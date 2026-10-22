@@ -37,6 +37,7 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
   ];
 
   const presets = [
+    { id: "all_time", labelEn: "All time", labelMl: "എല്ലാ സമയവും" },
     { id: "today", labelEn: "Today", labelMl: "ഇന്ന്" },
     { id: "this_week", labelEn: "This week", labelMl: "ഈ ആഴ്ച" },
     { id: "this_month", labelEn: "This month", labelMl: "ഈ മാസം" },
@@ -56,13 +57,17 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
 
   const handleApply = () => {
     let customLabel = "";
-    if (activePreset === "this_month") {
-      customLabel = lang === "ml" ? `${monthNamesMl[currentMonth]} ${currentYear}` : `${monthNamesEn[currentMonth]} ${currentYear}`;
-    } else if (activePreset === "last_month") {
-      const prevM = currentMonth === 0 ? 11 : currentMonth - 1;
-      const prevY = currentMonth === 0 ? currentYear - 1 : currentYear;
-      customLabel = lang === "ml" ? `${monthNamesMl[prevM]} ${prevY}` : `${monthNamesEn[prevM]} ${prevY}`;
-    } else if (activePreset === "today" || activePreset === "custom" || selectMode === "single") {
+    if (activePreset === "all_time") {
+      customLabel = lang === "ml" ? "എല്ലാ സമയവും" : "All Time";
+    } else if (selectMode === "range") {
+      const validDay = selectedDay || 12;
+      const validYear = currentYear || 2026;
+      const validMonth = typeof currentMonth === "number" ? currentMonth : 9;
+      const startDayStr = String(Math.max(1, validDay - 6)).padStart(2, "0");
+      const endDayStr = String(validDay).padStart(2, "0");
+      const monthStr = String(validMonth + 1).padStart(2, "0");
+      customLabel = `${startDayStr}/${monthStr}/${validYear} - ${endDayStr}/${monthStr}/${validYear}`;
+    } else {
       const validDay = selectedDay || 12;
       const validYear = currentYear || 2026;
       const validMonth = typeof currentMonth === "number" ? currentMonth : 9;
@@ -72,9 +77,6 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
       const dayStr = String(validDay).padStart(2, "0");
       const monthStr = String(validMonth + 1).padStart(2, "0");
       customLabel = `${dayName}, ${dayStr}/${monthStr}/${validYear}`;
-    } else {
-      const presetObj = presets.find(p => p.id === activePreset);
-      customLabel = presetObj ? (lang === "ml" ? presetObj.labelMl : presetObj.labelEn) : activePreset;
     }
     onSelectPeriod(activePreset, customLabel);
     onClose();
@@ -196,9 +198,7 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
         {/* 3. Selected Date Title */}
         <div className="py-1.5">
           <h4 className="text-sm sm:text-base font-black text-slate-900 dark:text-white">
-            {activePreset === "this_month"
-              ? `${lang === "ml" ? "ഒക്ടോബർ 1 - 31, 2026" : "Oct 1, 2026 - Oct 31, 2026"}`
-              : currentDayFormatted()}
+            {currentDayFormatted()}
           </h4>
         </div>
 

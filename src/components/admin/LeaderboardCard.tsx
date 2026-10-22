@@ -4,6 +4,7 @@ import { Trophy, Filter, MapPin, Award, CheckCircle2, ChevronDown } from "lucide
 import { useLang } from "@/i18n/LanguageProvider";
 import { districts, constituencies, getDistrictName, getConstituencyName } from "@/data/geo";
 import { getFilteredLeaderboard } from "@/data/leaderboard";
+import { LeaderboardTop3Podium } from "./LeaderboardTop3Podium";
 
 interface LeaderboardCardProps {
   initialDistrict?: string;
@@ -149,6 +150,34 @@ export function LeaderboardCard({ initialDistrict = "all", initialConstituency =
         </span>
       </div>
 
+      {/* Top 3 Podium Visual */}
+      {leaderboardList.length >= 3 && (
+        <div className="bg-muted/30 p-2 rounded-xl border border-border/50 overflow-hidden">
+          <LeaderboardTop3Podium
+            rank1={{
+              rank: 1,
+              name: leaderboardList[0].name,
+              val: leaderboardList[0].points.toString(),
+              avatarUrl: leaderboardList[0].avatarUrl,
+            }}
+            rank2={{
+              rank: 2,
+              name: leaderboardList[1].name,
+              val: leaderboardList[1].points.toString(),
+              avatarUrl: leaderboardList[1].avatarUrl,
+            }}
+            rank3={{
+              rank: 3,
+              name: leaderboardList[2].name,
+              val: leaderboardList[2].points.toString(),
+              avatarUrl: leaderboardList[2].avatarUrl,
+            }}
+            category="workers"
+            lang={lang}
+          />
+        </div>
+      )}
+
       {/* Leaderboard Entries List */}
       <div className="space-y-2 text-xs">
         {topLeaders.length === 0 ? (
@@ -185,6 +214,13 @@ export function LeaderboardCard({ initialDistrict = "all", initialConstituency =
                   <span className={`flex h-7 w-7 items-center justify-center rounded-full text-xs shrink-0 ${rankBadge}`}>
                     #{rank}
                   </span>
+                  {leader.avatarUrl && (
+                    <img
+                      src={leader.avatarUrl}
+                      alt={leader.name}
+                      className="h-8 w-8 rounded-full object-cover border border-border shrink-0 shadow-2xs"
+                    />
+                  )}
                   <div className="min-w-0">
                     <span className="font-bold text-foreground block leading-tight truncate">
                       {leader.name}

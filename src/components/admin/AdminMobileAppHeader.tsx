@@ -16,6 +16,11 @@ import {
   BarChart3,
   HelpCircle,
   LogOut,
+  Sprout,
+  FileText,
+  Megaphone,
+  Headphones,
+  AlertTriangle,
 } from "lucide-react";
 import { useLang } from "@/i18n/LanguageProvider";
 import { Link } from "@tanstack/react-router";
@@ -23,32 +28,79 @@ import { AdminMobileTab } from "./AdminMobileAppBottomNav";
 
 interface AdminMobileAppHeaderProps {
   onNavigateTab?: (tab: AdminMobileTab) => void;
+  onOpenNotifications?: () => void;
 }
 
-export function AdminMobileAppHeader({ onNavigateTab }: AdminMobileAppHeaderProps = {}) {
+export function AdminMobileAppHeader({ onNavigateTab, onOpenNotifications }: AdminMobileAppHeaderProps = {}) {
   const { lang, setLang } = useLang();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-  const notifications = [
+  const notificationsGrouped = [
     {
-      id: "1",
-      title: lang === "ml" ? "3 കവിഞ്ഞ കേസുകൾ (SLA Alert)" : "3 Overdue Critical SLA Cases",
-      time: lang === "ml" ? "10 മിനിറ്റ് മുമ്പ്" : "10m ago",
-      type: "alert",
+      group: lang === "ml" ? "ഇന്ന്" : "Today",
+      items: [
+        {
+          id: "n1",
+          tag: "PM-KISAN",
+          tagBg: "bg-amber-100 text-amber-700 dark:bg-amber-950/80 dark:text-amber-300",
+          iconBg: "bg-amber-100 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400",
+          icon: Sprout,
+          title: lang === "ml" ? "പിഎം-കിസാൻ ഇ-കെവൈസി പൂർത്തിയാക്കുക" : "Complete PM-KISAN e-KYC",
+          subtitle: lang === "ml" ? "ഗുണഭോക്തൃ അക്കൗണ്ടിനായി വെരിഫിക്കേഷൻ കുടിശ്ശികയാണ്." : "Verification is pending for your beneficiary account.",
+          time: "10m ago",
+          dotColor: "bg-amber-500",
+        },
+        {
+          id: "n2",
+          tag: lang === "ml" ? "സ്കോളർഷിപ്പ്" : "Scholarship",
+          tagBg: "bg-rose-100 text-rose-700 dark:bg-rose-950/80 dark:text-rose-300",
+          iconBg: "bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400",
+          icon: AlertTriangle,
+          title: lang === "ml" ? "സ്കോളർഷിപ്പ് അപേക്ഷയിൽ തിരുത്തൽ വേണം" : "Scholarship application correction required",
+          subtitle: lang === "ml" ? "പ്രോസസ്സിംഗ് തുടരാൻ കൂടുതൽ രേഖകൾ ആവശ്യമാണ്." : "Additional documents are needed to continue processing.",
+          time: "25m ago",
+          dotColor: "bg-rose-500",
+        },
+        {
+          id: "n3",
+          tag: "Kerala e-District",
+          tagBg: "bg-blue-100 text-blue-700 dark:bg-blue-950/80 dark:text-blue-300",
+          iconBg: "bg-blue-100 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400",
+          icon: FileText,
+          title: lang === "ml" ? "വരുമാന സർട്ടിഫിക്കറ്റ് സമർപ്പിച്ചു" : "Income certificate submitted",
+          subtitle: lang === "ml" ? "ഇ-ഡിസ്ട്രിക്റ്റ് അപേക്ഷ പരിശോധനയിലാണ്." : "Your Kerala e-District application is under review.",
+          time: "1h ago",
+          dotColor: "bg-blue-500",
+        },
+      ],
     },
     {
-      id: "2",
-      title: lang === "ml" ? "പുതിയ പദ്ധതി ചേർത്തു: KISAN Pension" : "New Scheme Published: KISAN Pension",
-      time: lang === "ml" ? "1 മണിക്കൂർ മുമ്പ്" : "1h ago",
-      type: "info",
-    },
-    {
-      id: "3",
-      title: lang === "ml" ? "കൊല്ലം ജില്ലയിൽ 85% ലക്ഷ്യം കൈവരിച്ചു" : "Kollam district reached 85% target",
-      time: lang === "ml" ? "2 മണിക്കൂർ മുമ്പ്" : "2h ago",
-      type: "success",
+      group: lang === "ml" ? "ഇന്നലെ" : "Yesterday",
+      items: [
+        {
+          id: "n4",
+          tag: lang === "ml" ? "പുതിയ പദ്ധതി" : "New Scheme",
+          tagBg: "bg-blue-100 text-blue-700 dark:bg-blue-950/80 dark:text-blue-300",
+          iconBg: "bg-blue-100 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400",
+          icon: Megaphone,
+          title: lang === "ml" ? "പുതിയ പദ്ധതി ലഭ്യമാണ്" : "New scheme available",
+          subtitle: lang === "ml" ? "പിഎം വിശ്വകർമ്മ യോജനയിൽ ഇപ്പോൾ അപേക്ഷിക്കാം." : "PM Vishwakarma Yojana is now open for eligible users.",
+          time: lang === "ml" ? "ഇന്നലെ" : "Yesterday",
+          dotColor: "bg-blue-500",
+        },
+        {
+          id: "n5",
+          tag: lang === "ml" ? "സഹായം" : "Support",
+          tagBg: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300",
+          iconBg: "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400",
+          icon: Headphones,
+          title: lang === "ml" ? "സഹായ അഭ്യർത്ഥന പുതുക്കി" : "Help request updated",
+          subtitle: lang === "ml" ? "സപ്പോർട്ട് ടീം കൂടുതൽ വിവരങ്ങൾ ആവശ്യപ്പെട്ടിട്ടുണ്ട്." : "Support team requested additional information.",
+          time: lang === "ml" ? "ഇന്നലെ" : "Yesterday",
+          dotColor: "bg-emerald-500",
+        },
+      ],
     },
   ];
 
@@ -62,7 +114,6 @@ export function AdminMobileAppHeader({ onNavigateTab }: AdminMobileAppHeaderProp
           <button
             onClick={() => {
               setIsMenuOpen(true);
-              setIsNotifOpen(false);
               setIsProfileOpen(false);
             }}
             className="flex p-0.5 items-center justify-center rounded-md text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition-all shrink-0 focus:outline-none"
@@ -97,11 +148,13 @@ export function AdminMobileAppHeader({ onNavigateTab }: AdminMobileAppHeaderProp
           <div className="relative shrink-0">
             <button
               onClick={() => {
-                setIsNotifOpen(!isNotifOpen);
+                if (onOpenNotifications) {
+                  onOpenNotifications();
+                }
                 setIsMenuOpen(false);
                 setIsProfileOpen(false);
               }}
-              className="relative flex h-9 w-9 items-center justify-center rounded-full border border-slate-200/80 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 transition-all shadow-2xs focus:outline-none shrink-0"
+              className="relative flex h-9 w-9 items-center justify-center rounded-full border border-slate-200/80 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 transition-all shadow-2xs focus:outline-none shrink-0 cursor-pointer"
               aria-label="Notifications"
             >
               <Bell className="h-4 w-4 text-slate-700 dark:text-slate-200 stroke-[2]" />
@@ -109,29 +162,6 @@ export function AdminMobileAppHeader({ onNavigateTab }: AdminMobileAppHeaderProp
                 4
               </span>
             </button>
-
-            {/* Notifications Popover */}
-            {isNotifOpen && (
-              <div className="absolute right-0 top-12 z-50 w-[270px] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-2xl space-y-2 animate-in fade-in-50 zoom-in-95 text-foreground">
-                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
-                  <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                    <Bell className="h-3.5 w-3.5 text-orange-500" />
-                    {lang === "ml" ? "അറിയിപ്പുകൾ" : "Notifications"} (4)
-                  </span>
-                  <button onClick={() => setIsNotifOpen(false)} className="rounded-md p-1 text-muted-foreground hover:text-foreground">
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-                <div className="space-y-1.5 max-h-60 overflow-y-auto">
-                  {notifications.map((n) => (
-                    <div key={n.id} className="rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 p-2.5 text-xs space-y-0.5">
-                      <p className="font-semibold text-foreground leading-snug">{n.title}</p>
-                      <span className="text-[10px] text-muted-foreground font-medium">{n.time}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
           {/* User Profile Circle Control (Uniform 36px size matching bell & EN) */}
@@ -140,24 +170,31 @@ export function AdminMobileAppHeader({ onNavigateTab }: AdminMobileAppHeaderProp
               onClick={() => {
                 setIsProfileOpen(!isProfileOpen);
                 setIsMenuOpen(false);
-                setIsNotifOpen(false);
               }}
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200/80 dark:border-slate-700 bg-[#FFEDD5] text-[#F97316] hover:bg-orange-200 active:scale-95 transition-all shadow-2xs focus:outline-none shrink-0"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-orange-300/80 dark:border-slate-700 bg-[#FFEDD5] text-[#F97316] hover:bg-orange-200 active:scale-95 transition-all shadow-2xs focus:outline-none shrink-0 overflow-hidden"
               aria-label="User Profile"
-              title="User Profile Options"
+              title="Jayasurya Profile Options"
             >
-              <User className="h-4 w-4 text-[#F97316] stroke-[2.5]" />
+              <img
+                src="https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150&auto=format&fit=crop&q=80"
+                alt="Jayasurya"
+                className="h-full w-full object-cover rounded-full"
+              />
             </button>
 
             {/* Profile Popover */}
             {isProfileOpen && (
               <div className="absolute right-0 top-14 z-50 w-[240px] rounded-2xl border border-amber-200/80 bg-white dark:bg-slate-900 p-3.5 shadow-2xl space-y-3 animate-in fade-in-50 zoom-in-95 text-foreground">
                 <div className="flex items-center gap-2.5 border-b border-amber-100 dark:border-slate-800 pb-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FFEDD5] text-[#F97316] font-bold shadow-2xs">
-                    <User className="h-5.5 w-5.5 text-[#F97316]" />
+                  <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-[#FFEDD5] text-[#F97316] font-bold shadow-2xs overflow-hidden shrink-0">
+                    <img
+                      src="https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150&auto=format&fit=crop&q=80"
+                      alt="Jayasurya"
+                      className="h-full w-full object-cover rounded-xl"
+                    />
                   </div>
                   <div>
-                    <h3 className="font-bold text-xs text-foreground">Soman P.</h3>
+                    <h3 className="font-bold text-xs text-foreground">Jayasurya</h3>
                     <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
                       <ShieldCheck className="h-3 w-3" /> State Admin
                     </p>
@@ -218,12 +255,16 @@ export function AdminMobileAppHeader({ onNavigateTab }: AdminMobileAppHeaderProp
 
               {/* User Identity Card inside Drawer */}
               <div className="flex items-center gap-3 rounded-2xl border border-border/80 bg-muted/40 p-3 shadow-2xs">
-                <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold shadow-xs">
-                  <User className="h-5 w-5" />
-                  <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-background" />
+                <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold shadow-xs overflow-hidden shrink-0">
+                  <img
+                    src="https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150&auto=format&fit=crop&q=80"
+                    alt="Jayasurya"
+                    className="h-full w-full object-cover rounded-xl"
+                  />
+                  <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-background z-10" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-xs font-bold text-foreground">Soman P.</p>
+                  <p className="text-xs font-bold text-foreground">Jayasurya</p>
                   <p className="text-[10px] font-semibold text-emerald-600 flex items-center gap-1">
                     <ShieldCheck className="h-3 w-3" /> {lang === "ml" ? "സംസ്ഥാന അഡ്മിൻ" : "State Nodal Admin"}
                   </p>

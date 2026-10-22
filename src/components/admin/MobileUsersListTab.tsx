@@ -19,7 +19,7 @@ import {
   UserCheck,
 } from "lucide-react";
 import { useLang } from "@/i18n/LanguageProvider";
-import { mockUsers, userCategorySummary, AppUser, UserCategory } from "@/data/users";
+import { mockUsers, userCategorySummary, AppUser, UserCategory, isBjpMemberUser } from "@/data/users";
 import { districts } from "@/data/geo";
 import { FilterChip } from "./MobileAppliedFiltersScope";
 import { PartyFlagIcon } from "@/components/common/PartyFlagIcon";
@@ -75,11 +75,7 @@ export function MobileUsersListTab({
       // Category filter
       if (selectedCategory !== "all") {
         if (selectedCategory === "bjp_member") {
-          const isBjp =
-            user.category === "bjp_member" ||
-            user.designationEn.toLowerCase().includes("bjp") ||
-            user.designationMl.includes("ബി.ജെ.പി") ||
-            user.email.includes("bjp");
+          const isBjp = isBjpMemberUser(user);
           if (!isBjp) return false;
         } else if (selectedCategory === "peoples_representative") {
           const isRep =
@@ -197,8 +193,33 @@ export function MobileUsersListTab({
     return chips;
   }, [selectedCategory, selectedDistrict, selectedDistrictObj, searchQuery, lang]);
 
-  const getCategoryBadge = (category: UserCategory) => {
-    switch (category) {
+  const getUserBadge = (user: AppUser) => {
+    if (user.badgeEn) {
+      if (user.badgeEn === "Party Member") {
+        return null;
+      }
+      const label = lang === "ml" && user.badgeMl ? user.badgeMl : user.badgeEn;
+      let bg = "bg-orange-100 dark:bg-orange-950/60 text-orange-900 dark:text-orange-200 border-orange-300 dark:border-orange-800";
+      let dot = "bg-orange-500";
+
+      if (user.badgeEn === "People's Rep" || user.badgeEn === "Peoples Rep") {
+        bg = "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800";
+        dot = "bg-emerald-500";
+      } else if (user.badgeEn === "Former MLA") {
+        bg = "bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-800";
+        dot = "bg-purple-500";
+      } else if (user.badgeEn === "MP") {
+        bg = "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800";
+        dot = "bg-emerald-500";
+      } else if (user.badgeEn === "MLA") {
+        bg = "bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800";
+        dot = "bg-blue-500";
+      }
+
+      return { label, bg, dot };
+    }
+
+    switch (user.category) {
       case "politician":
         return {
           label: lang === "ml" ? "രാഷ്ട്രീയ നേതാവ്" : "Politician",
@@ -212,11 +233,7 @@ export function MobileUsersListTab({
           dot: "bg-emerald-500",
         };
       case "bjp_member":
-        return {
-          label: lang === "ml" ? "ബി.ജെ.പി അംഗം" : "BJP Member",
-          bg: "bg-orange-100 dark:bg-orange-950/60 text-orange-900 dark:text-orange-200 border-orange-300 dark:border-orange-800",
-          dot: "bg-orange-500",
-        };
+        return null;
       case "other_party_member":
         return {
           label: lang === "ml" ? "മറ്റ് പാർട്ടി അംഗം" : "Other Party Member",
@@ -250,75 +267,66 @@ export function MobileUsersListTab({
       : "All 14 Districts & 140 Constituencies";
 
   return (
-    <div className="space-y-3 animate-in fade-in duration-200">
-      {/* Top Dashboard-Style Header: Users Count + Date Picker Pill + Filter Pill */}
-      <div className="flex items-center justify-between gap-1.5 pt-1 pb-0.5 mt-0 mb-1">
-        {/* Title */}
-        <div className="flex items-center gap-1.5 shrink-0 h-7">
-          <h2 className="font-display text-base sm:text-lg font-black text-[#0a0f1d] dark:text-white tracking-tight leading-none flex items-center">
-            <span>{lang === "ml" ? "ഉപയോക്താക്കൾ" : "Users"}</span>
-          </h2>
-        </div>
+    <div className="space-y-1.5 animate-in fade-in duration-200">
+      {/* Top Header matching Dashboard layout: Date Title (Left) + Stepper & Controls (Right) */}
+      <div className="flex items-center justify-between gap-2 py-1 my-0.5">
+        {/* Left Side: Bold Date/Period Title */}
+        <button
+          type="button"
+          onClick={onOpenDatePicker}
+          className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0"
+          title="Click to Open Date Picker"
+        >
+          {displayPeriodText}
+        </button>
 
-        {/* Date Selection Pill + Filter Button */}
-        <div className="flex items-center gap-1.5 min-w-0">
-          {/* Date Selection Pill */}
-          <div className="flex items-center justify-between rounded-full border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 px-2 py-0.5 text-[10.5px] font-bold text-[#0a0f1d] dark:text-slate-200 shadow-2xs hover:border-slate-300 transition-all min-h-[28px] max-w-[190px]">
-            <div className="flex items-center gap-0.5 min-w-0 flex-1 justify-center">
-              <button
-                type="button"
-                onClick={() => handleStepPeriodInternal(-1)}
-                className="p-0.5 rounded-full text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
-                title="Previous Period"
-              >
-                <ChevronLeft className="h-3.5 w-3.5 stroke-[2.4]" />
-              </button>
+        {/* Right Side: Circular Action Buttons (Previous, Next, Calendar, Filter) */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {/* Left Arrow (Previous Period) */}
+          <button
+            type="button"
+            onClick={() => handleStepPeriodInternal(-1)}
+            className="flex h-6 w-6 items-center justify-center rounded-full border border-orange-100 dark:border-slate-800 bg-orange-50/50 dark:bg-slate-900 text-orange-600 hover:bg-orange-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shadow-2xs"
+            title="Previous Period"
+          >
+            <ChevronLeft className="h-3 w-3 stroke-[2.5]" />
+          </button>
 
-              <button
-                type="button"
-                onClick={onOpenDatePicker}
-                className="text-[10.5px] font-extrabold text-[#0a0f1d] dark:text-slate-100 hover:text-[#ff5500] transition-colors cursor-pointer px-1 tracking-tight truncate"
-                title="Click to Open Date Picker"
-              >
-                {displayPeriodText}
-              </button>
+          {/* Right Arrow (Next Period) */}
+          <button
+            type="button"
+            onClick={() => handleStepPeriodInternal(1)}
+            className="flex h-6 w-6 items-center justify-center rounded-full border border-orange-100 dark:border-slate-800 bg-orange-50/50 dark:bg-slate-900 text-orange-600 hover:bg-orange-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shadow-2xs"
+            title="Next Period"
+          >
+            <ChevronRight className="h-3 w-3 stroke-[2.5]" />
+          </button>
 
-              <button
-                type="button"
-                onClick={() => handleStepPeriodInternal(1)}
-                className="p-0.5 rounded-full text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
-                title="Next Period"
-              >
-                <ChevronRight className="h-3.5 w-3.5 stroke-[2.4]" />
-              </button>
-            </div>
+          {/* Calendar Icon Button */}
+          <button
+            type="button"
+            onClick={onOpenDatePicker}
+            className="flex h-6 w-6 items-center justify-center rounded-full border border-orange-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 text-[#ff5500] hover:bg-orange-50 dark:hover:bg-orange-950/30 transition-colors cursor-pointer shadow-2xs"
+            title="Open Date Picker"
+          >
+            <Calendar className="h-3.5 w-3.5 stroke-[2.2]" />
+          </button>
 
-            <button
-              type="button"
-              onClick={onOpenDatePicker}
-              className="p-0.5 rounded-full text-[#ff5500] hover:bg-orange-50 dark:hover:bg-orange-950/30 transition-colors cursor-pointer border-l border-slate-200 dark:border-slate-800 pl-1.5 ml-0.5 shrink-0"
-              title="Open Date Picker"
-            >
-              <Calendar className="h-3.5 w-3.5 stroke-[2.2]" />
-            </button>
-          </div>
-
-          {/* Filter Button Pill with Active Indication Badge */}
+          {/* Filter Button */}
           <button
             type="button"
             onClick={() => setShowFilterDrawer(!showFilterDrawer)}
-            className={`relative flex h-7 w-7 items-center justify-center rounded-full border transition-all shadow-2xs cursor-pointer shrink-0 ${
+            className={`relative flex h-6 w-6 items-center justify-center rounded-full border transition-all shadow-2xs cursor-pointer ${
               showFilterDrawer || appliedFilterChips.length > 0 || selectedDistrict !== "all"
-                ? "border-orange-500 bg-orange-500 text-white ring-2 ring-orange-500/30 shadow-xs"
-                : "border-amber-200/60 dark:border-slate-800 bg-[#fffcf0] dark:bg-slate-900 text-[#0a0f1d] dark:text-slate-200 hover:bg-amber-100/50"
+                ? "border-orange-500 bg-orange-500 text-white ring-2 ring-orange-500/30"
+                : "border-orange-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-orange-500 hover:bg-orange-50"
             }`}
             title="Toggle Filters"
           >
-            <Filter className={`h-3.5 w-3.5 stroke-[2.2] shrink-0 ${appliedFilterChips.length > 0 || showFilterDrawer || selectedDistrict !== "all" ? "text-white" : "text-[#ff5500]"}`} />
+            <Filter className={`h-3 w-3 stroke-[2.2] ${appliedFilterChips.length > 0 || showFilterDrawer || selectedDistrict !== "all" ? "text-white" : "text-orange-500"}`} />
 
-            {/* Active Filter Indication Badge Counter */}
             {(appliedFilterChips.length > 0 || selectedDistrict !== "all") && (
-              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[9px] font-black text-white ring-2 ring-white dark:ring-slate-900 animate-pulse">
+              <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-600 text-[8px] font-black text-white ring-1.5 ring-white dark:ring-slate-900 animate-pulse">
                 {appliedFilterChips.length || 1}
               </span>
             )}
@@ -585,7 +593,7 @@ export function MobileUsersListTab({
           </div>
         ) : (
           filteredUsers.map((user) => {
-            const badge = getCategoryBadge(user.category);
+            const badge = getUserBadge(user);
             return (
               <div
                 key={user.id}
@@ -610,7 +618,7 @@ export function MobileUsersListTab({
                         user.name.charAt(0)
                       )}
                       <span
-                        className={`absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border-2 border-background ${badge.dot}`}
+                        className={`absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border-2 border-background ${badge?.dot || "bg-orange-500"}`}
                       />
                     </div>
 
@@ -619,7 +627,7 @@ export function MobileUsersListTab({
                         <h3 className="text-xs font-extrabold text-foreground truncate group-hover:text-orange-600 transition-colors">
                           {lang === "ml" ? user.nameMl : user.name}
                         </h3>
-                        {(user.category === "bjp_member" || user.designationEn.toLowerCase().includes("bjp") || user.email.includes("bjp")) && (
+                        {isBjpMemberUser(user) && (
                           <PartyFlagIcon className="h-3.5 w-5 rounded-[2px]" />
                         )}
                       </div>
@@ -629,12 +637,14 @@ export function MobileUsersListTab({
                     </div>
                   </div>
 
-                  {/* Category Pill Tag */}
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold border shrink-0 ${badge.bg}`}
-                  >
-                    <span>{badge.label}</span>
-                  </span>
+                  {/* Category Pill Tag Badge */}
+                  {badge && (
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold border shrink-0 ${badge.bg}`}
+                    >
+                      <span>{badge.label}</span>
+                    </span>
+                  )}
                 </div>
 
                 {/* Location & Contact Info Row */}
@@ -681,7 +691,7 @@ export function MobileUsersListTab({
                     <h3 className="text-sm font-bold text-foreground">
                       {lang === "ml" ? selectedUserDetail.nameMl : selectedUserDetail.name}
                     </h3>
-                    {(selectedUserDetail.category === "bjp_member" || selectedUserDetail.designationEn.toLowerCase().includes("bjp") || selectedUserDetail.email.includes("bjp")) && (
+                    {isBjpMemberUser(selectedUserDetail) && (
                       <PartyFlagIcon className="h-4 w-5 rounded-[2px]" />
                     )}
                   </div>

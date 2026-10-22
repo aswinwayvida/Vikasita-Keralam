@@ -10,7 +10,21 @@ export type LeaderboardEntry = {
   casesResolved: number;
   points: number;
   avatarColor: string;
+  avatarUrl?: string;
 };
+
+const profilePhotos = [
+  "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=150&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80",
+];
 
 // Seed sample leaders across districts and mandalams
 const leaderFirstNames = [
@@ -67,6 +81,7 @@ export function generateLeaderboardData(): LeaderboardEntry[] {
         casesResolved,
         points,
         avatarColor: avatarColors[(counter + i) % avatarColors.length],
+        avatarUrl: profilePhotos[(counter + i) % profilePhotos.length],
       });
       counter++;
     }
