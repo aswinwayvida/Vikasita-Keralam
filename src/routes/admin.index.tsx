@@ -448,7 +448,7 @@ export function AdminDashboard() {
                 <Database className="h-5 w-5" />
               </div>
             </div>
-            <p className="font-display text-lg sm:text-xl font-bold text-foreground tracking-tight">128</p>
+            <p className="font-display text-lg sm:text-xl font-bold text-foreground tracking-tight">740</p>
           </div>
 
           {/* Card 4: Total Scheme Categories */}

@@ -313,7 +313,7 @@ export function AdminMobileAppHeader({ onNavigateTab, onOpenNotifications }: Adm
                 >
                   <span className="flex items-center gap-2.5">
                     <ScrollText className="h-4 w-4 text-muted-foreground" />
-                    {lang === "ml" ? "ക്ഷേമ പദ്ധതികൾ (128)" : "Welfare Schemes (128)"}
+                    {lang === "ml" ? "ക്ഷേമ പദ്ധതികൾ (740)" : "Welfare Schemes (740)"}
                   </span>
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </button>

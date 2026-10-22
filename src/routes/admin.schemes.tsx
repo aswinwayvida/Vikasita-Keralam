@@ -272,7 +272,7 @@ function SchemesPage() {
               <span className="text-[10px] sm:text-[11px] font-bold text-muted-foreground uppercase">{lang === "ml" ? "ആകെ പദ്ധതികൾ" : "TOTAL SCHEMES"}</span>
               <Database className="h-4 w-4 text-primary" />
             </div>
-            <p className="text-lg sm:text-xl font-mono font-extrabold text-foreground">128</p>
+            <p className="text-lg sm:text-xl font-mono font-extrabold text-foreground">740</p>
             <span className="text-[10px] text-muted-foreground font-semibold block">{lang === "ml" ? "ലഭ്യമായ എല്ലാ പദ്ധതികളും" : "All available schemes"}</span>
           </div>
 
