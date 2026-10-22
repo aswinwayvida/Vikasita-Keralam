@@ -25,6 +25,7 @@ import {
   type QueueStage,
 } from "@/data/admin-applications";
 import { districts, getDistrictName } from "@/data/geo";
+import { schemes } from "@/data/schemes";
 import { loadHelpdeskRequests, type HelpdeskRequest } from "@/lib/helpdesk-requests";
 import { useLang } from "@/i18n/LanguageProvider";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -91,6 +92,11 @@ function ApplicationsPage() {
   const routeSearch = Route.useSearch();
   const [stage, setStage] = useState<"All" | QueueStage>(routeSearch.stage ?? "All");
   const [district, setDistrict] = useState("All");
+  const [schemeCategoryFilter, setSchemeCategoryFilter] = useState("all");
+  const [assistanceStatusFilter, setAssistanceStatusFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("all");
+  const [customStartDate, setCustomRangeStart] = useState("");
+  const [customEndDate, setCustomRangeEnd] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [, setHelpdeskRequests] = useState<HelpdeskRequest[]>([]);
@@ -128,7 +134,7 @@ function ApplicationsPage() {
           (district === "All" || record.districtId === district)
         );
       }),
-    [district, routeSearch.filter, searchQuery, stage],
+    [district, routeSearch.filter, searchQuery, stage, schemeCategoryFilter, assistanceStatusFilter, dateFilter, customStartDate, customEndDate],
   );
   const visible = filtered.slice(0, 40);
   const allVisibleSelected =
@@ -167,7 +173,7 @@ function ApplicationsPage() {
     }
   }, []);
 
-  const activeFilterCount = (stage !== "All" ? 1 : 0) + (district !== "All" ? 1 : 0);
+  const activeFilterCount = (stage !== "All" ? 1 : 0) + (district !== "All" ? 1 : 0) + (schemeCategoryFilter !== "all" ? 1 : 0) + (assistanceStatusFilter !== "all" ? 1 : 0) + (dateFilter !== "all" ? 1 : 0);
 
   return (
     <div className="space-y-6 pb-8">
