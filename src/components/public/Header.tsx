@@ -58,7 +58,7 @@ export function Header() {
     >
       <SaffronTopBar />
       <div className="border-b border-border">
-        <div className="vk-site-header-row mx-auto flex w-full max-w-7xl min-w-0 items-center justify-between gap-2 px-4 sm:gap-4 sm:px-6">
+        <div className="vk-site-header-row mx-auto flex w-full max-w-7xl min-w-0 items-center justify-between gap-2 px-2.5 sm:gap-4 sm:px-6">
           <BrandLogo className="vk-site-logo w-auto max-w-[calc(100vw-88px)] shrink object-contain drop-shadow-sm sm:max-w-[300px] md:max-w-[340px] xl:max-w-[360px]" />
           <nav className="hidden items-center gap-0.5 xl:flex">
             {navItems.map((n) => (

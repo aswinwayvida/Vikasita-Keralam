@@ -6,24 +6,21 @@ import {
   FileCheck2,
   FileText,
   Filter,
+  Download,
+  LayoutGrid,
+  List,
   Mail,
   MapPin,
   MessageCircle,
-  Phone,
   Plus,
-  Search,
   UserRoundCheck,
 } from "lucide-react";
 import {
   adminApplicationMetrics,
   adminApplications,
-  applicationReviewers,
   applicationStages,
-  formatWaitingTime,
-  maskPhone,
   type QueueStage,
 } from "@/data/admin-applications";
-import { schemes } from "@/data/schemes";
 import { districts, getDistrictName } from "@/data/geo";
 import { loadHelpdeskRequests, type HelpdeskRequest } from "@/lib/helpdesk-requests";
 import { useLang } from "@/i18n/LanguageProvider";
@@ -42,16 +39,57 @@ export const Route = createFileRoute("/admin/applications")({
   component: ApplicationsPage,
 });
 
+export function StagePill({ stage }: { stage: QueueStage }) {
+  if (stage === "New") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-extrabold text-primary border border-primary/20">
+        New
+      </span>
+    );
+  }
+  if (stage === "Checking documents") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-extrabold text-amber-700 border border-amber-500/20">
+        Checking documents
+      </span>
+    );
+  }
+  if (stage === "Follow-up needed") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2.5 py-0.5 text-[10px] font-extrabold text-destructive border border-destructive/20">
+        Follow-up needed
+      </span>
+    );
+  }
+  if (stage === "Ready to submit") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 px-2.5 py-0.5 text-[10px] font-extrabold text-sky-600 border border-sky-500/20">
+        Ready to submit
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-600 border border-emerald-500/20">
+      Completed
+    </span>
+  );
+}
+
+export function formatWaitingTime(hours: number) {
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  const rem = hours % 24;
+  return rem > 0 ? `${days}d ${rem}h` : `${days}d`;
+}
+
 function ApplicationsPage() {
   const { lang } = useLang();
   const navigate = useNavigate();
   const routeSearch = Route.useSearch();
-  const [query, setQuery] = useState("");
   const [stage, setStage] = useState<"All" | QueueStage>(routeSearch.stage ?? "All");
   const [district, setDistrict] = useState("All");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [helpdeskRequests, setHelpdeskRequests] = useState<HelpdeskRequest[]>([]);
-  const [helpdeskFilter, setHelpdeskFilter] = useState("all");
+  const [, setHelpdeskRequests] = useState<HelpdeskRequest[]>([]);
 
   useEffect(() => {
     const refresh = () => setHelpdeskRequests(loadHelpdeskRequests());
@@ -64,16 +102,9 @@ function ApplicationsPage() {
     };
   }, []);
 
-  const visibleHelpdeskRequests = helpdeskRequests.filter(
-    (item) => helpdeskFilter === "all" || item.helpdeskId === helpdeskFilter,
-  );
-
   const filtered = useMemo(
     () =>
       adminApplications.filter((record) => {
-        const scheme = schemes.find((item) => item.id === record.schemeId);
-        const haystack =
-          `${record.id} ${record.reference} ${record.applicant} ${record.mobile} ${scheme?.en ?? ""}`.toLowerCase();
         const filterMatch =
           !routeSearch.filter ||
           (routeSearch.filter === "action" && record.queueStage !== "Completed") ||
@@ -88,13 +119,12 @@ function ApplicationsPage() {
             record.ageHours > 48) ||
           (routeSearch.filter === "unassigned" && record.reviewer === "Not assigned");
         return (
-          haystack.includes(query.toLowerCase()) &&
           filterMatch &&
           (stage === "All" || record.queueStage === stage) &&
           (district === "All" || record.districtId === district)
         );
       }),
-    [district, query, routeSearch.filter, stage],
+    [district, routeSearch.filter, stage],
   );
   const visible = filtered.slice(0, 40);
   const allVisibleSelected =
@@ -118,306 +148,396 @@ function ApplicationsPage() {
     });
   }
 
-  return (
-    <div className="space-y-5">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-bold sm:text-3xl">Applications</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            View, assign, check, submit and track applications from one place.
-          </p>
-        </div>
-        <Button asChild className="h-10 rounded-xl px-4">
-          <Link to="/admin/applications/new" search={{ stage: undefined, filter: undefined }}>
-            <Plus className="h-4 w-4" /> New Application
-          </Link>
-        </Button>
-      </div>
+  const [timeRange, setTimeRange] = useState("30days");
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
+  const [viewMode, setViewMode] = useState<"table" | "cards">(() => {
+    if (typeof window !== "undefined" && window.innerWidth >= 768) {
+      return "table";
+    }
+    return "cards";
+  });
 
-      <section className="rounded-2xl border border-primary/20 bg-card p-4 sm:p-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setViewMode(window.innerWidth >= 768 ? "table" : "cards");
+    }
+  }, []);
+
+  const activeFilterCount = (stage !== "All" ? 1 : 0) + (district !== "All" ? 1 : 0);
+
+  return (
+    <div className="space-y-6 pb-8">
+      {/* Merged Single Section Container */}
+      <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-5">
+        
+        {/* Top Header Row with Title & Filter / Export / New Application Buttons */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 pb-4">
           <div>
-            <h2 className="font-display text-lg font-bold">Helpdesk requests from the public website</h2>
-            <p className="mt-1 text-xs leading-5 text-muted-foreground">
-              Review requests assigned to each helpdesk and follow up on missing documents.
+            <h2 className="font-display text-base font-bold text-foreground">
+              {lang === "ml" ? "അപേക്ഷകളുടെ പട്ടിക & അവലോകനം" : "Applications Directory & Overview"}
+            </h2>
+            <p className="text-[11px] text-muted-foreground">
+              {lang === "ml" ? "അപേക്ഷ പരിശോധന, ട്രാക്കിംഗ്, റിവ്യൂ പ്രോസസ്സിംഗ്" : "View, assign, check, submit and track applications from one place"}
             </p>
           </div>
-          <label className="text-xs font-semibold">
-            Helpdesk
-            <select
-              value={helpdeskFilter}
-              onChange={(event) => setHelpdeskFilter(event.target.value)}
-              className="mt-1 block h-10 w-full min-w-52 rounded-xl border border-border bg-background px-3 text-sm font-normal"
-            >
-              <option value="all">All helpdesks</option>
-              {Array.from(new Map(helpdeskRequests.map((item) => [item.helpdeskId, item.helpdeskName])).entries()).map(([id, name]) => (
-                <option key={id} value={id}>{name}</option>
-              ))}
-            </select>
-          </label>
-        </div>
-        {visibleHelpdeskRequests.length ? (
-          <div className="mt-4 grid gap-2">
-            {visibleHelpdeskRequests.map((item) => (
-              <Link
-                key={item.reference}
-                to="/admin/applications/$applicationId"
-                params={{ applicationId: item.reference }}
-                className="flex flex-col gap-2 rounded-xl border border-border bg-background p-3 transition hover:border-primary/40 hover:bg-saffron-soft/20 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div>
-                  <p className="text-sm font-bold">{item.applicant} <span className="ml-1 font-mono text-xs font-normal text-muted-foreground">{item.reference}</span></p>
-                  <p className="mt-1 text-xs text-muted-foreground">{item.helpdeskName} · {schemes.find((scheme) => scheme.id === item.schemeId)?.[lang] ?? item.schemeId}</p>
-                </div>
-                <div className="flex items-center gap-3 text-xs font-semibold">
-                  <span>{item.documents.length} files selected · {item.missingDocuments.length} missing</span>
-                  <ChevronRight className="h-4 w-4 text-primary" />
-                </div>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <p className="mt-4 rounded-xl bg-muted/45 p-4 text-sm text-muted-foreground">No public helpdesk requests found.</p>
-        )}
-      </section>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {[
-          {
-            icon: FileText,
-            value: adminApplicationMetrics.open,
-            label: "Open applications",
-            href: "/admin/applications?filter=action",
-            tone: "text-primary bg-primary/10",
-          },
-          {
-            icon: Clock3,
-            value: adminApplicationMetrics.waitingOver24Hours,
-            label: "Waiting over 24 hours",
-            href: "/admin/applications?filter=due",
-            tone: "text-destructive bg-destructive/10",
-          },
-          {
-            icon: FileCheck2,
-            value: adminApplicationMetrics.documentsNeeded,
-            label: "Documents needed",
-            href: "/admin/applications?filter=documents",
-            tone: "text-amber-700 bg-amber-500/10",
-          },
-          {
-            icon: UserRoundCheck,
-            value: adminApplicationMetrics.unassigned,
-            label: "Unassigned applications",
-            href: "/admin/applications?filter=unassigned",
-            tone: "text-secondary bg-secondary/10",
-          },
-        ].map((item) => (
-          <a
-            key={item.label}
-            href={item.href}
-            className="group rounded-xl border border-border bg-card p-4 transition hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <span
-                className={`inline-flex h-8 w-8 items-center justify-center rounded-lg ${item.tone}`}
-              >
-                <item.icon className="h-4 w-4" />
-              </span>
-              <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
-            </div>
-            <div className="mt-3 font-display text-2xl font-bold">{item.value}</div>
-            <div className="mt-0.5 text-xs text-muted-foreground">{item.label}</div>
-          </a>
-        ))}
-      </div>
-
-      <section className="min-w-0 overflow-hidden rounded-2xl border border-border bg-card">
-        <div className="border-b border-border p-3 sm:p-4">
-          <div className="grid gap-2 lg:grid-cols-[minmax(260px,1fr)_210px_210px]">
-            <label className="flex h-10 items-center gap-2 rounded-xl border border-border bg-background px-3">
-              <Search className="h-4 w-4 text-muted-foreground" />
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                className="min-w-0 flex-1 bg-transparent text-sm outline-none"
-                placeholder="Search name, mobile or scheme"
-              />
-            </label>
-            <label className="flex h-10 items-center gap-2 rounded-xl border border-border bg-background px-3">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <select
-                value={stage}
-                onChange={(event) => setStage(event.target.value as "All" | QueueStage)}
-                className="min-w-0 flex-1 bg-transparent text-sm outline-none"
-              >
-                <option>All</option>
-                {applicationStages.map((item) => (
-                  <option key={item}>{item}</option>
-                ))}
-              </select>
-            </label>
-            <label className="flex h-10 items-center gap-2 rounded-xl border border-border bg-background px-3">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-              <select
-                value={district}
-                onChange={(event) => setDistrict(event.target.value)}
-                className="min-w-0 flex-1 bg-transparent text-sm outline-none"
-              >
-                <option value="All">All districts</option>
-                {districts.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item[lang]}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          {selectedIds.size > 0 && (
-            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-primary/20 bg-primary/[0.06] p-2.5">
-              <span className="mr-1 text-xs font-semibold">{selectedIds.size} selected</span>
-              <Button type="button" size="sm" variant="outline">
-                <UserRoundCheck /> Assign
-              </Button>
-              <Button type="button" size="sm" variant="outline">
-                <MessageCircle /> WhatsApp
-              </Button>
-              <Button type="button" size="sm" variant="outline">
-                <Mail /> Email
-              </Button>
+          {/* Filter, Export & New Application Controls on the Right */}
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar pb-0.5 max-w-full sm:ml-auto shrink-0">
+            {/* View Mode Toggle Switch */}
+            <div className="flex items-center rounded-xl border border-border bg-background p-0.5 shrink-0">
               <button
                 type="button"
-                onClick={() => setSelectedIds(new Set())}
-                className="ml-auto px-2 text-xs font-semibold text-muted-foreground hover:text-foreground"
+                onClick={() => setViewMode("table")}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
+                  viewMode === "table"
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title={lang === "ml" ? "പട്ടിക വ്യൂ" : "Table View"}
               >
-                Clear
+                <List className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{lang === "ml" ? "പട്ടിക" : "List"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("cards")}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
+                  viewMode === "cards"
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title={lang === "ml" ? "കാർഡ് വ്യൂ" : "Card View"}
+              >
+                <LayoutGrid className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{lang === "ml" ? "കാർഡ്" : "Cards"}</span>
               </button>
             </div>
-          )}
-        </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1120px] text-sm">
-            <thead className="bg-muted/45 text-left text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-              <tr>
-                <th className="w-12 px-4 py-3">
-                  <Checkbox
-                    checked={allVisibleSelected}
-                    onCheckedChange={toggleAll}
-                    aria-label="Select all visible applications"
-                  />
-                </th>
-                <th className="px-4 py-3">Applicant</th>
-                <th className="px-4 py-3">Scheme</th>
-                <th className="px-4 py-3">District</th>
-                <th className="px-4 py-3">Submitted / waiting</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Assigned to</th>
-                <th className="px-4 py-3">Documents</th>
-                <th className="w-12 px-3 py-3" />
-              </tr>
-            </thead>
-            <tbody>
-              {visible.map((record) => {
-                const schemeItem = schemes.find((item) => item.id === record.schemeId);
-                const overdue = record.ageHours > 48 && record.queueStage !== "Completed";
-                return (
-                  <tr
-                    key={record.id}
-                    onClick={() =>
-                      navigate({
-                        to: "/admin/applications/$applicationId",
-                        params: { applicationId: record.id },
-                      })
-                    }
-                    className="cursor-pointer border-b border-border last:border-0 hover:bg-muted/35"
-                  >
-                    <td className="px-4 py-3" onClick={(event) => event.stopPropagation()}>
-                      <Checkbox
-                        checked={selectedIds.has(record.id)}
-                        onCheckedChange={() => toggleOne(record.id)}
-                        aria-label={`Select ${record.applicant}`}
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <Link
-                        to="/admin/applications/$applicationId"
-                        params={{ applicationId: record.id }}
-                        onClick={(event) => event.stopPropagation()}
-                        className="font-medium hover:text-primary hover:underline"
-                      >
-                        {record.applicant}
-                      </Link>
-                      <div className="mt-1 flex items-center gap-2">
-                        <span className="font-mono text-[11px] text-muted-foreground">
-                          {maskPhone(record.mobile)}
-                        </span>
-                        <a
-                          href={`tel:${record.mobile}`}
-                          onClick={(event) => event.stopPropagation()}
-                          className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border text-secondary hover:border-secondary"
-                          aria-label={`Call ${record.applicant}`}
+            {/* Time Range Selector Dropdown */}
+            <select
+              value={timeRange}
+              onChange={(e) => setTimeRange(e.target.value)}
+              className="h-8 rounded-xl border border-border bg-background px-2.5 py-1 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer shrink-0"
+            >
+              <option value="today">{lang === "ml" ? "ഇന്ന്" : "Today"}</option>
+              <option value="7days">{lang === "ml" ? "7 ദിവസങ്ങൾ" : "7 Days"}</option>
+              <option value="30days">{lang === "ml" ? "30 ദിവസങ്ങൾ" : "30 Days"}</option>
+              <option value="60days">{lang === "ml" ? "60 ദിവസങ്ങൾ" : "60 Days"}</option>
+              <option value="1year">{lang === "ml" ? "1 വർഷം" : "1 Year"}</option>
+            </select>
+
+            {/* Filter and Export Actions Pair */}
+            <div className="flex items-center gap-2 shrink-0">
+              {/* Filter Button with Popover Menu */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowFilterMenu(!showFilterMenu)}
+                  className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors shrink-0 ${
+                    activeFilterCount > 0 || showFilterMenu
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-background text-foreground hover:bg-muted"
+                  }`}
+                >
+                  <Filter className="h-3.5 w-3.5" />
+                  {lang === "ml" ? "ഫിൽട്ടറുകൾ" : "Filter"}
+                  {activeFilterCount > 0 && (
+                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </button>
+
+                {showFilterMenu && (
+                  <div className="absolute right-0 top-full mt-2 z-30 w-72 rounded-xl border border-border bg-card p-4 shadow-lg space-y-3.5">
+                    <div className="flex items-center justify-between border-b border-border pb-2">
+                      <h4 className="text-xs font-bold text-foreground">
+                        {lang === "ml" ? "അപേക്ഷ ഫിൽട്ടറുകൾ" : "Filter Applications"}
+                      </h4>
+                      {activeFilterCount > 0 && (
+                        <button
+                          onClick={() => {
+                            setStage("All");
+                            setDistrict("All");
+                          }}
+                          className="text-[11px] font-semibold text-primary hover:underline"
                         >
-                          <Phone className="h-3.5 w-3.5" />
-                        </a>
-                      </div>
-                    </td>
-                    <td className="max-w-56 px-4 py-3 text-xs">
-                      <span className="line-clamp-2">{schemeItem?.[lang]}</span>
-                    </td>
-                    <td className="px-4 py-3 text-xs">
-                      {getDistrictName(record.districtId, lang)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <p className="text-xs">
-                        {new Date(record.submittedAt).toLocaleDateString("en-IN")}
-                      </p>
-                      <p
-                        className={`mt-0.5 text-[11px] ${overdue ? "font-semibold text-destructive" : "text-muted-foreground"}`}
-                      >
-                        {record.queueStage === "Completed"
-                          ? "Completed"
-                          : `${formatWaitingTime(record.ageHours)} waiting`}
-                      </p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <StagePill stage={record.queueStage} />
-                    </td>
-                    <td className="px-4 py-3 text-xs font-medium">{record.reviewer}</td>
-                    <td className="px-4 py-3 text-xs font-semibold">{record.documentCount}/5</td>
-                    <td className="px-3 py-3">
-                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        <div className="flex items-center justify-between border-t border-border px-4 py-3 text-xs text-muted-foreground">
-          <span>
-            Showing {visible.length} of {filtered.length} applications
-          </span>
-          <span>{applicationReviewers.length - 1} reviewers available</span>
-        </div>
-      </section>
-    </div>
-  );
-}
+                          {lang === "ml" ? "റീസെറ്റ്" : "Reset all"}
+                        </button>
+                      )}
+                    </div>
 
-export function StagePill({ stage }: { stage: QueueStage }) {
-  const style: Record<QueueStage, string> = {
-    New: "bg-primary/10 text-primary",
-    "Checking documents": "bg-amber-500/15 text-amber-700",
-    "Ready to submit": "bg-secondary/10 text-secondary",
-    "Follow-up needed": "bg-sky-500/10 text-sky-700",
-    Completed: "bg-muted text-muted-foreground",
-  };
-  return (
-    <span
-      className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[10px] font-semibold ${style[stage]}`}
-    >
-      {stage}
-    </span>
+                    {/* Status / Stage Filter */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold text-muted-foreground block">
+                        {lang === "ml" ? "സ്റ്റാറ്റസ് / ഘട്ടം" : "Status / Stage"}
+                      </label>
+                      <select
+                        value={stage}
+                        onChange={(event) => setStage(event.target.value as "All" | QueueStage)}
+                        className="w-full h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold outline-none"
+                      >
+                        <option value="All">{lang === "ml" ? "എല്ലാ സ്റ്റാറ്റസുകളും" : "All Statuses"}</option>
+                        {applicationStages.map((item) => (
+                          <option key={item} value={item}>{item}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* District Filter */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold text-muted-foreground block">
+                        {lang === "ml" ? "ജില്ല" : "District"}
+                      </label>
+                      <select
+                        value={district}
+                        onChange={(event) => setDistrict(event.target.value)}
+                        className="w-full h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold outline-none"
+                      >
+                        <option value="All">{lang === "ml" ? "എല്ലാ ജില്ലകളും" : "All Districts"}</option>
+                        {districts.map((item) => (
+                          <option key={item.id} value={item.id}>
+                            {item[lang]}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <button
+                className="flex items-center gap-1.5 rounded-xl border border-border bg-background px-2.5 sm:px-3.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors shrink-0"
+                title={lang === "ml" ? "എക്സ്പോർട്ട്" : "Export"}
+              >
+                <Download className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="hidden sm:inline">{lang === "ml" ? "എക്സ്പോർട്ട്" : "Export"}</span>
+              </button>
+            </div>
+
+            <Button asChild className="hidden sm:inline-flex h-8 rounded-xl px-3.5 text-xs font-semibold shrink-0">
+              <Link to="/admin/applications/new" search={{ stage: undefined, filter: undefined }}>
+                <Plus className="h-3.5 w-3.5" /> {lang === "ml" ? "പുതിയ അപേക്ഷ" : "New Application"}
+              </Link>
+            </Button>
+          </div>
+        </div>
+
+        {/* Embedded Status KPI Summary Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+          {/* Card 1: Open Applications */}
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 sm:p-3.5 space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] sm:text-[11px] font-bold text-muted-foreground uppercase">{lang === "ml" ? "തുറന്ന അപേക്ഷകൾ" : "OPEN APPLICATIONS"}</span>
+              <FileText className="h-4 w-4 text-primary" />
+            </div>
+            <p className="text-lg sm:text-xl font-mono font-extrabold text-foreground">{adminApplicationMetrics.open}</p>
+            <span className="text-[10px] text-emerald-600 font-semibold block">{lang === "ml" ? "പ്രവർത്തനം ആവശ്യമാണ്" : "Action required"}</span>
+          </div>
+
+          {/* Card 2: Waiting over 24 hours */}
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 sm:p-3.5 space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] sm:text-[11px] font-bold text-muted-foreground uppercase">{lang === "ml" ? "24 മണിക്കൂറിലധികം വൈകിയവ" : "WAITING OVER 24H"}</span>
+              <Clock3 className="h-4 w-4 text-destructive" />
+            </div>
+            <p className="text-lg sm:text-xl font-mono font-extrabold text-destructive">{adminApplicationMetrics.waitingOver24Hours}</p>
+            <span className="text-[10px] text-destructive font-semibold block">{lang === "ml" ? "മുൻഗണന നൽകുക" : "High priority queue"}</span>
+          </div>
+
+          {/* Card 3: Documents needed */}
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 sm:p-3.5 space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] sm:text-[11px] font-bold text-muted-foreground uppercase">{lang === "ml" ? "രേഖകൾ വേണം" : "DOCUMENTS NEEDED"}</span>
+              <FileCheck2 className="h-4 w-4 text-amber-600" />
+            </div>
+            <p className="text-lg sm:text-xl font-mono font-extrabold text-amber-600">{adminApplicationMetrics.documentsNeeded}</p>
+            <span className="text-[10px] text-amber-600 font-semibold block">{lang === "ml" ? "രേഖകൾ അപ്‌ലോഡ് ചെയ്യാൻ ബാക്കി" : "Pending citizen upload"}</span>
+          </div>
+
+          {/* Card 4: Unassigned applications */}
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 sm:p-3.5 space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] sm:text-[11px] font-bold text-muted-foreground uppercase">{lang === "ml" ? "അസൈൻ ചെയ്യാത്തവ" : "UNASSIGNED"}</span>
+              <UserRoundCheck className="h-4 w-4 text-sky-600" />
+            </div>
+            <p className="text-lg sm:text-xl font-mono font-extrabold text-foreground">{adminApplicationMetrics.unassigned}</p>
+            <span className="text-[10px] text-sky-600 font-semibold block">{lang === "ml" ? "ഓഫീസറെ വേണം" : "Needs reviewer"}</span>
+          </div>
+        </div>
+
+        {/* Selected Applications Action Bar */}
+        {selectedIds.size > 0 && (
+          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-primary/20 bg-primary/[0.06] p-2.5">
+            <span className="mr-1 text-xs font-semibold">{selectedIds.size} selected</span>
+            <Button type="button" size="sm" variant="outline">
+              <UserRoundCheck className="h-3.5 w-3.5 mr-1" /> Assign
+            </Button>
+            <Button type="button" size="sm" variant="outline">
+              <MessageCircle className="h-3.5 w-3.5 mr-1" /> WhatsApp
+            </Button>
+            <Button type="button" size="sm" variant="outline">
+              <Mail className="h-3.5 w-3.5 mr-1" /> Email
+            </Button>
+            <button
+              type="button"
+              onClick={() => setSelectedIds(new Set())}
+              className="ml-auto px-2 text-xs font-semibold text-muted-foreground hover:text-foreground"
+            >
+              Clear
+            </button>
+          </div>
+        )}
+
+        {/* Cards View */}
+        {viewMode === "cards" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            {visible.map((record) => {
+              const isSelected = selectedIds.has(record.id);
+              return (
+                <div
+                  key={record.id}
+                  onClick={() =>
+                    navigate({
+                      to: "/admin/applications/$applicationId",
+                      params: { applicationId: record.id },
+                    })
+                  }
+                  className={`rounded-xl border border-border/80 bg-card p-4 space-y-3 shadow-2xs hover:border-primary/40 hover:shadow-xs transition-all cursor-pointer ${
+                    isSelected ? "border-primary/50 bg-primary/[0.04]" : ""
+                  }`}
+                >
+                  {/* Top Header Row: Selection + Reference & Stage */}
+                  <div className="flex items-center justify-between gap-2 border-b border-border/40 pb-2.5">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => toggleOne(record.id)}
+                          aria-label={`Select application ${record.reference}`}
+                        />
+                      </div>
+                      <span className="font-mono font-bold text-xs text-foreground truncate">
+                        {record.reference}
+                      </span>
+                    </div>
+                    <StagePill stage={record.queueStage} />
+                  </div>
+
+                  {/* Applicant Details */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="font-bold text-sm text-foreground">{record.applicant}</p>
+                      <p className="text-xs text-muted-foreground font-medium">{record.mobile}</p>
+                    </div>
+                    <span className="text-xs font-bold text-primary shrink-0 bg-primary/10 px-2.5 py-0.5 rounded-md">
+                      {record.schemeId}
+                    </span>
+                  </div>
+
+                  {/* Footer Meta Row: Location, Age, Action */}
+                  <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border/40">
+                    <span className="flex items-center gap-1 font-medium">
+                      <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      {getDistrictName(record.districtId, lang)}
+                    </span>
+                    <span className="font-mono font-medium text-[11px]">
+                      Wait: {formatWaitingTime(record.ageHours)}
+                    </span>
+                    <span className="font-semibold text-primary flex items-center gap-0.5">
+                      Details <ChevronRight className="h-3.5 w-3.5" />
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Data Table View */}
+        {viewMode === "table" && (
+          <div className="overflow-x-auto rounded-xl border border-border">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-muted/50 font-bold text-muted-foreground border-b border-border">
+                <tr>
+                  <th className="w-10 p-3">
+                    <Checkbox
+                      checked={allVisibleSelected}
+                      onCheckedChange={toggleAll}
+                      aria-label="Select all visible applications"
+                    />
+                  </th>
+                  <th className="p-3">{lang === "ml" ? "റഫറൻസ് നമ്പർ" : "APPLICATION / REF"}</th>
+                  <th className="p-3">{lang === "ml" ? "അപേക്ഷകൻ" : "APPLICANT"}</th>
+                  <th className="p-3">{lang === "ml" ? "പദ്ധതി" : "SCHEME"}</th>
+                  <th className="p-3">{lang === "ml" ? "ജില്ല" : "DISTRICT"}</th>
+                  <th className="p-3">{lang === "ml" ? "ഘട്ടം" : "STAGE"}</th>
+                  <th className="p-3">{lang === "ml" ? "പരിശോധകൻ" : "REVIEWER"}</th>
+                  <th className="p-3 text-right">{lang === "ml" ? "കാത്തിരിപ്പ് സമയം" : "WAITING TIME"}</th>
+                  <th className="p-3" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/60 font-semibold">
+                {visible.map((record) => {
+                  const isSelected = selectedIds.has(record.id);
+                  return (
+                    <tr
+                      key={record.id}
+                      onClick={() =>
+                        navigate({
+                          to: "/admin/applications/$applicationId",
+                          params: { applicationId: record.id },
+                        })
+                      }
+                      className={`cursor-pointer hover:bg-muted/40 transition-colors ${isSelected ? "bg-primary/[0.04]" : ""}`}
+                    >
+                      <td className="p-3" onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => toggleOne(record.id)}
+                          aria-label={`Select application ${record.reference}`}
+                        />
+                      </td>
+                      <td className="p-3 font-mono font-bold text-foreground">
+                        <p>{record.reference}</p>
+                        <p className="text-[10px] text-muted-foreground font-normal">ID: {record.id}</p>
+                      </td>
+                      <td className="p-3">
+                        <p className="font-bold text-foreground">{record.applicant}</p>
+                        <p className="text-[10px] text-muted-foreground font-normal">{record.mobile}</p>
+                      </td>
+                      <td className="p-3 text-primary font-bold">{record.schemeId}</td>
+                      <td className="p-3 text-muted-foreground">{getDistrictName(record.districtId, lang)}</td>
+                      <td className="p-3">
+                        <StagePill stage={record.queueStage} />
+                      </td>
+                      <td className="p-3 text-muted-foreground">{record.reviewer}</td>
+                      <td className="p-3 text-right font-mono text-muted-foreground">
+                        {formatWaitingTime(record.ageHours)}
+                      </td>
+                      <td className="p-3 text-right">
+                        <ChevronRight className="h-4 w-4 text-muted-foreground inline-block" />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+      </div>
+
+      {/* Mobile Sticky Floating Plus Button */}
+      <div className="fixed bottom-6 right-5 z-50 sm:hidden">
+        <Link
+          to="/admin/applications/new"
+          search={{ stage: undefined, filter: undefined }}
+          className="flex h-13 w-13 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl hover:bg-primary/90 active:scale-95 transition-all"
+          aria-label={lang === "ml" ? "പുതിയ അപേക്ഷ" : "New Application"}
+        >
+          <Plus className="h-6 w-6" />
+        </Link>
+      </div>
+    </div>
   );
 }

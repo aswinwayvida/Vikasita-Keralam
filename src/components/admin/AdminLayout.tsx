@@ -13,7 +13,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
           <AdminSidebar />
           <SidebarInset>
             <AdminTopBar />
-            <main className="p-4 sm:p-6">{children}</main>
+            <main className="px-2.5 py-3.5 sm:p-6">{children}</main>
           </SidebarInset>
         </div>
       </SidebarProvider>

@@ -13,7 +13,7 @@ import { getConstituencyName, getDistrictName } from "@/data/geo";
 import { useLang } from "@/i18n/LanguageProvider";
 import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/admin/volunteers_/$volunteerId")({
-  head: () => ({ meta: [{ title: "Volunteer details Â· Admin" }] }),
+  head: () => ({ meta: [{ title: "Volunteer details · Admin" }] }),
   component: VolunteerDetails,
 });
 function VolunteerDetails() {

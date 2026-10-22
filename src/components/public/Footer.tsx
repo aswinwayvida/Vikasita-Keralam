@@ -32,7 +32,7 @@ export function Footer() {
               </li>
             )}
             <li>
-              <Link to="/eligibility" className="hover:text-primary">
+              <Link to="/eligibility" search={{ scheme: undefined }} className="hover:text-primary">
                 {t.nav.eligibility}
               </Link>
             </li>

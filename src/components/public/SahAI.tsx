@@ -481,7 +481,7 @@ export function SahAI() {
           {!locatorMode && showTopicMenu && (
             <div className="space-y-2 pt-1">
               <Button asChild className="w-full justify-between" variant="outline">
-                <Link to="/eligibility" onClick={() => setOpen(false)}>
+                <Link to="/eligibility" search={{ scheme: undefined }} onClick={() => setOpen(false)}>
                   <span className="inline-flex items-center gap-2">
                     <Sparkles className="h-4 w-4 text-primary" />
                     {lang === "ml"

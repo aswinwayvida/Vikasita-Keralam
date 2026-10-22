@@ -14,6 +14,9 @@ import { helpdeskLocations } from "@/data/helpdesk-locations";
 import { useLang } from "@/i18n/LanguageProvider";
 
 export const Route = createFileRoute("/admin/growth")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    filter: search.filter as string | undefined,
+  }),
   head: () => ({ meta: [{ title: "Helpdesks · Admin" }] }),
   component: HelpdeskNetworkPage,
 });

@@ -246,7 +246,7 @@ function SchemesIndex() {
             </h2>
           </div>
           <Button asChild variant="outline">
-            <Link to="/eligibility">
+            <Link to="/eligibility" search={{ scheme: undefined }}>
               {copy.eligibility} <ArrowRight className="ml-1.5 h-4 w-4" />
             </Link>
           </Button>

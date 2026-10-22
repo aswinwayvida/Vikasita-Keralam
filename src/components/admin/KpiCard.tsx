@@ -14,21 +14,21 @@ export function KpiCard({ icon: Icon, label, value, delta, tone = "primary", hre
   }[tone];
   const up = (delta ?? 0) >= 0;
   const content = (
-    <>
+    <div className="flex h-full flex-col justify-center space-y-0.5 space-y-[1px]">
       <div className="flex items-center justify-between">
-        <span className={`inline-flex h-9 w-9 items-center justify-center rounded-lg ${toneCls}`}><Icon className="h-4.5 w-4.5" /></span>
+        <span className={`inline-flex h-6 w-6 items-center justify-center rounded-md ${toneCls}`}><Icon className="h-3.5 w-3.5" /></span>
         {typeof delta === "number" ? (
           <span className={`inline-flex items-center gap-0.5 text-xs font-medium ${up ? "text-secondary" : "text-destructive"}`}>
-            {up ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}
+            {up ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
             {Math.abs(delta)}%
           </span>
-        ) : href ? <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" /> : null}
+        ) : href ? <ChevronRight className="h-3.5 w-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" /> : null}
       </div>
-      <div className="mt-4 font-display text-2xl font-bold sm:text-3xl">{value}</div>
-      <div className="mt-1 text-xs text-muted-foreground">{label}</div>
-    </>
+      <div className="font-display text-base font-bold leading-none sm:text-lg">{value}</div>
+      <div className="text-[16px] text-muted-foreground truncate leading-none">{label}</div>
+    </div>
   );
 
-  if (href) return <a href={href} className="group block rounded-xl border border-border bg-card p-5 transition hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">{content}</a>;
-  return <div className="rounded-xl border border-border bg-card p-5">{content}</div>;
+  if (href) return <a href={href} className="group block h-[60px] rounded-xl border border-border bg-card px-3.5 py-1.5 transition hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">{content}</a>;
+  return <div className="h-[60px] rounded-xl border border-border bg-card px-3.5 py-1.5">{content}</div>;
 }

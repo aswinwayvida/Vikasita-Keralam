@@ -3,7 +3,7 @@ import { ArrowLeft, CheckCheck, Eye, MessageCircle, Send } from "lucide-react";
 import { whatsappCampaigns } from "@/data/volunteers";
 import { useLang } from "@/i18n/LanguageProvider";
 export const Route = createFileRoute("/admin/whatsapp_/$messageId")({
-  head: () => ({ meta: [{ title: "Message details Â· Admin" }] }),
+  head: () => ({ meta: [{ title: "Message details · Admin" }] }),
   component: MessageDetails,
 });
 function MessageDetails() {

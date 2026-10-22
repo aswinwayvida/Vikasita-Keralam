@@ -13,7 +13,7 @@ import { useLang } from "@/i18n/LanguageProvider";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/admin/schemes_/$schemeId")({
-  head: () => ({ meta: [{ title: "Scheme details Â· Admin" }] }),
+  head: () => ({ meta: [{ title: "Scheme details · Admin" }] }),
   component: SchemeDetails,
 });
 

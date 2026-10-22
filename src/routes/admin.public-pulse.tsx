@@ -10,6 +10,8 @@ import {
   PieChart, Pie, Cell, BarChart, Bar, Legend,
 } from "recharts";
 
+import { calculateResolutionRate } from "@/utils/analyticsUtils";
+
 export const Route = createFileRoute("/admin/public-pulse")({
   beforeLoad: () => {
     if (!FEATURES.janashabdam) {
@@ -27,7 +29,7 @@ function PublicPulse() {
   const total = issues.length;
   const resolved = issues.filter((i) => i.status === "resolved" || i.status === "closed").length;
   const verified = issues.filter((i) => ["verified", "escalated", "public_campaign", "followup_pending"].includes(i.status)).length;
-  const resolutionRate = Math.round((resolved / total) * 100);
+  const resolutionRate = Math.round(calculateResolutionRate(resolved, total));
 
   const heat = districts.map((d) => {
     const row: Record<string, string | number> = { name: d[lang] };

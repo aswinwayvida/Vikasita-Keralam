@@ -5,7 +5,7 @@ import { useLang } from "@/i18n/LanguageProvider";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/admin/growth_/$helpdeskId")({
-  head: () => ({ meta: [{ title: "Helpdesk details Â· Admin" }] }),
+  head: () => ({ meta: [{ title: "Helpdesk details · Admin" }] }),
   component: HelpdeskDetails,
 });
 function HelpdeskDetails() {
@@ -24,6 +24,7 @@ function HelpdeskDetails() {
         <div>
           <Link
             to="/admin/growth"
+            search={{ filter: undefined }}
             className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-primary"
           >
             <ArrowLeft className="h-4 w-4" /> Helpdesks

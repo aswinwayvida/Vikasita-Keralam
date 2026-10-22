@@ -266,7 +266,7 @@ function Index() {
         <div className="mx-auto grid max-w-6xl grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5">
           {[
             { label: t.stats.citizens, value: "1,24,800+" },
-            { label: t.stats.volunteers, value: "8,200+" },
+            { label: t.stats.volunteers, value: "8,201+" },
             { label: t.stats.panchayats, value: "940+" },
           ].map((s) => (
             <div

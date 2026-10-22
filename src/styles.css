@@ -55,8 +55,8 @@
   --color-warning: var(--warning);
   --color-danger: var(--danger);
   --color-success: var(--green);
-  --font-display: "Manrope", "Anek Malayalam", system-ui, sans-serif;
-  --font-sans: "Manrope", "Noto Sans Malayalam", "Inter", system-ui, sans-serif;
+  --font-display: "Instrument Sans", "Manrope", "Anek Malayalam", system-ui, sans-serif;
+  --font-sans: "Instrument Sans", "Manrope", "Noto Sans Malayalam", "Inter", system-ui, sans-serif;
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -156,6 +156,9 @@
 }
 
 @layer base {
+  html {
+    font-size: calc(16px + 1.4px);
+  }
   html,
   body,
   #root {

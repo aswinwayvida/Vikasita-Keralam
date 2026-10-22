@@ -23,7 +23,7 @@ export const en: Dict = {
     volunteer: { title: "Volunteer Network", desc: "Join local volunteer action and help citizens access services and support." },
   },
   hero: {
-    eyebrow: "BJP Kerala · Vikasita Keralam Citizen Service Mission",
+    eyebrow: "Vikasita Keralam · Citizen Service Mission",
     title: "The right scheme,\nwith the right support",
     sub: "Discover Central Government schemes, check eligibility, and get guided application support — in one place.",
     ctaPrimary: "Find Schemes",
