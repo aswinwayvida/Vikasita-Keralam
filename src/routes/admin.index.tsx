@@ -210,7 +210,7 @@ export function AdminDashboard() {
                 }`}
               >
                 <Filter className="h-3.5 w-3.5" />
-                <span>{lang === "ml" ? "ഭൂമിശാസ്ത്ര വിഭജനം (Geography Scope)" : "Geography Scope"}</span>
+                <span>{lang === "ml" ? "ഫിൽട്ടറുകൾ" : "Filters"}</span>
                 {activeFiltersCount > 0 && (
                   <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-extrabold text-primary-foreground">
                     {activeFiltersCount}
@@ -223,7 +223,7 @@ export function AdminDashboard() {
                 <div className="absolute right-0 top-11 z-50 w-[320px] sm:w-[380px] max-w-[calc(100vw-32px)] rounded-2xl border border-border bg-card p-4 shadow-xl space-y-4 animate-in fade-in-50 zoom-in-95">
                   <div className="flex items-center justify-between border-b border-border pb-2.5">
                     <span className="text-xs font-extrabold text-foreground uppercase tracking-wider">
-                      {lang === "ml" ? "ഭൂമിശാസ്ത്രപരമായ പരിധി" : "Geography Scope"}
+                      {lang === "ml" ? "ഫിൽട്ടർ നിയന്ത്രണങ്ങൾ" : "Filter Controls"}
                     </span>
                     <button
                       onClick={() => setIsFilterOpen(false)}
@@ -233,8 +233,68 @@ export function AdminDashboard() {
                     </button>
                   </div>
 
+                  {/* Search Input (Inside Filter Panel Only) */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-extrabold text-muted-foreground uppercase">
+                      {lang === "ml" ? "തിരയുക" : "Search"}
+                    </label>
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder={
+                          lang === "ml"
+                            ? "പൗരന്റെ പേര്, സിറ്റിസൺ ഐഡി, കേസ് ഐഡി, പദ്ധതി..."
+                            : "Search citizen name, Citizen ID, Case ID, scheme..."
+                        }
+                        className="w-full rounded-xl border border-border bg-background pl-8 pr-3 py-2 text-xs font-semibold text-foreground focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Scheme Selector */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-extrabold text-muted-foreground uppercase">
+                      {lang === "ml" ? "പദ്ധതി" : "Scheme"}
+                    </label>
+                    <select
+                      value={selectedScheme}
+                      onChange={(e) => setSelectedScheme(e.target.value)}
+                      className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-foreground focus:border-primary focus:outline-none"
+                    >
+                      <option value="ALL">{lang === "ml" ? "എല്ലാ പദ്ധതികളും" : "All Schemes"}</option>
+                      <option value="PM-KISAN Samman Nidhi">PM-KISAN Samman Nidhi</option>
+                      <option value="Ayushman Bharat">Ayushman Bharat</option>
+                      <option value="Subhiksha Keralam">Subhiksha Keralam</option>
+                      <option value="Karunya Health Insurance">Karunya Health Insurance</option>
+                      <option value="LIFE Mission">LIFE Mission</option>
+                    </select>
+                  </div>
+
+                  {/* Case Status Selector */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-extrabold text-muted-foreground uppercase">
+                      {lang === "ml" ? "കേസ് സ്ഥിതി" : "Case Status"}
+                    </label>
+                    <select
+                      value={selectedStatus}
+                      onChange={(e) => setSelectedStatus(e.target.value)}
+                      className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-foreground focus:border-primary focus:outline-none"
+                    >
+                      <option value="ALL">{lang === "ml" ? "എല്ലാ സ്ഥിതികളും" : "All Statuses"}</option>
+                      <option value="New">{lang === "ml" ? "പുതിയത്" : "New"}</option>
+                      <option value="In Progress">{lang === "ml" ? "പുരോഗതിയിൽ" : "In Progress"}</option>
+                      <option value="Pending">{lang === "ml" ? "തീർപ്പാക്കാത്തത്" : "Pending"}</option>
+                      <option value="Resolved">{lang === "ml" ? "പരിഹരിച്ചത്" : "Resolved"}</option>
+                      <option value="Escalated">{lang === "ml" ? "ഉയർത്തി നൽകിയത്" : "Escalated"}</option>
+                      <option value="Closed">{lang === "ml" ? "അടച്ചത്" : "Closed"}</option>
+                    </select>
+                  </div>
+
                   {/* Geography Drill-Down */}
-                  <div className="space-y-2">
+                  <div className="space-y-2 pt-2 border-t border-border/60">
                     <span className="text-[10px] font-extrabold text-primary uppercase tracking-wider block">
                       {lang === "ml" ? "ഭൂമിശാസ്ത്രപരമായ വിഭജനം" : "Geography Drill-Down"}
                     </span>
@@ -345,6 +405,41 @@ export function AdminDashboard() {
         {/* Removable Active Filter Chips Row */}
         {activeFiltersCount > 0 && (
           <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-border/40">
+            {selectedScheme !== "ALL" && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary border border-primary/20">
+                <span>{selectedScheme}</span>
+                <button
+                  onClick={() => setSelectedScheme("ALL")}
+                  className="hover:text-primary-foreground hover:bg-primary rounded-full p-0.5"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            )}
+
+            {selectedStatus !== "ALL" && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary border border-primary/20">
+                <span>{selectedStatus}</span>
+                <button
+                  onClick={() => setSelectedStatus("ALL")}
+                  className="hover:text-primary-foreground hover:bg-primary rounded-full p-0.5"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            )}
+
+            {searchQuery.trim() !== "" && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary border border-primary/20">
+                <span>"{searchQuery}"</span>
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="hover:text-primary-foreground hover:bg-primary rounded-full p-0.5"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            )}
 
             {selectedDistrict !== "ALL" && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary border border-primary/20">

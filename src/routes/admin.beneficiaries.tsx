@@ -112,7 +112,6 @@ function BeneficiariesPage() {
               <option value="30days">{lang === "ml" ? "30 ദിവസങ്ങൾ" : "30 Days"}</option>
               <option value="60days">{lang === "ml" ? "60 ദിവസങ്ങൾ" : "60 Days"}</option>
               <option value="1year">{lang === "ml" ? "1 വർഷം" : "1 Year"}</option>
-              <option value="all">{lang === "ml" ? "എല്ലാ സമയവും" : "All Time"}</option>
             </select>
             <button className="flex items-center gap-1.5 rounded-xl border border-border bg-background px-3.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors shrink-0">
               <Filter className="h-3.5 w-3.5 text-muted-foreground" />
