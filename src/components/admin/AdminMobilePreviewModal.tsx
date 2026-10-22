@@ -3239,13 +3239,13 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                   <div className="flex items-center gap-2">
                     {/* Scheme Search Input */}
                     <div className="relative flex-1">
-                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400 pointer-events-none" />
                       <input
                         type="text"
                         value={schemeSearchQuery}
                         onChange={(e) => setSchemeSearchQuery(e.target.value)}
                         placeholder={lang === "ml" ? "പദ്ധതികൾ തിരയുക..." : "Search schemes..."}
-                        className="w-full h-8.5 pl-8 pr-7 text-xs font-semibold rounded-xl border border-amber-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs"
+                        className="w-full h-7 pl-7 pr-6 text-[11px] font-semibold rounded-full border border-amber-200/80 dark:border-slate-800 bg-[#fffcfa] dark:bg-slate-900 text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs"
                       />
                       {schemeSearchQuery && (
                         <button
@@ -3263,7 +3263,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                       <select
                         value={schemeCategoryFilter}
                         onChange={(e) => setSchemeCategoryFilter(e.target.value)}
-                        className="h-8.5 pl-3 pr-7 text-xs font-bold rounded-xl border border-orange-300/80 dark:border-orange-800/80 bg-orange-50 dark:bg-orange-950/40 text-orange-900 dark:text-orange-200 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs cursor-pointer appearance-none"
+                        className="h-7 pl-3 pr-7 text-[11px] font-bold rounded-full border border-amber-200/80 dark:border-orange-800/80 bg-[#fffcf0] dark:bg-slate-900 text-[#0a0f1d] dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs cursor-pointer appearance-none"
                       >
                         <option value="all">{lang === "ml" ? "എല്ലാ വിഭാഗങ്ങളും" : "All Categories"}</option>
                         <option value="agriculture">{lang === "ml" ? "കൃഷി (Agriculture)" : "Agriculture"}</option>
@@ -3274,7 +3274,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                         <option value="employment">{lang === "ml" ? "തൊഴിൽ (Employment)" : "Employment"}</option>
                         <option value="women_child">{lang === "ml" ? "വനിതാ ശിശു (Women & Child)" : "Women & Child"}</option>
                       </select>
-                      <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-orange-600 dark:text-orange-400 pointer-events-none stroke-[2.5]" />
+                      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-[#0a0f1d] dark:text-slate-300 pointer-events-none" />
                     </div>
                   </div>
                 </div>
