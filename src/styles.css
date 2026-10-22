@@ -1,0 +1,375 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Design system definition.
+ *
+ * The @theme inline block maps CSS custom properties to Tailwind utility
+ * classes (e.g. --color-primary -> bg-primary, text-primary).
+ *
+ * The :root and .dark blocks define the actual color values using oklch.
+ * All colors MUST use oklch format.
+ *
+ * To add a new semantic color:
+ * 1. Add the variable to :root (light value) and .dark (dark value)
+ * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-saffron: var(--saffron);
+  --color-saffron-deep: var(--saffron-deep);
+  --color-saffron-soft: var(--saffron-soft);
+  --color-green: var(--green);
+  --color-green-soft: var(--green-soft);
+  --color-navy: var(--navy);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-success: var(--green);
+  --font-display: "Manrope", "Anek Malayalam", system-ui, sans-serif;
+  --font-sans: "Manrope", "Noto Sans Malayalam", "Inter", system-ui, sans-serif;
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --radius: 0.75rem;
+
+  /* BJP brand */
+  --saffron: oklch(0.78 0.16 60); /* #FF9933 */
+  --saffron-deep: oklch(0.68 0.18 50); /* #E87511 */
+  --saffron-soft: oklch(0.94 0.05 70);
+  --green: oklch(0.55 0.16 145); /* #138808 */
+  --green-soft: oklch(0.92 0.06 145);
+  --navy: oklch(0.27 0.09 265); /* #0A2A66 */
+  --warning: oklch(0.78 0.16 75); /* #F59E0B */
+  --danger: oklch(0.58 0.22 27); /* #DC2626 */
+
+  /* Semantic shadcn tokens */
+  --background: oklch(0.985 0.012 75); /* warm off-white #FFFBF5 */
+  --foreground: var(--navy);
+  --card: oklch(1 0 0);
+  --card-foreground: var(--navy);
+  --popover: oklch(1 0 0);
+  --popover-foreground: var(--navy);
+  --primary: var(--saffron);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: var(--green);
+  --secondary-foreground: oklch(1 0 0);
+  --muted: oklch(0.96 0.018 70);
+  --muted-foreground: oklch(0.5 0.04 265);
+  --accent: var(--saffron-soft);
+  --accent-foreground: var(--navy);
+  --destructive: var(--danger);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.92 0.025 60); /* #F3E4D4 */
+  --input: oklch(0.92 0.025 60);
+  --ring: var(--saffron);
+
+  /* Charts */
+  --chart-1: var(--saffron); /* applications */
+  --chart-2: var(--green); /* approved/resolved */
+  --chart-3: var(--warning); /* pending */
+  --chart-4: var(--danger); /* rejected/escalated */
+  --chart-5: var(--navy); /* neutral */
+
+  /* Sidebar (admin) */
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: var(--navy);
+  --sidebar-primary: var(--saffron);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.96 0.025 60);
+  --sidebar-accent-foreground: var(--navy);
+  --sidebar-border: oklch(0.92 0.025 60);
+  --sidebar-ring: var(--saffron);
+}
+
+.dark {
+  /* Dark not used in this prototype; keep tokens valid */
+  --background: oklch(0.18 0.03 265);
+  --foreground: oklch(0.98 0.01 75);
+  --card: oklch(0.22 0.03 265);
+  --card-foreground: oklch(0.98 0.01 75);
+  --popover: oklch(0.22 0.03 265);
+  --popover-foreground: oklch(0.98 0.01 75);
+  --primary: var(--saffron);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: var(--green);
+  --secondary-foreground: oklch(1 0 0);
+  --muted: oklch(0.28 0.03 265);
+  --muted-foreground: oklch(0.75 0.02 265);
+  --accent: oklch(0.28 0.03 265);
+  --accent-foreground: oklch(0.98 0.01 75);
+  --destructive: var(--danger);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: var(--saffron);
+  --sidebar: oklch(0.22 0.03 265);
+  --sidebar-foreground: oklch(0.98 0.01 75);
+  --sidebar-primary: var(--saffron);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.28 0.03 265);
+  --sidebar-accent-foreground: oklch(0.98 0.01 75);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: var(--saffron);
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: clip;
+  }
+  * {
+    border-color: var(--color-border);
+  }
+  img,
+  video,
+  canvas {
+    max-width: 100%;
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    color: var(--navy);
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer components {
+  /* Shared responsive rhythm for every public page and section. */
+  .vk-site-header-row {
+    min-height: clamp(4.75rem, 8.5vw, 6.5rem);
+  }
+
+  .vk-site-logo {
+    height: clamp(4rem, 7.5vw, 6rem);
+  }
+
+  .vk-container {
+    width: 100%;
+    max-width: 80rem;
+    margin-inline: auto;
+    padding-inline: clamp(1rem, 2.25vw, 1.5rem);
+  }
+
+  .vk-container-narrow {
+    width: 100%;
+    max-width: 72rem;
+    margin-inline: auto;
+    padding-inline: clamp(1rem, 2.25vw, 1.5rem);
+  }
+
+  .vk-hero-shell {
+    padding-block: clamp(2.25rem, 6vh, 4rem);
+  }
+
+  .vk-home-hero-shell {
+    padding-block: clamp(1.5rem, 4.5vh, 2.5rem);
+  }
+
+  .vk-eligibility-hero {
+    padding-block: clamp(1.5rem, 4vh, 2.25rem);
+  }
+
+  .vk-section-shell-narrow.vk-eligibility-intro {
+    padding-block: clamp(1.5rem, 3.5vh, 2.25rem);
+  }
+
+  .vk-section-shell-narrow.vk-eligibility-question-shell {
+    padding-block: clamp(1.25rem, 3vh, 2rem);
+  }
+
+  .vk-eligibility-hero .vk-hero-title {
+    font-size: clamp(1.9rem, 3.4vw, 3rem);
+  }
+
+  .vk-hero-grid {
+    display: grid;
+    align-items: start;
+    gap: clamp(1.75rem, 4vw, 3rem);
+  }
+
+  .vk-hero-title {
+    max-width: 48rem;
+    overflow-wrap: anywhere;
+    font-size: clamp(2.1rem, 4.25vw, 3.4rem);
+    font-weight: 700;
+    line-height: 1.16;
+    letter-spacing: -0.025em;
+  }
+
+  .vk-section-shell {
+    width: 100%;
+    max-width: 80rem;
+    margin-inline: auto;
+    padding: clamp(2.5rem, 6vw, 4rem) clamp(1rem, 2.25vw, 1.5rem);
+  }
+
+  .vk-section-shell-narrow {
+    width: 100%;
+    max-width: 72rem;
+    margin-inline: auto;
+    padding: clamp(2rem, 5vw, 3rem) clamp(1rem, 2.25vw, 1.5rem);
+  }
+
+  .vk-content-grid {
+    display: grid;
+    align-items: start;
+  }
+
+  .vk-home-hero-media,
+  .vk-hero-media {
+    width: 100%;
+  }
+
+  .vk-hero-media {
+    align-self: start;
+  }
+
+  @media (min-width: 64rem) {
+    .vk-hero-grid {
+      grid-template-columns: minmax(0, 1.12fr) minmax(20rem, 0.88fr);
+    }
+  }
+
+  @media (min-width: 64rem) and (max-height: 50rem) {
+    .vk-site-header-row {
+      min-height: 5.25rem;
+    }
+
+    .vk-site-logo {
+      height: 4.75rem;
+    }
+
+    .vk-hero-shell {
+      padding-block: clamp(1.5rem, 3.8vh, 2.25rem);
+    }
+
+    .vk-home-hero-shell {
+      padding-block: 1.25rem;
+    }
+
+    .vk-eligibility-hero,
+    .vk-section-shell-narrow.vk-eligibility-intro {
+      padding-block: 1.25rem;
+    }
+
+    .vk-hero-title {
+      font-size: clamp(2.05rem, 3.55vw, 3rem);
+      line-height: 1.12;
+    }
+
+    .vk-hero-media {
+      width: min(100%, calc(100svh - 15.5rem));
+      min-width: 20rem;
+      justify-self: end;
+    }
+
+    .vk-home-hero-media {
+      width: min(100%, calc(100svh - 11.75rem));
+      justify-self: end;
+    }
+
+    .vk-section-shell {
+      padding-block: 2.75rem;
+    }
+
+    .vk-section-shell-narrow {
+      padding-block: 2.25rem;
+    }
+  }
+
+  @media (max-width: 47.999rem) {
+    .vk-hero-shell,
+    .vk-home-hero-shell,
+    .vk-eligibility-hero {
+      padding-block: 2rem;
+    }
+
+    .vk-hero-title {
+      font-size: clamp(2rem, 10vw, 2.75rem);
+      line-height: 1.18;
+    }
+
+    .vk-section-shell,
+    .vk-section-shell-narrow {
+      padding-block: 2.5rem;
+    }
+  }
+}
+@utility saffron-top-bar {
+  height: 4px;
+  background: linear-gradient(90deg, var(--saffron) 0%, var(--saffron-deep) 50%, var(--green) 100%);
+}
+
+@utility section-underline {
+  &::after {
+    content: "";
+    display: block;
+    width: 56px;
+    height: 3px;
+    background: var(--green);
+    margin-top: 8px;
+    border-radius: 2px;
+  }
+}
+
+@utility ml-content {
+  line-height: 1.85;
+  font-family: "Noto Sans Malayalam", "Manrope", system-ui, sans-serif;
+}
