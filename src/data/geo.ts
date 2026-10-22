@@ -208,16 +208,43 @@ const districtAreas: Record<string, Array<[string, string]>> = {
   ksd: [["കാസർഗോഡ്","Kasaragod"],["കാഞ്ഞങ്ങാട്","Kanhangad"],["മഞ്ചേശ്വരം","Manjeshwaram"],["ഉദുമ","Uduma"],["ബേക്കൽ","Bekal"]],
 };
 
+// Explicit 6 official Municipal Corporations of Kerala with published SEC ward counts
+export const corporationData: Record<string, { ml: string; en: string; wardsCount: number }> = {
+  tvm: { ml: "തിരുവനന്തപുരം കോർപ്പറേഷൻ", en: "Thiruvananthapuram Corporation", wardsCount: 101 },
+  klm: { ml: "കൊല്ലം കോർപ്പറേഷൻ", en: "Kollam Corporation", wardsCount: 56 },
+  ekm: { ml: "കൊച്ചി കോർപ്പറേഷൻ", en: "Kochi Corporation", wardsCount: 76 },
+  tsr: { ml: "തൃശ്ശൂർ കോർപ്പറേഷൻ", en: "Thrissur Corporation", wardsCount: 56 },
+  kkd: { ml: "കോഴിക്കോട് കോർപ്പറേഷൻ", en: "Kozhikode Corporation", wardsCount: 76 },
+  knr: { ml: "കണ്ണൂർ കോർപ്പറേഷൻ", en: "Kannur Corporation", wardsCount: 56 },
+};
+
 export const panchayats: Panchayat[] = districts.flatMap((d) => {
   const firstConstituency = constituencies.find((c) => c.districtId === d.id)!;
-  return districtAreas[d.id].map(([ml, en], j) => ({
-    id: `${d.id}-a${j + 1}`,
-    districtId: d.id,
-    constituencyId: firstConstituency.id,
-    ml,
-    en,
-    type: (j === 0 ? "corporation" : j === 1 ? "municipality" : "panchayat") as Panchayat["type"],
-  }));
+  const list: Panchayat[] = [];
+
+  if (corporationData[d.id]) {
+    list.push({
+      id: `${d.id}-corp`,
+      districtId: d.id,
+      constituencyId: firstConstituency.id,
+      ml: corporationData[d.id].ml,
+      en: corporationData[d.id].en,
+      type: "corporation",
+    });
+  }
+
+  districtAreas[d.id].slice(0, 4).forEach(([ml, en], j) => {
+    list.push({
+      id: `${d.id}-lb${j + 1}`,
+      districtId: d.id,
+      constituencyId: firstConstituency.id,
+      ml,
+      en,
+      type: j === 0 ? "municipality" : "panchayat",
+    });
+  });
+
+  return list;
 });
 
 export const wards = Array.from({ length: 20 }, (_, i) => ({ id: `w${i + 1}`, label: `${i + 1}` }));
