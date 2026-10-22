@@ -111,6 +111,11 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
   const [mobileSubPage, setMobileSubPage] = useState<"none" | "leaderboard" | "needs_attention" | "recent_activity" | "beneficiaries" | "notifications" | "applications" | "events_announcements">("none");
   const [eventsSubTab, setEventsSubTab] = useState<"events" | "announcements">("events");
   const [applicationStatusFilter, setApplicationStatusFilter] = useState<"all" | "pending" | "assisted" | "rejected">("all");
+  const [appSchemeCategoryFilter, setAppSchemeCategoryFilter] = useState<string>("all");
+  const [appAssistanceStatusFilter, setAppAssistanceStatusFilter] = useState<string>("all");
+  const [appDateFilter, setAppDateFilter] = useState<string>("all");
+  const [appCustomStartDate, setAppCustomStartDate] = useState<string>("");
+  const [appCustomEndDate, setAppCustomEndDate] = useState<string>("");
   const matchAppSearch = (
     status: "pending" | "assisted" | "rejected",
     nameEn: string,
@@ -4531,7 +4536,92 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           </div>
                         </div>
                       )}
-                    </div></div>
+                    </div>
+
+                    {/* Scheme Category Filter */}
+                    <div className="col-span-2 flex flex-col gap-1.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between">
+                        <span>{lang === "ml" ? "പദ്ധതി വിഭാഗം" : "Scheme Category"}</span>
+                        <span className="text-[10px] text-slate-500">Default: All Categories</span>
+                      </label>
+                      <select
+                        value={appSchemeCategoryFilter}
+                        onChange={(e) => setAppSchemeCategoryFilter(e.target.value)}
+                        className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+                      >
+                        <option value="all">{lang === "ml" ? "എല്ലാ വിഭാഗങ്ങളും" : "All Categories"}</option>
+                        <option value="agriculture">{lang === "ml" ? "കൃഷി" : "Agriculture"}</option>
+                        <option value="education">{lang === "ml" ? "വിദ്യാഭ്യാസം" : "Education"}</option>
+                        <option value="health">{lang === "ml" ? "ആരോഗ്യം" : "Health"}</option>
+                        <option value="housing">{lang === "ml" ? "ഭവനം" : "Housing"}</option>
+                        <option value="pension_welfare">{lang === "ml" ? "പെൻഷൻ & ക്ഷേമം" : "Pension & Welfare"}</option>
+                        <option value="women_welfare">{lang === "ml" ? "വനിതാ ക്ഷേമം" : "Women Welfare"}</option>
+                        <option value="employment">{lang === "ml" ? "തൊഴിൽ" : "Employment"}</option>
+                        <option value="msme">{lang === "ml" ? "എം.എസ്.എം.ഇ & ബിസിനസ്" : "MSME & Business"}</option>
+                      </select>
+                    </div>
+
+                    {/* Assistance Status Filter */}
+                    <div className="col-span-2 flex flex-col gap-1.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between">
+                        <span>{lang === "ml" ? "സഹായ അവസ്ഥ" : "Assistance Status"}</span>
+                        <span className="text-[10px] text-slate-500">Default: All Statuses</span>
+                      </label>
+                      <select
+                        value={appAssistanceStatusFilter}
+                        onChange={(e) => setAppAssistanceStatusFilter(e.target.value)}
+                        className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+                      >
+                        <option value="all">{lang === "ml" ? "എല്ലാ അവസ്ഥയും" : "All Statuses"}</option>
+                        <option value="not_assisted">{lang === "ml" ? "സഹായം ലഭിച്ചിട്ടില്ല" : "Not Assisted"}</option>
+                        <option value="requested">{lang === "ml" ? "അപേക്ഷിച്ചു" : "Requested"}</option>
+                        <option value="in_progress">{lang === "ml" ? "നടപടികളിൽ" : "In Progress"}</option>
+                        <option value="assisted">{lang === "ml" ? "സഹായം ലഭിച്ചു" : "Assisted"}</option>
+                      </select>
+                    </div>
+
+                    {/* Application Date Filter */}
+                    <div className="col-span-2 flex flex-col gap-1.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between">
+                        <span>{lang === "ml" ? "അപേക്ഷാ തീയതി" : "Application Date"}</span>
+                        <span className="text-[10px] text-slate-500">Default: All Dates</span>
+                      </label>
+                      <select
+                        value={appDateFilter}
+                        onChange={(e) => setAppDateFilter(e.target.value)}
+                        className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+                      >
+                        <option value="all">{lang === "ml" ? "എല്ലാ തീയതികളും" : "All Dates"}</option>
+                        <option value="today">{lang === "ml" ? "ഇന്ന്" : "Today"}</option>
+                        <option value="7days">{lang === "ml" ? "കഴിഞ്ഞ 7 ദിവസം" : "Last 7 Days"}</option>
+                        <option value="30days">{lang === "ml" ? "കഴിഞ്ഞ 30 ദിവസം" : "Last 30 Days"}</option>
+                        <option value="custom">{lang === "ml" ? "കസ്റ്റം പരിധി" : "Custom Range"}</option>
+                      </select>
+
+                      {appDateFilter === "custom" && (
+                        <div className="grid grid-cols-2 gap-2 pt-1.5">
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400">From Date</span>
+                            <input
+                              type="date"
+                              value={appCustomStartDate}
+                              onChange={(e) => setAppCustomStartDate(e.target.value)}
+                              className="rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                            />
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400">To Date</span>
+                            <input
+                              type="date"
+                              value={appCustomEndDate}
+                              onChange={(e) => setAppCustomEndDate(e.target.value)}
+                              className="rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Bottom Action Bar: Reset & Apply Filters */}
@@ -4546,6 +4636,11 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                       setFilterDepartment("all");
                       setFilterPerformance("all");
                       setActiveDistrictFilter("all");
+                      setAppSchemeCategoryFilter("all");
+                      setAppAssistanceStatusFilter("all");
+                      setAppDateFilter("all");
+                      setAppCustomStartDate("");
+                      setAppCustomEndDate("");
                     }}
                     className="w-1/3 rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 font-bold text-xs py-3 shadow-xs hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-all cursor-pointer active:scale-[0.98] flex items-center justify-center gap-1.5"
                   >
