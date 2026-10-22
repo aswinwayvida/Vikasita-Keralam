@@ -334,24 +334,6 @@ function ApplicationsPage() {
                       </select>
                     </div>
 
-                    {/* Assistance Status Filter */}
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-semibold text-muted-foreground block">
-                        {lang === "ml" ? "സഹായ സ്റ്റാറ്റസ്" : "Assistance Status"}
-                      </label>
-                      <select
-                        value={assistanceStatusFilter}
-                        onChange={(e) => setAssistanceStatusFilter(e.target.value)}
-                        className="w-full h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold outline-none"
-                      >
-                        <option value="all">{lang === "ml" ? "എല്ലാം" : "All Statuses"}</option>
-                        <option value="not_assisted">{lang === "ml" ? "സഹായം ലഭിച്ചിട്ടില്ല" : "Not Assisted"}</option>
-                        <option value="requested">{lang === "ml" ? "അപേക്ഷിച്ചു" : "Requested"}</option>
-                        <option value="in_progress">{lang === "ml" ? "നടപടിക്രമത്തിൽ" : "In Progress"}</option>
-                        <option value="assisted">{lang === "ml" ? "സഹായം ലഭിച്ചു" : "Assisted"}</option>
-                      </select>
-                    </div>
-
                     {/* Application Date Filter */}
                     <div className="space-y-1">
                       <label className="text-[11px] font-semibold text-muted-foreground block">
@@ -471,22 +453,6 @@ function ApplicationsPage() {
                 <option value="women">{lang === "ml" ? "വനിതാ ക്ഷേമം" : "Women Welfare"}</option>
                 <option value="employment">{lang === "ml" ? "തൊഴിൽ" : "Employment"}</option>
                 <option value="msme">{lang === "ml" ? "MSME & സംരംഭകം" : "MSME & Business"}</option>
-              </select>
-              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
-            </div>
-
-            {/* Assistance Status Dropdown */}
-            <div className="relative shrink-0">
-              <select
-                value={assistanceStatusFilter}
-                onChange={(e) => setAssistanceStatusFilter(e.target.value)}
-                className="h-7.5 pl-2.5 pr-7 text-[11px] font-semibold rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs cursor-pointer appearance-none"
-              >
-                <option value="all">{lang === "ml" ? "സഹായം: എല്ലാം" : "Assistance: All"}</option>
-                <option value="not_assisted">{lang === "ml" ? "സഹായം ലഭിച്ചിട്ടില്ല" : "Not Assisted"}</option>
-                <option value="requested">{lang === "ml" ? "അപേക്ഷിച്ചു" : "Requested"}</option>
-                <option value="in_progress">{lang === "ml" ? "നടപടിക്രമത്തിൽ" : "In Progress"}</option>
-                <option value="assisted">{lang === "ml" ? "സഹായം ലഭിച്ചു" : "Assisted"}</option>
               </select>
               <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
             </div>

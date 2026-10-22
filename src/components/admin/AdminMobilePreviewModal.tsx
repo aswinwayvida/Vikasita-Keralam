@@ -4561,25 +4561,6 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                       </select>
                     </div>
 
-                    {/* Assistance Status Filter */}
-                    <div className="col-span-2 flex flex-col gap-1.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between">
-                        <span>{lang === "ml" ? "സഹായ അവസ്ഥ" : "Assistance Status"}</span>
-                        <span className="text-[10px] text-slate-500">Default: All Statuses</span>
-                      </label>
-                      <select
-                        value={appAssistanceStatusFilter}
-                        onChange={(e) => setAppAssistanceStatusFilter(e.target.value)}
-                        className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
-                      >
-                        <option value="all">{lang === "ml" ? "എല്ലാ അവസ്ഥയും" : "All Statuses"}</option>
-                        <option value="not_assisted">{lang === "ml" ? "സഹായം ലഭിച്ചിട്ടില്ല" : "Not Assisted"}</option>
-                        <option value="requested">{lang === "ml" ? "അപേക്ഷിച്ചു" : "Requested"}</option>
-                        <option value="in_progress">{lang === "ml" ? "നടപടികളിൽ" : "In Progress"}</option>
-                        <option value="assisted">{lang === "ml" ? "സഹായം ലഭിച്ചു" : "Assisted"}</option>
-                      </select>
-                    </div>
-
                     {/* Application Date Filter */}
                     <div className="col-span-2 flex flex-col gap-1.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
                       <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between">
