@@ -311,6 +311,86 @@ function ApplicationsPage() {
                         ))}
                       </select>
                     </div>
+
+                    {/* Scheme Category Filter */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold text-muted-foreground block">
+                        {lang === "ml" ? "പദ്ധതി വിഭാഗം" : "Scheme Category"}
+                      </label>
+                      <select
+                        value={schemeCategoryFilter}
+                        onChange={(e) => setSchemeCategoryFilter(e.target.value)}
+                        className="w-full h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold outline-none"
+                      >
+                        <option value="all">{lang === "ml" ? "എല്ലാ വിഭാഗങ്ങളും" : "All Categories"}</option>
+                        <option value="agriculture">{lang === "ml" ? "കൃഷി" : "Agriculture"}</option>
+                        <option value="education">{lang === "ml" ? "വിദ്യാഭ്യാസം" : "Education"}</option>
+                        <option value="health">{lang === "ml" ? "ആരോഗ്യം" : "Health"}</option>
+                        <option value="housing">{lang === "ml" ? "ഭവനം" : "Housing"}</option>
+                        <option value="welfare">{lang === "ml" ? "പെൻഷൻ / ക്ഷേമം" : "Pension & Welfare"}</option>
+                        <option value="women">{lang === "ml" ? "വനിതാ ക്ഷേമം" : "Women Welfare"}</option>
+                        <option value="employment">{lang === "ml" ? "തൊഴിൽ" : "Employment"}</option>
+                        <option value="msme">{lang === "ml" ? "MSME / സംരംഭകം" : "MSME & Business"}</option>
+                      </select>
+                    </div>
+
+                    {/* Assistance Status Filter */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold text-muted-foreground block">
+                        {lang === "ml" ? "സഹായ സ്റ്റാറ്റസ്" : "Assistance Status"}
+                      </label>
+                      <select
+                        value={assistanceStatusFilter}
+                        onChange={(e) => setAssistanceStatusFilter(e.target.value)}
+                        className="w-full h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold outline-none"
+                      >
+                        <option value="all">{lang === "ml" ? "എല്ലാം" : "All Statuses"}</option>
+                        <option value="not_assisted">{lang === "ml" ? "സഹായം ലഭിച്ചിട്ടില്ല" : "Not Assisted"}</option>
+                        <option value="requested">{lang === "ml" ? "അപേക്ഷിച്ചു" : "Requested"}</option>
+                        <option value="in_progress">{lang === "ml" ? "നടപടിക്രമത്തിൽ" : "In Progress"}</option>
+                        <option value="assisted">{lang === "ml" ? "സഹായം ലഭിച്ചു" : "Assisted"}</option>
+                      </select>
+                    </div>
+
+                    {/* Application Date Filter */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold text-muted-foreground block">
+                        {lang === "ml" ? "അപേക്ഷാ തീയതി" : "Application Date"}
+                      </label>
+                      <select
+                        value={dateFilter}
+                        onChange={(e) => setDateFilter(e.target.value)}
+                        className="w-full h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold outline-none"
+                      >
+                        <option value="all">{lang === "ml" ? "എല്ലാ തീയതികളും" : "All Dates"}</option>
+                        <option value="today">{lang === "ml" ? "ഇന്ന്" : "Today"}</option>
+                        <option value="7days">{lang === "ml" ? "കഴിഞ്ഞ 7 ദിവസങ്ങൾ" : "Last 7 Days"}</option>
+                        <option value="30days">{lang === "ml" ? "കഴിഞ്ഞ 30 ദിവസങ്ങൾ" : "Last 30 Days"}</option>
+                        <option value="custom">{lang === "ml" ? "കസ്റ്റം റേഞ്ച്" : "Custom Range"}</option>
+                      </select>
+                      {dateFilter === "custom" && (
+                        <div className="grid grid-cols-2 gap-2 pt-1.5">
+                          <div>
+                            <span className="text-[10px] text-muted-foreground block mb-0.5">From</span>
+                            <input
+                              type="date"
+                              value={customStartDate}
+                              onChange={(e) => setCustomRangeStart(e.target.value)}
+                              className="w-full h-7 text-[11px] rounded border border-border bg-background px-1.5 font-medium"
+                            />
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-muted-foreground block mb-0.5">To</span>
+                            <input
+                              type="date"
+                              value={customEndDate}
+                              onChange={(e) => setCustomRangeEnd(e.target.value)}
+                              className="w-full h-7 text-[11px] rounded border border-border bg-background px-1.5 font-medium"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
