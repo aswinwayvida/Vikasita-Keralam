@@ -414,41 +414,116 @@ function ApplicationsPage() {
 
         
         {/* Search & Status Filter Controls Row */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 pt-1 pb-1">
-          {/* Search Input for Application Name, ID, Type */}
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={lang === "ml" ? "പേര്, അപേക്ഷാ ഐഡി, തരം എന്നിവ നൽകി തിരയുക..." : "Search applications by name, ID, type..."}
-              className="w-full h-8.5 pl-8.5 pr-8 text-xs font-medium rounded-xl border border-amber-200/80 dark:border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5"
+        <div className="flex flex-col gap-2.5 pt-1 pb-1">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+            {/* Search Input for Application Name, ID, Type */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={lang === "ml" ? "പേര്, അപേക്ഷാ ഐഡി, തരം എന്നിവ നൽകി തിരയുക..." : "Search applications by name, ID, type..."}
+                className="w-full h-8.5 pl-8.5 pr-8 text-xs font-medium rounded-xl border border-amber-200/80 dark:border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Status Select Dropdown Pill */}
+            <div className="relative shrink-0">
+              <select
+                value={stage}
+                onChange={(e) => setStage(e.target.value as "All" | QueueStage)}
+                className="h-8.5 pl-3 pr-8 text-xs font-bold rounded-xl border border-amber-300/80 dark:border-amber-800/80 bg-amber-50 dark:bg-amber-950/40 text-amber-950 dark:text-amber-100 focus:outline-none focus:ring-1 focus:ring-amber-500 shadow-2xs cursor-pointer appearance-none"
               >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
+                <option value="All">{lang === "ml" ? "എല്ലാ അപേക്ഷകളും" : "All Applications"}</option>
+                {applicationStages.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-amber-700 dark:text-amber-300 pointer-events-none" />
+            </div>
           </div>
 
-          {/* Status Select Dropdown Pill */}
-          <div className="relative shrink-0">
-            <select
-              value={stage}
-              onChange={(e) => setStage(e.target.value as "All" | QueueStage)}
-              className="h-8.5 pl-3 pr-8 text-xs font-bold rounded-xl border border-amber-300/80 dark:border-amber-800/80 bg-amber-50 dark:bg-amber-950/40 text-amber-950 dark:text-amber-100 focus:outline-none focus:ring-1 focus:ring-amber-500 shadow-2xs cursor-pointer appearance-none"
-            >
-              <option value="All">{lang === "ml" ? "എല്ലാ അപേക്ഷകളും" : "All Applications"}</option>
-              {applicationStages.map((item) => (
-                <option key={item} value={item}>{item}</option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-amber-700 dark:text-amber-300 pointer-events-none" />
+          {/* Quick Filter Bar: Scheme Category, Assistance Status, Application Date */}
+          <div className="flex flex-wrap items-center gap-2 overflow-x-auto no-scrollbar pb-1 text-xs">
+            {/* Scheme Category Dropdown */}
+            <div className="relative shrink-0">
+              <select
+                value={schemeCategoryFilter}
+                onChange={(e) => setSchemeCategoryFilter(e.target.value)}
+                className="h-7.5 pl-2.5 pr-7 text-[11px] font-semibold rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs cursor-pointer appearance-none"
+              >
+                <option value="all">{lang === "ml" ? "വിഭാഗം: എല്ലാം" : "Category: All Categories"}</option>
+                <option value="agriculture">{lang === "ml" ? "കൃഷി" : "Agriculture"}</option>
+                <option value="education">{lang === "ml" ? "വിദ്യാഭ്യാസം" : "Education"}</option>
+                <option value="health">{lang === "ml" ? "ആരോഗ്യം" : "Health"}</option>
+                <option value="housing">{lang === "ml" ? "ഭവനം" : "Housing"}</option>
+                <option value="welfare">{lang === "ml" ? "പെൻഷൻ & ക്ഷേമം" : "Pension & Welfare"}</option>
+                <option value="women">{lang === "ml" ? "വനിതാ ക്ഷേമം" : "Women Welfare"}</option>
+                <option value="employment">{lang === "ml" ? "തൊഴിൽ" : "Employment"}</option>
+                <option value="msme">{lang === "ml" ? "MSME & സംരംഭകം" : "MSME & Business"}</option>
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
+            </div>
+
+            {/* Assistance Status Dropdown */}
+            <div className="relative shrink-0">
+              <select
+                value={assistanceStatusFilter}
+                onChange={(e) => setAssistanceStatusFilter(e.target.value)}
+                className="h-7.5 pl-2.5 pr-7 text-[11px] font-semibold rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs cursor-pointer appearance-none"
+              >
+                <option value="all">{lang === "ml" ? "സഹായം: എല്ലാം" : "Assistance: All"}</option>
+                <option value="not_assisted">{lang === "ml" ? "സഹായം ലഭിച്ചിട്ടില്ല" : "Not Assisted"}</option>
+                <option value="requested">{lang === "ml" ? "അപേക്ഷിച്ചു" : "Requested"}</option>
+                <option value="in_progress">{lang === "ml" ? "നടപടിക്രമത്തിൽ" : "In Progress"}</option>
+                <option value="assisted">{lang === "ml" ? "സഹായം ലഭിച്ചു" : "Assisted"}</option>
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
+            </div>
+
+            {/* Application Date Dropdown */}
+            <div className="relative shrink-0">
+              <select
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="h-7.5 pl-2.5 pr-7 text-[11px] font-semibold rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs cursor-pointer appearance-none"
+              >
+                <option value="all">{lang === "ml" ? "തീയതി: എല്ലാ തീയതികളും" : "Date: All Dates"}</option>
+                <option value="today">{lang === "ml" ? "ഇന്ന്" : "Today"}</option>
+                <option value="7days">{lang === "ml" ? "കഴിഞ്ഞ 7 ദിവസങ്ങൾ" : "Last 7 Days"}</option>
+                <option value="30days">{lang === "ml" ? "കഴിഞ്ഞ 30 ദിവസങ്ങൾ" : "Last 30 Days"}</option>
+                <option value="custom">{lang === "ml" ? "കസ്റ്റം റേഞ്ച്" : "Custom Range"}</option>
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
+            </div>
+
+            {dateFilter === "custom" && (
+              <div className="flex items-center gap-1.5 shrink-0">
+                <input
+                  type="date"
+                  value={customStartDate}
+                  onChange={(e) => setCustomRangeStart(e.target.value)}
+                  className="h-7.5 text-[11px] rounded-lg border border-border bg-background px-2 font-medium"
+                />
+                <span className="text-[10px] text-muted-foreground font-semibold">to</span>
+                <input
+                  type="date"
+                  value={customEndDate}
+                  onChange={(e) => setCustomRangeEnd(e.target.value)}
+                  className="h-7.5 text-[11px] rounded-lg border border-border bg-background px-2 font-medium"
+                />
+              </div>
+            )}
           </div>
         </div>
 
