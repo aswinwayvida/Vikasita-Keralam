@@ -2589,13 +2589,13 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                         <div className="flex items-center gap-2 pb-1">
                           {/* Application Search Input */}
                           <div className="relative flex-1">
-                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400 pointer-events-none" />
                             <input
                               type="text"
                               value={applicationSearchQuery}
                               onChange={(e) => setApplicationSearchQuery(e.target.value)}
                               placeholder={lang === "ml" ? "പേര്, ഐഡി, ടൈപ്പ് തിരയുക..." : "Search by name, ID, type..."}
-                              className="w-full h-8.5 pl-8 pr-7 text-xs font-semibold rounded-xl border border-amber-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs"
+                              className="w-full h-7 pl-7 pr-6 text-[11px] font-semibold rounded-lg border border-amber-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs"
                             />
                             {applicationSearchQuery && (
                               <button
@@ -2613,14 +2613,14 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                             <select
                               value={applicationStatusFilter}
                               onChange={(e) => setApplicationStatusFilter(e.target.value as "all" | "assisted" | "pending" | "rejected")}
-                              className="h-8.5 pl-3 pr-7 text-xs font-bold rounded-xl border border-orange-300/80 dark:border-orange-800/80 bg-orange-50 dark:bg-orange-950/40 text-orange-900 dark:text-orange-200 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs cursor-pointer appearance-none"
+                              className="h-7 pl-2.5 pr-6 text-[11px] font-bold rounded-lg border border-orange-300/80 dark:border-orange-800/80 bg-orange-50 dark:bg-orange-950/40 text-orange-900 dark:text-orange-200 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs cursor-pointer appearance-none"
                             >
                               <option value="all">{lang === "ml" ? `എല്ലാം (${applicationsCount})` : `All (${applicationsCount})`}</option>
                               <option value="assisted">{lang === "ml" ? `സഹായം ലഭിച്ചവ (${currentMetrics.assisted})` : `Assisted (${currentMetrics.assisted})`}</option>
                               <option value="pending">{lang === "ml" ? `പെൻഡിംഗ് (${currentMetrics.pending})` : `Pending (${currentMetrics.pending})`}</option>
                               <option value="rejected">{lang === "ml" ? `നിരസിച്ചവ (${currentMetrics.rejected})` : `Rejected (${currentMetrics.rejected})`}</option>
                             </select>
-                            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-orange-700 dark:text-orange-300 pointer-events-none" />
+                            <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 h-3 w-3 text-orange-700 dark:text-orange-300 pointer-events-none" />
                           </div>
                         </div>
 

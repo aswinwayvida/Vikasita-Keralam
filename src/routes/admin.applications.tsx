@@ -406,7 +406,7 @@ function ApplicationsPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={lang === "ml" ? "പേര്, അപേക്ഷാ ഐഡി, തരം എന്നിവ നൽകി തിരയുക..." : "Search applications by name, ID, type..."}
-                className="w-full h-8.5 pl-8.5 pr-8 text-xs font-medium rounded-xl border border-amber-200/80 dark:border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs"
+                className="w-full h-7 pl-7 pr-6 text-[11px] font-medium rounded-lg border border-amber-200/80 dark:border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs"
               />
               {searchQuery && (
                 <button
@@ -424,7 +424,7 @@ function ApplicationsPage() {
               <select
                 value={stage}
                 onChange={(e) => setStage(e.target.value as "All" | QueueStage)}
-                className="h-8.5 pl-3 pr-8 text-xs font-bold rounded-xl border border-amber-300/80 dark:border-amber-800/80 bg-amber-50 dark:bg-amber-950/40 text-amber-950 dark:text-amber-100 focus:outline-none focus:ring-1 focus:ring-amber-500 shadow-2xs cursor-pointer appearance-none"
+                className="h-7 pl-2.5 pr-6 text-[11px] font-bold rounded-lg border border-amber-300/80 dark:border-amber-800/80 bg-amber-50 dark:bg-amber-950/40 text-amber-950 dark:text-amber-100 focus:outline-none focus:ring-1 focus:ring-amber-500 shadow-2xs cursor-pointer appearance-none"
               >
                 <option value="All">{lang === "ml" ? "എല്ലാ അപേക്ഷകളും" : "All Applications"}</option>
                 {applicationStages.map((item) => (
