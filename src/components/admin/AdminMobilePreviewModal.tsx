@@ -111,6 +111,32 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
   const [mobileSubPage, setMobileSubPage] = useState<"none" | "leaderboard" | "needs_attention" | "recent_activity" | "beneficiaries" | "notifications" | "applications" | "events_announcements">("none");
   const [eventsSubTab, setEventsSubTab] = useState<"events" | "announcements">("events");
   const [applicationStatusFilter, setApplicationStatusFilter] = useState<"all" | "pending" | "assisted" | "rejected">("all");
+  const matchAppSearch = (
+    status: "pending" | "assisted" | "rejected",
+    nameEn: string,
+    nameMl: string,
+    applicantEn: string,
+    applicantMl: string,
+    typeEn: string,
+    typeMl: string,
+    ref: string
+  ) => {
+    const matchesStatus = applicationStatusFilter === "all" || applicationStatusFilter === status;
+    if (!matchesStatus) return false;
+    if (!applicationSearchQuery.trim()) return true;
+    const q = applicationSearchQuery.toLowerCase();
+    return (
+      nameEn.toLowerCase().includes(q) ||
+      nameMl.toLowerCase().includes(q) ||
+      applicantEn.toLowerCase().includes(q) ||
+      applicantMl.toLowerCase().includes(q) ||
+      typeEn.toLowerCase().includes(q) ||
+      typeMl.toLowerCase().includes(q) ||
+      ref.toLowerCase().includes(q)
+    );
+  };
+
+  const [applicationSearchQuery, setApplicationSearchQuery] = useState<string>("");
   const [beneficiarySearchQuery, setBeneficiarySearchQuery] = useState<string>("");
   const [beneficiaryCategoryFilter, setBeneficiaryCategoryFilter] = useState<string>("ALL");
   const [currentSelectedDate, setCurrentSelectedDate] = useState<Date>(new Date(2026, 9, 12)); // 12/10/2026
@@ -2554,64 +2580,49 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           </div>
                         </div>
 
-                        {/* Interactive Status Filter Pills */}
-                        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden text-[11px] font-bold">
-                          <button
-                            type="button"
-                            onClick={() => setApplicationStatusFilter("all")}
-                            className={`px-3 py-1 rounded-full whitespace-nowrap transition-all cursor-pointer ${
-                              applicationStatusFilter === "all"
-                                ? "bg-[#0b132b] text-white shadow-xs"
-                                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
-                            }`}
-                          >
-                            {lang === "ml" ? `എല്ലാം (${applicationsCount})` : `All (${applicationsCount})`}
-                          </button>
+                        {/* Search Input & Status Selection Dropdown Pill */}
+                        <div className="flex items-center gap-2 pb-1">
+                          {/* Application Search Input */}
+                          <div className="relative flex-1">
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                            <input
+                              type="text"
+                              value={applicationSearchQuery}
+                              onChange={(e) => setApplicationSearchQuery(e.target.value)}
+                              placeholder={lang === "ml" ? "പേര്, ഐഡി, ടൈപ്പ് തിരയുക..." : "Search by name, ID, type..."}
+                              className="w-full h-8.5 pl-8 pr-7 text-xs font-semibold rounded-xl border border-amber-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs"
+                            />
+                            {applicationSearchQuery && (
+                              <button
+                                type="button"
+                                onClick={() => setApplicationSearchQuery("")}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                          </div>
 
-                          <button
-                            type="button"
-                            onClick={() => setApplicationStatusFilter("assisted")}
-                            className={`inline-flex items-center gap-1 px-3 py-1 rounded-full whitespace-nowrap transition-all cursor-pointer ${
-                              applicationStatusFilter === "assisted"
-                                ? "bg-teal-700 text-white shadow-xs"
-                                : "bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200/80 hover:bg-teal-100"
-                            }`}
-                          >
-                            <CheckCircle2 className="h-3 w-3" />
-                            <span>{lang === "ml" ? `സഹായം ലഭിച്ചവ (${currentMetrics.assisted})` : `Assisted (${currentMetrics.assisted})`}</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => setApplicationStatusFilter("pending")}
-                            className={`inline-flex items-center gap-1 px-3 py-1 rounded-full whitespace-nowrap transition-all cursor-pointer ${
-                              applicationStatusFilter === "pending"
-                                ? "bg-amber-600 text-white shadow-xs"
-                                : "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/80 hover:bg-amber-100"
-                            }`}
-                          >
-                            <Hourglass className="h-3 w-3" />
-                            <span>{lang === "ml" ? `പെൻഡിംഗ് (${currentMetrics.pending})` : `Pending (${currentMetrics.pending})`}</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => setApplicationStatusFilter("rejected")}
-                            className={`inline-flex items-center gap-1 px-3 py-1 rounded-full whitespace-nowrap transition-all cursor-pointer ${
-                              applicationStatusFilter === "rejected"
-                                ? "bg-rose-600 text-white shadow-xs"
-                                : "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200/80 hover:bg-rose-100"
-                            }`}
-                          >
-                            <XCircle className="h-3 w-3" />
-                            <span>{lang === "ml" ? `നിരസിച്ചവ (${currentMetrics.rejected})` : `Rejected (${currentMetrics.rejected})`}</span>
-                          </button>
+                          {/* Status Selection Dropdown Pill */}
+                          <div className="relative shrink-0">
+                            <select
+                              value={applicationStatusFilter}
+                              onChange={(e) => setApplicationStatusFilter(e.target.value as "all" | "assisted" | "pending" | "rejected")}
+                              className="h-8.5 pl-3 pr-7 text-xs font-bold rounded-xl border border-orange-300/80 dark:border-orange-800/80 bg-orange-50 dark:bg-orange-950/40 text-orange-900 dark:text-orange-200 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs cursor-pointer appearance-none"
+                            >
+                              <option value="all">{lang === "ml" ? `എല്ലാം (${applicationsCount})` : `All (${applicationsCount})`}</option>
+                              <option value="assisted">{lang === "ml" ? `സഹായം ലഭിച്ചവ (${currentMetrics.assisted})` : `Assisted (${currentMetrics.assisted})`}</option>
+                              <option value="pending">{lang === "ml" ? `പെൻഡിംഗ് (${currentMetrics.pending})` : `Pending (${currentMetrics.pending})`}</option>
+                              <option value="rejected">{lang === "ml" ? `നിരസിച്ചവ (${currentMetrics.rejected})` : `Rejected (${currentMetrics.rejected})`}</option>
+                            </select>
+                            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-orange-700 dark:text-orange-300 pointer-events-none" />
+                          </div>
                         </div>
 
                         {/* List of Applications */}
                         <div className="space-y-2 pt-1">
                           {/* Item 1: Pending */}
-                          {(applicationStatusFilter === "all" || applicationStatusFilter === "pending") && (
+                          {matchAppSearch("pending", "Pratibha Merit Scholarship", "പ്രതിഭാ മെരിറ്റ് സ്കോളർഷിപ്പ്", "Ananya Ramesh", "അനന്യ രമേശ്", "Scholarship", "സ്കോളർഷിപ്പ്", "APP-2026-8910") && (
                             <div className="p-3 rounded-2xl bg-[#FFFDF3] dark:bg-amber-950/20 border border-[#FEF3C7] dark:border-amber-900/40 shadow-2xs hover:shadow-xs transition-shadow cursor-pointer">
                               <div className="flex items-center justify-between gap-1.5">
                                 <span className="text-[9px] font-black text-amber-800 dark:text-amber-300 bg-amber-100/90 dark:bg-amber-950/80 px-2 py-0.5 rounded-full uppercase">
@@ -2639,7 +2650,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           )}
 
                           {/* Item 2: Assisted */}
-                          {(applicationStatusFilter === "all" || applicationStatusFilter === "assisted") && (
+                          {matchAppSearch("assisted", "Karunya Health Insurance", "കാരുണ്യ ആരോഗ്യ ഇൻഷുറൻസ്", "Lakshmi Amma", "ലക്ഷ്മി അമ്മ", "Health Insurance", "ആരോഗ്യം", "APP-2026-8922") && (
                             <div className="p-3 rounded-2xl bg-[#F0FDF4] dark:bg-teal-950/20 border border-[#DCFCE7] dark:border-teal-900/40 shadow-2xs hover:shadow-xs transition-shadow cursor-pointer">
                               <div className="flex items-center justify-between gap-1.5">
                                 <span className="text-[9px] font-black text-teal-800 dark:text-teal-300 bg-teal-100/90 dark:bg-teal-950/80 px-2 py-0.5 rounded-full uppercase">
@@ -2667,7 +2678,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           )}
 
                           {/* Item 3: Pending */}
-                          {(applicationStatusFilter === "all" || applicationStatusFilter === "pending") && (
+                          {matchAppSearch("pending", "Pratibha Merit Scholarship", "പ്രതിഭാ മെരിറ്റ് സ്കോളർഷിപ്പ്", "Ananya Ramesh", "അനന്യ രമേശ്", "Scholarship", "സ്കോളർഷിപ്പ്", "APP-2026-8910") && (
                             <div className="p-3 rounded-2xl bg-[#FFFDF3] dark:bg-amber-950/20 border border-[#FEF3C7] dark:border-amber-900/40 shadow-2xs hover:shadow-xs transition-shadow cursor-pointer">
                               <div className="flex items-center justify-between gap-1.5">
                                 <span className="text-[9px] font-black text-amber-800 dark:text-amber-300 bg-amber-100/90 dark:bg-amber-950/80 px-2 py-0.5 rounded-full uppercase">
@@ -2695,7 +2706,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           )}
 
                           {/* Item 4: Rejected */}
-                          {(applicationStatusFilter === "all" || applicationStatusFilter === "rejected") && (
+                          {matchAppSearch("rejected", "LIFE Mission Housing Title", "ലൈഫ് മിഷൻ ഭവന പദ്ധതി", "Joseph K", "ജോസഫ് കെ", "Housing", "ഭവന നിർമ്മാണം", "APP-2026-8927") && (
                             <div className="p-3 rounded-2xl bg-[#FFF5F5] dark:bg-rose-950/20 border border-[#FFE4E6] dark:border-rose-900/40 shadow-2xs hover:shadow-xs transition-shadow cursor-pointer">
                               <div className="flex items-center justify-between gap-1.5">
                                 <span className="text-[9px] font-black text-rose-800 dark:text-rose-300 bg-rose-100/90 dark:bg-rose-950/80 px-2 py-0.5 rounded-full uppercase">
@@ -2723,7 +2734,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           )}
 
                           {/* Item 5: Assisted */}
-                          {(applicationStatusFilter === "all" || applicationStatusFilter === "assisted") && (
+                          {matchAppSearch("assisted", "Karunya Health Insurance", "കാരുണ്യ ആരോഗ്യ ഇൻഷുറൻസ്", "Lakshmi Amma", "ലക്ഷ്മി അമ്മ", "Health Insurance", "ആരോഗ്യം", "APP-2026-8922") && (
                             <div className="p-3 rounded-2xl bg-[#F0FDF4] dark:bg-teal-950/20 border border-[#DCFCE7] dark:border-teal-900/40 shadow-2xs hover:shadow-xs transition-shadow cursor-pointer">
                               <div className="flex items-center justify-between gap-1.5">
                                 <span className="text-[9px] font-black text-teal-800 dark:text-teal-300 bg-teal-100/90 dark:bg-teal-950/80 px-2 py-0.5 rounded-full uppercase">
@@ -3777,59 +3788,44 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                   </div>
                 </div>
 
-                {/* Interactive Status Filter Pills */}
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden text-[11px] font-bold">
-                  <button
-                    type="button"
-                    onClick={() => setApplicationStatusFilter("all")}
-                    className={`px-3 py-1 rounded-full whitespace-nowrap transition-all cursor-pointer ${
-                      applicationStatusFilter === "all"
-                        ? "bg-[#ff5500] text-white shadow-xs"
-                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
-                    }`}
-                  >
-                    {lang === "ml" ? `എല്ലാം (${applicationsCount})` : `All (${applicationsCount})`}
-                  </button>
+                {/* Search Input & Status Selection Dropdown Pill */}
+                        <div className="flex items-center gap-2 pb-1">
+                          {/* Application Search Input */}
+                          <div className="relative flex-1">
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                            <input
+                              type="text"
+                              value={applicationSearchQuery}
+                              onChange={(e) => setApplicationSearchQuery(e.target.value)}
+                              placeholder={lang === "ml" ? "പേര്, ഐഡി, ടൈപ്പ് തിരയുക..." : "Search by name, ID, type..."}
+                              className="w-full h-8.5 pl-8 pr-7 text-xs font-semibold rounded-xl border border-amber-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs"
+                            />
+                            {applicationSearchQuery && (
+                              <button
+                                type="button"
+                                onClick={() => setApplicationSearchQuery("")}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                          </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setApplicationStatusFilter("assisted")}
-                    className={`inline-flex items-center gap-1 px-3 py-1 rounded-full whitespace-nowrap transition-all cursor-pointer ${
-                      applicationStatusFilter === "assisted"
-                        ? "bg-teal-700 text-white shadow-xs"
-                        : "bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200/80 hover:bg-teal-100"
-                    }`}
-                  >
-                    <CheckCircle2 className="h-3 w-3" />
-                    <span>{lang === "ml" ? `സഹായം ലഭിച്ചവ (${currentMetrics.assisted})` : `Assisted (${currentMetrics.assisted})`}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setApplicationStatusFilter("pending")}
-                    className={`inline-flex items-center gap-1 px-3 py-1 rounded-full whitespace-nowrap transition-all cursor-pointer ${
-                      applicationStatusFilter === "pending"
-                        ? "bg-amber-600 text-white shadow-xs"
-                        : "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/80 hover:bg-amber-100"
-                    }`}
-                  >
-                    <Hourglass className="h-3 w-3" />
-                    <span>{lang === "ml" ? `പെൻഡിംഗ് (${currentMetrics.pending})` : `Pending (${currentMetrics.pending})`}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setApplicationStatusFilter("rejected")}
-                    className={`inline-flex items-center gap-1 px-3 py-1 rounded-full whitespace-nowrap transition-all cursor-pointer ${
-                      applicationStatusFilter === "rejected"
-                        ? "bg-rose-600 text-white shadow-xs"
-                        : "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200/80 hover:bg-rose-100"
-                    }`}
-                  >
-                    <XCircle className="h-3 w-3" />
-                    <span>{lang === "ml" ? `നിരസിച്ചവ (${currentMetrics.rejected})` : `Rejected (${currentMetrics.rejected})`}</span>
-                  </button>
-                </div>
+                          {/* Status Selection Dropdown Pill */}
+                          <div className="relative shrink-0">
+                            <select
+                              value={applicationStatusFilter}
+                              onChange={(e) => setApplicationStatusFilter(e.target.value as "all" | "assisted" | "pending" | "rejected")}
+                              className="h-8.5 pl-3 pr-7 text-xs font-bold rounded-xl border border-orange-300/80 dark:border-orange-800/80 bg-orange-50 dark:bg-orange-950/40 text-orange-900 dark:text-orange-200 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs cursor-pointer appearance-none"
+                            >
+                              <option value="all">{lang === "ml" ? `എല്ലാം (${applicationsCount})` : `All (${applicationsCount})`}</option>
+                              <option value="assisted">{lang === "ml" ? `സഹായം ലഭിച്ചവ (${currentMetrics.assisted})` : `Assisted (${currentMetrics.assisted})`}</option>
+                              <option value="pending">{lang === "ml" ? `പെൻഡിംഗ് (${currentMetrics.pending})` : `Pending (${currentMetrics.pending})`}</option>
+                              <option value="rejected">{lang === "ml" ? `നിരസിച്ചവ (${currentMetrics.rejected})` : `Rejected (${currentMetrics.rejected})`}</option>
+                            </select>
+                            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-orange-700 dark:text-orange-300 pointer-events-none" />
+                          </div>
+                        </div>
 
                 {/* SLA Breaches Banner */}
                 {/* Removed per user request */}
@@ -3837,7 +3833,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                 {/* List of Applications */}
                 <div className="space-y-2 pt-1">
                   {/* Item 1: Pending */}
-                  {(applicationStatusFilter === "all" || applicationStatusFilter === "pending") && (
+                  {matchAppSearch("pending", "Pratibha Merit Scholarship", "പ്രതിഭാ മെരിറ്റ് സ്കോളർഷിപ്പ്", "Ananya Ramesh", "അനന്യ രമേശ്", "Scholarship", "സ്കോളർഷിപ്പ്", "APP-2026-8910") && (
                     <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:shadow-xs transition-all cursor-pointer">
                       <div className="flex items-center justify-between gap-1.5">
                         <span className="text-[9.5px] font-extrabold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/70 dark:border-indigo-900/50 px-2 py-0.5 rounded-full uppercase tracking-wider">
@@ -3865,7 +3861,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                   )}
 
                   {/* Item 2: Assisted */}
-                  {(applicationStatusFilter === "all" || applicationStatusFilter === "assisted") && (
+                  {matchAppSearch("assisted", "Karunya Health Insurance", "കാരുണ്യ ആരോഗ്യ ഇൻഷുറൻസ്", "Lakshmi Amma", "ലക്ഷ്മി അമ്മ", "Health Insurance", "ആരോഗ്യം", "APP-2026-8922") && (
                     <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:shadow-xs transition-all cursor-pointer">
                       <div className="flex items-center justify-between gap-1.5">
                         <span className="text-[9.5px] font-extrabold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 border border-purple-200/70 dark:border-purple-900/50 px-2 py-0.5 rounded-full uppercase tracking-wider">
@@ -3893,7 +3889,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                   )}
 
                   {/* Item 3: Pending */}
-                  {(applicationStatusFilter === "all" || applicationStatusFilter === "pending") && (
+                  {matchAppSearch("pending", "Pratibha Merit Scholarship", "പ്രതിഭാ മെരിറ്റ് സ്കോളർഷിപ്പ്", "Ananya Ramesh", "അനന്യ രമേശ്", "Scholarship", "സ്കോളർഷിപ്പ്", "APP-2026-8910") && (
                     <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:shadow-xs transition-all cursor-pointer">
                       <div className="flex items-center justify-between gap-1.5">
                         <span className="text-[9.5px] font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/70 dark:border-emerald-900/50 px-2 py-0.5 rounded-full uppercase tracking-wider">
@@ -3921,7 +3917,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                   )}
 
                   {/* Item 4: Rejected */}
-                  {(applicationStatusFilter === "all" || applicationStatusFilter === "rejected") && (
+                  {matchAppSearch("rejected", "LIFE Mission Housing Title", "ലൈഫ് മിഷൻ ഭവന പദ്ധതി", "Joseph K", "ജോസഫ് കെ", "Housing", "ഭവന നിർമ്മാണം", "APP-2026-8927") && (
                     <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:shadow-xs transition-all cursor-pointer">
                       <div className="flex items-center justify-between gap-1.5">
                         <span className="text-[9.5px] font-extrabold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border border-blue-200/70 dark:border-blue-900/50 px-2 py-0.5 rounded-full uppercase tracking-wider">
@@ -3949,7 +3945,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                   )}
 
                   {/* Item 5: Assisted */}
-                  {(applicationStatusFilter === "all" || applicationStatusFilter === "assisted") && (
+                  {matchAppSearch("assisted", "Karunya Health Insurance", "കാരുണ്യ ആരോഗ്യ ഇൻഷുറൻസ്", "Lakshmi Amma", "ലക്ഷ്മി അമ്മ", "Health Insurance", "ആരോഗ്യം", "APP-2026-8922") && (
                     <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:shadow-xs transition-all cursor-pointer">
                       <div className="flex items-center justify-between gap-1.5">
                         <span className="text-[9.5px] font-extrabold text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/60 border border-cyan-200/70 dark:border-cyan-900/50 px-2 py-0.5 rounded-full uppercase tracking-wider">
