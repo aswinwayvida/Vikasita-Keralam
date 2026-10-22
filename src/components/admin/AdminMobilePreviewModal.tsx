@@ -9,7 +9,7 @@ import { DatePickerModal } from "./DatePickerModal";
 import { MobileUsersListTab } from "./MobileUsersListTab";
 import { MobileAppliedFiltersScope, FilterChip } from "./MobileAppliedFiltersScope";
 import { PartyFlagIcon } from "@/components/common/PartyFlagIcon";
-import { districts, constituencies, getDistrictName, getConstituencyName } from "@/data/geo";
+import { districts, constituencies, panchayats, wards, getDistrictName, getConstituencyName } from "@/data/geo";
 import { LeaderboardTop3Podium } from "./LeaderboardTop3Podium";
 
 interface AdminMobilePreviewModalProps {
@@ -255,6 +255,32 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
   };
   const [activeDistrictFilter, setActiveDistrictFilter] = useState<string>("all");
   const [filterGeoScope, setFilterGeoScope] = useState<string>("state");
+  // Mode selection: 'assembly' | 'local_body'
+  const [geoMode, setGeoMode] = useState<'assembly' | 'local_body'>('assembly');
+  const [appliedGeoMode, setAppliedGeoMode] = useState<'assembly' | 'local_body'>('assembly');
+
+  // Assembly/Booth Draft State
+  const [draftDistrict, setDraftDistrict] = useState<string>('all');
+  const [draftMandalam, setDraftMandalam] = useState<string>('all');
+  const [draftBooth, setDraftBooth] = useState<string>('all');
+
+  // Assembly/Booth Applied State
+  const [appliedDistrict, setAppliedDistrict] = useState<string>('all');
+  const [appliedMandalam, setAppliedMandalam] = useState<string>('all');
+  const [appliedBooth, setAppliedBooth] = useState<string>('all');
+
+  // Local Bodies Draft State
+  const [draftLBType, setDraftLBType] = useState<string>('all');
+  const [draftLBDistrict, setDraftLBDistrict] = useState<string>('all');
+  const [draftLocalBody, setDraftLocalBody] = useState<string>('all');
+  const [draftWard, setDraftWard] = useState<string>('all');
+
+  // Local Bodies Applied State
+  const [appliedLBType, setAppliedLBType] = useState<string>('all');
+  const [appliedLBDistrict, setAppliedLBDistrict] = useState<string>('all');
+  const [appliedLocalBody, setAppliedLocalBody] = useState<string>('all');
+  const [appliedWard, setAppliedWard] = useState<string>('all');
+
   const [selectedDistrict, setSelectedDistrict] = useState<string>("tvm");
   const [selectedMandalam, setSelectedMandalam] = useState<string>("kazhakuttam");
   const [selectedArea, setSelectedArea] = useState<string>("sector_1");
@@ -4240,7 +4266,44 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
           {showFilterMenu && (
             <div 
               className="absolute inset-0 z-50 flex items-end bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200 rounded-[36px] overflow-hidden"
-              onClick={() => setShowFilterMenu(false)}
+              onClick={() => {
+                      setAppliedGeoMode(geoMode);
+                      if (geoMode === "assembly") {
+                        setAppliedDistrict(draftDistrict);
+                        setAppliedMandalam(draftMandalam);
+                        setAppliedBooth(draftBooth);
+                        if (draftBooth !== "all") {
+                          setFilterGeoScope("booth");
+                          setSelectedDistrict(draftDistrict);
+                          setSelectedMandalam(draftMandalam);
+                          setSelectedBooth(draftBooth);
+                        } else if (draftMandalam !== "all") {
+                          setFilterGeoScope("mandalam");
+                          setSelectedDistrict(draftDistrict);
+                          setSelectedMandalam(draftMandalam);
+                        } else if (draftDistrict !== "all") {
+                          setFilterGeoScope("district");
+                          setSelectedDistrict(draftDistrict);
+                        } else {
+                          setFilterGeoScope("state");
+                        }
+                      } else {
+                        setAppliedLBType(draftLBType);
+                        setAppliedLBDistrict(draftLBDistrict);
+                        setAppliedLocalBody(draftLocalBody);
+                        setAppliedWard(draftWard);
+                        if (draftWard !== "all") {
+                          setFilterGeoScope("booth");
+                        } else if (draftLocalBody !== "all") {
+                          setFilterGeoScope("area");
+                        } else if (draftLBDistrict !== "all") {
+                          setFilterGeoScope("district");
+                        } else {
+                          setFilterGeoScope("state");
+                        }
+                      }
+                      setShowFilterMenu(false);
+                    }}
             >
               <div 
                 className="w-full rounded-t-[28px] bg-white dark:bg-slate-900 p-3.5 sm:p-4 shadow-2xl transition-all border-t border-x border-amber-200/80 dark:border-amber-900/60 animate-in slide-in-from-bottom-full duration-300 flex flex-col"
@@ -4269,57 +4332,61 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                 <div className="space-y-3.5 my-2.5 flex-1">
                   <div className="grid grid-cols-2 gap-3">
                     {/* Geography / Scope Filter + Cascading Selection Controls */}
-                    <div className="col-span-2 flex flex-col gap-2 p-2.5 rounded-xl bg-amber-100/60 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800/80">
+                    <div className="col-span-2 flex flex-col gap-3 p-3 rounded-xl bg-amber-100/60 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800/80">
                       <div className="flex items-center justify-between">
                         <label className="text-xs font-black text-amber-950 dark:text-amber-200 uppercase tracking-wider flex items-center gap-1">
-                          <span>{lang === "ml" ? "ഭൂമിശാസ്ത്രം / മേഖല" : "Geography Scope"}</span>
+                          <span>{lang === "ml" ? "ഭൂമിശാസ്ത്രം / മേഖല" : "GEOGRAPHY SCOPE"}</span>
                         </label>
                         <span className="text-[10px] font-bold text-amber-800 dark:text-amber-300 bg-amber-200/80 dark:bg-amber-900/80 px-2 py-0.5 rounded-full uppercase">
-                          {filterGeoScope} level
+                          {geoMode === "assembly" ? "Assembly / Booth" : "Local Bodies"}
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2">
-                        {/* Scope Level Selector */}
-                        <div className="flex flex-col gap-1 col-span-2 sm:col-span-1">
-                          <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                            {lang === "ml" ? "തല തിരഞ്ഞെടുക്കുക" : "Select Level"}
-                          </label>
-                          <select
-                            value={filterGeoScope}
-                            onChange={(e) => setFilterGeoScope(e.target.value)}
-                            className="rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-xs font-black text-amber-950 dark:text-amber-100 focus:outline-none cursor-pointer"
-                          >
-                            <option value="state">State Level (All Kerala)</option>
-                            <option value="district">District Level</option>
-                            <option value="mandalam">Mandalam Level</option>
-                            <option value="area">Area / Sector Level</option>
-                            <option value="booth">Booth Level</option>
-                          </select>
-                        </div>
+                      {/* Mode Segmented Tab Selector */}
+                      <div className="flex rounded-lg bg-amber-200/60 dark:bg-amber-950/60 p-0.5 border border-amber-300/80 dark:border-amber-800/80">
+                        <button
+                          type="button"
+                          onClick={() => setGeoMode("assembly")}
+                          className={`flex-1 rounded-md py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                            geoMode === "assembly"
+                              ? "bg-white dark:bg-slate-900 text-amber-950 dark:text-amber-100 shadow-2xs"
+                              : "text-amber-800 dark:text-amber-300 hover:text-amber-950"
+                          }`}
+                        >
+                          {lang === "ml" ? "അസംബ്ലി / ബൂത്ത്" : "Assembly / Booth"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setGeoMode("local_body")}
+                          className={`flex-1 rounded-md py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                            geoMode === "local_body"
+                              ? "bg-white dark:bg-slate-900 text-amber-950 dark:text-amber-100 shadow-2xs"
+                              : "text-amber-800 dark:text-amber-300 hover:text-amber-950"
+                          }`}
+                        >
+                          {lang === "ml" ? "തദ്ദേശ സ്ഥാപനങ്ങൾ" : "Local Bodies"}
+                        </button>
+                      </div>
 
-                        {/* Dynamic Cascading Dropdowns based on Level */}
-                        {filterGeoScope !== "state" && (
-                          <div className="flex flex-col gap-1">
+                      {/* Mode 1: Assembly / Booth */}
+                      {geoMode === "assembly" && (
+                        <div className="grid grid-cols-2 gap-2.5">
+                          {/* District */}
+                          <div className="flex flex-col gap-1 col-span-2 sm:col-span-1">
                             <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
                               {lang === "ml" ? "ജില്ല" : "District"}
                             </label>
                             <select
-                              value={selectedDistrict}
+                              value={draftDistrict}
                               onChange={(e) => {
                                 const newDist = e.target.value;
-                                setSelectedDistrict(newDist);
-                                const mandalams = constituencies.filter(c => c.districtId === newDist);
-                                if (mandalams.length > 0) {
-                                  setSelectedMandalam(mandalams[0].id);
-                                  const areas = getAreasForMandalam(mandalams[0].id, lang);
-                                  if (areas.length > 0) {
-                                    setSelectedArea(areas[0].id);
-                                  }
-                                }
+                                setDraftDistrict(newDist);
+                                setDraftMandalam("all");
+                                setDraftBooth("all");
                               }}
-                              className="rounded-lg border border-amber-200 dark:border-amber-800 bg-white dark:bg-slate-900 px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+                              className="rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
                             >
+                              <option value="all">{lang === "ml" ? "എല്ലാ ജില്ലകളും" : "All Districts"}</option>
                               {districts.map((d) => (
                                 <option key={d.id} value={d.id}>
                                   {d[lang]}
@@ -4327,75 +4394,148 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                               ))}
                             </select>
                           </div>
-                        )}
 
-                        {(filterGeoScope === "mandalam" || filterGeoScope === "area" || filterGeoScope === "booth") && (
-                          <div className="flex flex-col gap-1">
+                          {/* Mandalam */}
+                          <div className="flex flex-col gap-1 col-span-2 sm:col-span-1">
                             <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
                               {lang === "ml" ? "മണ്ഡലം" : "Mandalam"}
                             </label>
                             <select
-                              value={selectedMandalam}
+                              value={draftMandalam}
+                              disabled={draftDistrict === "all"}
                               onChange={(e) => {
-                                const newMandalam = e.target.value;
-                                setSelectedMandalam(newMandalam);
-                                const areas = getAreasForMandalam(newMandalam, lang);
-                                if (areas.length > 0) {
-                                  setSelectedArea(areas[0].id);
-                                }
+                                setDraftMandalam(e.target.value);
+                                setDraftBooth("all");
                               }}
-                              className="rounded-lg border border-amber-200 dark:border-amber-800 bg-white dark:bg-slate-900 px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+                              className="rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer disabled:opacity-50"
                             >
-                              {constituencies.filter(c => c.districtId === selectedDistrict).map((c) => (
+                              <option value="all">{lang === "ml" ? "എല്ലാ മണ്ഡലങ്ങളും" : "All Mandalams"}</option>
+                              {(draftDistrict === "all"
+                                ? constituencies
+                                : constituencies.filter((c) => c.districtId === draftDistrict)
+                              ).map((c) => (
                                 <option key={c.id} value={c.id}>
                                   {c[lang]}
                                 </option>
                               ))}
                             </select>
                           </div>
-                        )}
 
-                        {(filterGeoScope === "area" || filterGeoScope === "booth") && (
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                              {lang === "ml" ? "ഏരിയ / മേഖലാ" : "Area / Sector"}
-                            </label>
-                            <select
-                              value={selectedArea}
-                              onChange={(e) => setSelectedArea(e.target.value)}
-                              className="rounded-lg border border-amber-200 dark:border-amber-800 bg-white dark:bg-slate-900 px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
-                            >
-                              {getAreasForMandalam(selectedMandalam, lang).map((a) => (
-                                <option key={a.id} value={a.id}>
-                                  {a[lang]}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        )}
-
-                        {filterGeoScope === "booth" && (
+                          {/* Booth */}
                           <div className="flex flex-col gap-1 col-span-2">
                             <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                              {lang === "ml" ? "ബൂത്ത് തിരഞ്ഞെടുക്കുക" : "Select Booth"}
+                              {lang === "ml" ? "ബൂത്ത്" : "Booth"}
                             </label>
                             <select
-                              value={selectedBooth}
-                              onChange={(e) => setSelectedBooth(e.target.value)}
-                              className="rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-xs font-black text-amber-950 dark:text-amber-100 focus:outline-none cursor-pointer"
+                              value={draftBooth}
+                              disabled={draftMandalam === "all"}
+                              onChange={(e) => setDraftBooth(e.target.value)}
+                              className="rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer disabled:opacity-50"
                             >
-                              {[101, 102, 103, 104, 105, 106, 107, 108].map((num) => (
+                              <option value="all">{lang === "ml" ? "എല്ലാ ബൂത്തുകളും" : "All Booths"}</option>
+                              {[101, 102, 103, 104, 105, 106, 107, 108, 109, 110].map((num) => (
                                 <option key={num} value={`booth_${num}`}>
                                   {lang === "ml" ? `ബൂത്ത് #${num}` : `Booth #${num}`}
                                 </option>
                               ))}
                             </select>
                           </div>
-                        )}
-                      </div>
-                    </div>
+                        </div>
+                      )}
 
-                    </div>
+                      {/* Mode 2: Local Bodies */}
+                      {geoMode === "local_body" && (
+                        <div className="grid grid-cols-2 gap-2.5">
+                          {/* District */}
+                          <div className="flex flex-col gap-1 col-span-2 sm:col-span-1">
+                            <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                              {lang === "ml" ? "ജില്ല" : "District"}
+                            </label>
+                            <select
+                              value={draftLBDistrict}
+                              onChange={(e) => {
+                                setDraftLBDistrict(e.target.value);
+                                setDraftLocalBody("all");
+                                setDraftWard("all");
+                              }}
+                              className="rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+                            >
+                              <option value="all">{lang === "ml" ? "എല്ലാ ജില്ലകളും" : "All Districts"}</option>
+                              {districts.map((d) => (
+                                <option key={d.id} value={d.id}>
+                                  {d[lang]}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* Local Body Type */}
+                          <div className="flex flex-col gap-1 col-span-2 sm:col-span-1">
+                            <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                              {lang === "ml" ? "തദ്ദേശ സ്ഥാപന തരം" : "Local Body Type"}
+                            </label>
+                            <select
+                              value={draftLBType}
+                              onChange={(e) => {
+                                setDraftLBType(e.target.value);
+                                setDraftLocalBody("all");
+                                setDraftWard("all");
+                              }}
+                              className="rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+                            >
+                              <option value="all">{lang === "ml" ? "എല്ലാ തരങ്ങളും" : "All Types"}</option>
+                              <option value="corporation">{lang === "ml" ? "കോർപ്പറേഷൻ" : "Corporation"}</option>
+                              <option value="municipality">{lang === "ml" ? "മുനിസിപ്പാലിറ്റി" : "Municipality"}</option>
+                              <option value="panchayat">{lang === "ml" ? "ഗ്രാമ പഞ്ചായത്ത്" : "Grama Panchayat"}</option>
+                            </select>
+                          </div>
+
+                          {/* Local Body */}
+                          <div className="flex flex-col gap-1 col-span-2 sm:col-span-1">
+                            <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                              {lang === "ml" ? "തദ്ദേശ സ്ഥാപനം" : "Local Body"}
+                            </label>
+                            <select
+                              value={draftLocalBody}
+                              onChange={(e) => {
+                                setDraftLocalBody(e.target.value);
+                                setDraftWard("all");
+                              }}
+                              className="rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+                            >
+                              <option value="all">{lang === "ml" ? "എല്ലാ തദ്ദേശ സ്ഥാപനങ്ങളും" : "All Local Bodies"}</option>
+                              {panchayats
+                                .filter((p) => (draftLBDistrict === "all" || p.districtId === draftLBDistrict) && (draftLBType === "all" || p.type === draftLBType))
+                                .map((p) => (
+                                  <option key={p.id} value={p.id}>
+                                    {p[lang]}
+                                  </option>
+                                ))}
+                            </select>
+                          </div>
+
+                          {/* Ward */}
+                          <div className="flex flex-col gap-1 col-span-2 sm:col-span-1">
+                            <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                              {lang === "ml" ? "വാർഡ്" : "Ward"}
+                            </label>
+                            <select
+                              value={draftWard}
+                              disabled={draftLocalBody === "all"}
+                              onChange={(e) => setDraftWard(e.target.value)}
+                              className="rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer disabled:opacity-50"
+                            >
+                              <option value="all">{lang === "ml" ? "എല്ലാ വാർഡുകളും" : "All Wards"}</option>
+                              {wards.map((w) => (
+                                <option key={w.id} value={w.id}>
+                                  {lang === "ml" ? `വാർഡ് ${w.label}` : `Ward ${w.label}`}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      )}
+                    </div></div>
                 </div>
 
                 {/* Bottom Action Bar: Reset & Apply Filters */}
