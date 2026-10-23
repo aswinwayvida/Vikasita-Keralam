@@ -3,6 +3,14 @@ import { Link } from "@tanstack/react-router";
 import { X, Smartphone, Wifi, Battery, Signal, ChevronRight, ChevronLeft, ArrowLeft, Users, HeartHandshake, Database, Layers, Sparkles, MessageSquare, Clock3, UserCheck, LayoutDashboard, Sliders, Calendar, FileText, XCircle, CheckCircle2, Hourglass, MapPin, Trophy, AlertTriangle, Activity, Globe, Map, Network, Store, ShieldCheck, ChevronDown, Filter, Search, Megaphone, CalendarDays, BellRing, Phone, RotateCcw, GraduationCap, Sprout, LayoutGrid, MoreVertical, AlertCircle, Star } from "lucide-react";
 import { useLang } from "@/i18n/LanguageProvider";
 import officialLotus from "@/assets/bjp-official-lotus.png";
+import users3dIcon from "@/assets/kpi-3d/users.png";
+import beneficiaries3dIcon from "@/assets/kpi-3d/beneficiaries.png";
+import applications3dIcon from "@/assets/kpi-3d/applications.png";
+import assisted3dIcon from "@/assets/kpi-3d/assisted.png";
+import pending3dIcon from "@/assets/kpi-3d/pending.png";
+import rejected3dIcon from "@/assets/kpi-3d/rejected.png";
+import schemes3dIcon from "@/assets/kpi-3d/schemes.png";
+import coveredBooth3dIcon from "@/assets/kpi-3d/covered-booth.png";
 import { AdminMobileAppBottomNav, AdminMobileTab } from "./AdminMobileAppBottomNav";
 import { AdminMobileAppHeader } from "./AdminMobileAppHeader";
 import { DatePickerModal } from "./DatePickerModal";
@@ -658,9 +666,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           <span className="text-[11.5px] font-bold text-muted-foreground truncate">
                             {lang === "ml" ? "ഉപയോക്താക്കൾ" : "Users"}
                           </span>
-                          <div className="h-5.5 w-5.5 rounded-md bg-gradient-to-br from-emerald-400 via-emerald-500 to-emerald-700 p-1 flex items-center justify-center shadow-xs shrink-0">
-                            <Users className="h-3 w-3 text-white" />
-                          </div>
+                          <img src={users3dIcon} alt="Users" className="h-6 w-6 sm:h-7 sm:w-7 object-contain shrink-0" />
                         </div>
                         <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">{currentMetrics.users.toLocaleString()}</p>
                       </div>
@@ -674,9 +680,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           <span className="text-[11.5px] font-bold text-muted-foreground truncate">
                             {lang === "ml" ? "ഗുണഭോക്താക്കൾ" : "Beneficiaries"}
                           </span>
-                          <div className="h-5.5 w-5.5 rounded-md bg-gradient-to-br from-indigo-400 via-indigo-500 to-indigo-700 p-1 flex items-center justify-center shadow-xs shrink-0">
-                            <HeartHandshake className="h-3 w-3 text-white" />
-                          </div>
+                          <img src={beneficiaries3dIcon} alt="Beneficiaries" className="h-6 w-6 sm:h-7 sm:w-7 object-contain shrink-0" />
                         </div>
                         <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">{currentMetrics.beneficiaries.toLocaleString()}</p>
                       </div>
@@ -694,9 +698,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           <span className="text-[11.5px] font-bold text-muted-foreground truncate">
                             {lang === "ml" ? "അപേക്ഷകൾ" : "Applications"}
                           </span>
-                          <div className="h-5.5 w-5.5 rounded-md bg-gradient-to-br from-blue-400 via-blue-500 to-blue-700 p-1 flex items-center justify-center shadow-xs shrink-0">
-                            <FileText className="h-3 w-3 text-white" />
-                          </div>
+                          <img src={applications3dIcon} alt="Applications" className="h-6 w-6 sm:h-7 sm:w-7 object-contain shrink-0" />
                         </div>
                         <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">{applicationsCount.toLocaleString()}</p>
                       </div>
@@ -714,9 +716,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           <span className="text-[11.5px] font-bold text-muted-foreground truncate">
                             {lang === "ml" ? "സഹായം ലഭിച്ചവ" : "Assisted"}
                           </span>
-                          <div className="h-5.5 w-5.5 rounded-md bg-gradient-to-br from-teal-400 via-teal-500 to-teal-700 p-1 flex items-center justify-center shadow-xs shrink-0">
-                            <CheckCircle2 className="h-3 w-3 text-white" />
-                          </div>
+                          <img src={assisted3dIcon} alt="Assisted" className="h-6 w-6 sm:h-7 sm:w-7 object-contain shrink-0" />
                         </div>
                         <p className="font-display text-sm sm:text-base font-bold text-teal-600 dark:text-teal-400 leading-none mt-1">{currentMetrics.assisted.toLocaleString()}</p>
                       </div>
@@ -734,9 +734,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           <span className="text-[11.5px] font-bold text-muted-foreground truncate">
                             {lang === "ml" ? "പെൻഡിംഗ്" : "Pending"}
                           </span>
-                          <div className="h-5.5 w-5.5 rounded-md bg-gradient-to-br from-amber-400 via-amber-500 to-amber-700 p-1 flex items-center justify-center shadow-xs shrink-0">
-                            <Hourglass className="h-3 w-3 text-white" />
-                          </div>
+                          <img src={pending3dIcon} alt="Pending" className="h-6 w-6 sm:h-7 sm:w-7 object-contain shrink-0" />
                         </div>
                         <p className="font-display text-sm sm:text-base font-bold text-amber-600 dark:text-amber-400 leading-none mt-1">{currentMetrics.pending.toLocaleString()}</p>
                       </div>
@@ -754,9 +752,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           <span className="text-[11.5px] font-bold text-muted-foreground truncate">
                             {lang === "ml" ? "നിരസിച്ചവ" : "Rejected"}
                           </span>
-                          <div className="h-5.5 w-5.5 rounded-md bg-gradient-to-br from-rose-400 via-rose-500 to-rose-700 p-1 flex items-center justify-center shadow-xs shrink-0">
-                            <XCircle className="h-3 w-3 text-white" />
-                          </div>
+                          <img src={rejected3dIcon} alt="Rejected" className="h-6 w-6 sm:h-7 sm:w-7 object-contain shrink-0" />
                         </div>
                         <p className="font-display text-sm sm:text-base font-bold text-rose-600 dark:text-rose-400 leading-none mt-1">{currentMetrics.rejected.toLocaleString()}</p>
                       </div>
@@ -773,9 +769,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           <span className="text-[11.5px] font-bold text-muted-foreground truncate">
                             {lang === "ml" ? "പദ്ധതികൾ" : "Schemes"}
                           </span>
-                          <div className="h-5.5 w-5.5 rounded-md bg-gradient-to-br from-purple-400 via-purple-500 to-purple-700 p-1 flex items-center justify-center shadow-xs shrink-0">
-                            <Layers className="h-3 w-3 text-white" />
-                          </div>
+                          <img src={schemes3dIcon} alt="Schemes" className="h-6 w-6 sm:h-7 sm:w-7 object-contain shrink-0" />
                         </div>
                         <div className="space-y-0.5 mt-0.5">
                           <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none">{currentMetrics.schemes.toLocaleString()}</p>
@@ -788,9 +782,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           <span className="text-[11.5px] font-bold text-muted-foreground truncate">
                             {lang === "ml" ? "കവർ ചെയ്ത ബൂത്തുകൾ" : "Covered Booth"}
                           </span>
-                          <div className="h-5.5 w-5.5 rounded-md bg-gradient-to-br from-cyan-400 via-cyan-500 to-cyan-700 p-1 flex items-center justify-center shadow-xs shrink-0">
-                            <MapPin className="h-3 w-3 text-white" />
-                          </div>
+                          <img src={coveredBooth3dIcon} alt="Covered Booth" className="h-6 w-6 sm:h-7 sm:w-7 object-contain shrink-0" />
                         </div>
                         <div className="space-y-0.5 mt-0.5">
                           <p className="font-display text-xs sm:text-sm font-bold text-cyan-600 dark:text-cyan-400 leading-none">

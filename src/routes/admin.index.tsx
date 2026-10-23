@@ -40,6 +40,14 @@ import {
   Smartphone,
 } from "lucide-react";
 import { useLang } from "@/i18n/LanguageProvider";
+import users3dIcon from "@/assets/kpi-3d/users.png";
+import beneficiaries3dIcon from "@/assets/kpi-3d/beneficiaries.png";
+import applications3dIcon from "@/assets/kpi-3d/applications.png";
+import assisted3dIcon from "@/assets/kpi-3d/assisted.png";
+import pending3dIcon from "@/assets/kpi-3d/pending.png";
+import rejected3dIcon from "@/assets/kpi-3d/rejected.png";
+import schemes3dIcon from "@/assets/kpi-3d/schemes.png";
+import coveredBooth3dIcon from "@/assets/kpi-3d/covered-booth.png";
 import { SchemesByCategoryCard } from "@/components/admin/SchemesByCategoryCard";
 import { LeaderboardCard } from "@/components/admin/LeaderboardCard";
 import { AdminMobileAppBottomNav, AdminMobileTab } from "@/components/admin/AdminMobileAppBottomNav";
@@ -399,126 +407,113 @@ export function AdminDashboard() {
         )}
 
       {/* ========================================================================= */}
-      {/* 2. EXECUTIVE 8 KPI CARDS (2 ROWS OF 4)                                    */}
       {/* ========================================================================= */}
-      <div className="space-y-2">
-        {/* Row 1: Core Totals */}
-        <section className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-          {/* Card 1: Total Citizens */}
-          <div className="group rounded-xl border border-border/80 bg-card px-3.5 py-2 shadow-2xs hover:border-emerald-500/30 transition-all space-y-0.5">
-            <div className="flex items-center justify-between gap-1.5">
-              <span className="text-[11px] font-semibold text-muted-foreground leading-tight">
-                {lang === "ml" ? (
-                  <>
-                    <span className="block sm:inline">ആകെ</span> <span className="block sm:inline">പൗരന്മാർ</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="block sm:inline">Total</span> <span className="block sm:inline">Citizens</span>
-                  </>
-                )}
-              </span>
-              <div className="rounded-lg bg-emerald-500/10 p-1 text-emerald-600 shrink-0">
-                <Users className="h-5 w-5" />
-              </div>
-            </div>
-            <p className="font-display text-lg sm:text-xl font-bold text-foreground tracking-tight">142,850</p>
+      {/* 2. EXECUTIVE 8 KPI CARDS (MATCHING REFERENCE DESIGN WITH 3D ICONS)       */}
+      {/* ========================================================================= */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {/* Card 1: Users */}
+        <div className="group rounded-2xl border border-amber-200/50 dark:border-border bg-card p-3.5 sm:p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between">
+          <div className="flex items-start justify-between gap-2">
+            <span className="text-sm sm:text-base font-bold text-slate-700 dark:text-slate-200 leading-tight">
+              {lang === "ml" ? "ഉപയോക്താക്കൾ" : "Users"}
+            </span>
+            <img src={users3dIcon} alt="Users" className="h-8 w-8 sm:h-10 sm:w-10 object-contain shrink-0" />
           </div>
+          <div className="mt-2.5 font-display text-lg sm:text-2xl font-extrabold text-foreground tracking-tight">
+            142,850
+          </div>
+        </div>
 
-          {/* Card 2: Total Beneficiaries */}
-          <div className="group rounded-xl border border-border/80 bg-card px-3.5 py-2 shadow-2xs hover:border-indigo-500/30 transition-all space-y-0.5">
-            <div className="flex items-center justify-between gap-1.5">
-              <span className="text-[11px] font-semibold text-muted-foreground leading-tight">
-                {lang === "ml" ? "ആകെ ഗുണഭോക്താക്കൾ" : "Total Beneficiaries"}
-              </span>
-              <div className="rounded-lg bg-indigo-500/10 p-1 text-indigo-600 shrink-0">
-                <HeartHandshake className="h-5 w-5" />
-              </div>
-            </div>
-            <p className="font-display text-lg sm:text-xl font-bold text-foreground tracking-tight">48,250</p>
+        {/* Card 2: Beneficiaries */}
+        <div className="group rounded-2xl border border-amber-200/50 dark:border-border bg-card p-3.5 sm:p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between">
+          <div className="flex items-start justify-between gap-2">
+            <span className="text-sm sm:text-base font-bold text-slate-700 dark:text-slate-200 leading-tight">
+              {lang === "ml" ? "ഗുണഭോക്താക്കൾ" : "Beneficiaries"}
+            </span>
+            <img src={beneficiaries3dIcon} alt="Beneficiaries" className="h-8 w-8 sm:h-10 sm:w-10 object-contain shrink-0" />
           </div>
+          <div className="mt-2.5 font-display text-lg sm:text-2xl font-extrabold text-foreground tracking-tight">
+            48,250
+          </div>
+        </div>
 
-          {/* Card 3: Total Schemes */}
-          <div className="group rounded-xl border border-border/80 bg-card px-3.5 py-2 shadow-2xs hover:border-purple-500/30 transition-all space-y-0.5">
-            <div className="flex items-center justify-between gap-1.5">
-              <span className="text-[11px] font-semibold text-muted-foreground leading-tight">
-                {lang === "ml" ? "ആകെ പദ്ധതികൾ" : "Total Schemes"}
-              </span>
-              <div className="rounded-lg bg-purple-500/10 p-1 text-purple-600 shrink-0">
-                <Database className="h-5 w-5" />
-              </div>
-            </div>
-            <p className="font-display text-lg sm:text-xl font-bold text-foreground tracking-tight">740</p>
+        {/* Card 3: Applications */}
+        <div className="group rounded-2xl border border-amber-200/50 dark:border-border bg-card p-3.5 sm:p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between">
+          <div className="flex items-start justify-between gap-2">
+            <span className="text-sm sm:text-base font-bold text-slate-700 dark:text-slate-200 leading-tight">
+              {lang === "ml" ? "അപേക്ഷകൾ" : "Applications"}
+            </span>
+            <img src={applications3dIcon} alt="Applications" className="h-8 w-8 sm:h-10 sm:w-10 object-contain shrink-0" />
           </div>
+          <div className="mt-2.5 font-display text-lg sm:text-2xl font-extrabold text-foreground tracking-tight">
+            63,830
+          </div>
+        </div>
 
-          {/* Card 4: Total Scheme Categories */}
-          <div className="group rounded-xl border border-border/80 bg-card px-3.5 py-2 shadow-2xs hover:border-orange-500/30 transition-all space-y-0.5">
-            <div className="flex items-center justify-between gap-1.5">
-              <span className="text-[11px] font-semibold text-muted-foreground leading-tight">
-                {lang === "ml" ? "പദ്ധതി വിഭാഗങ്ങൾ" : "Total Scheme Categories"}
-              </span>
-              <div className="rounded-lg bg-orange-500/10 p-1 text-orange-600 shrink-0">
-                <Layers className="h-5 w-5" />
-              </div>
-            </div>
-            <p className="font-display text-lg sm:text-xl font-bold text-foreground tracking-tight">16</p>
+        {/* Card 4: Assisted */}
+        <div className="group rounded-2xl border border-amber-200/50 dark:border-border bg-card p-3.5 sm:p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between">
+          <div className="flex items-start justify-between gap-2">
+            <span className="text-sm sm:text-base font-bold text-slate-700 dark:text-slate-200 leading-tight">
+              {lang === "ml" ? "സഹായിച്ചവ" : "Assisted"}
+            </span>
+            <img src={assisted3dIcon} alt="Assisted" className="h-8 w-8 sm:h-10 sm:w-10 object-contain shrink-0" />
           </div>
-        </section>
+          <div className="mt-2.5 font-display text-lg sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tracking-tight">
+            46,830
+          </div>
+        </div>
 
-        {/* Row 2: Operational Activity & Users */}
-        <section className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-          {/* Card 5: New Registrations */}
-          <div className="group rounded-xl border border-border/80 bg-card px-3.5 py-2 shadow-2xs hover:border-amber-500/30 transition-all space-y-0.5">
-            <div className="flex items-center justify-between gap-1.5">
-              <span className="text-[11px] font-semibold text-muted-foreground leading-tight">
-                {lang === "ml" ? "പുതിയ രജിസ്ട്രേഷനുകൾ" : "New Registrations"}
-              </span>
-              <div className="rounded-lg bg-amber-500/10 p-1 text-amber-600 shrink-0">
-                <Sparkles className="h-5 w-5" />
-              </div>
-            </div>
-            <p className="font-display text-lg sm:text-xl font-bold text-amber-600 tracking-tight">+8,201</p>
+        {/* Card 5: Pending */}
+        <div className="group rounded-2xl border border-amber-200/50 dark:border-border bg-card p-3.5 sm:p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between">
+          <div className="flex items-start justify-between gap-2">
+            <span className="text-sm sm:text-base font-bold text-slate-700 dark:text-slate-200 leading-tight">
+              {lang === "ml" ? "തീർപ്പുകൽപ്പിക്കാത്തവ" : "Pending"}
+            </span>
+            <img src={pending3dIcon} alt="Pending" className="h-8 w-8 sm:h-10 sm:w-10 object-contain shrink-0" />
           </div>
+          <div className="mt-2.5 font-display text-lg sm:text-2xl font-extrabold text-amber-600 dark:text-amber-500 tracking-tight">
+            14,160
+          </div>
+        </div>
 
-          {/* Card 6: Help Requests */}
-          <div className="group rounded-xl border border-border/80 bg-card px-3.5 py-2 shadow-2xs hover:border-blue-500/30 transition-all space-y-0.5">
-            <div className="flex items-center justify-between gap-1.5">
-              <span className="text-[11px] font-semibold text-muted-foreground leading-tight">
-                {lang === "ml" ? "സഹായ അഭ്യർത്ഥനകൾ" : "Help Requests"}
-              </span>
-              <div className="rounded-lg bg-blue-500/10 p-1 text-blue-600 shrink-0">
-                <MessageSquare className="h-5 w-5" />
-              </div>
-            </div>
-            <p className="font-display text-lg sm:text-xl font-bold text-foreground tracking-tight">12,450</p>
+        {/* Card 6: Rejected */}
+        <div className="group rounded-2xl border border-amber-200/50 dark:border-border bg-card p-3.5 sm:p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between">
+          <div className="flex items-start justify-between gap-2">
+            <span className="text-sm sm:text-base font-bold text-slate-700 dark:text-slate-200 leading-tight">
+              {lang === "ml" ? "നിരസിച്ചവ" : "Rejected"}
+            </span>
+            <img src={rejected3dIcon} alt="Rejected" className="h-8 w-8 sm:h-10 sm:w-10 object-contain shrink-0" />
           </div>
+          <div className="mt-2.5 font-display text-lg sm:text-2xl font-extrabold text-rose-600 dark:text-rose-500 tracking-tight">
+            1,420
+          </div>
+        </div>
 
-          {/* Card 7: Open Requests */}
-          <div className="group rounded-xl border border-border/80 bg-card px-3.5 py-2 shadow-2xs hover:border-rose-500/30 transition-all space-y-0.5">
-            <div className="flex items-center justify-between gap-1.5">
-              <span className="text-[11px] font-semibold text-muted-foreground leading-tight">
-                {lang === "ml" ? "തുറന്ന സഹായ അഭ്യർത്ഥനകൾ" : "Open Requests"}
-              </span>
-              <div className="rounded-lg bg-rose-500/10 p-1 text-rose-600 shrink-0">
-                <Clock3 className="h-5 w-5" />
-              </div>
-            </div>
-            <p className="font-display text-lg sm:text-xl font-bold text-rose-600 tracking-tight">1,884</p>
+        {/* Card 7: Schemes */}
+        <div className="group rounded-2xl border border-amber-200/50 dark:border-border bg-card p-3.5 sm:p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between">
+          <div className="flex items-start justify-between gap-2">
+            <span className="text-sm sm:text-base font-bold text-slate-700 dark:text-slate-200 leading-tight">
+              {lang === "ml" ? "പദ്ധതികൾ" : "Schemes"}
+            </span>
+            <img src={schemes3dIcon} alt="Schemes" className="h-8 w-8 sm:h-10 sm:w-10 object-contain shrink-0" />
           </div>
+          <div className="mt-2.5 font-display text-lg sm:text-2xl font-extrabold text-foreground tracking-tight">
+            740
+          </div>
+        </div>
 
-          {/* Card 8: Total Users */}
-          <div className="group rounded-xl border border-border/80 bg-card px-3.5 py-2 shadow-2xs hover:border-cyan-500/30 transition-all space-y-0.5">
-            <div className="flex items-center justify-between gap-1.5">
-              <span className="text-[11px] font-semibold text-muted-foreground leading-tight">
-                {lang === "ml" ? "ആകെ ഉപയോക്താക്കൾ" : "Total Users"}
-              </span>
-              <div className="rounded-lg bg-cyan-500/10 p-1 text-cyan-600 shrink-0">
-                <UserCheck className="h-5 w-5" />
-              </div>
-            </div>
-            <p className="font-display text-lg sm:text-xl font-bold text-foreground tracking-tight">24,680</p>
+        {/* Card 8: Covered Booth */}
+        <div className="group rounded-2xl border border-amber-200/50 dark:border-border bg-card p-3.5 sm:p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between">
+          <div className="flex items-start justify-between gap-2">
+            <span className="text-sm sm:text-base font-bold text-slate-700 dark:text-slate-200 leading-tight">
+              {lang === "ml" ? "ഉൾപ്പെടുത്തിയ ബൂത്തുകൾ" : "Covered Booth"}
+            </span>
+            <img src={coveredBooth3dIcon} alt="Covered Booth" className="h-8 w-8 sm:h-10 sm:w-10 object-contain shrink-0" />
           </div>
-        </section>
+          <div className="mt-2.5 font-display text-lg sm:text-xl font-extrabold text-sky-600 dark:text-sky-400 tracking-tight">
+            28,726 / 30,495
+          </div>
+        </div>
       </div>
 
 
