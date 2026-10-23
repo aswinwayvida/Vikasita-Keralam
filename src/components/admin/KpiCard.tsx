@@ -14,17 +14,17 @@ export function KpiCard({ icon: Icon, iconSrc, label, value, delta, tone = "prim
   }[tone];
   const up = (delta ?? 0) >= 0;
   const content = (
-    <div className="flex h-full flex-col justify-between p-3.5 sm:p-4">
-      <div className="flex items-start justify-between gap-2">
+    <div className="flex h-full flex-col justify-between p-2.5 sm:p-3">
+      <div className="flex items-start justify-between gap-1.5">
         <span className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 leading-tight">{label}</span>
         {iconSrc ? (
-          <img src={iconSrc} alt={label} className="h-9 w-9 sm:h-11 sm:w-11 object-contain shrink-0" />
+          <img src={iconSrc} alt={label} className="h-8 w-8 sm:h-9 sm:w-9 object-contain shrink-0" />
         ) : Icon ? (
-          <span className={`inline-flex h-8 w-8 items-center justify-center rounded-lg ${toneCls}`}><Icon className="h-4 w-4" /></span>
+          <span className={`inline-flex h-7 w-7 items-center justify-center rounded-lg ${toneCls}`}><Icon className="h-3.5 w-3.5" /></span>
         ) : null}
       </div>
-      <div className="flex items-baseline justify-between mt-2">
-        <div className={`font-display text-lg sm:text-2xl font-extrabold tracking-tight ${valueClassName || "text-foreground"}`}>{value}</div>
+      <div className="flex items-baseline justify-between mt-1">
+        <div className={`font-display text-base sm:text-xl font-extrabold tracking-tight ${valueClassName || "text-foreground"}`}>{value}</div>
         {typeof delta === "number" ? (
           <span className={`inline-flex items-center gap-0.5 text-xs font-bold ${up ? "text-secondary" : "text-destructive"}`}>
             {up ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}

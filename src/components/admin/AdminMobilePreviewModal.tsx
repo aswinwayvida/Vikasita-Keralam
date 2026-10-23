@@ -660,13 +660,13 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                       {/* 1. Users */}
                       <div
                         onClick={() => setActiveTab("users")}
-                        className="min-h-[52px] rounded-lg border border-border bg-card p-2 flex flex-col justify-between shadow-2xs hover:border-emerald-500/70 transition-all cursor-pointer"
+                        className="min-h-[44px] rounded-lg border border-border bg-card p-1.5 px-2 flex flex-col justify-between shadow-2xs hover:border-emerald-500/70 transition-all cursor-pointer"
                       >
                         <div className="flex items-center justify-between gap-1">
                           <span className="text-[11.5px] font-bold text-muted-foreground truncate">
                             {lang === "ml" ? "ഉപയോക്താക്കൾ" : "Users"}
                           </span>
-                          <img src={users3dIcon} alt="Users" className="h-6 w-6 sm:h-7 sm:w-7 object-contain shrink-0" />
+                          <img src={users3dIcon} alt="Users" className="h-5 w-5 sm:h-5.5 sm:w-5.5 object-contain shrink-0" />
                         </div>
                         <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">{currentMetrics.users.toLocaleString()}</p>
                       </div>
@@ -674,13 +674,13 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                       {/* 2. Beneficiaries */}
                       <div
                         onClick={() => setMobileSubPage("beneficiaries")}
-                        className="min-h-[52px] rounded-lg border border-border bg-card p-2 flex flex-col justify-between shadow-2xs hover:border-indigo-500/70 transition-all cursor-pointer"
+                        className="min-h-[44px] rounded-lg border border-border bg-card p-1.5 px-2 flex flex-col justify-between shadow-2xs hover:border-indigo-500/70 transition-all cursor-pointer"
                       >
                         <div className="flex items-center justify-between gap-1">
                           <span className="text-[11.5px] font-bold text-muted-foreground truncate">
                             {lang === "ml" ? "ഗുണഭോക്താക്കൾ" : "Beneficiaries"}
                           </span>
-                          <img src={beneficiaries3dIcon} alt="Beneficiaries" className="h-6 w-6 sm:h-7 sm:w-7 object-contain shrink-0" />
+                          <img src={beneficiaries3dIcon} alt="Beneficiaries" className="h-5 w-5 sm:h-5.5 sm:w-5.5 object-contain shrink-0" />
                         </div>
                         <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">{currentMetrics.beneficiaries.toLocaleString()}</p>
                       </div>
@@ -692,13 +692,13 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           setMobileSubPage("none");
                           setApplicationStatusFilter("all");
                         }}
-                        className="min-h-[52px] rounded-lg border border-border bg-card p-2 flex flex-col justify-between shadow-2xs hover:border-blue-500/70 transition-all cursor-pointer"
+                        className="min-h-[44px] rounded-lg border border-border bg-card p-1.5 px-2 flex flex-col justify-between shadow-2xs hover:border-blue-500/70 transition-all cursor-pointer"
                       >
                         <div className="flex items-center justify-between gap-1">
                           <span className="text-[11.5px] font-bold text-muted-foreground truncate">
                             {lang === "ml" ? "അപേക്ഷകൾ" : "Applications"}
                           </span>
-                          <img src={applications3dIcon} alt="Applications" className="h-6 w-6 sm:h-7 sm:w-7 object-contain shrink-0" />
+                          <img src={applications3dIcon} alt="Applications" className="h-5 w-5 sm:h-5.5 sm:w-5.5 object-contain shrink-0" />
                         </div>
                         <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">{applicationsCount.toLocaleString()}</p>
                       </div>
@@ -710,13 +710,13 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           setMobileSubPage("none");
                           setApplicationStatusFilter("assisted");
                         }}
-                        className="min-h-[52px] rounded-lg border border-border bg-card p-2 flex flex-col justify-between shadow-2xs hover:border-teal-500/70 transition-all cursor-pointer"
+                        className="min-h-[44px] rounded-lg border border-border bg-card p-1.5 px-2 flex flex-col justify-between shadow-2xs hover:border-teal-500/70 transition-all cursor-pointer"
                       >
                         <div className="flex items-center justify-between gap-1">
                           <span className="text-[11.5px] font-bold text-muted-foreground truncate">
                             {lang === "ml" ? "സഹായം ലഭിച്ചവ" : "Assisted"}
                           </span>
-                          <img src={assisted3dIcon} alt="Assisted" className="h-6 w-6 sm:h-7 sm:w-7 object-contain shrink-0" />
+                          <img src={assisted3dIcon} alt="Assisted" className="h-5 w-5 sm:h-5.5 sm:w-5.5 object-contain shrink-0" />
                         </div>
                         <p className="font-display text-sm sm:text-base font-bold text-teal-600 dark:text-teal-400 leading-none mt-1">{currentMetrics.assisted.toLocaleString()}</p>
                       </div>
@@ -728,13 +728,13 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           setMobileSubPage("none");
                           setApplicationStatusFilter("pending");
                         }}
-                        className="min-h-[52px] rounded-lg border border-border bg-card p-2 flex flex-col justify-between shadow-2xs hover:border-amber-500/70 transition-all cursor-pointer"
+                        className="min-h-[44px] rounded-lg border border-border bg-card p-1.5 px-2 flex flex-col justify-between shadow-2xs hover:border-amber-500/70 transition-all cursor-pointer"
                       >
                         <div className="flex items-center justify-between gap-1">
                           <span className="text-[11.5px] font-bold text-muted-foreground truncate">
                             {lang === "ml" ? "പെൻഡിംഗ്" : "Pending"}
                           </span>
-                          <img src={pending3dIcon} alt="Pending" className="h-6 w-6 sm:h-7 sm:w-7 object-contain shrink-0" />
+                          <img src={pending3dIcon} alt="Pending" className="h-5 w-5 sm:h-5.5 sm:w-5.5 object-contain shrink-0" />
                         </div>
                         <p className="font-display text-sm sm:text-base font-bold text-amber-600 dark:text-amber-400 leading-none mt-1">{currentMetrics.pending.toLocaleString()}</p>
                       </div>
@@ -746,13 +746,13 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           setMobileSubPage("none");
                           setApplicationStatusFilter("rejected");
                         }}
-                        className="min-h-[52px] rounded-lg border border-border bg-card p-2 flex flex-col justify-between shadow-2xs hover:border-rose-500/70 transition-all cursor-pointer"
+                        className="min-h-[44px] rounded-lg border border-border bg-card p-1.5 px-2 flex flex-col justify-between shadow-2xs hover:border-rose-500/70 transition-all cursor-pointer"
                       >
                         <div className="flex items-center justify-between gap-1">
                           <span className="text-[11.5px] font-bold text-muted-foreground truncate">
                             {lang === "ml" ? "നിരസിച്ചവ" : "Rejected"}
                           </span>
-                          <img src={rejected3dIcon} alt="Rejected" className="h-6 w-6 sm:h-7 sm:w-7 object-contain shrink-0" />
+                          <img src={rejected3dIcon} alt="Rejected" className="h-5 w-5 sm:h-5.5 sm:w-5.5 object-contain shrink-0" />
                         </div>
                         <p className="font-display text-sm sm:text-base font-bold text-rose-600 dark:text-rose-400 leading-none mt-1">{currentMetrics.rejected.toLocaleString()}</p>
                       </div>
@@ -763,13 +763,13 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           setActiveTab("schemes");
                           setMobileSubPage("none");
                         }}
-                        className="min-h-[52px] rounded-lg border border-border bg-card p-2 flex flex-col justify-between shadow-2xs hover:border-purple-500/70 transition-all cursor-pointer"
+                        className="min-h-[44px] rounded-lg border border-border bg-card p-1.5 px-2 flex flex-col justify-between shadow-2xs hover:border-purple-500/70 transition-all cursor-pointer"
                       >
                         <div className="flex items-center justify-between gap-1">
                           <span className="text-[11.5px] font-bold text-muted-foreground truncate">
                             {lang === "ml" ? "പദ്ധതികൾ" : "Schemes"}
                           </span>
-                          <img src={schemes3dIcon} alt="Schemes" className="h-6 w-6 sm:h-7 sm:w-7 object-contain shrink-0" />
+                          <img src={schemes3dIcon} alt="Schemes" className="h-5 w-5 sm:h-5.5 sm:w-5.5 object-contain shrink-0" />
                         </div>
                         <div className="space-y-0.5 mt-0.5">
                           <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none">{currentMetrics.schemes.toLocaleString()}</p>
@@ -777,12 +777,12 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                       </div>
 
                       {/* 8. Covered Booth */}
-                      <div className="min-h-[52px] rounded-lg border border-border bg-card p-2 flex flex-col justify-between shadow-2xs hover:border-cyan-500/70 transition-all cursor-pointer">
+                      <div className="min-h-[44px] rounded-lg border border-border bg-card p-1.5 px-2 flex flex-col justify-between shadow-2xs hover:border-cyan-500/70 transition-all cursor-pointer">
                         <div className="flex items-center justify-between gap-1">
                           <span className="text-[11.5px] font-bold text-muted-foreground truncate">
                             {lang === "ml" ? "കവർ ചെയ്ത ബൂത്തുകൾ" : "Covered Booth"}
                           </span>
-                          <img src={coveredBooth3dIcon} alt="Covered Booth" className="h-6 w-6 sm:h-7 sm:w-7 object-contain shrink-0" />
+                          <img src={coveredBooth3dIcon} alt="Covered Booth" className="h-5 w-5 sm:h-5.5 sm:w-5.5 object-contain shrink-0" />
                         </div>
                         <div className="space-y-0.5 mt-0.5">
                           <p className="font-display text-xs sm:text-sm font-bold text-cyan-600 dark:text-cyan-400 leading-none">
