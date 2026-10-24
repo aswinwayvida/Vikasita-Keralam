@@ -102,11 +102,11 @@ export function AdminMobileAppHeader({ onNavigateTab, onOpenNotifications }: Adm
               }}
               className="flex h-9 w-9 items-center justify-center rounded-full border border-orange-300/80 dark:border-slate-700 bg-[#FFEDD5] text-[#F97316] hover:bg-orange-200 active:scale-95 transition-all shadow-2xs focus:outline-none shrink-0 overflow-hidden cursor-pointer"
               aria-label="User Profile"
-              title="Admin Account Profile"
+              title="Jayasurya Profile"
             >
               <img
                 src="https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150&auto=format&fit=crop&q=80"
-                alt="Admin Profile"
+                alt="Jayasurya"
                 className="h-full w-full object-cover rounded-full"
               />
             </button>
@@ -118,12 +118,12 @@ export function AdminMobileAppHeader({ onNavigateTab, onOpenNotifications }: Adm
                   <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-[#FFEDD5] text-[#F97316] font-bold shadow-2xs overflow-hidden shrink-0">
                     <img
                       src="https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150&auto=format&fit=crop&q=80"
-                      alt="Admin Account"
+                      alt="Jayasurya"
                       className="h-full w-full object-cover rounded-xl"
                     />
                   </div>
                   <div>
-                    <h3 className="font-bold text-xs text-foreground">Admin Account</h3>
+                    <h3 className="font-bold text-xs text-foreground">Jayasurya</h3>
                     <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
                       <ShieldCheck className="h-3 w-3" /> State Administration
                     </p>
@@ -170,12 +170,12 @@ export function AdminMobileAppHeader({ onNavigateTab, onOpenNotifications }: Adm
                   <div className="relative flex h-12 w-12 items-center justify-center rounded-full ring-2 ring-orange-300 p-0.5 bg-orange-100 shrink-0 overflow-hidden">
                     <img
                       src="https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150&auto=format&fit=crop&q=80"
-                      alt="Admin Account"
+                      alt="Jayasurya"
                       className="h-full w-full object-cover rounded-full"
                     />
                   </div>
                   <div>
-                    <h3 className="font-bold text-sm text-slate-900 dark:text-white leading-tight">Admin Account</h3>
+                    <h3 className="font-bold text-sm text-slate-900 dark:text-white leading-tight">Jayasurya</h3>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">State Administration</p>
                     <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[9.5px] font-bold bg-orange-100 dark:bg-orange-950/80 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
                       <ShieldCheck className="h-2.5 w-2.5" /> State Admin
