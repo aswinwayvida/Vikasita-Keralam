@@ -3,10 +3,11 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AdminSidebar } from "./AdminSidebar";
 import { AdminTopBar } from "./AdminTopBar";
 import { SaffronTopBar } from "@/components/public/SaffronTopBar";
+import { BottomNav } from "@/components/public/BottomNav";
 
 export function AdminLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-16">
       <SaffronTopBar />
       <SidebarProvider>
         <div className="flex min-h-[calc(100vh-4px)] w-full">
@@ -17,6 +18,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
           </SidebarInset>
         </div>
       </SidebarProvider>
+      <BottomNav />
     </div>
   );
 }
