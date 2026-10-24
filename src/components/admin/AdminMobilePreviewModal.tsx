@@ -1018,53 +1018,75 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                       })()}
                     </div>
 
-                    {/* Quick Action Section */}
-                    <div className="space-y-2 pt-1">
-                      {/* Section Header */}
-                      <div className="flex items-center gap-2 px-0.5">
-                        <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-950/50 text-[#ff5500] shrink-0">
-                          <Zap className="h-3.5 w-3.5 fill-[#ff5500] stroke-[#ff5500]" />
-                        </span>
-                        <h3 className="font-display text-sm font-black text-[#0a0f1d] dark:text-white tracking-tight truncate">
-                          {lang === "ml" ? "ദ്രുത ക്രിയകൾ" : "Quick Action"}
-                        </h3>
+                    {/* Single Quick Action Section */}
+                    <div className="space-y-1.5 pt-0.5">
+                      {/* Section Header - Exact same style and spacing as Events & Announcements */}
+                      <div className="flex items-center justify-between px-0.5 pb-1">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-md bg-orange-500/10 dark:bg-orange-950/30 text-[#ff5500] shrink-0">
+                            <Zap className="h-3.5 w-3.5 stroke-[2.2]" />
+                          </span>
+                          <h3 className="font-display text-xs sm:text-[13px] font-black text-[#0a0f1d] dark:text-white tracking-tight truncate">
+                            {lang === "ml" ? "ദ്രുത ക്രിയകൾ" : "Quick Action"}
+                          </h3>
+                        </div>
                       </div>
 
-                      {/* 2 Action Cards Matching Reference Image */}
-                      <div className="grid grid-cols-2 gap-2.5">
+                      {/* 2 Action Cards - Exact replica of reference screenshot */}
+                      <div className="grid grid-cols-2 gap-2">
                         {/* 1. Eligible Schemes Card */}
                         <div
                           onClick={() => setMobileTab("schemes")}
-                          className="rounded-[1.25rem] bg-[#fffbf5] dark:bg-orange-950/20 border border-[#fde6d2] dark:border-orange-900/40 p-3 flex items-center gap-2.5 transition-transform active:scale-98 cursor-pointer shadow-2xs hover:shadow-xs"
+                          className="rounded-2xl bg-gradient-to-r from-[#fff7f2] via-[#fff3ea] to-[#fff8f3] dark:from-slate-800 dark:via-slate-800/90 dark:to-orange-950/30 border border-[#ffebd9] dark:border-orange-900/40 p-2 sm:p-2.5 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98 relative overflow-hidden"
                         >
-                          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#ff5500] text-white shrink-0 shadow-xs">
-                            <Layers className="h-5.5 w-5.5 stroke-[2.2]" />
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <img
+                              src={applications3dIcon}
+                              alt="Eligible Schemes"
+                              className="h-10 w-10 sm:h-11 sm:w-11 object-contain shrink-0 drop-shadow-xs group-hover:scale-105 transition-transform"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <h4 className="font-black text-[11.5px] sm:text-[12px] text-[#1e293b] dark:text-white leading-tight truncate">
+                                {lang === "ml" ? "അർഹമായ പദ്ധതികൾ" : "Eligible Schemes"}
+                              </h4>
+                              <p className="font-bold text-[10px] sm:text-[10.5px] text-[#f95700] dark:text-orange-400 leading-tight mt-[1px] truncate">
+                                {lang === "ml" ? "740 പദ്ധതികൾ" : "740 Available"}
+                              </p>
+                              <p className="font-medium text-[8.5px] sm:text-[9px] text-slate-500 dark:text-slate-400 leading-tight mt-[1px] truncate">
+                                {lang === "ml" ? "അപേക്ഷിക്കുക" : "Explore and apply"}
+                              </p>
+                            </div>
                           </div>
-                          <div className="min-w-0 flex-1">
-                            <h4 className="font-black text-[12.5px] sm:text-[13px] text-[#0a0f1d] dark:text-white leading-tight truncate">
-                              {lang === "ml" ? "അർഹമായ പദ്ധതികൾ" : "Eligible Schemes"}
-                            </h4>
-                            <p className="font-bold text-[10.5px] sm:text-[11px] text-[#e65100] dark:text-orange-400 mt-0.5 truncate">
-                              {lang === "ml" ? "740 ലഭ്യമാണ്" : "740 Available"}
-                            </p>
+                          <div className="flex h-6.5 w-6.5 items-center justify-center rounded-full bg-[#f95700] text-white shadow-2xs group-hover:scale-105 transition-transform shrink-0 ml-1">
+                            <ChevronRight className="h-3.5 w-3.5 stroke-[3]" />
                           </div>
                         </div>
 
                         {/* 2. Help Requests Card */}
                         <div
                           onClick={() => setMobileTab("helpdesk")}
-                          className="rounded-[1.25rem] bg-[#f4f7ff] dark:bg-blue-950/20 border border-[#dbe6fe] dark:border-blue-900/40 p-3 flex items-center gap-2.5 transition-transform active:scale-98 cursor-pointer shadow-2xs hover:shadow-xs"
+                          className="rounded-2xl bg-gradient-to-r from-[#fff7f2] via-[#fff3ea] to-[#fff8f3] dark:from-slate-800 dark:via-slate-800/90 dark:to-orange-950/30 border border-[#ffebd9] dark:border-orange-900/40 p-2 sm:p-2.5 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98 relative overflow-hidden"
                         >
-                          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#2563eb] text-white shrink-0 shadow-xs">
-                            <Headphones className="h-5.5 w-5.5 stroke-[2.2]" />
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <img
+                              src={sahaiAvatar}
+                              alt="Help Requests"
+                              className="h-10 w-10 sm:h-11 sm:w-11 object-contain shrink-0 drop-shadow-xs group-hover:scale-105 transition-transform"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <h4 className="font-black text-[11.5px] sm:text-[12px] text-[#1e293b] dark:text-white leading-tight truncate">
+                                {lang === "ml" ? "സഹായ അഭ്യർത്ഥനകൾ" : "Help Requests"}
+                              </h4>
+                              <p className="font-bold text-[10px] sm:text-[10.5px] text-[#f95700] dark:text-orange-400 leading-tight mt-[1px] truncate">
+                                {lang === "ml" ? "സഹായ് അസിസ്റ്റന്റ്" : "SahAI Assistant"}
+                              </p>
+                              <p className="font-medium text-[8.5px] sm:text-[9px] text-slate-500 dark:text-slate-400 leading-tight mt-[1px] truncate">
+                                {lang === "ml" ? "പിന്തുണ നേടുക" : "Get instant support"}
+                              </p>
+                            </div>
                           </div>
-                          <div className="min-w-0 flex-1">
-                            <h4 className="font-black text-[12.5px] sm:text-[13px] text-[#0a0f1d] dark:text-white leading-tight truncate">
-                              {lang === "ml" ? "സഹായ അഭ്യർത്ഥനകൾ" : "Help Requests"}
-                            </h4>
-                            <p className="font-bold text-[10.5px] sm:text-[11px] text-[#2563eb] dark:text-blue-400 mt-0.5 truncate">
-                              {lang === "ml" ? "സഹായ് അസിസ്റ്റന്റ്" : "SahAI Assistant"}
-                            </p>
+                          <div className="flex h-6.5 w-6.5 items-center justify-center rounded-full bg-[#f95700] text-white shadow-2xs group-hover:scale-105 transition-transform shrink-0 ml-1">
+                            <ChevronRight className="h-3.5 w-3.5 stroke-[3]" />
                           </div>
                         </div>
                       </div>
