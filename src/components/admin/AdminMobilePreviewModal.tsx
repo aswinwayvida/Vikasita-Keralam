@@ -1022,15 +1022,20 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                     <div className="space-y-1.5 pt-1">
                       {/* Section Header */}
                       <div className="flex items-center justify-between px-0.5 pb-0.5">
-                        <h3 className="font-display text-sm sm:text-[14px] font-black text-[#0f172a] dark:text-white tracking-tight">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-md bg-orange-500/10 dark:bg-orange-950/30 text-[#ff5500] shrink-0">
+                            <AlertCircle className="h-3.5 w-3.5 stroke-[2.2]" />
+                          </span>
+                          <h3 className="font-display text-xs sm:text-[13px] font-black text-[#0a0f1d] dark:text-white tracking-tight truncate">
                           {lang === "ml" ? "ശ്രദ്ധ ആവശ്യമുണ്ട്" : "Needs attention"}
-                        </h3>
+                          </h3>
+                        </div>
                         <button
                           type="button"
                           onClick={() => setMobileTab("applications")}
                           className="flex items-center gap-0.5 text-[11px] font-bold text-[#f95700] hover:underline cursor-pointer"
                         >
-                          <span>{lang === "ml" ? "എല്ലാം" : "View all"}</span>
+                          <span className="flex items-center gap-1.5"><span>{lang === "ml" ? "എല്ലാം" : "View all"}</span><span className="rounded-full bg-orange-500/10 dark:bg-orange-950/40 text-[#f95700] px-1.5 py-0.5 text-[9.5px] font-black leading-none border border-orange-200/80 dark:border-orange-900/50">2</span></span>
                           <ChevronRight className="h-3.5 w-3.5 stroke-[2.5]" />
                         </button>
                       </div>
@@ -1091,51 +1096,6 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                             </div>
                             <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform" />
                           </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* SECTION 2: Quick actions */}
-                    <div className="space-y-1.5 pt-1.5">
-                      {/* Section Header */}
-                      <div className="px-0.5 pb-0.5">
-                        <h3 className="font-display text-sm sm:text-[14px] font-black text-[#0f172a] dark:text-white tracking-tight">
-                          {lang === "ml" ? "ദ്രുത ക്രിയകൾ" : "Quick actions"}
-                        </h3>
-                      </div>
-
-                      {/* 2 Grid Action Cards */}
-                      <div className="grid grid-cols-2 gap-2.5">
-                        {/* Card 1: Browse Schemes */}
-                        <div
-                          onClick={() => setMobileTab("schemes")}
-                          className="rounded-2xl bg-[#fffbf0] dark:bg-amber-950/20 border border-[#fef0d5] dark:border-amber-900/40 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
-                        >
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-gradient-to-tr from-amber-500 to-[#f95700] text-white shadow-xs shrink-0 group-hover:scale-105 transition-transform">
-                              <LayoutGrid className="h-4.5 w-4.5 stroke-[2.3]" />
-                            </div>
-                            <h4 className="font-black text-[11.5px] sm:text-[12.5px] text-[#0f172a] dark:text-white leading-tight truncate">
-                              {lang === "ml" ? "പദ്ധതികൾ നോക്കുക" : "Browse Schemes"}
-                            </h4>
-                          </div>
-                          <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform shrink-0 ml-1" />
-                        </div>
-
-                        {/* Card 2: Help Requests */}
-                        <div
-                          onClick={() => setMobileTab("helpdesk")}
-                          className="rounded-2xl bg-[#eff6ff] dark:bg-blue-950/20 border border-[#dbeafe] dark:border-blue-900/40 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
-                        >
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-[#2563eb] text-white shadow-xs shrink-0 group-hover:scale-105 transition-transform">
-                              <Headphones className="h-4.5 w-4.5 stroke-[2.3]" />
-                            </div>
-                            <h4 className="font-black text-[11.5px] sm:text-[12.5px] text-[#0f172a] dark:text-white leading-tight truncate">
-                              {lang === "ml" ? "സഹായ അഭ്യർത്ഥനകൾ" : "Help Requests"}
-                            </h4>
-                          </div>
-                          <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform shrink-0 ml-1" />
                         </div>
                       </div>
                     </div>
