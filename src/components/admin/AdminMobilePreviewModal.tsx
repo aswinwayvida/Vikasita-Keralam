@@ -81,8 +81,8 @@ const metricsByPeriod: Record<
   this_month: {
     users: 142850,
     beneficiaries: 48250,
-    pending: 14160,
-    assisted: 46830,
+    pending: 6160,
+    assisted: 8000,
     rejected: 1420,
     schemes: 740,
     boothCoverage: "94.2%",
@@ -402,12 +402,12 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     }
     return lang === "ml" ? "എല്ലാ കേരളവും • സംസ്ഥാന തലം" : "Kerala State (State-Wide)";
   }, [filterGeoScope, selectedDistrict, selectedMandalam, selectedArea, selectedBooth, lang]);
-  // Applications = sum of pending, rejected, and beneficiaries
+  // Applications = sum of pending, assisted (In Review), rejected, and beneficiaries (Approved)
   const applicationsCount =
     currentMetrics.pending +
+    currentMetrics.assisted +
     currentMetrics.rejected +
     currentMetrics.beneficiaries;
-
   const resolvedCount = currentMetrics.beneficiaries + currentMetrics.assisted;
   const resolutionRateVal = applicationsCount > 0
     ? ((currentMetrics.beneficiaries / applicationsCount) * 100).toFixed(1)
@@ -660,65 +660,65 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                       {/* 1. Users */}
                       <div
                         onClick={() => setActiveTab("users")}
-                        className="min-h-[52px] rounded-lg border border-border bg-card p-2 flex flex-col justify-between shadow-2xs hover:border-emerald-500/70 transition-all cursor-pointer"
+                        className="min-h-[44px] rounded-lg border border-border bg-card p-1.5 px-2 flex flex-col justify-between shadow-2xs hover:border-emerald-500/70 transition-all cursor-pointer"
                       >
                         <div className="flex items-center justify-between gap-1">
                           <span className="text-[11.5px] font-bold text-muted-foreground truncate">
                             {lang === "ml" ? "ഉപയോക്താക്കൾ" : "Users"}
                           </span>
-                          <img src={users3dIcon} alt="Users" className="h-6 w-6 sm:h-7 sm:w-7 object-contain shrink-0" />
+                          <img src={users3dIcon} alt="Users" className="h-5 w-5 sm:h-5.5 sm:w-5.5 object-contain shrink-0" />
                         </div>
                         <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">{currentMetrics.users.toLocaleString()}</p>
                       </div>
 
-                      {/* 2. Beneficiaries */}
-                      <div
-                        onClick={() => setMobileSubPage("beneficiaries")}
-                        className="min-h-[52px] rounded-lg border border-border bg-card p-2 flex flex-col justify-between shadow-2xs hover:border-indigo-500/70 transition-all cursor-pointer"
-                      >
-                        <div className="flex items-center justify-between gap-1">
-                          <span className="text-[11.5px] font-bold text-muted-foreground truncate">
-                            {lang === "ml" ? "ഗുണഭോക്താക്കൾ" : "Beneficiaries"}
-                          </span>
-                          <img src={beneficiaries3dIcon} alt="Beneficiaries" className="h-6 w-6 sm:h-7 sm:w-7 object-contain shrink-0" />
-                        </div>
-                        <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">{currentMetrics.beneficiaries.toLocaleString()}</p>
-                      </div>
-
-                      {/* 3. Applications */}
+                      {/* 2. Applications */}
                       <div
                         onClick={() => {
                           setActiveTab("applications");
                           setMobileSubPage("none");
                           setApplicationStatusFilter("all");
                         }}
-                        className="min-h-[52px] rounded-lg border border-border bg-card p-2 flex flex-col justify-between shadow-2xs hover:border-blue-500/70 transition-all cursor-pointer"
+                        className="min-h-[44px] rounded-lg border border-border bg-card p-1.5 px-2 flex flex-col justify-between shadow-2xs hover:border-blue-500/70 transition-all cursor-pointer"
                       >
                         <div className="flex items-center justify-between gap-1">
                           <span className="text-[11.5px] font-bold text-muted-foreground truncate">
                             {lang === "ml" ? "അപേക്ഷകൾ" : "Applications"}
                           </span>
-                          <img src={applications3dIcon} alt="Applications" className="h-6 w-6 sm:h-7 sm:w-7 object-contain shrink-0" />
+                          <img src={applications3dIcon} alt="Applications" className="h-5 w-5 sm:h-5.5 sm:w-5.5 object-contain shrink-0" />
                         </div>
                         <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">{applicationsCount.toLocaleString()}</p>
                       </div>
 
-                      {/* 4. Assisted */}
+                      {/* 3. Approved (renamed from Beneficiaries) */}
+                      <div
+                        onClick={() => setMobileSubPage("beneficiaries")}
+                        className="min-h-[44px] rounded-lg border border-border bg-card p-1.5 px-2 flex flex-col justify-between shadow-2xs hover:border-emerald-500/70 transition-all cursor-pointer"
+                      >
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-[11.5px] font-bold text-muted-foreground truncate">
+                            {lang === "ml" ? "അംഗീകരിച്ചവ" : "Approved"}
+                          </span>
+                          <img src={assisted3dIcon} alt="Approved" className="h-5 w-5 sm:h-5.5 sm:w-5.5 object-contain shrink-0" />
+                        </div>
+                        <p className="font-display text-sm sm:text-base font-bold text-emerald-600 dark:text-emerald-400 leading-none mt-1">{currentMetrics.beneficiaries.toLocaleString()}</p>
+                      </div>
+
+                      {/* 4. In Review (renamed from Approved / Assisted) */}
                       <div
                         onClick={() => {
                           setActiveTab("applications");
                           setMobileSubPage("none");
                           setApplicationStatusFilter("assisted");
                         }}
-                        className="min-h-[52px] rounded-lg border border-border bg-card p-2 flex flex-col justify-between shadow-2xs hover:border-teal-500/70 transition-all cursor-pointer"
+                        className="min-h-[44px] rounded-lg border border-border bg-card p-1.5 px-2 flex flex-col justify-between shadow-2xs hover:border-indigo-500/70 transition-all cursor-pointer"
                       >
                         <div className="flex items-center justify-between gap-1">
                           <span className="text-[11.5px] font-bold text-muted-foreground truncate">
-                            {lang === "ml" ? "സഹായം ലഭിച്ചവ" : "Assisted"}
+                            {lang === "ml" ? "പരിശോധനയിലുള്ളവ" : "In Review"}
                           </span>
-                          <img src={assisted3dIcon} alt="Assisted" className="h-6 w-6 sm:h-7 sm:w-7 object-contain shrink-0" />
+                          <img src={beneficiaries3dIcon} alt="In Review" className="h-5 w-5 sm:h-5.5 sm:w-5.5 object-contain shrink-0" />
                         </div>
-                        <p className="font-display text-sm sm:text-base font-bold text-teal-600 dark:text-teal-400 leading-none mt-1">{currentMetrics.assisted.toLocaleString()}</p>
+                        <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">{currentMetrics.assisted.toLocaleString()}</p>
                       </div>
 
                       {/* 5. Pending */}
@@ -728,13 +728,13 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           setMobileSubPage("none");
                           setApplicationStatusFilter("pending");
                         }}
-                        className="min-h-[52px] rounded-lg border border-border bg-card p-2 flex flex-col justify-between shadow-2xs hover:border-amber-500/70 transition-all cursor-pointer"
+                        className="min-h-[44px] rounded-lg border border-border bg-card p-1.5 px-2 flex flex-col justify-between shadow-2xs hover:border-amber-500/70 transition-all cursor-pointer"
                       >
                         <div className="flex items-center justify-between gap-1">
                           <span className="text-[11.5px] font-bold text-muted-foreground truncate">
                             {lang === "ml" ? "പെൻഡിംഗ്" : "Pending"}
                           </span>
-                          <img src={pending3dIcon} alt="Pending" className="h-6 w-6 sm:h-7 sm:w-7 object-contain shrink-0" />
+                          <img src={pending3dIcon} alt="Pending" className="h-5 w-5 sm:h-5.5 sm:w-5.5 object-contain shrink-0" />
                         </div>
                         <p className="font-display text-sm sm:text-base font-bold text-amber-600 dark:text-amber-400 leading-none mt-1">{currentMetrics.pending.toLocaleString()}</p>
                       </div>
@@ -746,49 +746,15 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           setMobileSubPage("none");
                           setApplicationStatusFilter("rejected");
                         }}
-                        className="min-h-[52px] rounded-lg border border-border bg-card p-2 flex flex-col justify-between shadow-2xs hover:border-rose-500/70 transition-all cursor-pointer"
+                        className="min-h-[44px] rounded-lg border border-border bg-card p-1.5 px-2 flex flex-col justify-between shadow-2xs hover:border-rose-500/70 transition-all cursor-pointer"
                       >
                         <div className="flex items-center justify-between gap-1">
                           <span className="text-[11.5px] font-bold text-muted-foreground truncate">
                             {lang === "ml" ? "നിരസിച്ചവ" : "Rejected"}
                           </span>
-                          <img src={rejected3dIcon} alt="Rejected" className="h-6 w-6 sm:h-7 sm:w-7 object-contain shrink-0" />
+                          <img src={rejected3dIcon} alt="Rejected" className="h-5 w-5 sm:h-5.5 sm:w-5.5 object-contain shrink-0" />
                         </div>
                         <p className="font-display text-sm sm:text-base font-bold text-rose-600 dark:text-rose-400 leading-none mt-1">{currentMetrics.rejected.toLocaleString()}</p>
-                      </div>
-
-                      {/* 7. Schemes */}
-                      <div
-                        onClick={() => {
-                          setActiveTab("schemes");
-                          setMobileSubPage("none");
-                        }}
-                        className="min-h-[52px] rounded-lg border border-border bg-card p-2 flex flex-col justify-between shadow-2xs hover:border-purple-500/70 transition-all cursor-pointer"
-                      >
-                        <div className="flex items-center justify-between gap-1">
-                          <span className="text-[11.5px] font-bold text-muted-foreground truncate">
-                            {lang === "ml" ? "പദ്ധതികൾ" : "Schemes"}
-                          </span>
-                          <img src={schemes3dIcon} alt="Schemes" className="h-6 w-6 sm:h-7 sm:w-7 object-contain shrink-0" />
-                        </div>
-                        <div className="space-y-0.5 mt-0.5">
-                          <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none">{currentMetrics.schemes.toLocaleString()}</p>
-                        </div>
-                      </div>
-
-                      {/* 8. Covered Booth */}
-                      <div className="min-h-[52px] rounded-lg border border-border bg-card p-2 flex flex-col justify-between shadow-2xs hover:border-cyan-500/70 transition-all cursor-pointer">
-                        <div className="flex items-center justify-between gap-1">
-                          <span className="text-[11.5px] font-bold text-muted-foreground truncate">
-                            {lang === "ml" ? "കവർ ചെയ്ത ബൂത്തുകൾ" : "Covered Booth"}
-                          </span>
-                          <img src={coveredBooth3dIcon} alt="Covered Booth" className="h-6 w-6 sm:h-7 sm:w-7 object-contain shrink-0" />
-                        </div>
-                        <div className="space-y-0.5 mt-0.5">
-                          <p className="font-display text-xs sm:text-sm font-bold text-cyan-600 dark:text-cyan-400 leading-none">
-                            {currentMetrics.convertedBooths} / 30,495
-                          </p>
-                        </div>
                       </div>
                     </div>
 
@@ -1051,75 +1017,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                       })()}
                     </div>
 
-                    {/* Quick Actions Section (Matching Reference Screenshot UI) */}
-                    <div className="space-y-1.5 pt-1">
-                      {/* Quick Actions Section Header */}
-                      <div className="flex items-center justify-between px-0.5">
-                        <h3 className="font-display text-xs sm:text-sm font-bold text-[#0a0f1d] dark:text-white tracking-tight">
-                          {lang === "ml" ? "ദ്രുത ക്രിയകൾ" : "Quick Actions"}
-                        </h3>
-                      </div>
 
-                      {/* 3 Quick Action Cards Row */}
-                      <div className="grid grid-cols-3 gap-1.5">
-                        {/* 1. Leaderboard Card */}
-                        <button
-                          type="button"
-                          onClick={() => setMobileSubPage("leaderboard")}
-                          className="group flex flex-col justify-between rounded-xl border-0 bg-[#fffbf0] dark:bg-amber-950/30 p-2 text-left transition-all hover:shadow-xs active:scale-[0.97] cursor-pointer min-h-[90px]"
-                        >
-                          <div className="flex h-7.5 w-7.5 items-center justify-center rounded-full bg-gradient-to-tr from-amber-500 to-orange-400 text-white shadow-xs shrink-0">
-                            <Trophy className="h-3.5 w-3.5" />
-                          </div>
-                          <div className="mt-1.5 space-y-0.5">
-                            <span className="block font-bold text-[10.5px] text-[#0a0f1d] dark:text-white leading-tight">
-                              {lang === "ml" ? "ലീഡർബോർഡ്" : "Leaderboard"}
-                            </span>
-                            <span className="block text-[9.5px] font-bold text-[#ff5500] dark:text-amber-400">
-                              {lang === "ml" ? "റാങ്കിംഗ്" : "Top Leads"}
-                            </span>
-                          </div>
-                        </button>
-
-                        {/* 2. Needs Attention Card */}
-                        <button
-                          type="button"
-                          onClick={() => setMobileSubPage("needs_attention")}
-                          className="group flex flex-col justify-between rounded-xl border-0 bg-[#fff0f3] dark:bg-rose-950/30 p-2 text-left transition-all hover:shadow-xs active:scale-[0.97] cursor-pointer min-h-[90px]"
-                        >
-                          <div className="flex h-7.5 w-7.5 items-center justify-center rounded-full bg-gradient-to-tr from-rose-500 to-pink-600 text-white shadow-xs shrink-0">
-                            <AlertTriangle className="h-3.5 w-3.5" />
-                          </div>
-                          <div className="mt-1.5 space-y-0.5">
-                            <span className="block font-bold text-[10.5px] text-[#0a0f1d] dark:text-white leading-tight">
-                              {lang === "ml" ? "ശ്രദ്ധിക്കാൻ" : "Needs Attention"}
-                            </span>
-                            <span className="block text-[9.5px] font-bold text-rose-600 dark:text-rose-400">
-                              {lang === "ml" ? "3 വിഷയം" : "3 Issues"}
-                            </span>
-                          </div>
-                        </button>
-
-                        {/* 3. Recent Activity Card */}
-                        <button
-                          type="button"
-                          onClick={() => setMobileSubPage("recent_activity")}
-                          className="group flex flex-col justify-between rounded-xl border-0 bg-[#eff6ff] dark:bg-blue-950/30 p-2 text-left transition-all hover:shadow-xs active:scale-[0.97] cursor-pointer min-h-[90px]"
-                        >
-                          <div className="flex h-7.5 w-7.5 items-center justify-center rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 text-white shadow-xs shrink-0">
-                            <Activity className="h-3.5 w-3.5" />
-                          </div>
-                          <div className="mt-1.5 space-y-0.5">
-                            <span className="block font-bold text-[10.5px] text-[#0a0f1d] dark:text-white leading-tight">
-                              {lang === "ml" ? "ആക്റ്റിവിറ്റി" : "Recent Activity"}
-                            </span>
-                            <span className="block text-[9.5px] font-bold text-blue-600 dark:text-blue-400">
-                              {lang === "ml" ? "തത്സമയം" : "Live Feed"}
-                            </span>
-                          </div>
-                        </button>
-                      </div>
-                    </div>
                   </div>
                 ) : (
                   /* Dedicated Full Screen Views inside Mobile App */
@@ -2608,7 +2506,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                               className="h-7 pl-3 pr-7 text-[11px] font-bold rounded-full border border-amber-200/80 dark:border-orange-800/80 bg-[#fffcf0] dark:bg-slate-900 text-[#0a0f1d] dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs cursor-pointer appearance-none"
                             >
                               <option value="all">{lang === "ml" ? `എല്ലാം (${applicationsCount})` : `All (${applicationsCount})`}</option>
-                              <option value="assisted">{lang === "ml" ? `സഹായം ലഭിച്ചവ (${currentMetrics.assisted})` : `Assisted (${currentMetrics.assisted})`}</option>
+                              <option value="assisted">{lang === "ml" ? `പരിശോധനയിലുള്ളവ (${currentMetrics.assisted})` : `In Review (${currentMetrics.assisted})`}</option>
                               <option value="pending">{lang === "ml" ? `പെൻഡിംഗ് (${currentMetrics.pending})` : `Pending (${currentMetrics.pending})`}</option>
                               <option value="rejected">{lang === "ml" ? `നിരസിച്ചവ (${currentMetrics.rejected})` : `Rejected (${currentMetrics.rejected})`}</option>
                             </select>
@@ -3816,7 +3714,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                       className="h-7 pl-3 pr-7 text-[11px] font-bold rounded-full border border-amber-200/80 dark:border-orange-800/80 bg-[#fffcf0] dark:bg-slate-900 text-[#0a0f1d] dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs cursor-pointer appearance-none"
                     >
                       <option value="all">{lang === "ml" ? `എല്ലാം (${applicationsCount})` : `All (${applicationsCount})`}</option>
-                      <option value="assisted">{lang === "ml" ? `സഹായം ലഭിച്ചവ (${currentMetrics.assisted})` : `Assisted (${currentMetrics.assisted})`}</option>
+                      <option value="assisted">{lang === "ml" ? `പരിശോധനയിലുള്ളവ (${currentMetrics.assisted})` : `In Review (${currentMetrics.assisted})`}</option>
                       <option value="pending">{lang === "ml" ? `പെൻഡിംഗ് (${currentMetrics.pending})` : `Pending (${currentMetrics.pending})`}</option>
                       <option value="rejected">{lang === "ml" ? `നിരസിച്ചവ (${currentMetrics.rejected})` : `Rejected (${currentMetrics.rejected})`}</option>
                     </select>

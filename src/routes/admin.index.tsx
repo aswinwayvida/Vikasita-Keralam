@@ -424,15 +424,15 @@ export function AdminDashboard() {
           </div>
         </div>
 
-        {/* Card 2: Beneficiaries */}
+        {/* Card 2: Approved */}
         <div className="group rounded-2xl border border-amber-200/50 dark:border-border bg-card p-3.5 sm:p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between">
           <div className="flex items-start justify-between gap-2">
             <span className="text-sm sm:text-base font-bold text-slate-700 dark:text-slate-200 leading-tight">
-              {lang === "ml" ? "ഗുണഭോക്താക്കൾ" : "Beneficiaries"}
+              {lang === "ml" ? "അംഗീകരിച്ചവ" : "Approved"}
             </span>
-            <img src={beneficiaries3dIcon} alt="Beneficiaries" className="h-8 w-8 sm:h-10 sm:w-10 object-contain shrink-0" />
+            <img src={assisted3dIcon} alt="Approved" className="h-8 w-8 sm:h-10 sm:w-10 object-contain shrink-0" />
           </div>
-          <div className="mt-2.5 font-display text-lg sm:text-2xl font-extrabold text-foreground tracking-tight">
+          <div className="mt-2.5 font-display text-lg sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tracking-tight">
             48,250
           </div>
         </div>
@@ -450,16 +450,16 @@ export function AdminDashboard() {
           </div>
         </div>
 
-        {/* Card 4: Assisted */}
+        {/* Card 4: In Review */}
         <div className="group rounded-2xl border border-amber-200/50 dark:border-border bg-card p-3.5 sm:p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between">
           <div className="flex items-start justify-between gap-2">
             <span className="text-sm sm:text-base font-bold text-slate-700 dark:text-slate-200 leading-tight">
-              {lang === "ml" ? "സഹായിച്ചവ" : "Assisted"}
+              {lang === "ml" ? "പരിശോധനയിലുള്ളവ" : "In Review"}
             </span>
-            <img src={assisted3dIcon} alt="Assisted" className="h-8 w-8 sm:h-10 sm:w-10 object-contain shrink-0" />
+            <img src={beneficiaries3dIcon} alt="In Review" className="h-8 w-8 sm:h-10 sm:w-10 object-contain shrink-0" />
           </div>
-          <div className="mt-2.5 font-display text-lg sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tracking-tight">
-            46,830
+          <div className="mt-2.5 font-display text-lg sm:text-2xl font-extrabold text-foreground tracking-tight">
+            8,000
           </div>
         </div>
 
@@ -472,7 +472,7 @@ export function AdminDashboard() {
             <img src={pending3dIcon} alt="Pending" className="h-8 w-8 sm:h-10 sm:w-10 object-contain shrink-0" />
           </div>
           <div className="mt-2.5 font-display text-lg sm:text-2xl font-extrabold text-amber-600 dark:text-amber-500 tracking-tight">
-            14,160
+            6,160
           </div>
         </div>
 

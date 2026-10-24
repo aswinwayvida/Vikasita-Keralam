@@ -37,12 +37,6 @@ export function AdminMobileAppBottomNav({
       icon: FileText,
     },
     {
-      id: "users",
-      labelEn: "Users",
-      labelMl: "ഉപയോക്താക്കൾ",
-      icon: Users,
-    },
-    {
       id: "more",
       labelEn: "More",
       labelMl: "കൂടുതൽ",
