@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link } from "@tanstack/react-router";
-import { X, Smartphone, Wifi, Battery, Signal, ChevronRight, ChevronLeft, ArrowLeft, Users, HeartHandshake, Database, Layers, Sparkles, MessageSquare, Clock3, UserCheck, LayoutDashboard, Sliders, Calendar, FileText, XCircle, CheckCircle2, Hourglass, MapPin, Trophy, AlertTriangle, Activity, Globe, Map, Network, Store, ShieldCheck, ChevronDown, Filter, Search, Megaphone, CalendarDays, BellRing, Phone, RotateCcw, GraduationCap, Sprout, LayoutGrid, MoreVertical, AlertCircle, Star } from "lucide-react";
+import { X, Smartphone, Wifi, Battery, Signal, ChevronRight, ChevronLeft, ArrowLeft, Users, HeartHandshake, Database, Layers, Sparkles, MessageSquare, Clock3, UserCheck, LayoutDashboard, Sliders, Calendar, FileText, XCircle, CheckCircle2, Hourglass, MapPin, Trophy, AlertTriangle, Activity, Globe, Map, Network, Store, ShieldCheck, ChevronDown, Filter, Search, Megaphone, CalendarDays, BellRing, Phone, RotateCcw, GraduationCap, Sprout, LayoutGrid, MoreVertical, AlertCircle, Star, Zap, Headphones } from "lucide-react";
 import { useLang } from "@/i18n/LanguageProvider";
 import officialLotus from "@/assets/bjp-official-lotus.png";
 import users3dIcon from "@/assets/kpi-3d/users.png";
@@ -1015,6 +1015,62 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           </div>
                         );
                       })()}
+                    </div>
+
+                    {/* Quick Action Section */}
+                    <div className="space-y-1.5 pt-1">
+                      {/* Section Header */}
+                      <div className="flex items-center justify-between px-0.5 pb-0.5">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-md bg-orange-500/10 dark:bg-orange-950/30 text-[#ff5500] shrink-0">
+                            <Zap className="h-3.5 w-3.5 stroke-[2.2]" />
+                          </span>
+                          <h3 className="font-display text-xs sm:text-[13px] font-black text-[#0a0f1d] dark:text-white tracking-tight truncate">
+                            {lang === "ml" ? "ദ്രുത ക്രിയകൾ" : "Quick Action"}
+                          </h3>
+                        </div>
+                      </div>
+
+                      {/* 2 Action Cards: Eligible Schemes & Help Requests */}
+                      <div className="grid grid-cols-2 gap-2">
+                        {/* 1. Eligible Schemes Card */}
+                        <button
+                          type="button"
+                          onClick={() => setMobileTab("schemes")}
+                          className="flex items-center gap-2.5 p-2.5 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50/80 dark:from-slate-800 dark:to-orange-950/30 border border-orange-200/80 dark:border-orange-800/60 shadow-2xs hover:shadow-xs transition-all text-left group cursor-pointer active:scale-98"
+                        >
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500 text-white shadow-xs shrink-0 group-hover:scale-105 transition-transform">
+                            <Layers className="h-4.5 w-4.5 stroke-[2.2]" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="text-[11px] font-extrabold text-slate-900 dark:text-white leading-tight truncate">
+                              {lang === "ml" ? "അർഹമായ പദ്ധതികൾ" : "Eligible Schemes"}
+                            </h4>
+                            <p className="text-[9.5px] font-semibold text-orange-600 dark:text-orange-400 mt-0.5">
+                              {lang === "ml" ? "അപേക്ഷിക്കുക" : "740 Available"}
+                            </p>
+                          </div>
+                        </button>
+
+                        {/* 2. Help Requests Card */}
+                        <button
+                          type="button"
+                          onClick={() => setMobileTab("helpdesk")}
+                          className="flex items-center gap-2.5 p-2.5 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50/80 dark:from-slate-800 dark:to-blue-950/30 border border-blue-200/80 dark:border-blue-800/60 shadow-2xs hover:shadow-xs transition-all text-left group cursor-pointer active:scale-98"
+                        >
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white shadow-xs shrink-0 group-hover:scale-105 transition-transform">
+                            <Headphones className="h-4.5 w-4.5 stroke-[2.2]" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="text-[11px] font-extrabold text-slate-900 dark:text-white leading-tight truncate">
+                              {lang === "ml" ? "സഹായ അഭ്യർത്ഥനകൾ" : "Help Requests"}
+                            </h4>
+                            <p className="text-[9.5px] font-semibold text-blue-600 dark:text-blue-400 mt-0.5">
+                              {lang === "ml" ? "പിന്തുണ നേടുക" : "SahAI Assistant"}
+                            </p>
+                          </div>
+                        </button>
+                      </div>
                     </div>
 
 
