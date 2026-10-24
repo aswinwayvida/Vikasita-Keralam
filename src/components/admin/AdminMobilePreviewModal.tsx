@@ -1018,76 +1018,124 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                       })()}
                     </div>
 
-                    {/* Single Quick Action Section */}
-                    <div className="space-y-1.5 pt-0.5">
-                      {/* Section Header - Exact same style and spacing as Events & Announcements */}
-                      <div className="flex items-center justify-between px-0.5 pb-1">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="flex h-5 w-5 items-center justify-center rounded-md bg-orange-500/10 dark:bg-orange-950/30 text-[#ff5500] shrink-0">
-                            <Zap className="h-3.5 w-3.5 stroke-[2.2]" />
-                          </span>
-                          <h3 className="font-display text-xs sm:text-[13px] font-black text-[#0a0f1d] dark:text-white tracking-tight truncate">
-                            {lang === "ml" ? "ദ്രുത ക്രിയകൾ" : "Quick Action"}
-                          </h3>
-                        </div>
+                    {/* SECTION 1: Needs attention */}
+                    <div className="space-y-1.5 pt-1">
+                      {/* Section Header */}
+                      <div className="flex items-center justify-between px-0.5 pb-0.5">
+                        <h3 className="font-display text-sm sm:text-[14px] font-black text-[#0f172a] dark:text-white tracking-tight">
+                          {lang === "ml" ? "ശ്രദ്ധ ആവശ്യമുണ്ട്" : "Needs attention"}
+                        </h3>
+                        <button
+                          type="button"
+                          onClick={() => setMobileTab("applications")}
+                          className="flex items-center gap-0.5 text-[11px] font-bold text-[#f95700] hover:underline cursor-pointer"
+                        >
+                          <span>{lang === "ml" ? "എല്ലാം" : "View all"}</span>
+                          <ChevronRight className="h-3.5 w-3.5 stroke-[2.5]" />
+                        </button>
                       </div>
 
-                      {/* 2 Action Cards - Exact replica of reference screenshot */}
-                      <div className="grid grid-cols-2 gap-2">
-                        {/* 1. Eligible Schemes Card */}
+                      {/* Needs Attention Items */}
+                      <div className="space-y-2">
+                        {/* Item 1: Meera Nair */}
                         <div
-                          onClick={() => setMobileTab("schemes")}
-                          className="rounded-2xl bg-gradient-to-r from-[#fff7f2] via-[#fff3ea] to-[#fff8f3] dark:from-slate-800 dark:via-slate-800/90 dark:to-orange-950/30 border border-[#ffebd9] dark:border-orange-900/40 p-2 sm:p-2.5 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98 relative overflow-hidden"
+                          onClick={() => setMobileTab("applications")}
+                          className="rounded-2xl bg-white dark:bg-slate-900 border border-orange-100 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
                         >
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <img
-                              src={applications3dIcon}
-                              alt="Eligible Schemes"
-                              className="h-10 w-10 sm:h-11 sm:w-11 object-contain shrink-0 drop-shadow-xs group-hover:scale-105 transition-transform"
-                            />
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-pink-100 dark:bg-pink-950/60 text-pink-600 dark:text-pink-400 font-extrabold text-xs shrink-0">
+                              MN
+                            </div>
                             <div className="min-w-0 flex-1">
-                              <h4 className="font-black text-[11.5px] sm:text-[12px] text-[#1e293b] dark:text-white leading-tight truncate">
-                                {lang === "ml" ? "അർഹമായ പദ്ധതികൾ" : "Eligible Schemes"}
+                              <h4 className="font-black text-[12px] sm:text-[12.5px] text-slate-900 dark:text-white leading-tight truncate">
+                                {lang === "ml" ? "മീര നായർ" : "Meera Nair"}
                               </h4>
-                              <p className="font-bold text-[10px] sm:text-[10.5px] text-[#f95700] dark:text-orange-400 leading-tight mt-[1px] truncate">
-                                {lang === "ml" ? "740 പദ്ധതികൾ" : "740 Available"}
-                              </p>
-                              <p className="font-medium text-[8.5px] sm:text-[9px] text-slate-500 dark:text-slate-400 leading-tight mt-[1px] truncate">
-                                {lang === "ml" ? "അപേക്ഷിക്കുക" : "Explore and apply"}
+                              <p className="font-medium text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
+                                {lang === "ml" ? "പി.എം വിശ്വകർമ്മ" : "PM Vishwakarma"}
                               </p>
                             </div>
                           </div>
-                          <div className="flex h-6.5 w-6.5 items-center justify-center rounded-full bg-[#f95700] text-white shadow-2xs group-hover:scale-105 transition-transform shrink-0 ml-1">
-                            <ChevronRight className="h-3.5 w-3.5 stroke-[3]" />
+
+                          <div className="flex items-center gap-2 shrink-0 ml-2">
+                            <div className="flex items-center gap-1.5 rounded-full bg-[#fff4ed] dark:bg-orange-950/50 border border-[#ffebd9] dark:border-orange-900/50 px-2.5 py-1 text-[10px] font-bold text-[#f95700] dark:text-orange-400">
+                              <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[#f95700] text-white text-[8.5px] font-black leading-none">!</span>
+                              <span>{lang === "ml" ? "1 രേഖ വിട്ടുപോയി" : "1 document missing"}</span>
+                            </div>
+                            <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform" />
                           </div>
                         </div>
 
-                        {/* 2. Help Requests Card */}
+                        {/* Item 2: Ravi Kumar */}
                         <div
-                          onClick={() => setMobileTab("helpdesk")}
-                          className="rounded-2xl bg-gradient-to-r from-[#fff7f2] via-[#fff3ea] to-[#fff8f3] dark:from-slate-800 dark:via-slate-800/90 dark:to-orange-950/30 border border-[#ffebd9] dark:border-orange-900/40 p-2 sm:p-2.5 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98 relative overflow-hidden"
+                          onClick={() => setMobileTab("applications")}
+                          className="rounded-2xl bg-white dark:bg-slate-900 border border-orange-100 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
                         >
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <img
-                              src={sahaiAvatar}
-                              alt="Help Requests"
-                              className="h-10 w-10 sm:h-11 sm:w-11 object-contain shrink-0 drop-shadow-xs group-hover:scale-105 transition-transform"
-                            />
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-extrabold text-xs shrink-0">
+                              RK
+                            </div>
                             <div className="min-w-0 flex-1">
-                              <h4 className="font-black text-[11.5px] sm:text-[12px] text-[#1e293b] dark:text-white leading-tight truncate">
-                                {lang === "ml" ? "സഹായ അഭ്യർത്ഥനകൾ" : "Help Requests"}
+                              <h4 className="font-black text-[12px] sm:text-[12.5px] text-slate-900 dark:text-white leading-tight truncate">
+                                {lang === "ml" ? "രവി കുമാർ" : "Ravi Kumar"}
                               </h4>
-                              <p className="font-bold text-[10px] sm:text-[10.5px] text-[#f95700] dark:text-orange-400 leading-tight mt-[1px] truncate">
-                                {lang === "ml" ? "സഹായ് അസിസ്റ്റന്റ്" : "SahAI Assistant"}
-                              </p>
-                              <p className="font-medium text-[8.5px] sm:text-[9px] text-slate-500 dark:text-slate-400 leading-tight mt-[1px] truncate">
-                                {lang === "ml" ? "പിന്തുണ നേടുക" : "Get instant support"}
+                              <p className="font-medium text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
+                                {lang === "ml" ? "പി.എം സ്വനിധി" : "PM SVANidhi"}
                               </p>
                             </div>
                           </div>
-                          <div className="flex h-6.5 w-6.5 items-center justify-center rounded-full bg-[#f95700] text-white shadow-2xs group-hover:scale-105 transition-transform shrink-0 ml-1">
-                            <ChevronRight className="h-3.5 w-3.5 stroke-[3]" />
+
+                          <div className="flex items-center gap-2 shrink-0 ml-2">
+                            <div className="flex items-center gap-1.5 rounded-full bg-[#fff4ed] dark:bg-orange-950/50 border border-[#ffebd9] dark:border-orange-900/50 px-2.5 py-1 text-[10px] font-bold text-[#f95700] dark:text-orange-400">
+                              <Calendar className="h-3.5 w-3.5 text-[#f95700]" />
+                              <span>{lang === "ml" ? "ഇന്ന് തുടർനടപടി" : "Follow-up due today"}</span>
+                            </div>
+                            <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform" />
                           </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* SECTION 2: Quick actions */}
+                    <div className="space-y-1.5 pt-1.5">
+                      {/* Section Header */}
+                      <div className="px-0.5 pb-0.5">
+                        <h3 className="font-display text-sm sm:text-[14px] font-black text-[#0f172a] dark:text-white tracking-tight">
+                          {lang === "ml" ? "ദ്രുത ക്രിയകൾ" : "Quick actions"}
+                        </h3>
+                      </div>
+
+                      {/* 2 Grid Action Cards */}
+                      <div className="grid grid-cols-2 gap-2.5">
+                        {/* Card 1: Browse Schemes */}
+                        <div
+                          onClick={() => setMobileTab("schemes")}
+                          className="rounded-2xl bg-[#fffbf0] dark:bg-amber-950/20 border border-[#fef0d5] dark:border-amber-900/40 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
+                        >
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-gradient-to-tr from-amber-500 to-[#f95700] text-white shadow-xs shrink-0 group-hover:scale-105 transition-transform">
+                              <LayoutGrid className="h-4.5 w-4.5 stroke-[2.3]" />
+                            </div>
+                            <h4 className="font-black text-[11.5px] sm:text-[12.5px] text-[#0f172a] dark:text-white leading-tight truncate">
+                              {lang === "ml" ? "പദ്ധതികൾ നോക്കുക" : "Browse Schemes"}
+                            </h4>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform shrink-0 ml-1" />
+                        </div>
+
+                        {/* Card 2: Help Requests */}
+                        <div
+                          onClick={() => setMobileTab("helpdesk")}
+                          className="rounded-2xl bg-[#eff6ff] dark:bg-blue-950/20 border border-[#dbeafe] dark:border-blue-900/40 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
+                        >
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-[#2563eb] text-white shadow-xs shrink-0 group-hover:scale-105 transition-transform">
+                              <Headphones className="h-4.5 w-4.5 stroke-[2.3]" />
+                            </div>
+                            <h4 className="font-black text-[11.5px] sm:text-[12.5px] text-[#0f172a] dark:text-white leading-tight truncate">
+                              {lang === "ml" ? "സഹായ അഭ്യർത്ഥനകൾ" : "Help Requests"}
+                            </h4>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform shrink-0 ml-1" />
                         </div>
                       </div>
                     </div>
