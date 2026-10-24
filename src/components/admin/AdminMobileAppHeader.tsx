@@ -162,7 +162,7 @@ export function AdminMobileAppHeader({ onNavigateTab, onOpenNotifications }: Adm
       {/* Full Mobile Navigation Drawer (Exact Match to User Reference Screenshot) */}
       {isMenuOpen && (
         <div className="absolute top-0 left-0 w-full h-[680px] z-50 flex bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-[85%] max-w-[320px] h-full bg-[#FDFBF7] dark:bg-slate-900 p-4 flex flex-col justify-between shadow-2xl border-r border-slate-200 dark:border-slate-800 overflow-y-auto custom-scrollbar">
+          <div className="w-[85%] max-w-[320px] h-full bg-[#FDFBF7] dark:bg-slate-900 p-4 flex flex-col justify-between shadow-2xl border-r border-slate-200 dark:border-slate-800 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             <div className="space-y-4">
               {/* Profile Card Header */}
               <div className="flex items-center justify-between pb-1">
