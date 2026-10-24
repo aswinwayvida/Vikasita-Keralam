@@ -39,11 +39,11 @@ export function Header() {
 
   const navItems = [
     { to: "/", label: t.nav.home },
+    { to: "/janashabdam/track", label: t.nav.applications },
     { to: "/schemes", label: t.nav.schemes },
-    ...(FEATURES.janashabdam ? [{ to: "/janashabdam", label: t.nav.janashabdam } as const] : []),
-    { to: "/eligibility", label: t.nav.eligibility },
     { to: "/helpdesk", label: t.nav.helpdesk },
-    ...(FEATURES.janashabdam ? [{ to: "/janashabdam/track", label: t.nav.track } as const] : []),
+    { to: "/eligibility", label: t.nav.eligibility },
+    ...(FEATURES.janashabdam ? [{ to: "/janashabdam", label: t.nav.janashabdam } as const] : []),
     { to: "/volunteer", label: t.nav.volunteer },
     { to: "/contact", label: t.nav.contact },
   ] as const;

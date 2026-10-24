@@ -3,6 +3,8 @@ export const en: Dict = {
   brand: "Vikasita Keralam",
   tagline: "With everyone, for everyone",
   nav: {
+    applications: "Applications",
+    newApplication: "New App",
     home: "Home",
     schemes: "Schemes",
     eligibility: "Eligibility",

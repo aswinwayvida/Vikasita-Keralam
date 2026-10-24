@@ -2,7 +2,9 @@ export const ml = {
   brand: "വികസിത കേരളം",
   tagline: "എല്ലാവർക്കും ഒപ്പം, എല്ലാവർക്കും വേണ്ടി",
   nav: {
-    home: "Home",
+    applications: "അപേക്ഷകൾ",
+    newApplication: "അപേക്ഷിക്കുക",
+    home: "ഹോം",
     schemes: "Schemes",
     eligibility: "Eligibility",
     janashabdam: "Janashabdam",
