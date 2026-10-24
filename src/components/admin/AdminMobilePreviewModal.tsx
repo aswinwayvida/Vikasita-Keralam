@@ -1019,14 +1019,14 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                     </div>
 
                     {/* Quick Action Section */}
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-2.5 shadow-2xs space-y-2">
+                    <div className="space-y-1.5 pt-0.5">
                       {/* Section Header */}
-                      <div className="flex items-center justify-between px-0.5">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-950/50 text-[#ff5500] shrink-0">
+                      <div className="flex items-center justify-between px-0.5 pb-0.5">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-md bg-orange-500/10 dark:bg-orange-950/30 text-[#ff5500] shrink-0">
                             <Zap className="h-3.5 w-3.5 fill-[#ff5500] stroke-[#ff5500]" />
                           </span>
-                          <h3 className="font-display text-xs sm:text-[13px] font-black text-slate-900 dark:text-white tracking-tight truncate">
+                          <h3 className="font-display text-xs sm:text-[13px] font-black text-[#0a0f1d] dark:text-white tracking-tight truncate">
                             {lang === "ml" ? "ദ്രുത ക്രിയകൾ" : "Quick Action"}
                           </h3>
                         </div>
@@ -1040,92 +1040,84 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                         </button>
                       </div>
 
-                      {/* 2 Action Cards: Eligible Schemes & Help Requests */}
-                      <div className="grid grid-cols-2 gap-2">
-                        {/* 1. Eligible Schemes Card */}
+                      {/* 3 Professional Action Cards: Browse Schemes, Help Requests, Follow Ups */}
+                      <div className="grid grid-cols-3 gap-2">
+                        {/* 1. Browse Schemes Card */}
                         <div
                           onClick={() => setMobileTab("schemes")}
-                          className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#fffdfa] via-[#fff8ef] to-[#fef2e2] dark:from-slate-800 dark:to-orange-950/30 border border-orange-200/60 dark:border-orange-900/50 p-2.5 flex flex-col justify-between h-[138px] shadow-2xs hover:shadow-xs transition-all group cursor-pointer active:scale-98"
+                          className="relative overflow-hidden rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/60 p-2.5 flex flex-col justify-between h-[115px] sm:h-[120px] shadow-2xs hover:shadow-xs transition-all group cursor-pointer active:scale-98"
                         >
-                          {/* Top row: Icon Badge Left + 3D Graphic Right */}
-                          <div className="flex items-start justify-between min-h-0 relative z-10">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white dark:bg-slate-800 shadow-xs border border-orange-100 dark:border-orange-900/40 text-[#ff5500] shrink-0">
-                              <Layers className="h-4.5 w-4.5 stroke-[2.2]" />
-                            </div>
-                            <img
-                              src={schemes3dIcon}
-                              alt="Schemes 3D"
-                              className="h-11 w-11 object-contain filter drop-shadow-xs transform transition-transform group-hover:scale-105 -mr-1 -mt-1"
-                            />
+                          {/* Top Right Curved Badge */}
+                          <div className="absolute top-0 right-0 rounded-bl-xl rounded-tr-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white px-2 py-0.5 text-[8px] font-black uppercase tracking-wider shadow-2xs">
+                            {lang === "ml" ? "740+" : "Popular"}
                           </div>
 
-                          {/* Middle: Content */}
-                          <div className="min-w-0 z-10 mt-1">
-                            <h4 className="text-[11.5px] font-extrabold text-slate-900 dark:text-white leading-tight truncate">
-                              {lang === "ml" ? "അർഹമായ പദ്ധതികൾ" : "Eligible Schemes"}
+                          {/* Top Left Icon Container */}
+                          <div className="flex items-center">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-xs group-hover:scale-105 transition-transform">
+                              <Layers className="h-5 w-5 stroke-[2.2]" />
+                            </div>
+                          </div>
+
+                          {/* Bottom Left Title */}
+                          <div className="min-w-0">
+                            <h4 className="font-black text-[11px] sm:text-[11.5px] text-slate-900 dark:text-white leading-snug line-clamp-2">
+                              {lang === "ml" ? "പദ്ധതികൾ കാണുക" : "Browse Schemes"}
                             </h4>
-                            <p className="text-[10px] font-black text-[#ff5500] leading-tight mt-0.5">
-                              {lang === "ml" ? "740 ലഭ്യമാണ്" : "740 Available"}
-                            </p>
-                            <p className="text-[9px] font-semibold text-slate-400 dark:text-slate-400 mt-0.5 truncate">
-                              {lang === "ml" ? "പരിശോധിച്ച് അപേക്ഷിക്കുക" : "Explore and apply"}
-                            </p>
-                          </div>
-
-                          {/* Bottom Action Pill Button */}
-                          <div className="z-10 mt-1 flex items-center justify-between rounded-full bg-white/90 dark:bg-slate-800/90 backdrop-blur-xs border border-amber-200/50 dark:border-orange-900/30 px-2.5 py-1 shadow-2xs group-hover:border-orange-300 transition-colors">
-                            <span className="text-[9.5px] font-bold text-slate-700 dark:text-slate-200 truncate">
-                              {lang === "ml" ? "പദ്ധതികൾ കാണുക" : "Explore Schemes"}
-                            </span>
-                            <div className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-[#ff5500] text-white shrink-0 shadow-xs group-hover:scale-110 transition-transform">
-                              <ChevronRight className="h-3 w-3 stroke-[3]" />
-                            </div>
                           </div>
                         </div>
 
-                        {/* 2. Help Requests / SahAI Assistant Card */}
+                        {/* 2. Help Requests Card */}
                         <div
                           onClick={() => setMobileTab("helpdesk")}
-                          className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#fffafd] via-[#fff2f4] to-[#fdeef1] dark:from-slate-800 dark:to-rose-950/30 border border-rose-200/60 dark:border-rose-900/50 p-2.5 flex flex-col justify-between h-[138px] shadow-2xs hover:shadow-xs transition-all group cursor-pointer active:scale-98"
+                          className="relative overflow-hidden rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/60 p-2.5 flex flex-col justify-between h-[115px] sm:h-[120px] shadow-2xs hover:shadow-xs transition-all group cursor-pointer active:scale-98"
                         >
-                          {/* Top row: Icon Badge Left + 3D SahAI Graphic Right */}
-                          <div className="flex items-start justify-between min-h-0 relative z-10">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white dark:bg-slate-800 shadow-xs border border-rose-100 dark:border-rose-900/40 text-[#ff5500] shrink-0">
-                              <Headphones className="h-4.5 w-4.5 stroke-[2.2]" />
-                            </div>
-                            <img
-                              src={sahaiAvatar}
-                              alt="SahAI Assistant 3D"
-                              className="h-11 w-11 object-contain filter drop-shadow-xs transform transition-transform group-hover:scale-105 -mr-1 -mt-1"
-                            />
+                          {/* Top Right Curved Badge */}
+                          <div className="absolute top-0 right-0 rounded-bl-xl rounded-tr-2xl bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-300 px-2 py-0.5 text-[8px] font-extrabold tracking-wider">
+                            {lang === "ml" ? "സഹായ്" : "Instant"}
                           </div>
 
-                          {/* Middle: Content */}
-                          <div className="min-w-0 z-10 mt-1">
-                            <h4 className="text-[11.5px] font-extrabold text-slate-900 dark:text-white leading-tight truncate">
+                          {/* Top Left Icon Container */}
+                          <div className="flex items-center">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-xs group-hover:scale-105 transition-transform">
+                              <Headphones className="h-5 w-5 stroke-[2.2]" />
+                            </div>
+                          </div>
+
+                          {/* Bottom Left Title */}
+                          <div className="min-w-0">
+                            <h4 className="font-black text-[11px] sm:text-[11.5px] text-slate-900 dark:text-white leading-snug line-clamp-2">
                               {lang === "ml" ? "സഹായ അഭ്യർത്ഥനകൾ" : "Help Requests"}
                             </h4>
-                            <p className="text-[10px] font-black text-[#ff5500] leading-tight mt-0.5">
-                              {lang === "ml" ? "സഹായ് അസിസ്റ്റന്റ്" : "SahAI Assistant"}
-                            </p>
-                            <p className="text-[9px] font-semibold text-slate-400 dark:text-slate-400 mt-0.5 truncate">
-                              {lang === "ml" ? "ഉടനടി പിന്തുണ നേടുക" : "Get instant support"}
-                            </p>
+                          </div>
+                        </div>
+
+                        {/* 3. Follow Ups Card */}
+                        <div
+                          onClick={() => setMobileTab("applications")}
+                          className="relative overflow-hidden rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/60 p-2.5 flex flex-col justify-between h-[115px] sm:h-[120px] shadow-2xs hover:shadow-xs transition-all group cursor-pointer active:scale-98"
+                        >
+                          {/* Top Right Curved Badge */}
+                          <div className="absolute top-0 right-0 rounded-bl-xl rounded-tr-2xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-300 px-2 py-0.5 text-[8px] font-extrabold tracking-wider">
+                            {lang === "ml" ? "ലൈവ്" : "Active"}
                           </div>
 
-                          {/* Bottom Action Pill Button */}
-                          <div className="z-10 mt-1 flex items-center justify-between rounded-full bg-white/90 dark:bg-slate-800/90 backdrop-blur-xs border border-rose-200/50 dark:border-rose-900/30 px-2.5 py-1 shadow-2xs group-hover:border-rose-300 transition-colors">
-                            <span className="text-[9.5px] font-bold text-slate-700 dark:text-slate-200 truncate">
-                              {lang === "ml" ? "സംസാരിക്കുക" : "Chat with SahAI"}
-                            </span>
-                            <div className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-[#ff5500] text-white shrink-0 shadow-xs group-hover:scale-110 transition-transform">
-                              <ChevronRight className="h-3 w-3 stroke-[3]" />
+                          {/* Top Left Icon Container */}
+                          <div className="flex items-center">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 text-white shadow-xs group-hover:scale-105 transition-transform">
+                              <RotateCcw className="h-5 w-5 stroke-[2.2]" />
                             </div>
+                          </div>
+
+                          {/* Bottom Left Title */}
+                          <div className="min-w-0">
+                            <h4 className="font-black text-[11px] sm:text-[11.5px] text-slate-900 dark:text-white leading-snug line-clamp-2">
+                              {lang === "ml" ? "ഫോളോ അപ്പുകൾ" : "Follow Ups"}
+                            </h4>
                           </div>
                         </div>
                       </div>
                     </div>
-
 
                   </div>
                 ) : (
