@@ -109,11 +109,15 @@ export function AdminMobileAppHeader({
               }}
               className="flex h-9 w-9 items-center justify-center rounded-full border border-orange-300/80 dark:border-slate-700 bg-[#FFEDD5] text-[#F97316] hover:bg-orange-200 active:scale-95 transition-all shadow-2xs focus:outline-none shrink-0 overflow-hidden cursor-pointer"
               aria-label="User Profile"
-              title="Jayasurya Profile"
+              title={userRole === "party_worker" ? "Dhyan M S Profile" : "Jayasurya Profile"}
             >
               <img
-                src="https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150&auto=format&fit=crop&q=80"
-                alt="Jayasurya"
+                src={
+                  userRole === "party_worker"
+                    ? "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80"
+                    : "https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150&auto=format&fit=crop&q=80"
+                }
+                alt={userRole === "party_worker" ? "Dhyan M S" : "Jayasurya"}
                 className="h-full w-full object-cover rounded-full"
               />
             </button>
@@ -124,15 +128,28 @@ export function AdminMobileAppHeader({
                 <div className="flex items-center gap-2.5 border-b border-amber-100 dark:border-slate-800 pb-3">
                   <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-[#FFEDD5] text-[#F97316] font-bold shadow-2xs overflow-hidden shrink-0">
                     <img
-                      src="https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150&auto=format&fit=crop&q=80"
-                      alt="Jayasurya"
+                      src={
+                        userRole === "party_worker"
+                          ? "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80"
+                          : "https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150&auto=format&fit=crop&q=80"
+                      }
+                      alt={userRole === "party_worker" ? "Dhyan M S" : "Jayasurya"}
                       className="h-full w-full object-cover rounded-xl"
                     />
                   </div>
                   <div>
-                    <h3 className="font-bold text-xs text-foreground">Jayasurya</h3>
+                    <h3 className="font-bold text-xs text-foreground">
+                      {userRole === "party_worker" ? "Dhyan M S" : "Jayasurya"}
+                    </h3>
                     <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
-                      <ShieldCheck className="h-3 w-3" /> {userRole === "party_worker" ? (lang === "ml" ? "പാർട്ടി പ്രവർത്തകൻ" : "Party Worker") : (lang === "ml" ? "സംസ്ഥാന ഭരണം" : "State Administration")}
+                      <ShieldCheck className="h-3 w-3" />{" "}
+                      {userRole === "party_worker"
+                        ? lang === "ml"
+                          ? "പാർട്ടി ലീഡർ"
+                          : "Party Leader"
+                        : lang === "ml"
+                        ? "സംസ്ഥാന ഭരണം"
+                        : "State Administration"}
                     </p>
                   </div>
                 </div>
@@ -154,7 +171,7 @@ export function AdminMobileAppHeader({
                       <span>{lang === "ml" ? "റോൾ മാറ്റുക" : "Switch View"}</span>
                     </span>
                     <span className="text-[9.5px] font-bold uppercase bg-orange-100 dark:bg-orange-950/60 text-[#F97316] px-2 py-0.5 rounded-md border border-orange-200 dark:border-orange-800">
-                      {userRole === "state_admin" ? (lang === "ml" ? "പാർട്ടി പ്രവർത്തകൻ" : "Party Worker") : (lang === "ml" ? "അഡ്മിൻ" : "Admin")}
+                      {userRole === "state_admin" ? (lang === "ml" ? "പാർട്ടി പ്രവർത്തകൻ" : "Party Worker") : (lang === "ml" ? "അഡ്മിൻ" : "ADMIN")}
                     </span>
                   </button>
                   <button
