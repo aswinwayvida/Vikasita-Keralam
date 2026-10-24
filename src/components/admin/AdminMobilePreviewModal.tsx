@@ -3878,6 +3878,88 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
               />
             )}
 
+            {(activeTab === "create" || activeTab === "helpdesk") && (
+              <div className="space-y-3 animate-in fade-in duration-200">
+                <div className="flex items-center justify-between border-b border-border/80 pb-2 px-0.5">
+                  <h3 className="font-extrabold text-sm text-foreground">
+                    {activeTab === "create"
+                      ? (lang === "ml" ? "പുതിയ അപേക്ഷ സമർപ്പിക്കുക" : "Create New Application")
+                      : (lang === "ml" ? "സ്കീം ഹെൽപ്പ്ഡെസ്ക്" : "Scheme Helpdesk")}
+                  </h3>
+                  <span className="text-[10.5px] font-bold text-orange-600 bg-orange-100 dark:bg-orange-950/60 px-2 py-0.5 rounded-full">
+                    {activeTab === "create" ? "Quick Form" : "Helpdesk"}
+                  </span>
+                </div>
+
+                {activeTab === "create" ? (
+                  <div className="space-y-2.5 bg-card p-3 rounded-2xl border border-border shadow-2xs">
+                    <p className="text-xs text-muted-foreground">
+                      {lang === "ml" ? "ഗുണഭോക്താവിനായി പുതിയ കേന്ദ്ര സർക്കാർ പദ്ധതി അപേക്ഷ സമർപ്പിക്കുക." : "Submit a new Central Government scheme application on behalf of a citizen."}
+                    </p>
+                    <div>
+                      <label className="text-[11px] font-bold text-foreground block mb-1">
+                        {lang === "ml" ? "പദ്ധതി തിരഞ്ഞെടുക്കുക" : "Select Scheme"}
+                      </label>
+                      <select className="w-full text-xs font-semibold p-2 rounded-xl border border-border bg-background">
+                        <option>PM Kisan Samman Nidhi</option>
+                        <option>Pradhan Mantri Awas Yojana</option>
+                        <option>Ayushman Bharat PM-JAY</option>
+                        <option>Subhiksha Keralam Aid</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-foreground block mb-1">
+                        {lang === "ml" ? "അപേക്ഷകന്റെ പേര്" : "Applicant Full Name"}
+                      </label>
+                      <input type="text" placeholder="e.g. Soman P" className="w-full text-xs p-2 rounded-xl border border-border bg-background" />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-foreground block mb-1">
+                        {lang === "ml" ? "ഫോൺ നമ്പർ" : "Mobile Phone Number"}
+                      </label>
+                      <input type="tel" placeholder="+91 98765 43210" className="w-full text-xs p-2 rounded-xl border border-border bg-background" />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab("applications");
+                        setMobileSubPage("none");
+                      }}
+                      className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-primary text-white font-bold text-xs shadow-md active:scale-98 transition-transform"
+                    >
+                      {lang === "ml" ? "അപേക്ഷ സമർപ്പിക്കുക" : "Submit Application"}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3 bg-card p-3 rounded-2xl border border-border shadow-2xs">
+                    <div className="flex items-center gap-3 p-3 bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800 rounded-xl">
+                      <div className="h-10 w-10 rounded-full bg-orange-500 text-white flex items-center justify-center shrink-0 font-bold">
+                        AI
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-foreground">SahAI Scheme Assistant</h4>
+                        <p className="text-[10.5px] text-muted-foreground">
+                          {lang === "ml" ? "പദ്ധതി സംശയങ്ങൾക്കും സഹായങ്ങൾക്കുമായി സംസാരിക്കൂ." : "Instant assistance for scheme eligibility and application guidance."}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="border border-border rounded-xl p-2.5 bg-background text-xs space-y-2">
+                      <p className="text-muted-foreground font-medium">
+                        {lang === "ml" ? "ഹെൽപ്പ്ഡെസ്ക് നമ്പർ: +91 1800 200 400" : "Helpdesk Helpline: 1800-200-400 (Toll Free)"}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("create")}
+                        className="w-full py-2 rounded-lg bg-primary/10 text-primary font-bold text-xs hover:bg-primary/20 transition-colors"
+                      >
+                        {lang === "ml" ? "നേരിട്ട് അപേക്ഷിക്കുക" : "Apply Directly"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {activeTab === "more" && (
               <div className="space-y-3 animate-in fade-in duration-200">
                 <div className="flex items-center justify-between border-b border-border/80 pb-2 px-0.5">
