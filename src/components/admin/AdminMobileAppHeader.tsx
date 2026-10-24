@@ -26,9 +26,16 @@ import { AdminMobileTab } from "./AdminMobileAppBottomNav";
 interface AdminMobileAppHeaderProps {
   onNavigateTab?: (tab: AdminMobileTab) => void;
   onOpenNotifications?: () => void;
+  userRole?: "state_admin" | "party_worker";
+  onSwitchRole?: (role: "state_admin" | "party_worker") => void;
 }
 
-export function AdminMobileAppHeader({ onNavigateTab, onOpenNotifications }: AdminMobileAppHeaderProps = {}) {
+export function AdminMobileAppHeader({
+  onNavigateTab,
+  onOpenNotifications,
+  userRole = "state_admin",
+  onSwitchRole,
+}: AdminMobileAppHeaderProps = {}) {
   const { lang, setLang } = useLang();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -125,12 +132,31 @@ export function AdminMobileAppHeader({ onNavigateTab, onOpenNotifications }: Adm
                   <div>
                     <h3 className="font-bold text-xs text-foreground">Jayasurya</h3>
                     <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
-                      <ShieldCheck className="h-3 w-3" /> State Administration
+                      <ShieldCheck className="h-3 w-3" /> {userRole === "party_worker" ? (lang === "ml" ? "പാർട്ടി പ്രവർത്തകൻ" : "Party Worker") : (lang === "ml" ? "സംസ്ഥാന ഭരണം" : "State Administration")}
                     </p>
                   </div>
                 </div>
 
                 <div className="space-y-1 text-xs">
+                  {/* Role Switcher Option */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onSwitchRole) {
+                        onSwitchRole(userRole === "state_admin" ? "party_worker" : "state_admin");
+                      }
+                      setIsProfileOpen(false);
+                    }}
+                    className="flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-foreground hover:bg-orange-50 dark:hover:bg-slate-800 font-medium transition-all cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Users2 className="h-4 w-4 text-[#F97316]" />
+                      <span>{lang === "ml" ? "റോൾ മാറ്റുക" : "Switch View"}</span>
+                    </span>
+                    <span className="text-[9.5px] font-bold uppercase bg-orange-100 dark:bg-orange-950/60 text-[#F97316] px-2 py-0.5 rounded-md border border-orange-200 dark:border-orange-800">
+                      {userRole === "state_admin" ? (lang === "ml" ? "പാർട്ടി പ്രവർത്തകൻ" : "Party Worker") : (lang === "ml" ? "അഡ്മിൻ" : "Admin")}
+                    </span>
+                  </button>
                   <button
                     onClick={() => setLang(lang === "ml" ? "en" : "ml")}
                     className="flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-foreground hover:bg-amber-50 dark:hover:bg-slate-800 font-medium transition-all cursor-pointer"

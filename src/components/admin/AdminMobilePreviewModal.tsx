@@ -116,6 +116,8 @@ const metricsByPeriod: Record<
 
 export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewModalProps) {
   const { lang } = useLang();
+  const [userRole, setUserRole] = useState<"state_admin" | "party_worker">("state_admin");
+  const [partyWorkerTab, setPartyWorkerTab] = useState<"my_work" | "team">("my_work");
   const [activeTab, setActiveTab] = useState<AdminMobileTab>("overview");
   const [mobileSubPage, setMobileSubPage] = useState<"none" | "leaderboard" | "needs_attention" | "recent_activity" | "beneficiaries" | "notifications" | "applications" | "events_announcements">("none");
   const [eventsSubTab, setEventsSubTab] = useState<"events" | "announcements">("events");
@@ -559,6 +561,8 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
 
           {/* Mobile App Standard Header with Logo, Nav Menu, Notifications & Logged User Profile */}
           <AdminMobileAppHeader
+            userRole={userRole}
+            onSwitchRole={setUserRole}
             onNavigateTab={(tab) => {
               setActiveTab(tab);
               setMobileSubPage("none");
