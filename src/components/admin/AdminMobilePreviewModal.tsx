@@ -4289,9 +4289,39 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                     </div>
                   )}
 
-                  {/* Item 2: Assisted */}
+                  {/* Item 2: Assisted - Karunya Health Insurance */}
                   {matchAppSearch("assisted", "Karunya Health Insurance", "കാരുണ്യ ആരോഗ്യ ഇൻഷുറൻസ്", "Lakshmi Amma", "ലക്ഷ്മി അമ്മ", "Health Insurance", "ആരോഗ്യം", "APP-2026-8922") && (
-                    <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:shadow-xs transition-all cursor-pointer">
+                    <div 
+                      onClick={() => {
+                        setSelectedApplicationRecord({
+                          ref: "APP-2026-8922",
+                          schemeNameEn: "Karunya Health Insurance",
+                          schemeNameMl: "കാരുണ്യ ആരോഗ്യ ഇൻഷുറൻസ്",
+                          categoryEn: "Health Insurance",
+                          categoryMl: "ആരോഗ്യം",
+                          status: "approved",
+                          applicantNameEn: "Lakshmi Amma",
+                          applicantNameMl: "ലക്ഷ്മി അമ്മ",
+                          aadhaar: "XXXX-XXXX-8922",
+                          phone: "+91 98470 11223",
+                          locationEn: "Vattiyoorkavu, Thiruvananthapuram",
+                          locationMl: "വട്ടിയൂർക്കാവ്, തിരുവനന്തപുരം",
+                          annualIncome: "₹ 75,000",
+                          appliedDate: "03/10/2026",
+                          currentStep: 4,
+                          pendingDocs: ["Ration Card Copy", "Doctor Certificate"],
+                          nextActionEn: "Sanction letter generated. Financial claim process ready.",
+                          nextActionMl: "അനുമതി പത്രം തയാറായി. ധനസഹായ തുക നൽകാൻ വിവരങ്ങൾ ക്രമീകരിച്ചു.",
+                          auditLog: [
+                            { titleEn: "Application Received", titleMl: "അപേക്ഷ ലഭിച്ചു", date: "03 Oct 2026", status: "completed" },
+                            { titleEn: "Document Verification Completed", titleMl: "രേഖാ പരിശോധന പൂർത്തിയായി", date: "04 Oct 2026", status: "completed" },
+                            { titleEn: "District Medical Sanction", titleMl: "ജില്ലാ മെഡിക്കൽ അനുമതി", date: "05 Oct 2026", status: "completed" },
+                          ],
+                        });
+                        setMobileSubPage("app_detail");
+                      }}
+                      className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+                    >
                       <div className="flex items-center justify-between gap-1.5">
                         <span className="text-[9.5px] font-extrabold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 border border-purple-200/70 dark:border-purple-900/50 px-2 py-0.5 rounded-full uppercase tracking-wider">
                           {lang === "ml" ? "ആരോഗ്യം" : "Health Insurance"}
@@ -4317,9 +4347,39 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                     </div>
                   )}
 
-                  {/* Item 3: Pending */}
-                  {matchAppSearch("pending", "Pratibha Merit Scholarship", "പ്രതിഭാ മെരിറ്റ് സ്കോളർഷിപ്പ്", "Ananya Ramesh", "അനന്യ രമേശ്", "Scholarship", "സ്കോളർഷിപ്പ്", "APP-2026-8910") && (
-                    <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:shadow-xs transition-all cursor-pointer">
+                  {/* Item 3: PM Kisan Samman Nidhi */}
+                  {matchAppSearch("pending", "PM Kisan Samman Nidhi", "പിഎം-കിസാൻ സമ്മാൻ നിധി", "K. Krishnan", "കെ. കൃഷ്ണൻ", "Agriculture", "കൃഷി", "APP-2026-8925") && (
+                    <div 
+                      onClick={() => {
+                        setSelectedApplicationRecord({
+                          ref: "APP-2026-8925",
+                          schemeNameEn: "PM Kisan Samman Nidhi",
+                          schemeNameMl: "പിഎം-കിസാൻ സമ്മാൻ നിധി",
+                          categoryEn: "Agriculture",
+                          categoryMl: "കൃഷി",
+                          status: "pending",
+                          applicantNameEn: "K. Krishnan",
+                          applicantNameMl: "കെ. കൃഷ്ണൻ",
+                          aadhaar: "XXXX-XXXX-8925",
+                          phone: "+91 98463 87654",
+                          locationEn: "Palakkad North, Palakkad",
+                          locationMl: "പാലക്കാട് നോർത്ത്, പാലക്കാട്",
+                          annualIncome: "₹ 90,000",
+                          appliedDate: "01/10/2026",
+                          currentStep: 2,
+                          pendingDocs: ["Land Tax Receipt", "Aadhaar e-KYC Verification"],
+                          nextActionEn: "Pending e-KYC validation via Biometric / OTP",
+                          nextActionMl: "ബയോമെട്രിക് / ഒടിപി വഴി ഇ-കെവൈസി പരിശോധന പൂർത്തിയാക്കുക",
+                          auditLog: [
+                            { titleEn: "Application Registered", titleMl: "അപേക്ഷ രജിസ്റ്റർ ചെയ്തു", date: "01 Oct 2026", status: "completed" },
+                            { titleEn: "Land Record Audit", titleMl: "ഭൂമി വിവര പരിശോധന", date: "03 Oct 2026", status: "completed" },
+                            { titleEn: "Bank Aadhar Seeding", titleMl: "ബാങ്ക് ആധാർ ലിങ്കിംഗ്", date: "Pending", status: "current" },
+                          ],
+                        });
+                        setMobileSubPage("app_detail");
+                      }}
+                      className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+                    >
                       <div className="flex items-center justify-between gap-1.5">
                         <span className="text-[9.5px] font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/70 dark:border-emerald-900/50 px-2 py-0.5 rounded-full uppercase tracking-wider">
                           {lang === "ml" ? "കൃഷി" : "Agriculture"}
@@ -4345,9 +4405,39 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                     </div>
                   )}
 
-                  {/* Item 4: Rejected */}
+                  {/* Item 4: Rejected - LIFE Mission */}
                   {matchAppSearch("rejected", "LIFE Mission Housing Title", "ലൈഫ് മിഷൻ ഭവന പദ്ധതി", "Joseph K", "ജോസഫ് കെ", "Housing", "ഭവന നിർമ്മാണം", "APP-2026-8927") && (
-                    <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:shadow-xs transition-all cursor-pointer">
+                    <div 
+                      onClick={() => {
+                        setSelectedApplicationRecord({
+                          ref: "APP-2026-8927",
+                          schemeNameEn: "LIFE Mission Housing Title",
+                          schemeNameMl: "ലൈഫ് മിഷൻ ഭവന പദ്ധതി",
+                          categoryEn: "Housing",
+                          categoryMl: "ഭവന നിർമ്മാണം",
+                          status: "rejected",
+                          applicantNameEn: "Joseph K",
+                          applicantNameMl: "ജോസഫ് കെ",
+                          aadhaar: "XXXX-XXXX-8927",
+                          phone: "+91 98952 66778",
+                          locationEn: "Chathannoor, Kollam",
+                          locationMl: "ചാത്തന്നൂർ, കൊല്ലം",
+                          annualIncome: "₹ 1,80,000",
+                          appliedDate: "29/09/2026",
+                          currentStep: 3,
+                          pendingDocs: ["Ownership Title Deed"],
+                          nextActionEn: "Rejected due to income limit exceeding eligibility criteria",
+                          nextActionMl: "വരുമാന പരിധി യോഗ്യതാ മാനദണ്ഡത്തിൽ കൂടുതൽ ആയതിനാൽ നിരസിച്ചു",
+                          auditLog: [
+                            { titleEn: "Application Submitted", titleMl: "അപേക്ഷ സമർപ്പിച്ചു", date: "29 Sep 2026", status: "completed" },
+                            { titleEn: "Field Verification Inspection", titleMl: "ഫീൽഡ് തല പരിശോധന", date: "02 Oct 2026", status: "completed" },
+                            { titleEn: "Application Rejected", titleMl: "അപേക്ഷ നിരസിച്ചു", date: "04 Oct 2026", status: "completed" },
+                          ],
+                        });
+                        setMobileSubPage("app_detail");
+                      }}
+                      className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+                    >
                       <div className="flex items-center justify-between gap-1.5">
                         <span className="text-[9.5px] font-extrabold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border border-blue-200/70 dark:border-blue-900/50 px-2 py-0.5 rounded-full uppercase tracking-wider">
                           {lang === "ml" ? "ഭവന നിർമ്മാണം" : "Housing"}
@@ -4373,9 +4463,39 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                     </div>
                   )}
 
-                  {/* Item 5: Assisted */}
-                  {matchAppSearch("assisted", "Karunya Health Insurance", "കാരുണ്യ ആരോഗ്യ ഇൻഷുറൻസ്", "Lakshmi Amma", "ലക്ഷ്മി അമ്മ", "Health Insurance", "ആരോഗ്യം", "APP-2026-8922") && (
-                    <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:shadow-xs transition-all cursor-pointer">
+                  {/* Item 5: Vayoshreshtha Pension */}
+                  {matchAppSearch("assisted", "Vayoshreshtha Pension Scheme", "വയോശ്രേഷ്ഠ പെൻഷൻ", "Soman P", "സോമൻ പി", "Pension", "പെൻഷൻ", "APP-2026-8921") && (
+                    <div 
+                      onClick={() => {
+                        setSelectedApplicationRecord({
+                          ref: "APP-2026-8921",
+                          schemeNameEn: "Vayoshreshtha Pension Scheme",
+                          schemeNameMl: "വയോശ്രേഷ്ഠ പെൻഷൻ",
+                          categoryEn: "Pension",
+                          categoryMl: "പെൻഷൻ",
+                          status: "disbursed",
+                          applicantNameEn: "Soman P",
+                          applicantNameMl: "സോമൻ പി",
+                          aadhaar: "XXXX-XXXX-8921",
+                          phone: "+91 94471 23456",
+                          locationEn: "Kazhakkoottam, Thiruvananthapuram",
+                          locationMl: "കഴക്കൂട്ടം, തിരുവനന്തപുരം",
+                          annualIncome: "₹ 60,000",
+                          appliedDate: "04/10/2026",
+                          currentStep: 5,
+                          pendingDocs: ["Age Proof Certificate", "Bank Passbook Copy"],
+                          nextActionEn: "Monthly pension disbursed directly to DBT linked bank account",
+                          nextActionMl: "പ്രതിമാസ പെൻഷൻ ഡിബിടി ബാങ്ക് അക്കൗണ്ടിലേക്ക് അയച്ചു നൽകി",
+                          auditLog: [
+                            { titleEn: "Application Submitted", titleMl: "അപേക്ഷ സമർപ്പിച്ചു", date: "04 Oct 2026", status: "completed" },
+                            { titleEn: "Verification & Approval", titleMl: "പരിശോധനയും അംഗീകാരവും", date: "05 Oct 2026", status: "completed" },
+                            { titleEn: "First Pension Disbursed", titleMl: "ആദ്യ പെൻഷൻ ലഭിച്ചു", date: "06 Oct 2026", status: "completed" },
+                          ],
+                        });
+                        setMobileSubPage("app_detail");
+                      }}
+                      className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+                    >
                       <div className="flex items-center justify-between gap-1.5">
                         <span className="text-[9.5px] font-extrabold text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/60 border border-cyan-200/70 dark:border-cyan-900/50 px-2 py-0.5 rounded-full uppercase tracking-wider">
                           {lang === "ml" ? "പെൻഷൻ" : "Pension"}
