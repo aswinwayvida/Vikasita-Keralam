@@ -832,23 +832,9 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                       }}
                     />
 
-                    {/* Core Analytics KPI Grid (2 cards per row with Icon matching border on hover) */}
+                    {/* Core Analytics KPI Grid (2 cards per row) */}
                     <div className="grid grid-cols-2 gap-2">
-                      {/* 1. Users */}
-                      <div
-                        onClick={() => setMobileSubPage("beneficiaries")}
-                        className="min-h-[44px] rounded-lg border border-border bg-card p-1.5 px-2 flex flex-col justify-between shadow-2xs hover:border-emerald-500/70 transition-all cursor-pointer"
-                      >
-                        <div className="flex items-center justify-between gap-1">
-                          <span className="text-[11.5px] font-bold text-muted-foreground truncate">
-                            {lang === "ml" ? "ഉപയോക്താക്കൾ" : "Users"}
-                          </span>
-                          <img src={users3dIcon} alt="Users" className="h-5 w-5 sm:h-5.5 sm:w-5.5 object-contain shrink-0" />
-                        </div>
-                        <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">{currentMetrics.users.toLocaleString()}</p>
-                      </div>
-
-                      {/* 2. Applications */}
+                      {/* 1. Application Received */}
                       <div
                         onClick={() => {
                           setActiveTab("applications");
@@ -859,14 +845,32 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                       >
                         <div className="flex items-center justify-between gap-1">
                           <span className="text-[11.5px] font-bold text-muted-foreground truncate">
-                            {lang === "ml" ? "അപേക്ഷകൾ" : "Applications"}
+                            {lang === "ml" ? "ലഭിച്ച അപേക്ഷകൾ" : "Application Received"}
                           </span>
-                          <img src={applications3dIcon} alt="Applications" className="h-5 w-5 sm:h-5.5 sm:w-5.5 object-contain shrink-0" />
+                          <img src={applications3dIcon} alt="Application Received" className="h-5 w-5 sm:h-5.5 sm:w-5.5 object-contain shrink-0" />
                         </div>
                         <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">{applicationsCount.toLocaleString()}</p>
                       </div>
 
-                      {/* 3. Approved (renamed from Beneficiaries) */}
+                      {/* 2. Submitted */}
+                      <div
+                        onClick={() => {
+                          setActiveTab("applications");
+                          setMobileSubPage("none");
+                          setApplicationStatusFilter("all");
+                        }}
+                        className="min-h-[44px] rounded-lg border border-border bg-card p-1.5 px-2 flex flex-col justify-between shadow-2xs hover:border-sky-500/70 transition-all cursor-pointer"
+                      >
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-[11.5px] font-bold text-muted-foreground truncate">
+                            {lang === "ml" ? "സമർപ്പിച്ചവ" : "Submitted"}
+                          </span>
+                          <img src={users3dIcon} alt="Submitted" className="h-5 w-5 sm:h-5.5 sm:w-5.5 object-contain shrink-0" />
+                        </div>
+                        <p className="font-display text-sm sm:text-base font-bold text-sky-600 dark:text-sky-400 leading-none mt-1">{(applicationsCount - 150).toLocaleString()}</p>
+                      </div>
+
+                      {/* 3. Approved */}
                       <div
                         onClick={() => setMobileSubPage("beneficiaries")}
                         className="min-h-[44px] rounded-lg border border-border bg-card p-1.5 px-2 flex flex-col justify-between shadow-2xs hover:border-emerald-500/70 transition-all cursor-pointer"
@@ -880,7 +884,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                         <p className="font-display text-sm sm:text-base font-bold text-emerald-600 dark:text-emerald-400 leading-none mt-1">{currentMetrics.beneficiaries.toLocaleString()}</p>
                       </div>
 
-                      {/* 4. In Review (renamed from Approved / Assisted) */}
+                      {/* 4. In Review */}
                       <div
                         onClick={() => {
                           setActiveTab("applications");
