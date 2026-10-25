@@ -147,7 +147,7 @@ export const ml = {
     welcome: "Welcome, State Admin",
     kpis: {
       appsPending: "Applications Pending",
-      appsApproved: "Approved",
+      appsApproved: "ഗുണഭോക്താക്കൾ",
       issuesOpen: "Active Issues",
       issuesResolved: "Resolved",
       volunteersActive: "Active Volunteers",

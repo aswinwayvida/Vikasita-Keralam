@@ -148,7 +148,7 @@ export const en: Dict = {
     welcome: "Welcome, State Admin",
     kpis: {
       appsPending: "Applications Pending",
-      appsApproved: "Approved",
+      appsApproved: "Beneficiaries",
       issuesOpen: "Active Issues",
       issuesResolved: "Resolved",
       volunteersActive: "Active Volunteers",

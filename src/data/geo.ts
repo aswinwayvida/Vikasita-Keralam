@@ -1,6 +1,17 @@
 export type District = { id: string; ml: string; en: string };
 export type Constituency = { id: string; districtId: string; ml: string; en: string };
-export type Panchayat = { id: string; districtId: string; constituencyId: string; ml: string; en: string; type: "panchayat" | "municipality" | "corporation" };
+export type LocalBodyType = "panchayat" | "municipality" | "corporation";
+export type Panchayat = { id: string; districtId: string; constituencyId: string; ml: string; en: string; type: LocalBodyType };
+
+export type WardItem = {
+  id: string;
+  number: number;
+  nameEn: string;
+  nameMl: string;
+  displayEn: string;
+  displayMl: string;
+  constituencyId?: string;
+};
 
 export const districts: District[] = [
   { id: "tvm", ml: "തിരുവനന്തപുരം", en: "Thiruvananthapuram" },
@@ -260,4 +271,74 @@ export function getConstituencyName(id: string, lang: "ml" | "en") {
 export function getPanchayatName(id: string, lang: "ml" | "en") {
   const p = panchayats.find((x) => x.id === id);
   return p ? p[lang] : id;
+}
+
+
+export function getWardsForLocalBody(localBodyIdOrName: string): WardItem[] {
+  const lb = panchayats.find(
+    (p) => p.id === localBodyIdOrName || p.en === localBodyIdOrName || p.ml === localBodyIdOrName
+  );
+
+  const districtConstituencies = lb
+    ? constituencies.filter((c) => c.districtId === lb.districtId)
+    : [];
+
+  const representativeWardNames = [
+    { en: "Town Central", ml: "ടൗൺ സെൻട്രൽ" },
+    { en: "Station Road", ml: "സ്റ്റേഷൻ റോഡ്" },
+    { en: "Market Ward", ml: "മാർക്കറ്റ് വാർഡ്" },
+    { en: "Hospital Junction", ml: "ഹോസ്പിറ്റൽ ജംഗ്ഷൻ" },
+    { en: "East Fort", ml: "കിഴക്കേ കോട്ട" },
+    { en: "West Hill", ml: "വെസ്റ്റ് ഹിൽ" },
+    { en: "Temple North", ml: "ക്ഷേത്രം നോർത്ത്" },
+    { en: "Civil Station", ml: "സിവിൽ സ്റ്റേഷൻ" },
+    { en: "River View", ml: "റിവർ വ്യൂ" },
+    { en: "High School Ward", ml: "ഹൈസ്കൂൾ വാർഡ്" },
+    { en: "Bypass Junction", ml: "ബൈപ്പാസ് ജംഗ്ഷൻ" },
+    { en: "College Road", ml: "കോളേജ് റോഡ്" },
+    { en: "Kavala North", ml: "കവല നോർത്ത്" },
+    { en: "Kavala South", ml: "കവല സൗത്ത്" },
+    { en: "Office Junction", ml: "ഓഫീസ് ജംഗ്ഷൻ" },
+  ];
+
+  return representativeWardNames.map((nameObj, idx) => {
+    const wardNum = idx + 1;
+    let mappedConstituencyId: string | undefined = undefined;
+
+    if (lb && districtConstituencies.length > 0) {
+      if (wardNum <= 6) {
+        mappedConstituencyId = lb.constituencyId || districtConstituencies[0].id;
+      } else if (wardNum <= 10 && districtConstituencies.length > 1) {
+        mappedConstituencyId = districtConstituencies[1].id;
+      }
+    }
+
+    return {
+      id: `${lb?.id || "lb"}-ward-${wardNum}`,
+      number: wardNum,
+      nameEn: nameObj.en,
+      nameMl: nameObj.ml,
+      displayEn: `Ward ${wardNum} - ${nameObj.en}`,
+      displayMl: `വാർഡ് ${wardNum} - ${nameObj.ml}`,
+      constituencyId: mappedConstituencyId,
+    };
+  });
+}
+
+export function getMappedConstituencyForWard(localBodyIdOrName: string, wardDisplayOrId: string): Constituency | null {
+  if (!localBodyIdOrName || !wardDisplayOrId) return null;
+  const wardsList = getWardsForLocalBody(localBodyIdOrName);
+  const matchedWard = wardsList.find(
+    (w) =>
+      w.id === wardDisplayOrId ||
+      w.displayEn === wardDisplayOrId ||
+      w.displayMl === wardDisplayOrId ||
+      `Ward ${w.number}` === wardDisplayOrId
+  );
+
+  if (matchedWard && matchedWard.constituencyId) {
+    const matchedConstituency = constituencies.find((c) => c.id === matchedWard.constituencyId);
+    return matchedConstituency || null;
+  }
+  return null;
 }
