@@ -4,7 +4,7 @@ import { X, Smartphone, Wifi, Battery, Signal, ChevronRight, ChevronLeft, ArrowL
 import { useLang } from "@/i18n/LanguageProvider";
 import officialLotus from "@/assets/bjp-official-lotus.png";
 import users3dIcon from "@/assets/kpi-3d/users.png";
-import beneficiaries3dIcon from "@/assets/kpi-3d/beneficiaries.png";
+import inReview3dIcon from "@/assets/kpi-3d/in-review.png";
 import applications3dIcon from "@/assets/kpi-3d/applications.png";
 import assisted3dIcon from "@/assets/kpi-3d/assisted.png";
 import pending3dIcon from "@/assets/kpi-3d/pending.png";
@@ -897,7 +897,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           <span className="text-[11.5px] font-bold text-muted-foreground truncate">
                             {lang === "ml" ? "പരിശോധനയിലുള്ളവ" : "In Review"}
                           </span>
-                          <img src={beneficiaries3dIcon} alt="In Review" className="h-5 w-5 sm:h-5.5 sm:w-5.5 object-contain shrink-0" />
+                          <img src={inReview3dIcon} alt="In Review" className="h-5 w-5 sm:h-5.5 sm:w-5.5 object-contain shrink-0" />
                         </div>
                         <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">{currentMetrics.assisted.toLocaleString()}</p>
                       </div>
