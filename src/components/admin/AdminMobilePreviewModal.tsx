@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link } from "@tanstack/react-router";
-import { X, Smartphone, Wifi, Battery, Signal, ChevronRight, ChevronLeft, ArrowLeft, Users, HeartHandshake, Database, Layers, Sparkles, MessageSquare, Clock3, UserCheck, LayoutDashboard, Sliders, Calendar, FileText, XCircle, CheckCircle2, Hourglass, MapPin, Trophy, AlertTriangle, Activity, Globe, Map, Network, Store, ShieldCheck, ChevronDown, Filter, Search, Megaphone, CalendarDays, BellRing, Phone, RotateCcw, GraduationCap, Sprout, LayoutGrid, MoreVertical, AlertCircle, Star, Zap, Headphones } from "lucide-react";
+import { X, Smartphone, Wifi, Battery, Signal, ChevronRight, ChevronLeft, ArrowLeft, Users, HeartHandshake, Database, Layers, Sparkles, MessageSquare, Clock3, UserCheck, LayoutDashboard, Sliders, Calendar, FileText, XCircle, CheckCircle2, Hourglass, MapPin, Trophy, AlertTriangle, Activity, Globe, Map, Network, Store, ShieldCheck, ChevronDown, Filter, Search, Megaphone, CalendarDays, BellRing, Phone, RotateCcw, GraduationCap, Sprout, LayoutGrid, MoreVertical, AlertCircle, Star, Zap, Headphones, Edit, Upload, FileCheck, Loader2, SearchX, RefreshCw, Check } from "lucide-react";
 import { useLang } from "@/i18n/LanguageProvider";
 import officialLotus from "@/assets/bjp-official-lotus.png";
 import users3dIcon from "@/assets/kpi-3d/users.png";
@@ -168,6 +168,103 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     createPin.trim() &&
     createState.trim()
   );
+
+  // Create Application Flow Steps State
+  const [createFlowStep, setCreateFlowStep] = useState<"form" | "checking" | "eligible_schemes" | "scheme_details" | "submitted">("form");
+  const [isCheckingEligibility, setIsCheckingEligibility] = useState<boolean>(false);
+  const [eligibleSchemesSearchQuery, setEligibleSchemesSearchQuery] = useState<string>("");
+  const [selectedEligibleScheme, setSelectedEligibleScheme] = useState<{
+    id: string;
+    titleEn: string;
+    titleMl: string;
+    benefitEn: string;
+    benefitMl: string;
+    matchLabelEn: string;
+    matchLabelMl: string;
+    deptEn: string;
+    deptMl: string;
+    categoryEn: string;
+    categoryMl: string;
+    requiredDocEn: string;
+    requiredDocMl: string;
+  } | null>(null);
+  const [uploadedDocName, setUploadedDocName] = useState<string>("");
+  const [bankAccountNumber, setBankAccountNumber] = useState<string>("");
+  const [bankIfscCode, setBankIfscCode] = useState<string>("");
+  const [declarationAccepted, setDeclarationAccepted] = useState<boolean>(false);
+
+  const handleStartEligibilityCheck = () => {
+    if (!isCreateFormValid || isCheckingEligibility) return;
+    setCreateFlowStep("checking");
+    setIsCheckingEligibility(true);
+    setTimeout(() => {
+      setIsCheckingEligibility(false);
+      setCreateFlowStep("eligible_schemes");
+    }, 2200);
+  };
+
+  const mockEligibleSchemesList = [
+    {
+      id: "SCH-001",
+      titleEn: "PM Kisan Samman Nidhi",
+      titleMl: "പി.എം. കിസാൻ സമ്മാൻ നിധി",
+      benefitEn: "₹6,000 / year direct benefit transfer in 3 installments for eligible farmers.",
+      benefitMl: "കർഷകർക്ക് പ്രതിവർഷം ₹6,000 ധനസഹായം (3 ഗഡുക്കളായി നേരിട്ട് ബാങ്ക് അക്കൗണ്ടിലേക്ക്).",
+      matchLabelEn: "100% Match",
+      matchLabelMl: "100% യോഗ്യത",
+      deptEn: "Agriculture Department",
+      deptMl: "കൃഷി വകുപ്പ്",
+      categoryEn: "Central Government",
+      categoryMl: "കേന്ദ്ര സർക്കാർ",
+      requiredDocEn: "Land Record / Revenue Tax Receipt Copy",
+      requiredDocMl: "കരം അടച്ച രസീത് / ഭൂമി ഉടമസ്ഥാവകാശ രേഖ",
+    },
+    {
+      id: "SCH-002",
+      titleEn: "Karunya Arogya Suraksha Padhathi (KASP)",
+      titleMl: "കാരുണ്യ ആരോഗ്യ സുരക്ഷാ പദ്ധതി (KASP)",
+      benefitEn: "Up to ₹5,00,000 per family per year for secondary and tertiary hospitalization.",
+      benefitMl: "കുടുംബത്തിന് പ്രതിവർഷം ₹5,00,000 വരെയുള്ള സൗജന്യ ആശുപത്രി ചികിത്സാ പരിരക്ഷ.",
+      matchLabelEn: "96% Match",
+      matchLabelMl: "96% യോഗ്യത",
+      deptEn: "Health & Family Welfare",
+      deptMl: "ആരോഗ്യ കുടുംബക്ഷേമ വകുപ്പ്",
+      categoryEn: "State Government",
+      categoryMl: "സംസ്ഥാന സർക്കാർ",
+      requiredDocEn: "Ration Card Copy (AAY / PHH / Non-Priority)",
+      requiredDocMl: "റേഷൻ കാർഡിന്റെ പകർപ്പ് (AAY / PHH)",
+    },
+    {
+      id: "SCH-003",
+      titleEn: "LIFE Mission Housing Title & Grant",
+      titleMl: "ലൈഫ് മിഷൻ ഭവന നിർമ്മാണ പദ്ധതി",
+      benefitEn: "₹4,00,000 financial assistance for constructing a house for homeless families.",
+      benefitMl: "ഭവനരഹിതരായ കുടുംബങ്ങൾക്ക് വീട് നിർമ്മിക്കുന്നതിന് ₹4,00,000 സാമ്പത്തിക സഹായം.",
+      matchLabelEn: "92% Match",
+      matchLabelMl: "92% യോഗ്യത",
+      deptEn: "Local Self Government",
+      deptMl: "തദ്ദേശ സ്വയംഭരണ വകുപ്പ്",
+      categoryEn: "State Government",
+      categoryMl: "സംസ്ഥാന സർക്കാർ",
+      requiredDocEn: "Land Ownership Title / Possessory Certificate",
+      requiredDocMl: "ഭൂമി ഉടമസ്ഥാവകാശ സാക്ഷ്യപത്രം",
+    },
+    {
+      id: "SCH-004",
+      titleEn: "Vayoshreshtha Welfare & Pension Scheme",
+      titleMl: "വയോശ്രേഷ്ഠ മുതിർന്ന പൗര പെൻഷൻ",
+      benefitEn: "₹1,600 monthly social security pension and healthcare support.",
+      benefitMl: "പ്രതിമാസം ₹1,600 സാമൂഹിക സുരക്ഷാ പെൻഷനും ആരോഗ്യ പരിരക്ഷയും.",
+      matchLabelEn: "88% Match",
+      matchLabelMl: "88% യോഗ്യത",
+      deptEn: "Social Justice Department",
+      deptMl: "സാമൂഹിക നീതി വകുപ്പ്",
+      categoryEn: "State Government",
+      categoryMl: "സംസ്ഥാന സർക്കാർ",
+      requiredDocEn: "Aadhaar / Age Proof & Bank Passbook Copy",
+      requiredDocMl: "വയസ് തെളിയിക്കുന്ന രേഖ & ബാങ്ക് പാസ്ബുക്ക് പകർപ്പ്",
+    },
+  ];
   const [mobileSubPage, setMobileSubPage] = useState<"none" | "leaderboard" | "needs_attention" | "recent_activity" | "beneficiaries" | "notifications" | "applications" | "events_announcements">("none");
   const [eventsSubTab, setEventsSubTab] = useState<"events" | "announcements">("events");
   const [applicationStatusFilter, setApplicationStatusFilter] = useState<"all" | "pending" | "assisted" | "rejected">("all");
@@ -714,7 +811,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                     <div className="grid grid-cols-2 gap-2">
                       {/* 1. Users */}
                       <div
-                        onClick={() => setActiveTab("users")}
+                        onClick={() => setMobileSubPage("beneficiaries")}
                         className="min-h-[44px] rounded-lg border border-border bg-card p-1.5 px-2 flex flex-col justify-between shadow-2xs hover:border-emerald-500/70 transition-all cursor-pointer"
                       >
                         <div className="flex items-center justify-between gap-1">
@@ -1086,7 +1183,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                         </div>
                         <button
                           type="button"
-                          onClick={() => setMobileTab("applications")}
+                          onClick={() => setActiveTab("applications")}
                           className="flex items-center gap-0.5 text-[11px] font-bold text-[#f95700] hover:underline cursor-pointer"
                         >
                           <span className="flex items-center gap-1.5"><span>{lang === "ml" ? "എല്ലാം" : "View all"}</span><span className="rounded-full bg-orange-500/10 dark:bg-orange-950/40 text-[#f95700] px-1.5 py-0.5 text-[9.5px] font-black leading-none border border-orange-200/80 dark:border-orange-900/50">2</span></span>
@@ -1098,7 +1195,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                       <div className="space-y-2">
                         {/* Item 1: Meera Nair */}
                         <div
-                          onClick={() => setMobileTab("applications")}
+                          onClick={() => setActiveTab("applications")}
                           className="rounded-2xl bg-white dark:bg-slate-900 border border-orange-100 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
                         >
                           <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -1126,7 +1223,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
 
                         {/* Item 2: Ravi Kumar */}
                         <div
-                          onClick={() => setMobileTab("applications")}
+                          onClick={() => setActiveTab("applications")}
                           className="rounded-2xl bg-white dark:bg-slate-900 border border-orange-100 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
                         >
                           <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -4040,7 +4137,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
               </div>
             )}
 
-            {activeTab === "users" && (
+            {(activeTab as string) === "users" && (
               <MobileUsersListTab
                 periodText={getFormattedPeriodDisplay()}
                 onOpenDatePicker={() => setIsDatePickerOpen(true)}
@@ -4056,7 +4153,16 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                       <button
                         type="button"
                         onClick={() => {
-                          if (selectedSchemeName) {
+                          if (createFlowStep === "scheme_details") {
+                            setCreateFlowStep("eligible_schemes");
+                          } else if (createFlowStep === "eligible_schemes") {
+                            setCreateFlowStep("form");
+                          } else if (createFlowStep === "checking") {
+                            setIsCheckingEligibility(false);
+                            setCreateFlowStep("form");
+                          } else if (createFlowStep === "submitted") {
+                            setCreateFlowStep("form");
+                          } else if (selectedSchemeName) {
                             setActiveTab("schemes");
                             setSelectedSchemeName("");
                           } else {
@@ -4071,11 +4177,21 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                       </button>
                     )}
                     <h3 className="font-extrabold text-sm text-foreground">
-                      {activeTab === "create"
-                        ? selectedSchemeName
+                      {activeTab === "create" ? (
+                        createFlowStep === "checking"
+                          ? (lang === "ml" ? "യോഗ്യത പരിശോധിക്കുന്നു..." : "Checking eligibility...")
+                          : createFlowStep === "eligible_schemes"
+                          ? (lang === "ml" ? "യോഗ്യതയുള്ള പദ്ധതികൾ" : "Eligible Schemes")
+                          : createFlowStep === "scheme_details"
+                          ? `${selectedEligibleScheme?.titleEn || (lang === "ml" ? "പദ്ധതി" : "Scheme")} - ${lang === "ml" ? "അവസാന വിവരങ്ങൾ" : "Final Details"}`
+                          : createFlowStep === "submitted"
+                          ? (lang === "ml" ? "അപേക്ഷ സമർപ്പിച്ചു" : "Application Submitted")
+                          : selectedSchemeName
                           ? `${selectedSchemeName} - ${lang === "ml" ? "യോഗ്യത പരിശോധിക്കുക" : "Check Eligibility"}`
                           : (lang === "ml" ? "പുതിയ അപേക്ഷ സമർപ്പിക്കുക" : "Create New Application")
-                        : (lang === "ml" ? "സ്കീം ഹെൽപ്പ്ഡെസ്ക്" : "Scheme Helpdesk")}
+                      ) : (
+                        lang === "ml" ? "സ്കീം ഹെൽപ്പ്ഡെസ്ക്" : "Scheme Helpdesk"
+                      )}
                     </h3>
                   </div>
                   {activeTab !== "create" && (
@@ -4086,379 +4202,700 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                 </div>
 
                 {activeTab === "create" ? (
-                  <div className="space-y-3.5 bg-card p-3.5 rounded-2xl border border-border shadow-2xs">
-                    {/* 1. Full Name */}
-                    <div>
-                      <label className="text-[11px] font-bold text-foreground block mb-1">
-                        {lang === "ml" ? "പൂർണ്ണമായ പേര് *" : "Full Name *"}
-                      </label>
-                      <input 
-                        type="text" 
-                        value={createFullName}
-                        onChange={(e) => setCreateFullName(e.target.value)}
-                        placeholder={lang === "ml" ? "ഉദാ: സോമൻ പി" : "Enter Full Name"}
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none" 
-                      />
-                    </div>
+                  <>
+                    {/* Step 1: Form Inputs View */}
+                    {createFlowStep === "form" && (
+                      <div className="space-y-3.5 bg-card p-3.5 rounded-2xl border border-border shadow-2xs">
+                        {/* 1. Full Name */}
+                        <div>
+                          <label className="text-[11px] font-bold text-foreground block mb-1">
+                            {lang === "ml" ? "പൂർണ്ണമായ പേര് *" : "Full Name *"}
+                          </label>
+                          <input 
+                            type="text" 
+                            value={createFullName}
+                            onChange={(e) => setCreateFullName(e.target.value)}
+                            placeholder={lang === "ml" ? "ഉദാ: സോമൻ പി" : "Enter Full Name"}
+                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground" 
+                          />
+                        </div>
 
-                    {/* 2. Aadhaar Number */}
-                    <div>
-                      <label className="text-[11px] font-bold text-foreground block mb-1">
-                        {lang === "ml" ? "ആധാർ നമ്പർ *" : "Aadhaar Number *"}
-                      </label>
-                      <input 
-                        type="text"
-                        maxLength={12}
-                        value={createAadhaar}
-                        onChange={(e) => setCreateAadhaar(e.target.value.replace(/\D/g, ''))}
-                        placeholder="12-digit Aadhaar number"
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none" 
-                      />
-                    </div>
+                        {/* 2. Aadhaar Number */}
+                        <div>
+                          <label className="text-[11px] font-bold text-foreground block mb-1">
+                            {lang === "ml" ? "ആധാർ നമ്പർ *" : "Aadhaar Number *"}
+                          </label>
+                          <input 
+                            type="text"
+                            maxLength={12}
+                            value={createAadhaar}
+                            onChange={(e) => setCreateAadhaar(e.target.value.replace(/\D/g, ''))}
+                            placeholder="12-digit Aadhaar number"
+                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground" 
+                          />
+                        </div>
 
-                    {/* 3. Mobile Number with Country Code */}
-                    <div>
-                      <label className="text-[11px] font-bold text-foreground block mb-1">
-                        {lang === "ml" ? "മൊബൈൽ നമ്പർ *" : "Mobile Number *"}
-                      </label>
-                      <div className="flex gap-1.5">
-                        <select
-                          value={createCountryCode}
-                          onChange={(e) => setCreateCountryCode(e.target.value)}
-                          className="text-xs font-semibold p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none shrink-0"
-                        >
-                          <option value="+91">🇮🇳 +91</option>
-                          <option value="+1">🇺🇸 +1</option>
-                          <option value="+971">🇦🇪 +971</option>
-                          <option value="+44">🇬🇧 +44</option>
-                        </select>
-                        <input 
-                          type="tel"
-                          maxLength={10}
-                          value={createPhone}
-                          onChange={(e) => setCreatePhone(e.target.value.replace(/\D/g, ''))}
-                          placeholder="10-digit phone number"
-                          className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none" 
-                        />
+                        {/* 3. Mobile Number with Country Code */}
+                        <div>
+                          <label className="text-[11px] font-bold text-foreground block mb-1">
+                            {lang === "ml" ? "മൊബൈൽ നമ്പർ *" : "Mobile Number *"}
+                          </label>
+                          <div className="flex gap-1.5">
+                            <select
+                              value={createCountryCode}
+                              onChange={(e) => setCreateCountryCode(e.target.value)}
+                              className="text-xs font-semibold p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none shrink-0 text-foreground"
+                            >
+                              <option value="+91">🇮🇳 +91</option>
+                              <option value="+1">🇺🇸 +1</option>
+                              <option value="+971">🇦🇪 +971</option>
+                              <option value="+44">🇬🇧 +44</option>
+                            </select>
+                            <input 
+                              type="tel"
+                              maxLength={10}
+                              value={createPhone}
+                              onChange={(e) => setCreatePhone(e.target.value.replace(/\D/g, ''))}
+                              placeholder="10-digit phone number"
+                              className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground" 
+                            />
+                          </div>
+                        </div>
+
+                        {/* 4. Email (Optional) */}
+                        <div>
+                          <label className="text-[11px] font-bold text-foreground block mb-1">
+                            {lang === "ml" ? "ഇമെയിൽ (ഓപ്ഷണൽ)" : "Email (Optional)"}
+                          </label>
+                          <input 
+                            type="email" 
+                            value={createEmail}
+                            onChange={(e) => setCreateEmail(e.target.value)}
+                            placeholder="name@example.com"
+                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground" 
+                          />
+                        </div>
+
+                        {/* 5. Date of Birth */}
+                        <div>
+                          <label className="text-[11px] font-bold text-foreground block mb-1">
+                            {lang === "ml" ? "ജനന തീയതി *" : "Date of Birth *"}
+                          </label>
+                          <input 
+                            type="date" 
+                            value={createDob}
+                            onChange={(e) => setCreateDob(e.target.value)}
+                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground" 
+                          />
+                        </div>
+
+                        {/* 6. Gender */}
+                        <div>
+                          <label className="text-[11px] font-bold text-foreground block mb-1">
+                            {lang === "ml" ? "ലിംഗഭേദം *" : "Gender *"}
+                          </label>
+                          <select 
+                            value={createGender}
+                            onChange={(e) => setCreateGender(e.target.value)}
+                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
+                          >
+                            <option value="">{lang === "ml" ? "-- ലിംഗഭേദം തിരഞ്ഞെടുക്കുക --" : "-- Select Gender --"}</option>
+                            <option value="Male">{lang === "ml" ? "പുരുഷൻ" : "Male"}</option>
+                            <option value="Female">{lang === "ml" ? "സ്ത്രീ" : "Female"}</option>
+                            <option value="Transgender / Other">{lang === "ml" ? "ട്രാൻസ്‌ജെൻഡർ / മറ്റുള്ളവ" : "Transgender / Other"}</option>
+                          </select>
+                        </div>
+
+                        {/* 7. Religion */}
+                        <div>
+                          <label className="text-[11px] font-bold text-foreground block mb-1">
+                            {lang === "ml" ? "മതം *" : "Religion *"}
+                          </label>
+                          <select 
+                            value={createReligion}
+                            onChange={(e) => setCreateReligion(e.target.value)}
+                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
+                          >
+                            <option value="">{lang === "ml" ? "-- മതം തിരഞ്ഞെടുക്കുക --" : "-- Select Religion --"}</option>
+                            <option value="Hinduism">Hinduism</option>
+                            <option value="Islam">Islam</option>
+                            <option value="Christianity">Christianity</option>
+                            <option value="Sikhism">Sikhism</option>
+                            <option value="Buddhism">Buddhism</option>
+                            <option value="Jainism">Jainism</option>
+                            <option value="Other">Other</option>
+                          </select>
+                        </div>
+
+                        {/* 8. Caste */}
+                        <div>
+                          <label className="text-[11px] font-bold text-foreground block mb-1">
+                            {lang === "ml" ? "ജാതി / വിഭാഗം *" : "Caste *"}
+                          </label>
+                          <select 
+                            value={createCaste}
+                            onChange={(e) => setCreateCaste(e.target.value)}
+                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
+                          >
+                            <option value="">{lang === "ml" ? "-- വിഭാഗം തിരഞ്ഞെടുക്കുക --" : "-- Select Caste --"}</option>
+                            <option value="General">General</option>
+                            <option value="OBC">OBC</option>
+                            <option value="SC">SC</option>
+                            <option value="ST">ST</option>
+                            <option value="OBC-NCL">OBC-NCL</option>
+                            <option value="EWS">EWS</option>
+                          </select>
+                        </div>
+
+                        {/* 9. Marital Status */}
+                        <div>
+                          <label className="text-[11px] font-bold text-foreground block mb-1">
+                            {lang === "ml" ? "വൈവാഹിക അവസ്ഥ *" : "Marital Status *"}
+                          </label>
+                          <select 
+                            value={createMaritalStatus}
+                            onChange={(e) => setCreateMaritalStatus(e.target.value)}
+                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
+                          >
+                            <option value="">{lang === "ml" ? "-- വൈവാഹിക അവസ്ഥ --" : "-- Select Marital Status --"}</option>
+                            <option value="Single / Unmarried">{lang === "ml" ? "അവിവാഹിതൻ / അവിവാഹിത" : "Single / Unmarried"}</option>
+                            <option value="Married">{lang === "ml" ? "വിവാഹിതൻ / വിവാഹിത" : "Married"}</option>
+                            <option value="Widowed">{lang === "ml" ? "വിധവ / വിധവൻ" : "Widowed"}</option>
+                            <option value="Divorcee">{lang === "ml" ? "വിവാഹബന്ധം വേർപെടുത്തിയ വ്യക്തി" : "Divorcee"}</option>
+                            <option value="Separated">{lang === "ml" ? "വേർപിരിഞ്ഞു കഴിയുന്ന വ്യക്തി" : "Separated"}</option>
+                          </select>
+                        </div>
+
+                        {/* 10. Occupation */}
+                        <div>
+                          <label className="text-[11px] font-bold text-foreground block mb-1">
+                            {lang === "ml" ? "തൊഴിൽ *" : "Occupation *"}
+                          </label>
+                          <select 
+                            value={createOccupation}
+                            onChange={(e) => setCreateOccupation(e.target.value)}
+                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
+                          >
+                            <option value="">{lang === "ml" ? "-- തൊഴിൽ തിരഞ്ഞെടുക്കുക --" : "-- Select Occupation --"}</option>
+                            <option value="Farmer / Agriculture">{lang === "ml" ? "കർഷകൻ / കൃഷി" : "Farmer / Agriculture"}</option>
+                            <option value="Daily Wage Worker">{lang === "ml" ? "ദിനബത്ത തൊഴിലാളി" : "Daily Wage Worker"}</option>
+                            <option value="Salaried (Private)">{lang === "ml" ? "സ്വകാര്യ മേഖല ഉദ്യോഗസ്ഥൻ" : "Salaried (Private)"}</option>
+                            <option value="Salaried (Government)">{lang === "ml" ? "സർക്കാർ ഉദ്യോഗസ്ഥൻ" : "Salaried (Government)"}</option>
+                            <option value="Self-Employed / Business">{lang === "ml" ? "സ്വയംതൊഴിൽ / ബിസിനസ്സ്" : "Self-Employed / Business"}</option>
+                            <option value="Homemaker">{lang === "ml" ? "ഗൃഹനാഥ / വീട്ടമ്മ" : "Homemaker"}</option>
+                            <option value="Student">{lang === "ml" ? "വിദ്യാർത്ഥി" : "Student"}</option>
+                            <option value="Unemployed">{lang === "ml" ? "തൊഴിൽ രഹിതൻ" : "Unemployed"}</option>
+                            <option value="Retired">{lang === "ml" ? "വിരമിച്ച വ്യക്തി" : "Retired"}</option>
+                            <option value="Other">{lang === "ml" ? "മറ്റുള്ളവ" : "Other"}</option>
+                          </select>
+                        </div>
+
+                        {/* 11. Income Range */}
+                        <div>
+                          <label className="text-[11px] font-bold text-foreground block mb-1">
+                            {lang === "ml" ? "വാർഷിക വരുമാന പരിധി *" : "Income Range *"}
+                          </label>
+                          <select 
+                            value={createIncomeRange}
+                            onChange={(e) => setCreateIncomeRange(e.target.value)}
+                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
+                          >
+                            <option value="">{lang === "ml" ? "-- വരുമാന പരിധി --" : "-- Select Income Range --"}</option>
+                            <option value="Below ₹50,000">Below ₹50,000</option>
+                            <option value="₹50,000 - ₹1,00,000">₹50,000 - ₹1,00,000</option>
+                            <option value="₹1,00,000 - ₹2,50,000">₹1,00,000 - ₹2,50,000</option>
+                            <option value="₹2,50,000 - ₹5,00,000">₹2,50,000 - ₹5,00,000</option>
+                            <option value="Above ₹5,00,000">Above ₹5,00,000</option>
+                          </select>
+                        </div>
+
+                        {/* Address Section Title */}
+                        <div className="pt-2 border-t border-border">
+                          <h4 className="font-extrabold text-xs text-orange-600 dark:text-orange-400 uppercase tracking-wide">
+                            {lang === "ml" ? "മേൽവിലാസം (എല്ലാം നിർബന്ധം*)" : "Address Section (All Mandatory*)"}
+                          </h4>
+                        </div>
+
+                        {/* 12. Address 1 */}
+                        <div>
+                          <label className="text-[11px] font-bold text-foreground block mb-1">
+                            {lang === "ml" ? "മേൽവിലാസം 1 *" : "Address 1 *"}
+                          </label>
+                          <input 
+                            type="text" 
+                            value={createAddress1}
+                            onChange={(e) => setCreateAddress1(e.target.value)}
+                            placeholder="House Name / Door No. / Street"
+                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground" 
+                          />
+                        </div>
+
+                        {/* 13. Address 2 */}
+                        <div>
+                          <label className="text-[11px] font-bold text-foreground block mb-1">
+                            {lang === "ml" ? "മേൽവിലാസം 2 *" : "Address 2 *"}
+                          </label>
+                          <input 
+                            type="text" 
+                            value={createAddress2}
+                            onChange={(e) => setCreateAddress2(e.target.value)}
+                            placeholder="Locality / Landmark"
+                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground" 
+                          />
+                        </div>
+
+                        {/* 14. Place */}
+                        <div>
+                          <label className="text-[11px] font-bold text-foreground block mb-1">
+                            {lang === "ml" ? "സ്ഥലം *" : "Place *"}
+                          </label>
+                          <input 
+                            type="text" 
+                            value={createPlace}
+                            onChange={(e) => setCreatePlace(e.target.value)}
+                            placeholder="Post Office / Place"
+                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground" 
+                          />
+                        </div>
+
+                        {/* 15. Ward */}
+                        <div>
+                          <label className="text-[11px] font-bold text-foreground block mb-1">
+                            {lang === "ml" ? "വാർഡ് *" : "Ward *"}
+                          </label>
+                          <select 
+                            value={createWard}
+                            onChange={(e) => setCreateWard(e.target.value)}
+                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
+                          >
+                            <option value="">{lang === "ml" ? "-- വാർഡ് തിരഞ്ഞെടുക്കുക --" : "-- Select Ward (1-50) --"}</option>
+                            {Array.from({ length: 50 }, (_, i) => (
+                              <option key={i + 1} value={`Ward ${i + 1}`}>
+                                {lang === "ml" ? `വാർഡ് ${i + 1}` : `Ward ${i + 1}`}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* 16. Local Body */}
+                        <div>
+                          <label className="text-[11px] font-bold text-foreground block mb-1">
+                            {lang === "ml" ? "തദ്ദേശ സ്വയംഭരണ സ്ഥാപനം *" : "Local Body *"}
+                          </label>
+                          <input 
+                            type="text" 
+                            value={createLocalBody}
+                            onChange={(e) => setCreateLocalBody(e.target.value)}
+                            placeholder="Panchayat / Municipality / Corporation"
+                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground" 
+                          />
+                        </div>
+
+                        {/* 17. City */}
+                        <div>
+                          <label className="text-[11px] font-bold text-foreground block mb-1">
+                            {lang === "ml" ? "നഗരം *" : "City *"}
+                          </label>
+                          <input 
+                            type="text" 
+                            value={createCity}
+                            onChange={(e) => setCreateCity(e.target.value)}
+                            placeholder="City / Town"
+                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground" 
+                          />
+                        </div>
+
+                        {/* 18. Assembly Mandalam */}
+                        <div>
+                          <label className="text-[11px] font-bold text-foreground block mb-1">
+                            {lang === "ml" ? "നിയമസഭാ മണ്ഡലം *" : "Assembly Mandalam *"}
+                          </label>
+                          <select 
+                            value={createMandalam}
+                            onChange={(e) => setCreateMandalam(e.target.value)}
+                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
+                          >
+                            <option value="">{lang === "ml" ? "-- മണ്ഡലം തിരഞ്ഞെടുക്കുക --" : "-- Select Constituency --"}</option>
+                            {constituencies.map((c) => (
+                              <option key={c.id} value={c.en}>
+                                {lang === "ml" ? c.ml : c.en}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* 19. District */}
+                        <div>
+                          <label className="text-[11px] font-bold text-foreground block mb-1">
+                            {lang === "ml" ? "ജില്ല *" : "District *"}
+                          </label>
+                          <select 
+                            value={createDistrict}
+                            onChange={(e) => setCreateDistrict(e.target.value)}
+                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
+                          >
+                            <option value="">{lang === "ml" ? "-- ജില്ല തിരഞ്ഞെടുക്കുക --" : "-- Select District --"}</option>
+                            {districts.map((d) => (
+                              <option key={d.id} value={d.en}>
+                                {lang === "ml" ? d.ml : d.en}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* 20. PIN */}
+                        <div>
+                          <label className="text-[11px] font-bold text-foreground block mb-1">
+                            {lang === "ml" ? "പിൻകോഡ് *" : "PIN *"}
+                          </label>
+                          <input 
+                            type="text"
+                            maxLength={6}
+                            value={createPin}
+                            onChange={(e) => setCreatePin(e.target.value.replace(/\D/g, ''))}
+                            placeholder="6-digit PIN code"
+                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground" 
+                          />
+                        </div>
+
+                        {/* 21. State */}
+                        <div>
+                          <label className="text-[11px] font-bold text-foreground block mb-1">
+                            {lang === "ml" ? "സംസ്ഥാനം *" : "State *"}
+                          </label>
+                          <select 
+                            value={createState}
+                            onChange={(e) => setCreateState(e.target.value)}
+                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
+                          >
+                            <option value="Kerala">Kerala (കേരളം)</option>
+                            <option value="Tamil Nadu">Tamil Nadu</option>
+                            <option value="Karnataka">Karnataka</option>
+                            <option value="Andhra Pradesh">Andhra Pradesh</option>
+                            <option value="Telangana">Telangana</option>
+                            <option value="Maharashtra">Maharashtra</option>
+                            <option value="Other State">Other State</option>
+                          </select>
+                        </div>
                       </div>
-                    </div>
+                    )}
 
-                    {/* 4. Email (Optional) */}
-                    <div>
-                      <label className="text-[11px] font-bold text-foreground block mb-1">
-                        {lang === "ml" ? "ഇമെയിൽ (ഓപ്ഷണൽ)" : "Email (Optional)"}
-                      </label>
-                      <input 
-                        type="email" 
-                        value={createEmail}
-                        onChange={(e) => setCreateEmail(e.target.value)}
-                        placeholder="name@example.com"
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none" 
-                      />
-                    </div>
+                    {/* Step 2: Scanning / Loading View */}
+                    {createFlowStep === "checking" && (
+                      <div className="bg-card border border-border p-6 rounded-2xl shadow-xs flex flex-col items-center justify-center text-center space-y-5 my-4 animate-in fade-in duration-300 min-h-[340px]">
+                        <div className="relative flex items-center justify-center">
+                          <div className="absolute h-24 w-28 rounded-full bg-orange-500/20 animate-ping" />
+                          <div className="absolute h-20 w-20 rounded-full bg-orange-500/30 animate-pulse" />
+                          <div className="relative h-16 w-16 rounded-full bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center shadow-lg text-white">
+                            <Sparkles className="h-8 w-8 animate-spin" style={{ animationDuration: '3s' }} />
+                          </div>
+                        </div>
 
-                    {/* 5. Date of Birth */}
-                    <div>
-                      <label className="text-[11px] font-bold text-foreground block mb-1">
-                        {lang === "ml" ? "ജനന തീയതി *" : "Date of Birth *"}
-                      </label>
-                      <input 
-                        type="date" 
-                        value={createDob}
-                        onChange={(e) => setCreateDob(e.target.value)}
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none" 
-                      />
-                    </div>
+                        <div className="space-y-1.5 max-w-xs">
+                          <h4 className="text-base font-extrabold text-foreground">
+                            {lang === "ml" ? "യോഗ്യത പരിശോധിക്കുന്നു..." : "Checking eligibility…"}
+                          </h4>
+                          <p className="text-xs text-muted-foreground leading-relaxed">
+                            {lang === "ml"
+                              ? "നിങ്ങളുടെ വിവരങ്ങളുമായി പൊരുത്തപ്പെടുന്ന പദ്ധതികൾ കണ്ടെത്തുന്നു."
+                              : "Finding schemes that match your details."}
+                          </p>
+                        </div>
 
-                    {/* 6. Gender */}
-                    <div>
-                      <label className="text-[11px] font-bold text-foreground block mb-1">
-                        {lang === "ml" ? "ലിംഗഭേദം *" : "Gender *"}
-                      </label>
-                      <select 
-                        value={createGender}
-                        onChange={(e) => setCreateGender(e.target.value)}
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none"
-                      >
-                        <option value="">{lang === "ml" ? "-- ലിംഗഭേദം തിരഞ്ഞെടുക്കുക --" : "-- Select Gender --"}</option>
-                        <option value="Male">{lang === "ml" ? "പുരുഷൻ" : "Male"}</option>
-                        <option value="Female">{lang === "ml" ? "സ്ത്രീ" : "Female"}</option>
-                        <option value="Transgender / Other">{lang === "ml" ? "ട്രാൻസ്‌ജെൻഡർ / മറ്റുള്ളവ" : "Transgender / Other"}</option>
-                      </select>
-                    </div>
+                        {/* Progress Bar Animation */}
+                        <div className="w-full max-w-xs space-y-1.5">
+                          <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                            <div className="h-full bg-gradient-to-r from-amber-500 via-orange-500 to-orange-600 rounded-full animate-pulse w-3/4 transition-all duration-1000" />
+                          </div>
+                          <div className="flex justify-between items-center text-[10px] text-muted-foreground font-semibold px-0.5">
+                            <span>{createFullName || "Applicant"}</span>
+                            <span>{lang === "ml" ? "ശേഖരിക്കുന്നു..." : "Matching databases..."}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
-                    {/* 7. Religion */}
-                    <div>
-                      <label className="text-[11px] font-bold text-foreground block mb-1">
-                        {lang === "ml" ? "മതം *" : "Religion *"}
-                      </label>
-                      <select 
-                        value={createReligion}
-                        onChange={(e) => setCreateReligion(e.target.value)}
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none"
-                      >
-                        <option value="">{lang === "ml" ? "-- മതം തിരഞ്ഞെടുക്കുക --" : "-- Select Religion --"}</option>
-                        <option value="Hinduism">Hinduism</option>
-                        <option value="Islam">Islam</option>
-                        <option value="Christianity">Christianity</option>
-                        <option value="Sikhism">Sikhism</option>
-                        <option value="Buddhism">Buddhism</option>
-                        <option value="Jainism">Jainism</option>
-                        <option value="Other">Other</option>
-                      </select>
-                    </div>
+                    {/* Step 3: Eligible Schemes View */}
+                    {createFlowStep === "eligible_schemes" && (
+                      <div className="space-y-3.5 animate-in fade-in duration-200">
+                        {/* Compact Applicant Summary Card */}
+                        <div className="bg-gradient-to-r from-orange-500/10 via-amber-500/5 to-transparent p-3.5 rounded-2xl border border-orange-200 dark:border-orange-900/60 shadow-2xs flex items-center justify-between gap-2">
+                          <div className="space-y-1 text-left min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-extrabold text-xs text-foreground truncate">
+                                {createFullName || "Soman P"}
+                              </span>
+                              <span className="text-[9.5px] font-bold text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-950/80 px-2 py-0.5 rounded-full shrink-0">
+                                {createCaste || "General"}
+                              </span>
+                            </div>
+                            <p className="text-[10.5px] text-muted-foreground truncate">
+                              Aadhaar: XXXX-XXXX-{(createAadhaar || "8921").slice(-4)} • {createCountryCode} {createPhone || "9847123456"}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground/90 truncate">
+                              {createDistrict || "Thiruvananthapuram"} • {createMandalam || "Kazhakkoottam"} • Income: {createIncomeRange || "Below ₹1,00,000"}
+                            </p>
+                          </div>
 
-                    {/* 8. Caste */}
-                    <div>
-                      <label className="text-[11px] font-bold text-foreground block mb-1">
-                        {lang === "ml" ? "ജാതി / വിഭാഗം *" : "Caste *" }
-                      </label>
-                      <select 
-                        value={createCaste}
-                        onChange={(e) => setCreateCaste(e.target.value)}
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none"
-                      >
-                        <option value="">{lang === "ml" ? "-- വിഭാഗം തിരഞ്ഞെടുക്കുക --" : "-- Select Caste --"}</option>
-                        <option value="General">General</option>
-                        <option value="OBC">OBC</option>
-                        <option value="SC">SC</option>
-                        <option value="ST">ST</option>
-                        <option value="OBC-NCL">OBC-NCL</option>
-                        <option value="EWS">EWS</option>
-                      </select>
-                    </div>
+                          <button
+                            type="button"
+                            onClick={() => setCreateFlowStep("form")}
+                            className="flex items-center gap-1 text-xs font-bold text-orange-600 dark:text-orange-400 bg-orange-100/80 hover:bg-orange-200 dark:bg-orange-950/80 hover:dark:bg-orange-900/80 px-2.5 py-1.5 rounded-xl border border-orange-300 dark:border-orange-800 transition-colors cursor-pointer shrink-0 shadow-2xs"
+                          >
+                            <Edit className="h-3.5 w-3.5" />
+                            <span>{lang === "ml" ? "മാറ്റുക" : "Edit"}</span>
+                          </button>
+                        </div>
 
-                    {/* 9. Marital Status */}
-                    <div>
-                      <label className="text-[11px] font-bold text-foreground block mb-1">
-                        {lang === "ml" ? "വൈവാഹിക അവസ്ഥ *" : "Marital Status *"}
-                      </label>
-                      <select 
-                        value={createMaritalStatus}
-                        onChange={(e) => setCreateMaritalStatus(e.target.value)}
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none"
-                      >
-                        <option value="">{lang === "ml" ? "-- വൈവാഹിക അവസ്ഥ --" : "-- Select Marital Status --"}</option>
-                        <option value="Single / Unmarried">{lang === "ml" ? "അവിവാഹിതൻ / അവിവാഹിത" : "Single / Unmarried"}</option>
-                        <option value="Married">{lang === "ml" ? "വിവാഹിതൻ / വിവാഹിത" : "Married"}</option>
-                        <option value="Widowed">{lang === "ml" ? "വിധവ / വിധവൻ" : "Widowed"}</option>
-                        <option value="Divorcee">{lang === "ml" ? "വിവാഹബന്ധം വേർപെടുത്തിയ വ്യക്തി" : "Divorcee"}</option>
-                        <option value="Separated">{lang === "ml" ? "വേർപിരിഞ്ഞു കഴിയുന്ന വ്യക്തി" : "Separated"}</option>
-                      </select>
-                    </div>
+                        {/* Search Bar for Eligible Schemes */}
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                          <input
+                            type="text"
+                            value={eligibleSchemesSearchQuery}
+                            onChange={(e) => setEligibleSchemesSearchQuery(e.target.value)}
+                            placeholder={lang === "ml" ? "പദ്ധതിയുടെ പേര് തിരയുക..." : "Search eligible schemes..."}
+                            className="w-full text-xs pl-9 pr-3 py-2.5 rounded-xl border border-border bg-card focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
+                          />
+                          {eligibleSchemesSearchQuery && (
+                            <button
+                              type="button"
+                              onClick={() => setEligibleSchemesSearchQuery("")}
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
 
-                    {/* 10. Occupation */}
-                    <div>
-                      <label className="text-[11px] font-bold text-foreground block mb-1">
-                        {lang === "ml" ? "തൊഴിൽ *" : "Occupation *"}
-                      </label>
-                      <select 
-                        value={createOccupation}
-                        onChange={(e) => setCreateOccupation(e.target.value)}
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none"
-                      >
-                        <option value="">{lang === "ml" ? "-- തൊഴിൽ തിരഞ്ഞെടുക്കുക --" : "-- Select Occupation --"}</option>
-                        <option value="Farmer / Agriculture">{lang === "ml" ? "കർഷകൻ / കൃഷി" : "Farmer / Agriculture"}</option>
-                        <option value="Daily Wage Worker">{lang === "ml" ? "ദിനബത്ത തൊഴിലാളി" : "Daily Wage Worker"}</option>
-                        <option value="Salaried (Private)">{lang === "ml" ? "സ്വകാര്യ മേഖല ഉദ്യോഗസ്ഥൻ" : "Salaried (Private)"}</option>
-                        <option value="Salaried (Government)">{lang === "ml" ? "സർക്കാർ ഉദ്യോഗസ്ഥൻ" : "Salaried (Government)"}</option>
-                        <option value="Self-Employed / Business">{lang === "ml" ? "സ്വയംതൊഴിൽ / ബിസിനസ്സ്" : "Self-Employed / Business"}</option>
-                        <option value="Homemaker">{lang === "ml" ? "ഗൃഹനാഥ / വീട്ടമ്മ" : "Homemaker"}</option>
-                        <option value="Student">{lang === "ml" ? "വിദ്യാർത്ഥി" : "Student"}</option>
-                        <option value="Unemployed">{lang === "ml" ? "തൊഴിൽ രഹിതൻ" : "Unemployed"}</option>
-                        <option value="Retired">{lang === "ml" ? "വിരമിച്ച വ്യക്തി" : "Retired"}</option>
-                        <option value="Other">{lang === "ml" ? "മറ്റുള്ളവ" : "Other"}</option>
-                      </select>
-                    </div>
+                        {/* Eligible Scheme Cards or Empty State */}
+                        {mockEligibleSchemesList.filter((s) => {
+                          if (!eligibleSchemesSearchQuery.trim()) return true;
+                          const q = eligibleSchemesSearchQuery.toLowerCase();
+                          return (
+                            s.titleEn.toLowerCase().includes(q) ||
+                            s.titleMl.toLowerCase().includes(q) ||
+                            s.deptEn.toLowerCase().includes(q) ||
+                            s.benefitEn.toLowerCase().includes(q)
+                          );
+                        }).length > 0 ? (
+                          <div className="space-y-3">
+                            {mockEligibleSchemesList
+                              .filter((s) => {
+                                if (!eligibleSchemesSearchQuery.trim()) return true;
+                                const q = eligibleSchemesSearchQuery.toLowerCase();
+                                return (
+                                  s.titleEn.toLowerCase().includes(q) ||
+                                  s.titleMl.toLowerCase().includes(q) ||
+                                  s.deptEn.toLowerCase().includes(q) ||
+                                  s.benefitEn.toLowerCase().includes(q)
+                                );
+                              })
+                              .map((scheme) => (
+                                <div
+                                  key={scheme.id}
+                                  className="bg-card p-3.5 rounded-2xl border border-border shadow-2xs hover:border-orange-300 dark:hover:border-orange-800 transition-all space-y-2.5 text-left"
+                                >
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div>
+                                      <span className="text-[9.5px] font-bold uppercase tracking-wider text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/60 px-2 py-0.5 rounded-full border border-orange-200 dark:border-orange-900/60">
+                                        {lang === "ml" ? scheme.categoryMl : scheme.categoryEn}
+                                      </span>
+                                      <h4 className="font-extrabold text-xs text-foreground mt-1.5 leading-snug">
+                                        {lang === "ml" ? scheme.titleMl : scheme.titleEn}
+                                      </h4>
+                                    </div>
+                                    <span className="text-[10px] font-extrabold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/80 px-2 py-0.5 rounded-full shrink-0 border border-emerald-300 dark:border-emerald-800">
+                                      {lang === "ml" ? scheme.matchLabelMl : scheme.matchLabelEn}
+                                    </span>
+                                  </div>
 
-                    {/* 11. Income Range */}
-                    <div>
-                      <label className="text-[11px] font-bold text-foreground block mb-1">
-                        {lang === "ml" ? "വാർഷിക വരുമാന പരിധി *" : "Income Range *"}
-                      </label>
-                      <select 
-                        value={createIncomeRange}
-                        onChange={(e) => setCreateIncomeRange(e.target.value)}
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none"
-                      >
-                        <option value="">{lang === "ml" ? "-- വരുമാന പരിധി --" : "-- Select Income Range --"}</option>
-                        <option value="Below ₹50,000">Below ₹50,000</option>
-                        <option value="₹50,000 - ₹1,00,000">₹50,000 - ₹1,00,000</option>
-                        <option value="₹1,00,000 - ₹2,50,000">₹1,00,000 - ₹2,50,000</option>
-                        <option value="₹2,50,000 - ₹5,00,000">₹2,50,000 - ₹5,00,000</option>
-                        <option value="Above ₹5,00,000">Above ₹5,00,000</option>
-                      </select>
-                    </div>
+                                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                                    {lang === "ml" ? scheme.benefitMl : scheme.benefitEn}
+                                  </p>
 
-                    {/* Address Section Title */}
-                    <div className="pt-2 border-t border-border">
-                      <h4 className="font-extrabold text-xs text-orange-600 dark:text-orange-400 uppercase tracking-wide">
-                        {lang === "ml" ? "മേൽവിലാസം (എല്ലാം നിർബന്ധം*)" : "Address Section (All Mandatory*)"}
-                      </h4>
-                    </div>
+                                  <div className="pt-2 border-t border-border/80 flex items-center justify-between gap-2">
+                                    <span className="text-[10px] text-muted-foreground font-medium truncate">
+                                      {lang === "ml" ? scheme.deptMl : scheme.deptEn}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedEligibleScheme(scheme);
+                                        setCreateFlowStep("scheme_details");
+                                      }}
+                                      className="py-2 px-4 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-extrabold text-xs shadow-xs active:scale-95 transition-all cursor-pointer shrink-0"
+                                    >
+                                      {lang === "ml" ? "അപേക്ഷിക്കുക" : "Apply Now"}
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                          </div>
+                        ) : (
+                          /* Empty & Retry State */
+                          <div className="bg-card border border-border p-6 rounded-2xl shadow-2xs text-center space-y-3 my-2">
+                            <div className="h-12 w-12 rounded-full bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center mx-auto">
+                              <SearchX className="h-6 w-6" />
+                            </div>
+                            <div className="space-y-1">
+                              <h4 className="font-extrabold text-xs text-foreground">
+                                {lang === "ml" ? "പൊരുത്തപ്പെടുന്ന പദ്ധതികൾ കണ്ടെത്തിയില്ല" : "No matching schemes found"}
+                              </h4>
+                              <p className="text-[11px] text-muted-foreground max-w-xs mx-auto">
+                                {lang === "ml"
+                                  ? "നിങ്ങൾ നൽകിയ തിരച്ചിൽ വാക്കിന് അനുയോജ്യമായ പദ്ധതികളില്ല. തിരച്ചിൽ മാറ്റി ശ്രമിക്കുക."
+                                  : "Try adjusting your search criteria or clear filters to view available schemes."}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setEligibleSchemesSearchQuery("")}
+                              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-orange-500 text-white font-bold text-xs hover:bg-orange-600 transition-colors shadow-2xs cursor-pointer"
+                            >
+                              <RefreshCw className="h-3.5 w-3.5" />
+                              <span>{lang === "ml" ? "വീണ്ടും ശ്രമിക്കുക" : "Retry Search"}</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
-                    {/* 12. Address 1 */}
-                    <div>
-                      <label className="text-[11px] font-bold text-foreground block mb-1">
-                        {lang === "ml" ? "മേൽവിലാസം 1 *" : "Address 1 *"}
-                      </label>
-                      <input 
-                        type="text" 
-                        value={createAddress1}
-                        onChange={(e) => setCreateAddress1(e.target.value)}
-                        placeholder="House Name / Door No. / Street"
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none" 
-                      />
-                    </div>
+                    {/* Step 4: Missing Scheme-Specific Details View */}
+                    {createFlowStep === "scheme_details" && selectedEligibleScheme && (
+                      <div className="space-y-3.5 bg-card p-3.5 rounded-2xl border border-border shadow-2xs text-left animate-in fade-in duration-200">
+                        <div className="bg-orange-50 dark:bg-orange-950/50 p-2.5 rounded-xl border border-orange-200 dark:border-orange-800 text-[11px] text-orange-900 dark:text-orange-200 font-medium">
+                          {lang === "ml"
+                            ? `അപേക്ഷകന്റെ വിവരങ്ങൾ (${createFullName}) വിജയകരമായി കൈമാറി. ഈ സ്കീമിനുള്ള അവസാന വിവരങ്ങൾ നൽകുക.`
+                            : `Applicant profile for ${createFullName || "Soman P"} carried forward. Complete missing scheme documents.`}
+                        </div>
 
-                    {/* 13. Address 2 */}
-                    <div>
-                      <label className="text-[11px] font-bold text-foreground block mb-1">
-                        {lang === "ml" ? "മേൽവിലാസം 2 *" : "Address 2 *"}
-                      </label>
-                      <input 
-                        type="text" 
-                        value={createAddress2}
-                        onChange={(e) => setCreateAddress2(e.target.value)}
-                        placeholder="Locality / Landmark"
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none" 
-                      />
-                    </div>
+                        {/* Document Upload Box */}
+                        <div className="space-y-1.5">
+                          <label className="text-[11px] font-bold text-foreground block">
+                            {lang === "ml" ? "ആവശ്യമായ രേഖ സമർപ്പിക്കുക *" : "Required Document Upload *"}
+                          </label>
+                          <p className="text-[10.5px] text-muted-foreground">
+                            {lang === "ml" ? selectedEligibleScheme.requiredDocMl : selectedEligibleScheme.requiredDocEn}
+                          </p>
+                          <div className="border-2 border-dashed border-border hover:border-orange-400 p-3.5 rounded-xl text-center bg-background transition-colors cursor-pointer"
+                            onClick={() => setUploadedDocName(`${selectedEligibleScheme.id}_Document_Proof.pdf`)}
+                          >
+                            <Upload className="h-5 w-5 text-orange-500 mx-auto mb-1" />
+                            {uploadedDocName ? (
+                              <div className="flex items-center justify-center gap-1 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
+                                <FileCheck className="h-4 w-4" />
+                                <span>{uploadedDocName}</span>
+                              </div>
+                            ) : (
+                              <span className="text-xs font-semibold text-muted-foreground">
+                                {lang === "ml" ? "രേഖ അപ്‌ലോഡ് ചെയ്യാൻ ക്ലിക്ക് ചെയ്യുക (PDF/JPG)" : "Tap to upload file (PDF, JPG - Max 5MB)"}
+                              </span>
+                            )}
+                          </div>
+                        </div>
 
-                    {/* 14. Place */}
-                    <div>
-                      <label className="text-[11px] font-bold text-foreground block mb-1">
-                        {lang === "ml" ? "സ്ഥലം *" : "Place *"}
-                      </label>
-                      <input 
-                        type="text" 
-                        value={createPlace}
-                        onChange={(e) => setCreatePlace(e.target.value)}
-                        placeholder="Post Office / Place"
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none" 
-                      />
-                    </div>
+                        {/* Bank Account Number */}
+                        <div>
+                          <label className="text-[11px] font-bold text-foreground block mb-1">
+                            {lang === "ml" ? "ബാങ്ക് അക്കൗണ്ട് നമ്പർ *" : "Bank Account Number *"}
+                          </label>
+                          <input
+                            type="text"
+                            value={bankAccountNumber}
+                            onChange={(e) => setBankAccountNumber(e.target.value.replace(/\D/g, ''))}
+                            placeholder="e.g. 398201004821"
+                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
+                          />
+                        </div>
 
-                    {/* 15. Ward */}
-                    <div>
-                      <label className="text-[11px] font-bold text-foreground block mb-1">
-                        {lang === "ml" ? "വാർഡ് *" : "Ward *"}
-                      </label>
-                      <select 
-                        value={createWard}
-                        onChange={(e) => setCreateWard(e.target.value)}
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none"
-                      >
-                        <option value="">{lang === "ml" ? "-- വാർഡ് തിരഞ്ഞെടുക്കുക --" : "-- Select Ward (1-50) --"}</option>
-                        {Array.from({ length: 50 }, (_, i) => (
-                          <option key={i + 1} value={`Ward ${i + 1}`}>
-                            {lang === "ml" ? `വാർഡ് ${i + 1}` : `Ward ${i + 1}`}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                        {/* Bank IFSC Code */}
+                        <div>
+                          <label className="text-[11px] font-bold text-foreground block mb-1">
+                            {lang === "ml" ? "ബാങ്ക് IFSC കോഡ് *" : "Bank IFSC Code *"}
+                          </label>
+                          <input
+                            type="text"
+                            value={bankIfscCode}
+                            onChange={(e) => setBankIfscCode(e.target.value.toUpperCase())}
+                            placeholder="e.g. SBIN0001234"
+                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground uppercase"
+                          />
+                        </div>
 
-                    {/* 16. Local Body */}
-                    <div>
-                      <label className="text-[11px] font-bold text-foreground block mb-1">
-                        {lang === "ml" ? "തദ്ദേശ സ്വയംഭരണ സ്ഥാപനം *" : "Local Body *"}
-                      </label>
-                      <input 
-                        type="text" 
-                        value={createLocalBody}
-                        onChange={(e) => setCreateLocalBody(e.target.value)}
-                        placeholder="Panchayat / Municipality / Corporation"
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none" 
-                      />
-                    </div>
+                        {/* Declaration Checkbox */}
+                        <div className="flex items-start gap-2 pt-2 border-t border-border">
+                          <input
+                            type="checkbox"
+                            id="scheme_decl"
+                            checked={declarationAccepted}
+                            onChange={(e) => setDeclarationAccepted(e.target.checked)}
+                            className="mt-0.5 accent-orange-500 rounded h-4 w-4 cursor-pointer"
+                          />
+                          <label htmlFor="scheme_decl" className="text-[10.5px] text-muted-foreground leading-tight cursor-pointer">
+                            {lang === "ml"
+                              ? "നൽകിയിട്ടുള്ള എല്ലാ വിവരങ്ങളും സത്യസന്ധവും കൃത്യവുമാണെന്ന് ഇതിനാൽ സാക്ഷ്യപ്പെടുത്തുന്നു."
+                              : "I confirm that all supplied profile details and documents are authentic and accurate."}
+                          </label>
+                        </div>
+                      </div>
+                    )}
 
-                    {/* 17. City */}
-                    <div>
-                      <label className="text-[11px] font-bold text-foreground block mb-1">
-                        {lang === "ml" ? "നഗരം *" : "City *"}
-                      </label>
-                      <input 
-                        type="text" 
-                        value={createCity}
-                        onChange={(e) => setCreateCity(e.target.value)}
-                        placeholder="City / Town"
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none" 
-                      />
-                    </div>
+                    {/* Step 5: Submitted Success View */}
+                    {createFlowStep === "submitted" && (
+                      <div className="bg-card border border-border p-6 rounded-2xl shadow-xs text-center space-y-4 my-2 animate-in zoom-in-95 duration-200">
+                        <div className="h-16 w-16 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-sm">
+                          <Check className="h-8 w-8 stroke-[3]" />
+                        </div>
 
-                    {/* 18. Assembly Mandalam */}
-                    <div>
-                      <label className="text-[11px] font-bold text-foreground block mb-1">
-                        {lang === "ml" ? "നിയമസഭാ മണ്ഡലം *" : "Assembly Mandalam *"}
-                      </label>
-                      <select 
-                        value={createMandalam}
-                        onChange={(e) => setCreateMandalam(e.target.value)}
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none"
-                      >
-                        <option value="">{lang === "ml" ? "-- മണ്ഡലം തിരഞ്ഞെടുക്കുക --" : "-- Select Constituency --"}</option>
-                        {constituencies.map((c) => (
-                          <option key={c.id} value={c.en}>
-                            {lang === "ml" ? c.ml : c.en}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                        <div className="space-y-1">
+                          <h4 className="text-base font-extrabold text-foreground">
+                            {lang === "ml" ? "അപേക്ഷ വിജയകരമായി സമർപ്പിച്ചു!" : "Application Submitted Successfully!"}
+                          </h4>
+                          <p className="text-xs text-muted-foreground">
+                            {lang === "ml"
+                              ? "നിങ്ങളുടെ അപേക്ഷ പരിശോധനയ്ക്കായി അതത് ഉദ്യോഗസ്ഥർക്ക് അയച്ചിട്ടുണ്ട്."
+                              : "Your welfare application has been registered and assigned an official tracking code."}
+                          </p>
+                        </div>
 
-                    {/* 19. District */}
-                    <div>
-                      <label className="text-[11px] font-bold text-foreground block mb-1">
-                        {lang === "ml" ? "ജില്ല *" : "District *"}
-                      </label>
-                      <select 
-                        value={createDistrict}
-                        onChange={(e) => setCreateDistrict(e.target.value)}
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none"
-                      >
-                        <option value="">{lang === "ml" ? "-- ജില്ല തിരഞ്ഞെടുക്കുക --" : "-- Select District --"}</option>
-                        {districts.map((d) => (
-                          <option key={d.id} value={d.en}>
-                            {lang === "ml" ? d.ml : d.en}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                        <div className="p-3 bg-muted/60 rounded-xl border border-border text-center space-y-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
+                            {lang === "ml" ? "അപേക്ഷ റെഫറൻസ് നമ്പർ" : "Application Reference No"}
+                          </span>
+                          <span className="text-sm font-black text-orange-600 dark:text-orange-400 tracking-wide font-mono">
+                            VK-2026-849201
+                          </span>
+                        </div>
 
-                    {/* 20. PIN */}
-                    <div>
-                      <label className="text-[11px] font-bold text-foreground block mb-1">
-                        {lang === "ml" ? "പിൻകോഡ് *" : "PIN *"}
-                      </label>
-                      <input 
-                        type="text"
-                        maxLength={6}
-                        value={createPin}
-                        onChange={(e) => setCreatePin(e.target.value.replace(/\D/g, ''))}
-                        placeholder="6-digit PIN code"
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none" 
-                      />
-                    </div>
-
-                    {/* 21. State */}
-                    <div>
-                      <label className="text-[11px] font-bold text-foreground block mb-1">
-                        {lang === "ml" ? "സംസ്ഥാനം *" : "State *"}
-                      </label>
-                      <select 
-                        value={createState}
-                        onChange={(e) => setCreateState(e.target.value)}
-                        className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none"
-                      >
-                        <option value="Kerala">Kerala (കേരളം)</option>
-                        <option value="Tamil Nadu">Tamil Nadu</option>
-                        <option value="Karnataka">Karnataka</option>
-                        <option value="Andhra Pradesh">Andhra Pradesh</option>
-                        <option value="Telangana">Telangana</option>
-                        <option value="Maharashtra">Maharashtra</option>
-                        <option value="Other State">Other State</option>
-                      </select>
-                    </div>
-                  </div>
+                        <div className="pt-2 flex flex-col gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveTab("applications");
+                              setCreateFlowStep("form");
+                            }}
+                            className="w-full py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-md transition-all cursor-pointer"
+                          >
+                            {lang === "ml" ? "അപേക്ഷകൾ കാണുക" : "View All Applications"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCreateFlowStep("form");
+                              setUploadedDocName("");
+                              setBankAccountNumber("");
+                              setBankIfscCode("");
+                              setDeclarationAccepted(false);
+                            }}
+                            className="w-full py-2.5 rounded-xl bg-muted text-foreground font-semibold text-xs hover:bg-muted/80 transition-colors cursor-pointer"
+                          >
+                            {lang === "ml" ? "മറ്റൊരു അപേക്ഷ നൽകുക" : "Submit Another Application"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <div className="space-y-3 bg-card p-3 rounded-2xl border border-border shadow-2xs">
                     <div className="flex items-center gap-3 p-3 bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800 rounded-xl">
@@ -4478,7 +4915,10 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                       </p>
                       <button
                         type="button"
-                        onClick={() => setActiveTab("create")}
+                        onClick={() => {
+                          setActiveTab("create");
+                          setCreateFlowStep("form");
+                        }}
                         className="w-full py-2 rounded-lg bg-primary/10 text-primary font-bold text-xs hover:bg-primary/20 transition-colors"
                       >
                         {lang === "ml" ? "നേരിട്ട് അപേക്ഷിക്കുക" : "Apply Directly"}
@@ -4489,7 +4929,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
               </div>
             )}
 
-            {activeTab === "more" && (
+            {(activeTab as string) === "more" && (
               <div className="space-y-3 animate-in fade-in duration-200">
                 <div className="flex items-center justify-between border-b border-border/80 pb-2 px-0.5">
                   <h3 className="font-extrabold text-sm text-foreground">
@@ -4624,36 +5064,80 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
           {/* Sticky Phone App Bottom Footer Navigation */}
           {activeTab === "create" ? (
             <div className="sticky bottom-0 left-0 right-0 p-3 bg-card/95 backdrop-blur-md border-t border-border z-30 shadow-lg">
-              <button
-                type="button"
-                disabled={!isCreateFormValid}
-                onClick={() => {
-                  if (isCreateFormValid) {
+              {createFlowStep === "form" && (
+                <button
+                  type="button"
+                  disabled={!isCreateFormValid}
+                  onClick={handleStartEligibilityCheck}
+                  className={`w-full py-3 rounded-xl font-bold text-xs shadow-md transition-all ${
+                    isCreateFormValid
+                      ? "bg-gradient-to-r from-amber-500 via-orange-500 to-primary text-white active:scale-[0.98] cursor-pointer"
+                      : "bg-muted text-muted-foreground opacity-60 cursor-not-allowed"
+                  }`}
+                >
+                  {lang === "ml" ? "യോഗ്യത പരിശോധിക്കുക" : "Check Eligibility"}
+                </button>
+              )}
+
+              {createFlowStep === "checking" && (
+                <button
+                  type="button"
+                  disabled
+                  className="w-full py-3 rounded-xl font-bold text-xs shadow-md bg-orange-500/80 text-white flex items-center justify-center gap-2 cursor-wait"
+                >
+                  <Loader2 className="h-4 w-4 animate-spin text-white" />
+                  <span>{lang === "ml" ? "യോഗ്യത പരിശോധിക്കുന്നു..." : "Checking eligibility…"}</span>
+                </button>
+              )}
+
+              {createFlowStep === "eligible_schemes" && (
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCreateFlowStep("form")}
+                    className="w-1/3 py-2.5 rounded-xl border border-border bg-background hover:bg-muted font-bold text-xs text-foreground transition-colors cursor-pointer"
+                  >
+                    {lang === "ml" ? "എഡിറ്റ് ഫോം" : "Edit Form"}
+                  </button>
+                  <p className="w-2/3 text-[10.5px] font-semibold text-muted-foreground flex items-center justify-center text-center bg-muted/40 rounded-xl px-2">
+                    {lang === "ml" ? "സ്കീം തിരഞ്ഞെടുത്ത് അപേക്ഷിക്കുക" : "Tap 'Apply Now' on a scheme above"}
+                  </p>
+                </div>
+              )}
+
+              {createFlowStep === "scheme_details" && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCreateFlowStep("submitted");
+                  }}
+                  className="w-full py-3 rounded-xl font-extrabold text-xs shadow-md bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white active:scale-[0.98] transition-all cursor-pointer"
+                >
+                  {lang === "ml" ? "അപേക്ഷ സമർപ്പിക്കുക" : "Submit Application"}
+                </button>
+              )}
+
+              {createFlowStep === "submitted" && (
+                <button
+                  type="button"
+                  onClick={() => {
                     setActiveTab("applications");
-                    setMobileSubPage("none");
-                  }
-                }}
-                className={`w-full py-3 rounded-xl font-bold text-xs shadow-md transition-all ${
-                  isCreateFormValid
-                    ? "bg-gradient-to-r from-amber-500 via-orange-500 to-primary text-white active:scale-[0.98] cursor-pointer"
-                    : "bg-muted text-muted-foreground opacity-60 cursor-not-allowed"
-                }`}
-              >
-                {lang === "ml" ? "യോഗ്യത പരിശോധിക്കുക" : "Check Eligibility"}
-              </button>
+                    setCreateFlowStep("form");
+                  }}
+                  className="w-full py-3 rounded-xl font-bold text-xs shadow-md bg-emerald-600 hover:bg-emerald-700 text-white transition-all cursor-pointer"
+                >
+                  {lang === "ml" ? "അപേക്ഷകൾ കാണുക" : "Go to Applications List"}
+                </button>
+              )}
             </div>
           ) : (
             ((mobileSubPage === "none" || mobileSubPage === "leaderboard" || mobileSubPage === "beneficiaries") && (
               <AdminMobileAppBottomNav
-                activeTab={showMoreMenu || mobileSubPage === "leaderboard" || mobileSubPage === "beneficiaries" ? "more" : activeTab}
+                activeTab={activeTab}
                 onTabChange={(tab) => {
-                  if (tab === "more") {
-                    setShowMoreMenu(true);
-                  } else {
-                    setActiveTab(tab);
-                    setMobileSubPage("none");
-                    setShowMoreMenu(false);
-                  }
+                  setActiveTab(tab);
+                  setMobileSubPage("none");
+                  setShowMoreMenu(false);
                 }}
               />
             ))

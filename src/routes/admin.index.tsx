@@ -94,9 +94,9 @@ export function AdminDashboard() {
 
   const handleMobileTabChange = (tab: AdminMobileTab) => {
     setMobileTab(tab);
-    if (tab === "users" || tab === "schemes" || tab === "applications") {
+    if ((tab as string) === "users" || tab === "schemes" || tab === "applications") {
       setIsMobileModalOpen(true);
-    } else if (tab === "more") {
+    } else if ((tab as string) === "more") {
       setIsFilterOpen(true);
     }
   };
