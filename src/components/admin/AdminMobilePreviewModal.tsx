@@ -3465,7 +3465,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                               }}
                               className="px-3 py-1.5 rounded-lg bg-[#ff5500] hover:bg-orange-600 text-white font-extrabold text-[11px] flex items-center gap-1 shadow-xs cursor-pointer active:scale-95 transition-all"
                             >
-                              <span>{lang === "ml" ? "ലഭ്യത പരിശോധിക്കുക" : "Check Availability"}</span>
+                              <span>{lang === "ml" ? "യോഗ്യത പരിശോധിക്കുക" : "Check Eligibility"}</span>
                               <ChevronRight className="h-3 w-3 stroke-[2.5]" />
                             </button>
                           </div>
@@ -3544,7 +3544,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                               }}
                               className="px-3 py-1.5 rounded-lg bg-[#ff5500] hover:bg-orange-600 text-white font-extrabold text-[11px] flex items-center gap-1 shadow-xs cursor-pointer active:scale-95 transition-all"
                             >
-                              <span>{lang === "ml" ? "ലഭ്യത പരിശോധിക്കുക" : "Check Availability"}</span>
+                              <span>{lang === "ml" ? "യോഗ്യത പരിശോധിക്കുക" : "Check Eligibility"}</span>
                               <ChevronRight className="h-3 w-3 stroke-[2.5]" />
                             </button>
                           </div>
@@ -3614,7 +3614,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                               }}
                               className="px-3 py-1.5 rounded-lg bg-[#ff5500] hover:bg-orange-600 text-white font-extrabold text-[11px] flex items-center gap-1 shadow-xs cursor-pointer active:scale-95 transition-all"
                             >
-                              <span>{lang === "ml" ? "ലഭ്യത പരിശോധിക്കുക" : "Check Availability"}</span>
+                              <span>{lang === "ml" ? "യോഗ്യത പരിശോധിക്കുക" : "Check Eligibility"}</span>
                               <ChevronRight className="h-3 w-3 stroke-[2.5]" />
                             </button>
                           </div>
@@ -4073,7 +4073,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                     <h3 className="font-extrabold text-sm text-foreground">
                       {activeTab === "create"
                         ? selectedSchemeName
-                          ? `${selectedSchemeName} - ${lang === "ml" ? "ലഭ്യത പരിശോധിക്കുക" : "Check Availability"}`
+                          ? `${selectedSchemeName} - ${lang === "ml" ? "യോഗ്യത പരിശോധിക്കുക" : "Check Eligibility"}`
                           : (lang === "ml" ? "പുതിയ അപേക്ഷ സമർപ്പിക്കുക" : "Create New Application")
                         : (lang === "ml" ? "സ്കീം ഹെൽപ്പ്ഡെസ്ക്" : "Scheme Helpdesk")}
                     </h3>
@@ -4639,7 +4639,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                     : "bg-muted text-muted-foreground opacity-60 cursor-not-allowed"
                 }`}
               >
-                {lang === "ml" ? "ലഭ്യത പരിശോധിക്കുക" : "Check Availability"}
+                {lang === "ml" ? "യോഗ്യത പരിശോധിക്കുക" : "Check Eligibility"}
               </button>
             </div>
           ) : (
