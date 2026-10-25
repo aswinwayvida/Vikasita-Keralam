@@ -1857,7 +1857,10 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                         <div className="flex items-center justify-between border-b border-border pb-2">
                           <button
                             type="button"
-                            onClick={() => setMobileSubPage("none")}
+                            onClick={() => {
+            setMobileSubPage("none");
+            setActiveTab("applications");
+          }}
                             className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-600 hover:text-rose-700 cursor-pointer"
                           >
                             <ChevronRight className="h-4 w-4 rotate-180" />
