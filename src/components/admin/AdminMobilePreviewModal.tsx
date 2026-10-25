@@ -2363,192 +2363,193 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                       </div>
                     )}
 
-  {/* Dedicated Subpage 6: Detailed Application View */}
-  {mobileSubPage === "app_detail" && selectedApplicationRecord && (
-    <div className="space-y-3.5 pt-0.5 animate-in fade-in duration-200">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-border/80 pb-2.5">
-        <button
-          type="button"
-          onClick={() => setMobileSubPage("none")}
-          className="inline-flex items-center gap-1.5 text-xs font-extrabold text-foreground hover:text-orange-600 transition-colors cursor-pointer"
-        >
-          <ArrowLeft className="h-4 w-4 text-orange-600" />
-          <span>{lang === "ml" ? "അപേക്ഷാ വിശദാംശങ്ങൾ" : "Application Details"}</span>
-        </button>
-        <span className="font-mono text-[10.5px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-          {selectedApplicationRecord.ref}
-        </span>
-      </div>
+            {/* Main Center Subpages / Active Tabs Container */}
+            {mobileSubPage === "app_detail" && selectedApplicationRecord ? (
+              <div className="space-y-3.5 pt-0.5 animate-in fade-in duration-200">
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-border/80 pb-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setMobileSubPage("none")}
+                    className="inline-flex items-center gap-1.5 text-xs font-extrabold text-foreground hover:text-orange-600 transition-colors cursor-pointer"
+                  >
+                    <ArrowLeft className="h-4 w-4 text-orange-600" />
+                    <span>{lang === "ml" ? "അപേക്ഷാ വിശദാംശങ്ങൾ" : "Application Details"}</span>
+                  </button>
+                  <span className="font-mono text-[10.5px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                    {selectedApplicationRecord.ref}
+                  </span>
+                </div>
 
-      {/* Overview Header Banner Card */}
-      <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent border border-orange-200/80 dark:border-orange-900/40 space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-[9.5px] font-extrabold px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950/80 text-orange-700 dark:text-orange-300 border border-orange-200/60 uppercase">
-            {lang === "ml" ? selectedApplicationRecord.categoryMl : selectedApplicationRecord.categoryEn}
-          </span>
-          <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border inline-flex items-center gap-1 ${
-            selectedApplicationRecord.status === "approved" || selectedApplicationRecord.status === "disbursed"
-              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-              : selectedApplicationRecord.status === "rejected"
-              ? "bg-rose-50 text-rose-700 border-rose-200"
-              : "bg-amber-50 text-amber-700 border-amber-200"
-          }`}>
-            {selectedApplicationRecord.status === "approved" || selectedApplicationRecord.status === "disbursed" ? (
-              <CheckCircle2 className="h-3 w-3" />
-            ) : selectedApplicationRecord.status === "rejected" ? (
-              <XCircle className="h-3 w-3" />
+                {/* Overview Header Banner Card */}
+                <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent border border-orange-200/80 dark:border-orange-900/40 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9.5px] font-extrabold px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950/80 text-orange-700 dark:text-orange-300 border border-orange-200/60 uppercase">
+                      {lang === "ml" ? selectedApplicationRecord.categoryMl : selectedApplicationRecord.categoryEn}
+                    </span>
+                    <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border inline-flex items-center gap-1 ${
+                      selectedApplicationRecord.status === "approved" || selectedApplicationRecord.status === "disbursed"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : selectedApplicationRecord.status === "rejected"
+                        ? "bg-rose-50 text-rose-700 border-rose-200"
+                        : "bg-amber-50 text-amber-700 border-amber-200"
+                    }`}>
+                      {selectedApplicationRecord.status === "approved" || selectedApplicationRecord.status === "disbursed" ? (
+                        <CheckCircle2 className="h-3 w-3" />
+                      ) : selectedApplicationRecord.status === "rejected" ? (
+                        <XCircle className="h-3 w-3" />
+                      ) : (
+                        <Hourglass className="h-3 w-3" />
+                      )}
+                      {selectedApplicationRecord.status === "approved"
+                        ? (lang === "ml" ? "അംഗീകരിച്ചു" : "Approved")
+                        : selectedApplicationRecord.status === "disbursed"
+                        ? (lang === "ml" ? "വിതരണം ചെയ്തു" : "Disbursed")
+                        : selectedApplicationRecord.status === "rejected"
+                        ? (lang === "ml" ? "നിരസിച്ചു" : "Rejected")
+                        : (lang === "ml" ? "പരിശോധനയിൽ" : "In Progress")}
+                    </span>
+                  </div>
+
+                  <h4 className="font-extrabold text-sm text-foreground leading-tight">
+                    {lang === "ml" ? selectedApplicationRecord.schemeNameMl : selectedApplicationRecord.schemeNameEn}
+                  </h4>
+                  <p className="text-[11px] text-muted-foreground font-medium">
+                    {lang === "ml" ? "സമർപ്പിച്ച തീയതി" : "Applied Date"}: <span className="font-bold text-foreground">{selectedApplicationRecord.appliedDate}</span>
+                  </p>
+                </div>
+
+                {/* Workflow Progress Tracker */}
+                <div className="bg-card p-3.5 rounded-2xl border border-border shadow-2xs space-y-2.5">
+                  <h5 className="font-extrabold text-xs text-foreground uppercase tracking-wider">
+                    {lang === "ml" ? "പ്രോസസ്സിംഗ് ഘട്ടങ്ങൾ" : "Application Workflow Progress"}
+                  </h5>
+                  
+                  <div className="grid grid-cols-5 gap-1 pt-1 text-center">
+                    {[
+                      { step: 1, labelEn: "Applied", labelMl: "സമർപ്പിച്ചു" },
+                      { step: 2, labelEn: "Doc Check", labelMl: "രേഖാ പരിശോധന" },
+                      { step: 3, labelEn: "Inspection", labelMl: "ഫീൽഡ് തലം" },
+                      { step: 4, labelEn: "Sanction", labelMl: "അനുമതി" },
+                      { step: 5, labelEn: "Disbursal", labelMl: "വിതരണം" },
+                    ].map((s) => {
+                      const isCompleted = selectedApplicationRecord.currentStep > s.step;
+                      const isCurrent = selectedApplicationRecord.currentStep === s.step;
+                      return (
+                        <div key={s.step} className="flex flex-col items-center space-y-1">
+                          <div className={`h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                            isCompleted
+                              ? "bg-emerald-500 text-white"
+                              : isCurrent
+                              ? "bg-orange-500 text-white ring-2 ring-orange-300"
+                              : "bg-slate-100 text-slate-400"
+                          }`}>
+                            {isCompleted ? <Check className="h-3 w-3" /> : s.step}
+                          </div>
+                          <span className={`text-[9px] leading-tight font-semibold ${
+                            isCurrent ? "text-orange-600 font-bold" : "text-muted-foreground"
+                          }`}>
+                            {lang === "ml" ? s.labelMl : s.labelEn}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Next Step Banner */}
+                <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 flex items-start gap-2.5">
+                  <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <h6 className="font-bold text-[11.5px] text-amber-900 dark:text-amber-200">
+                      {lang === "ml" ? "അടുത്ത നടപടി" : "Next Action Required"}
+                    </h6>
+                    <p className="text-[10.5px] text-amber-800 dark:text-amber-300 leading-snug">
+                      {lang === "ml" ? selectedApplicationRecord.nextActionMl : selectedApplicationRecord.nextActionEn}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Applicant Profile Information */}
+                <div className="bg-card p-3.5 rounded-2xl border border-border shadow-2xs space-y-2.5">
+                  <h5 className="font-extrabold text-xs text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <UserCheck className="h-3.5 w-3.5 text-orange-600" />
+                    <span>{lang === "ml" ? "അപേക്ഷകന്റെ വിവരങ്ങൾ" : "Applicant Details"}</span>
+                  </h5>
+
+                  <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
+                    <div className="p-2 rounded-xl bg-muted/40 space-y-0.5">
+                      <span className="text-[9.5px] font-semibold text-muted-foreground uppercase block">{lang === "ml" ? "പേര്" : "Name"}</span>
+                      <span className="font-bold text-foreground block">{lang === "ml" ? selectedApplicationRecord.applicantNameMl : selectedApplicationRecord.applicantNameEn}</span>
+                    </div>
+
+                    <div className="p-2 rounded-xl bg-muted/40 space-y-0.5">
+                      <span className="text-[9.5px] font-semibold text-muted-foreground uppercase block">{lang === "ml" ? "ആധാർ നമ്പർ" : "Aadhaar"}</span>
+                      <span className="font-mono font-bold text-foreground block">{selectedApplicationRecord.aadhaar}</span>
+                    </div>
+
+                    <div className="p-2 rounded-xl bg-muted/40 space-y-0.5">
+                      <span className="text-[9.5px] font-semibold text-muted-foreground uppercase block">{lang === "ml" ? "ഫോൺ നമ്പർ" : "Phone"}</span>
+                      <span className="font-bold text-foreground block">{selectedApplicationRecord.phone}</span>
+                    </div>
+
+                    <div className="p-2 rounded-xl bg-muted/40 space-y-0.5">
+                      <span className="text-[9.5px] font-semibold text-muted-foreground uppercase block">{lang === "ml" ? "വാർഷിക വരുമാനം" : "Annual Income"}</span>
+                      <span className="font-bold text-foreground block">{selectedApplicationRecord.annualIncome}</span>
+                    </div>
+
+                    <div className="col-span-2 p-2 rounded-xl bg-muted/40 space-y-0.5">
+                      <span className="text-[9.5px] font-semibold text-muted-foreground uppercase block">{lang === "ml" ? "സ്ഥലം / മണ്ഡലം" : "Location"}</span>
+                      <span className="font-bold text-foreground block">{lang === "ml" ? selectedApplicationRecord.locationMl : selectedApplicationRecord.locationEn}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pending Documents Checklist */}
+                <div className="bg-card p-3.5 rounded-2xl border border-border shadow-2xs space-y-2">
+                  <h5 className="font-extrabold text-xs text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <FileText className="h-3.5 w-3.5 text-orange-600" />
+                    <span>{lang === "ml" ? "ആവശ്യമായ രേഖകൾ" : "Required Documents"}</span>
+                  </h5>
+
+                  <div className="space-y-1.5 pt-1">
+                    {selectedApplicationRecord.pendingDocs.map((doc, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-2 rounded-xl border border-border bg-background text-[11px]">
+                        <span className="font-semibold text-foreground">{doc}</span>
+                        <span className="text-[9.5px] font-bold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+                          {lang === "ml" ? "സ്ഥിരീകരിച്ചു" : "Verified"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Application Timeline Audit Log */}
+                <div className="bg-card p-3.5 rounded-2xl border border-border shadow-2xs space-y-2.5">
+                  <h5 className="font-extrabold text-xs text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <Clock3 className="h-3.5 w-3.5 text-orange-600" />
+                    <span>{lang === "ml" ? "പ്രോസസ്സിംഗ് ചരിത്രം" : "Activity Log"}</span>
+                  </h5>
+
+                  <div className="space-y-2 pt-1">
+                    {selectedApplicationRecord.auditLog.map((log, idx) => (
+                      <div key={idx} className="flex items-start gap-2.5 text-[11px] pb-2 border-b border-border/50 last:border-0 last:pb-0">
+                        <span className={`h-2 w-2 rounded-full mt-1.5 shrink-0 ${
+                          log.status === "completed" ? "bg-emerald-500" : log.status === "current" ? "bg-orange-500" : "bg-slate-300"
+                        }`} />
+                        <div className="flex-1 space-y-0.5">
+                          <div className="flex items-center justify-between">
+                            <h6 className="font-bold text-foreground">{lang === "ml" ? log.titleMl : log.titleEn}</h6>
+                            <span className="text-[9.5px] text-muted-foreground">{log.date}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             ) : (
-              <Hourglass className="h-3 w-3" />
-            )}
-            {selectedApplicationRecord.status === "approved"
-              ? (lang === "ml" ? "അംഗീകരിച്ചു" : "Approved")
-              : selectedApplicationRecord.status === "disbursed"
-              ? (lang === "ml" ? "വിതരണം ചെയ്തു" : "Disbursed")
-              : selectedApplicationRecord.status === "rejected"
-              ? (lang === "ml" ? "നിരസിച്ചു" : "Rejected")
-              : (lang === "ml" ? "പരിശോധനയിൽ" : "In Progress")}
-          </span>
-        </div>
-
-        <h4 className="font-extrabold text-sm text-foreground leading-tight">
-          {lang === "ml" ? selectedApplicationRecord.schemeNameMl : selectedApplicationRecord.schemeNameEn}
-        </h4>
-        <p className="text-[11px] text-muted-foreground font-medium">
-          {lang === "ml" ? "സമർപ്പിച്ച തീയതി" : "Applied Date"}: <span className="font-bold text-foreground">{selectedApplicationRecord.appliedDate}</span>
-        </p>
-      </div>
-
-      {/* Workflow Progress Tracker */}
-      <div className="bg-card p-3.5 rounded-2xl border border-border shadow-2xs space-y-2.5">
-        <h5 className="font-extrabold text-xs text-foreground uppercase tracking-wider">
-          {lang === "ml" ? "പ്രോസസ്സിംഗ് ഘട്ടങ്ങൾ" : "Application Workflow Progress"}
-        </h5>
-        
-        <div className="grid grid-cols-5 gap-1 pt-1 text-center">
-          {[
-            { step: 1, labelEn: "Applied", labelMl: "സമർപ്പിച്ചു" },
-            { step: 2, labelEn: "Doc Check", labelMl: "രേഖാ പരിശോധന" },
-            { step: 3, labelEn: "Inspection", labelMl: "ഫീൽഡ് തലം" },
-            { step: 4, labelEn: "Sanction", labelMl: "അനുമതി" },
-            { step: 5, labelEn: "Disbursal", labelMl: "വിതരണം" },
-          ].map((s) => {
-            const isCompleted = selectedApplicationRecord.currentStep > s.step;
-            const isCurrent = selectedApplicationRecord.currentStep === s.step;
-            return (
-              <div key={s.step} className="flex flex-col items-center space-y-1">
-                <div className={`h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                  isCompleted
-                    ? "bg-emerald-500 text-white"
-                    : isCurrent
-                    ? "bg-orange-500 text-white ring-2 ring-orange-300"
-                    : "bg-slate-100 text-slate-400"
-                }`}>
-                  {isCompleted ? <Check className="h-3 w-3" /> : s.step}
-                </div>
-                <span className={`text-[9px] leading-tight font-semibold ${
-                  isCurrent ? "text-orange-600 font-bold" : "text-muted-foreground"
-                }`}>
-                  {lang === "ml" ? s.labelMl : s.labelEn}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Next Step Banner */}
-      <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 flex items-start gap-2.5">
-        <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-        <div className="space-y-0.5">
-          <h6 className="font-bold text-[11.5px] text-amber-900 dark:text-amber-200">
-            {lang === "ml" ? "അടുത്ത നടപടി" : "Next Action Required"}
-          </h6>
-          <p className="text-[10.5px] text-amber-800 dark:text-amber-300 leading-snug">
-            {lang === "ml" ? selectedApplicationRecord.nextActionMl : selectedApplicationRecord.nextActionEn}
-          </p>
-        </div>
-      </div>
-
-      {/* Applicant Profile Information */}
-      <div className="bg-card p-3.5 rounded-2xl border border-border shadow-2xs space-y-2.5">
-        <h5 className="font-extrabold text-xs text-foreground uppercase tracking-wider flex items-center gap-1.5">
-          <UserCheck className="h-3.5 w-3.5 text-orange-600" />
-          <span>{lang === "ml" ? "അപേക്ഷകന്റെ വിവരങ്ങൾ" : "Applicant Details"}</span>
-        </h5>
-
-        <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
-          <div className="p-2 rounded-xl bg-muted/40 space-y-0.5">
-            <span className="text-[9.5px] font-semibold text-muted-foreground uppercase block">{lang === "ml" ? "പേര്" : "Name"}</span>
-            <span className="font-bold text-foreground block">{lang === "ml" ? selectedApplicationRecord.applicantNameMl : selectedApplicationRecord.applicantNameEn}</span>
-          </div>
-
-          <div className="p-2 rounded-xl bg-muted/40 space-y-0.5">
-            <span className="text-[9.5px] font-semibold text-muted-foreground uppercase block">{lang === "ml" ? "ആധാർ നമ്പർ" : "Aadhaar"}</span>
-            <span className="font-mono font-bold text-foreground block">{selectedApplicationRecord.aadhaar}</span>
-          </div>
-
-          <div className="p-2 rounded-xl bg-muted/40 space-y-0.5">
-            <span className="text-[9.5px] font-semibold text-muted-foreground uppercase block">{lang === "ml" ? "ഫോൺ നമ്പർ" : "Phone"}</span>
-            <span className="font-bold text-foreground block">{selectedApplicationRecord.phone}</span>
-          </div>
-
-          <div className="p-2 rounded-xl bg-muted/40 space-y-0.5">
-            <span className="text-[9.5px] font-semibold text-muted-foreground uppercase block">{lang === "ml" ? "വാർഷിക വരുമാനം" : "Annual Income"}</span>
-            <span className="font-bold text-foreground block">{selectedApplicationRecord.annualIncome}</span>
-          </div>
-
-          <div className="col-span-2 p-2 rounded-xl bg-muted/40 space-y-0.5">
-            <span className="text-[9.5px] font-semibold text-muted-foreground uppercase block">{lang === "ml" ? "സ്ഥലം / മണ്ഡലം" : "Location"}</span>
-            <span className="font-bold text-foreground block">{lang === "ml" ? selectedApplicationRecord.locationMl : selectedApplicationRecord.locationEn}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Pending Documents Checklist */}
-      <div className="bg-card p-3.5 rounded-2xl border border-border shadow-2xs space-y-2">
-        <h5 className="font-extrabold text-xs text-foreground uppercase tracking-wider flex items-center gap-1.5">
-          <FileText className="h-3.5 w-3.5 text-orange-600" />
-          <span>{lang === "ml" ? "ആവശ്യമായ രേഖകൾ" : "Required Documents"}</span>
-        </h5>
-
-        <div className="space-y-1.5 pt-1">
-          {selectedApplicationRecord.pendingDocs.map((doc, idx) => (
-            <div key={idx} className="flex items-center justify-between p-2 rounded-xl border border-border bg-background text-[11px]">
-              <span className="font-semibold text-foreground">{doc}</span>
-              <span className="text-[9.5px] font-bold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
-                {lang === "ml" ? "സ്ഥിരീകരിച്ചു" : "Verified"}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Application Timeline Audit Log */}
-      <div className="bg-card p-3.5 rounded-2xl border border-border shadow-2xs space-y-2.5">
-        <h5 className="font-extrabold text-xs text-foreground uppercase tracking-wider flex items-center gap-1.5">
-          <Clock3 className="h-3.5 w-3.5 text-orange-600" />
-          <span>{lang === "ml" ? "പ്രോസസ്സിംഗ് ചരിത്രം" : "Activity Log"}</span>
-        </h5>
-
-        <div className="space-y-2 pt-1">
-          {selectedApplicationRecord.auditLog.map((log, idx) => (
-            <div key={idx} className="flex items-start gap-2.5 text-[11px] pb-2 border-b border-border/50 last:border-0 last:pb-0">
-              <span className={`h-2 w-2 rounded-full mt-1.5 shrink-0 ${
-                log.status === "completed" ? "bg-emerald-500" : log.status === "current" ? "bg-orange-500" : "bg-slate-300"
-              }`} />
-              <div className="flex-1 space-y-0.5">
-                <div className="flex items-center justify-between">
-                  <h6 className="font-bold text-foreground">{lang === "ml" ? log.titleMl : log.titleEn}</h6>
-                  <span className="text-[9.5px] text-muted-foreground">{log.date}</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )}
+              <>
                     {mobileSubPage === "notifications" && (
                       <div className="space-y-3 pt-0.5 animate-in fade-in duration-200">
                         {/* Header */}
