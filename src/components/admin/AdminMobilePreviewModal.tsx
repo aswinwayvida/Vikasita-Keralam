@@ -170,9 +170,10 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
   );
 
   // Create Application Flow Steps State
-  const [createFlowStep, setCreateFlowStep] = useState<"form" | "checking" | "eligible_schemes" | "scheme_details" | "submitted">("form");
+  const [createFlowStep, setCreateFlowStep] = useState<"form" | "checking" | "eligibility_result" | "eligible_schemes" | "scheme_details" | "submitted">("form");
   const [isCheckingEligibility, setIsCheckingEligibility] = useState<boolean>(false);
   const [eligibleSchemesSearchQuery, setEligibleSchemesSearchQuery] = useState<string>("");
+  const [isSingleSchemeEligible, setIsSingleSchemeEligible] = useState<boolean>(true);
   const [selectedEligibleScheme, setSelectedEligibleScheme] = useState<{
     id: string;
     titleEn: string;
@@ -192,16 +193,6 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
   const [bankAccountNumber, setBankAccountNumber] = useState<string>("");
   const [bankIfscCode, setBankIfscCode] = useState<string>("");
   const [declarationAccepted, setDeclarationAccepted] = useState<boolean>(false);
-
-  const handleStartEligibilityCheck = () => {
-    if (!isCreateFormValid || isCheckingEligibility) return;
-    setCreateFlowStep("checking");
-    setIsCheckingEligibility(true);
-    setTimeout(() => {
-      setIsCheckingEligibility(false);
-      setCreateFlowStep("eligible_schemes");
-    }, 2200);
-  };
 
   const mockEligibleSchemesList = [
     {
@@ -265,6 +256,40 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
       requiredDocMl: "വയസ് തെളിയിക്കുന്ന രേഖ & ബാങ്ക് പാസ്ബുക്ക് പകർപ്പ്",
     },
   ];
+
+  const handleStartEligibilityCheck = () => {
+    if (!isCreateFormValid || isCheckingEligibility) return;
+    setCreateFlowStep("checking");
+    setIsCheckingEligibility(true);
+
+    setTimeout(() => {
+      setIsCheckingEligibility(false);
+      if (selectedSchemeName) {
+        const matchedScheme = mockEligibleSchemesList.find(
+          (s) => s.titleEn.toLowerCase().includes(selectedSchemeName.toLowerCase()) || selectedSchemeName.toLowerCase().includes(s.titleEn.toLowerCase())
+        ) || {
+          id: "SCH-SPECIFIC",
+          titleEn: selectedSchemeName,
+          titleMl: selectedSchemeName,
+          benefitEn: "Official government scheme financial assistance and welfare benefits.",
+          benefitMl: "സർക്കാർ പദ്ധതി സാമ്പത്തിക ആനുകൂല്യങ്ങളും ക്ഷേമ സഹായങ്ങളും.",
+          matchLabelEn: "100% Match",
+          matchLabelMl: "100% യോഗ്യത",
+          deptEn: "Kerala State Department",
+          deptMl: "കേരള സംസ്ഥാന വകുപ്പ്",
+          categoryEn: "Government Scheme",
+          categoryMl: "സർക്കാർ പദ്ധതി",
+          requiredDocEn: "Aadhaar Card / Income Certificate Copy",
+          requiredDocMl: "ആധാർ കാർഡ് / വരുമാന സർട്ടിഫിക്കറ്റ് പകർപ്പ്",
+        };
+        setSelectedEligibleScheme(matchedScheme);
+        setIsSingleSchemeEligible(true);
+        setCreateFlowStep("eligibility_result");
+      } else {
+        setCreateFlowStep("eligible_schemes");
+      }
+    }, 2200);
+  };
   const [mobileSubPage, setMobileSubPage] = useState<"none" | "leaderboard" | "needs_attention" | "recent_activity" | "beneficiaries" | "notifications" | "applications" | "events_announcements">("none");
   const [eventsSubTab, setEventsSubTab] = useState<"events" | "announcements">("events");
   const [applicationStatusFilter, setApplicationStatusFilter] = useState<"all" | "pending" | "assisted" | "rejected">("all");
@@ -4593,12 +4618,14 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
 
                         <div className="space-y-1.5 max-w-xs">
                           <h4 className="text-base font-extrabold text-foreground">
-                            {lang === "ml" ? "യോഗ്യത പരിശോധിക്കുന്നു..." : "Checking eligibility…"}
+                            {lang === "ml"
+                              ? `${selectedSchemeName ? selectedSchemeName + " " : ""}യോഗ്യത പരിശോധിക്കുന്നു...`
+                              : `Checking eligibility for ${selectedSchemeName || "schemes"}…`}
                           </h4>
                           <p className="text-xs text-muted-foreground leading-relaxed">
                             {lang === "ml"
-                              ? "നിങ്ങളുടെ വിവരങ്ങളുമായി പൊരുത്തപ്പെടുന്ന പദ്ധതികൾ കണ്ടെത്തുന്നു."
-                              : "Finding schemes that match your details."}
+                              ? "നിങ്ങളുടെ വിവരങ്ങളുമായി ഈ പദ്ധതിയുടെ മാനദണ്ഡങ്ങൾ പൊരുത്തപ്പെടുത്തുന്നു."
+                              : "Verifying your applicant profile criteria against official scheme rules."}
                           </p>
                         </div>
 
@@ -4612,6 +4639,94 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                             <span>{lang === "ml" ? "ശേഖരിക്കുന്നു..." : "Matching databases..."}</span>
                           </div>
                         </div>
+                      </div>
+                    )}
+
+                    {/* Step 2.5: Specific Single Scheme Eligibility Result View */}
+                    {createFlowStep === "eligibility_result" && selectedEligibleScheme && (
+                      <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200 text-left">
+                        {isSingleSchemeEligible ? (
+                          /* Eligible Result Card */
+                          <div className="bg-card border-2 border-emerald-500/40 p-5 rounded-2xl shadow-md text-center space-y-4">
+                            <div className="relative flex items-center justify-center mx-auto">
+                              <div className="absolute h-16 w-16 rounded-full bg-emerald-500/20 animate-ping" />
+                              <div className="relative h-14 w-14 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg">
+                                <CheckCircle2 className="h-8 w-8 stroke-[2.5]" />
+                              </div>
+                            </div>
+
+                            <div className="space-y-1.5">
+                              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/80 px-3 py-1 rounded-full border border-emerald-300 dark:border-emerald-800">
+                                {lang === "ml" ? "🎉 നിങ്ങൾ യോഗ്യനാണ്!" : "🎉 You are Eligible!"}
+                              </span>
+                              <h3 className="font-black text-base text-foreground pt-1">
+                                {selectedSchemeName || (lang === "ml" ? selectedEligibleScheme.titleMl : selectedEligibleScheme.titleEn)}
+                              </h3>
+                              <p className="text-xs text-muted-foreground leading-relaxed px-2">
+                                {lang === "ml"
+                                  ? "നിങ്ങൾ നൽകിയ വിവരങ്ങൾ അനുസരിച്ച് ഈ പദ്ധതിയുടെ എല്ലാ അർഹതാ മാനദണ്ഡങ്ങളും പൂർണ്ണമായും പാലിക്കപ്പെട്ടിരിക്കുന്നു."
+                                  : "Based on your verified applicant profile, you meet all primary criteria for this scheme."}
+                              </p>
+                            </div>
+
+                            {/* Key Match Badges */}
+                            <div className="grid grid-cols-2 gap-2 text-left bg-emerald-50/70 dark:bg-emerald-950/30 p-3 rounded-xl border border-emerald-200 dark:border-emerald-900/60 text-[11px]">
+                              <div className="flex items-center gap-1.5 font-bold text-emerald-900 dark:text-emerald-200">
+                                <Check className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                                <span>{lang === "ml" ? "വരുമാന പരിധി പൊരുത്തപ്പെട്ടു" : "Income Bracket Verified"}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 font-bold text-emerald-900 dark:text-emerald-200">
+                                <Check className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                                <span>{lang === "ml" ? "മണ്ഡലം അർഹത ലഭ്യം" : "District Scope Matched"}</span>
+                              </div>
+                            </div>
+
+                            {/* Action Button to Proceed to Final Details */}
+                            <button
+                              type="button"
+                              onClick={() => setCreateFlowStep("scheme_details")}
+                              className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-xs sm:text-sm shadow-md active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2"
+                            >
+                              <span>{lang === "ml" ? "അവസാന വിവരങ്ങൾ നൽകുക (ബാങ്ക് & രേഖകൾ)" : "Proceed to Final Details (Upload Docs & Bank)"}</span>
+                              <ChevronRight className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          /* Not Eligible Card */
+                          <div className="bg-card border-2 border-amber-500/40 p-5 rounded-2xl shadow-md text-center space-y-4">
+                            <div className="h-14 w-14 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto shadow-sm">
+                              <AlertCircle className="h-7 w-7" />
+                            </div>
+
+                            <div className="space-y-1">
+                              <h4 className="font-extrabold text-sm text-foreground">
+                                {lang === "ml" ? "യോഗ്യത കുറവാണ്" : "Currently Not Eligible"}
+                              </h4>
+                              <p className="text-xs text-muted-foreground">
+                                {lang === "ml"
+                                  ? `നിങ്ങളുടെ ചില വിവരങ്ങൾ ${selectedSchemeName}-ന്റെ മാനദണ്ഡങ്ങളുമായി പൊരുത്തപ്പെടുന്നില്ല.`
+                                  : `Some applicant details do not meet the minimum criteria for ${selectedSchemeName}.`}
+                              </p>
+                            </div>
+
+                            <div className="flex flex-col gap-2 pt-1">
+                              <button
+                                type="button"
+                                onClick={() => setCreateFlowStep("form")}
+                                className="w-full py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer"
+                              >
+                                {lang === "ml" ? "വിവരങ്ങൾ തിരുത്തുക" : "Edit Application Details"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setCreateFlowStep("eligible_schemes")}
+                                className="w-full py-2.5 rounded-xl bg-muted text-foreground font-semibold text-xs hover:bg-muted/80 transition-colors cursor-pointer"
+                              >
+                                {lang === "ml" ? "മറ്റ് പദ്ധതികൾ കാണുക" : "Browse All Schemes"}
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
 
