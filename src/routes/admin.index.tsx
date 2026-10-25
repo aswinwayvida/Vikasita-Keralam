@@ -40,9 +40,10 @@ import {
   Smartphone,
 } from "lucide-react";
 import { useLang } from "@/i18n/LanguageProvider";
-import users3dIcon from "@/assets/kpi-3d/users.png";
 import beneficiaries3dIcon from "@/assets/kpi-3d/beneficiaries.png";
 import applications3dIcon from "@/assets/kpi-3d/applications.png";
+import received3dIcon from "@/assets/kpi-3d/received.png";
+import inReview3dIcon from "@/assets/kpi-3d/in-review.png";
 import assisted3dIcon from "@/assets/kpi-3d/assisted.png";
 import pending3dIcon from "@/assets/kpi-3d/pending.png";
 import rejected3dIcon from "@/assets/kpi-3d/rejected.png";
@@ -411,42 +412,42 @@ export function AdminDashboard() {
       {/* 2. EXECUTIVE 8 KPI CARDS (MATCHING REFERENCE DESIGN WITH 3D ICONS)       */}
       {/* ========================================================================= */}
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {/* Card 1: Users */}
+        {/* Card 1: Submitted */}
         <div className="group rounded-2xl border border-amber-200/50 dark:border-border bg-card p-3.5 sm:p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between">
           <div className="flex items-start justify-between gap-2">
             <span className="text-sm sm:text-base font-bold text-slate-700 dark:text-slate-200 leading-tight">
-              {lang === "ml" ? "ഉപയോക്താക്കൾ" : "Users"}
+              {lang === "ml" ? "സമർപ്പിച്ച അപേക്ഷകൾ" : "Submitted"}
             </span>
-            <img src={users3dIcon} alt="Users" className="h-8 w-8 sm:h-10 sm:w-10 object-contain shrink-0" />
-          </div>
-          <div className="mt-2.5 font-display text-lg sm:text-2xl font-extrabold text-foreground tracking-tight">
-            142,850
-          </div>
-        </div>
-
-        {/* Card 2: Approved */}
-        <div className="group rounded-2xl border border-amber-200/50 dark:border-border bg-card p-3.5 sm:p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between">
-          <div className="flex items-start justify-between gap-2">
-            <span className="text-sm sm:text-base font-bold text-slate-700 dark:text-slate-200 leading-tight">
-              {lang === "ml" ? "അംഗീകരിച്ചവ" : "Approved"}
-            </span>
-            <img src={assisted3dIcon} alt="Approved" className="h-8 w-8 sm:h-10 sm:w-10 object-contain shrink-0" />
-          </div>
-          <div className="mt-2.5 font-display text-lg sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tracking-tight">
-            48,250
-          </div>
-        </div>
-
-        {/* Card 3: Applications */}
-        <div className="group rounded-2xl border border-amber-200/50 dark:border-border bg-card p-3.5 sm:p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between">
-          <div className="flex items-start justify-between gap-2">
-            <span className="text-sm sm:text-base font-bold text-slate-700 dark:text-slate-200 leading-tight">
-              {lang === "ml" ? "അപേക്ഷകൾ" : "Applications"}
-            </span>
-            <img src={applications3dIcon} alt="Applications" className="h-8 w-8 sm:h-10 sm:w-10 object-contain shrink-0" />
+            <img src={applications3dIcon} alt="Submitted" className="h-8 w-8 sm:h-10 sm:w-10 object-contain shrink-0" />
           </div>
           <div className="mt-2.5 font-display text-lg sm:text-2xl font-extrabold text-foreground tracking-tight">
             63,830
+          </div>
+        </div>
+
+        {/* Card 2: Received */}
+        <div className="group rounded-2xl border border-amber-200/50 dark:border-border bg-card p-3.5 sm:p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between">
+          <div className="flex items-start justify-between gap-2">
+            <span className="text-sm sm:text-base font-bold text-slate-700 dark:text-slate-200 leading-tight">
+              {lang === "ml" ? "ലഭിച്ച അപേക്ഷകൾ" : "Received"}
+            </span>
+            <img src={received3dIcon} alt="Received" className="h-8 w-8 sm:h-10 sm:w-10 object-contain shrink-0" />
+          </div>
+          <div className="mt-2.5 font-display text-lg sm:text-2xl font-extrabold text-foreground tracking-tight">
+            63,830
+          </div>
+        </div>
+
+        {/* Card 3: Beneficiaries */}
+        <div className="group rounded-2xl border border-amber-200/50 dark:border-border bg-card p-3.5 sm:p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between">
+          <div className="flex items-start justify-between gap-2">
+            <span className="text-sm sm:text-base font-bold text-slate-700 dark:text-slate-200 leading-tight">
+              {lang === "ml" ? "ഗുണഭോക്താക്കൾ" : "Beneficiaries"}
+            </span>
+            <img src={assisted3dIcon} alt="Beneficiaries" className="h-8 w-8 sm:h-10 sm:w-10 object-contain shrink-0" />
+          </div>
+          <div className="mt-2.5 font-display text-lg sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tracking-tight">
+            48,250
           </div>
         </div>
 
@@ -456,7 +457,7 @@ export function AdminDashboard() {
             <span className="text-sm sm:text-base font-bold text-slate-700 dark:text-slate-200 leading-tight">
               {lang === "ml" ? "പരിശോധനയിലുള്ളവ" : "In Review"}
             </span>
-            <img src={beneficiaries3dIcon} alt="In Review" className="h-8 w-8 sm:h-10 sm:w-10 object-contain shrink-0" />
+            <img src={inReview3dIcon} alt="In Review" className="h-8 w-8 sm:h-10 sm:w-10 object-contain shrink-0" />
           </div>
           <div className="mt-2.5 font-display text-lg sm:text-2xl font-extrabold text-foreground tracking-tight">
             8,000
@@ -518,9 +519,6 @@ export function AdminDashboard() {
 
 
 
-
-
-      {/* ========================================================================= */}
       {/* 5. WELFARE ANALYTICS & GRASSROOTS GROWTH (SCHEMES + REFERRALS + GAMIFICATION) */}
       {/* ========================================================================= */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
