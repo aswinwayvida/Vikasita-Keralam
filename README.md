@@ -12,7 +12,7 @@ Design style:
 
 - Clean, prestigious, professional political-public service platform
 
-- Malayalam and English language toggle
+- Malayalam and English language toggle -
 
 - Blue, saffron, white colour palette
 
