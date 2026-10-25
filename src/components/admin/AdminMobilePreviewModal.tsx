@@ -846,7 +846,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                         className="min-h-[44px] rounded-lg border border-border bg-card p-1.5 px-2 flex flex-col justify-between shadow-2xs hover:border-blue-500/70 transition-all cursor-pointer"
                       >
                         <div className="flex items-center justify-between gap-1">
-                          <span className="text-[11.5px] font-bold text-muted-foreground truncate">
+                          <span className="text-[10px] sm:text-[10.5px] font-bold text-muted-foreground truncate leading-tight">
                             {lang === "ml" ? "ലഭിച്ച അപേക്ഷകൾ" : "Application Received"}
                           </span>
                           <img src={applicationReceived3dIcon} alt="Application Received" className="h-7 w-7 object-contain shrink-0" />
@@ -869,7 +869,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           </span>
                           <img src={submitted3dIcon} alt="Submitted" className="h-7 w-7 object-contain shrink-0" />
                         </div>
-                        <p className="font-display text-sm sm:text-base font-bold text-sky-600 dark:text-sky-400 leading-none mt-1">{(applicationsCount - 150).toLocaleString()}</p>
+                        <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">{(applicationsCount - 150).toLocaleString()}</p>
                       </div>
 
                       {/* 3. Approved */}
@@ -883,7 +883,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           </span>
                           <img src={assisted3dIcon} alt="Approved" className="h-7 w-7 object-contain shrink-0" />
                         </div>
-                        <p className="font-display text-sm sm:text-base font-bold text-emerald-600 dark:text-emerald-400 leading-none mt-1">{currentMetrics.beneficiaries.toLocaleString()}</p>
+                        <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">{currentMetrics.beneficiaries.toLocaleString()}</p>
                       </div>
 
                       {/* 4. In Review */}
