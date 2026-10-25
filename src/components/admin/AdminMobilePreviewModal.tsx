@@ -292,7 +292,15 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
       }
     }, 2200);
   };
-  const [mobileSubPage, setMobileSubPage] = useState<"none" | "leaderboard" | "needs_attention" | "recent_activity" | "beneficiaries" | "notifications" | "applications" | "events_announcements">("none");
+  const [mobileSubPage, setMobileSubPage] = useState<"none" | "leaderboard" | "needs_attention" | "recent_activity" | "beneficiaries" | "notifications" | "applications" | "events_announcements" | "app_detail">("none");
+  const [selectedSchemeCategoryDetail, setSelectedSchemeCategoryDetail] = useState<{
+    id: string;
+    titleEn: string;
+    titleMl: string;
+    categoryLabelEn: string;
+    categoryLabelMl: string;
+    count: number;
+  } | null>(null);
   const [eventsSubTab, setEventsSubTab] = useState<"events" | "announcements">("events");
   const [applicationStatusFilter, setApplicationStatusFilter] = useState<"all" | "pending" | "assisted" | "rejected">("all");
   const [appSchemeCategoryFilter, setAppSchemeCategoryFilter] = useState<string>("all");
