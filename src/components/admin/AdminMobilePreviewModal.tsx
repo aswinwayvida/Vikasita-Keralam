@@ -5,6 +5,7 @@ import { useLang } from "@/i18n/LanguageProvider";
 import officialLotus from "@/assets/bjp-official-lotus.png";
 import users3dIcon from "@/assets/kpi-3d/users.png";
 import inReview3dIcon from "@/assets/kpi-3d/in-review.png";
+import documentsPending3dIcon from "@/assets/kpi-3d/documents-pending.png";
 import applications3dIcon from "@/assets/kpi-3d/applications.png";
 import openApplication3dIcon from "@/assets/kpi-3d/open-application.png";
 import submitted3dIcon from "@/assets/kpi-3d/submitted.png";
@@ -456,7 +457,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                   <span className="text-[10px] sm:text-[10.5px] font-bold text-muted-foreground truncate leading-tight">
                     {lang === "ml" ? "ബാക്കിയുള്ള രേഖകൾ" : "Documents pending"}
                   </span>
-                  <img src={inReview3dIcon} alt="Documents pending" className="h-7 w-7 object-contain shrink-0" />
+                  <img src={documentsPending3dIcon} alt="Documents pending" className="h-7 w-7 object-contain shrink-0" />
                 </div>
                 <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">08</p>
               </div>
@@ -1973,7 +1974,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           <span className="text-[11.5px] font-bold text-muted-foreground truncate">
                             {lang === "ml" ? "പരിശോധനയിലുള്ളവ" : "In Review"}
                           </span>
-                          <img src={inReview3dIcon} alt="In Review" className="h-7 w-7 object-contain shrink-0" />
+                          <img src={documentsPending3dIcon} alt="In Review" className="h-7 w-7 object-contain shrink-0" />
                         </div>
                         <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">{currentMetrics.assisted.toLocaleString()}</p>
                       </div>
