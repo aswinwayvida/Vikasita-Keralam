@@ -195,6 +195,24 @@ export function AdminMobileAppHeader({
                     </span>
                     <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsProfileOpen(false);
+                      try {
+                        localStorage.removeItem("vk-admin-session");
+                        sessionStorage.clear();
+                      } catch (e) {
+                        console.error(e);
+                      }
+                      window.location.replace("/");
+                    }}
+                    className="flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 font-medium transition-all cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <LogOut className="h-4 w-4 text-red-500" /> {lang === "ml" ? "ലോഗ് ഔട്ട്" : "Log out"}
+                    </span>
+                  </button>
                 </div>
               </div>
             )}
