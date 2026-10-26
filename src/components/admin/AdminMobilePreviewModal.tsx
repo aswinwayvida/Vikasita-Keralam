@@ -6193,7 +6193,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                                       }}
                                       className="py-2 px-4 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-extrabold text-xs shadow-xs active:scale-95 transition-all cursor-pointer shrink-0"
                                     >
-                                      {lang === "ml" ? "അപേക്ഷിക്കുക" : "Apply Now"}
+                                      {lang === "ml" ? "സ്കീം തിരഞ്ഞെടുക്കുക" : "Select Scheme"}
                                     </button>
                                   </div>
                                 </div>
@@ -6568,7 +6568,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                     {lang === "ml" ? "എഡിറ്റ് ഫോം" : "Edit Form"}
                   </button>
                   <p className="w-2/3 text-[10.5px] font-semibold text-muted-foreground flex items-center justify-center text-center bg-muted/40 rounded-xl px-2">
-                    {lang === "ml" ? "സ്കീം തിരഞ്ഞെടുത്ത് അപേക്ഷിക്കുക" : "Tap 'Apply Now' on a scheme above"}
+                    {lang === "ml" ? "മുകളിലുള്ള 'Select Scheme' ക്ലിക്ക് ചെയ്യുക" : "Tap 'Select Scheme' on a scheme above"}
                   </p>
                 </div>
               )}
