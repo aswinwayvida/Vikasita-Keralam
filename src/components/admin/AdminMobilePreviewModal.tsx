@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link } from "@tanstack/react-router";
-import { X, Smartphone, Wifi, Battery, Signal, ChevronRight, ChevronLeft, ArrowLeft, Users, HeartHandshake, Database, Layers, Sparkles, MessageSquare, Clock3, UserCheck, LayoutDashboard, Sliders, Calendar, FileText, XCircle, CheckCircle2, Hourglass, MapPin, Trophy, AlertTriangle, Activity, Globe, Map, Network, Store, ShieldCheck, ChevronDown, Filter, Search, Megaphone, CalendarDays, BellRing, Phone, RotateCcw, GraduationCap, Sprout, LayoutGrid, MoreVertical, AlertCircle, Star, Zap, Headphones, Edit, Upload, FileCheck, Loader2, SearchX, RefreshCw, Check, Lock, User, Download, Eye } from "lucide-react";
+import { X, Smartphone, Wifi, Battery, Signal, ChevronRight, ChevronLeft, ArrowLeft, Users, HeartHandshake, Database, Layers, Sparkles, MessageSquare, Clock3, UserCheck, LayoutDashboard, Sliders, Calendar, FileText, XCircle, CheckCircle2, Hourglass, MapPin, Trophy, AlertTriangle, Activity, Globe, Map, Network, Store, ShieldCheck, ChevronDown, Filter, Search, SearchCheck, Megaphone, CalendarDays, BellRing, Phone, RotateCcw, GraduationCap, Sprout, LayoutGrid, MoreVertical, AlertCircle, Star, Zap, Headphones, Edit, Upload, FileCheck, Loader2, SearchX, RefreshCw, Check, Lock, User, Download, Eye, Send } from "lucide-react";
 import { useLang } from "@/i18n/LanguageProvider";
 import officialLotus from "@/assets/bjp-official-lotus.png";
 import users3dIcon from "@/assets/kpi-3d/users.png";
@@ -19,6 +19,7 @@ import coveredBooth3dIcon from "@/assets/kpi-3d/covered-booth.png";
 import sahaiAvatar from "@/assets/sahai-avatar-v3.png";
 import { AdminMobileAppBottomNav, AdminMobileTab } from "./AdminMobileAppBottomNav";
 import { AdminMobileAppHeader } from "./AdminMobileAppHeader";
+import { MobileGuestEventsSection } from "./MobileGuestEventsSection";
 import { DatePickerModal } from "./DatePickerModal";
 import { MobileUsersListTab } from "./MobileUsersListTab";
 import { MobileAppliedFiltersScope, FilterChip } from "./MobileAppliedFiltersScope";
@@ -266,6 +267,22 @@ const metricsByPeriod: Record<
 export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewModalProps) {
   const { lang } = useLang();
   const [userRole, setUserRole] = useState<"state_admin" | "party_worker">("state_admin");
+  const [isGuest, setIsGuest] = useState<boolean>(false);
+  const [isSahAiOpen, setIsSahAiOpen] = useState<boolean>(false);
+
+  const handleLogout = () => {
+    setIsGuest(true);
+    setActiveTab("overview");
+    setMobileSubPage("none");
+    setShowFilterMenu(false);
+    setShowMoreMenu(false);
+  };
+
+  const handleLogin = () => {
+    setIsGuest(false);
+    setActiveTab("overview");
+    setMobileSubPage("none");
+  };
   const [partyWorkerTab, setPartyWorkerTab] = useState<"my_work" | "team">("my_work");
   const [activeTab, setActiveTab] = useState<AdminMobileTab>("overview");
 
@@ -1737,6 +1754,168 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     });
   }, [beneficiarySearchQuery, beneficiaryCategoryFilter]);
 
+  const renderGuestScreen = () => {
+    return (
+      <div className="space-y-4 animate-in fade-in duration-200 pb-16 pt-3">
+        {/* Banner Section */}
+        <div className="w-full rounded-2xl overflow-hidden bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs">
+          <img
+            src="/images/mobile-guest-banner.png"
+            alt="Vikasita Keralam Banner"
+            className="w-full h-auto object-contain block rounded-2xl"
+          />
+        </div>
+
+        {/* Scheme Categories Section */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between px-1">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="flex h-5 w-5 items-center justify-center rounded-md bg-orange-500/10 dark:bg-orange-950/30 text-[#ff5500] shrink-0">
+                <LayoutGrid className="h-3.5 w-3.5 stroke-[2.2]" />
+              </span>
+              <h3 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 tracking-tight truncate">
+                {lang === "ml" ? "വിഭാഗങ്ങൾ" : "Categories"}
+              </h3>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setIsGuest(false);
+                setActiveTab("schemes");
+                setMobileSubPage("none");
+              }}
+              className="inline-flex items-center gap-0.5 text-xs font-bold text-orange-600 dark:text-orange-400 hover:underline cursor-pointer"
+            >
+              <span>{lang === "ml" ? "എല്ലാം കാണുക" : "View All"}</span>
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-4 gap-x-1 gap-y-2.5 px-0.5 pt-0.5">
+            {schemeCategories2Row.map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => {
+                  setIsGuest(false);
+                  setActiveTab("schemes");
+                  setSelectedSchemeCategoryDetail(cat.detail);
+                  setSchemeCategoryFilter(cat.id);
+                  setMobileSubPage("category_schemes");
+                }}
+                className="flex flex-col items-center text-center p-0.5 cursor-pointer transition-all duration-150 group rounded-xl hover:scale-105"
+              >
+                <div className="relative h-11 w-11 sm:h-12 sm:w-12 flex items-center justify-center p-0.5 rounded-xl mb-1 bg-slate-50/80 dark:bg-slate-800/40 group-hover:bg-amber-50 dark:group-hover:bg-slate-800 transition-all">
+                  <img
+                    src={cat.icon}
+                    alt={cat.labelEn}
+                    className="h-9 w-9 sm:h-10 sm:w-10 object-contain drop-shadow-xs transition-transform duration-200 group-hover:scale-110"
+                  />
+                </div>
+                <span className="text-[10px] sm:text-[10.5px] font-extrabold leading-[1.15] block whitespace-pre-line text-center max-w-[76px] text-slate-800 dark:text-slate-100">
+                  {lang === "ml" ? cat.labelMl : cat.labelEn}
+                </span>
+                <span className="text-[8.5px] font-bold text-slate-400 dark:text-slate-500 mt-0.5 block text-center">
+                  {lang === "ml" ? cat.schemesCountMl : cat.schemesCount}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center justify-center gap-1.5 pt-0.5">
+            <span className="h-2 w-2 rounded-full bg-[#ff5500]" />
+            <span className="h-2 w-2 rounded-full bg-slate-200 dark:bg-slate-700" />
+          </div>
+        </div>
+
+        {/* Popular Schemes Section */}
+        <div className="pt-2 pb-2 border-t border-slate-100 dark:border-slate-800/80 space-y-2">
+          <div className="flex items-center justify-between px-1">
+            <div className="flex items-center gap-1.5">
+              <span className="flex h-5 w-5 items-center justify-center rounded-md bg-orange-500/10 dark:bg-orange-950/30 text-[#ff5500] shrink-0">
+                <Sparkles className="h-3.5 w-3.5 stroke-[2.2]" />
+              </span>
+              <h4 className="text-xs font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
+                {lang === "ml" ? "ജനപ്രിയ പദ്ധതികൾ" : "Popular Schemes"}
+              </h4>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setIsGuest(false);
+                setActiveTab("schemes");
+                setMobileSubPage("none");
+              }}
+              className="inline-flex items-center gap-0.5 text-xs font-bold text-orange-600 dark:text-orange-400 hover:underline cursor-pointer"
+            >
+              <span>{lang === "ml" ? "എല്ലാം കാണുക" : "View All"}</span>
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
+          <div className="flex overflow-x-auto gap-2.5 pb-1 pt-0.5 px-0.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory">
+            {popularSchemesList.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => {
+                  setIsGuest(false);
+                  setActiveTab("schemes");
+                  const foundCat = schemeCategories2Row.find(
+                    (c) => c.id === item.categoryId || c.detail.id === item.categoryId,
+                  );
+                  if (foundCat) {
+                    setSelectedSchemeCategoryDetail(foundCat.detail);
+                    setSchemeCategoryFilter(foundCat.id);
+                  } else {
+                    setSelectedSchemeCategoryDetail({
+                      id: item.id,
+                      count: 18,
+                      categoryLabelEn: item.nameEn,
+                      categoryLabelMl: item.nameMl,
+                      titleEn: item.nameEn,
+                      titleMl: item.nameMl,
+                    });
+                    setSchemeCategoryFilter("all");
+                  }
+                  setMobileSubPage("category_schemes");
+                }}
+                className="snap-start shrink-0 w-[calc(25%-7.5px)] min-w-[72px] flex flex-col items-center text-center p-0.5 group cursor-pointer transition-all duration-200 hover:scale-105"
+              >
+                <div className="relative h-13 w-13 sm:h-14 sm:w-14 rounded-full bg-white dark:bg-slate-900 border-2 border-slate-200/90 dark:border-slate-700/80 shadow-2xs group-hover:border-orange-500 dark:group-hover:border-orange-400 group-hover:shadow-xs flex items-center justify-center p-1.5 transition-all overflow-hidden">
+                  <img
+                    src={item.logo}
+                    alt={item.nameEn}
+                    className="h-full w-full object-contain rounded-full transition-transform duration-200 group-hover:scale-110"
+                  />
+                </div>
+                <span className="text-[10px] sm:text-[10.5px] font-extrabold leading-tight text-slate-800 dark:text-slate-100 mt-1.5 block text-center max-w-[72px] line-clamp-2">
+                  {lang === "ml" ? item.nameMl : item.nameEn}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Events & Announcements Section */}
+        <MobileGuestEventsSection
+          lang={lang}
+          slideIndex={announcementIndex}
+          onViewAll={() => {
+            setIsGuest(false);
+            setActiveTab("overview");
+            setMobileSubPage("events_announcements");
+          }}
+          onSlideAction={() => {
+            setIsGuest(false);
+            setActiveTab("overview");
+            setMobileSubPage("events_announcements");
+          }}
+        />
+      </div>
+    );
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -1809,6 +1988,9 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
 
           {/* Mobile App Standard Header with Logo, Nav Menu, Notifications & Logged User Profile */}
           <AdminMobileAppHeader
+            isGuest={isGuest}
+            onLogout={handleLogout}
+            onLoginClick={handleLogin}
             userRole={userRole}
             onSwitchRole={setUserRole}
             onNavigateTab={(tab) => {
@@ -1822,7 +2004,11 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
           />
 
           {/* Scrollable Main Content Area based on Selected Bottom Tab */}
-          <div className="flex-1 overflow-y-auto [ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-3 pt-1.5 pb-16 space-y-2.5 bg-muted/20">
+          <div className={`flex-1 overflow-y-auto [ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-3 pt-1.5 ${!isGuest && (activeTab === "create" || mobileSubPage === "app_detail") ? "pb-6" : "pb-16"} space-y-2.5 bg-muted/20 relative`}>
+            {isGuest ? (
+              renderGuestScreen()
+            ) : (
+              <>
             {activeTab === "overview" && (
               <>
                 {mobileSubPage === "none" ? (
@@ -4936,9 +5122,14 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                     {/* 2-Row Scheme Categories Section */}
                     <div className="pt-1 pb-1">
                       <div className="flex items-center justify-between mb-1.5 px-1">
-                        <h3 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
-                          {lang === "ml" ? "വിഭാഗങ്ങൾ" : "Categories"}
-                        </h3>
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-md bg-orange-500/10 dark:bg-orange-950/30 text-[#ff5500] shrink-0">
+                            <LayoutGrid className="h-3.5 w-3.5 stroke-[2.2]" />
+                          </span>
+                          <h3 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 tracking-tight truncate">
+                            {lang === "ml" ? "വിഭാഗങ്ങൾ" : "Categories"}
+                          </h3>
+                        </div>
                         <button
                           type="button"
                           onClick={() => {
@@ -5015,7 +5206,9 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                     <div className="pt-2 pb-2 border-t border-slate-100 dark:border-slate-800/80">
                       <div className="flex items-center justify-between mb-2 px-1">
                         <div className="flex items-center gap-1.5">
-                          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                          <span className="flex h-5 w-5 items-center justify-center rounded-md bg-orange-500/10 dark:bg-orange-950/30 text-[#ff5500] shrink-0">
+                            <Sparkles className="h-3.5 w-3.5 stroke-[2.2]" />
+                          </span>
                           <h4 className="text-xs font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
                             {lang === "ml" ? "ജനപ്രിയ പദ്ധതികൾ" : "Popular Schemes"}
                           </h4>
@@ -6759,10 +6952,12 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
               </div>
             )
           }
+          </>
+          )}
           </div>
 
           {/* Sticky Phone App Bottom Footer Navigation */}
-          {activeTab === "create" ? (
+          {activeTab === "create" && (
             <div className="sticky bottom-0 left-0 right-0 p-3 bg-card/95 backdrop-blur-md border-t border-border z-30 shadow-lg">
               {createFlowStep === "form" && (
                 <button
@@ -6830,17 +7025,129 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                 </button>
               )}
             </div>
-          ) : (
-            ((mobileSubPage === "none" || mobileSubPage === "leaderboard" || mobileSubPage === "beneficiaries" || mobileSubPage === "app_detail" || mobileSubPage === "category_schemes") && (
-              <AdminMobileAppBottomNav
-                activeTab={activeTab}
-                onTabChange={(tab) => {
-                  setActiveTab(tab);
+          )}
+
+          {/* Bottom Nav Bar - Hidden in Guest Mode */}
+          {!isGuest && activeTab !== "create" && mobileSubPage !== "app_detail" && (mobileSubPage === "none" || mobileSubPage === "leaderboard" || mobileSubPage === "beneficiaries" || mobileSubPage === "category_schemes") && (
+            <AdminMobileAppBottomNav
+              activeTab={activeTab}
+              onTabChange={(tab) => {
+                setActiveTab(tab);
+                setMobileSubPage("none");
+                setShowMoreMenu(false);
+              }}
+            />
+          )}
+
+          {/* Guest Footer Action Bar */}
+          {isGuest && (
+            <div className="absolute bottom-0 left-0 right-0 z-50 rounded-b-[2rem] border-t border-slate-200/90 bg-white px-3 pb-3 pt-2.5 shadow-[0_-4px_16px_rgba(15,23,42,0.08)] dark:border-slate-800 dark:bg-slate-900">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsGuest(false);
+                  setActiveTab("create");
                   setMobileSubPage("none");
-                  setShowMoreMenu(false);
+                  setCreateFlowStep("form");
                 }}
-              />
-            ))
+                className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-[#0b3b66] px-4 py-3 text-sm font-extrabold text-white shadow-[0_6px_18px_rgba(11,59,102,0.25)] transition-all hover:bg-[#092f52] active:scale-[0.99] cursor-pointer"
+              >
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/15">
+                  <SearchCheck className="h-4.5 w-4.5 stroke-[2.4]" />
+                </span>
+                <span>{lang === "ml" ? "യോഗ്യത പരിശോധിക്കുക" : "Check Eligibility"}</span>
+              </button>
+            </div>
+          )}
+
+          {/* Floating SahAI Help Chatbot Button */}
+          <button
+            type="button"
+            onClick={() => setIsSahAiOpen(true)}
+            className={`absolute ${isGuest ? "bottom-24" : "bottom-16"} right-3.5 z-40 flex items-center gap-1.5 p-1.5 pl-2.5 bg-gradient-to-r from-amber-500 via-orange-500 to-orange-600 text-white rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer border border-white/40 group`}
+            title="Help / SahAI Assistant"
+          >
+            <span className="text-[10.5px] font-black tracking-tight">{lang === "ml" ? "സഹായം" : "Help"}</span>
+            <div className="h-7 w-7 rounded-full overflow-hidden border border-white/80 bg-white/20 shrink-0">
+              <img src={sahaiAvatar} alt="SahAI Assistant" className="h-full w-full object-cover" />
+            </div>
+          </button>
+
+          {/* SahAI Help Chatbot Overlay Modal */}
+          {isSahAiOpen && (
+            <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-xs flex flex-col justify-end animate-in fade-in duration-200">
+              <div className="bg-background border-t border-border rounded-t-3xl p-4 max-h-[85%] h-[480px] flex flex-col shadow-2xl animate-in slide-in-from-bottom duration-300">
+                {/* Header */}
+                <div className="flex items-center justify-between pb-3 border-b border-border">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-9 w-9 rounded-full overflow-hidden border border-orange-400 p-0.5 bg-orange-50">
+                      <img src={sahaiAvatar} alt="SahAI" className="h-full w-full object-cover rounded-full" />
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold text-xs text-foreground flex items-center gap-1.5">
+                        SahAI Assistant
+                        <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" />
+                      </h3>
+                      <p className="text-[10px] text-muted-foreground">
+                        {lang === "ml" ? "24x7 ക്ഷേമ പദ്ധതി സഹായം" : "24x7 Welfare Scheme Assistance"}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsSahAiOpen(false)}
+                    className="p-1 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Messages Scroll Area */}
+                <div className="flex-1 overflow-y-auto py-3 space-y-3 pr-1 text-xs">
+                  <div className="flex gap-2 max-w-[85%]">
+                    <div className="h-7 w-7 rounded-full overflow-hidden border border-orange-300 shrink-0 bg-orange-50">
+                      <img src={sahaiAvatar} alt="SahAI" className="h-full w-full object-cover rounded-full" />
+                    </div>
+                    <div className="p-3 rounded-2xl rounded-tl-xs bg-muted/70 text-foreground text-[11px] leading-relaxed">
+                      {lang === "ml"
+                        ? "നമസ്കാരം! വികസിത കേരളം സഹായ പേജിലേക്ക് സ്വാഗതം. പദ്ധതികൾ, അപേക്ഷാ യോഗ്യതകൾ അല്ലെങ്കിൽ സഹായ കേന്ദ്രങ്ങളെക്കുറിച്ച് ചോദിക്കൂ."
+                        : "Namaskaram! Welcome to Vikasita Keralam Help Desk. Ask me any question about schemes, eligibility, or local help centers."}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Suggestions & Input */}
+                <div className="pt-2 border-t border-border space-y-2">
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 [ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    <button
+                      type="button"
+                      className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 hover:bg-orange-200 transition-colors shrink-0"
+                    >
+                      {lang === "ml" ? "യോഗ്യത പരിശോധിക്കുക" : "Check Eligibility"}
+                    </button>
+                    <button
+                      type="button"
+                      className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 hover:bg-orange-200 transition-colors shrink-0"
+                    >
+                      {lang === "ml" ? "അപേക്ഷിക്കുന്ന വിധം" : "How to Apply"}
+                    </button>
+                  </div>
+                  <div className="relative flex items-center">
+                    <input
+                      type="text"
+                      placeholder={lang === "ml" ? "നിങ്ങളുടെ ചോദ്യം ഇവിടെ ടൈപ്പ് ചെയ്യുക..." : "Type your query here..."}
+                      className="w-full pl-3 pr-9 py-2 text-xs rounded-xl border border-border bg-muted/40 focus:bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-2 p-1 text-orange-600 hover:text-orange-700 cursor-pointer"
+                    >
+                      <Send className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* Home Bar Indicator */}
