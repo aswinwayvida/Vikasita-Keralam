@@ -441,7 +441,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                   <span className="text-[10px] sm:text-[10.5px] font-bold text-muted-foreground truncate leading-tight">
                     {lang === "ml" ? "തുറന്ന അപേക്ഷകൾ" : "Open applications"}
                   </span>
-                  <img src={openApplication3dIcon} alt="Open applications" className="h-7 w-7 object-contain shrink-0" />
+                  <img src={openApplication3dIcon} alt="Open applications" className="h-8 w-8 object-contain shrink-0" />
                 </div>
                 <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">24</p>
               </div>
@@ -459,7 +459,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                   <span className="text-[10px] sm:text-[10.5px] font-bold text-muted-foreground truncate leading-tight">
                     {lang === "ml" ? "ബാക്കിയുള്ള രേഖകൾ" : "Documents pending"}
                   </span>
-                  <img src={documentsPending3dIcon} alt="Documents pending" className="h-7 w-7 object-contain shrink-0" />
+                  <img src={documentsPending3dIcon} alt="Documents pending" className="h-8 w-8 object-contain shrink-0" />
                 </div>
                 <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">08</p>
               </div>
@@ -477,7 +477,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                   <span className="text-[10px] sm:text-[10.5px] font-bold text-muted-foreground truncate leading-tight">
                     {lang === "ml" ? "സമർപ്പിക്കാൻ തയ്യാറായവ" : "Ready to submit"}
                   </span>
-                  <img src={readyToSubmit3dIcon} alt="Ready to submit" className="h-7 w-7 object-contain shrink-0" />
+                  <img src={readyToSubmit3dIcon} alt="Ready to submit" className="h-8 w-8 object-contain shrink-0" />
                 </div>
                 <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">05</p>
               </div>
@@ -491,7 +491,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                   <span className="text-[10px] sm:text-[10.5px] font-bold text-muted-foreground truncate leading-tight">
                     {lang === "ml" ? "തുടർനടപടികൾ വേണ്ടവ" : "Follow-ups due"}
                   </span>
-                  <img src={followupsDue3dIcon} alt="Follow-ups due" className="h-7 w-7 object-contain shrink-0" />
+                  <img src={followupsDue3dIcon} alt="Follow-ups due" className="h-8 w-8 object-contain shrink-0" />
                 </div>
                 <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">03</p>
               </div>
@@ -1926,7 +1926,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           <span className="text-[10px] sm:text-[10.5px] font-bold text-muted-foreground truncate leading-tight">
                             {lang === "ml" ? "ലഭിച്ച അപേക്ഷകൾ" : "Application Received"}
                           </span>
-                          <img src={openApplication3dIcon} alt="Application Received" className="h-7 w-7 object-contain shrink-0" />
+                          <img src={openApplication3dIcon} alt="Application Received" className="h-8 w-8 object-contain shrink-0" />
                         </div>
                         <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">{applicationsCount.toLocaleString()}</p>
                       </div>
@@ -1944,7 +1944,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           <span className="text-[11.5px] font-bold text-muted-foreground truncate">
                             {lang === "ml" ? "സമർപ്പിച്ചവ" : "Submitted"}
                           </span>
-                          <img src={readyToSubmit3dIcon} alt="Submitted" className="h-7 w-7 object-contain shrink-0" />
+                          <img src={readyToSubmit3dIcon} alt="Submitted" className="h-8 w-8 object-contain shrink-0" />
                         </div>
                         <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">{(applicationsCount - 150).toLocaleString()}</p>
                       </div>
@@ -1958,7 +1958,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           <span className="text-[11.5px] font-bold text-muted-foreground truncate">
                             {lang === "ml" ? "ഗുണഭോക്താക്കൾ" : "Beneficiaries"}
                           </span>
-                          <img src={assisted3dIcon} alt="Beneficiaries" className="h-7 w-7 object-contain shrink-0" />
+                          <img src={assisted3dIcon} alt="Beneficiaries" className="h-8 w-8 object-contain shrink-0" />
                         </div>
                         <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">{currentMetrics.beneficiaries.toLocaleString()}</p>
                       </div>
@@ -1976,7 +1976,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           <span className="text-[11.5px] font-bold text-muted-foreground truncate">
                             {lang === "ml" ? "പരിശോധനയിലുള്ളവ" : "In Review"}
                           </span>
-                          <img src={documentsPending3dIcon} alt="In Review" className="h-7 w-7 object-contain shrink-0" />
+                          <img src={documentsPending3dIcon} alt="In Review" className="h-8 w-8 object-contain shrink-0" />
                         </div>
                         <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">{currentMetrics.assisted.toLocaleString()}</p>
                       </div>
@@ -1994,7 +1994,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           <span className="text-[11.5px] font-bold text-muted-foreground truncate">
                             {lang === "ml" ? "പെൻഡിംഗ്" : "Pending"}
                           </span>
-                          <img src={followupsDue3dIcon} alt="Pending" className="h-7 w-7 object-contain shrink-0" />
+                          <img src={followupsDue3dIcon} alt="Pending" className="h-8 w-8 object-contain shrink-0" />
                         </div>
                         <p className="font-display text-sm sm:text-base font-bold text-amber-600 dark:text-amber-400 leading-none mt-1">{currentMetrics.pending.toLocaleString()}</p>
                       </div>
@@ -2012,7 +2012,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           <span className="text-[11.5px] font-bold text-muted-foreground truncate">
                             {lang === "ml" ? "നിരസിച്ചവ" : "Rejected"}
                           </span>
-                          <img src={rejected3dIcon} alt="Rejected" className="h-7 w-7 object-contain shrink-0" />
+                          <img src={rejected3dIcon} alt="Rejected" className="h-8 w-8 object-contain shrink-0" />
                         </div>
                         <p className="font-display text-sm sm:text-base font-bold text-rose-600 dark:text-rose-400 leading-none mt-1">{currentMetrics.rejected.toLocaleString()}</p>
                       </div>
