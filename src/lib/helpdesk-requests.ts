@@ -7,15 +7,33 @@ export type HelpdeskRequestDocument = {
   fileType: string;
 };
 
+export type HelpdeskRequestLocation = {
+  districtId?: string;
+  districtName?: string;
+  localBodyType?: string;
+  localBodyId?: string;
+  localBodyName?: string;
+  wardId?: string;
+  wardName?: string;
+  mandalamId?: string;
+  mandalamName?: string;
+};
+
 export type HelpdeskRequest = {
   reference: string;
   applicant: string;
   schemeId: string;
+  schemeIds?: string[];
   district: string;
   helpdeskId: string;
   helpdeskName: string;
   mobile: string;
   email?: string;
+  contactName?: string;
+  contactMobile?: string;
+  notes?: string;
+  location?: HelpdeskRequestLocation;
+  source?: "scheme_application" | "guest_eligibility";
   documents: HelpdeskRequestDocument[];
   missingDocuments: string[];
   status: "helpdesk_request_created";
