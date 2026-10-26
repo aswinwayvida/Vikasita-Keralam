@@ -309,41 +309,41 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
 
   const renderPartyMemberDashboard = () => {
     return (
-      <div className="space-y-3.5 animate-in fade-in duration-200">
-        {/* Top Segmented Switch: My Work | Team placed on top left where greeting was */}
-        <div className="flex items-center justify-start pt-0.5 pb-0.5">
-          <div className="flex items-center p-1 bg-white dark:bg-slate-900 rounded-full border border-slate-200/90 dark:border-slate-800 shadow-2xs gap-1">
+      <div className="space-y-2 animate-in fade-in duration-200">
+        {/* Top Segmented Switch: My Work | Team */}
+        <div className="flex items-center justify-start">
+          <div className="inline-flex items-center p-0.5 bg-white dark:bg-slate-900 rounded-full border border-slate-200/90 dark:border-slate-800 shadow-2xs gap-0.5">
             <button
               type="button"
               onClick={() => setPartyWorkerTab("my_work")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-[12.5px] transition-all cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] sm:text-xs transition-all cursor-pointer ${
                 partyWorkerTab === "my_work"
                   ? "bg-[#FFF0E6] dark:bg-orange-950/60 text-[#ea580c] dark:text-orange-300 font-extrabold shadow-2xs"
                   : "text-[#475569] dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-bold"
               }`}
             >
-              <FileText className={`h-3.5 w-3.5 ${partyWorkerTab === "my_work" ? "text-[#ea580c] dark:text-orange-300" : "text-slate-400"}`} />
+              <FileText className={`h-3 w-3 ${partyWorkerTab === "my_work" ? "text-[#ea580c] dark:text-orange-300" : "text-slate-400"}`} />
               <span className="whitespace-nowrap">{lang === "ml" ? "എന്റെ ജോലി" : "My Work"}</span>
             </button>
             <button
               type="button"
               onClick={() => setPartyWorkerTab("team")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-[12.5px] transition-all cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] sm:text-xs transition-all cursor-pointer ${
                 partyWorkerTab === "team"
                   ? "bg-[#FFF0E6] dark:bg-orange-950/60 text-[#ea580c] dark:text-orange-300 font-extrabold shadow-2xs"
                   : "text-[#475569] dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-bold"
               }`}
             >
-              <Users className={`h-3.5 w-3.5 ${partyWorkerTab === "team" ? "text-[#ea580c] dark:text-orange-300" : "text-slate-400"}`} />
+              <Users className={`h-3 w-3 ${partyWorkerTab === "team" ? "text-[#ea580c] dark:text-orange-300" : "text-slate-400"}`} />
               <span className="whitespace-nowrap">{lang === "ml" ? "ടീം" : "Team"}</span>
             </button>
           </div>
         </div>
 
         {partyWorkerTab === "my_work" ? (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {/* Header Row: Date Title Left + Action Buttons Right (<, >, Calendar, Filter) - Matching Admin View */}
-            <div className="flex items-center justify-between gap-2 pt-0.5 pb-1 my-0">
+            <div className="flex items-center justify-between gap-2 pt-0.5 pb-0.5 my-0">
               {/* Left Side: Bold Date/Period Title */}
               <button
                 type="button"
