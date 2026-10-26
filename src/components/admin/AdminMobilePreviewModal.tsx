@@ -310,41 +310,6 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
   const renderPartyMemberDashboard = () => {
     return (
       <div className="space-y-3.5 animate-in fade-in duration-200">
-        {/* Top Role Header & Switch Option */}
-        <div className="flex items-center justify-between rounded-2xl bg-white dark:bg-slate-900 border border-orange-200/80 dark:border-slate-800 p-2.5 shadow-2xs">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-[#FFEDD5] text-[#F97316] font-bold shadow-2xs overflow-hidden shrink-0">
-              <img
-                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80"
-                alt="Dhyan M S"
-                className="h-full w-full object-cover rounded-xl"
-              />
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <h3 className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
-                  Dhyan M S
-                </h3>
-                <span className="text-[9px] font-black uppercase bg-orange-100 dark:bg-orange-950/60 text-[#F97316] px-1.5 py-0.5 rounded-md border border-orange-200 dark:border-orange-800 shrink-0">
-                  {lang === "ml" ? "പാർട്ടി അംഗം" : "Party Member"}
-                </span>
-              </div>
-              <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-semibold truncate">
-                {lang === "ml" ? "കഴക്കൂട്ടം മണ്ഡലം • ബൂത്ത് 42" : "Kazhakkoottam Mandalam • Booth 42"}
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setUserRole("state_admin")}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-[10.5px] font-extrabold shadow-2xs transition-all active:scale-95 cursor-pointer shrink-0"
-            title="Switch to Admin View"
-          >
-            <RotateCcw className="h-3 w-3" />
-            <span>{lang === "ml" ? "അഡ്മിൻ" : "Admin View"}</span>
-          </button>
-        </div>
-
         {/* Top Segmented Switch: My Work | Team */}
         <div className="flex items-center justify-center p-1 bg-white dark:bg-slate-900 rounded-full border border-slate-200/90 dark:border-slate-800 shadow-2xs max-w-[250px] mx-auto my-0.5">
           <button
@@ -386,8 +351,8 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
               </div>
             </div>
 
-            {/* 2x2 Metric Cards Grid matching design image */}
-            <div className="grid grid-cols-2 gap-2.5">
+            {/* 2x2 Metric Cards Grid matching Admin view style */}
+            <div className="grid grid-cols-2 gap-2">
               {/* Card 1: Open applications */}
               <div
                 onClick={() => {
@@ -395,17 +360,15 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                   setMobileSubPage("none");
                   setApplicationStatusFilter("pending");
                 }}
-                className="rounded-2xl border border-orange-100/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 flex flex-col justify-between shadow-2xs hover:border-orange-300 transition-all cursor-pointer min-h-[92px]"
+                className="min-h-[44px] rounded-lg border border-border bg-card p-1.5 px-2 flex flex-col justify-between shadow-2xs hover:border-blue-500/70 transition-all cursor-pointer"
               >
-                <div className="flex items-start justify-between gap-1">
-                  <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300 leading-tight">
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-[10px] sm:text-[10.5px] font-bold text-muted-foreground truncate leading-tight">
                     {lang === "ml" ? "തുറന്ന അപേക്ഷകൾ" : "Open applications"}
                   </span>
-                  <img src={applicationReceived3dIcon} alt="Open applications" className="h-8 w-8 object-contain shrink-0" />
+                  <img src={applicationReceived3dIcon} alt="Open applications" className="h-7 w-7 object-contain shrink-0" />
                 </div>
-                <span className="font-display text-2xl font-black text-[#0f172a] dark:text-white leading-none mt-2">
-                  24
-                </span>
+                <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">24</p>
               </div>
 
               {/* Card 2: Documents pending */}
@@ -415,17 +378,15 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                   setMobileSubPage("none");
                   setApplicationStatusFilter("assisted");
                 }}
-                className="rounded-2xl border border-orange-100/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 flex flex-col justify-between shadow-2xs hover:border-orange-300 transition-all cursor-pointer min-h-[92px]"
+                className="min-h-[44px] rounded-lg border border-border bg-card p-1.5 px-2 flex flex-col justify-between shadow-2xs hover:border-sky-500/70 transition-all cursor-pointer"
               >
-                <div className="flex items-start justify-between gap-1">
-                  <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300 leading-tight">
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-[10px] sm:text-[10.5px] font-bold text-muted-foreground truncate leading-tight">
                     {lang === "ml" ? "ബാക്കിയുള്ള രേഖകൾ" : "Documents pending"}
                   </span>
-                  <img src={inReview3dIcon} alt="Documents pending" className="h-8 w-8 object-contain shrink-0" />
+                  <img src={inReview3dIcon} alt="Documents pending" className="h-7 w-7 object-contain shrink-0" />
                 </div>
-                <span className="font-display text-2xl font-black text-[#0f172a] dark:text-white leading-none mt-2">
-                  08
-                </span>
+                <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">08</p>
               </div>
 
               {/* Card 3: Ready to submit */}
@@ -435,33 +396,29 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                   setMobileSubPage("none");
                   setApplicationStatusFilter("all");
                 }}
-                className="rounded-2xl border border-orange-100/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 flex flex-col justify-between shadow-2xs hover:border-emerald-300 transition-all cursor-pointer min-h-[92px]"
+                className="min-h-[44px] rounded-lg border border-border bg-card p-1.5 px-2 flex flex-col justify-between shadow-2xs hover:border-emerald-500/70 transition-all cursor-pointer"
               >
-                <div className="flex items-start justify-between gap-1">
-                  <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300 leading-tight">
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-[10px] sm:text-[10.5px] font-bold text-muted-foreground truncate leading-tight">
                     {lang === "ml" ? "സമർപ്പിക്കാൻ തയ്യാറായവ" : "Ready to submit"}
                   </span>
-                  <img src={submitted3dIcon} alt="Ready to submit" className="h-8 w-8 object-contain shrink-0" />
+                  <img src={submitted3dIcon} alt="Ready to submit" className="h-7 w-7 object-contain shrink-0" />
                 </div>
-                <span className="font-display text-2xl font-black text-emerald-600 dark:text-emerald-400 leading-none mt-2">
-                  05
-                </span>
+                <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">05</p>
               </div>
 
               {/* Card 4: Follow-ups due */}
               <div
                 onClick={() => setMobileSubPage("needs_attention")}
-                className="rounded-2xl border border-orange-100/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 flex flex-col justify-between shadow-2xs hover:border-rose-300 transition-all cursor-pointer min-h-[92px]"
+                className="min-h-[44px] rounded-lg border border-border bg-card p-1.5 px-2 flex flex-col justify-between shadow-2xs hover:border-amber-500/70 transition-all cursor-pointer"
               >
-                <div className="flex items-start justify-between gap-1">
-                  <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300 leading-tight">
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-[10px] sm:text-[10.5px] font-bold text-muted-foreground truncate leading-tight">
                     {lang === "ml" ? "തുടർനടപടികൾ വേണ്ടവ" : "Follow-ups due"}
                   </span>
-                  <img src={pending3dIcon} alt="Follow-ups due" className="h-8 w-8 object-contain shrink-0" />
+                  <img src={pending3dIcon} alt="Follow-ups due" className="h-7 w-7 object-contain shrink-0" />
                 </div>
-                <span className="font-display text-2xl font-black text-rose-600 dark:text-rose-400 leading-none mt-2">
-                  03
-                </span>
+                <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">03</p>
               </div>
             </div>
 
