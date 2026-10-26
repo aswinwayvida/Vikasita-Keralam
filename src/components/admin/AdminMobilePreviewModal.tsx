@@ -310,32 +310,42 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
   const renderPartyMemberDashboard = () => {
     return (
       <div className="space-y-3.5 animate-in fade-in duration-200">
-        {/* Top Segmented Switch: My Work | Team */}
-        <div className="flex items-center justify-center p-1 bg-white dark:bg-slate-900 rounded-full border border-slate-200/90 dark:border-slate-800 shadow-2xs max-w-[250px] mx-auto my-0.5">
-          <button
-            type="button"
-            onClick={() => setPartyWorkerTab("my_work")}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-full text-xs font-bold transition-all cursor-pointer ${
-              partyWorkerTab === "my_work"
-                ? "bg-[#FFF5ED] dark:bg-orange-950/60 text-[#ea580c] dark:text-orange-300 border border-orange-200/80 dark:border-orange-800/60 shadow-2xs font-extrabold"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            <FileText className={`h-3.5 w-3.5 ${partyWorkerTab === "my_work" ? "text-[#ea580c]" : "text-slate-400"}`} />
-            <span>{lang === "ml" ? "എന്റെ ജോലി" : "My Work"}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setPartyWorkerTab("team")}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-full text-xs font-bold transition-all cursor-pointer ${
-              partyWorkerTab === "team"
-                ? "bg-[#FFF5ED] dark:bg-orange-950/60 text-[#ea580c] dark:text-orange-300 border border-orange-200/80 dark:border-orange-800/60 shadow-2xs font-extrabold"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            <Users className={`h-3.5 w-3.5 ${partyWorkerTab === "team" ? "text-[#ea580c]" : "text-slate-400"}`} />
-            <span>{lang === "ml" ? "ടീം" : "Team"}</span>
-          </button>
+        {/* Top Header Row: Good Morning Greeting Left + Segmented Switch (My Work | Team) Right */}
+        <div className="flex items-center justify-between gap-2 pt-0.5 pb-0.5">
+          <div>
+            <h2 className="font-display font-black text-base sm:text-[17px] text-[#0A101D] dark:text-white leading-tight tracking-tight">
+              {lang === "ml" ? "നമസ്കാരം, അനിൽ" : "Good Morning, Anil"}
+            </h2>
+            <p className="text-[11.5px] sm:text-xs font-semibold text-[#5E6C84] dark:text-slate-400 leading-snug mt-0.5">
+              {lang === "ml" ? "മണ്ഡലം പ്രസിഡന്റ്, കാട്ടാക്കട" : "Mandalam President, Kattakada"}
+            </p>
+          </div>
+
+          {/* Top Segmented Switch: My Work | Team */}
+          <div className="flex items-center p-1 bg-white dark:bg-slate-900 rounded-[16px] border border-slate-200/90 dark:border-slate-800 shadow-2xs shrink-0 gap-1">
+            <button
+              type="button"
+              onClick={() => setPartyWorkerTab("my_work")}
+              className={`px-3 py-1.5 rounded-xl text-xs sm:text-[12.5px] transition-all cursor-pointer ${
+                partyWorkerTab === "my_work"
+                  ? "bg-[#FFF0E6] dark:bg-orange-950/60 text-[#ea580c] dark:text-orange-300 font-extrabold shadow-2xs"
+                  : "text-[#475569] dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-bold"
+              }`}
+            >
+              {lang === "ml" ? "എന്റെ ജോലി" : "My Work"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setPartyWorkerTab("team")}
+              className={`px-3 py-1.5 rounded-xl text-xs sm:text-[12.5px] transition-all cursor-pointer ${
+                partyWorkerTab === "team"
+                  ? "bg-[#FFF0E6] dark:bg-orange-950/60 text-[#ea580c] dark:text-orange-300 font-extrabold shadow-2xs"
+                  : "text-[#475569] dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-bold"
+              }`}
+            >
+              {lang === "ml" ? "ടീം" : "Team"}
+            </button>
+          </div>
         </div>
 
         {partyWorkerTab === "my_work" ? (
