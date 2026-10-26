@@ -9,6 +9,7 @@ import documentsPending3dIcon from "@/assets/kpi-3d/documents-pending.png";
 import applications3dIcon from "@/assets/kpi-3d/applications.png";
 import openApplication3dIcon from "@/assets/kpi-3d/open-application.png";
 import submitted3dIcon from "@/assets/kpi-3d/submitted.png";
+import readyToSubmit3dIcon from "@/assets/kpi-3d/ready-to-submit.png";
 import assisted3dIcon from "@/assets/kpi-3d/assisted.png";
 import pending3dIcon from "@/assets/kpi-3d/pending.png";
 import rejected3dIcon from "@/assets/kpi-3d/rejected.png";
@@ -475,7 +476,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                   <span className="text-[10px] sm:text-[10.5px] font-bold text-muted-foreground truncate leading-tight">
                     {lang === "ml" ? "സമർപ്പിക്കാൻ തയ്യാറായവ" : "Ready to submit"}
                   </span>
-                  <img src={submitted3dIcon} alt="Ready to submit" className="h-7 w-7 object-contain shrink-0" />
+                  <img src={readyToSubmit3dIcon} alt="Ready to submit" className="h-7 w-7 object-contain shrink-0" />
                 </div>
                 <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">05</p>
               </div>
@@ -1942,7 +1943,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           <span className="text-[11.5px] font-bold text-muted-foreground truncate">
                             {lang === "ml" ? "സമർപ്പിച്ചവ" : "Submitted"}
                           </span>
-                          <img src={submitted3dIcon} alt="Submitted" className="h-7 w-7 object-contain shrink-0" />
+                          <img src={readyToSubmit3dIcon} alt="Submitted" className="h-7 w-7 object-contain shrink-0" />
                         </div>
                         <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">{(applicationsCount - 150).toLocaleString()}</p>
                       </div>
