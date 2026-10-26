@@ -6,7 +6,7 @@ import officialLotus from "@/assets/bjp-official-lotus.png";
 import users3dIcon from "@/assets/kpi-3d/users.png";
 import inReview3dIcon from "@/assets/kpi-3d/in-review.png";
 import applications3dIcon from "@/assets/kpi-3d/applications.png";
-import applicationReceived3dIcon from "@/assets/kpi-3d/application-received.png";
+import openApplication3dIcon from "@/assets/kpi-3d/open-application.png";
 import submitted3dIcon from "@/assets/kpi-3d/submitted.png";
 import assisted3dIcon from "@/assets/kpi-3d/assisted.png";
 import pending3dIcon from "@/assets/kpi-3d/pending.png";
@@ -438,7 +438,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                   <span className="text-[10px] sm:text-[10.5px] font-bold text-muted-foreground truncate leading-tight">
                     {lang === "ml" ? "തുറന്ന അപേക്ഷകൾ" : "Open applications"}
                   </span>
-                  <img src={applicationReceived3dIcon} alt="Open applications" className="h-7 w-7 object-contain shrink-0" />
+                  <img src={openApplication3dIcon} alt="Open applications" className="h-7 w-7 object-contain shrink-0" />
                 </div>
                 <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">24</p>
               </div>
@@ -1923,7 +1923,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           <span className="text-[10px] sm:text-[10.5px] font-bold text-muted-foreground truncate leading-tight">
                             {lang === "ml" ? "ലഭിച്ച അപേക്ഷകൾ" : "Application Received"}
                           </span>
-                          <img src={applicationReceived3dIcon} alt="Application Received" className="h-7 w-7 object-contain shrink-0" />
+                          <img src={openApplication3dIcon} alt="Application Received" className="h-7 w-7 object-contain shrink-0" />
                         </div>
                         <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">{applicationsCount.toLocaleString()}</p>
                       </div>
