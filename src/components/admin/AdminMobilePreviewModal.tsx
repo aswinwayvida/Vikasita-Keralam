@@ -307,6 +307,349 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     setAddressSheetSearch("");
   };
 
+  const renderPartyMemberDashboard = () => {
+    return (
+      <div className="space-y-3.5 animate-in fade-in duration-200">
+        {/* Top Role Header & Switch Option */}
+        <div className="flex items-center justify-between rounded-2xl bg-white dark:bg-slate-900 border border-orange-200/80 dark:border-slate-800 p-2.5 shadow-2xs">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-[#FFEDD5] text-[#F97316] font-bold shadow-2xs overflow-hidden shrink-0">
+              <img
+                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80"
+                alt="Dhyan M S"
+                className="h-full w-full object-cover rounded-xl"
+              />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <h3 className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
+                  Dhyan M S
+                </h3>
+                <span className="text-[9px] font-black uppercase bg-orange-100 dark:bg-orange-950/60 text-[#F97316] px-1.5 py-0.5 rounded-md border border-orange-200 dark:border-orange-800 shrink-0">
+                  {lang === "ml" ? "പാർട്ടി അംഗം" : "Party Member"}
+                </span>
+              </div>
+              <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-semibold truncate">
+                {lang === "ml" ? "കഴക്കൂട്ടം മണ്ഡലം • ബൂത്ത് 42" : "Kazhakkoottam Mandalam • Booth 42"}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setUserRole("state_admin")}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-[10.5px] font-extrabold shadow-2xs transition-all active:scale-95 cursor-pointer shrink-0"
+            title="Switch to Admin View"
+          >
+            <RotateCcw className="h-3 w-3" />
+            <span>{lang === "ml" ? "അഡ്മിൻ" : "Admin View"}</span>
+          </button>
+        </div>
+
+        {/* Top Segmented Switch: My Work | Team */}
+        <div className="flex items-center justify-center p-1 bg-white dark:bg-slate-900 rounded-full border border-slate-200/90 dark:border-slate-800 shadow-2xs max-w-[250px] mx-auto my-0.5">
+          <button
+            type="button"
+            onClick={() => setPartyWorkerTab("my_work")}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-full text-xs font-bold transition-all cursor-pointer ${
+              partyWorkerTab === "my_work"
+                ? "bg-[#FFF5ED] dark:bg-orange-950/60 text-[#ea580c] dark:text-orange-300 border border-orange-200/80 dark:border-orange-800/60 shadow-2xs font-extrabold"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <FileText className={`h-3.5 w-3.5 ${partyWorkerTab === "my_work" ? "text-[#ea580c]" : "text-slate-400"}`} />
+            <span>{lang === "ml" ? "എന്റെ ജോലി" : "My Work"}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setPartyWorkerTab("team")}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-full text-xs font-bold transition-all cursor-pointer ${
+              partyWorkerTab === "team"
+                ? "bg-[#FFF5ED] dark:bg-orange-950/60 text-[#ea580c] dark:text-orange-300 border border-orange-200/80 dark:border-orange-800/60 shadow-2xs font-extrabold"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <Users className={`h-3.5 w-3.5 ${partyWorkerTab === "team" ? "text-[#ea580c]" : "text-slate-400"}`} />
+            <span>{lang === "ml" ? "ടീം" : "Team"}</span>
+          </button>
+        </div>
+
+        {partyWorkerTab === "my_work" ? (
+          <div className="space-y-3">
+            {/* Header: Title Left + Updated info Right */}
+            <div className="flex items-center justify-between px-0.5 pt-0.5">
+              <h2 className="font-display text-sm sm:text-base font-black text-[#0a0f1d] dark:text-white tracking-tight">
+                {lang === "ml" ? "നിങ്ങളുടെ പ്രവർത്തനം ഒറ്റനോട്ടത്തിൽ" : "Your work at a glance"}
+              </h2>
+              <div className="flex items-center gap-1 text-[10.5px] font-bold text-slate-500 dark:text-slate-400 shrink-0">
+                <span>{lang === "ml" ? "ഇപ്പോൾ അപ്ഡേറ്റ് ചെയ്തു" : "Updated just now"}</span>
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              </div>
+            </div>
+
+            {/* 2x2 Metric Cards Grid matching design image */}
+            <div className="grid grid-cols-2 gap-2.5">
+              {/* Card 1: Open applications */}
+              <div
+                onClick={() => {
+                  setActiveTab("applications");
+                  setMobileSubPage("none");
+                  setApplicationStatusFilter("pending");
+                }}
+                className="rounded-2xl border border-orange-100/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 flex flex-col justify-between shadow-2xs hover:border-orange-300 transition-all cursor-pointer min-h-[92px]"
+              >
+                <div className="flex items-start justify-between gap-1">
+                  <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300 leading-tight">
+                    {lang === "ml" ? "തുറന്ന അപേക്ഷകൾ" : "Open applications"}
+                  </span>
+                  <img src={applicationReceived3dIcon} alt="Open applications" className="h-8 w-8 object-contain shrink-0" />
+                </div>
+                <span className="font-display text-2xl font-black text-[#0f172a] dark:text-white leading-none mt-2">
+                  24
+                </span>
+              </div>
+
+              {/* Card 2: Documents pending */}
+              <div
+                onClick={() => {
+                  setActiveTab("applications");
+                  setMobileSubPage("none");
+                  setApplicationStatusFilter("assisted");
+                }}
+                className="rounded-2xl border border-orange-100/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 flex flex-col justify-between shadow-2xs hover:border-orange-300 transition-all cursor-pointer min-h-[92px]"
+              >
+                <div className="flex items-start justify-between gap-1">
+                  <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300 leading-tight">
+                    {lang === "ml" ? "ബാക്കിയുള്ള രേഖകൾ" : "Documents pending"}
+                  </span>
+                  <img src={inReview3dIcon} alt="Documents pending" className="h-8 w-8 object-contain shrink-0" />
+                </div>
+                <span className="font-display text-2xl font-black text-[#0f172a] dark:text-white leading-none mt-2">
+                  08
+                </span>
+              </div>
+
+              {/* Card 3: Ready to submit */}
+              <div
+                onClick={() => {
+                  setActiveTab("applications");
+                  setMobileSubPage("none");
+                  setApplicationStatusFilter("all");
+                }}
+                className="rounded-2xl border border-orange-100/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 flex flex-col justify-between shadow-2xs hover:border-emerald-300 transition-all cursor-pointer min-h-[92px]"
+              >
+                <div className="flex items-start justify-between gap-1">
+                  <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300 leading-tight">
+                    {lang === "ml" ? "സമർപ്പിക്കാൻ തയ്യാറായവ" : "Ready to submit"}
+                  </span>
+                  <img src={submitted3dIcon} alt="Ready to submit" className="h-8 w-8 object-contain shrink-0" />
+                </div>
+                <span className="font-display text-2xl font-black text-emerald-600 dark:text-emerald-400 leading-none mt-2">
+                  05
+                </span>
+              </div>
+
+              {/* Card 4: Follow-ups due */}
+              <div
+                onClick={() => setMobileSubPage("needs_attention")}
+                className="rounded-2xl border border-orange-100/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 flex flex-col justify-between shadow-2xs hover:border-rose-300 transition-all cursor-pointer min-h-[92px]"
+              >
+                <div className="flex items-start justify-between gap-1">
+                  <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300 leading-tight">
+                    {lang === "ml" ? "തുടർനടപടികൾ വേണ്ടവ" : "Follow-ups due"}
+                  </span>
+                  <img src={pending3dIcon} alt="Follow-ups due" className="h-8 w-8 object-contain shrink-0" />
+                </div>
+                <span className="font-display text-2xl font-black text-rose-600 dark:text-rose-400 leading-none mt-2">
+                  03
+                </span>
+              </div>
+            </div>
+
+            {/* Events & Announcements Section */}
+            <div className="space-y-2 pt-1">
+              <div className="flex items-center justify-between px-0.5">
+                <div className="flex items-center gap-1.5">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-md bg-orange-500/10 text-[#ff5500]">
+                    <Megaphone className="h-3.5 w-3.5 stroke-[2.2]" />
+                  </span>
+                  <h3 className="font-display text-xs sm:text-sm font-black text-[#0a0f1d] dark:text-white tracking-tight">
+                    {lang === "ml" ? "പരിപാടികളും അറിയിപ്പുകളും" : "Events & Announcements"}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMobileSubPage("events_announcements")}
+                  className="flex items-center gap-1 text-xs font-bold text-[#ff5500] hover:text-orange-600 transition-colors cursor-pointer"
+                >
+                  <span>{lang === "ml" ? "എല്ലാം" : "View All"}</span>
+                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#ff3b30] text-white text-[9.5px] font-black shadow-2xs">
+                    3
+                  </span>
+                  <ChevronRight className="h-3.5 w-3.5 stroke-[2.5]" />
+                </button>
+              </div>
+
+              {/* YUVA VIKAS YATRA Event Banner Card */}
+              <div
+                onClick={() => setMobileSubPage("events_announcements")}
+                className="relative overflow-hidden rounded-2xl border border-orange-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs cursor-pointer p-3 flex items-center justify-between group hover:border-orange-400 transition-all"
+              >
+                <div className="flex-1 pr-2 space-y-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <h4 className="font-black text-xs sm:text-sm text-slate-900 dark:text-white uppercase tracking-tight truncate">
+                      YUVA VIKAS YATRA & CON...
+                    </h4>
+                    <span className="h-2 w-2 rounded-full bg-red-600 shrink-0" />
+                  </div>
+                  <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 line-clamp-1">
+                    50,000+ Youth Leaders Gathering in...
+                  </p>
+                  <div className="pt-1">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-[#0a0f1d] dark:bg-slate-800 text-white text-[9.5px] font-black tracking-wider uppercase shadow-2xs">
+                      JOIN YATRA
+                    </span>
+                  </div>
+                </div>
+
+                {/* Right Graphic Date Badge with Lotus emblem */}
+                <div className="relative shrink-0 w-24 h-20 rounded-xl bg-gradient-to-br from-[#c2410c] via-[#ea580c] to-[#9a3412] p-1.5 flex items-center justify-center shadow-xs overflow-hidden">
+                  <div className="absolute top-1 right-1 h-4 w-4 rounded-full bg-white/20 p-0.5 flex items-center justify-center">
+                    <img src={officialLotus} alt="Lotus" className="h-full w-full object-contain" />
+                  </div>
+                  <div className="bg-white rounded-lg px-2.5 py-1 shadow-2xs border border-orange-100 flex flex-col items-center">
+                    <span className="text-[8.5px] font-black text-[#c2410c] tracking-widest leading-none">NOV</span>
+                    <span className="text-base font-black text-slate-900 leading-none my-0.5">02</span>
+                    <span className="text-[8px] font-extrabold text-orange-600/90 leading-none">2026</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Needs Attention Section */}
+            <div className="space-y-2 pt-1">
+              <div className="flex items-center justify-between px-0.5">
+                <div className="flex items-center gap-1.5">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-md bg-orange-500/10 text-orange-600">
+                    <AlertCircle className="h-3.5 w-3.5 stroke-[2.2]" />
+                  </span>
+                  <h3 className="font-display text-xs sm:text-sm font-black text-[#0a0f1d] dark:text-white tracking-tight">
+                    {lang === "ml" ? "ശ്രദ്ധിക്കേണ്ടവ" : "Needs attention"}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMobileSubPage("needs_attention")}
+                  className="flex items-center gap-1 text-xs font-bold text-[#ff5500] hover:text-orange-600 transition-colors cursor-pointer"
+                >
+                  <span>{lang === "ml" ? "എല്ലാം" : "View all"}</span>
+                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-orange-100 text-orange-600 text-[9.5px] font-black">
+                    2
+                  </span>
+                  <ChevronRight className="h-3.5 w-3.5 stroke-[2.5]" />
+                </button>
+              </div>
+
+              {/* Item Card 1: Meera Nair */}
+              <div
+                onClick={() => setMobileSubPage("app_detail")}
+                className="flex items-center justify-between rounded-2xl border border-orange-100/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-2.5 shadow-2xs hover:border-orange-300 transition-all cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-pink-100 dark:bg-pink-950/60 text-pink-600 font-extrabold text-xs shrink-0">
+                    MN
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
+                      Meera Nair
+                    </h4>
+                    <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 truncate">
+                      PM Vishwakarma
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-orange-50 dark:bg-orange-950/40 border border-orange-200/80 dark:border-orange-900/60 text-[#ea580c] dark:text-orange-300 text-[10.5px] font-bold">
+                    <AlertCircle className="h-3 w-3 text-orange-500" />
+                    <span>1 document missing</span>
+                  </span>
+                  <ChevronRight className="h-4 w-4 text-slate-400" />
+                </div>
+              </div>
+
+              {/* Item Card 2: Soman K */}
+              <div
+                onClick={() => setMobileSubPage("app_detail")}
+                className="flex items-center justify-between rounded-2xl border border-orange-100/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-2.5 shadow-2xs hover:border-orange-300 transition-all cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-600 font-extrabold text-xs shrink-0">
+                    SK
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
+                      Soman K
+                    </h4>
+                    <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 truncate">
+                      LIFE Mission Housing
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/60 text-amber-700 dark:text-amber-300 text-[10.5px] font-bold">
+                    <Clock3 className="h-3 w-3 text-amber-500" />
+                    <span>Verification pending</span>
+                  </span>
+                  <ChevronRight className="h-4 w-4 text-slate-400" />
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Team Tab Content */
+          <div className="space-y-3">
+            <div className="flex items-center justify-between px-0.5 pt-0.5">
+              <h2 className="font-display text-sm sm:text-base font-black text-[#0a0f1d] dark:text-white tracking-tight">
+                {lang === "ml" ? "ടീം പ്രവർത്തനം" : "Team Performance"}
+              </h2>
+              <span className="text-xs font-extrabold text-[#ea580c] bg-orange-100 dark:bg-orange-950/60 px-2 py-0.5 rounded-full">
+                Booth 42
+              </span>
+            </div>
+
+            {/* Team Metrics Summary */}
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="rounded-2xl border border-orange-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-2xs">
+                <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Active Workers</p>
+                <p className="text-xl font-black text-slate-900 dark:text-white mt-1">18</p>
+              </div>
+              <div className="rounded-2xl border border-orange-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-2xs">
+                <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Applications Done</p>
+                <p className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-1">142</p>
+              </div>
+            </div>
+
+            {/* Leaderboard Callout */}
+            <div
+              onClick={() => setMobileSubPage("leaderboard")}
+              className="flex items-center justify-between rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 p-3 text-white shadow-md cursor-pointer hover:opacity-95 transition-all"
+            >
+              <div className="flex items-center gap-2.5">
+                <Trophy className="h-6 w-6 text-amber-200 shrink-0" />
+                <div>
+                  <h4 className="font-extrabold text-xs sm:text-sm">Booth Leaderboard #1</h4>
+                  <p className="text-[11px] text-orange-100 font-medium">Kazhakkoottam Mandalam</p>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-white shrink-0" />
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const handleLocalBodyTypeSelect = (type: LocalBodyType) => {
     setCreateLocalBodyType(type);
     setCreateLocalBody("");
@@ -315,7 +658,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     setIsMandalamAutoFilled(false);
   };
 
-  const handleLocalBodySelect = (lbName: string) => {
+    const handleLocalBodySelect = (lbName: string) => {
     setCreateLocalBody(lbName);
     setCreateWard("");
     setCreateMandalam("");
@@ -324,7 +667,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     setAddressSheetSearch("");
   };
 
-  const handleWardSelect = (wardItem: WardItem) => {
+    const handleWardSelect = (wardItem: WardItem) => {
     const wardDisplay = `Ward ${wardItem.number} - ${lang === "ml" ? wardItem.nameMl : wardItem.nameEn}`;
     setCreateWard(wardDisplay);
 
@@ -344,14 +687,14 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     setAddressSheetSearch("");
   };
 
-  const handleMandalamSelect = (mandalamEn: string) => {
+    const handleMandalamSelect = (mandalamEn: string) => {
     setCreateMandalam(mandalamEn);
     setIsMandalamAutoFilled(false);
     setActiveAddressSheet(null);
     setAddressSheetSearch("");
   };
 
-  const isCreateFormValid = Boolean(
+    const isCreateFormValid = Boolean(
     createFullName.trim() &&
     createAadhaar.trim() &&
     createPhone.trim() &&
@@ -486,7 +829,8 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
           requiredDocEn: "Aadhaar Card / Income Certificate Copy",
           requiredDocMl: "ആധാർ കാർഡ് / വരുമാന സർട്ടിഫിക്കറ്റ് പകർപ്പ്",
         };
-        setSelectedEligibleScheme(matchedScheme);
+
+          setSelectedEligibleScheme(matchedScheme);
         setIsSingleSchemeEligible(true);
         setCreateFlowStep("eligibility_result");
       } else {
@@ -494,7 +838,8 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
       }
     }, 2200);
   };
-  const [mobileSubPage, setMobileSubPage] = useState<"none" | "leaderboard" | "needs_attention" | "recent_activity" | "beneficiaries" | "notifications" | "applications" | "events_announcements" | "app_detail" | "category_schemes">("none");
+
+    const [mobileSubPage, setMobileSubPage] = useState<"none" | "leaderboard" | "needs_attention" | "recent_activity" | "beneficiaries" | "notifications" | "applications" | "events_announcements" | "app_detail" | "category_schemes">("none");
   const [selectedSchemeCategoryDetail, setSelectedSchemeCategoryDetail] = useState<{
     id: string;
     titleEn: string;
@@ -535,7 +880,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     );
   };
 
-  const [applicationSearchQuery, setApplicationSearchQuery] = useState<string>("");
+    const [applicationSearchQuery, setApplicationSearchQuery] = useState<string>("");
   const [beneficiarySearchQuery, setBeneficiarySearchQuery] = useState<string>("");
   const [beneficiaryCategoryFilter, setBeneficiaryCategoryFilter] = useState<string>("ALL");
   const [currentSelectedDate, setCurrentSelectedDate] = useState<Date>(new Date(2026, 9, 12)); // 12/10/2026
@@ -593,7 +938,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     return `${dayName}, ${day}/${month}/${year}`;
   };
 
-  
+    
   const getAreasForMandalam = (mandalamVal: string, language: "ml" | "en") => {
     if (!mandalamVal || mandalamVal === "all") {
       return [
@@ -669,7 +1014,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     ];
   };
 
-  const getFormattedPeriodDisplay = () => {
+    const getFormattedPeriodDisplay = () => {
     if (selectedPeriod === "this_month" && !periodCustomLabel) {
       return lang === "ml" ? "ഒക്ടോബർ 2026" : "October 2026";
     }
@@ -685,7 +1030,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     return formatDateWithDay(currentSelectedDate);
   };
 
-  const renderAppDetailSubpage = () => {
+    const renderAppDetailSubpage = () => {
     const record = selectedApplicationRecord || {
       ref: "APP-2026-8910",
       schemeNameEn: "Pratibha Merit Scholarship",
@@ -712,7 +1057,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
       ],
     };
 
-    return (
+      return (
       <div className="space-y-3.5 pt-0.5 animate-in fade-in duration-200 text-slate-900 dark:text-slate-100">
         {/* Header Bar: Back Arrow, Title, Download Icon */}
         <div className="flex items-center justify-between pb-1">
@@ -955,14 +1300,15 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     );
   };
 
-  const handleStepPeriod = (daysOffset: number) => {
+    const handleStepPeriod = (daysOffset: number) => {
     const baseDate = currentSelectedDate && !isNaN(currentSelectedDate.getTime()) ? currentSelectedDate : new Date(2026, 9, 12);
     const newDate = new Date(baseDate);
     newDate.setDate(newDate.getDate() + daysOffset);
     setCurrentSelectedDate(newDate);
     setPeriodCustomLabel(formatDateWithDay(newDate));
   };
-  const [activeDistrictFilter, setActiveDistrictFilter] = useState<string>("all");
+
+    const [activeDistrictFilter, setActiveDistrictFilter] = useState<string>("all");
   const [filterGeoScope, setFilterGeoScope] = useState<string>("state");
   // Mode selection: 'assembly' | 'local_body'
   const [geoMode, setGeoMode] = useState<'assembly' | 'local_body'>('assembly');
@@ -1040,7 +1386,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     slaBreaches: Math.max(0, Math.round((rawMetrics?.slaBreaches || 0) * geoScopeMultiplier)),
   };
 
-  // Human readable active location label
+    // Human readable active location label
   const activeLocationLabel = React.useMemo(() => {
     if (filterGeoScope === "booth") {
       const currentAreas = getAreasForMandalam(selectedMandalam, lang);
@@ -1101,7 +1447,8 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
         social_security: "Social Security",
         employment: "Employment",
       };
-      chips.push({
+
+        chips.push({
         id: "category",
         label: `Category: ${catNames[filterSchemeCategory] || filterSchemeCategory}`,
         onRemove: () => setFilterSchemeCategory("all"),
@@ -1115,7 +1462,8 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
         social_justice: "Welfare",
         rural_dev: "Rural Dev",
       };
-      chips.push({
+
+        chips.push({
         id: "dept",
         label: `Department: ${deptNames[filterDepartment] || filterDepartment}`,
         onRemove: () => setFilterDepartment("all"),
@@ -1128,7 +1476,8 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
         needs_attention: "Needs Attention",
         sla_breached: "SLA Breached",
       };
-      chips.push({
+
+        chips.push({
         id: "perf",
         label: `Performance: ${perfNames[filterPerformance] || filterPerformance}`,
         onRemove: () => setFilterPerformance("all"),
@@ -1245,7 +1594,10 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
             {activeTab === "overview" && (
               <>
                 {mobileSubPage === "none" ? (
-                  <div className="space-y-3 animate-in fade-in duration-200">
+                  userRole === "party_worker" ? (
+                    renderPartyMemberDashboard()
+                  ) : (
+                    <div className="space-y-3 animate-in fade-in duration-200">
                     {/* Header Row: Date Title Left + Action Buttons Right (<, >, Calendar, Filter) - Matching Users Tab */}
                     <div className="flex items-center justify-between gap-2 pt-0.5 pb-1 my-0">
                       {/* Left Side: Bold Date/Period Title */}
@@ -1776,6 +2128,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                     </div>
 
                   </div>
+                  )
                 ) : (
                   /* Dedicated Full Screen Views inside Mobile App */
                   <div className="space-y-3 animate-in fade-in duration-200">
@@ -1836,7 +2189,8 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                                 rankColor: idx === 0 ? "text-[#eab308]" : idx === 1 ? "text-[#6366f1]" : idx === 2 ? "text-[#f97316]" : "text-[#64748b]",
                                 tagBg: b.tagBg,
                               };
-                            });
+
+                              });
                           })(),
                         },
                         area: {
@@ -1884,7 +2238,8 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                                   rankColor: idx === 0 ? "text-[#eab308]" : idx === 1 ? "text-[#6366f1]" : idx === 2 ? "text-[#f97316]" : "text-[#64748b]",
                                   tagBg: b.tagBg,
                                 };
-                              });
+
+                                });
                             }
 
                             const areas = getAreasForMandalam(selectedMandalam, lang);
@@ -1912,7 +2267,8 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                                 rankColor: idx === 0 ? "text-[#eab308]" : idx === 1 ? "text-[#6366f1]" : idx === 2 ? "text-[#f97316]" : "text-[#64748b]",
                                 tagBg: b.tagBg,
                               };
-                            });
+
+                              });
                           })(),
                         },
                         booths: {
@@ -1969,7 +2325,8 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                                 rankColor: idx === 0 ? "text-[#eab308]" : idx === 1 ? "text-[#6366f1]" : idx === 2 ? "text-[#f97316]" : "text-[#64748b]",
                                 tagBg: b.tagBg,
                               };
-                            });
+
+                              });
                           })(),
                         },
                         workers: {
@@ -1988,7 +2345,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                         },
                       };
 
-                      const currentDataset = datasets[leaderboardCategory] || datasets.districts;
+                        const currentDataset = datasets[leaderboardCategory] || datasets.districts;
                       const podiumTop3 = currentDataset.items.slice(0, 3);
                       const rank1 = podiumTop3[0];
                       const rank2 = podiumTop3[1];
