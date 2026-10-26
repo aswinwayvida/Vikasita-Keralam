@@ -2286,81 +2286,93 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                       })()}
                     </div>
 
-                    {/* SECTION 1: Needs attention */}
-                    <div className="space-y-1.5 pt-1">
+                    {/* SECTION 1: Districts Needing Attention (Admin View District-Wise) */}
+                    <div className="space-y-2 pt-1">
                       {/* Section Header */}
                       <div className="flex items-center justify-between px-0.5 pb-0.5">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="flex h-5 w-5 items-center justify-center rounded-md bg-orange-500/10 dark:bg-orange-950/30 text-[#ff5500] shrink-0">
-                            <AlertCircle className="h-3.5 w-3.5 stroke-[2.2]" />
-                          </span>
-                          <h3 className="font-display text-xs sm:text-[13px] font-black text-[#0a0f1d] dark:text-white tracking-tight truncate">
-                          {lang === "ml" ? "ശ്രദ്ധ ആവശ്യമുണ്ട്" : "Needs attention"}
-                          </h3>
-                        </div>
+                        <h3 className="font-display text-sm sm:text-base font-black text-[#0A101D] dark:text-white tracking-tight">
+                          {lang === "ml" ? "ശ്രദ്ധിക്കേണ്ട ജില്ലകൾ" : "Districts needing attention"}
+                        </h3>
                         <button
                           type="button"
                           onClick={() => setActiveTab("applications")}
-                          className="flex items-center gap-0.5 text-[11px] font-bold text-[#f95700] hover:underline cursor-pointer"
+                          className="flex items-center gap-0.5 text-xs sm:text-[13px] font-extrabold text-[#ea580c] hover:underline cursor-pointer"
                         >
-                          <span className="flex items-center gap-1.5"><span>{lang === "ml" ? "എല്ലാം" : "View all"}</span><span className="rounded-full bg-orange-500/10 dark:bg-orange-950/40 text-[#f95700] px-1.5 py-0.5 text-[9.5px] font-black leading-none border border-orange-200/80 dark:border-orange-900/50">2</span></span>
-                          <ChevronRight className="h-3.5 w-3.5 stroke-[2.5]" />
+                          <span>{lang === "ml" ? "എല്ലാം കാണുക" : "View all"}</span>
+                          <ChevronRight className="h-4 w-4 stroke-[2.5]" />
                         </button>
                       </div>
 
-                      {/* Needs Attention Items */}
-                      <div className="space-y-2">
-                        {/* Item 1: Meera Nair */}
+                      {/* District-wise Needs Attention Cards */}
+                      <div className="space-y-2.5">
+                        {/* District 1: Wayanad */}
                         <div
                           onClick={() => setActiveTab("applications")}
-                          className="rounded-2xl bg-white dark:bg-slate-900 border border-orange-100 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
+                          className="rounded-2xl sm:rounded-3xl bg-white dark:bg-slate-900 border border-red-100/90 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
                         >
                           <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-pink-100 dark:bg-pink-950/60 text-pink-600 dark:text-pink-400 font-extrabold text-xs shrink-0">
-                              MN
+                            {/* Wayanad Tea Hills Avatar */}
+                            <div className="relative flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-gradient-to-br from-emerald-100 via-teal-100 to-emerald-200 dark:from-emerald-950 dark:to-teal-900 border border-emerald-200/80 dark:border-emerald-800 shrink-0 overflow-hidden shadow-2xs">
+                              <svg className="h-full w-full text-emerald-600 dark:text-emerald-400" viewBox="0 0 100 100" fill="none">
+                                <circle cx="50" cy="50" r="50" fill="#E6F4EA" />
+                                <path d="M10 80 Q 30 50, 50 80 T 90 80 L 100 100 L 0 100 Z" fill="#34A853" opacity="0.4" />
+                                <path d="M0 90 Q 25 65, 55 90 T 100 90 L 100 100 L 0 100 Z" fill="#188038" opacity="0.7" />
+                                <circle cx="75" cy="30" r="8" fill="#FABB05" opacity="0.8" />
+                                <path d="M25 45 C 35 35, 45 35, 55 45 C 65 55, 75 45, 85 55" stroke="#137333" strokeWidth="3" strokeLinecap="round" />
+                              </svg>
                             </div>
+
                             <div className="min-w-0 flex-1">
-                              <h4 className="font-black text-[12px] sm:text-[12.5px] text-slate-900 dark:text-white leading-tight truncate">
-                                {lang === "ml" ? "മീര നായർ" : "Meera Nair"}
+                              <h4 className="font-extrabold text-sm sm:text-[15px] text-slate-900 dark:text-white leading-tight truncate">
+                                {lang === "ml" ? "വയനാട്" : "Wayanad"}
                               </h4>
-                              <p className="font-medium text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
-                                {lang === "ml" ? "പി.എം വിശ്വകർമ്മ" : "PM Vishwakarma"}
+                              <p className="font-extrabold text-xs text-red-600 dark:text-red-400 leading-tight mt-0.5 truncate">
+                                {lang === "ml" ? "12 കുടിശ്ശിക തുടർനടപടികൾ" : "12 overdue follow-ups"}
                               </p>
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2 shrink-0 ml-2">
-                            <div className="flex items-center gap-1.5 rounded-full bg-[#fff4ed] dark:bg-orange-950/50 border border-[#ffebd9] dark:border-orange-900/50 px-2.5 py-1 text-[10px] font-bold text-[#f95700] dark:text-orange-400">
-                              <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[#f95700] text-white text-[8.5px] font-black leading-none">!</span>
-                              <span>{lang === "ml" ? "1 രേഖ വിട്ടുപോയി" : "1 document missing"}</span>
+                          <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                            <div className="flex items-center gap-1.5 rounded-full bg-red-50 dark:bg-red-950/60 border border-red-100 dark:border-red-900/60 px-3 py-1 text-xs font-extrabold text-red-600 dark:text-red-400">
+                              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-white text-[10px] font-black leading-none">!</span>
+                              <span className="whitespace-nowrap">{lang === "ml" ? "ശ്രദ്ധ വേണം" : "Needs attention"}</span>
                             </div>
                             <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform" />
                           </div>
                         </div>
 
-                        {/* Item 2: Ravi Kumar */}
+                        {/* District 2: Kollam East */}
                         <div
                           onClick={() => setActiveTab("applications")}
-                          className="rounded-2xl bg-white dark:bg-slate-900 border border-orange-100 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
+                          className="rounded-2xl sm:rounded-3xl bg-white dark:bg-slate-900 border border-amber-100/90 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
                         >
                           <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-extrabold text-xs shrink-0">
-                              RK
+                            {/* Kollam Backwaters/Houseboat Avatar */}
+                            <div className="relative flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-gradient-to-br from-amber-100 via-sky-100 to-teal-100 dark:from-amber-950 dark:to-sky-900 border border-amber-200/80 dark:border-amber-800 shrink-0 overflow-hidden shadow-2xs">
+                              <svg className="h-full w-full text-amber-600 dark:text-amber-400" viewBox="0 0 100 100" fill="none">
+                                <circle cx="50" cy="50" r="50" fill="#FEF7E0" />
+                                <path d="M0 65 Q 25 55, 50 65 T 100 65 L 100 100 L 0 100 Z" fill="#4285F4" opacity="0.3" />
+                                <path d="M0 75 Q 30 70, 60 78 T 100 75 L 100 100 L 0 100 Z" fill="#1A73E8" opacity="0.6" />
+                                <path d="M30 65 C 30 50, 45 45, 60 55 C 65 60, 60 65, 55 65 Z" fill="#E37400" />
+                                <path d="M25 65 L 65 65 L 60 70 L 30 70 Z" fill="#B06000" />
+                                <circle cx="75" cy="28" r="7" fill="#FBBC04" opacity="0.9" />
+                              </svg>
                             </div>
+
                             <div className="min-w-0 flex-1">
-                              <h4 className="font-black text-[12px] sm:text-[12.5px] text-slate-900 dark:text-white leading-tight truncate">
-                                {lang === "ml" ? "രവി കുമാർ" : "Ravi Kumar"}
+                              <h4 className="font-extrabold text-sm sm:text-[15px] text-slate-900 dark:text-white leading-tight truncate">
+                                {lang === "ml" ? "കൊല്ലം ഈസ്റ്റ്" : "Kollam East"}
                               </h4>
-                              <p className="font-medium text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
-                                {lang === "ml" ? "പി.എം സ്വനിധി" : "PM SVANidhi"}
+                              <p className="font-extrabold text-xs text-[#ea580c] dark:text-orange-400 leading-tight mt-0.5 truncate">
+                                {lang === "ml" ? "28 രേഖകൾ കാത്തിരിക്കുന്നു" : "28 awaiting documents"}
                               </p>
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2 shrink-0 ml-2">
-                            <div className="flex items-center gap-1.5 rounded-full bg-[#fff4ed] dark:bg-orange-950/50 border border-[#ffebd9] dark:border-orange-900/50 px-2.5 py-1 text-[10px] font-bold text-[#f95700] dark:text-orange-400">
-                              <Calendar className="h-3.5 w-3.5 text-[#f95700]" />
-                              <span>{lang === "ml" ? "ഇന്ന് തുടർനടപടി" : "Follow-up due today"}</span>
+                          <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                            <div className="flex items-center gap-1.5 rounded-full bg-[#FFF0E6] dark:bg-orange-950/60 border border-orange-200/80 dark:border-orange-900/60 px-3 py-1 text-xs font-extrabold text-[#ea580c] dark:text-orange-300">
+                              <FileText className="h-3.5 w-3.5 text-[#ea580c] dark:text-orange-300 stroke-[2.5]" />
+                              <span className="whitespace-nowrap">{lang === "ml" ? "രേഖകൾ കാത്തിരിക്കുന്നു" : "Documents pending"}</span>
                             </div>
                             <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform" />
                           </div>
