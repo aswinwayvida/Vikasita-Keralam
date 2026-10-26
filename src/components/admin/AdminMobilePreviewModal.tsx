@@ -310,44 +310,44 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
   const renderPartyMemberDashboard = () => {
     return (
       <div className="space-y-3.5 animate-in fade-in duration-200">
-        {/* Top Header Row: Good Morning Greeting + Animated Lotus Left & Segmented Switch (My Work | Team) Right */}
-        <div className="flex items-center justify-between gap-2 pt-0.5 pb-0.5">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <h2 className="font-display font-black text-base sm:text-[17px] text-[#0A101D] dark:text-white leading-tight tracking-tight flex items-center gap-1.5 truncate">
+        {/* Top Header Row: Good Morning Greeting + Animated Lotus Left & Compact Segmented Switch (My Work | Team) Right */}
+        <div className="flex items-center justify-between gap-1.5 pt-0.5 pb-0.5">
+          <div className="flex items-center gap-1 min-w-0">
+            <h2 className="font-display font-black text-sm sm:text-[15px] text-[#0A101D] dark:text-white leading-tight tracking-tight flex items-center gap-1.5 whitespace-nowrap">
               <span>{lang === "ml" ? "നമസ്കാരം, അനിൽ" : "Good Morning, Anil"}</span>
               <img
                 src={officialLotus}
                 alt="Lotus"
-                className="h-5 w-5 sm:h-5.5 sm:w-5.5 object-contain inline-block animate-pulse drop-shadow-2xs shrink-0"
+                className="h-4.5 w-4.5 sm:h-5 sm:w-5 object-contain inline-block animate-pulse drop-shadow-2xs shrink-0"
               />
             </h2>
           </div>
 
-          {/* Top Segmented Switch: My Work | Team */}
-          <div className="flex items-center p-1 bg-white dark:bg-slate-900 rounded-[16px] border border-slate-200/90 dark:border-slate-800 shadow-2xs shrink-0 gap-1">
+          {/* Compact Top Segmented Switch: My Work | Team */}
+          <div className="flex items-center p-0.5 bg-white dark:bg-slate-900 rounded-full border border-slate-200/90 dark:border-slate-800 shadow-2xs shrink-0 gap-0.5">
             <button
               type="button"
               onClick={() => setPartyWorkerTab("my_work")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-[12.5px] transition-all cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] sm:text-[11.5px] transition-all cursor-pointer ${
                 partyWorkerTab === "my_work"
                   ? "bg-[#FFF0E6] dark:bg-orange-950/60 text-[#ea580c] dark:text-orange-300 font-extrabold shadow-2xs"
                   : "text-[#475569] dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-bold"
               }`}
             >
-              <FileText className={`h-3.5 w-3.5 ${partyWorkerTab === "my_work" ? "text-[#ea580c] dark:text-orange-300" : "text-slate-400"}`} />
-              <span>{lang === "ml" ? "എന്റെ ജോലി" : "My Work"}</span>
+              <FileText className={`h-3 w-3 ${partyWorkerTab === "my_work" ? "text-[#ea580c] dark:text-orange-300" : "text-slate-400"}`} />
+              <span className="whitespace-nowrap">{lang === "ml" ? "എന്റെ ജോലി" : "My Work"}</span>
             </button>
             <button
               type="button"
               onClick={() => setPartyWorkerTab("team")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-[12.5px] transition-all cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] sm:text-[11.5px] transition-all cursor-pointer ${
                 partyWorkerTab === "team"
                   ? "bg-[#FFF0E6] dark:bg-orange-950/60 text-[#ea580c] dark:text-orange-300 font-extrabold shadow-2xs"
                   : "text-[#475569] dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-bold"
               }`}
             >
-              <Users className={`h-3.5 w-3.5 ${partyWorkerTab === "team" ? "text-[#ea580c] dark:text-orange-300" : "text-slate-400"}`} />
-              <span>{lang === "ml" ? "ടീം" : "Team"}</span>
+              <Users className={`h-3 w-3 ${partyWorkerTab === "team" ? "text-[#ea580c] dark:text-orange-300" : "text-slate-400"}`} />
+              <span className="whitespace-nowrap">{lang === "ml" ? "ടീം" : "Team"}</span>
             </button>
           </div>
         </div>
