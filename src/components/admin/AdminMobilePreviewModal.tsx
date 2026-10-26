@@ -340,16 +340,86 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
 
         {partyWorkerTab === "my_work" ? (
           <div className="space-y-3">
-            {/* Header: Title Left + Updated info Right */}
-            <div className="flex items-center justify-between px-0.5 pt-0.5">
-              <h2 className="font-display text-sm sm:text-base font-black text-[#0a0f1d] dark:text-white tracking-tight">
-                {lang === "ml" ? "നിങ്ങളുടെ പ്രവർത്തനം ഒറ്റനോട്ടത്തിൽ" : "Your work at a glance"}
-              </h2>
-              <div className="flex items-center gap-1 text-[10.5px] font-bold text-slate-500 dark:text-slate-400 shrink-0">
-                <span>{lang === "ml" ? "ഇപ്പോൾ അപ്ഡേറ്റ് ചെയ്തു" : "Updated just now"}</span>
-                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            {/* Header Row: Date Title Left + Action Buttons Right (<, >, Calendar, Filter) - Matching Admin View */}
+            <div className="flex items-center justify-between gap-2 pt-0.5 pb-1 my-0">
+              {/* Left Side: Bold Date/Period Title */}
+              <button
+                type="button"
+                onClick={() => setIsDatePickerOpen(true)}
+                className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0"
+                title="Click to Open Date Picker"
+              >
+                {getFormattedPeriodDisplay()}
+              </button>
+
+              {/* Right Side: Circular Action Buttons (Previous, Next, Calendar, Filter) */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                {/* Left Arrow (Previous Period) */}
+                <button
+                  type="button"
+                  onClick={() => handleStepPeriod(-1)}
+                  className="flex h-6 w-6 items-center justify-center rounded-full border border-orange-100 dark:border-slate-800 bg-orange-50/50 dark:bg-slate-900 text-orange-600 hover:bg-orange-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shadow-2xs"
+                  title="Previous Period"
+                >
+                  <ChevronLeft className="h-3 w-3 stroke-[2.5]" />
+                </button>
+
+                {/* Right Arrow (Next Period) */}
+                <button
+                  type="button"
+                  onClick={() => handleStepPeriod(1)}
+                  className="flex h-6 w-6 items-center justify-center rounded-full border border-orange-100 dark:border-slate-800 bg-orange-50/50 dark:bg-slate-900 text-orange-600 hover:bg-orange-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shadow-2xs"
+                  title="Next Period"
+                >
+                  <ChevronRight className="h-3 w-3 stroke-[2.5]" />
+                </button>
+
+                {/* Calendar Icon Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsDatePickerOpen(true)}
+                  className="flex h-6 w-6 items-center justify-center rounded-full border border-orange-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 text-[#ff5500] hover:bg-orange-50 dark:hover:bg-orange-950/30 transition-colors cursor-pointer shadow-2xs"
+                  title="Open Date Picker"
+                >
+                  <Calendar className="h-3.5 w-3.5 stroke-[2.2]" />
+                </button>
+
+                {/* Filter Button */}
+                <button
+                  type="button"
+                  onClick={() => setShowFilterMenu(!showFilterMenu)}
+                  className={`relative flex h-6 w-6 items-center justify-center rounded-full border transition-all shadow-2xs cursor-pointer ${
+                    showFilterMenu || appliedFilterChips.length > 0
+                      ? "border-orange-500 bg-orange-500 text-white ring-2 ring-orange-500/30"
+                      : "border-orange-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-orange-500 hover:bg-orange-50"
+                  }`}
+                  title="Toggle Filters"
+                >
+                  <Filter className={`h-3 w-3 stroke-[2.2] ${appliedFilterChips.length > 0 || showFilterMenu ? "text-white" : "text-orange-500"}`} />
+
+                  {appliedFilterChips.length > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-600 text-[8px] font-black text-white ring-1.5 ring-white dark:ring-slate-900 animate-pulse">
+                      {appliedFilterChips.length}
+                    </span>
+                  )}
+                </button>
               </div>
             </div>
+
+            {/* Applied Filters & Current Scope UI */}
+            <MobileAppliedFiltersScope
+              currentScopeTitle={filterGeoScope !== "state" ? activeLocationLabel : "All Kerala • State Level"}
+              currentScopeSubLabel={filterGeoScope !== "state" ? "Sector 1, Kazhakuttam" : "All 14 Districts & 140 Constituencies"}
+              onResetScope={filterGeoScope !== "state" ? () => setFilterGeoScope("state") : undefined}
+              appliedFilters={dashboardFilterChips}
+              onResetAllFilters={() => {
+                setFilterSchemeType("all");
+                setFilterSchemeCategory("all");
+                setFilterDepartment("all");
+                setFilterPerformance("all");
+                setFilterGeoScope("state");
+              }}
+            />
 
             {/* 2x2 Metric Cards Grid matching Admin view style */}
             <div className="grid grid-cols-2 gap-2">
@@ -422,143 +492,343 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
               </div>
             </div>
 
-            {/* Events & Announcements Section */}
-            <div className="space-y-2 pt-1">
-              <div className="flex items-center justify-between px-0.5">
-                <div className="flex items-center gap-1.5">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-md bg-orange-500/10 text-[#ff5500]">
+            {/* SECTION: Events & Announcements - Matching Admin View */}
+            <div className="space-y-1.5 pt-1">
+              {/* Section Header */}
+              <div className="flex items-center justify-between px-0.5 pb-0.5">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-md bg-orange-500/10 dark:bg-orange-950/30 text-[#ff5500] shrink-0">
                     <Megaphone className="h-3.5 w-3.5 stroke-[2.2]" />
                   </span>
-                  <h3 className="font-display text-xs sm:text-sm font-black text-[#0a0f1d] dark:text-white tracking-tight">
+                  <h3 className="font-display text-xs sm:text-[13px] font-black text-[#0a0f1d] dark:text-white tracking-tight truncate">
                     {lang === "ml" ? "പരിപാടികളും അറിയിപ്പുകളും" : "Events & Announcements"}
                   </h3>
                 </div>
                 <button
                   type="button"
                   onClick={() => setMobileSubPage("events_announcements")}
-                  className="flex items-center gap-1 text-xs font-bold text-[#ff5500] hover:text-orange-600 transition-colors cursor-pointer"
+                  className="flex items-center gap-1 text-[11px] font-bold text-[#ff5500] hover:text-orange-600 transition-colors cursor-pointer shrink-0"
                 >
                   <span>{lang === "ml" ? "എല്ലാം" : "View All"}</span>
                   <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#ff3b30] text-white text-[9.5px] font-black shadow-2xs">
                     3
                   </span>
-                  <ChevronRight className="h-3.5 w-3.5 stroke-[2.5]" />
+                  <ChevronRight className="h-3.5 w-3.5 text-[#ff5500] stroke-[2.5]" />
                 </button>
               </div>
 
-              {/* YUVA VIKAS YATRA Event Banner Card */}
-              <div
-                onClick={() => setMobileSubPage("events_announcements")}
-                className="relative overflow-hidden rounded-2xl border border-orange-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs cursor-pointer p-3 flex items-center justify-between group hover:border-orange-400 transition-all"
-              >
-                <div className="flex-1 pr-2 space-y-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <h4 className="font-black text-xs sm:text-sm text-slate-900 dark:text-white uppercase tracking-tight truncate">
-                      YUVA VIKAS YATRA & CON...
-                    </h4>
-                    <span className="h-2 w-2 rounded-full bg-red-600 shrink-0" />
-                  </div>
-                  <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 line-clamp-1">
-                    50,000+ Youth Leaders Gathering in...
-                  </p>
-                  <div className="pt-1">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-[#0a0f1d] dark:bg-slate-800 text-white text-[9.5px] font-black tracking-wider uppercase shadow-2xs">
-                      JOIN YATRA
-                    </span>
-                  </div>
-                </div>
+              {/* Single Unified Carousel */}
+              {(() => {
+                const mergedSlides = [
+                  {
+                    type: "banner_image",
+                    bannerImg: "/images/pm_schemes_explore_now.png",
+                    title: "Explore PM Schemes",
+                    isUnread: true,
+                  },
+                  {
+                    type: "event",
+                    dateMonth: "OCT",
+                    dateDay: "15",
+                    dateYear: "2026",
+                    ribbon: "BOOTH CONVENTION",
+                    ribbonMl: "ബൂത്ത് സമ്മേളനം",
+                    title: "VIKASITA KERALAM SAMMELAN 2026",
+                    subtitle: "Statewide Mega Booth Worker Convention in TVM",
+                    subtitleMl: "സംസ്ഥാനതല മെഗാ ബൂത്ത് സമ്മേളനം",
+                    ctaText: "REGISTER NOW",
+                    ctaTextMl: "രജിസ്റ്റർ ചെയ്യുക",
+                    rightGradient: "from-[#800f13] via-[#a3161a] to-[#4f080b]",
+                    accentBorder: "border-[#800f13]",
+                    dateBadgeBg: "bg-white text-[#800f13]",
+                    yearTagBg: "bg-red-50 text-[#800f13] border-red-200/80",
+                    isUnread: true,
+                  },
+                  {
+                    type: "announcement",
+                    ribbon: "MODI'S GUARANTEE",
+                    ribbonMl: "മോദിയുടെ ഗ്യാരണ്ടി",
+                    ribbonBg: "bg-red-500 text-white font-black",
+                    title: "SABKA SAATH · SABKA VIKAS",
+                    subtitle: "Sabka Vishwas · Sabka Prayaas (2047 Vision)",
+                    subtitleMl: "സബ്കാ സാഥ്, സബ്കാ വികാസ്, സബ്കാ വിശ്വാസ്",
+                    cardStyle: "bg-gradient-to-r from-[#800f13] via-[#a3161a] to-[#590a0d] text-white shadow-md border border-red-900/50",
+                    titleColor: "text-white font-extrabold",
+                    subTitleColor: "text-red-100/95 font-medium",
+                    rightGraphicBg: "bg-red-950/70 border-red-400/40",
+                    isUnread: true,
+                  },
+                  {
+                    type: "event",
+                    dateMonth: "NOV",
+                    dateDay: "02",
+                    dateYear: "2026",
+                    ribbon: "YOUTH RALLY",
+                    ribbonMl: "യുവമോർച്ച റാലി",
+                    title: "YUVA VIKAS YATRA & CONCLAVE",
+                    subtitle: "50,000+ Youth Leaders Gathering in TVM",
+                    subtitleMl: "തിരുവനന്തപുരത്ത് 50,000+ യുവ പ്രതിനിധികൾ",
+                    ctaText: "JOIN YATRA",
+                    ctaTextMl: "പങ്കെടുക്കുക",
+                    rightGradient: "from-[#ea580c] via-[#c2410c] to-[#9a3412]",
+                    accentBorder: "border-[#ea580c]",
+                    dateBadgeBg: "bg-white text-[#c2410c]",
+                    yearTagBg: "bg-orange-50 text-[#c2410c] border-orange-200/80",
+                    isUnread: true,
+                  },
+                  {
+                    type: "announcement",
+                    ribbon: "PM KISAN SAMMAN",
+                    ribbonMl: "പി.എം കിസാൻ",
+                    ribbonBg: "bg-amber-400 text-amber-950 font-black",
+                    title: "DIRECT BENEFIT TRANSFER ₹6,000",
+                    subtitle: "Empowering 35 Lakh Farmers Across Kerala",
+                    subtitleMl: "കേരളത്തിലെ 35 ലക്ഷം കർഷകർക്ക് നേട്ടങ്ങൾ",
+                    cardStyle: "bg-gradient-to-r from-[#15803d] via-emerald-700 to-[#065f46] text-white shadow-md border border-emerald-600/50",
+                    titleColor: "text-white font-extrabold",
+                    subTitleColor: "text-emerald-100/95 font-medium",
+                    rightGraphicBg: "bg-emerald-950/70 border-amber-300/40",
+                    isUnread: false,
+                  },
+                  {
+                    type: "event",
+                    dateMonth: "NOV",
+                    dateDay: "20",
+                    dateYear: "2026",
+                    ribbon: "BENEFICIARY MEET",
+                    ribbonMl: "ഗുണഭോക്തൃ സംഗമം",
+                    title: "CENTRAL SCHEMES EXPO",
+                    subtitle: "Interactive Session with Union Ministers at Kochi",
+                    subtitleMl: "കേന്ദ്ര മന്ത്രിമാരുമായുള്ള ഗുണഭോക്തൃ സംവാദം",
+                    ctaText: "ATTEND EXPO",
+                    ctaTextMl: "സന്ദർശിക്കുക",
+                    rightGradient: "from-[#0d9488] via-[#0f766e] to-[#115e59]",
+                    accentBorder: "border-[#0d9488]",
+                    dateBadgeBg: "bg-white text-[#0f766e]",
+                    yearTagBg: "bg-teal-50 text-[#0f766e] border-teal-200/80",
+                    isUnread: false,
+                  },
+                  {
+                    type: "announcement",
+                    ribbon: "AYUSHMAN BHARAT",
+                    ribbonMl: "ആയുഷ്മാൻ ഭാരത്",
+                    ribbonBg: "bg-[#ff5500] text-white font-black",
+                    title: "FREE HEALTH COVERAGE UP TO ₹5 LAKH",
+                    subtitle: "Cashless Medical Treatment for All Families",
+                    subtitleMl: "സൗജന്യ സമഗ്ര കുടുംബ ആരോഗ്യ സുരക്ഷാ പദ്ധതി",
+                    cardStyle: "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm border border-slate-200/90 dark:border-slate-800",
+                    titleColor: "text-slate-900 dark:text-white font-extrabold",
+                    subTitleColor: "text-slate-700 dark:text-slate-200 font-medium",
+                    rightGraphicBg: "bg-orange-50 dark:bg-slate-800 border-orange-200 dark:border-slate-700",
+                    isUnread: false,
+                  },
+                  {
+                    type: "event",
+                    dateMonth: "DEC",
+                    dateDay: "10",
+                    dateYear: "2026",
+                    ribbon: "MAHILA SAMMELAN",
+                    ribbonMl: "മഹിളാ സമ്മേളനം",
+                    title: "NARI SHAKTI VIKAS CONCLAVE",
+                    subtitle: "Empowering Women Entrepreneurs in Kozhikode",
+                    subtitleMl: "വനിതാ സംരംഭകത്വ സംസ്ഥാന സമ്മേളനം",
+                    ctaText: "GET PASS",
+                    ctaTextMl: "പാസ് നേടുക",
+                    rightGradient: "from-[#15803d] via-[#166534] to-[#14532d]",
+                    accentBorder: "border-[#15803d]",
+                    dateBadgeBg: "bg-white text-[#166534]",
+                    yearTagBg: "bg-emerald-50 text-[#166534] border-emerald-200/80",
+                    isUnread: false,
+                  },
+                ];
 
-                {/* Right Graphic Date Badge with Lotus emblem */}
-                <div className="relative shrink-0 w-24 h-20 rounded-xl bg-gradient-to-br from-[#c2410c] via-[#ea580c] to-[#9a3412] p-1.5 flex items-center justify-center shadow-xs overflow-hidden">
-                  <div className="absolute top-1 right-1 h-4 w-4 rounded-full bg-white/20 p-0.5 flex items-center justify-center">
-                    <img src={officialLotus} alt="Lotus" className="h-full w-full object-contain" />
+                const slide = mergedSlides[announcementIndex % mergedSlides.length];
+
+                if (slide.type === "banner_image") {
+                  return (
+                    <div
+                      onClick={() => setMobileSubPage("events_announcements")}
+                      className="relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs h-[80px] w-full cursor-pointer group transition-all duration-500"
+                    >
+                      <img
+                        src={slide.bannerImg}
+                        alt="Explore PM Schemes - Viksit Bharat"
+                        className="h-full w-full object-fill group-hover:scale-102 transition-transform duration-300"
+                      />
+                      {slide.isUnread && (
+                        <div className="absolute top-2 right-2 z-10">
+                          <span className="h-2 w-2 rounded-full bg-[#ff3b30] shrink-0 inline-block shadow-xs" />
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                if (slide.type === "event") {
+                  return (
+                    <div className="relative overflow-hidden rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm h-[80px] flex items-center justify-between transition-all duration-500">
+                      {/* Left Content Area (White background with black pill CTA) */}
+                      <div className="flex-1 min-w-0 h-full p-2.5 pl-3 pr-3 flex flex-col justify-between z-10">
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <h4 className="font-display text-[11.5px] sm:text-[12px] font-black text-slate-900 dark:text-white leading-tight tracking-tight truncate">
+                              {slide.title}
+                            </h4>
+                            {slide.isUnread && (
+                              <span className="h-2 w-2 rounded-full bg-[#ff3b30] shrink-0 inline-block" />
+                            )}
+                          </div>
+                          <p className="text-[9.5px] font-medium text-slate-600 dark:text-slate-300 leading-tight line-clamp-1">
+                            {lang === "ml" ? slide.subtitleMl : slide.subtitle}
+                          </p>
+                        </div>
+                        <div className="pt-0.5">
+                          <button
+                            type="button"
+                            onClick={() => setMobileSubPage("recent_activity")}
+                            className="inline-block rounded-full bg-slate-950 dark:bg-slate-100 text-white dark:text-slate-950 px-2.5 py-0.5 text-[8px] font-black tracking-wider uppercase shadow-xs transition-transform active:scale-95 cursor-pointer"
+                          >
+                            {lang === "ml" ? slide.ctaTextMl : slide.ctaText}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Right Angular Geometric Section */}
+                      <div className="relative h-full w-[38%] shrink-0 flex items-center justify-center overflow-hidden pr-0.5">
+                        <div className={`absolute inset-0 bg-gradient-to-br ${slide.rightGradient} [clip-path:polygon(20%_0%,100%_0%,100%_100%,0%_100%,15%_50%)]`} />
+                        <div className={`absolute inset-0 border-l-2 ${slide.accentBorder} opacity-80 [clip-path:polygon(20%_0%,25%_0%,20%_50%,25%_100%,20%_100%,15%_50%)]`} />
+
+                        <div className={`relative z-10 rounded-lg px-2 py-0.5 flex flex-col items-center justify-center text-center ${slide.dateBadgeBg} min-w-[48px] shadow-md border border-white/60`}>
+                          <span className="block text-[8px] font-black uppercase tracking-wider leading-none">{slide.dateMonth}</span>
+                          <span className="block text-[15px] font-black leading-tight my-0.5 tracking-tight">{slide.dateDay}</span>
+                          <span className={`block text-[7px] font-black tracking-widest leading-none px-1 py-0.5 rounded-xs border ${slide.yearTagBg}`}>
+                            {slide.dateYear}
+                          </span>
+                        </div>
+
+                        <div className="absolute top-1 right-1 z-20 h-5 w-5 rounded-full bg-amber-400 border border-white/80 p-0.5 flex items-center justify-center shadow-xs">
+                          <img src={officialLotus} alt="Lotus" className="h-3.5 w-3.5 object-contain" />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className={`relative overflow-hidden rounded-xl ${slide.cardStyle} p-2 px-2.5 h-[80px] flex flex-col justify-between transition-all duration-500`}>
+                    {/* Top Right Ribbon */}
+                    <div className="absolute top-0 right-0 z-10">
+                      <div className={`rounded-bl-md px-2 py-0.5 text-[7px] font-black uppercase tracking-wider shadow-xs ${slide.ribbonBg}`}>
+                        {lang === "ml" ? slide.ribbonMl : slide.ribbon}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-1 flex-1 min-h-0">
+                      <div className={`shrink-0 h-9 w-9 rounded-full border ${slide.rightGraphicBg} p-0.5 flex items-center justify-center shadow-xs overflow-hidden`}>
+                        <img
+                          src={officialLotus}
+                          alt="Lotus Emblem"
+                          className="h-5.5 w-5.5 object-contain drop-shadow-xs"
+                        />
+                      </div>
+
+                      <div className="min-w-0 flex-1 flex flex-col justify-center h-full pr-1 text-left space-y-0.5">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <h4 className={`font-display text-[12px] sm:text-[12.5px] font-extrabold leading-tight tracking-tight truncate ${slide.titleColor}`}>
+                            {slide.title}
+                          </h4>
+                          {slide.isUnread && (
+                            <span className="h-2 w-2 rounded-full bg-[#ff3b30] shrink-0 inline-block" />
+                          )}
+                        </div>
+                        <p className={`text-[9.5px] leading-tight line-clamp-2 ${slide.subTitleColor}`}>
+                          {lang === "ml" ? slide.subtitleMl : slide.subtitle}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="bg-white rounded-lg px-2.5 py-1 shadow-2xs border border-orange-100 flex flex-col items-center">
-                    <span className="text-[8.5px] font-black text-[#c2410c] tracking-widest leading-none">NOV</span>
-                    <span className="text-base font-black text-slate-900 leading-none my-0.5">02</span>
-                    <span className="text-[8px] font-extrabold text-orange-600/90 leading-none">2026</span>
-                  </div>
-                </div>
-              </div>
+                );
+              })()}
             </div>
 
-            {/* Needs Attention Section */}
-            <div className="space-y-2 pt-1">
-              <div className="flex items-center justify-between px-0.5">
-                <div className="flex items-center gap-1.5">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-md bg-orange-500/10 text-orange-600">
+            {/* SECTION: Needs attention - Matching Admin View */}
+            <div className="space-y-1.5 pt-1">
+              {/* Section Header */}
+              <div className="flex items-center justify-between px-0.5 pb-0.5">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-md bg-orange-500/10 dark:bg-orange-950/30 text-[#ff5500] shrink-0">
                     <AlertCircle className="h-3.5 w-3.5 stroke-[2.2]" />
                   </span>
-                  <h3 className="font-display text-xs sm:text-sm font-black text-[#0a0f1d] dark:text-white tracking-tight">
-                    {lang === "ml" ? "ശ്രദ്ധിക്കേണ്ടവ" : "Needs attention"}
+                  <h3 className="font-display text-xs sm:text-[13px] font-black text-[#0a0f1d] dark:text-white tracking-tight truncate">
+                    {lang === "ml" ? "ശ്രദ്ധ ആവശ്യമുണ്ട്" : "Needs attention"}
                   </h3>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setMobileSubPage("needs_attention")}
-                  className="flex items-center gap-1 text-xs font-bold text-[#ff5500] hover:text-orange-600 transition-colors cursor-pointer"
+                  onClick={() => setActiveTab("applications")}
+                  className="flex items-center gap-0.5 text-[11px] font-bold text-[#f95700] hover:underline cursor-pointer"
                 >
-                  <span>{lang === "ml" ? "എല്ലാം" : "View all"}</span>
-                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-orange-100 text-orange-600 text-[9.5px] font-black">
-                    2
-                  </span>
+                  <span className="flex items-center gap-1.5"><span>{lang === "ml" ? "എല്ലാം" : "View all"}</span><span className="rounded-full bg-orange-500/10 dark:bg-orange-950/40 text-[#f95700] px-1.5 py-0.5 text-[9.5px] font-black leading-none border border-orange-200/80 dark:border-orange-900/50">2</span></span>
                   <ChevronRight className="h-3.5 w-3.5 stroke-[2.5]" />
                 </button>
               </div>
 
-              {/* Item Card 1: Meera Nair */}
-              <div
-                onClick={() => setMobileSubPage("app_detail")}
-                className="flex items-center justify-between rounded-2xl border border-orange-100/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-2.5 shadow-2xs hover:border-orange-300 transition-all cursor-pointer"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-pink-100 dark:bg-pink-950/60 text-pink-600 font-extrabold text-xs shrink-0">
-                    MN
+              {/* Needs Attention Items */}
+              <div className="space-y-2">
+                {/* Item 1: Meera Nair */}
+                <div
+                  onClick={() => setActiveTab("applications")}
+                  className="rounded-2xl bg-white dark:bg-slate-900 border border-orange-100 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-pink-100 dark:bg-pink-950/60 text-pink-600 dark:text-pink-400 font-extrabold text-xs shrink-0">
+                      MN
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-black text-[12px] sm:text-[12.5px] text-slate-900 dark:text-white leading-tight truncate">
+                        {lang === "ml" ? "മീര നായർ" : "Meera Nair"}
+                      </h4>
+                      <p className="font-medium text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
+                        {lang === "ml" ? "പി.എം വിശ്വകർമ്മ" : "PM Vishwakarma"}
+                      </p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
-                      Meera Nair
-                    </h4>
-                    <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 truncate">
-                      PM Vishwakarma
-                    </p>
+
+                  <div className="flex items-center gap-2 shrink-0 ml-2">
+                    <div className="flex items-center gap-1.5 rounded-full bg-[#fff4ed] dark:bg-orange-950/50 border border-[#ffebd9] dark:border-orange-900/50 px-2.5 py-1 text-[10px] font-bold text-[#f95700] dark:text-orange-400">
+                      <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[#f95700] text-white text-[8.5px] font-black leading-none">!</span>
+                      <span>{lang === "ml" ? "1 രേഖ വിട്ടുപോയി" : "1 document missing"}</span>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform" />
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-orange-50 dark:bg-orange-950/40 border border-orange-200/80 dark:border-orange-900/60 text-[#ea580c] dark:text-orange-300 text-[10.5px] font-bold">
-                    <AlertCircle className="h-3 w-3 text-orange-500" />
-                    <span>1 document missing</span>
-                  </span>
-                  <ChevronRight className="h-4 w-4 text-slate-400" />
-                </div>
-              </div>
-
-              {/* Item Card 2: Soman K */}
-              <div
-                onClick={() => setMobileSubPage("app_detail")}
-                className="flex items-center justify-between rounded-2xl border border-orange-100/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-2.5 shadow-2xs hover:border-orange-300 transition-all cursor-pointer"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-600 font-extrabold text-xs shrink-0">
-                    SK
+                {/* Item 2: Ravi Kumar */}
+                <div
+                  onClick={() => setActiveTab("applications")}
+                  className="rounded-2xl bg-white dark:bg-slate-900 border border-orange-100 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-extrabold text-xs shrink-0">
+                      RK
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-black text-[12px] sm:text-[12.5px] text-slate-900 dark:text-white leading-tight truncate">
+                        {lang === "ml" ? "രവി കുമാർ" : "Ravi Kumar"}
+                      </h4>
+                      <p className="font-medium text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
+                        {lang === "ml" ? "പി.എം സ്വനിധി" : "PM SVANidhi"}
+                      </p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
-                      Soman K
-                    </h4>
-                    <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 truncate">
-                      LIFE Mission Housing
-                    </p>
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/60 text-amber-700 dark:text-amber-300 text-[10.5px] font-bold">
-                    <Clock3 className="h-3 w-3 text-amber-500" />
-                    <span>Verification pending</span>
-                  </span>
-                  <ChevronRight className="h-4 w-4 text-slate-400" />
+                  <div className="flex items-center gap-2 shrink-0 ml-2">
+                    <div className="flex items-center gap-1.5 rounded-full bg-[#fff4ed] dark:bg-orange-950/50 border border-[#ffebd9] dark:border-orange-900/50 px-2.5 py-1 text-[10px] font-bold text-[#f95700] dark:text-orange-400">
+                      <Calendar className="h-3.5 w-3.5 text-[#f95700]" />
+                      <span>{lang === "ml" ? "ഇന്ന് തുടർനടപടി" : "Follow-up due today"}</span>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform" />
+                  </div>
                 </div>
               </div>
             </div>
