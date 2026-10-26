@@ -12,6 +12,7 @@ import submitted3dIcon from "@/assets/kpi-3d/submitted.png";
 import readyToSubmit3dIcon from "@/assets/kpi-3d/ready-to-submit.png";
 import assisted3dIcon from "@/assets/kpi-3d/assisted.png";
 import pending3dIcon from "@/assets/kpi-3d/pending.png";
+import followupsDue3dIcon from "@/assets/kpi-3d/followups-due.png";
 import rejected3dIcon from "@/assets/kpi-3d/rejected.png";
 import schemes3dIcon from "@/assets/kpi-3d/schemes.png";
 import coveredBooth3dIcon from "@/assets/kpi-3d/covered-booth.png";
@@ -490,7 +491,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                   <span className="text-[10px] sm:text-[10.5px] font-bold text-muted-foreground truncate leading-tight">
                     {lang === "ml" ? "തുടർനടപടികൾ വേണ്ടവ" : "Follow-ups due"}
                   </span>
-                  <img src={pending3dIcon} alt="Follow-ups due" className="h-7 w-7 object-contain shrink-0" />
+                  <img src={followupsDue3dIcon} alt="Follow-ups due" className="h-7 w-7 object-contain shrink-0" />
                 </div>
                 <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">03</p>
               </div>
@@ -1993,7 +1994,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           <span className="text-[11.5px] font-bold text-muted-foreground truncate">
                             {lang === "ml" ? "പെൻഡിംഗ്" : "Pending"}
                           </span>
-                          <img src={pending3dIcon} alt="Pending" className="h-7 w-7 object-contain shrink-0" />
+                          <img src={followupsDue3dIcon} alt="Pending" className="h-7 w-7 object-contain shrink-0" />
                         </div>
                         <p className="font-display text-sm sm:text-base font-bold text-amber-600 dark:text-amber-400 leading-none mt-1">{currentMetrics.pending.toLocaleString()}</p>
                       </div>
