@@ -33,7 +33,7 @@ import {
 import Autoplay from "embla-carousel-autoplay";
 import { useEffect, useRef, useState } from "react";
 import { FEATURES } from "@/config/features";
-import heroVikasita from "@/assets/hero-vikasita-keralam-v3.png";
+import heroVikasita from "@/assets/hero-vikasita-keralam.png";
 import heroSchemes from "@/assets/hero-schemes-helpdesk-v2.png";
 import heroVolunteer from "@/assets/hero-volunteer-service-v2.png";
 
