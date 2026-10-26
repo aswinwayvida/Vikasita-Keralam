@@ -1944,16 +1944,16 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                         <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">{(applicationsCount - 150).toLocaleString()}</p>
                       </div>
 
-                      {/* 3. Approved */}
+                      {/* 3. Beneficiaries */}
                       <div
                         onClick={() => setMobileSubPage("beneficiaries")}
                         className="min-h-[44px] rounded-lg border border-border bg-card p-1.5 px-2 flex flex-col justify-between shadow-2xs hover:border-emerald-500/70 transition-all cursor-pointer"
                       >
                         <div className="flex items-center justify-between gap-1">
                           <span className="text-[11.5px] font-bold text-muted-foreground truncate">
-                            {lang === "ml" ? "അംഗീകരിച്ചവ" : "Approved"}
+                            {lang === "ml" ? "ഗുണഭോക്താക്കൾ" : "Beneficiaries"}
                           </span>
-                          <img src={assisted3dIcon} alt="Approved" className="h-7 w-7 object-contain shrink-0" />
+                          <img src={assisted3dIcon} alt="Beneficiaries" className="h-7 w-7 object-contain shrink-0" />
                         </div>
                         <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-1">{currentMetrics.beneficiaries.toLocaleString()}</p>
                       </div>
