@@ -26,6 +26,7 @@ import { AdminMobileTab } from "./AdminMobileAppBottomNav";
 
 interface AdminMobileAppHeaderProps {
   onNavigateTab?: (tab: AdminMobileTab) => void;
+  onOpenUsers?: () => void;
   onOpenNotifications?: () => void;
   userRole?: "state_admin" | "party_worker";
   onSwitchRole?: (role: "state_admin" | "party_worker") => void;
@@ -36,6 +37,7 @@ interface AdminMobileAppHeaderProps {
 
 export function AdminMobileAppHeader({
   onNavigateTab,
+  onOpenUsers,
   onOpenNotifications,
   userRole = "state_admin",
   onSwitchRole,
@@ -314,6 +316,20 @@ export function AdminMobileAppHeader({
                 >
                   <span className="flex items-center gap-3">
                     <Users className="h-4 w-4 text-orange-500" /> {lang === "ml" ? "ഗുണഭോക്താക്കൾ" : "Beneficiaries"}
+                  </span>
+                  <ChevronRight className="h-4 w-4 text-slate-400" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    if (onOpenUsers) onOpenUsers();
+                  }}
+                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-orange-50 dark:hover:bg-slate-800 font-bold transition-all cursor-pointer"
+                >
+                  <span className="flex items-center gap-3">
+                    <Users2 className="h-4 w-4 text-orange-500" /> {lang === "ml" ? "ഉപയോക്താക്കൾ" : "Users"}
                   </span>
                   <ChevronRight className="h-4 w-4 text-slate-400" />
                 </button>

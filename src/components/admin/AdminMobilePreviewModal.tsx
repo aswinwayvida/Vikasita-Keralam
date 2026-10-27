@@ -3895,7 +3895,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     setCreateFlowStep("form");
   };
 
-    const [mobileSubPage, setMobileSubPage] = useState<"none" | "leaderboard" | "needs_attention" | "recent_activity" | "beneficiaries" | "notifications" | "applications" | "events_announcements" | "app_detail" | "category_schemes">("none");
+    const [mobileSubPage, setMobileSubPage] = useState<"none" | "leaderboard" | "needs_attention" | "recent_activity" | "beneficiaries" | "users" | "user_detail" | "notifications" | "applications" | "events_announcements" | "app_detail" | "category_schemes">("none");
   const [selectedSchemeCategoryDetail, setSelectedSchemeCategoryDetail] = useState<{
     id: string;
     titleEn: string;
@@ -3938,6 +3938,9 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
 
     const [applicationSearchQuery, setApplicationSearchQuery] = useState<string>("");
   const [beneficiarySearchQuery, setBeneficiarySearchQuery] = useState<string>("");
+  const [userSearchQuery, setUserSearchQuery] = useState<string>("");
+  const [selectedApplicationUserId, setSelectedApplicationUserId] = useState<string | null>(null);
+  const [appDetailReturnSubPage, setAppDetailReturnSubPage] = useState<"applications" | "user_detail">("applications");
   const [beneficiaryCategoryFilter, setBeneficiaryCategoryFilter] = useState<string>("ALL");
   const [currentSelectedDate, setCurrentSelectedDate] = useState<Date>(new Date(2026, 9, 12)); // 12/10/2026
   const [selectedPeriod, setSelectedPeriod] = useState<string>("this_month");
@@ -4999,8 +5002,12 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
           <div className="flex min-w-0 items-center gap-2">
             <button
               type="button"
-              onClick={() => setMobileSubPage("applications")}
-              aria-label={lang === "ml" ? "അപേക്ഷകളിലേക്ക് മടങ്ങുക" : "Back to Applications"}
+              onClick={() => setMobileSubPage(appDetailReturnSubPage)}
+              aria-label={
+                appDetailReturnSubPage === "user_detail"
+                  ? (lang === "ml" ? "ഉപയോക്തൃ വിവരങ്ങളിലേക്ക് മടങ്ങുക" : "Back to User Details")
+                  : (lang === "ml" ? "അപേക്ഷകളിലേക്ക് മടങ്ങുക" : "Back to Applications")
+              }
               className="-ml-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
             >
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#fff7ec] text-[#1b255a] dark:bg-slate-800 dark:text-white">
@@ -5008,7 +5015,9 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
               </span>
             </button>
             <h2 className="truncate text-[16px] font-bold leading-tight text-[#1b255a] dark:text-white">
-              {lang === "ml" ? "അപേക്ഷകളിലേക്ക് മടങ്ങുക" : "Back to Applications"}
+              {appDetailReturnSubPage === "user_detail"
+                ? (lang === "ml" ? "ഉപയോക്തൃ വിവരങ്ങളിലേക്ക് മടങ്ങുക" : "Back to User Details")
+                : (lang === "ml" ? "അപേക്ഷകളിലേക്ക് മടങ്ങുക" : "Back to Applications")}
             </h2>
           </div>
 
@@ -5558,10 +5567,68 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
       ? `${lang === "ml" ? "ട്രാക്കിംഗ് ഐഡി" : "Tracking ID"}: ${application.trackingId}`
       : `${lang === "ml" ? "സേവ്" : "Saved"}: ${application.appliedDate}`;
 
+  const mobileApplicationUsers = (() => {
+    const usersByName = new globalThis.Map<
+      string,
+      {
+        id: string;
+        nameEn: string;
+        nameMl: string;
+        locationEn: string;
+        locationMl: string;
+        phone: string;
+        applicationCount: number;
+      }
+    >();
+
+    [...savedApplicationRecords, ...mobileApplicationAllPreviewRecords].forEach((application) => {
+      const key = application.applicantNameEn.trim().toLowerCase();
+      const existing = usersByName.get(key);
+      if (existing) {
+        existing.applicationCount += 1;
+        if (!existing.phone && application.phone) existing.phone = application.phone;
+        return;
+      }
+      usersByName.set(key, {
+        id: key,
+        nameEn: application.applicantNameEn,
+        nameMl: application.applicantNameMl,
+        locationEn: application.locationEn,
+        locationMl: application.locationMl,
+        phone: application.phone,
+        applicationCount: 1,
+      });
+    });
+
+    return Array.from(usersByName.values()).sort(
+      (a, b) => b.applicationCount - a.applicationCount || a.nameEn.localeCompare(b.nameEn),
+    );
+  })();
+
+  const userQuery = userSearchQuery.trim().toLowerCase();
+  const filteredMobileApplicationUsers = mobileApplicationUsers.filter((user) =>
+    !userQuery
+      ? true
+      : [user.nameEn, user.nameMl, user.locationEn, user.locationMl, user.phone].some((value) =>
+          value.toLowerCase().includes(userQuery),
+        ),
+  );
+
+  const selectedApplicationUser = selectedApplicationUserId
+    ? mobileApplicationUsers.find((user) => user.id === selectedApplicationUserId) ?? null
+    : null;
+
+  const selectedApplicationUserApplications = selectedApplicationUser
+    ? [...savedApplicationRecords, ...mobileApplicationAllPreviewRecords].filter(
+        (application) => application.applicantNameEn.trim().toLowerCase() === selectedApplicationUser.id,
+      )
+    : [];
+
   const renderMobileApplicationListCard = (application: MobileApplicationRecord) => (
     <div
       key={application.ref}
       onClick={() => {
+        setAppDetailReturnSubPage(mobileSubPage === "user_detail" ? "user_detail" : "applications");
         setSelectedApplicationRecord(application);
         setMobileSubPage("app_detail");
       }}
@@ -6077,6 +6144,10 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
               onLoginClick={openMobileAuth}
               userRole={userRole}
               onSwitchRole={setUserRole}
+              onOpenUsers={() => {
+                setActiveTab("overview");
+                setMobileSubPage("users");
+              }}
               onNavigateTab={(tab) => {
                 setEditingApplicationRef("");
                 setActiveTab(tab);
@@ -8777,6 +8848,166 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                               </div>
                             </div>
                           ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Dedicated Subpage: Users List (users from applications) */}
+                    {mobileSubPage === "users" && (
+                      <div className="space-y-3 pt-0.5 animate-in fade-in duration-200">
+                        <div className="flex items-center justify-between border-b border-border/80 pb-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setMobileSubPage("none")}
+                            className="inline-flex items-center gap-1 text-xs font-extrabold text-[#ff5500] hover:text-orange-600 cursor-pointer shrink-0"
+                          >
+                            <ChevronRight className="h-4 w-4 rotate-180" />
+                            <span>{lang === "ml" ? "ഉപയോക്താക്കളുടെ പട്ടിക" : "Users List"}</span>
+                          </button>
+
+                          <span className="inline-flex items-center gap-1 rounded-full border border-orange-200/80 bg-orange-500/10 px-2 py-0.5 text-[10px] font-extrabold text-[#ff5500] dark:border-orange-800/60 dark:bg-orange-950/40 dark:text-orange-300 shrink-0">
+                            <Users className="h-3 w-3" />
+                            {filteredMobileApplicationUsers.length} {lang === "ml" ? "ഉപയോക്താക്കൾ" : "Users"}
+                          </span>
+                        </div>
+
+                        <div className="relative">
+                          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                          <input
+                            type="text"
+                            value={userSearchQuery}
+                            onChange={(e) => setUserSearchQuery(e.target.value)}
+                            placeholder={lang === "ml" ? "പേര്, സ്ഥലം, ഫോൺ സെർച്ച് ചെയ്യുക..." : "Search name, location, phone..."}
+                            className="w-full rounded-xl border border-border bg-card pl-8 pr-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs"
+                          />
+                        </div>
+
+                        <p className="px-0.5 text-[10px] font-semibold text-muted-foreground">
+                          {lang === "ml" ? "എല്ലാ അപേക്ഷകളിൽ നിന്നുമുള്ള ഉപയോക്താക്കൾ" : "Users from all applications"}
+                        </p>
+
+                        <div className="space-y-2">
+                          {filteredMobileApplicationUsers.map((user) => (
+                            <button
+                              key={user.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedApplicationUserId(user.id);
+                                setMobileSubPage("user_detail");
+                              }}
+                              className="flex w-full items-center justify-between gap-2 rounded-2xl border border-border bg-card p-3 text-left shadow-2xs transition-all hover:border-orange-300 dark:hover:border-orange-800 cursor-pointer"
+                            >
+                              <span className="flex min-w-0 items-center gap-2.5">
+                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-[11px] font-black text-slate-900 dark:bg-slate-700 dark:text-white shadow-2xs">
+                                  {getApplicantInitials(user.nameEn)}
+                                </span>
+                                <span className="min-w-0">
+                                  <span className="block truncate text-[12px] font-bold text-foreground">
+                                    {lang === "ml" ? user.nameMl : user.nameEn}
+                                  </span>
+                                  <span className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground">
+                                    <MapPin className="h-3 w-3 shrink-0 text-orange-500" />
+                                    <span className="truncate">{lang === "ml" ? user.locationMl : user.locationEn}</span>
+                                  </span>
+                                </span>
+                              </span>
+
+                              <span className="flex shrink-0 items-center">
+                                <ChevronRight className="h-4 w-4 text-slate-400" />
+                              </span>
+                            </button>
+                          ))}
+
+                          {filteredMobileApplicationUsers.length === 0 && (
+                            <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-8 text-center dark:border-slate-800 dark:bg-slate-900">
+                              <Users className="mx-auto mb-2 h-6 w-6 text-slate-300 dark:text-slate-600" />
+                              <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400">
+                                {lang === "ml" ? "ഉപയോക്താക്കളെ കണ്ടെത്തിയില്ല." : "No users found."}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Dedicated Subpage: User Details (applications of one user) */}
+                    {mobileSubPage === "user_detail" && selectedApplicationUser && (
+                      <div className="space-y-3 pt-0.5 animate-in fade-in duration-200">
+                        <div className="flex items-center justify-between border-b border-border/80 pb-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setMobileSubPage("users")}
+                            className="inline-flex items-center gap-1 text-xs font-extrabold text-[#ff5500] hover:text-orange-600 cursor-pointer shrink-0"
+                          >
+                            <ChevronRight className="h-4 w-4 rotate-180" />
+                            <span>{lang === "ml" ? "ഉപയോക്തൃ വിവരങ്ങൾ" : "User Details"}</span>
+                          </button>
+                        </div>
+
+                        <div className="rounded-2xl border border-border bg-card p-3.5 shadow-2xs">
+                          <div className="flex items-center gap-3">
+                            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-slate-200 text-[13px] font-black text-slate-900 dark:bg-slate-700 dark:text-white shadow-2xs">
+                              {getApplicantInitials(selectedApplicationUser.nameEn)}
+                            </span>
+                            <div className="min-w-0">
+                              <p className="truncate text-[14px] font-extrabold text-foreground">
+                                {lang === "ml" ? selectedApplicationUser.nameMl : selectedApplicationUser.nameEn}
+                              </p>
+                              <p className="mt-0.5 flex items-center gap-1 text-[10.5px] text-muted-foreground">
+                                <MapPin className="h-3 w-3 shrink-0 text-orange-500" />
+                                <span className="truncate">
+                                  {lang === "ml" ? selectedApplicationUser.locationMl : selectedApplicationUser.locationEn}
+                                </span>
+                              </p>
+                              {selectedApplicationUser.phone && (
+                                <p className="mt-0.5 flex items-center gap-1 text-[10.5px] text-muted-foreground">
+                                  <Phone className="h-3 w-3 shrink-0 text-orange-500" />
+                                  <span className="truncate">{selectedApplicationUser.phone}</span>
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleAddAnotherApplicant();
+                            setCreateFullName(selectedApplicationUser.nameEn);
+                            const phoneDigits = selectedApplicationUser.phone.replace(/\D/g, "");
+                            setCreatePhone(
+                              phoneDigits.length === 12 && phoneDigits.startsWith("91")
+                                ? phoneDigits.slice(2)
+                                : phoneDigits,
+                            );
+                            setCreateFlowStep("eligible_schemes");
+                          }}
+                          className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#ff5500] px-3 py-2.5 text-[11.5px] font-extrabold text-white shadow-2xs transition-colors hover:bg-orange-600 cursor-pointer"
+                        >
+                          <Plus className="h-3.5 w-3.5 stroke-[2.6]" />
+                          {lang === "ml" ? "പുതിയ അപേക്ഷ" : "Apply New"}
+                        </button>
+
+                        <div className="flex items-center justify-between gap-2 px-0.5">
+                          <h4 className="text-[12px] font-extrabold text-foreground">
+                            {lang === "ml" ? "എല്ലാ അപേക്ഷകളും" : "All Applications"}
+                          </h4>
+                          <span className="inline-flex h-[18px] min-w-[22px] items-center justify-center rounded-full border border-orange-200/80 bg-orange-500/10 px-1.5 text-[10px] font-extrabold text-[#ff5500] dark:border-orange-800/60 dark:bg-orange-950/40 dark:text-orange-300">
+                            {selectedApplicationUserApplications.length}
+                          </span>
+                        </div>
+
+                        <div className="space-y-2">
+                          {selectedApplicationUserApplications.map((application) =>
+                            renderMobileApplicationListCard(application),
+                          )}
+                          {selectedApplicationUserApplications.length === 0 && (
+                            <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-8 text-center dark:border-slate-800 dark:bg-slate-900">
+                              <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400">
+                                {lang === "ml" ? "ഈ ഉപയോക്താവിന് അപേക്ഷകളില്ല." : "No applications found for this user."}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
