@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link } from "@tanstack/react-router";
-import { X, Smartphone, Wifi, Battery, Signal, ChevronRight, ChevronLeft, ArrowLeft, Users, HeartHandshake, Database, Layers, Sparkles, MessageSquare, Clock3, UserCheck, LayoutDashboard, Sliders, Calendar, FileText, XCircle, CheckCircle2, Hourglass, MapPin, Trophy, AlertTriangle, Activity, Globe, Map, Network, Store, ShieldCheck, ChevronDown, Filter, Search, SearchCheck, Megaphone, CalendarDays, BellRing, Phone, RotateCcw, GraduationCap, Sprout, LayoutGrid, MoreVertical, AlertCircle, Star, Zap, Headphones, Edit, Upload, FileCheck, Loader2, SearchX, RefreshCw, Check, Lock, User, Download, Eye, Send, Info, Plus } from "lucide-react";
+import { X, Smartphone, Wifi, Battery, Signal, ChevronRight, ChevronLeft, ArrowLeft, Users, HeartHandshake, Database, Layers, Sparkles, MessageSquare, Clock3, UserCheck, LayoutDashboard, Sliders, Calendar, FileText, XCircle, CheckCircle2, Hourglass, MapPin, Trophy, AlertTriangle, Activity, Globe, Map, Network, Store, ShieldCheck, ChevronDown, Filter, Search, SearchCheck, Megaphone, CalendarDays, BellRing, Phone, RotateCcw, GraduationCap, Sprout, LayoutGrid, MoreVertical, AlertCircle, Star, Zap, Headphones, Edit, Upload, FileCheck, Loader2, SearchX, RefreshCw, Check, Lock, User, Eye, Send, Info, Plus, Inbox, FileSearch, HandCoins, UserRound, Paperclip, ClipboardList, Headset, Copy, Pencil, Download, FileImage, ExternalLink, CloudUpload } from "lucide-react";
 import { useLang } from "@/i18n/LanguageProvider";
 import officialLotus from "@/assets/bjp-official-lotus.png";
 import users3dIcon from "@/assets/kpi-3d/users.png";
@@ -47,6 +47,12 @@ type MobileSchemeFieldKey =
   | "bplStatus"
   | "residenceArea";
 
+type MobileSchemeDocument = {
+  id: string;
+  labelEn: string;
+  labelMl: string;
+};
+
 type MobileEligibleScheme = {
   id: string;
   titleEn: string;
@@ -61,6 +67,7 @@ type MobileEligibleScheme = {
   categoryMl: string;
   requiredDocEn: string;
   requiredDocMl: string;
+  requiredDocuments?: MobileSchemeDocument[];
   requiredFieldKeys: MobileSchemeFieldKey[];
 };
 
@@ -73,8 +80,124 @@ type MobileMissingItem = {
 
 type MobileCollectionStatus = "not_started" | "incomplete" | "complete" | "ready";
 
+type PmKisanChoiceKey =
+  | "ownsCultivableLand"
+  | "landOwner"
+  | "landRecorded"
+  | "landAcquisitionMode"
+  | "familyReceivesBenefit"
+  | "institutionalLandholder";
+
+type PmKisanCollectionDetails = {
+  ownsCultivableLand: string;
+  landOwner: string;
+  landRecorded: string;
+  landAcquiredDate: string;
+  landAcquisitionNotSure: boolean;
+  landAcquisitionMode: string;
+  familyReceivesBenefit: string;
+  institutionalLandholder: string;
+};
+
+type PmKisanQuestion =
+  | {
+      type: "choice";
+      key: PmKisanChoiceKey;
+      labelEn: string;
+      labelMl: string;
+      options: Array<{ value: string; labelEn: string; labelMl: string }>;
+    }
+  | {
+      type: "date";
+      key: "landAcquiredDate";
+      labelEn: string;
+      labelMl: string;
+    };
+
+const createEmptyPmKisanDetails = (): PmKisanCollectionDetails => ({
+  ownsCultivableLand: "",
+  landOwner: "",
+  landRecorded: "",
+  landAcquiredDate: "",
+  landAcquisitionNotSure: false,
+  landAcquisitionMode: "",
+  familyReceivesBenefit: "",
+  institutionalLandholder: "",
+});
+
+const pmKisanYesNoOptions = [
+  { value: "yes", labelEn: "Yes", labelMl: "അതെ" },
+  { value: "no", labelEn: "No", labelMl: "അല്ല" },
+  { value: "not_sure", labelEn: "Not sure", labelMl: "ഉറപ്പില്ല" },
+];
+
+const pmKisanQuestions: PmKisanQuestion[] = [
+  {
+    type: "choice",
+    key: "ownsCultivableLand",
+    labelEn: "Does the farmer’s family own cultivable agricultural land?",
+    labelMl: "കർഷക കുടുംബത്തിന് കൃഷിയോഗ്യമായ ഭൂമി ഉണ്ടോ?",
+    options: pmKisanYesNoOptions,
+  },
+  {
+    type: "choice",
+    key: "landOwner",
+    labelEn: "Who owns the land?",
+    labelMl: "ഭൂമി ആരുടെ ഉടമസ്ഥതയിലാണ്?",
+    options: [
+      { value: "applicant", labelEn: "Applicant", labelMl: "അപേക്ഷകൻ" },
+      { value: "spouse", labelEn: "Spouse", labelMl: "പങ്കാളി" },
+      { value: "minor_child", labelEn: "Minor child", labelMl: "പ്രായപൂർത്തിയാകാത്ത കുട്ടി" },
+      { value: "joint", labelEn: "Joint ownership", labelMl: "സംയുക്ത ഉടമസ്ഥത" },
+      { value: "other", labelEn: "Other", labelMl: "മറ്റുള്ളവർ" },
+      { value: "not_sure", labelEn: "Not sure", labelMl: "ഉറപ്പില്ല" },
+    ],
+  },
+  {
+    type: "choice",
+    key: "landRecorded",
+    labelEn: "Is the land recorded in the owner’s name?",
+    labelMl: "ഭൂമി ഉടമയുടെ പേരിൽ രേഖപ്പെടുത്തിയിട്ടുണ്ടോ?",
+    options: pmKisanYesNoOptions,
+  },
+  {
+    type: "date",
+    key: "landAcquiredDate",
+    labelEn: "When was the land acquired?",
+    labelMl: "ഭൂമി എപ്പോൾ സ്വന്തമാക്കി?",
+  },
+  {
+    type: "choice",
+    key: "landAcquisitionMode",
+    labelEn: "How was the land acquired?",
+    labelMl: "ഭൂമി എങ്ങനെയാണ് സ്വന്തമാക്കിയത്?",
+    options: [
+      { value: "inherited", labelEn: "Inherited", labelMl: "പാരമ്പര്യമായി ലഭിച്ചത്" },
+      { value: "purchased", labelEn: "Purchased", labelMl: "വാങ്ങിയത്" },
+      { value: "gifted", labelEn: "Gifted", labelMl: "സമ്മാനമായി ലഭിച്ചത്" },
+      { value: "other", labelEn: "Other", labelMl: "മറ്റുള്ളവ" },
+      { value: "not_sure", labelEn: "Not sure", labelMl: "ഉറപ്പില്ല" },
+    ],
+  },
+  {
+    type: "choice",
+    key: "familyReceivesBenefit",
+    labelEn: "Does anyone in the farmer’s family already receive PM-KISAN benefits?",
+    labelMl: "കർഷക കുടുംബത്തിലെ ആർക്കെങ്കിലും ഇതിനകം പി.എം-കിസാൻ ആനുകൂല്യം ലഭിക്കുന്നുണ്ടോ?",
+    options: pmKisanYesNoOptions,
+  },
+  {
+    type: "choice",
+    key: "institutionalLandholder",
+    labelEn: "Is the land held by an institution?",
+    labelMl: "ഭൂമി ഒരു സ്ഥാപനത്തിന്റെ കൈവശമാണോ?",
+    options: pmKisanYesNoOptions,
+  },
+];
+
 type MobileCollectionRecord = {
   reference: string;
+  createdAt: string;
   applicantName: string;
   scheme: MobileEligibleScheme;
   status: MobileCollectionStatus;
@@ -82,6 +205,7 @@ type MobileCollectionRecord = {
   followUpDate: string;
   followUpNotes: string;
   uploadedDocName: string;
+  uploadedDocuments?: Record<string, string>;
   bankAccountNumber: string;
   bankIfscCode: string;
   minorityStatus: string;
@@ -92,6 +216,7 @@ type MobileCollectionRecord = {
   financialHardshipStatus: string;
   annualFamilyIncome: string;
   residenceArea: string;
+  pmKisanDetails?: PmKisanCollectionDetails;
   declarationAccepted: boolean;
   updatedAt: string;
 };
@@ -116,6 +241,1029 @@ type MobileCollectionRecordReturnStep =
   | "selected_schemes"
   | "applicant_applications";
 
+type MobileApplicationListStatus =
+  | "application_received"
+  | "document_verification_completed"
+  | "applied"
+  | "review"
+  | "beneficiary"
+  | "rejected"
+  | "pending"
+  | "assisted";
+
+type MobileApplicationStatusFilter = "all" | MobileApplicationListStatus;
+
+type MobileApplicationListVisibleStatus = Exclude<MobileApplicationListStatus, "pending" | "assisted">;
+
+type MobileApplicationRecord = {
+  ref: string;
+  trackingId?: string;
+  trackingUrl?: string;
+  schemeNameEn: string;
+  schemeNameMl: string;
+  categoryEn: string;
+  categoryMl: string;
+  status: "pending" | "in_review" | "approved" | "rejected" | "disbursed";
+  applicantNameEn: string;
+  applicantNameMl: string;
+  aadhaar: string;
+  phone: string;
+  locationEn: string;
+  locationMl: string;
+  annualIncome: string;
+  appliedDate: string;
+  currentStep: number;
+  pendingDocs: string[];
+  nextActionEn: string;
+  nextActionMl: string;
+  auditLog: Array<{
+    titleEn: string;
+    titleMl: string;
+    date: string;
+    time?: string;
+    actorEn?: string;
+    actorMl?: string;
+    notes?: string;
+    status: "completed" | "current" | "upcoming";
+  }>;
+  workflowStatus?: MobileApplicationListStatus;
+  decisionReason?: string;
+  assistedByEn?: string;
+  assistedByMl?: string;
+};
+
+type MobileApplicationRecordSeed = Omit<
+  MobileApplicationRecord,
+  "ref" | "status" | "currentStep" | "pendingDocs" | "nextActionEn" | "nextActionMl" | "auditLog" | "workflowStatus" | "decisionReason"
+>;
+
+const mobileApplicationRecordSeeds: MobileApplicationRecordSeed[] = [
+  {
+    schemeNameEn: "PM Kisan Samman Nidhi",
+    schemeNameMl: "പിഎം-കിസാൻ സമ്മാൻ നിധി",
+    categoryEn: "Agriculture",
+    categoryMl: "കൃഷി",
+    applicantNameEn: "K. Krishnan",
+    applicantNameMl: "കെ. കൃഷ്ണൻ",
+    aadhaar: "XXXX-XXXX-9001",
+    phone: "+91 98463 87654",
+    locationEn: "Palakkad North, Palakkad",
+    locationMl: "പാലക്കാട് നോർത്ത്, പാലക്കാട്",
+    annualIncome: "₹ 90,000",
+    appliedDate: "18 Oct 2026",
+    assistedByEn: "Anil Thomas",
+    assistedByMl: "അനിൽ തോമസ്",
+  },
+  {
+    schemeNameEn: "Pradhan Mantri Fasal Bima Yojana (PMFBY)",
+    schemeNameMl: "പ്രധാനമന്ത്രി ഫസൽ ബീമാ യോജന (PMFBY)",
+    categoryEn: "Agriculture",
+    categoryMl: "കൃഷി",
+    applicantNameEn: "Muhammed Shafee",
+    applicantNameMl: "മുഹമ്മദ് ഷാഫി",
+    aadhaar: "XXXX-XXXX-9002",
+    phone: "+91 97441 12389",
+    locationEn: "Malappuram Central, Malappuram",
+    locationMl: "മലപ്പുറം സെൻട്രൽ, മലപ്പുറം",
+    annualIncome: "₹ 1,05,000",
+    appliedDate: "17 Oct 2026",
+    assistedByEn: "Suresh Kumar",
+    assistedByMl: "സുരേഷ് കുമാർ",
+  },
+  {
+    schemeNameEn: "Kisan Credit Card (KCC) Scheme",
+    schemeNameMl: "കിസാൻ ക്രെഡിറ്റ് കാർഡ് (KCC) പദ്ധതി",
+    categoryEn: "Agriculture Credit",
+    categoryMl: "കാർഷിക വായ്പ",
+    applicantNameEn: "Ravi Kumar",
+    applicantNameMl: "രവി കുമാർ",
+    aadhaar: "XXXX-XXXX-9003",
+    phone: "+91 98950 44556",
+    locationEn: "Ollur, Thrissur",
+    locationMl: "ഒല്ലൂർ, തൃശൂർ",
+    annualIncome: "₹ 1,30,000",
+    appliedDate: "16 Oct 2026",
+    assistedByEn: "Priya Menon",
+    assistedByMl: "പ്രിയ മേനോൻ",
+  },
+  {
+    schemeNameEn: "Pradhan Mantri Jan Dhan Yojana (PMJDY)",
+    schemeNameMl: "പ്രധാനമന്ത്രി ജൻ ധൻ യോജന (PMJDY)",
+    categoryEn: "Banking",
+    categoryMl: "ബാങ്കിംഗ്",
+    applicantNameEn: "Sunitha Kumari",
+    applicantNameMl: "സുനിത കുമാരി",
+    aadhaar: "XXXX-XXXX-9004",
+    phone: "+91 94462 54321",
+    locationEn: "Kottayam East, Kottayam",
+    locationMl: "കോട്ടയം ഈസ്റ്റ്, കോട്ടയം",
+    annualIncome: "₹ 72,000",
+    appliedDate: "15 Oct 2026",
+    assistedByEn: "Maya Devi",
+    assistedByMl: "മായാ ദേവി",
+  },
+  {
+    schemeNameEn: "Atal Pension Yojana (APY)",
+    schemeNameMl: "അടൽ പെൻഷൻ യോജന (APY)",
+    categoryEn: "Banking & Pension",
+    categoryMl: "ബാങ്കിംഗ് & പെൻഷൻ",
+    applicantNameEn: "Devaki Amma",
+    applicantNameMl: "ദേവകി അമ്മ",
+    aadhaar: "XXXX-XXXX-9005",
+    phone: "+91 94460 44556",
+    locationEn: "Kannur Town, Kannur",
+    locationMl: "കണ്ണൂർ ടൗൺ, കണ്ണൂർ",
+    annualIncome: "₹ 58,000",
+    appliedDate: "14 Oct 2026",
+    assistedByEn: "Vineeth S.",
+    assistedByMl: "വിനീത് എസ്.",
+  },
+  {
+    schemeNameEn: "Pradhan Mantri Jeevan Jyoti Bima Yojana (PMJJBY)",
+    schemeNameMl: "പ്രധാനമന്ത്രി ജീവൻ ജ്യോതി ബീമാ യോജന (PMJJBY)",
+    categoryEn: "Insurance",
+    categoryMl: "ഇൻഷുറൻസ്",
+    applicantNameEn: "P. Thomas",
+    applicantNameMl: "പി. തോമസ്",
+    aadhaar: "XXXX-XXXX-9006",
+    phone: "+91 97455 11224",
+    locationEn: "Koyilandy, Kozhikode",
+    locationMl: "കൊയിലാണ്ടി, കോഴിക്കോട്",
+    annualIncome: "₹ 1,15,000",
+    appliedDate: "13 Oct 2026",
+    assistedByEn: "Anil Thomas",
+    assistedByMl: "അനിൽ തോമസ്",
+  },
+  {
+    schemeNameEn: "PM SVANidhi",
+    schemeNameMl: "പി.എം സ്വനിധി",
+    categoryEn: "Business",
+    categoryMl: "ബിസിനസ്",
+    applicantNameEn: "Abdul Rahman",
+    applicantNameMl: "അബ്ദുൾ റഹ്മാൻ",
+    aadhaar: "XXXX-XXXX-9007",
+    phone: "+91 97451 98765",
+    locationEn: "Kollam Port, Kollam",
+    locationMl: "കൊല്ലം പോർട്ട്, കൊല്ലം",
+    annualIncome: "₹ 1,40,000",
+    appliedDate: "12 Oct 2026",
+    assistedByEn: "Suresh Kumar",
+    assistedByMl: "സുരേഷ് കുമാർ",
+  },
+  {
+    schemeNameEn: "Pradhan Mantri Mudra Yojana (PMMY)",
+    schemeNameMl: "പ്രധാനമന്ത്രി മുദ്രാ യോജന (PMMY)",
+    categoryEn: "Business Loan",
+    categoryMl: "ബിസിനസ് വായ്പ",
+    applicantNameEn: "Radhamani V",
+    applicantNameMl: "രാധാമണി വി",
+    aadhaar: "XXXX-XXXX-9008",
+    phone: "+91 94475 99001",
+    locationEn: "Balaramapuram, Thiruvananthapuram",
+    locationMl: "ബാലരാമപുരം, തിരുവനന്തപുരം",
+    annualIncome: "₹ 1,65,000",
+    appliedDate: "11 Oct 2026",
+    assistedByEn: "Priya Menon",
+    assistedByMl: "പ്രിയ മേനോൻ",
+  },
+  {
+    schemeNameEn: "PM Vishwakarma Yojana",
+    schemeNameMl: "പി.എം വിശ്വകർമ്മ യോജന",
+    categoryEn: "Business & Skills",
+    categoryMl: "ബിസിനസ് & നൈപുണ്യം",
+    applicantNameEn: "Mathew Varghese",
+    applicantNameMl: "മാത്യു വർഗീസ്",
+    aadhaar: "XXXX-XXXX-9009",
+    phone: "+91 94961 88990",
+    locationEn: "Adimali, Idukki",
+    locationMl: "അടിമാലി, ഇടുക്കി",
+    annualIncome: "₹ 1,25,000",
+    appliedDate: "10 Oct 2026",
+    assistedByEn: "Maya Devi",
+    assistedByMl: "മായാ ദേവി",
+  },
+  {
+    schemeNameEn: "PM YASASVI Scholarship",
+    schemeNameMl: "പിഎം യശസ്വി സ്കോളർഷിപ്പ്",
+    categoryEn: "Scholarship",
+    categoryMl: "സ്കോളർഷിപ്പ്",
+    applicantNameEn: "Ananya Ramesh",
+    applicantNameMl: "അനന്യ രമേശ്",
+    aadhaar: "XXXX-XXXX-9010",
+    phone: "+91 94950 33445",
+    locationEn: "Kazhakkoottam, Thiruvananthapuram",
+    locationMl: "കഴക്കൂട്ടം, തിരുവനന്തപുരം",
+    annualIncome: "₹ 1,20,000",
+    appliedDate: "09 Oct 2026",
+    assistedByEn: "Vineeth S.",
+    assistedByMl: "വിനീത് എസ്.",
+  },
+  {
+    schemeNameEn: "Post Matric Scholarship for SC Students",
+    schemeNameMl: "എസ്‌സി വിദ്യാർത്ഥികൾക്കുള്ള പോസ്റ്റ് മെട്രിക് സ്കോളർഷിപ്പ്",
+    categoryEn: "Education",
+    categoryMl: "വിദ്യാഭ്യാസം",
+    applicantNameEn: "Saritha V",
+    applicantNameMl: "സരിത വി",
+    aadhaar: "XXXX-XXXX-9011",
+    phone: "+91 98472 77889",
+    locationEn: "Kasaragod South, Kasaragod",
+    locationMl: "കാസർഗോഡ് സൗത്ത്, കാസർഗോഡ്",
+    annualIncome: "₹ 85,000",
+    appliedDate: "08 Oct 2026",
+    assistedByEn: "Anil Thomas",
+    assistedByMl: "അനിൽ തോമസ്",
+  },
+  {
+    schemeNameEn: "PM Vidyalaxmi Scheme",
+    schemeNameMl: "പി.എം വിദ്യാലക്ഷ്മി പദ്ധതി",
+    categoryEn: "Education Loan",
+    categoryMl: "വിദ്യാഭ്യാസ വായ്പ",
+    applicantNameEn: "Arjun Das",
+    applicantNameMl: "അർജുൻ ദാസ്",
+    aadhaar: "XXXX-XXXX-9012",
+    phone: "+91 98955 23451",
+    locationEn: "Tripunithura, Ernakulam",
+    locationMl: "തൃപ്പൂണിത്തുറ, എറണാകുളം",
+    annualIncome: "₹ 1,75,000",
+    appliedDate: "07 Oct 2026",
+    assistedByEn: "Suresh Kumar",
+    assistedByMl: "സുരേഷ് കുമാർ",
+  },
+  {
+    schemeNameEn: "Ayushman Bharat - PM-JAY",
+    schemeNameMl: "ആയുഷ്മാൻ ഭാരത് - പിഎം-ജയ്",
+    categoryEn: "Health Insurance",
+    categoryMl: "ആരോഗ്യ ഇൻഷുറൻസ്",
+    applicantNameEn: "Lakshmi Amma",
+    applicantNameMl: "ലക്ഷ്മി അമ്മ",
+    aadhaar: "XXXX-XXXX-9013",
+    phone: "+91 98470 11223",
+    locationEn: "Vattiyoorkavu, Thiruvananthapuram",
+    locationMl: "വട്ടിയൂർക്കാവ്, തിരുവനന്തപുരം",
+    annualIncome: "₹ 75,000",
+    appliedDate: "06 Oct 2026",
+    assistedByEn: "Priya Menon",
+    assistedByMl: "പ്രിയ മേനോൻ",
+  },
+  {
+    schemeNameEn: "Pradhan Mantri National Dialysis Programme",
+    schemeNameMl: "പ്രധാനമന്ത്രി ദേശീയ ഡയാലിസിസ് പദ്ധതി",
+    categoryEn: "Health",
+    categoryMl: "ആരോഗ്യം",
+    applicantNameEn: "Thankamani K",
+    applicantNameMl: "തങ്കമണി കെ",
+    aadhaar: "XXXX-XXXX-9014",
+    phone: "+91 94960 88771",
+    locationEn: "Ambalapuzha, Alappuzha",
+    locationMl: "അമ്പലപ്പുഴ, ആലപ്പുഴ",
+    annualIncome: "₹ 68,000",
+    appliedDate: "05 Oct 2026",
+    assistedByEn: "Maya Devi",
+    assistedByMl: "മായാ ദേവി",
+  },
+  {
+    schemeNameEn: "Ayushman Bharat Digital Mission",
+    schemeNameMl: "ആയുഷ്മാൻ ഭാരത് ഡിജിറ്റൽ മിഷൻ",
+    categoryEn: "Digital Health",
+    categoryMl: "ഡിജിറ്റൽ ആരോഗ്യം",
+    applicantNameEn: "Nithin Raj",
+    applicantNameMl: "നിതിൻ രാജ്",
+    aadhaar: "XXXX-XXXX-9015",
+    phone: "+91 98466 11220",
+    locationEn: "Karunagappally, Kollam",
+    locationMl: "കരുനാഗപ്പള്ളി, കൊല്ലം",
+    annualIncome: "₹ 1,10,000",
+    appliedDate: "04 Oct 2026",
+    assistedByEn: "Vineeth S.",
+    assistedByMl: "വിനീത് എസ്.",
+  },
+  {
+    schemeNameEn: "Pradhan Mantri Awas Yojana - Gramin (PMAY-G)",
+    schemeNameMl: "പ്രധാനമന്ത്രി ആവാസ് യോജന - ഗ്രാമീൺ (PMAY-G)",
+    categoryEn: "Housing",
+    categoryMl: "ഭവന നിർമ്മാണം",
+    applicantNameEn: "Bindu Suresh",
+    applicantNameMl: "ബിന്ദു സുരേഷ്",
+    aadhaar: "XXXX-XXXX-9016",
+    phone: "+91 94977 65432",
+    locationEn: "Mananthavady, Wayanad",
+    locationMl: "മാനന്തവാടി, വയനാട്",
+    annualIncome: "₹ 62,000",
+    appliedDate: "03 Oct 2026",
+    assistedByEn: "Anil Thomas",
+    assistedByMl: "അനിൽ തോമസ്",
+  },
+  {
+    schemeNameEn: "Pradhan Mantri Awas Yojana - Urban 2.0",
+    schemeNameMl: "പ്രധാനമന്ത്രി ആവാസ് യോജന - അർബൻ 2.0",
+    categoryEn: "Housing",
+    categoryMl: "ഭവന നിർമ്മാണം",
+    applicantNameEn: "Joseph K",
+    applicantNameMl: "ജോസഫ് കെ",
+    aadhaar: "XXXX-XXXX-9017",
+    phone: "+91 98952 66778",
+    locationEn: "Chathannoor, Kollam",
+    locationMl: "ചാത്തന്നൂർ, കൊല്ലം",
+    annualIncome: "₹ 1,80,000",
+    appliedDate: "02 Oct 2026",
+    assistedByEn: "Suresh Kumar",
+    assistedByMl: "സുരേഷ് കുമാർ",
+  },
+  {
+    schemeNameEn: "PM Garib Kalyan Anna Yojana",
+    schemeNameMl: "പിഎം ഗരീബ് കല്യാൺ അന്ന യോജന",
+    categoryEn: "Food Security",
+    categoryMl: "ഭക്ഷ്യ സുരക്ഷ",
+    applicantNameEn: "Fathima Beevi",
+    applicantNameMl: "ഫാത്തിമ ബീവി",
+    aadhaar: "XXXX-XXXX-9018",
+    phone: "+91 97448 55321",
+    locationEn: "Fort Kochi, Ernakulam",
+    locationMl: "ഫോർട്ട് കൊച്ചി, എറണാകുളം",
+    annualIncome: "₹ 54,000",
+    appliedDate: "01 Oct 2026",
+    assistedByEn: "Priya Menon",
+    assistedByMl: "പ്രിയ മേനോൻ",
+  },
+  {
+    schemeNameEn: "Pradhan Mantri Ujjwala Yojana 2.0",
+    schemeNameMl: "പ്രധാനമന്ത്രി ഉജ്ജ്വല യോജന 2.0",
+    categoryEn: "Household Welfare",
+    categoryMl: "ഗാർഹിക ക്ഷേമം",
+    applicantNameEn: "Geetha Kumari",
+    applicantNameMl: "ഗീത കുമാരി",
+    aadhaar: "XXXX-XXXX-9019",
+    phone: "+91 94958 77221",
+    locationEn: "Thodupuzha, Idukki",
+    locationMl: "തൊടുപുഴ, ഇടുക്കി",
+    annualIncome: "₹ 66,000",
+    appliedDate: "30 Sep 2026",
+    assistedByEn: "Maya Devi",
+    assistedByMl: "മായാ ദേവി",
+  },
+  {
+    schemeNameEn: "Indira Gandhi National Old Age Pension Scheme (IGNOAPS)",
+    schemeNameMl: "ഇന്ദിരാഗാന്ധി ദേശീയ വാർധക്യ പെൻഷൻ പദ്ധതി (IGNOAPS)",
+    categoryEn: "Pension",
+    categoryMl: "പെൻഷൻ",
+    applicantNameEn: "Soman P",
+    applicantNameMl: "സോമൻ പി",
+    aadhaar: "XXXX-XXXX-9020",
+    phone: "+91 94471 23456",
+    locationEn: "Kazhakkoottam, Thiruvananthapuram",
+    locationMl: "കഴക്കൂട്ടം, തിരുവനന്തപുരം",
+    annualIncome: "₹ 60,000",
+    appliedDate: "29 Sep 2026",
+    assistedByEn: "Vineeth S.",
+    assistedByMl: "വിനീത് എസ്.",
+  },
+];
+
+const MOBILE_APPLICATION_TRACKING_URL = "https://www.pmsvanidhi.mohua.gov.in/Home/Search";
+
+const MOBILE_APPLICATION_LIST_VISIBLE_STATUSES = [
+  "application_received",
+  "document_verification_completed",
+  "applied",
+  "review",
+  "beneficiary",
+  "rejected",
+] as const satisfies readonly MobileApplicationListVisibleStatus[];
+
+const mobileApplicationStageConfig: Record<
+  MobileApplicationListVisibleStatus,
+  {
+    refStart: number;
+    detailStatus: MobileApplicationRecord["status"];
+    currentStep: number;
+    pendingDocs: string[];
+    nextActionEn: string;
+    nextActionMl: string;
+    includeTracking: boolean;
+  }
+> = {
+  application_received: {
+    refStart: 9201,
+    detailStatus: "pending",
+    currentStep: 1,
+    pendingDocs: ["Aadhaar Card.pdf", "Income Certificate.pdf"],
+    nextActionEn: "Application received. Document verification is pending.",
+    nextActionMl: "അപേക്ഷ ലഭിച്ചു. രേഖാ പരിശോധന ബാക്കിയുണ്ട്.",
+    includeTracking: false,
+  },
+  document_verification_completed: {
+    refStart: 9221,
+    detailStatus: "approved",
+    currentStep: 2,
+    pendingDocs: ["Aadhaar Card.pdf", "Income Certificate.pdf", "Residence Proof.pdf"],
+    nextActionEn: "Documents verified. The application is ready to submit on the official scheme portal.",
+    nextActionMl: "രേഖകൾ പരിശോധിച്ചു. ഔദ്യോഗിക സ്കീം പോർട്ടലിൽ അപേക്ഷ സമർപ്പിക്കാൻ തയ്യാറാണ്.",
+    includeTracking: false,
+  },
+  applied: {
+    refStart: 9241,
+    detailStatus: "approved",
+    currentStep: 3,
+    pendingDocs: ["Aadhaar Card.pdf", "Bank Passbook.pdf", "Supporting Certificate.pdf"],
+    nextActionEn: "Application submitted to the official scheme portal. Awaiting review.",
+    nextActionMl: "ഔദ്യോഗിക സ്കീം പോർട്ടലിൽ അപേക്ഷ സമർപ്പിച്ചു. പരിശോധനയ്ക്കായി കാത്തിരിക്കുന്നു.",
+    includeTracking: true,
+  },
+  review: {
+    refStart: 9261,
+    detailStatus: "in_review",
+    currentStep: 4,
+    pendingDocs: ["Aadhaar Card.pdf", "Bank Passbook.pdf", "Supporting Certificate.pdf"],
+    nextActionEn: "Application is under review by the scheme authority.",
+    nextActionMl: "സ്കീം അധികാരികൾ അപേക്ഷ പരിശോധിക്കുന്നു.",
+    includeTracking: true,
+  },
+  beneficiary: {
+    refStart: 9281,
+    detailStatus: "disbursed",
+    currentStep: 5,
+    pendingDocs: ["Aadhaar Card.pdf", "Bank Passbook.pdf", "Sanction Letter.pdf"],
+    nextActionEn: "Benefit receipt confirmed for this application.",
+    nextActionMl: "ഈ അപേക്ഷയുടെ ആനുകൂല്യ ലഭ്യത സ്ഥിരീകരിച്ചു.",
+    includeTracking: true,
+  },
+  rejected: {
+    refStart: 9301,
+    detailStatus: "rejected",
+    currentStep: 4,
+    pendingDocs: ["Aadhaar Card.pdf", "Income Certificate.pdf"],
+    nextActionEn: "Application rejected. Review the decision notes for details.",
+    nextActionMl: "അപേക്ഷ നിരസിച്ചു. വിശദാംശങ്ങൾക്ക് തീരുമാന കുറിപ്പുകൾ പരിശോധിക്കുക.",
+    includeTracking: true,
+  },
+};
+
+const formatMobileApplicationStageDate = (baseDate: string, offsetDays: number) => {
+  const date = new Date(`${baseDate} 00:00:00`);
+  if (Number.isNaN(date.getTime())) return baseDate;
+  date.setDate(date.getDate() + offsetDays);
+  return date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+};
+
+const buildMobileApplicationRecord = (
+  seed: MobileApplicationRecordSeed,
+  workflowStatus: MobileApplicationListVisibleStatus,
+  index: number
+): MobileApplicationRecord => {
+  const stage = mobileApplicationStageConfig[workflowStatus];
+  const refNumber = stage.refStart + index;
+  const auditLog: MobileApplicationRecord["auditLog"] = [
+    {
+      titleEn: "Application received",
+      titleMl: "അപേക്ഷ ലഭിച്ചു",
+      date: formatMobileApplicationStageDate(seed.appliedDate, 0),
+      time: "10:20 AM",
+      actorEn: seed.applicantNameEn,
+      actorMl: seed.applicantNameMl,
+      status: "completed",
+    },
+  ];
+
+  if (workflowStatus !== "application_received") {
+    auditLog.push({
+      titleEn: "Documents verified",
+      titleMl: "രേഖകൾ പരിശോധിച്ചു",
+      date: formatMobileApplicationStageDate(seed.appliedDate, 1),
+      time: "11:05 AM",
+      actorEn: "Anjali Nair",
+      actorMl: "അഞ്ജലി നായർ",
+      status: "completed",
+    });
+  }
+
+  if (workflowStatus === "applied" || workflowStatus === "review" || workflowStatus === "beneficiary" || workflowStatus === "rejected") {
+    auditLog.push({
+      titleEn: "Application submitted on official portal",
+      titleMl: "ഔദ്യോഗിക പോർട്ടലിൽ അപേക്ഷ സമർപ്പിച്ചു",
+      date: formatMobileApplicationStageDate(seed.appliedDate, 2),
+      time: "02:40 PM",
+      actorEn: seed.assistedByEn,
+      actorMl: seed.assistedByMl,
+      status: "completed",
+    });
+  }
+
+  if (workflowStatus === "review") {
+    auditLog.push({
+      titleEn: "Application under review",
+      titleMl: "അപേക്ഷ പരിശോധനയിൽ",
+      date: formatMobileApplicationStageDate(seed.appliedDate, 3),
+      time: "09:30 AM",
+      actorEn: "Scheme Review Committee",
+      actorMl: "സ്കീം അവലോകന സമിതി",
+      status: "current",
+    });
+  }
+
+  if (workflowStatus === "beneficiary") {
+    auditLog.push(
+      {
+        titleEn: "Application approved",
+        titleMl: "അപേക്ഷ അംഗീകരിച്ചു",
+        date: formatMobileApplicationStageDate(seed.appliedDate, 3),
+        time: "09:30 AM",
+        actorEn: "Scheme Review Committee",
+        actorMl: "സ്കീം അവലോകന സമിതി",
+        status: "completed",
+      },
+      {
+        titleEn: "Benefit received",
+        titleMl: "ആനുകൂല്യം ലഭിച്ചു",
+        date: formatMobileApplicationStageDate(seed.appliedDate, 5),
+        time: "01:15 PM",
+        actorEn: "Scheme Disbursement Desk",
+        actorMl: "സ്കീം വിതരണ ഡെസ്ക്",
+        status: "completed",
+      }
+    );
+  }
+
+  if (workflowStatus === "rejected") {
+    auditLog.push(
+      {
+        titleEn: "Application reviewed",
+        titleMl: "അപേക്ഷ പരിശോധിച്ചു",
+        date: formatMobileApplicationStageDate(seed.appliedDate, 3),
+        time: "09:30 AM",
+        actorEn: "Scheme Review Committee",
+        actorMl: "സ്കീം അവലോകന സമിതി",
+        status: "completed",
+      },
+      {
+        titleEn: "Application rejected",
+        titleMl: "അപേക്ഷ നിരസിച്ചു",
+        date: formatMobileApplicationStageDate(seed.appliedDate, 4),
+        time: "03:10 PM",
+        actorEn: "Scheme Review Committee",
+        actorMl: "സ്കീം അവലോകന സമിതി",
+        notes: "Eligibility could not be confirmed after document verification.",
+        status: "completed",
+      }
+    );
+  }
+
+  return {
+    ...seed,
+    ref: `APP-2026-${refNumber}`,
+    trackingId: stage.includeTracking ? `PMSV-2026-${refNumber}` : undefined,
+    trackingUrl: stage.includeTracking ? MOBILE_APPLICATION_TRACKING_URL : undefined,
+    status: stage.detailStatus,
+    currentStep: stage.currentStep,
+    pendingDocs: stage.pendingDocs,
+    nextActionEn: stage.nextActionEn,
+    nextActionMl: stage.nextActionMl,
+    auditLog,
+    workflowStatus,
+    decisionReason:
+      workflowStatus === "rejected"
+        ? "Eligibility could not be confirmed after document verification."
+        : undefined,
+  };
+};
+
+const mobileApplicationRecordsByStatus = MOBILE_APPLICATION_LIST_VISIBLE_STATUSES.reduce(
+  (records, status) => {
+    records[status] = mobileApplicationRecordSeeds.map((seed, index) =>
+      buildMobileApplicationRecord(seed, status, index)
+    );
+    return records;
+  },
+  {} as Record<MobileApplicationListVisibleStatus, MobileApplicationRecord[]>
+);
+
+const mobileApplicationAllPreviewRecords = Array.from({ length: 20 }, (_, index) => {
+  const status = MOBILE_APPLICATION_LIST_VISIBLE_STATUSES[index % MOBILE_APPLICATION_LIST_VISIBLE_STATUSES.length];
+  return mobileApplicationRecordsByStatus[status][index];
+});
+
+const mobileApplicationStatusMeta: Record<
+  MobileApplicationListStatus,
+  { labelEn: string; labelMl: string; icon: React.ComponentType<{ className?: string }>; className: string }
+> = {
+  application_received: {
+    labelEn: "Received",
+    labelMl: "ലഭിച്ചു",
+    icon: Inbox,
+    className: "border-slate-200/90 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-200",
+  },
+  document_verification_completed: {
+    labelEn: "Documents Verified",
+    labelMl: "രേഖകൾ പരിശോധിച്ചു",
+    icon: FileCheck,
+    className: "border-teal-200/80 bg-teal-50 text-teal-700 dark:border-teal-900/60 dark:bg-teal-950/40 dark:text-teal-300",
+  },
+  applied: {
+    labelEn: "Applied",
+    labelMl: "അപേക്ഷിച്ചു",
+    icon: Send,
+    className: "border-sky-200/80 bg-sky-50 text-sky-700 dark:border-sky-900/60 dark:bg-sky-950/40 dark:text-sky-300",
+  },
+  review: {
+    labelEn: "Under Review",
+    labelMl: "പരിശോധനയിൽ",
+    icon: FileSearch,
+    className: "border-orange-200/90 bg-orange-50 text-[#ff5500] dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300",
+  },
+  beneficiary: {
+    labelEn: "Benefit Received",
+    labelMl: "ആനുകൂല്യം ലഭിച്ചു",
+    icon: HandCoins,
+    className: "border-emerald-200/80 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300",
+  },
+  rejected: {
+    labelEn: "Rejected",
+    labelMl: "നിരസിച്ചു",
+    icon: XCircle,
+    className: "border-rose-200/80 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300",
+  },
+  pending: {
+    labelEn: "Received",
+    labelMl: "ലഭിച്ചു",
+    icon: Inbox,
+    className: "border-slate-200/90 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-200",
+  },
+  assisted: {
+    labelEn: "Approved",
+    labelMl: "അംഗീകരിച്ചു",
+    icon: CheckCircle2,
+    className: "border-blue-200/80 bg-blue-50 text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300",
+  },
+};
+
+type MobileApplicationCollectedDetails = {
+  dateOfBirth: string;
+  gender: string;
+  religion: string;
+  caste: string;
+  maritalStatus: string;
+  occupation: string;
+  email: string;
+  houseName: string;
+  streetLocality: string;
+  pincode: string;
+  district: string;
+  localBodyType: string;
+  localBody: string;
+  ward: string;
+  mandalam: string;
+  minorityStatus: string;
+  disabilityStatus: string;
+  studentStatus: string;
+  employmentStatus: string;
+  bplStatus: string;
+  financialHardshipStatus: string;
+  annualFamilyIncome: string;
+  incomeRange: string;
+  residenceArea: string;
+  bankAccountNumber: string;
+  bankIfscCode: string;
+};
+
+const mobileApplicationCollectedDetails: Record<string, MobileApplicationCollectedDetails> = {
+  "APP-2026-8910": {
+    dateOfBirth: "14/03/2004",
+    gender: "Female",
+    religion: "Hindu",
+    caste: "OBC",
+    maritalStatus: "Unmarried",
+    occupation: "Student",
+    email: "ananya.ramesh@example.com",
+    houseName: "Sree Nilayam",
+    streetLocality: "Kazhakkoottam Junction",
+    pincode: "695582",
+    district: "Thiruvananthapuram",
+    localBodyType: "Grama Panchayat",
+    localBody: "Kazhakkoottam",
+    ward: "Ward 12 - Kazhakkoottam",
+    mandalam: "Kazhakkoottam",
+    minorityStatus: "No",
+    disabilityStatus: "No",
+    studentStatus: "Yes",
+    employmentStatus: "Unemployed",
+    bplStatus: "No",
+    financialHardshipStatus: "Yes",
+    annualFamilyIncome: "₹1,20,000",
+    incomeRange: "₹1,00,000 - ₹2,50,000",
+    residenceArea: "Urban",
+    bankAccountNumber: "XXXX XXXX 4410",
+    bankIfscCode: "SIBL0000452",
+  },
+  "APP-2026-8922": {
+    dateOfBirth: "02/07/1958",
+    gender: "Female",
+    religion: "Hindu",
+    caste: "General",
+    maritalStatus: "Widowed",
+    occupation: "Homemaker",
+    email: "lakshmi.amma@example.com",
+    houseName: "Thara",
+    streetLocality: "Vattiyoorkavu",
+    pincode: "695013",
+    district: "Thiruvananthapuram",
+    localBodyType: "Municipal Corporation",
+    localBody: "Thiruvananthapuram",
+    ward: "Ward 24 - Vattiyoorkavu",
+    mandalam: "Vattiyoorkavu",
+    minorityStatus: "No",
+    disabilityStatus: "Yes",
+    studentStatus: "No",
+    employmentStatus: "Unemployed",
+    bplStatus: "Yes",
+    financialHardshipStatus: "Yes",
+    annualFamilyIncome: "₹75,000",
+    incomeRange: "₹50,000 - ₹1,00,000",
+    residenceArea: "Urban",
+    bankAccountNumber: "XXXX XXXX 2210",
+    bankIfscCode: "SBIN0070028",
+  },
+  "APP-2026-8925": {
+    dateOfBirth: "09/11/1969",
+    gender: "Male",
+    religion: "Hindu",
+    caste: "OBC",
+    maritalStatus: "Married",
+    occupation: "Farmer",
+    email: "krishnan.k@example.com",
+    houseName: "Krishna Bhavan",
+    streetLocality: "Palakkad North",
+    pincode: "678001",
+    district: "Palakkad",
+    localBodyType: "Municipality",
+    localBody: "Palakkad",
+    ward: "Ward 8 - Palakkad North",
+    mandalam: "Palakkad",
+    minorityStatus: "No",
+    disabilityStatus: "No",
+    studentStatus: "No",
+    employmentStatus: "Self-employed",
+    bplStatus: "No",
+    financialHardshipStatus: "No",
+    annualFamilyIncome: "₹90,000",
+    incomeRange: "₹50,000 - ₹1,00,000",
+    residenceArea: "Rural",
+    bankAccountNumber: "XXXX XXXX 7781",
+    bankIfscCode: "SBIN0070231",
+  },
+  "APP-2026-8928": {
+    dateOfBirth: "21/06/1982",
+    gender: "Male",
+    religion: "Hindu",
+    caste: "General",
+    maritalStatus: "Married",
+    occupation: "Farmer",
+    email: "ravi.kumar@example.com",
+    houseName: "Ambady",
+    streetLocality: "Ollur",
+    pincode: "680306",
+    district: "Thrissur",
+    localBodyType: "Municipality",
+    localBody: "Ollur",
+    ward: "Ward 5 - Ollur",
+    mandalam: "Ollur",
+    minorityStatus: "No",
+    disabilityStatus: "No",
+    studentStatus: "No",
+    employmentStatus: "Self-employed",
+    bplStatus: "No",
+    financialHardshipStatus: "No",
+    annualFamilyIncome: "₹1,05,000",
+    incomeRange: "₹1,00,000 - ₹2,50,000",
+    residenceArea: "Rural",
+    bankAccountNumber: "XXXX XXXX 3345",
+    bankIfscCode: "HDFC0001245",
+  },
+  "APP-2026-8927": {
+    dateOfBirth: "17/01/1975",
+    gender: "Male",
+    religion: "Christian",
+    caste: "General",
+    maritalStatus: "Married",
+    occupation: "Driver",
+    email: "joseph.k@example.com",
+    houseName: "St. Thomas",
+    streetLocality: "Chathannoor",
+    pincode: "691572",
+    district: "Kollam",
+    localBodyType: "Grama Panchayat",
+    localBody: "Chathannoor",
+    ward: "Ward 9 - Chathannoor",
+    mandalam: "Chathannoor",
+    minorityStatus: "Yes",
+    disabilityStatus: "No",
+    studentStatus: "No",
+    employmentStatus: "Employed",
+    bplStatus: "No",
+    financialHardshipStatus: "No",
+    annualFamilyIncome: "₹1,80,000",
+    incomeRange: "₹1,00,000 - ₹2,50,000",
+    residenceArea: "Rural",
+    bankAccountNumber: "XXXX XXXX 9902",
+    bankIfscCode: "FDRL0001278",
+  },
+  "APP-2026-8921": {
+    dateOfBirth: "05/04/1952",
+    gender: "Male",
+    religion: "Hindu",
+    caste: "General",
+    maritalStatus: "Widowed",
+    occupation: "Retired",
+    email: "soman.p@example.com",
+    houseName: "Soumya",
+    streetLocality: "Kazhakkoottam",
+    pincode: "695582",
+    district: "Thiruvananthapuram",
+    localBodyType: "Grama Panchayat",
+    localBody: "Kazhakkoottam",
+    ward: "Ward 14 - Kazhakkoottam",
+    mandalam: "Kazhakkoottam",
+    minorityStatus: "No",
+    disabilityStatus: "No",
+    studentStatus: "No",
+    employmentStatus: "Unemployed",
+    bplStatus: "Yes",
+    financialHardshipStatus: "Yes",
+    annualFamilyIncome: "₹60,000",
+    incomeRange: "₹50,000 - ₹1,00,000",
+    residenceArea: "Urban",
+    bankAccountNumber: "XXXX XXXX 6620",
+    bankIfscCode: "SBIN0070028",
+  },
+};
+
+type MobileDocumentKind = "pdf" | "word" | "jpg" | "png";
+
+const mobileDocumentKindMeta: Record<
+  MobileDocumentKind,
+  { label: string; extension: string; tileClass: string; chipClass: string; Icon: React.ComponentType<{ className?: string }> }
+> = {
+  pdf: {
+    label: "PDF",
+    extension: "pdf",
+    tileClass: "bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-300",
+    chipClass: "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300",
+    Icon: FileText,
+  },
+  word: {
+    label: "WORD",
+    extension: "docx",
+    tileClass: "bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-300",
+    chipClass: "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300",
+    Icon: FileText,
+  },
+  jpg: {
+    label: "JPG",
+    extension: "jpg",
+    tileClass: "bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-300",
+    chipClass: "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300",
+    Icon: FileImage,
+  },
+  png: {
+    label: "PNG",
+    extension: "png",
+    tileClass: "bg-violet-50 text-violet-600 dark:bg-violet-950/50 dark:text-violet-300",
+    chipClass: "bg-violet-50 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300",
+    Icon: FileImage,
+  },
+};
+
+const getMobileDocumentKind = (fileName: string): MobileDocumentKind => {
+  const lower = fileName.toLowerCase();
+  if (lower.endsWith(".doc") || lower.endsWith(".docx")) return "word";
+  if (lower.endsWith(".png")) return "png";
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "jpg";
+  if (lower.endsWith(".pdf")) return "pdf";
+  if (lower.includes("passbook")) return "png";
+  if (lower.includes("aadhaar") || lower.includes("ration") || lower.includes("photo")) return "jpg";
+  return "pdf";
+};
+
+const getMobileDocumentDisplayName = (fileName: string) => {
+  if (/\.(pdf|docx?|jpe?g|png)$/i.test(fileName)) return fileName;
+  return `${fileName}.${mobileDocumentKindMeta[getMobileDocumentKind(fileName)].extension}`;
+};
+
+const getMobileDocumentSize = (fileName: string) => {
+  let hash = 0;
+  for (let index = 0; index < fileName.length; index += 1) {
+    hash = (hash * 31 + fileName.charCodeAt(index)) % 100000;
+  }
+  const kilobytes = 160 + (hash % 1350);
+  return kilobytes >= 1024 ? `${(kilobytes / 1024).toFixed(1)} MB` : `${kilobytes} KB`;
+};
+
+const MOBILE_SCHEME_WEBSITE_URLS: Record<string, string> = {
+  "pm kisan samman nidhi": "https://pmkisan.gov.in",
+  "ayushman bharat pm-jay": "https://pmjay.gov.in",
+  "ayushman bharat - pm-jay": "https://pmjay.gov.in",
+  "ayushman bharat - pm-jay health protection": "https://pmjay.gov.in",
+  "pradhan mantri awas yojana (pmay housing)": "https://pmaymis.gov.in",
+  "pradhan mantri awas yojana - gramin (pmay-g)": "https://pmayg.nic.in",
+  "pradhan mantri awas yojana - urban (pmay-u)": "https://pmaymis.gov.in",
+  "indira gandhi national old age pension (ignoap)": "https://nsap.nic.in",
+  "indira gandhi national old age pension scheme (ignoaps)": "https://nsap.nic.in",
+  "pm yasasvi scholarship": "https://yet.nta.ac.in",
+  "kisan credit card (kcc) scheme": "https://www.pmkisan.gov.in",
+  "pradhan mantri fasal bima yojana (pmfby)": "https://pmfby.gov.in",
+};
+
+const getMobileSchemeWebsiteUrl = (schemeName: string) =>
+  MOBILE_SCHEME_WEBSITE_URLS[schemeName.trim().toLowerCase()] ?? "";
+
+const getMobileCategoryIconSrc = (category: string) => {
+  const normalized = category.trim().toLowerCase();
+  if (/(scholarship|education|learning|student)/.test(normalized)) {
+    return "/images/category-icons/cat_education.png";
+  }
+  if (/(agricultur|farmer|farming)/.test(normalized)) {
+    return "/images/category-icons/cat_agriculture.png";
+  }
+  if (/(health|medical|insurance)/.test(normalized)) {
+    return "/images/category-icons/cat_health.png";
+  }
+  if (/(hous|shelter)/.test(normalized)) {
+    return "/images/category-icons/cat_housing.png";
+  }
+  if (/(bank|finance|loan)/.test(normalized)) {
+    return "/images/category-icons/cat_banking.png";
+  }
+  if (/(business|entrepreneur|msme|startup)/.test(normalized)) {
+    return "/images/category-icons/cat_business.png";
+  }
+  if (/(law|justice|legal|rights)/.test(normalized)) {
+    return "/images/category-icons/cat_law_justice.png";
+  }
+  if (/(science|tech|digital)/.test(normalized)) {
+    return "/images/category-icons/cat_science.png";
+  }
+  return schemes3dIcon;
+};
+
+const getEligibleSchemeLogo = (scheme: MobileEligibleScheme) => {
+  const title = scheme.titleEn.toLowerCase();
+  if (/(kisan|farmer|agri|crop)/.test(title)) {
+    return "/images/category-icons/cat_agriculture.png";
+  }
+  if (/(karunya|arogya|health|hospital)/.test(title)) {
+    return "/images/category-icons/cat_health.png";
+  }
+  if (/(life mission|housing|home|shelter|awas)/.test(title)) {
+    return "/images/category-icons/cat_housing.png";
+  }
+  if (/(pension|vayoshreshtha)/.test(title)) {
+    return "/images/category-icons/cat_banking.png";
+  }
+  return getMobileCategoryIconSrc(scheme.categoryEn);
+};
+
+function MobileApplicationStatusBadge({
+  status,
+  lang,
+  size = "compact",
+  labelEn,
+  labelMl,
+}: {
+  status: MobileApplicationListStatus;
+  lang: string;
+  size?: "compact" | "medium" | "prominent";
+  labelEn?: string;
+  labelMl?: string;
+}) {
+  const meta = mobileApplicationStatusMeta[status];
+  const Icon = meta.icon;
+  const isProminent = size === "prominent";
+  const isMedium = size === "medium";
+  const iconSizeClass = isProminent ? "h-[18px] w-[18px]" : isMedium ? "h-4 w-4" : "h-3.5 w-3.5";
+  const checkSizeClass = isProminent ? "h-2.5 w-2.5" : "h-2 w-2";
+
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center whitespace-nowrap border font-extrabold leading-none ${meta.className} ${
+        isProminent
+          ? "h-9 gap-1.5 rounded-lg px-2.5 text-[12px]"
+          : isMedium
+            ? "h-6 gap-1.5 rounded-full px-2.5 text-[10.5px]"
+            : "h-5 gap-1 rounded-full px-2 text-[9.5px]"
+      }`}
+    >
+      {status === "beneficiary" ? (
+        <span className={`relative inline-flex shrink-0 items-center justify-center ${iconSizeClass}`}>
+          <HandCoins className={`${iconSizeClass} stroke-[2]`} />
+          <Check className={`absolute -bottom-0.5 -right-0.5 stroke-[3] ${checkSizeClass}`} />
+        </span>
+      ) : (
+        <Icon className={`shrink-0 stroke-[2] ${iconSizeClass}`} />
+      )}
+      <span>{lang === "ml" ? (labelMl ?? meta.labelMl) : (labelEn ?? meta.labelEn)}</span>
+    </span>
+  );
+}
+
 const getLocalIsoDate = (date: Date = new Date()) => {
   const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
   return localDate.toISOString().slice(0, 10);
@@ -128,6 +1276,100 @@ const formatCollectionDate = (isoDate: string) => {
   return date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 };
 
+const formatCollectionDateTime = (isoDateTime: string) => {
+  if (!isoDateTime) return "—";
+  const date = new Date(isoDateTime);
+  if (Number.isNaN(date.getTime())) return isoDateTime;
+  return date.toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+};
+
+const getActivityTimeLabel = (date: Date = new Date()) =>
+  date
+    .toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: true })
+    .toUpperCase();
+
+const createActivityEntry = (
+  entry: {
+    titleEn: string;
+    titleMl: string;
+    actorEn?: string;
+    actorMl?: string;
+    notes?: string;
+    status?: "completed" | "current" | "upcoming";
+  },
+  timestamp: Date = new Date(),
+) => ({
+  titleEn: entry.titleEn,
+  titleMl: entry.titleMl,
+  date: formatCollectionDate(getLocalIsoDate(timestamp)),
+  time: getActivityTimeLabel(timestamp),
+  actorEn: entry.actorEn,
+  actorMl: entry.actorMl,
+  notes: entry.notes?.trim() ? entry.notes.trim() : undefined,
+  status: entry.status ?? ("completed" as const),
+});
+
+const getMobileAuditFallbackActor = ({
+  event,
+  index,
+  applicantName,
+  assistedBy,
+  lang,
+}: {
+  event: { titleEn: string; titleMl: string };
+  index: number;
+  applicantName: string;
+  assistedBy: string;
+  lang: "ml" | "en";
+}) => {
+  const eventTitle = `${event.titleEn} ${event.titleMl}`.toLowerCase();
+  const pick = (en: string, ml: string) => (lang === "ml" ? ml : en);
+
+  if (eventTitle.includes("field")) {
+    return pick("Village Officer", "വില്ലേജ് ഓഫീസർ");
+  }
+  if (eventTitle.includes("medical")) {
+    return pick("District Medical Board", "ജില്ലാ മെഡിക്കൽ ബോർഡ്");
+  }
+  if (eventTitle.includes("document")) {
+    return pick("Anjali Nair", "അഞ്ജലി നായർ");
+  }
+  if (
+    eventTitle.includes("benefit") ||
+    eventTitle.includes("disburs") ||
+    eventTitle.includes("pension")
+  ) {
+    return pick("Scheme Disbursement Desk", "സ്കീം വിതരണ ഡെസ്ക്");
+  }
+  if (
+    eventTitle.includes("review") ||
+    eventTitle.includes("approval") ||
+    eventTitle.includes("reject") ||
+    eventTitle.includes("decision") ||
+    eventTitle.includes("sanction")
+  ) {
+    return pick("Scheme Review Committee", "സ്കീം അവലോകന സമിതി");
+  }
+  if (
+    eventTitle.includes("submitted") ||
+    eventTitle.includes("apply scheme") ||
+    eventTitle.includes("tracking")
+  ) {
+    return assistedBy;
+  }
+  if (eventTitle.includes("received") || eventTitle.includes("details")) {
+    return applicantName;
+  }
+  return index === 0 ? applicantName : assistedBy;
+};
+
 const getApplicantInitials = (name: string) => {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "AP";
@@ -136,20 +1378,20 @@ const getApplicantInitials = (name: string) => {
 };
 
 const mockBeneficiariesFullList = [
-  { id: "BEN-8921", name: "Soman P", nameMl: "സോമൻ പി", category: "Public Citizen", categoryMl: "പൊതുജനങ്ങൾ", location: "Kazhakkoottam, TVM", scheme: "Vayoshreshtha Pension", status: "Verified", date: "2026-10-04", phone: "+91 94471 23456" },
-  { id: "BEN-8922", name: "Lakshmi Amma", nameMl: "ലക്ഷ്മി അമ്മ", category: "Public Citizen", categoryMl: "പൊതുജനങ്ങൾ", location: "Vattiyoorkavu, TVM", scheme: "Karunya Health Insurance", status: "Verified", date: "2026-10-03", phone: "+91 98470 11223" },
-  { id: "BEN-8923", name: "Abdul Rahman", nameMl: "അബ്ദുൾ റഹ്മാൻ", category: "BJP Member", categoryMl: "ബി.ജെ.പി അംഗം", location: "Kollam Port, KLM", scheme: "Matsya Samridhi Scheme", status: "Verified", date: "2026-10-05", phone: "+91 97451 98765" },
-  { id: "BEN-8924", name: "Sunitha Kumari", nameMl: "സുനിത കുമാരി", category: "Politician", categoryMl: "രാഷ്ട്രീയ നേതാവ്", location: "Kottayam East, KTM", scheme: "Kudumbashree Enterprise Aid", status: "Verified", date: "2026-10-02", phone: "+91 94462 54321" },
+  { id: "BEN-8921", name: "Soman P", nameMl: "സോമൻ പി", category: "Public Citizen", categoryMl: "പൊതുജനങ്ങൾ", location: "Kazhakkoottam, TVM", scheme: "IGNOAPS Pension", status: "Verified", date: "2026-10-04", phone: "+91 94471 23456" },
+  { id: "BEN-8922", name: "Lakshmi Amma", nameMl: "ലക്ഷ്മി അമ്മ", category: "Public Citizen", categoryMl: "പൊതുജനങ്ങൾ", location: "Vattiyoorkavu, TVM", scheme: "Ayushman Bharat PM-JAY", status: "Verified", date: "2026-10-03", phone: "+91 98470 11223" },
+  { id: "BEN-8923", name: "Abdul Rahman", nameMl: "അബ്ദുൾ റഹ്മാൻ", category: "BJP Member", categoryMl: "ബി.ജെ.പി അംഗം", location: "Kollam Port, KLM", scheme: "PM Matsya Sampada Yojana", status: "Verified", date: "2026-10-05", phone: "+91 97451 98765" },
+  { id: "BEN-8924", name: "Sunitha Kumari", nameMl: "സുനിത കുമാരി", category: "Politician", categoryMl: "രാഷ്ട്രീയ നേതാവ്", location: "Kottayam East, KTM", scheme: "PM SVANidhi", status: "Verified", date: "2026-10-02", phone: "+91 94462 54321" },
   { id: "BEN-8925", name: "K. Krishnan", nameMl: "കെ. കൃഷ്ണൻ", category: "People’s Representative", categoryMl: "ജനപ്രതിനിധി", location: "Palakkad North, PKD", scheme: "PM Kisan Samman Nidhi", status: "Verified", date: "2026-10-01", phone: "+91 98463 87654" },
-  { id: "BEN-8926", name: "Ananya Ramesh", nameMl: "അനന്യ രമേശ്", category: "Public Citizen", categoryMl: "പൊതുജനങ്ങൾ", location: "Tripunithura, EKM", scheme: "Pratibha Education Assistance", status: "Verified", date: "2026-10-05", phone: "+91 94950 33445" },
-  { id: "BEN-8927", name: "Joseph K", nameMl: "ജോസഫ് കെ", category: "Public Citizen", categoryMl: "പൊതുജനങ്ങൾ", location: "Chathannoor, KLM", scheme: "LIFE Mission Housing Title", status: "Verified", date: "2026-09-29", phone: "+91 98952 66778" },
-  { id: "BEN-8928", name: "Radhamani V", nameMl: "രാധാമണി വി", category: "BJP Member", categoryMl: "ബി.ജെ.പി അംഗം", location: "Balaramapuram, TVM", scheme: "Handloom Worker Subsidy", status: "Verified", date: "2026-09-28", phone: "+91 94475 99001" },
-  { id: "BEN-8929", name: "Muhammed Shafee", nameMl: "മുഹമ്മദ് ഷാഫി", category: "Public Citizen", categoryMl: "പൊതുജനങ്ങൾ", location: "Malappuram Central, MLP", scheme: "Subhiksha Keralam Agriculture Aid", status: "Verified", date: "2026-09-27", phone: "+91 97441 12389" },
-  { id: "BEN-8930", name: "Devaki Amma", nameMl: "ദേവകി അമ്മ", category: "Public Citizen", categoryMl: "പൊതുജനങ്ങൾ", location: "Kannur Town, KNR", scheme: "Vayokshema Pension Scheme", status: "Verified", date: "2026-09-26", phone: "+91 94460 44556" },
-  { id: "BEN-8931", name: "Saritha V", nameMl: "സരിത വി", category: "BJP Member", categoryMl: "ബി.ജെ.പി അംഗം", location: "Kasaragod South, KSD", scheme: "She Pad & Hygiene Grant", status: "Verified", date: "2026-09-25", phone: "+91 98472 77889" },
-  { id: "BEN-8932", name: "Mathew Varghese", nameMl: "മാത്യു വർഗീസ്", category: "Politician", categoryMl: "രാഷ്ട്രീയ നേതാവ്", location: "Adimali, IDK", scheme: "Hill Farming Subsidy & Crop Aid", status: "Verified", date: "2026-09-24", phone: "+91 94961 88990" },
-  { id: "BEN-8933", name: "P. Thomas", nameMl: "പി. തോമസ്", category: "People’s Representative", categoryMl: "ജനപ്രതിനിധി", location: "Koyilandy, CLT", scheme: "Kera Suraksha Coconut Farming", status: "Verified", date: "2026-09-23", phone: "+91 97455 11224" },
-  { id: "BEN-8934", name: "Suja Nair", nameMl: "സുജ നായർ", category: "Public Citizen", categoryMl: "പൊതുജനങ്ങൾ", location: "Thrissur Town, TSR", scheme: "Pratibha Merit Scholarship", status: "Verified", date: "2026-09-22", phone: "+91 98950 55667" },
+  { id: "BEN-8926", name: "Ananya Ramesh", nameMl: "അനന്യ രമേശ്", category: "Public Citizen", categoryMl: "പൊതുജനങ്ങൾ", location: "Tripunithura, EKM", scheme: "PM YASASVI Scholarship", status: "Verified", date: "2026-10-05", phone: "+91 94950 33445" },
+  { id: "BEN-8927", name: "Joseph K", nameMl: "ജോസഫ് കെ", category: "Public Citizen", categoryMl: "പൊതുജനങ്ങൾ", location: "Chathannoor, KLM", scheme: "PMAY - Urban", status: "Verified", date: "2026-09-29", phone: "+91 98952 66778" },
+  { id: "BEN-8928", name: "Radhamani V", nameMl: "രാധാമണി വി", category: "BJP Member", categoryMl: "ബി.ജെ.പി അംഗം", location: "Balaramapuram, TVM", scheme: "National Handloom Development Programme", status: "Verified", date: "2026-09-28", phone: "+91 94475 99001" },
+  { id: "BEN-8929", name: "Muhammed Shafee", nameMl: "മുഹമ്മദ് ഷാഫി", category: "Public Citizen", categoryMl: "പൊതുജനങ്ങൾ", location: "Malappuram Central, MLP", scheme: "PM Fasal Bima Yojana", status: "Verified", date: "2026-09-27", phone: "+91 97441 12389" },
+  { id: "BEN-8930", name: "Devaki Amma", nameMl: "ദേവകി അമ്മ", category: "Public Citizen", categoryMl: "പൊതുജനങ്ങൾ", location: "Kannur Town, KNR", scheme: "Atal Pension Yojana", status: "Verified", date: "2026-09-26", phone: "+91 94460 44556" },
+  { id: "BEN-8931", name: "Saritha V", nameMl: "സരിത വി", category: "BJP Member", categoryMl: "ബി.ജെ.പി അംഗം", location: "Kasaragod South, KSD", scheme: "Menstrual Hygiene Scheme (NHM)", status: "Verified", date: "2026-09-25", phone: "+91 98472 77889" },
+  { id: "BEN-8932", name: "Mathew Varghese", nameMl: "മാത്യു വർഗീസ്", category: "Politician", categoryMl: "രാഷ്ട്രീയ നേതാവ്", location: "Adimali, IDK", scheme: "PM Krishi Sinchayee Yojana", status: "Verified", date: "2026-09-24", phone: "+91 94961 88990" },
+  { id: "BEN-8933", name: "P. Thomas", nameMl: "പി. തോമസ്", category: "People’s Representative", categoryMl: "ജനപ്രതിനിധി", location: "Koyilandy, CLT", scheme: "Coconut Development Board Schemes", status: "Verified", date: "2026-09-23", phone: "+91 97455 11224" },
+  { id: "BEN-8934", name: "Suja Nair", nameMl: "സുജ നായർ", category: "Public Citizen", categoryMl: "പൊതുജനങ്ങൾ", location: "Thrissur Town, TSR", scheme: "PM YASASVI Scholarship", status: "Verified", date: "2026-09-22", phone: "+91 98950 55667" },
 ];
 
 const schemeCategories2Row = [
@@ -295,6 +1537,311 @@ const popularSchemesList = [
   { id: "stand_up_india", nameEn: "Stand Up India", nameMl: "സ്റ്റാൻഡ് അപ് ഇന്ത്യ", logo: "/images/popular-schemes/stand_up_india.png", categoryId: "business" },
   { id: "smart_city", nameEn: "Smart City", nameMl: "സ്മാർട്ട് സിറ്റി", logo: "/images/popular-schemes/smart_city.png", categoryId: "housing" },
 ];
+
+type MobileCentralSchemeCard = {
+  titleEn: string;
+  titleMl: string;
+  deptEn: string;
+  deptMl: string;
+  benefitEn: string;
+  benefitMl: string;
+  eligibilityEn: string;
+  eligibilityMl: string;
+};
+
+const mobileCentralSchemeCardsByCategory: Record<string, MobileCentralSchemeCard[]> = {
+  agriculture: [
+    {
+      titleEn: "PM Kisan Samman Nidhi",
+      titleMl: "പിഎം-കിസാൻ സമ്മാൻ നിധി",
+      deptEn: "Ministry of Agriculture & Farmers Welfare, Govt of India",
+      deptMl: "കൃഷി കർഷകക്ഷേമ മന്ത്രാലയം, ഭാരത സർക്കാർ",
+      benefitEn: "₹6,000 / year direct bank transfer (3 installments)",
+      benefitMl: "പ്രതിവർഷം ₹6,000 (3 ഗഡുക്കളായി)",
+      eligibilityEn: "Small & marginal farmers holding cultivable land",
+      eligibilityMl: "കൃഷിഭൂമിയുള്ള ചെറുകിട-നാമമാത്ര കർഷകർ",
+    },
+    {
+      titleEn: "Pradhan Mantri Fasal Bima Yojana (PMFBY)",
+      titleMl: "പ്രധാനമന്ത്രി ഫസൽ ബീമാ യോജന (PMFBY)",
+      deptEn: "Ministry of Agriculture & Farmers Welfare, Govt of India",
+      deptMl: "കൃഷി കർഷകക്ഷേമ മന്ത്രാലയം, ഭാരത സർക്കാർ",
+      benefitEn: "Up to ₹2 Lakh crop insurance cover with subsidised premium",
+      benefitMl: "വിള ഇൻഷുറൻസിന് ₹2 ലക്ഷം വരെ പരിരക്ഷ, സബ്‍സിഡി പ്രീമിയം",
+      eligibilityEn: "All farmers including tenant & sharecropper farmers",
+      eligibilityMl: "പാട്ടക്കർഷകർ ഉൾപ്പെടെ എല്ലാ കർഷകരും",
+    },
+    {
+      titleEn: "Kisan Credit Card (KCC) Scheme",
+      titleMl: "കിസാൻ ക്രെഡിറ്റ് കാർഡ് (KCC) പദ്ധതി",
+      deptEn: "Department of Agriculture & Farmers Welfare, Govt of India",
+      deptMl: "കൃഷി കർഷകക്ഷേമ വകുപ്പ്, ഭാരത സർക്കാർ",
+      benefitEn: "Crop loan up to ₹3 Lakh at 4% effective interest",
+      benefitMl: "₹3 ലക്ഷം വരെ വിളവായ്പ, 4% ഫലപ്രദ പലിശ",
+      eligibilityEn: "Farmers, tenant farmers & SHG/JLG members",
+      eligibilityMl: "കർഷകർ, പാട്ടക്കർഷകർ, സ്വയം സഹായ സംഘങ്ങൾ",
+    },
+  ],
+  banking: [
+    {
+      titleEn: "Pradhan Mantri Jan Dhan Yojana (PMJDY)",
+      titleMl: "പ്രധാനമന്ത്രി ജൻ ധൻ യോജന (PMJDY)",
+      deptEn: "Ministry of Finance, Govt of India",
+      deptMl: "ധനകാര്യ മന്ത്രാലയം, ഭാരത സർക്കാർ",
+      benefitEn: "Zero-balance account with RuPay card & ₹2 Lakh accident cover",
+      benefitMl: "സീറോ ബാലൻസ് അക്കൗണ്ട്, RuPay കാർഡ്, ₹2 ലക്ഷം അപകട പരിരക്ഷ",
+      eligibilityEn: "Any citizen aged 10+ without a bank account",
+      eligibilityMl: "ബാങ്ക് അക്കൗണ്ട് ഇല്ലാത്ത 10 വയസ്സിന് മുകളിലുള്ള പൗരന്മാർ",
+    },
+    {
+      titleEn: "Atal Pension Yojana (APY)",
+      titleMl: "അടൽ പെൻഷൻ യോജന (APY)",
+      deptEn: "Ministry of Finance / PFRDA, Govt of India",
+      deptMl: "ധനകാര്യ മന്ത്രാലയം / PFRDA, ഭാരത സർക്കാർ",
+      benefitEn: "Guaranteed pension of ₹1,000–₹5,000 per month after 60",
+      benefitMl: "60 വയസ്സിന് ശേഷം പ്രതിമാസം ₹1,000–₹5,000 ഉറപ്പായ പെൻഷൻ",
+      eligibilityEn: "Citizens aged 18–40 with a savings bank account",
+      eligibilityMl: "18–40 വയസ്സുള്ള സേവിംഗ്സ് അക്കൗണ്ട് ഉടമകൾ",
+    },
+    {
+      titleEn: "Pradhan Mantri Jeevan Jyoti Bima Yojana (PMJJBY)",
+      titleMl: "പ്രധാനമന്ത്രി ജീവൻ ജ്യോതി ബീമാ യോജന (PMJJBY)",
+      deptEn: "Ministry of Finance, Govt of India",
+      deptMl: "ധനകാര്യ മന്ത്രാലയം, ഭാരത സർക്കാർ",
+      benefitEn: "₹2 Lakh life cover at ₹436 annual premium",
+      benefitMl: "പ്രതിവർഷം ₹436 പ്രീമിയത്തിൽ ₹2 ലക്ഷം ജീവൻ പരിരക്ഷ",
+      eligibilityEn: "Bank account holders aged 18–50",
+      eligibilityMl: "18–50 വയസ്സുള്ള ബാങ്ക് അക്കൗണ്ട് ഉടമകൾ",
+    },
+  ],
+  business: [
+    {
+      titleEn: "PM SVANidhi",
+      titleMl: "പിഎം സ്വനിധി",
+      deptEn: "Ministry of Housing & Urban Affairs, Govt of India",
+      deptMl: "പാർപ്പിട നഗരകാര്യ മന്ത്രാലയം, ഭാരത സർക്കാർ",
+      benefitEn: "Collateral-free working capital loan up to ₹50,000",
+      benefitMl: "ഈടില്ലാത്ത ₹50,000 വരെ വായ്പ",
+      eligibilityEn: "Street vendors holding a vending certificate",
+      eligibilityMl: "വെൻഡിംഗ് സർട്ടിഫിക്കറ്റുള്ള തെരുവ് വ്യാപാരികൾ",
+    },
+    {
+      titleEn: "Pradhan Mantri Mudra Yojana (PMMY)",
+      titleMl: "പ്രധാനമന്ത്രി മുദ്ര യോജന (PMMY)",
+      deptEn: "Department of Financial Services, Govt of India",
+      deptMl: "ധനകാര്യ സേവന വകുപ്പ്, ഭാരത സർക്കാർ",
+      benefitEn: "Business loans up to ₹10 Lakh (Shishu / Kishor / Tarun)",
+      benefitMl: "ശിശു / കിഷോർ / തരുൺ ഘട്ടങ്ങളിൽ ₹10 ലക്ഷം വരെ വായ്പ",
+      eligibilityEn: "Non-farm micro & small enterprises",
+      eligibilityMl: "കൃഷി ഇതര സൂക്ഷ്മ-ചെറുകിട സംരംഭങ്ങൾ",
+    },
+    {
+      titleEn: "PM Vishwakarma Yojana",
+      titleMl: "പിഎം വിശ്വകർമ്മ യോജന",
+      deptEn: "Ministry of MSME, Govt of India",
+      deptMl: "സൂക്ഷ്മ-ചെറുകിട സംരംഭ മന്ത്രാലയം, ഭാരത സർക്കാർ",
+      benefitEn: "₹15,000 toolkit grant & collateral-free loan up to ₹3 Lakh",
+      benefitMl: "₹15,000 ടൂൾകിറ്റ് ഗ്രാൻറും ₹3 ലക്ഷം വരെ വായ്പയും",
+      eligibilityEn: "Traditional artisans & craftspeople",
+      eligibilityMl: "പരമ്പരാഗത കൈത്തൊഴിൽ വിദഗ്ധർ",
+    },
+  ],
+  education: [
+    {
+      titleEn: "PM YASASVI Scholarship",
+      titleMl: "പിഎം യശസ്വി സ്കോളർഷിപ്പ്",
+      deptEn: "Ministry of Social Justice & Empowerment, Govt of India",
+      deptMl: "സാമൂഹിക നീതി ശാക്തീകരണ മന്ത്രാലയം, ഭാരത സർക്കാർ",
+      benefitEn: "Scholarship for OBC / EBC / DNT students in classes 9 to 12",
+      benefitMl: "9 മുതൽ 12 വരെ ക്ലാസുകളിലെ OBC / EBC / DNT വിദ്യാർത്ഥികൾക്ക് സ്കോളർഷിപ്പ്",
+      eligibilityEn: "OBC / EBC / DNT students meeting the income limit",
+      eligibilityMl: "വരുമാന പരിധി പാലിക്കുന്ന OBC / EBC / DNT വിദ്യാർത്ഥികൾ",
+    },
+    {
+      titleEn: "Post Matric Scholarship for SC Students",
+      titleMl: "എസ്‍സി വിദ്യാർത്ഥികൾക്കുള്ള പോസ്റ്റ് മെട്രിക് സ്കോളർഷിപ്പ്",
+      deptEn: "Ministry of Social Justice & Empowerment, Govt of India",
+      deptMl: "സാമൂഹിക നീതി ശാക്തീകരണ മന്ത്രാലയം, ഭാരത സർക്കാർ",
+      benefitEn: "Tuition fee and maintenance allowance for SC students",
+      benefitMl: "എസ്‍സി വിദ്യാർത്ഥികൾക്ക് ട്യൂഷൻ ഫീസും ഉപജീവന സഹായവും",
+      eligibilityEn: "SC students pursuing post-matric courses",
+      eligibilityMl: "പോസ്റ്റ് മെട്രിക് പഠനം നടത്തുന്ന എസ്‍സി വിദ്യാർത്ഥികൾ",
+    },
+    {
+      titleEn: "PM Vidyalaxmi Scheme",
+      titleMl: "പിഎം വിദ്യാലക്ഷ്മി പദ്ധതി",
+      deptEn: "Ministry of Education, Govt of India",
+      deptMl: "വിദ്യാഭ്യാസ മന്ത്രാലയം, ഭാരത സർക്കാർ",
+      benefitEn: "Collateral-free education loan up to ₹10 Lakh",
+      benefitMl: "ഈടില്ലാത്ത ₹10 ലക്ഷം വരെ വിദ്യാഭ്യാസ വായ്പ",
+      eligibilityEn: "Students admitted to recognised higher education institutions",
+      eligibilityMl: "അംഗീകൃത ഉന്നത വിദ്യാഭ്യാസ സ്ഥാപനങ്ങളിൽ പ്രവേശനം ലഭിച്ച വിദ്യാർത്ഥികൾ",
+    },
+  ],
+  healthcare: [
+    {
+      titleEn: "Ayushman Bharat - PM-JAY Health Protection",
+      titleMl: "ആയുഷ്മാൻ ഭാരത് - പിഎം-ജയ്",
+      deptEn: "National Health Authority, Govt of India",
+      deptMl: "ദേശീയ ആരോഗ്യ അതോറിറ്റി, ഭാരത സർക്കാർ",
+      benefitEn: "₹5,00,000 / family / year cashless hospital cover",
+      benefitMl: "കുടുംബത്തിന് പ്രതിവർഷം ₹5,00,000 ക്യാഷ്‍ലെസ് ചികിത്സാ പരിരക്ഷ",
+      eligibilityEn: "Low-income & SECC priority household members",
+      eligibilityMl: "താഴ്ന്ന വരുമാന & SECC മുൻഗണനാ കുടുംബങ്ങൾ",
+    },
+    {
+      titleEn: "Pradhan Mantri National Dialysis Programme",
+      titleMl: "പ്രധാനമന്ത്രി ദേശീയ ഡയാലിസിസ് പദ്ധതി",
+      deptEn: "Ministry of Health & Family Welfare, Govt of India",
+      deptMl: "ആരോഗ്യ കുടുംബക്ഷേമ മന്ത്രാലയം, ഭാരത സർക്കാർ",
+      benefitEn: "Free dialysis sessions at district hospitals",
+      benefitMl: "ജില്ലാ ആശുപത്രികളിൽ സൗജന്യ ഡയാലിസിസ്",
+      eligibilityEn: "BPL patients requiring dialysis support",
+      eligibilityMl: "ഡയാലിസിസ് ആവശ്യമുള്ള ബിപിഎൽ രോഗികൾ",
+    },
+    {
+      titleEn: "Ayushman Bharat Digital Mission",
+      titleMl: "ആയുഷ്മാൻ ഭാരത് ഡിജിറ്റൽ മിഷൻ",
+      deptEn: "Ministry of Health & Family Welfare, Govt of India",
+      deptMl: "ആരോഗ്യ കുടുംബക്ഷേമ മന്ത്രാലയം, ഭാരത സർക്കാർ",
+      benefitEn: "Digital health ID with linked health records",
+      benefitMl: "ഡിജിറ്റൽ ആരോഗ്യ ഐഡിയും ബന്ധിപ്പിച്ച ആരോഗ്യ രേഖകളും",
+      eligibilityEn: "All citizens (voluntary enrolment)",
+      eligibilityMl: "എല്ലാ പൗരന്മാർക്കും (സ്വമേധയാ രജിസ്ട്രേഷൻ)",
+    },
+  ],
+  housing: [
+    {
+      titleEn: "Pradhan Mantri Awas Yojana (PMAY Housing)",
+      titleMl: "പിഎംഎവൈ ഭവന പദ്ധതി (ഗ്രാമീൺ / അർബൻ)",
+      deptEn: "Ministry of Housing & Urban Affairs, Govt of India",
+      deptMl: "പാർപ്പിട നഗരകാര്യ മന്ത്രാലയം, ഭാരത സർക്കാർ",
+      benefitEn: "Up to ₹2.50 Lakh financial assistance for house construction",
+      benefitMl: "വീട് നിർമ്മാണത്തിന് ₹2.50 ലക്ഷം വരെ ധനസഹായം",
+      eligibilityEn: "Homeless or EWS households without pucca housing",
+      eligibilityMl: "സ്വന്തമായി പക്കാ വീടില്ലാത്ത താഴ്ന്ന വരുമാനക്കാർ",
+    },
+    {
+      titleEn: "Pradhan Mantri Awas Yojana - Gramin (PMAY-G)",
+      titleMl: "പ്രധാനമന്ത്രി ആവാസ് യോജന - ഗ്രാമീൺ",
+      deptEn: "Ministry of Rural Development, Govt of India",
+      deptMl: "ഗ്രാമവികസന മന്ത്രാലയം, ഭാരത സർക്കാർ",
+      benefitEn: "₹1.20 Lakh assistance for pucca house construction",
+      benefitMl: "പക്കാ വീട് നിർമ്മാണത്തിന് ₹1.20 ലക്ഷം സഹായം",
+      eligibilityEn: "Houseless & kutcha-house families as per SECC",
+      eligibilityMl: "SECC പ്രകാരം ഭവനരഹിത & കച്ചാ വീടുകളിലുള്ള കുടുംബങ്ങൾ",
+    },
+    {
+      titleEn: "Pradhan Mantri Awas Yojana - Urban 2.0",
+      titleMl: "പ്രധാനമന്ത്രി ആവാസ് യോജന - അർബൻ 2.0",
+      deptEn: "Ministry of Housing & Urban Affairs, Govt of India",
+      deptMl: "പാർപ്പിട നഗരകാര്യ മന്ത്രാലയം, ഭാരത സർക്കാർ",
+      benefitEn: "Interest subsidy & affordable rental housing support",
+      benefitMl: "പലിശ സബ്‍സിഡിയും താങ്ങാനാവുന്ന വാടക ഭവന പിന്തുണയും",
+      eligibilityEn: "Urban EWS / MIG families without a pucca house",
+      eligibilityMl: "പക്കാ വീടില്ലാത്ത നഗര EWS / MIG കുടുംബങ്ങൾ",
+    },
+  ],
+  law: [
+    {
+      titleEn: "NALSA Free Legal Aid",
+      titleMl: "ദേശീയ നിയമ സേവന അതോറിറ്റി സൗജന്യ നിയമ സഹായം",
+      deptEn: "Department of Justice, Govt of India",
+      deptMl: "നീതി വകുപ്പ്, ഭാരത സർക്കാർ",
+      benefitEn: "Free legal aid and representation in court",
+      benefitMl: "കോടതിയിൽ സൗജന്യ നിയമ സഹായവും പ്രാതിനിധ്യവും",
+      eligibilityEn: "Women, children, SC / ST & low-income citizens",
+      eligibilityMl: "സ്ത്രീകൾ, കുട്ടികൾ, SC / ST, താഴ്ന്ന വരുമാന പൗരന്മാർ",
+    },
+    {
+      titleEn: "Legal Aid Defence Counsel Scheme",
+      titleMl: "നിയമ സഹായ പ്രതിരോധ അഭിഭാഷക പദ്ധതി",
+      deptEn: "National Legal Services Authority, Govt of India",
+      deptMl: "ദേശീയ നിയമ സേവന അതോറിറ്റി, ഭാരത സർക്കാർ",
+      benefitEn: "Free defence counsel in criminal proceedings",
+      benefitMl: "ക്രിമിനൽ കേസുകളിൽ സൗജന്യ പ്രതിരോധ അഭിഭാഷകൻ",
+      eligibilityEn: "Undertrial & accused persons unable to afford counsel",
+      eligibilityMl: "അഭിഭാഷക ചെലവ് താങ്ങാനാവാത്ത പ്രതികൾ",
+    },
+    {
+      titleEn: "Victim Compensation Scheme",
+      titleMl: "ഇരകൾക്കുള്ള നഷ്ടപരിഹാര പദ്ധതി",
+      deptEn: "Ministry of Home Affairs, Govt of India",
+      deptMl: "ആഭ്യന്തര മന്ത്രാലയം, ഭാരത സർക്കാർ",
+      benefitEn: "Financial compensation for victims of crime",
+      benefitMl: "കുറ്റകൃത്യങ്ങളിൽ ഇരകൾക്ക് സാമ്പത്തിക നഷ്ടപരിഹാരം",
+      eligibilityEn: "Victims of notified crimes & their dependents",
+      eligibilityMl: "നിർദ്ദിഷ്ട കുറ്റകൃത്യങ്ങളുടെ ഇരകളും ആശ്രിതരും",
+    },
+  ],
+  science: [
+    {
+      titleEn: "Digital India Programme",
+      titleMl: "ഡിജിറ്റൽ ഇന്ത്യ പദ്ധതി",
+      deptEn: "Ministry of Electronics & IT, Govt of India",
+      deptMl: "ഇലക്ട്രോണിക്സ് & ഐടി മന്ത്രാലയം, ഭാരത സർക്കാർ",
+      benefitEn: "Digital public services & citizen e-governance access",
+      benefitMl: "ഡിജിറ്റൽ പൊതു സേവനങ്ങളും ഇ-ഗവേണൻസ് പ്രവേശനവും",
+      eligibilityEn: "All citizens & registered digital service users",
+      eligibilityMl: "എല്ലാ പൗരന്മാരും രജിസ്റ്റർ ചെയ്ത ഡിജിറ്റൽ സേവന ഉപയോക്താക്കളും",
+    },
+    {
+      titleEn: "PM Kaushal Vikas Yojana (PMKVY)",
+      titleMl: "പിഎം കൗശൽ വികാസ് യോജന (PMKVY)",
+      deptEn: "Ministry of Skill Development & Entrepreneurship, Govt of India",
+      deptMl: "നൈപുണ്യ വികസന സംരംഭകത്വ മന്ത്രാലയം, ഭാരത സർക്കാർ",
+      benefitEn: "Free short-term skill training with certification",
+      benefitMl: "സൗജന്യ ഹ്രസ്വകാല നൈപുണ്യ പരിശീലനവും സർട്ടിഫിക്കേഷനും",
+      eligibilityEn: "Youth aged 15–45 seeking skill certification",
+      eligibilityMl: "നൈപുണ്യ സർട്ടിഫിക്കേഷൻ തേടുന്ന 15–45 വയസ്സുള്ള യുവാക്കൾ",
+    },
+    {
+      titleEn: "National Apprenticeship Promotion Scheme",
+      titleMl: "ദേശീയ അപ്രന്റീസ്ഷിപ്പ് പ്രോത്സാഹന പദ്ധതി",
+      deptEn: "Ministry of Skill Development & Entrepreneurship, Govt of India",
+      deptMl: "നൈപുണ്യ വികസന സംരംഭകത്വ മന്ത്രാലയം, ഭാരത സർക്കാർ",
+      benefitEn: "Apprenticeship stipend support for trainees",
+      benefitMl: "പരിശീലനാർത്ഥികൾക്ക് സ്റ്റൈപ്പൻഡ് പിന്തുണ",
+      eligibilityEn: "Employers & ITI / diploma candidates",
+      eligibilityMl: "തൊഴിലുടമകളും ITI / ഡിപ്ലോമ സ്ഥാനാർത്ഥികളും",
+    },
+  ],
+  default: [
+    {
+      titleEn: "National Welfare & Financial Support Program",
+      titleMl: "കേന്ദ്ര സർക്കാർ സുരക്ഷാ പദ്ധതി",
+      deptEn: "Central Nodal Department, Govt of India",
+      deptMl: "കേന്ദ്ര വികസന മന്ത്രാലയം, ഭാരത സർക്കാർ",
+      benefitEn: "Direct financial assistance & subsidy transfer",
+      benefitMl: "നേരിട്ടുള്ള സാമ്പത്തിക സഹായം & സബ്‍സിഡി",
+      eligibilityEn: "Eligible resident citizens of India",
+      eligibilityMl: "യോഗ്യരായ ഇന്ത്യൻ പൗരന്മാർ",
+    },
+    {
+      titleEn: "PM Garib Kalyan Anna Yojana",
+      titleMl: "പിഎം ഗരീബ് കല്യാൺ അന്ന യോജന",
+      deptEn: "Department of Food & Public Distribution, Govt of India",
+      deptMl: "ഭക്ഷ്യ-പൊതു വിതരണ വകുപ്പ്, ഭാരത സർക്കാർ",
+      benefitEn: "Free foodgrain for priority household families",
+      benefitMl: "മുൻഗണനാ കുടുംബങ്ങൾക്ക് സൗജന്യ ഭക്ഷ്യധാന്യം",
+      eligibilityEn: "Priority household ration card holders",
+      eligibilityMl: "മുൻഗണനാ റേഷൻ കാർഡ് ഉടമകൾ",
+    },
+    {
+      titleEn: "Pradhan Mantri Ujjwala Yojana 2.0",
+      titleMl: "പ്രധാനമന്ത്രി ഉജ്ജ്വല യോജന 2.0",
+      deptEn: "Ministry of Petroleum & Natural Gas, Govt of India",
+      deptMl: "പെട്രോളിയം-പ്രകൃതിവാതക മന്ത്രാലയം, ഭാരത സർക്കാർ",
+      benefitEn: "Free LPG connection with subsidised refills",
+      benefitMl: "സൗജന്യ എൽപിജി കണക്ഷനും സബ്‍സിഡി റീഫില്ലും",
+      eligibilityEn: "BPL women from eligible households",
+      eligibilityMl: "യോഗ്യരായ ബിപിഎൽ കുടുംബങ്ങളിലെ വനിതകൾ",
+    },
+  ],
+};
+
+const getMobileCentralSchemeCards = (categoryId: string) =>
+  mobileCentralSchemeCardsByCategory[categoryId] ?? mobileCentralSchemeCardsByCategory.default;
 
 const metricsByPeriod: Record<
   string,
@@ -1151,8 +2698,9 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
   const [showEligibilityDetails, setShowEligibilityDetails] = useState<boolean>(true);
   const [selectedEligibleScheme, setSelectedEligibleScheme] = useState<MobileEligibleScheme | null>(null);
   const [selectedEligibleSchemeIds, setSelectedEligibleSchemeIds] = useState<string[]>([]);
-  const [schemeDetailsReturnStep, setSchemeDetailsReturnStep] = useState<"eligibility_result" | "eligible_schemes" | "selected_schemes" | "applicant_applications">("eligible_schemes");
-  const [uploadedDocName, setUploadedDocName] = useState<string>("");
+  const [schemeDetailsReturnStep, setSchemeDetailsReturnStep] = useState<"eligibility_result" | "eligible_schemes" | "selected_schemes" | "applicant_applications" | "app_detail">("eligible_schemes");
+  const [uploadedDocuments, setUploadedDocuments] = useState<Record<string, string>>({});
+  const [uploadErrors, setUploadErrors] = useState<Record<string, string>>({});
   const [bankAccountNumber, setBankAccountNumber] = useState<string>("");
   const [bankIfscCode, setBankIfscCode] = useState<string>("");
   const [declarationAccepted, setDeclarationAccepted] = useState<boolean>(false);
@@ -1164,6 +2712,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
   const [finalFinancialHardshipStatus, setFinalFinancialHardshipStatus] = useState<string>("");
   const [finalAnnualFamilyIncome, setFinalAnnualFamilyIncome] = useState<string>("");
   const [finalResidenceArea, setFinalResidenceArea] = useState<string>("");
+  const [pmKisanDetails, setPmKisanDetails] = useState<PmKisanCollectionDetails>(createEmptyPmKisanDetails);
   const [finalDetailsInvalidFields, setFinalDetailsInvalidFields] = useState<string[]>([]);
   const [finalDetailsSaveNotice, setFinalDetailsSaveNotice] = useState<"invalid" | "incomplete" | null>(null);
   const [mobileCollectionRecords, setMobileCollectionRecords] = useState<MobileCollectionRecord[]>([]);
@@ -1197,54 +2746,66 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
       categoryMl: "കേന്ദ്ര സർക്കാർ",
       requiredDocEn: "Land Record / Revenue Tax Receipt Copy",
       requiredDocMl: "കരം അടച്ച രസീത് / ഭൂമി ഉടമസ്ഥാവകാശ രേഖ",
-      requiredFieldKeys: ["bankAccountNumber", "bankIfscCode", "residenceArea"],
+      requiredFieldKeys: [],
     },
     {
       id: "SCH-002",
-      titleEn: "Karunya Arogya Suraksha Padhathi (KASP)",
-      titleMl: "കാരുണ്യ ആരോഗ്യ സുരക്ഷാ പദ്ധതി (KASP)",
+      titleEn: "Ayushman Bharat PM-JAY",
+      titleMl: "ആയുഷ്മാൻ ഭാരത് പിഎം-ജയ്",
       benefitEn: "Up to ₹5,00,000 per family per year for secondary and tertiary hospitalization.",
       benefitMl: "കുടുംബത്തിന് പ്രതിവർഷം ₹5,00,000 വരെയുള്ള സൗജന്യ ആശുപത്രി ചികിത്സാ പരിരക്ഷ.",
       matchLabelEn: "96% Match",
       matchLabelMl: "96% യോഗ്യത",
-      deptEn: "Health & Family Welfare",
-      deptMl: "ആരോഗ്യ കുടുംബക്ഷേമ വകുപ്പ്",
-      categoryEn: "State Government",
-      categoryMl: "സംസ്ഥാന സർക്കാർ",
-      requiredDocEn: "Ration Card Copy (AAY / PHH / Non-Priority)",
-      requiredDocMl: "റേഷൻ കാർഡിന്റെ പകർപ്പ് (AAY / PHH)",
+      deptEn: "National Health Authority",
+      deptMl: "ദേശീയ ആരോഗ്യ അതോറിറ്റി",
+      categoryEn: "Central Government",
+      categoryMl: "കേന്ദ്ര സർക്കാർ",
+      requiredDocEn: "Ration Card / SECC Verification Copy",
+      requiredDocMl: "റേഷൻ കാർഡ് / SECC സ്ഥിരീകരണ പകർപ്പ്",
       requiredFieldKeys: ["bankAccountNumber", "bankIfscCode", "bplStatus", "residenceArea"],
     },
     {
       id: "SCH-003",
-      titleEn: "LIFE Mission Housing Title & Grant",
-      titleMl: "ലൈഫ് മിഷൻ ഭവന നിർമ്മാണ പദ്ധതി",
-      benefitEn: "₹4,00,000 financial assistance for constructing a house for homeless families.",
-      benefitMl: "ഭവനരഹിതരായ കുടുംബങ്ങൾക്ക് വീട് നിർമ്മിക്കുന്നതിന് ₹4,00,000 സാമ്പത്തിക സഹായം.",
+      titleEn: "Pradhan Mantri Awas Yojana - Gramin (PMAY-G)",
+      titleMl: "പ്രധാനമന്ത്രി ആവാസ് യോജന - ഗ്രാമീൺ (PMAY-G)",
+      benefitEn: "Up to ₹1,20,000 assistance for constructing a pucca house for eligible rural families.",
+      benefitMl: "യോഗ്യരായ ഗ്രാമീണ കുടുംബങ്ങൾക്ക് പക്കാ വീട് നിർമ്മാണത്തിന് ₹1,20,000 വരെ ധനസഹായം.",
       matchLabelEn: "92% Match",
       matchLabelMl: "92% യോഗ്യത",
-      deptEn: "Local Self Government",
-      deptMl: "തദ്ദേശ സ്വയംഭരണ വകുപ്പ്",
-      categoryEn: "State Government",
-      categoryMl: "സംസ്ഥാന സർക്കാർ",
+      deptEn: "Ministry of Rural Development",
+      deptMl: "ഗ്രാമവികസന മന്ത്രാലയം",
+      categoryEn: "Central Government",
+      categoryMl: "കേന്ദ്ര സർക്കാർ",
       requiredDocEn: "Land Ownership Title / Possessory Certificate",
       requiredDocMl: "ഭൂമി ഉടമസ്ഥാവകാശ സാക്ഷ്യപത്രം",
       requiredFieldKeys: ["bankAccountNumber", "bankIfscCode", "bplStatus", "residenceArea"],
     },
     {
       id: "SCH-004",
-      titleEn: "Vayoshreshtha Welfare & Pension Scheme",
-      titleMl: "വയോശ്രേഷ്ഠ മുതിർന്ന പൗര പെൻഷൻ",
-      benefitEn: "₹1,600 monthly social security pension and healthcare support.",
-      benefitMl: "പ്രതിമാസം ₹1,600 സാമൂഹിക സുരക്ഷാ പെൻഷനും ആരോഗ്യ പരിരക്ഷയും.",
+      titleEn: "Indira Gandhi National Old Age Pension Scheme (IGNOAPS)",
+      titleMl: "ഇന്ദിരാഗാന്ധി ദേശീയ വാർദ്ധക്യ പെൻഷൻ പദ്ധതി (IGNOAPS)",
+      benefitEn: "Monthly central pension assistance for BPL senior citizens aged 60 and above.",
+      benefitMl: "60 വയസ്സിന് മുകളിലുള്ള ബിപിഎൽ മുതിർന്ന പൗരന്മാർക്ക് പ്രതിമാസ കേന്ദ്ര പെൻഷൻ സഹായം.",
       matchLabelEn: "88% Match",
       matchLabelMl: "88% യോഗ്യത",
-      deptEn: "Social Justice Department",
-      deptMl: "സാമൂഹിക നീതി വകുപ്പ്",
-      categoryEn: "State Government",
-      categoryMl: "സംസ്ഥാന സർക്കാർ",
+      deptEn: "Ministry of Rural Development",
+      deptMl: "ഗ്രാമവികസന മന്ത്രാലയം",
+      categoryEn: "Central Government",
+      categoryMl: "കേന്ദ്ര സർക്കാർ",
       requiredDocEn: "Aadhaar / Age Proof & Bank Passbook Copy",
       requiredDocMl: "വയസ് തെളിയിക്കുന്ന രേഖ & ബാങ്ക് പാസ്ബുക്ക് പകർപ്പ്",
+      requiredDocuments: [
+        {
+          id: "ageProof",
+          labelEn: "Aadhaar / Age Proof Copy",
+          labelMl: "ആധാർ / വയസ് തെളിയിക്കുന്ന രേഖയുടെ പകർപ്പ്",
+        },
+        {
+          id: "bankPassbook",
+          labelEn: "Bank Passbook Copy",
+          labelMl: "ബാങ്ക് പാസ്ബുക്ക് പകർപ്പ്",
+        },
+      ],
       requiredFieldKeys: ["bankAccountNumber", "bankIfscCode", "minorityStatus", "disabilityStatus", "studentStatus", "bplStatus", "residenceArea"],
     },
   ];
@@ -1275,16 +2836,71 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     return { en: scheme.categoryEn, ml: scheme.categoryMl };
   };
 
-  const getSchemeRequiredFieldKeys = (scheme: MobileEligibleScheme | null) =>
-    scheme?.requiredFieldKeys || (Object.keys(mobileFieldLabels) as MobileSchemeFieldKey[]);
+  const getSchemeRequiredFieldKeys = (scheme: MobileEligibleScheme | null) => {
+    if (isPmKisanScheme(scheme)) return [];
+    return scheme?.requiredFieldKeys || (Object.keys(mobileFieldLabels) as MobileSchemeFieldKey[]);
+  };
+
+  const getSchemeRequiredDocuments = (scheme: MobileEligibleScheme | null): MobileSchemeDocument[] => {
+    if (!scheme) return [];
+    if (scheme.requiredDocuments?.length) return scheme.requiredDocuments;
+    return [{ id: "requiredDocument", labelEn: scheme.requiredDocEn, labelMl: scheme.requiredDocMl }];
+  };
+
+  const isPmKisanScheme = (scheme: MobileEligibleScheme | null) =>
+    scheme?.id === "SCH-001" || /pm[\s-]*kisan/i.test(scheme?.titleEn ?? "");
+
+  const pmKisanReviewCutoffDate = "2019-02-01";
+
+  const getPmKisanMissingItems = (details: PmKisanCollectionDetails): MobileMissingItem[] =>
+    pmKisanQuestions.flatMap((question) => {
+      if (question.type === "choice") {
+        return details[question.key]
+          ? []
+          : [{ key: `pmKisan:${question.key}`, labelEn: question.labelEn, labelMl: question.labelMl, kind: "field" as const }];
+      }
+      return details.landAcquiredDate || details.landAcquisitionNotSure
+        ? []
+        : [{ key: `pmKisan:${question.key}`, labelEn: question.labelEn, labelMl: question.labelMl, kind: "field" as const }];
+    });
+
+  const isPmKisanAcquisitionAfterCutoff = (details: PmKisanCollectionDetails) =>
+    Boolean(details.landAcquiredDate) && details.landAcquiredDate > pmKisanReviewCutoffDate;
+
+  const getPmKisanAnswerLabel = (
+    details: PmKisanCollectionDetails,
+    question: PmKisanQuestion,
+    displayLang: "en" | "ml"
+  ) => {
+    if (question.type === "date") {
+      if (details.landAcquisitionNotSure) return displayLang === "ml" ? "ഉറപ്പില്ല" : "Not sure";
+      return details.landAcquiredDate ? formatCollectionDate(details.landAcquiredDate) : "—";
+    }
+    const option = question.options.find((item) => item.value === details[question.key]);
+    if (!option) return "—";
+    return displayLang === "ml" ? option.labelMl : option.labelEn;
+  };
+
+  const getUploadedDocumentsForRecord = (record: MobileCollectionRecord | null) => {
+    const requiredDocuments = getSchemeRequiredDocuments(record?.scheme ?? null);
+    const storedDocuments = record?.uploadedDocuments ? { ...record.uploadedDocuments } : {};
+    const firstRequiredDocument = requiredDocuments[0];
+    if (record?.uploadedDocName && firstRequiredDocument && !storedDocuments[firstRequiredDocument.id]) {
+      storedDocuments[firstRequiredDocument.id] = record.uploadedDocName;
+    }
+    return storedDocuments;
+  };
+
+  const getDocumentMissingItem = (document: MobileSchemeDocument): MobileMissingItem => ({
+    key: `document:${document.id}`,
+    labelEn: `Required document: ${document.labelEn}`,
+    labelMl: `ആവശ്യമായ രേഖ: ${document.labelMl}`,
+    kind: "document",
+  });
 
   const getRequiredItemsForScheme = (scheme: MobileEligibleScheme): MobileMissingItem[] => [
-    {
-      key: "requiredDocument",
-      labelEn: `Required document: ${scheme.requiredDocEn}`,
-      labelMl: `ആവശ്യമായ രേഖ: ${scheme.requiredDocMl}`,
-      kind: "document",
-    },
+    ...getSchemeRequiredDocuments(scheme).map(getDocumentMissingItem),
+    ...(isPmKisanScheme(scheme) ? getPmKisanMissingItems(createEmptyPmKisanDetails()) : []),
     ...getSchemeRequiredFieldKeys(scheme).map((key) => ({
       key,
       labelEn: mobileFieldLabels[key].labelEn,
@@ -1308,7 +2924,8 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     record: MobileCollectionRecord | null,
     sharedRecord?: MobileCollectionRecord | null
   ) => {
-    setUploadedDocName(record?.uploadedDocName || "");
+    setUploadedDocuments(getUploadedDocumentsForRecord(record));
+    setUploadErrors({});
     setBankAccountNumber(record?.bankAccountNumber || sharedRecord?.bankAccountNumber || "");
     setBankIfscCode(record?.bankIfscCode || sharedRecord?.bankIfscCode || "");
     setFinalMinorityStatus(record?.minorityStatus || sharedRecord?.minorityStatus || "");
@@ -1319,6 +2936,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     setFinalFinancialHardshipStatus(record?.financialHardshipStatus || sharedRecord?.financialHardshipStatus || "");
     setFinalAnnualFamilyIncome(record?.annualFamilyIncome || sharedRecord?.annualFamilyIncome || "");
     setFinalResidenceArea(record?.residenceArea || sharedRecord?.residenceArea || "");
+    setPmKisanDetails(record?.pmKisanDetails ? { ...record.pmKisanDetails } : createEmptyPmKisanDetails());
     setDeclarationAccepted(record?.declarationAccepted ?? false);
     setFollowUpDate(record?.followUpDate || "");
     setFollowUpNotes(record?.followUpNotes || "");
@@ -1326,8 +2944,10 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     setFinalDetailsInvalidFields([]);
     const hasCollectedData = Boolean(
       record
-      && (record.uploadedDocName || record.bankAccountNumber || record.bankIfscCode
-        || record.minorityStatus || record.declarationAccepted || record.followUpDate)
+      && (record.uploadedDocName || Object.values(getUploadedDocumentsForRecord(record)).some(Boolean)
+        || record.bankAccountNumber || record.bankIfscCode
+        || record.minorityStatus || record.declarationAccepted || record.followUpDate
+        || Boolean(record.pmKisanDetails && Object.values(record.pmKisanDetails).some((value) => Boolean(value))))
     );
     setFinalDetailsSaveNotice(hasCollectedData && record?.status === "incomplete" ? "incomplete" : null);
     setIsFollowUpSheetOpen(false);
@@ -1364,6 +2984,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
       nextReferences.push(reference);
       const newRecord: MobileCollectionRecord = {
         reference,
+        createdAt: new Date().toISOString(),
         applicantName,
         scheme: { ...scheme },
         status: "not_started",
@@ -1371,6 +2992,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
         followUpDate: "",
         followUpNotes: "",
         uploadedDocName: "",
+        uploadedDocuments: {},
         bankAccountNumber: "",
         bankIfscCode: "",
         minorityStatus: "",
@@ -1381,6 +3003,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
         financialHardshipStatus: "",
         annualFamilyIncome: "",
         residenceArea: "",
+        pmKisanDetails: isPmKisanScheme(scheme) ? createEmptyPmKisanDetails() : undefined,
         declarationAccepted: false,
         updatedAt: new Date().toISOString(),
       };
@@ -1435,6 +3058,10 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     (record) => record.reference === activeCollectionReference
   ) ?? null;
 
+  const activeCollectionRecordUploadedDocuments = activeCollectionRecord
+    ? getUploadedDocumentsForRecord(activeCollectionRecord)
+    : {};
+
   const followUpCollectionRecords = mobileCollectionRecords.filter(
     (record) => record.status === "incomplete"
   );
@@ -1452,7 +3079,6 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
   const applicantNotStartedCount = currentApplicantApplications.filter(
     (record) => record.status === "not_started"
   ).length;
-
   const activeApplicationIndex = currentApplicantApplications.findIndex(
     (record) => record.reference === activeCollectionReference
   );
@@ -1546,15 +3172,15 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     const age = getApplicantAge();
     const locationLabel = createDistrict ? `${createDistrict}, Kerala` : "Kerala";
     return (
-      <div className="rounded-2xl border border-border bg-card p-3 shadow-2xs">
+      <div className="rounded-2xl border border-border bg-card p-3.5 shadow-2xs">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-orange-200 bg-gradient-to-br from-orange-100 to-amber-50 text-sm font-black text-orange-700 dark:border-orange-900 dark:from-orange-950/70 dark:to-amber-950/40 dark:text-orange-300">
+          <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border border-orange-200 bg-gradient-to-br from-orange-100 to-amber-50 text-[15px] font-black text-orange-700 dark:border-orange-900 dark:from-orange-950/70 dark:to-amber-950/40 dark:text-orange-300">
             {initials || "A"}
           </div>
           <div className="min-w-0 flex-1 text-left">
-            <p className="truncate text-[13px] font-extrabold text-foreground">{applicantName}</p>
-            <p className="mt-0.5 truncate text-[10.5px] font-medium text-muted-foreground">
-              {age ? `Age ${age} • ` : ""}{locationLabel}
+            <p className="truncate text-[14px] font-extrabold text-foreground">{applicantName}</p>
+            <p className="mt-0.5 truncate text-[11.5px] font-medium text-muted-foreground">
+              {age ? `Age ${age} · ` : ""}{locationLabel}
             </p>
             {supportingLine && (
               <p className="mt-0.5 truncate text-[10px] font-medium text-muted-foreground/90">
@@ -1566,7 +3192,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
             <button
               type="button"
               onClick={onEdit}
-              className="shrink-0 text-[11px] font-extrabold text-orange-600 hover:text-orange-700 cursor-pointer dark:text-orange-400"
+              className="min-h-10 shrink-0 px-1 text-[11.5px] font-extrabold text-orange-600 hover:text-orange-700 cursor-pointer dark:text-orange-400"
             >
               {actionLabel || (lang === "ml" ? "തിരുത്തുക" : "Edit")}
             </button>
@@ -1574,6 +3200,57 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
         </div>
       </div>
     );
+  };
+
+  const handleDocumentFileSelect = (documentId: string, file?: File) => {
+    if (!file) return;
+    const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+    const isSupported = ["pdf", "jpg", "jpeg", "png"].includes(extension);
+    if (!isSupported) {
+      setUploadErrors((current) => ({
+        ...current,
+        [documentId]: lang === "ml"
+          ? "PDF, JPG അല്ലെങ്കിൽ PNG ഫയൽ മാത്രം അപ്‌ലോഡ് ചെയ്യുക."
+          : "Upload a PDF, JPG or PNG file only.",
+      }));
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadErrors((current) => ({
+        ...current,
+        [documentId]: lang === "ml"
+          ? "ഫയൽ വലുപ്പം 5MB-ൽ കുറവായിരിക്കണം."
+          : "File size must be under 5MB.",
+      }));
+      return;
+    }
+
+    setUploadedDocuments((current) => ({ ...current, [documentId]: file.name }));
+    setUploadErrors((current) => {
+      const next = { ...current };
+      delete next[documentId];
+      return next;
+    });
+    setFinalDetailsSaveNotice(null);
+  };
+
+  const removeDocumentUpload = (documentId: string) => {
+    setUploadedDocuments((current) => {
+      const next = { ...current };
+      delete next[documentId];
+      return next;
+    });
+    setUploadErrors((current) => {
+      const next = { ...current };
+      delete next[documentId];
+      return next;
+    });
+    setFinalDetailsSaveNotice(null);
+  };
+
+  const updatePmKisanDetails = (patch: Partial<PmKisanCollectionDetails>) => {
+    setPmKisanDetails((current) => ({ ...current, ...patch }));
+    setFinalDetailsSaveNotice(null);
   };
 
   const getFinalDetailsValidation = () => {
@@ -1585,14 +3262,9 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
       missingItems.push({ key, labelEn, labelMl, kind: "field" });
     };
 
-    if (!uploadedDocName) {
-      missingItems.push({
-        key: "requiredDocument",
-        labelEn: `Required document: ${selectedEligibleScheme?.requiredDocEn || "Scheme document"}`,
-        labelMl: `ആവശ്യമായ രേഖ: ${selectedEligibleScheme?.requiredDocMl || "പദ്ധതി രേഖ"}`,
-        kind: "document",
-      });
-    }
+    getSchemeRequiredDocuments(selectedEligibleScheme).forEach((document) => {
+      if (!uploadedDocuments[document.id]) missingItems.push(getDocumentMissingItem(document));
+    });
 
     if (requiresField("bankAccountNumber")) {
       if (!bankAccountNumber.trim()) {
@@ -1641,6 +3313,9 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     if (requiresField("residenceArea") && !finalResidenceArea) {
       addMissingField("residenceArea", mobileFieldLabels.residenceArea.labelEn, mobileFieldLabels.residenceArea.labelMl);
     }
+    if (isPmKisanScheme(selectedEligibleScheme)) {
+      missingItems.push(...getPmKisanMissingItems(pmKisanDetails));
+    }
     if (!declarationAccepted) {
       missingItems.push({ key: "declaration", labelEn: "Declaration confirmation", labelMl: "സത്യവാങ്മൂലം സ്ഥിരീകരണം", kind: "field" });
     }
@@ -1668,15 +3343,26 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
       );
     }
     const isComplete = status === "complete" || status === "ready";
+    const requiredDocuments = getSchemeRequiredDocuments(selectedEligibleScheme);
+    const normalizedUploadedDocuments = requiredDocuments.reduce<Record<string, string>>((documents, document) => {
+      const fileName = uploadedDocuments[document.id];
+      if (fileName) documents[document.id] = fileName;
+      return documents;
+    }, {});
     const record: MobileCollectionRecord = {
       reference,
+      createdAt: existingRecord?.createdAt || new Date().toISOString(),
       applicantName: createFullName.trim() || "Applicant",
       scheme: { ...selectedEligibleScheme },
       status,
       missingItems,
       followUpDate: isComplete ? "" : followUpDate,
       followUpNotes: isComplete ? "" : followUpNotes,
-      uploadedDocName,
+      uploadedDocName: requiredDocuments
+        .map((document) => uploadedDocuments[document.id])
+        .filter(Boolean)
+        .join(", "),
+      uploadedDocuments: normalizedUploadedDocuments,
       bankAccountNumber,
       bankIfscCode,
       minorityStatus: finalMinorityStatus,
@@ -1687,6 +3373,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
       financialHardshipStatus: finalFinancialHardshipStatus,
       annualFamilyIncome: finalAnnualFamilyIncome,
       residenceArea: finalResidenceArea,
+      pmKisanDetails: isPmKisanScheme(selectedEligibleScheme) ? { ...pmKisanDetails } : undefined,
       declarationAccepted,
       updatedAt: new Date().toISOString(),
     };
@@ -1705,13 +3392,89 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     setFinalDetailsInvalidFields(validation.invalidFields);
 
     if (validation.isValid) {
-      buildCollectionRecord("complete", []);
+      const savedRecord = buildCollectionRecord("complete", []);
       setFollowUpDate("");
       setFollowUpNotes("");
       setFollowUpMissingItems([]);
       setFinalDetailsSaveNotice(null);
       setIsFollowUpSheetOpen(false);
-      setCreateFlowStep("collection_saved");
+
+      if (savedRecord) {
+        const category = getSchemeCategoryLabel(savedRecord.scheme);
+        const phoneDigits = createPhone.replace(/\D/g, "").slice(-10);
+        const phoneDisplay =
+          phoneDigits.length === 10
+            ? `+91 ${phoneDigits.slice(0, 5)} ${phoneDigits.slice(5)}`
+            : `${createCountryCode} ${createPhone.trim()}`.trim() || "—";
+        const aadhaarDigits = createAadhaar.replace(/\D/g, "");
+        const locationEn =
+          [createMandalam.trim(), createDistrict.trim()].filter(Boolean).join(", ") || "Kerala";
+        const locationMl =
+          [
+            createMandalam ? getConstituencyName(createMandalam, "ml") : "",
+            createDistrict ? getDistrictName(createDistrict, "ml") : "",
+          ]
+            .filter(Boolean)
+            .join(", ") || "കേരളം";
+        const receivedDate = formatCollectionDate(savedRecord.createdAt.slice(0, 10));
+        const verifiedDate = formatCollectionDate(savedRecord.updatedAt.slice(0, 10));
+        const uploadedFiles = Object.values(savedRecord.uploadedDocuments ?? {}).filter(Boolean);
+        const assistingWorkerEn = userRole === "party_worker" ? "Dhyan M S" : "Jayasurya";
+        const assistingWorkerMl = userRole === "party_worker" ? "ധ്യാൻ എം എസ്" : "ജയസൂര്യ";
+
+        setSelectedApplicationRecord({
+          ref: savedRecord.reference,
+          schemeNameEn: savedRecord.scheme.titleEn,
+          schemeNameMl: savedRecord.scheme.titleMl,
+          categoryEn: category.en,
+          categoryMl: category.ml,
+          status: "pending",
+          applicantNameEn: savedRecord.applicantName,
+          applicantNameMl: savedRecord.applicantName,
+          aadhaar: aadhaarDigits.length >= 4 ? `XXXX-XXXX-${aadhaarDigits.slice(-4)}` : "—",
+          phone: phoneDisplay,
+          locationEn,
+          locationMl,
+          annualIncome: createIncomeRange || "—",
+          appliedDate: receivedDate,
+          currentStep: 2,
+          pendingDocs: uploadedFiles,
+          nextActionEn: "Ready for submission to the scheme portal",
+          nextActionMl: "സ്കീം പോർട്ടലിൽ സമർപ്പിക്കാൻ തയ്യാർ",
+          auditLog: [
+            {
+              titleEn: "Application received",
+              titleMl: "അപേക്ഷ ലഭിച്ചു",
+              date: receivedDate,
+              time: getActivityTimeLabel(new Date(savedRecord.createdAt)),
+              actorEn: savedRecord.applicantName,
+              actorMl: savedRecord.applicantName,
+              status: "completed",
+            },
+            {
+              titleEn: "Documents checked",
+              titleMl: "രേഖകൾ പരിശോധിച്ചു",
+              date: verifiedDate,
+              time: getActivityTimeLabel(new Date(savedRecord.updatedAt)),
+              actorEn: assistingWorkerEn,
+              actorMl: assistingWorkerMl,
+              status: "completed",
+            },
+          ],
+          workflowStatus: "document_verification_completed",
+          assistedByEn: assistingWorkerEn,
+          assistedByMl: assistingWorkerMl,
+        });
+      }
+
+      setActiveTab("applications");
+      setMobileSubPage("app_detail");
+      setAppDetailView("overview");
+      setAppDetailMenuOpen(false);
+      setEditingApplicationRef("");
+      setCreateFlowStep("form");
+      mobileContentRef.current?.scrollTo({ top: 0 });
+      showDocumentActionNotice(lang === "ml" ? "വിവരങ്ങൾ വിജയകരമായി സേവ് ചെയ്തു." : "Details saved successfully.");
       return;
     }
 
@@ -1739,6 +3502,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
   const handleAddAnotherScheme = () => {
     setSelectedEligibleSchemeIds(currentApplicantApplications.map((record) => record.scheme.id));
     setSelectedEligibleScheme(null);
+    setPmKisanDetails(createEmptyPmKisanDetails());
     setCreateFlowStep("eligible_schemes");
   };
 
@@ -1805,7 +3569,8 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     setSelectedEligibleScheme({ ...activeCollectionRecord.scheme });
     setSelectedEligibleSchemeIds([activeCollectionRecord.scheme.id]);
     setCreateFullName(activeCollectionRecord.applicantName === "Applicant" ? "" : activeCollectionRecord.applicantName);
-    setUploadedDocName(activeCollectionRecord.uploadedDocName);
+    setUploadedDocuments(getUploadedDocumentsForRecord(activeCollectionRecord));
+    setUploadErrors({});
     setBankAccountNumber(activeCollectionRecord.bankAccountNumber);
     setBankIfscCode(activeCollectionRecord.bankIfscCode);
     setFinalMinorityStatus(activeCollectionRecord.minorityStatus);
@@ -1816,6 +3581,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     setFinalFinancialHardshipStatus(activeCollectionRecord.financialHardshipStatus);
     setFinalAnnualFamilyIncome(activeCollectionRecord.annualFamilyIncome);
     setFinalResidenceArea(activeCollectionRecord.residenceArea);
+    setPmKisanDetails(activeCollectionRecord.pmKisanDetails ? { ...activeCollectionRecord.pmKisanDetails } : createEmptyPmKisanDetails());
     setDeclarationAccepted(activeCollectionRecord.declarationAccepted);
     setFollowUpDate(activeCollectionRecord.followUpDate);
     setFollowUpNotes(activeCollectionRecord.followUpNotes);
@@ -1832,6 +3598,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
   };
 
   const handleAddAnotherApplicant = () => {
+    setEditingApplicationRef("");
     setCreateFullName("");
     setCreateAadhaar("");
     setCreateCountryCode("+91");
@@ -1856,7 +3623,9 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     setSelectedSchemeName("");
     setSelectedEligibleScheme(null);
     setSelectedEligibleSchemeIds([]);
-    setUploadedDocName("");
+    setUploadedDocuments({});
+    setUploadErrors({});
+    setPmKisanDetails(createEmptyPmKisanDetails());
     setBankAccountNumber("");
     setBankIfscCode("");
     setFinalMinorityStatus("");
@@ -1867,6 +3636,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     setFinalFinancialHardshipStatus("");
     setFinalAnnualFamilyIncome("");
     setFinalResidenceArea("");
+    setPmKisanDetails(createEmptyPmKisanDetails());
     setDeclarationAccepted(false);
     setFinalDetailsInvalidFields([]);
     setFinalDetailsSaveNotice(null);
@@ -1900,10 +3670,10 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
           benefitMl: "സർക്കാർ പദ്ധതി സാമ്പത്തിക ആനുകൂല്യങ്ങളും ക്ഷേമ സഹായങ്ങളും.",
           matchLabelEn: "100% Match",
           matchLabelMl: "100% യോഗ്യത",
-          deptEn: "Kerala State Department",
-          deptMl: "കേരള സംസ്ഥാന വകുപ്പ്",
-          categoryEn: "Government Scheme",
-          categoryMl: "സർക്കാർ പദ്ധതി",
+          deptEn: "Government of India Department",
+          deptMl: "ഭാരത സർക്കാർ വകുപ്പ്",
+          categoryEn: "Central Government",
+          categoryMl: "കേന്ദ്ര സർക്കാർ",
           requiredDocEn: "Aadhaar Card / Income Certificate Copy",
           requiredDocMl: "ആധാർ കാർഡ് / വരുമാന സർട്ടിഫിക്കറ്റ് പകർപ്പ്",
           requiredFieldKeys: ["bankAccountNumber", "bankIfscCode", "minorityStatus", "disabilityStatus", "studentStatus", "bplStatus", "residenceArea"],
@@ -1911,12 +3681,16 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
 
         setSelectedEligibleScheme(matchedScheme);
         setSelectedEligibleSchemeIds([matchedScheme.id]);
+        setUploadedDocuments({});
+        setUploadErrors({});
+        setPmKisanDetails(createEmptyPmKisanDetails());
         setSchemeDetailsReturnStep("eligibility_result");
         setIsSingleSchemeEligible(true);
         setCreateFlowStep("eligibility_result");
       } else {
         setSelectedEligibleScheme(null);
         setSelectedEligibleSchemeIds([]);
+        setPmKisanDetails(createEmptyPmKisanDetails());
         setCreateFlowStep("eligible_schemes");
       }
     }, 2200);
@@ -1946,6 +3720,9 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     setSelectedSchemeName(scheme.en);
     setSelectedEligibleScheme(mobileScheme);
     setSelectedEligibleSchemeIds([scheme.id]);
+    setUploadedDocuments({});
+    setUploadErrors({});
+    setPmKisanDetails(createEmptyPmKisanDetails());
 
     const genderMap: Record<string, string> = {
       male: "Male",
@@ -2028,14 +3805,14 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     count: number;
   } | null>(null);
   const [eventsSubTab, setEventsSubTab] = useState<"events" | "announcements">("events");
-  const [applicationStatusFilter, setApplicationStatusFilter] = useState<"all" | "pending" | "assisted" | "rejected">("all");
+  const [applicationStatusFilter, setApplicationStatusFilter] = useState<MobileApplicationStatusFilter>("all");
   const [appSchemeCategoryFilter, setAppSchemeCategoryFilter] = useState<string>("all");
   const [appAssistanceStatusFilter, setAppAssistanceStatusFilter] = useState<string>("all");
   const [appDateFilter, setAppDateFilter] = useState<string>("all");
   const [appCustomStartDate, setAppCustomStartDate] = useState<string>("");
   const [appCustomEndDate, setAppCustomEndDate] = useState<string>("");
   const matchAppSearch = (
-    status: "pending" | "assisted" | "rejected",
+    status: MobileApplicationListStatus,
     nameEn: string,
     nameMl: string,
     applicantEn: string,
@@ -2070,30 +3847,376 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
   const [showMoreMenu, setShowMoreMenu] = useState<boolean>(false);
   const [deviceModel, setDeviceModel] = useState<"iphone" | "android">("iphone");
   const [activeNotificationFilter, setActiveNotificationFilter] = useState<"all" | "unread" | "applications" | "schemes" | "support">("all");
-  const [schemeSourceFilter, setSchemeSourceFilter] = useState<"all" | "central" | "state">("all");
   const [selectedSchemeName, setSelectedSchemeName] = useState<string>("");
   const [schemeSearchQuery, setSchemeSearchQuery] = useState<string>("");
-  const [selectedApplicationRecord, setSelectedApplicationRecord] = useState<{
-    ref: string;
-    schemeNameEn: string;
-    schemeNameMl: string;
-    categoryEn: string;
-    categoryMl: string;
-    status: "pending" | "in_review" | "approved" | "rejected" | "disbursed";
-    applicantNameEn: string;
-    applicantNameMl: string;
-    aadhaar: string;
-    phone: string;
-    locationEn: string;
-    locationMl: string;
-    annualIncome: string;
-    appliedDate: string;
-    currentStep: number;
-    pendingDocs: string[];
-    nextActionEn: string;
-    nextActionMl: string;
-    auditLog: Array<{ titleEn: string; titleMl: string; date: string; status: "completed" | "current" | "upcoming" }>;
-  } | null>(null);
+  const [selectedApplicationRecord, setSelectedApplicationRecord] = useState<MobileApplicationRecord | null>(null);
+  const [appDetailView, setAppDetailView] = useState<"overview" | "applicant" | "scheme" | "documents" | "history" | "support">("overview");
+  const [appDetailMenuOpen, setAppDetailMenuOpen] = useState<boolean>(false);
+  const [isTrackingSheetOpen, setIsTrackingSheetOpen] = useState<boolean>(false);
+  const [isTrackingSuccessOpen, setIsTrackingSuccessOpen] = useState<boolean>(false);
+  const [trackingIdDraft, setTrackingIdDraft] = useState<string>("");
+  const [trackingCopied, setTrackingCopied] = useState<boolean>(false);
+  const [isDecisionSheetOpen, setIsDecisionSheetOpen] = useState<boolean>(false);
+  const [decisionChoice, setDecisionChoice] = useState<"approved" | "rejected" | null>(null);
+  const [decisionNotes, setDecisionNotes] = useState<string>("");
+  const [previewDocument, setPreviewDocument] = useState<
+    { name: string; kind: MobileDocumentKind; size: string } | null
+  >(null);
+  const [documentActionNotice, setDocumentActionNotice] = useState<string>("");
+  const [editingApplicationRef, setEditingApplicationRef] = useState<string>("");
+  const [applicationRecordEdits, setApplicationRecordEdits] = useState<
+    Record<
+      string,
+      Partial<{
+        applicantNameEn: string;
+        applicantNameMl: string;
+        aadhaar: string;
+        phone: string;
+        locationEn: string;
+        locationMl: string;
+      }>
+    >
+  >({});
+  const [applicationCollectedDetails, setApplicationCollectedDetails] = useState<
+    Record<string, MobileApplicationCollectedDetails>
+  >(mobileApplicationCollectedDetails);
+
+  useEffect(() => {
+    setAppDetailView("overview");
+    setAppDetailMenuOpen(false);
+    setIsTrackingSheetOpen(false);
+    setIsTrackingSuccessOpen(false);
+    setTrackingIdDraft(selectedApplicationRecord?.trackingId ?? "");
+    setTrackingCopied(false);
+    setIsDecisionSheetOpen(false);
+    setDecisionChoice(null);
+    setDecisionNotes("");
+    setPreviewDocument(null);
+    setDocumentActionNotice("");
+  }, [selectedApplicationRecord?.ref, mobileSubPage]);
+
+  const handleSaveTrackingId = () => {
+    const nextTrackingId = trackingIdDraft.trim();
+    if (!nextTrackingId) return;
+    setSelectedApplicationRecord((current) =>
+      current
+        ? {
+            ...current,
+            trackingId: nextTrackingId,
+            auditLog: [
+              ...current.auditLog,
+              createActivityEntry({
+                titleEn: current.trackingId ? "Tracking ID updated" : "Tracking ID added",
+                titleMl: current.trackingId ? "ട്രാക്കിംഗ് ഐഡി അപ്ഡേറ്റ് ചെയ്തു" : "ട്രാക്കിംഗ് ഐഡി ചേർത്തു",
+                actorEn: current.assistedByEn,
+                actorMl: current.assistedByMl,
+                notes: `Tracking ID: ${nextTrackingId}`,
+              }),
+            ],
+          }
+        : current,
+    );
+    setIsTrackingSheetOpen(false);
+    setIsTrackingSuccessOpen(true);
+    setTrackingCopied(false);
+  };
+
+  const handleOpenDecisionSheet = () => {
+    setDecisionChoice(null);
+    setDecisionNotes(selectedApplicationRecord?.decisionReason ?? "");
+    setIsDecisionSheetOpen(true);
+  };
+
+  const handleCloseDecisionSheet = () => {
+    setIsDecisionSheetOpen(false);
+    setDecisionChoice(null);
+    setDecisionNotes("");
+    setSelectedApplicationRecord((current) =>
+      current && (current.workflowStatus ?? "pending") === "applied"
+        ? { ...current, workflowStatus: "review" }
+        : current,
+    );
+  };
+
+  const handleSaveDecision = () => {
+    if (!decisionChoice) return;
+    const isApproved = decisionChoice === "approved";
+    const reason = decisionNotes.trim();
+
+    setSelectedApplicationRecord((current) =>
+      current
+        ? {
+            ...current,
+            workflowStatus: isApproved ? "assisted" : "rejected",
+            decisionReason: isApproved ? "" : reason,
+            auditLog: [
+              ...current.auditLog,
+              createActivityEntry({
+                titleEn: isApproved ? "Decision recorded: Approved" : "Decision recorded: Rejected",
+                titleMl: isApproved
+                  ? "തീരുമാനം രേഖപ്പെടുത്തി: അംഗീകരിച്ചു"
+                  : "തീരുമാനം രേഖപ്പെടുത്തി: നിരസിച്ചു",
+                actorEn: current.assistedByEn,
+                actorMl: current.assistedByMl,
+                notes: isApproved ? undefined : reason,
+              }),
+            ],
+          }
+        : current,
+    );
+    setIsDecisionSheetOpen(false);
+    setDecisionChoice(null);
+    setDecisionNotes("");
+    showDocumentActionNotice(
+      lang === "ml" ? "തീരുമാനം സേവ് ചെയ്തു." : "Decision saved.",
+    );
+  };
+
+  const showDocumentActionNotice = (message: string) => {
+    setDocumentActionNotice(message);
+    window.setTimeout(() => setDocumentActionNotice(""), 2400);
+  };
+
+  const handleViewDocument = (fileName: string) => {
+    setPreviewDocument({
+      name: getMobileDocumentDisplayName(fileName),
+      kind: getMobileDocumentKind(fileName),
+      size: getMobileDocumentSize(fileName),
+    });
+  };
+
+  const handleDownloadDocument = () => {
+    showDocumentActionNotice(
+      lang === "ml"
+        ? "ഫയൽ ഡൗൺലോഡ് ഈ പ്രിവ്യൂവിൽ ലഭ്യമല്ല."
+        : "File download is unavailable in this preview.",
+    );
+  };
+
+  const handleEditApplicationDetails = () => {
+    const record = selectedApplicationRecord
+      ? { ...selectedApplicationRecord, ...(applicationRecordEdits[selectedApplicationRecord.ref] ?? {}) }
+      : null;
+    if (!record) return;
+
+    const details = applicationCollectedDetails[record.ref];
+    const pickOption = (value: string | undefined, options: string[], aliases: Record<string, string> = {}) => {
+      if (!value) return "";
+      const exact = options.find((option) => option.toLowerCase() === value.toLowerCase());
+      return exact ?? aliases[value] ?? "";
+    };
+    const toIsoDate = (value?: string) => {
+      if (!value) return "";
+      const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      return match ? `${match[3]}-${match[2]}-${match[1]}` : value;
+    };
+    const localBodyTypeMap: Record<string, LocalBodyType> = {
+      "grama panchayat": "panchayat",
+      panchayat: "panchayat",
+      municipality: "municipality",
+      "municipal corporation": "corporation",
+      corporation: "corporation",
+    };
+    const phoneDigits = record.phone.replace(/\D/g, "");
+    const localBodyType = details?.localBodyType
+      ? localBodyTypeMap[details.localBodyType.toLowerCase()]
+      : undefined;
+
+    setCreateFullName(record.applicantNameEn);
+    setCreateAadhaar(record.aadhaar);
+    setCreateCountryCode("+91");
+    setCreatePhone(phoneDigits.length > 10 ? phoneDigits.slice(-10) : phoneDigits);
+    setCreateEmail(details?.email ?? "");
+    setCreateDob(toIsoDate(details?.dateOfBirth));
+    setCreateGender(pickOption(details?.gender, ["Male", "Female", "Transgender / Other"]));
+    setCreateReligion(
+      pickOption(details?.religion, ["Hinduism", "Islam", "Christianity", "Sikhism", "Buddhism", "Jainism", "Other"], {
+        Hindu: "Hinduism",
+        Muslim: "Islam",
+        Christian: "Christianity",
+      }),
+    );
+    setCreateCaste(pickOption(details?.caste, ["General", "OBC", "SC", "ST", "OBC-NCL", "EWS"]));
+    setCreateMaritalStatus(
+      pickOption(
+        details?.maritalStatus,
+        ["Single / Unmarried", "Married", "Widowed", "Divorcee", "Separated"],
+        { Unmarried: "Single / Unmarried" },
+      ),
+    );
+    setCreateOccupation(
+      pickOption(
+        details?.occupation,
+        [
+          "Farmer / Agriculture",
+          "Daily Wage Worker",
+          "Salaried (Private)",
+          "Salaried (Government)",
+          "Self-Employed / Business",
+          "Homemaker",
+          "Student",
+          "Unemployed",
+          "Retired",
+          "Other",
+        ],
+        { Farmer: "Farmer / Agriculture", Driver: "Other", "Self-employed": "Self-Employed / Business" },
+      ),
+    );
+    setCreateIncomeRange(details?.incomeRange ?? "");
+    setCreateDistrict(details?.district ?? "");
+    setCreateLocalBodyType(localBodyType ?? "");
+    setCreateLocalBody(details?.localBody ?? "");
+    setCreateWard(details?.ward ?? "");
+    setCreateMandalam(details?.mandalam ?? "");
+    setCreateHouseName(details?.houseName ?? "");
+    setCreateStreetLocality(details?.streetLocality ?? "");
+    setCreatePin(details?.pincode ?? "");
+    setIsMandalamAutoFilled(false);
+
+    setSelectedSchemeName(record.schemeNameEn);
+    const matchedScheme =
+      mockEligibleSchemesList.find(
+        (scheme) => scheme.titleEn.toLowerCase() === record.schemeNameEn.toLowerCase(),
+      ) ?? {
+        id: `APP-EDIT-${record.ref}`,
+        titleEn: record.schemeNameEn,
+        titleMl: record.schemeNameMl,
+        benefitEn: "Benefits for the selected scheme application.",
+        benefitMl: "തിരഞ്ഞെടുത്ത പദ്ധതി അപേക്ഷയുടെ ആനുകൂല്യങ്ങൾ.",
+        matchLabelEn: "Selected scheme",
+        matchLabelMl: "തിരഞ്ഞെടുത്ത പദ്ധതി",
+        deptEn: record.categoryEn,
+        deptMl: record.categoryMl,
+        categoryEn: record.categoryEn,
+        categoryMl: record.categoryMl,
+        requiredDocEn: record.pendingDocs[0] ?? "Supporting document",
+        requiredDocMl: "ആവശ്യമായ രേഖ",
+        requiredFieldKeys: [
+          "bankAccountNumber",
+          "bankIfscCode",
+          "minorityStatus",
+          "disabilityStatus",
+          "studentStatus",
+          "bplStatus",
+          "residenceArea",
+        ],
+      };
+    setSelectedEligibleScheme(matchedScheme);
+    setSelectedEligibleSchemeIds([matchedScheme.id]);
+    setIsSingleSchemeEligible(true);
+    setSchemeDetailsReturnStep("eligibility_result");
+    setPmKisanDetails(createEmptyPmKisanDetails());
+
+    const pendingDocumentName = record.pendingDocs[0] ?? "";
+    const firstPendingDocument = getSchemeRequiredDocuments(matchedScheme)[0];
+    setUploadedDocuments(
+      pendingDocumentName && firstPendingDocument
+        ? { [firstPendingDocument.id]: pendingDocumentName }
+        : {}
+    );
+    setUploadErrors({});
+    setBankAccountNumber(details?.bankAccountNumber ?? "");
+    setBankIfscCode(details?.bankIfscCode ?? "");
+    const yesNo = (value?: string) => (value ? (value.toLowerCase() === "yes" ? "yes" : value.toLowerCase() === "no" ? "no" : "") : "");
+    setFinalMinorityStatus(yesNo(details?.minorityStatus));
+    setFinalDisabilityStatus(yesNo(details?.disabilityStatus));
+    setFinalStudentStatus(yesNo(details?.studentStatus));
+    const employmentValue = details?.employmentStatus?.toLowerCase() ?? "";
+    setFinalEmploymentStatus(
+      ["employed", "unemployed", "self-employed"].includes(employmentValue) ? employmentValue : "",
+    );
+    setFinalBplStatus(yesNo(details?.bplStatus));
+    setFinalFinancialHardshipStatus(yesNo(details?.financialHardshipStatus));
+    setFinalAnnualFamilyIncome((details?.annualFamilyIncome ?? "").replace(/[^\d]/g, ""));
+    const residenceValue = details?.residenceArea?.toLowerCase() ?? "";
+    setFinalResidenceArea(["urban", "rural"].includes(residenceValue) ? residenceValue : "");
+    setDeclarationAccepted(true);
+    setFinalDetailsInvalidFields([]);
+    setFinalDetailsSaveNotice(null);
+
+    setActiveCollectionReference("");
+    setActiveApplicantApplicationRefs([]);
+    setAppDetailView("overview");
+    setEditingApplicationRef(record.ref);
+    setActiveTab("create");
+    setMobileSubPage("none");
+    setCreateFlowStep("form");
+    mobileContentRef.current?.scrollTo({ top: 0 });
+  };
+
+  const handleSaveEditedApplicationDetails = () => {
+    const applicationRef = editingApplicationRef;
+    const existingDetails = applicationCollectedDetails[applicationRef];
+    if (!applicationRef || !existingDetails || !isCreateFormValid) return;
+
+    const dateParts = createDob.split("-");
+    const displayDateOfBirth =
+      dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : createDob.trim();
+    const localBodyTypeLabels: Record<LocalBodyType, string> = {
+      panchayat: "Grama Panchayat",
+      municipality: "Municipality",
+      corporation: "Municipal Corporation",
+    };
+    const updatedLocation = [createStreetLocality.trim(), createDistrict.trim()].filter(Boolean).join(", ");
+    const phoneDigits = createPhone.replace(/\D/g, "").slice(-10);
+    const formattedPhone =
+      phoneDigits.length === 10 ? `+91 ${phoneDigits.slice(0, 5)} ${phoneDigits.slice(5)}` : `${createCountryCode} ${createPhone.trim()}`;
+
+    setApplicationCollectedDetails((current) => ({
+      ...current,
+      [applicationRef]: {
+        ...existingDetails,
+        dateOfBirth: displayDateOfBirth,
+        gender: createGender,
+        religion: createReligion,
+        caste: createCaste,
+        maritalStatus: createMaritalStatus,
+        occupation: createOccupation,
+        email: createEmail.trim(),
+        houseName: createHouseName.trim(),
+        streetLocality: createStreetLocality.trim(),
+        pincode: createPin.trim(),
+        district: createDistrict,
+        localBodyType: createLocalBodyType ? localBodyTypeLabels[createLocalBodyType] : existingDetails.localBodyType,
+        localBody: createLocalBody,
+        ward: createWard,
+        mandalam: createMandalam,
+        incomeRange: createIncomeRange,
+      },
+    }));
+    setSelectedApplicationRecord((current) =>
+      current && current.ref === applicationRef
+        ? {
+            ...current,
+            applicantNameEn: createFullName.trim(),
+            applicantNameMl: createFullName.trim(),
+            aadhaar: createAadhaar.trim(),
+            phone: formattedPhone,
+            locationEn: updatedLocation,
+            locationMl: updatedLocation,
+          }
+        : current,
+    );
+    setApplicationRecordEdits((current) => ({
+      ...current,
+      [applicationRef]: {
+        applicantNameEn: createFullName.trim(),
+        applicantNameMl: createFullName.trim(),
+        aadhaar: createAadhaar.trim(),
+        phone: formattedPhone,
+        locationEn: updatedLocation,
+        locationMl: updatedLocation,
+      },
+    }));
+
+    setEditingApplicationRef("");
+    setActiveTab("applications");
+    setMobileSubPage("app_detail");
+    setAppDetailView("overview");
+    setCreateFlowStep("form");
+    mobileContentRef.current?.scrollTo({ top: 0 });
+    showDocumentActionNotice(lang === "ml" ? "അപേക്ഷാ വിവരങ്ങൾ അപ്ഡേറ്റ് ചെയ്തു." : "Application details updated.");
+  };
 
   // Scheme specific filter drawer states
   const [schemeCategoryFilter, setSchemeCategoryFilter] = useState<string>("all");
@@ -2117,7 +4240,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     return `${dayName}, ${day}/${month}/${year}`;
   };
 
-    
+
   const getAreasForMandalam = (mandalamVal: string, language: "ml" | "en") => {
     if (!mandalamVal || mandalamVal === "all") {
       return [
@@ -2210,10 +4333,10 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
   };
 
     const renderAppDetailSubpage = () => {
-    const record = selectedApplicationRecord || {
+    const baseRecord = selectedApplicationRecord || {
       ref: "APP-2026-8910",
-      schemeNameEn: "Pratibha Merit Scholarship",
-      schemeNameMl: "പ്രതിഭാ മെരിറ്റ് സ്കോളർഷിപ്പ്",
+      schemeNameEn: "PM YASASVI Scholarship",
+      schemeNameMl: "പിഎം യശസ്വി സ്കോളർഷിപ്പ്",
       categoryEn: "Scholarship",
       categoryMl: "സ്കോളർഷിപ്പ്",
       status: "pending" as const,
@@ -2230,251 +4353,974 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
       nextActionEn: "Awaiting document verification",
       nextActionMl: "രേഖാ പരിശോധന ബാക്കി നിൽക്കുന്നു",
       auditLog: [
-        { titleEn: "Application Submitted", titleMl: "അപേക്ഷ സമർപ്പിച്ചു", date: "05 Oct 2026", status: "completed" as const },
-        { titleEn: "Received at Office", titleMl: "ഓഫീസിൽ ലഭിച്ചു", date: "05 Oct 2026", status: "completed" as const },
-        { titleEn: "Under Review", titleMl: "പരിശോധനയിൽ", date: "06 Oct 2026", status: "current" as const },
+        {
+          titleEn: "Details received",
+          titleMl: "വിവരങ്ങൾ ലഭിച്ചു",
+          date: "24 Oct 2026",
+          actorEn: "Ananya Ramesh",
+          actorMl: "അനന്യ രമേശ്",
+          status: "completed" as const,
+        },
+        {
+          titleEn: "Documents checked",
+          titleMl: "രേഖകൾ പരിശോധിച്ചു",
+          date: "25 Oct 2026",
+          actorEn: "Anjali Nair",
+          actorMl: "അഞ്ജലി നായർ",
+          status: "completed" as const,
+        },
+        {
+          titleEn: "Submitted to scheme portal",
+          titleMl: "സ്കീം പോർട്ടലിൽ സമർപ്പിച്ചു",
+          date: "26 Oct 2026",
+          actorEn: "Suresh Kumar",
+          actorMl: "സുരേഷ് കുമാർ",
+          status: "completed" as const,
+        },
+        {
+          titleEn: "Under review",
+          titleMl: "പരിശോധനയിൽ",
+          date: "26 Oct 2026",
+          actorEn: "Scheme Review Committee",
+          actorMl: "സ്കീം അവലോകന സമിതി",
+          status: "current" as const,
+        },
       ],
+      workflowStatus: "review" as const,
+      assistedByEn: "Suresh Kumar",
+      assistedByMl: "സുരേഷ് കുമാർ",
+    };
+    const record = {
+      ...baseRecord,
+      ...(applicationRecordEdits[baseRecord.ref] ?? {}),
     };
 
-      return (
-      <div className="space-y-3.5 pt-0.5 animate-in fade-in duration-200 text-slate-900 dark:text-slate-100">
-        {/* Header Bar: Back Arrow, Title, Download Icon */}
-        <div className="flex items-center justify-between pb-1">
-          <button
-            type="button"
-            onClick={() => setMobileSubPage("none")}
-            className="inline-flex items-center gap-2 text-sm font-extrabold text-foreground hover:text-orange-600 transition-colors cursor-pointer"
-          >
-            <ChevronLeft className="h-5 w-5 text-slate-800 dark:text-slate-200 stroke-[2.5]" />
-            <span className="text-base font-extrabold">{lang === "ml" ? "അപേക്ഷാ വിവരങ്ങൾ" : "Application Details"}</span>
-          </button>
+    const workflowStatus: MobileApplicationListStatus = record.workflowStatus ?? "pending";
+    const workflowMeta = mobileApplicationStatusMeta[workflowStatus];
+    const schemeName = lang === "ml" ? record.schemeNameMl : record.schemeNameEn;
+    const categoryName = lang === "ml" ? record.categoryMl : record.categoryEn;
+    const applicantName = lang === "ml" ? record.applicantNameMl : record.applicantNameEn;
+    const applicantLocation = lang === "ml" ? record.locationMl : record.locationEn;
+    const assistedBy = (lang === "ml" ? record.assistedByMl : record.assistedByEn) || "—";
+    const uploadedDocs = record.pendingDocs ?? [];
+    const documentCountLabel = String(uploadedDocs.length).padStart(2, "0");
+    const auditEvents = record.auditLog ?? [];
+    const latestDatedEvent = [...auditEvents].reverse().find((event) => event.date && event.date !== "Pending");
+    const updatedDate = latestDatedEvent?.date ?? record.appliedDate;
+    const schemeWebsiteUrl = getMobileSchemeWebsiteUrl(record.schemeNameEn);
+    const isDocumentVerifiedStage = workflowStatus === "document_verification_completed";
+    const isReceivedStage = workflowStatus === "application_received";
+    const hasSchemeWebsite = Boolean(schemeWebsiteUrl);
+    const statusLabelEn = isDocumentVerifiedStage ? "Document Verified" : workflowMeta.labelEn;
+    const statusLabelMl = workflowMeta.labelMl;
+    const needsTrackingIdEntry = workflowStatus === "applied" && !record.trackingId;
+    const showDecisionAction =
+      (workflowStatus === "review" || workflowStatus === "applied") &&
+      (workflowStatus === "review" || Boolean(record.trackingId));
+    const isDecidedStage =
+      workflowStatus === "assisted" || workflowStatus === "rejected" || workflowStatus === "beneficiary";
 
-          <button
-            type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer"
-            title={lang === "ml" ? "ഡൗൺലോഡ്" : "Download PDF"}
-          >
-            <Download className="h-4.5 w-4.5 stroke-[2]" />
-          </button>
-        </div>
+    const outcomeStage:
+      | { key: string; labelEn: string; labelMl: string; tone: "success" | "danger" }
+      | null =
+      workflowStatus === "beneficiary"
+        ? {
+            key: "beneficiary",
+            labelEn: "Benefit received",
+            labelMl: "ആനുകൂല്യം ലഭിച്ചു",
+            tone: "success",
+          }
+        : workflowStatus === "rejected"
+          ? { key: "rejected", labelEn: "Rejected", labelMl: "നിരസിച്ചു", tone: "danger" }
+          : workflowStatus === "assisted"
+            ? {
+                key: "approved",
+                labelEn: "Approved",
+                labelMl: "അംഗീകരിച്ചു",
+                tone: "success",
+              }
+            : null;
 
-        {/* Top Scheme & Application Header Card */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-2.5">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-900/60 uppercase tracking-wider">
-              {lang === "ml" ? record.categoryMl : record.categoryEn}
-            </span>
-            <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-100/90 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-900/60 inline-flex items-center gap-1.5">
-              <Hourglass className="h-3 w-3 text-amber-700 dark:text-amber-400" />
-              <span>{record.status === "approved" || record.status === "disbursed" ? (lang === "ml" ? "അംഗീകരിച്ചു" : "Approved") : record.status === "rejected" ? (lang === "ml" ? "നിരസിച്ചു" : "Rejected") : (lang === "ml" ? "പെൻഡിംഗ്" : "Pending")}</span>
-            </span>
-          </div>
+    const progressStages: Array<{
+      key: string;
+      labelEn: string;
+      labelMl: string;
+      tone?: "success" | "danger";
+    }> = [
+      { key: "received", labelEn: "Received", labelMl: "ലഭിച്ചു" },
+      { key: "documents", labelEn: "Document Verified", labelMl: "രേഖകൾ പരിശോധിച്ചു" },
+      { key: "applied", labelEn: "Applied", labelMl: "അപേക്ഷിച്ചു" },
+      { key: "review", labelEn: "In review", labelMl: "പരിശോധനയിൽ" },
+      ...(outcomeStage ? [outcomeStage] : []),
+    ];
 
-          <div>
-            <h3 className="font-extrabold text-base text-slate-900 dark:text-white leading-tight">
-              {lang === "ml" ? record.schemeNameMl : record.schemeNameEn}
-            </h3>
-            <div className="flex items-center gap-2 mt-1 text-[11.5px] text-slate-500 dark:text-slate-400 font-medium">
-              <span className="font-semibold text-slate-700 dark:text-slate-300">{record.ref}</span>
-              <span>•</span>
-              <span>{lang === "ml" ? `സമർപ്പിച്ചത് ${record.appliedDate}` : `Submitted ${record.appliedDate}`}</span>
-            </div>
-          </div>
-        </div>
+    const currentStageIndex = outcomeStage
+      ? progressStages.length - 1
+      : isReceivedStage
+        ? 1
+        : workflowStatus === "pending"
+          ? 0
+          : workflowStatus === "document_verification_completed"
+            ? 2
+            : workflowStatus === "applied"
+              ? 3
+              : 3;
 
-        {/* Status Banner */}
-        <div className="p-3.5 rounded-2xl bg-amber-50/90 dark:bg-amber-950/40 border border-amber-200/90 dark:border-amber-900/60 flex items-start gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 shrink-0 mt-0.5">
-            <Hourglass className="h-4 w-4 stroke-[2.2]" />
-          </div>
-          <div className="space-y-0.5 min-w-0 flex-1">
-            <h4 className="font-extrabold text-xs text-amber-900 dark:text-amber-200">
-              {lang === "ml" ? record.nextActionMl || "രേഖാ പരിശോധന ബാക്കി നിൽക്കുന്നു" : record.nextActionEn || "Awaiting document verification"}
-            </h4>
-            <p className="text-[11px] text-amber-800/90 dark:text-amber-300/90 leading-snug font-medium">
-              {lang === "ml" ? "നിങ്ങളുടെ അപേക്ഷ വിജയകരമായി ലഭിച്ചിട്ടുണ്ട്." : "Your application status is being processed."}
-            </p>
-          </div>
-        </div>
+    const handleCopyTrackingId = async () => {
+      if (!record.trackingId) return;
+      try {
+        await navigator.clipboard.writeText(record.trackingId);
+        setTrackingCopied(true);
+        window.setTimeout(() => setTrackingCopied(false), 1600);
+      } catch {
+        setTrackingCopied(false);
+      }
+    };
 
-        {/* Progress Tracker Stepper Card */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-3">
-          <div className="relative flex items-center justify-between px-2">
-            {/* Stepper Connecting Line */}
-            <div className="absolute top-3.5 left-6 right-6 h-0.5 bg-slate-200 dark:bg-slate-800 -z-0">
-              <div className="h-full bg-emerald-500 w-[66%]" />
-            </div>
+    const handleApplyScheme = () => {
+      setSelectedApplicationRecord((current) => {
+        const target = current ?? baseRecord;
+        return {
+          ...target,
+          workflowStatus: "applied",
+          auditLog: [
+            ...target.auditLog,
+            createActivityEntry({
+              titleEn: "Apply Scheme opened on the official portal",
+              titleMl: "ഔദ്യോഗിക പോർട്ടലിൽ അപേക്ഷാ ഫോം തുറന്നു",
+              actorEn: target.assistedByEn,
+              actorMl: target.assistedByMl,
+            }),
+          ],
+        };
+      });
+    };
 
-            {/* Step 1: Submitted */}
-            <div className="relative z-10 flex flex-col items-center text-center space-y-1">
-              <div className="h-7 w-7 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-xs">
-                <Check className="h-4 w-4 stroke-[3]" />
-              </div>
-              <div className="space-y-0">
-                <span className="block text-[11px] font-bold text-slate-800 dark:text-slate-200">
-                  {lang === "ml" ? "സമർപ്പിച്ചു" : "Submitted"}
-                </span>
-                <span className="block text-[9.5px] font-medium text-slate-500 dark:text-slate-400">
-                  {record.appliedDate}
-                </span>
-              </div>
-            </div>
+    const handleVerifyDocuments = () => {
+      const normalizeSchemeName = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const applicationSchemeName = normalizeSchemeName(record.schemeNameEn);
 
-            {/* Step 2: Received */}
-            <div className="relative z-10 flex flex-col items-center text-center space-y-1">
-              <div className="h-7 w-7 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-xs">
-                <Check className="h-4 w-4 stroke-[3]" />
-              </div>
-              <div className="space-y-0">
-                <span className="block text-[11px] font-bold text-slate-800 dark:text-slate-200">
-                  {lang === "ml" ? "ലഭിച്ചു" : "Received"}
-                </span>
-                <span className="block text-[9.5px] font-medium text-slate-500 dark:text-slate-400">
-                  {record.appliedDate}
-                </span>
-              </div>
-            </div>
+      const linkedCollectionRecord = mobileCollectionRecords.find(
+        (item) => normalizeSchemeName(item.scheme.titleEn) === applicationSchemeName
+      );
 
-            {/* Step 3: In Review */}
-            <div className="relative z-10 flex flex-col items-center text-center space-y-1">
-              <div className="h-7 w-7 rounded-full bg-orange-500 text-white ring-4 ring-orange-100 dark:ring-orange-950/60 flex items-center justify-center shadow-xs">
-                <span className="h-2.5 w-2.5 rounded-full bg-white" />
-              </div>
-              <div className="space-y-0">
-                <span className="block text-[11px] font-extrabold text-orange-600 dark:text-orange-400">
-                  {lang === "ml" ? "പരിശോധനയിൽ" : "In Review"}
-                </span>
-              </div>
-            </div>
+      const matchedScheme: MobileEligibleScheme =
+        mockEligibleSchemesList.find(
+          (item) => normalizeSchemeName(item.titleEn) === applicationSchemeName
+        )
+        ?? mockEligibleSchemesList.find((item) => {
+          const candidate = normalizeSchemeName(item.titleEn);
+          return candidate.includes(applicationSchemeName) || applicationSchemeName.includes(candidate);
+        })
+        ?? linkedCollectionRecord?.scheme
+        ?? {
+          id: `APP-${applicationSchemeName.slice(0, 24) || "scheme"}`,
+          titleEn: record.schemeNameEn,
+          titleMl: record.schemeNameMl,
+          benefitEn: "",
+          benefitMl: "",
+          matchLabelEn: "",
+          matchLabelMl: "",
+          deptEn: "Government of India",
+          deptMl: "ഭാരത സർക്കാർ",
+          categoryEn: record.categoryEn,
+          categoryMl: record.categoryMl,
+          requiredDocEn: "Aadhaar Card",
+          requiredDocMl: "ആധാർ കാർഡ്",
+          requiredFieldKeys: [],
+        };
 
-            {/* Step 4: Decision */}
-            <div className="relative z-10 flex flex-col items-center text-center space-y-1">
-              <div className="h-7 w-7 rounded-full border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-400 flex items-center justify-center">
-                <span className="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-700" />
-              </div>
-              <div className="space-y-0">
-                <span className="block text-[11px] font-medium text-slate-400 dark:text-slate-500">
-                  {lang === "ml" ? "തീരുമാനം" : "Decision"}
-                </span>
-              </div>
-            </div>
-          </div>
+      setSelectedEligibleScheme({ ...matchedScheme });
+      setSelectedEligibleSchemeIds([matchedScheme.id]);
+      setSelectedSchemeName(matchedScheme.titleEn);
+      setSchemeDetailsReturnStep("app_detail");
+      setActiveCollectionReference(linkedCollectionRecord?.reference ?? "");
+      hydrateDetailsFromRecord(linkedCollectionRecord ?? null, null);
 
-          {/* Next Step Badge */}
-          <div className="pt-1 flex justify-center">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 dark:bg-orange-950/60 border border-orange-200/80 dark:border-orange-900/50 text-[10.5px] font-extrabold text-orange-600 dark:text-orange-400">
-              <span>{lang === "ml" ? "അടുത്തത്: പരിശോധനയിൽ" : "Next: In Review"}</span>
-            </span>
-          </div>
-        </div>
+      if (record.applicantNameEn && record.applicantNameEn !== "Applicant") {
+        setCreateFullName(record.applicantNameEn);
+      }
+      const phoneDigits = (record.phone ?? "").replace(/\D/g, "").slice(-10);
+      if (phoneDigits.length === 10) {
+        setCreatePhone(phoneDigits);
+      }
 
-        {/* Applicant Details Card */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-2.5">
-          <h4 className="font-extrabold text-xs text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-            <User className="h-3.5 w-3.5 text-orange-500" />
-            <span>{lang === "ml" ? "അപേക്ഷകന്റെ വിവരങ്ങൾ" : "Applicant Details"}</span>
+      setActiveTab("create");
+      setMobileSubPage("none");
+      setCreateFlowStep("scheme_details");
+      mobileContentRef.current?.scrollTo({ top: 0 });
+    };
+
+    const trackingDestinationUrl = record.trackingUrl?.trim() || MOBILE_APPLICATION_TRACKING_URL;
+    const hasTrackingDestination = (() => {
+      try {
+        const trackingDestination = new URL(trackingDestinationUrl);
+        return trackingDestination.protocol === "http:" || trackingDestination.protocol === "https:";
+      } catch {
+        return false;
+      }
+    })();
+
+    const detailRow = (label: string, value: string) => (
+      <div className="flex items-start justify-between gap-3 border-b border-slate-100 py-2.5 last:border-0 dark:border-slate-800">
+        <span className="text-[12.5px] font-medium text-slate-500 dark:text-slate-400">{label}</span>
+        <span className="max-w-[60%] text-right text-[12.5px] font-bold leading-snug text-[#0F172A] dark:text-white">{value}</span>
+      </div>
+    );
+
+    const detailSection = (
+      Icon: React.ComponentType<{ className?: string; strokeWidth?: number }>,
+      title: string,
+      rows: Array<{ label: string; value: string }>,
+    ) => (
+      <section>
+        <div className="flex items-center gap-1.5">
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[#fff4e5] text-[#b45309] dark:bg-slate-800 dark:text-orange-300">
+            <Icon className="h-3.5 w-3.5" strokeWidth={1.9} />
+          </span>
+          <h4 className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-slate-500 dark:text-slate-400">
+            {title}
           </h4>
-
-          <div className="space-y-2 pt-1 text-[11.5px]">
-            <div className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-slate-800">
-              <span className="font-medium text-slate-500 dark:text-slate-400">{lang === "ml" ? "പേര്" : "Name"}</span>
-              <span className="font-extrabold text-slate-900 dark:text-white">{lang === "ml" ? record.applicantNameMl : record.applicantNameEn}</span>
-            </div>
-
-            <div className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-slate-800">
-              <span className="font-medium text-slate-500 dark:text-slate-400">{lang === "ml" ? "ആധാർ നമ്പർ" : "Aadhaar Number"}</span>
-              <span className="font-mono text-slate-900 dark:text-white font-semibold">{record.aadhaar}</span>
-            </div>
-
-            <div className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-slate-800">
-              <span className="font-medium text-slate-500 dark:text-slate-400">{lang === "ml" ? "ഫോൺ നമ്പർ" : "Phone Number"}</span>
-              <span className="font-mono text-slate-900 dark:text-white font-semibold">{record.phone}</span>
-            </div>
-
-            <div className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-slate-800">
-              <span className="font-medium text-slate-500 dark:text-slate-400">{lang === "ml" ? "സ്ഥലം / ജില്ല" : "Location / District"}</span>
-              <span className="font-extrabold text-slate-900 dark:text-white">{lang === "ml" ? record.locationMl : record.locationEn}</span>
-            </div>
-
-            <div className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-slate-800">
-              <span className="font-medium text-slate-500 dark:text-slate-400">{lang === "ml" ? "വാർഷിക വരുമാനം" : "Annual Income"}</span>
-              <span className="font-extrabold text-slate-900 dark:text-white">{record.annualIncome}</span>
-            </div>
-
-            <div className="flex items-center justify-between py-1">
-              <span className="font-medium text-slate-500 dark:text-slate-400">{lang === "ml" ? "സംസ്ഥാനം" : "State"}</span>
-              <span className="font-extrabold text-slate-900 dark:text-white">Kerala</span>
-            </div>
-          </div>
         </div>
-
-        {/* Application Information Accordion Card */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center justify-between cursor-pointer hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
-          <div className="space-y-0.5">
-            <h4 className="font-extrabold text-xs text-slate-900 dark:text-white">
-              {lang === "ml" ? "അപേക്ഷാ ഫോം വിവരങ്ങൾ" : "Application Information"}
-            </h4>
-            <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-medium">
-              {lang === "ml" ? "സമർപ്പിച്ച ഫോം ഉത്തരങ്ങൾ കാണുക" : "View submitted form answers"}
-            </p>
-          </div>
-          <ChevronDown className="h-4 w-4 text-slate-400" />
+        <div className="mt-1">
+          {rows.map((row) => (
+            <React.Fragment key={row.label}>{detailRow(row.label, row.value)}</React.Fragment>
+          ))}
         </div>
+      </section>
+    );
 
-        {/* Documents Section */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-2.5">
-          <div className="flex items-center justify-between">
-            <h4 className="font-extrabold text-xs text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-              <FileText className="h-3.5 w-3.5 text-orange-500" />
-              <span>{lang === "ml" ? "രേഖകൾ" : "Documents"}</span>
-            </h4>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-              {record.pendingDocs ? record.pendingDocs.length : 2} files
-            </span>
-          </div>
+    const renderDetailNav = (titleEn: string, titleMl: string) => (
+      <div className="flex h-11 items-center gap-2 border-b border-slate-200/80 pb-1 dark:border-slate-800">
+        <button
+          type="button"
+          onClick={() => setAppDetailView("overview")}
+          aria-label={lang === "ml" ? "തിരികെ" : "Back"}
+          className="-ml-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+        >
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#fff7ec] text-[#1b255a] dark:bg-slate-800 dark:text-white">
+            <ArrowLeft className="h-4 w-4 stroke-[2]" />
+          </span>
+        </button>
+        <h2 className="truncate text-[16px] font-bold leading-tight text-[#1b255a] dark:text-white">
+          {lang === "ml" ? titleMl : titleEn}
+        </h2>
+      </div>
+    );
 
-          <div className="space-y-2 pt-1">
-            {(record.pendingDocs && record.pendingDocs.length > 0 ? record.pendingDocs : ["Identity proof.pdf", "Mark sheet.pdf"]).map((doc, docIdx) => (
-              <div key={docIdx} className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-100 dark:bg-rose-950/60 text-rose-600 shrink-0">
-                    <FileText className="h-4 w-4" />
+    const collected = applicationCollectedDetails[record.ref] as
+      | MobileApplicationCollectedDetails
+      | undefined;
+    const notRecorded = lang === "ml" ? "രേഖപ്പെടുത്തിയിട്ടില്ല" : "Not recorded";
+    const collectedValue = (value?: string) => (value && value.trim() ? value : notRecorded);
+    const districtValue = collected?.district ?? applicantLocation.split(",").pop()?.trim() ?? notRecorded;
+
+    if (appDetailView !== "overview") {
+      const viewTitle =
+        appDetailView === "applicant"
+          ? { en: "Applicant information", ml: "അപേക്ഷക വിവരങ്ങൾ" }
+          : appDetailView === "scheme"
+            ? { en: "Scheme-specific details", ml: "പദ്ധതി വിവരങ്ങൾ" }
+            : appDetailView === "documents"
+              ? {
+                  en: `Documents (${documentCountLabel})`,
+                  ml: `രേഖകൾ (${documentCountLabel})`,
+                }
+              : { en: "Application history", ml: "അപേക്ഷാ ചരിത്രം" };
+
+      return (
+        <div
+          className="space-y-3 pt-0.5 animate-in fade-in duration-200 text-slate-900 dark:text-slate-100"
+          style={{ paddingBottom: "max(24px, env(safe-area-inset-bottom))" }}
+        >
+          {renderDetailNav(viewTitle.en, viewTitle.ml)}
+          <div
+            className={
+              appDetailView === "documents"
+                ? "text-slate-900 dark:text-slate-100"
+                : "rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
+            }
+          >
+            {appDetailView === "applicant" && (
+              <div className="space-y-4">
+                {detailSection(
+                  UserRound,
+                  lang === "ml" ? "വ്യക്തിഗത വിവരങ്ങൾ" : "Personal details",
+                  [
+                    { label: lang === "ml" ? "മുഴുവൻ പേര്" : "Full name", value: applicantName },
+                    { label: lang === "ml" ? "ജനനത്തീയതി" : "Date of birth", value: collectedValue(collected?.dateOfBirth) },
+                    { label: lang === "ml" ? "ലിംഗം" : "Gender", value: collectedValue(collected?.gender) },
+                    { label: lang === "ml" ? "വിവാഹ നില" : "Marital status", value: collectedValue(collected?.maritalStatus) },
+                    { label: lang === "ml" ? "മതം" : "Religion", value: collectedValue(collected?.religion) },
+                    { label: lang === "ml" ? "സാമൂഹിക വിഭാഗം" : "Social category", value: collectedValue(collected?.caste) },
+                    { label: lang === "ml" ? "തൊഴിൽ" : "Occupation", value: collectedValue(collected?.occupation) },
+                    { label: lang === "ml" ? "ആധാർ നമ്പർ" : "Aadhaar number", value: record.aadhaar },
+                  ],
+                )}
+
+                {detailSection(Phone, lang === "ml" ? "ബന്ധപ്പെടാനുള്ള വിവരങ്ങൾ" : "Contact", [
+                  { label: lang === "ml" ? "മൊബൈൽ നമ്പർ" : "Mobile number", value: record.phone },
+                  { label: lang === "ml" ? "ഇമെയിൽ" : "Email", value: collectedValue(collected?.email) },
+                ])}
+
+                {detailSection(MapPin, lang === "ml" ? "വിലാസം" : "Address", [
+                  { label: lang === "ml" ? "വീട്ടുപേര്" : "House name", value: collectedValue(collected?.houseName) },
+                  { label: lang === "ml" ? "തെരുവ് / പ്രദേശം" : "Street / locality", value: collectedValue(collected?.streetLocality) },
+                  { label: lang === "ml" ? "തദ്ദേശ സ്ഥാപന തരം" : "Local body type", value: collectedValue(collected?.localBodyType) },
+                  { label: lang === "ml" ? "തദ്ദേശ സ്ഥാപനം" : "Local body", value: collectedValue(collected?.localBody) },
+                  { label: lang === "ml" ? "വാർഡ്" : "Ward", value: collectedValue(collected?.ward) },
+                  { label: lang === "ml" ? "നിയമസഭാ മണ്ഡലം" : "Assembly Mandalam", value: collectedValue(collected?.mandalam) },
+                  { label: lang === "ml" ? "ജില്ല" : "District", value: collectedValue(districtValue) },
+                  { label: lang === "ml" ? "പിൻ കോഡ്" : "PIN code", value: collectedValue(collected?.pincode) },
+                  { label: lang === "ml" ? "സംസ്ഥാനം" : "State", value: "Kerala" },
+                ])}
+
+                {detailSection(
+                  ShieldCheck,
+                  lang === "ml" ? "സാമൂഹിക-സാമ്പത്തിക വിവരങ്ങൾ" : "Socio-economic details",
+                  [
+                    { label: lang === "ml" ? "ന്യൂനപക്ഷ പദവി" : "Minority status", value: collectedValue(collected?.minorityStatus) },
+                    {
+                      label: lang === "ml" ? "വൈകല്യമുള്ള വ്യക്തി" : "Person with a disability",
+                      value: collectedValue(collected?.disabilityStatus),
+                    },
+                    { label: lang === "ml" ? "വിദ്യാർത്ഥി പദവി" : "Student status", value: collectedValue(collected?.studentStatus) },
+                    { label: lang === "ml" ? "തൊഴിൽ നില" : "Employment status", value: collectedValue(collected?.employmentStatus) },
+                    { label: lang === "ml" ? "ബിപിഎൽ നില" : "BPL status", value: collectedValue(collected?.bplStatus) },
+                    {
+                      label: lang === "ml" ? "സാമ്പത്തിക ബുദ്ധിമുട്ട്" : "Financial hardship",
+                      value: collectedValue(collected?.financialHardshipStatus),
+                    },
+                    {
+                      label: lang === "ml" ? "വാർഷിക കുടുംബ വരുമാനം" : "Annual family income",
+                      value: collectedValue(collected?.annualFamilyIncome ?? record.annualIncome),
+                    },
+                    {
+                      label: lang === "ml" ? "വരുമാന പരിധി" : "Income range",
+                      value: collectedValue(collected?.incomeRange),
+                    },
+                    { label: lang === "ml" ? "താമസ മേഖല" : "Area of residence", value: collectedValue(collected?.residenceArea) },
+                  ],
+                )}
+
+                {detailSection(HandCoins, lang === "ml" ? "ബാങ്ക് വിവരങ്ങൾ" : "Bank details", [
+                  {
+                    label: lang === "ml" ? "അക്കൗണ്ട് നമ്പർ" : "Account number",
+                    value: collectedValue(collected?.bankAccountNumber),
+                  },
+                  { label: lang === "ml" ? "ഐഎഫ്എസ്സി കോഡ്" : "IFSC code", value: collectedValue(collected?.bankIfscCode) },
+                ])}
+              </div>
+            )}
+
+            {appDetailView === "scheme" && (
+              <div className="space-y-4">
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[#fff4e5] text-[#b45309] dark:bg-slate-800 dark:text-orange-300">
+                      <Layers className="h-3.5 w-3.5" strokeWidth={1.9} />
+                    </span>
+                    <h4 className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-slate-500 dark:text-slate-400">
+                      {lang === "ml" ? "പദ്ധതി വിവരങ്ങൾ" : "Scheme details"}
+                    </h4>
                   </div>
-                  <span className="font-bold text-[11.5px] text-slate-900 dark:text-white truncate">
-                    {doc}
-                  </span>
+                  <p className="mt-2 text-[10px] font-extrabold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
+                    {categoryName}
+                  </p>
+                  <h3 className="mt-1 text-[15px] font-extrabold leading-snug text-[#0F172A] dark:text-white">{schemeName}</h3>
+                  <div className="mt-1">
+                    {detailRow(lang === "ml" ? "വിഭാഗം" : "Category", categoryName)}
+                    {detailRow(lang === "ml" ? "നില" : "Status", lang === "ml" ? statusLabelMl : statusLabelEn)}
+                    {detailRow(lang === "ml" ? "അപ്ഡേറ്റ് ചെയ്തത്" : "Updated", updatedDate)}
+                  </div>
                 </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-[9.5px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 inline-flex items-center gap-1">
-                    <Check className="h-2.5 w-2.5 stroke-[3]" />
-                    <span>Uploaded</span>
-                  </span>
-                  <button type="button" className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
-                    <Eye className="h-4 w-4" />
-                  </button>
+                <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-800/60">
+                  <div className="flex items-center gap-1.5">
+                    <Info className="h-3.5 w-3.5 shrink-0 text-slate-500 dark:text-slate-400" />
+                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                      {lang === "ml" ? "അടുത്ത നടപടി" : "Next action"}
+                    </p>
+                  </div>
+                  <p className="mt-1 text-[12.5px] font-medium leading-snug text-slate-700 dark:text-slate-200">
+                    {lang === "ml" ? record.nextActionMl : record.nextActionEn}
+                  </p>
                 </div>
               </div>
-            ))}
+            )}
+
+            {appDetailView === "documents" && (
+              <div>
+                <div className="space-y-2">
+                  {uploadedDocs.length === 0 ? (
+                    <p className="rounded-lg border border-dashed border-slate-200 p-4 text-center text-[12px] font-medium text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                      {lang === "ml" ? "രേഖകൾ അപ്‌ലോഡ് ചെയ്തിട്ടില്ല." : "No documents uploaded yet."}
+                    </p>
+                  ) : (
+                    uploadedDocs.map((doc) => {
+                      const kind = getMobileDocumentKind(doc);
+                      const meta = mobileDocumentKindMeta[kind];
+                      const DocIcon = meta.Icon;
+                      return (
+                        <div
+                          key={doc}
+                          className="flex items-center gap-2.5 rounded-xl border border-slate-200/80 bg-white p-2.5 shadow-2xs dark:border-slate-800 dark:bg-slate-900"
+                        >
+                          <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${meta.tileClass}`}>
+                            <DocIcon className="h-5 w-5" />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-[12.5px] font-bold text-[#0F172A] dark:text-white">
+                              {getMobileDocumentDisplayName(doc)}
+                            </span>
+                            <span className="mt-1 block text-[10.5px] font-medium text-slate-500 dark:text-slate-400">
+                              {getMobileDocumentSize(doc)}
+                            </span>
+                          </span>
+                          <span className="flex shrink-0 items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleViewDocument(doc)}
+                              aria-label={`${lang === "ml" ? "കാണുക" : "View"} ${doc}`}
+                              title={lang === "ml" ? "കാണുക" : "View"}
+                              className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition-colors hover:border-orange-200 hover:bg-orange-50 hover:text-[#ff5500] dark:border-slate-700 dark:text-slate-300 dark:hover:border-orange-900 dark:hover:bg-orange-950/40 cursor-pointer"
+                            >
+                              <Eye className="h-4 w-4" strokeWidth={2} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleDownloadDocument}
+                              aria-label={`${lang === "ml" ? "ഡൗൺലോഡ്" : "Download"} ${doc}`}
+                              title={lang === "ml" ? "ഡൗൺലോഡ്" : "Download"}
+                              className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition-colors hover:border-orange-200 hover:bg-orange-50 hover:text-[#ff5500] dark:border-slate-700 dark:text-slate-300 dark:hover:border-orange-900 dark:hover:bg-orange-950/40 cursor-pointer"
+                            >
+                              <Download className="h-4 w-4" strokeWidth={2} />
+                            </button>
+                          </span>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+
+            {appDetailView === "history" && (
+              <div className="space-y-4">
+                {auditEvents.length === 0 ? (
+                  <p className="rounded-lg border border-dashed border-slate-200 p-4 text-center text-[12px] font-medium text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                    {lang === "ml" ? "ഇതുവരെ പ്രവർത്തനങ്ങളൊന്നുമില്ല." : "No activity recorded yet."}
+                  </p>
+                ) : (
+                  auditEvents.map((event, index) => {
+                    const eventActorEn = event.actorEn?.trim();
+                    const eventActorMl = event.actorMl?.trim();
+                    const eventActor =
+                      eventActorEn || eventActorMl
+                        ? lang === "ml"
+                          ? eventActorMl || eventActorEn
+                          : eventActorEn || eventActorMl
+                        : getMobileAuditFallbackActor({
+                            event,
+                            index,
+                            applicantName,
+                            assistedBy,
+                            lang,
+                          });
+                    const timestamp = event.time ? `${event.date} · ${event.time}` : event.date;
+                    const meta = eventActor && eventActor !== "—" ? `${eventActor} · ${timestamp}` : timestamp;
+
+                    return (
+                      <div key={`${event.titleEn}-${index}`} className="relative flex items-start gap-3 pb-4 last:pb-0">
+                        {index < auditEvents.length - 1 && (
+                          <span className="absolute left-[9px] top-[22px] bottom-0 w-0.5 bg-slate-200 dark:bg-slate-700" />
+                        )}
+                        <span
+                          className={`relative z-10 flex h-[20px] w-[20px] shrink-0 items-center justify-center rounded-full ${
+                            event.status === "completed"
+                              ? "bg-emerald-500 text-white"
+                              : event.status === "current"
+                                ? "border-2 border-[#ff5500] bg-white text-[#ff5500] dark:bg-slate-900"
+                                : "border-2 border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"
+                          }`}
+                        >
+                          {event.status === "completed" ? (
+                            <Check className="h-3 w-3 stroke-[3]" />
+                          ) : (
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${
+                                event.status === "current" ? "bg-[#ff5500]" : "bg-slate-300 dark:bg-slate-600"
+                              }`}
+                            />
+                          )}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[12.5px] font-bold leading-snug text-[#0F172A] dark:text-white">
+                            {lang === "ml" ? event.titleMl : event.titleEn}
+                          </p>
+                          <p className="mt-0.5 text-[11px] font-medium leading-snug text-slate-500 dark:text-slate-400">
+                            {meta}
+                          </p>
+                          {event.notes && (
+                            <div className="mt-1.5 rounded-lg border border-[#f1ddc7] bg-[#fffaf3] px-2.5 py-1.5 dark:border-slate-700 dark:bg-slate-800/60">
+                              <p className="text-[9.5px] font-extrabold uppercase tracking-[0.1em] text-slate-500 dark:text-slate-400">
+                                {lang === "ml" ? "കുറിപ്പ്" : "Notes"}
+                              </p>
+                              <p className="mt-0.5 text-[11px] font-medium leading-snug text-[#0F172A] dark:text-slate-200">
+                                {event.notes}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+      return (
+      <div
+        className="space-y-2.5 pt-0.5 animate-in fade-in duration-200 text-slate-900 dark:text-slate-100"
+        style={{ paddingBottom: "max(24px, env(safe-area-inset-bottom))" }}
+      >
+        {/* Navigation Row */}
+        <div className="relative flex h-9 items-center justify-between gap-2 border-b border-slate-200/80 pb-0.5 dark:border-slate-800">
+          <div className="flex min-w-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setMobileSubPage("applications")}
+              aria-label={lang === "ml" ? "അപേക്ഷകളിലേക്ക് മടങ്ങുക" : "Back to Applications"}
+              className="-ml-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+            >
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#fff7ec] text-[#1b255a] dark:bg-slate-800 dark:text-white">
+                <ArrowLeft className="h-3.5 w-3.5 stroke-[2]" />
+              </span>
+            </button>
+            <h2 className="truncate text-[16px] font-bold leading-tight text-[#1b255a] dark:text-white">
+              {lang === "ml" ? "അപേക്ഷകളിലേക്ക് മടങ്ങുക" : "Back to Applications"}
+            </h2>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setAppDetailMenuOpen((open) => !open)}
+            aria-label={lang === "ml" ? "കൂടുതൽ" : "More options"}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#0F172A] transition-colors hover:bg-slate-100 dark:text-white dark:hover:bg-slate-800 cursor-pointer"
+          >
+            <MoreVertical className="h-4 w-4 stroke-[2]" />
+          </button>
+
+          {appDetailMenuOpen && (
+            <div className="absolute right-0 top-11 z-20 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+              <button
+                type="button"
+                onClick={() => {
+                  setAppDetailMenuOpen(false);
+                  setAppDetailView("history");
+                }}
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-[12px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer"
+              >
+                <Clock3 className="h-4 w-4" />
+                <span>{lang === "ml" ? "ചരിത്രം കാണുക" : "View history"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAppDetailMenuOpen(false);
+                  setIsSahAiOpen(true);
+                }}
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-[12px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer"
+              >
+                <Headset className="h-4 w-4" />
+                <span>{lang === "ml" ? "സഹായം" : "Contact support"}</span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Application progress + tracking */}
+        <div className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 dark:border-slate-800 dark:bg-slate-900">
+          <h3 className="text-[15px] font-extrabold text-[#0F172A] dark:text-white">
+            {lang === "ml" ? "അപേക്ഷയുടെ പുരോഗതി" : "Application progress"}
+          </h3>
+
+          <div className="mt-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex w-full items-start">
+              {progressStages.map((stage, index) => {
+                const nextStage = progressStages[index + 1];
+                const isReached =
+                  index < currentStageIndex || (stage.tone === "success" && index === currentStageIndex);
+                const isDanger = stage.tone === "danger" && index === currentStageIndex;
+                const isCurrent = index === currentStageIndex && !isDanger && !isReached;
+
+                const connectorTone =
+                  nextStage?.tone === "danger"
+                    ? "bg-rose-300 dark:bg-rose-900/70"
+                    : index < currentStageIndex - 1 ||
+                        (nextStage?.tone === "success" && index + 1 <= currentStageIndex)
+                      ? "bg-emerald-400"
+                      : "bg-slate-200 dark:bg-slate-700";
+
+                return (
+                  <div key={stage.key} className="relative flex flex-1 flex-col items-center text-center">
+                    {nextStage && (
+                      <span
+                        aria-hidden
+                        className={`absolute left-1/2 top-[14px] h-[2.5px] w-full -translate-y-1/2 ${connectorTone}`}
+                      />
+                    )}
+                    <span
+                      className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full ${
+                        isDanger
+                          ? "bg-rose-500 text-white"
+                          : isReached
+                            ? "bg-emerald-500 text-white"
+                            : isCurrent
+                              ? "border-2 border-[#ff5500] bg-white dark:bg-slate-900"
+                              : "border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800"
+                      }`}
+                    >
+                      {isDanger ? (
+                        <X className="h-3.5 w-3.5 stroke-[3]" />
+                      ) : isReached ? (
+                        <Check className="h-3.5 w-3.5 stroke-[3]" />
+                      ) : (
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full ${
+                            isCurrent ? "bg-[#ff5500]" : "bg-slate-300 dark:bg-slate-600"
+                          }`}
+                        />
+                      )}
+                    </span>
+                    <span
+                      className={`mt-1 max-w-full whitespace-normal px-0.5 text-[11.5px] leading-[1.15] ${
+                        isDanger
+                          ? "font-bold text-rose-600 dark:text-rose-400"
+                          : isCurrent
+                            ? "font-bold text-[#0F172A] dark:text-white"
+                            : isReached
+                              ? "font-medium text-[#0F172A] dark:text-white"
+                              : "font-medium text-slate-500 dark:text-slate-400"
+                      }`}
+                    >
+                      {lang === "ml" ? stage.labelMl : stage.labelEn}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {isDocumentVerifiedStage ? (
+            <div className="mt-2">
+              <a
+                href={hasSchemeWebsite ? schemeWebsiteUrl : undefined}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-disabled={!hasSchemeWebsite}
+                onClick={(event) => {
+                  if (!hasSchemeWebsite) event.preventDefault();
+                  handleApplyScheme();
+                }}
+                className={`flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-[#ff5500] text-[12px] font-extrabold text-white shadow-xs transition-colors hover:bg-orange-600 cursor-pointer active:scale-[0.99] ${
+                  hasSchemeWebsite ? "" : "pointer-events-none opacity-50"
+                }`}
+              >
+                <span>{lang === "ml" ? "പദ്ധതിക്ക് അപേക്ഷിക്കുക" : "Apply Scheme"}</span>
+                <ChevronRight className="h-4 w-4 stroke-[2.5]" />
+              </a>
+              {!hasSchemeWebsite && (
+                <p className="mt-1 text-[10.5px] font-medium leading-snug text-slate-500 dark:text-slate-400">
+                  {lang === "ml"
+                    ? "ഈ പദ്ധതിയുടെ ഔദ്യോഗിക വെബ്സൈറ്റ് ലഭ്യമല്ല."
+                    : "Official scheme website is not available for this scheme."}
+                </p>
+              )}
+            </div>
+          ) : isReceivedStage ? (
+            <button
+              type="button"
+              onClick={handleVerifyDocuments}
+              className="mt-2 flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-[#ff5500] text-[12px] font-extrabold text-white shadow-xs transition-colors hover:bg-orange-600 cursor-pointer active:scale-[0.99]"
+            >
+              <span>{lang === "ml" ? "രേഖകൾ പരിശോധിക്കുക" : "Verify Documents"}</span>
+              <ChevronRight className="h-4 w-4 stroke-[2.5]" />
+            </button>
+          ) : (
+            <>
+              <div className="mt-2 rounded-lg bg-slate-50 px-2.5 py-1.5 dark:bg-slate-800/60">
+                <p className="text-[10.5px] font-medium text-slate-500 dark:text-slate-400">
+                  {lang === "ml" ? "ട്രാക്കിംഗ് ഐഡി" : "Tracking ID"}
+                </p>
+
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-1">
+                    {record.trackingId ? (
+                      <>
+                        <span className="truncate text-[13.5px] font-extrabold tracking-wide text-[#0F172A] dark:text-white">
+                          {record.trackingId}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleCopyTrackingId}
+                          aria-label={lang === "ml" ? "ട്രാക്കിംഗ് ഐഡി പകർത്തുക" : "Copy tracking ID"}
+                          title={lang === "ml" ? "പകർത്തുക" : "Copy"}
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-200/70 cursor-pointer dark:text-slate-400 dark:hover:bg-slate-700"
+                        >
+                          {trackingCopied ? (
+                            <Check className="h-4 w-4 stroke-[2.5] text-emerald-600 dark:text-emerald-400" />
+                          ) : (
+                            <Copy className="h-4 w-4 stroke-[1.7]" />
+                          )}
+                        </button>
+                      </>
+                    ) : (
+                      <span className="text-[12px] font-medium text-slate-500 dark:text-slate-400">
+                        {lang === "ml" ? "ട്രാക്കിംഗ് ഐഡി ലഭ്യമല്ല" : "Tracking ID not available"}
+                      </span>
+                    )}
+                  </div>
+
+                  {(record.trackingId || !needsTrackingIdEntry) && !isDecidedStage && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTrackingIdDraft(record.trackingId ?? "");
+                        setIsTrackingSheetOpen(true);
+                      }}
+                      className="flex min-h-8 shrink-0 items-center gap-1 rounded-md px-1 text-[12px] font-extrabold text-[#ff5500] transition-colors hover:text-orange-600 cursor-pointer"
+                    >
+                      {record.trackingId ? (
+                        <Pencil className="h-3 w-3 stroke-[2.5]" />
+                      ) : (
+                        <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
+                      )}
+                      <span>
+                        {record.trackingId ? (lang === "ml" ? "എഡിറ്റ്" : "Edit") : lang === "ml" ? "ചേർക്കുക" : "Add"}
+                      </span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {!isDecidedStage && (needsTrackingIdEntry ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTrackingIdDraft("");
+                    setIsTrackingSheetOpen(true);
+                  }}
+                  className="mt-1.5 flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-[#ff5500] text-[12px] font-extrabold text-white shadow-xs transition-colors hover:bg-orange-600 cursor-pointer active:scale-[0.99]"
+                >
+                  <span>{lang === "ml" ? "ട്രാക്കിംഗ് ഐഡി നൽകുക" : "Enter Tracking ID"}</span>
+                  <ChevronRight className="h-4 w-4 stroke-[2.5]" />
+                </button>
+              ) : (
+                <>
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <a
+                      href={hasTrackingDestination ? trackingDestinationUrl : undefined}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-disabled={!hasTrackingDestination}
+                      onClick={(event) => {
+                        if (!hasTrackingDestination) event.preventDefault();
+                      }}
+                      className={`flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg text-[12px] font-extrabold transition-colors cursor-pointer active:scale-[0.99] ${
+                        showDecisionAction
+                          ? "border border-[#ff5500] bg-white text-[#ff5500] hover:bg-[#fff4e5] dark:border-orange-700 dark:bg-slate-900 dark:text-orange-300"
+                          : "bg-[#ff5500] text-white shadow-xs hover:bg-orange-600"
+                      }`}
+                    >
+                      <span>{lang === "ml" ? "അപേക്ഷ ട്രാക്ക് ചെയ്യുക" : "Track Application"}</span>
+                      <ChevronRight className="h-4 w-4 stroke-[2.5]" />
+                    </a>
+
+                    {showDecisionAction && (
+                      <button
+                        type="button"
+                        onClick={handleOpenDecisionSheet}
+                        className="flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#ff5500] text-[12px] font-extrabold text-white shadow-xs transition-colors hover:bg-orange-600 cursor-pointer active:scale-[0.99]"
+                      >
+                        <Check className="h-3.5 w-3.5 stroke-[2.5]" />
+                        <span>{lang === "ml" ? "തീരുമാനം സ്ഥിരീകരിക്കുക" : "Confirm Decision"}</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {!hasTrackingDestination && (
+                    <p className="mt-1 text-[10.5px] font-medium leading-snug text-slate-500 dark:text-slate-400">
+                      {lang === "ml"
+                        ? "ഈ അപേക്ഷയ്ക്ക് ട്രാക്കിംഗ് ലിങ്ക് ലഭ്യമല്ല."
+                        : "Tracking link is not available for this application."}
+                    </p>
+                  )}
+                </>
+              ))}
+            </>
+          )}
+        </div>
+
+        {/* Applicant */}
+        <div className="rounded-xl border border-slate-200 bg-white px-2.5 py-2 dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="min-w-0 truncate text-[15px] font-extrabold text-[#0F172A] dark:text-white">
+              {lang === "ml" ? "അപേക്ഷകൻ" : "Applicant"}
+            </h3>
+            <MobileApplicationStatusBadge
+              status={workflowStatus}
+              lang={lang}
+              size="medium"
+              labelEn={statusLabelEn}
+              labelMl={statusLabelMl}
+            />
+          </div>
+          <div className="mt-0.5">
+            <div className="flex items-start gap-2 py-0.5">
+              <UserRound className="mt-0.5 h-[18px] w-[18px] shrink-0 text-slate-500 dark:text-slate-400" strokeWidth={1.8} />
+              <div className="min-w-0">
+                <p className="text-[13px] font-extrabold leading-snug text-[#0F172A] dark:text-white">{applicantName}</p>
+                <p className="mt-0.5 text-[11.5px] font-medium text-slate-500 dark:text-slate-400">{applicantLocation}</p>
+              </div>
+            </div>
+            {/* Scheme summary */}
+            <div className="mt-1.5 rounded-xl border border-[#efe3d3] bg-[#fffcf7] px-2.5 py-2 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
+              <div className="flex min-w-0 items-center gap-1.5">
+                <h3
+                  className="min-w-0 truncate text-[13px] font-semibold leading-[1.35] text-[#0F172A] dark:text-white"
+                  title={schemeName}
+                >
+                  {schemeName}
+                </h3>
+                {schemeWebsiteUrl && (
+                  <a
+                    href={schemeWebsiteUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={
+                      lang === "ml"
+                        ? "പദ്ധതിയുടെ ഔദ്യോഗിക വെബ്സൈറ്റ് തുറക്കുക"
+                        : "Open official scheme website"
+                    }
+                    title={
+                      lang === "ml"
+                        ? "പദ്ധതിയുടെ ഔദ്യോഗിക വെബ്സൈറ്റ്"
+                        : "Open official scheme website"
+                    }
+                    className="relative flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded text-slate-400 transition-colors before:absolute before:-inset-2.5 before:content-[''] hover:bg-[#fff4e5] hover:text-[#ff5500] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-orange-300"
+                  >
+                    <ExternalLink className="h-[13px] w-[13px]" strokeWidth={2.1} />
+                  </a>
+                )}
+              </div>
+              <div className="mt-0.5 flex min-w-0 items-center gap-1.5">
+                <img
+                  src={getMobileCategoryIconSrc(record.categoryEn)}
+                  alt=""
+                  aria-hidden
+                  className="h-3.5 w-3.5 shrink-0 object-contain"
+                />
+                <p className="truncate text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+                  {categoryName}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Bottom Action Section */}
-        <div className="pt-2 space-y-3 pb-2 text-center">
-          <button
-            type="button"
-            className="w-full py-3 px-4 rounded-xl bg-[#ff5500] hover:bg-orange-600 text-white font-extrabold text-sm shadow-md transition-all flex items-center justify-center gap-1 cursor-pointer active:scale-98"
-          >
-            <span>{lang === "ml" ? "അപേക്ഷ ട്രാക്ക് ചെയ്യുക >" : "Track Application >"}</span>
-          </button>
-
-          <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
-            {lang === "ml" ? "സഹായം വേണോ? " : "Need help? "}
-            <button type="button" className="font-extrabold text-[#ff5500] hover:underline cursor-pointer">
-              {lang === "ml" ? "സപ്പോർട്ടുമായി ബന്ധപ്പെടുക" : "Contact support"}
+        {/* Application information */}
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-center justify-between gap-2 px-3.5 pt-3">
+            <h3 className="text-[15px] font-extrabold text-[#0F172A] dark:text-white">
+              {lang === "ml" ? "അപേക്ഷാ വിവരങ്ങൾ" : "Application information"}
+            </h3>
+            <button
+              type="button"
+              onClick={handleEditApplicationDetails}
+              className="inline-flex h-8 items-center gap-1 rounded-full border border-[#f1ddc7] bg-[#fff7ec] px-2.5 text-[11px] font-extrabold text-[#ff5500] transition-colors hover:border-orange-300 hover:bg-[#ffefdd] dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300 cursor-pointer"
+            >
+              <Pencil className="h-3 w-3 stroke-[2.5]" />
+              {lang === "ml" ? "തിരുത്തുക" : "Edit"}
             </button>
-          </p>
+          </div>
+          <div className="mt-0.5 px-3.5 pb-1.5">
+            <button
+              type="button"
+              onClick={() => setAppDetailView("applicant")}
+              className="flex min-h-11 w-full items-center gap-2.5 border-b border-slate-100 py-2 text-left cursor-pointer dark:border-slate-800"
+            >
+              <UserRound className="h-[18px] w-[18px] shrink-0 text-slate-500 dark:text-slate-400" strokeWidth={1.8} />
+              <span className="min-w-0 flex-1 text-[13px] font-semibold text-[#0F172A] dark:text-white">
+                {lang === "ml" ? "അപേക്ഷക വിവരങ്ങൾ" : "Applicant information"}
+              </span>
+              <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setAppDetailView("scheme")}
+              className="flex min-h-11 w-full items-center gap-2.5 border-b border-slate-100 py-2 text-left cursor-pointer dark:border-slate-800"
+            >
+              <ClipboardList className="h-[18px] w-[18px] shrink-0 text-slate-500 dark:text-slate-400" strokeWidth={1.8} />
+              <span className="min-w-0 flex-1 text-[13px] font-semibold text-[#0F172A] dark:text-white">
+                {lang === "ml" ? "പദ്ധതി വിവരങ്ങൾ" : "Scheme-specific details"}
+              </span>
+              <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setAppDetailView("documents")}
+              className="flex min-h-11 w-full items-center gap-2.5 py-2 text-left cursor-pointer"
+            >
+              <Paperclip className="h-[18px] w-[18px] shrink-0 text-slate-500 dark:text-slate-400" strokeWidth={1.8} />
+              <span className="min-w-0 flex-1">
+                <span className="block text-[13px] font-semibold text-[#0F172A] dark:text-white">
+                  {lang === "ml" ? "രേഖകൾ" : "Documents"}
+                </span>
+                <span className="mt-0.5 block text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                  {lang === "ml" ? `${uploadedDocs.length} ഫയലുകൾ അപ്‌ലോഡ് ചെയ്തു` : `${uploadedDocs.length} files uploaded`}
+                </span>
+              </span>
+              <Eye className="h-4 w-4 shrink-0 text-slate-400" />
+              <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
+            </button>
+            <div className="flex min-h-11 w-full items-center gap-2.5 border-t border-slate-100 py-2 dark:border-slate-800">
+              <UserCheck className="h-[18px] w-[18px] shrink-0 text-slate-500 dark:text-slate-400" strokeWidth={1.8} />
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-medium leading-snug text-slate-500 dark:text-slate-400">
+                  <span>{lang === "ml" ? "സഹായം നൽകിയത്" : "Assisted by"}</span>
+                  <span className="ml-1 text-slate-400 dark:text-slate-500">
+                    {lang === "ml"
+                      ? `(അവസാനം അപ്ഡേറ്റ് ചെയ്തത് ${updatedDate})`
+                      : `(Last updated ${updatedDate})`}
+                  </span>
+                </p>
+                <p className="mt-0.5 truncate text-[13px] font-semibold leading-snug text-[#0F172A] dark:text-white">
+                  {assistedBy}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
+
+        {/* Help */}
+        <button
+          type="button"
+          onClick={() => setIsSahAiOpen(true)}
+          className="flex w-full items-center gap-2 rounded-xl border border-[#f1ddc7] bg-[#fff8ee] px-4 py-3 text-left transition-colors hover:bg-[#fff3e2] cursor-pointer dark:border-orange-900/50 dark:bg-slate-900"
+        >
+          <Headset className="h-5 w-5 shrink-0 text-[#ff5500]" strokeWidth={1.8} />
+          <span className="min-w-0 flex-1 text-[12px] font-semibold leading-snug text-[#0F172A] dark:text-slate-100">
+            {lang === "ml" ? "ഈ അപേക്ഷയിൽ സഹായം വേണോ?" : "Need help with this application?"}
+          </span>
+          <span className="flex shrink-0 items-center gap-1 text-[12px] font-extrabold text-[#ff5500]">
+            {lang === "ml" ? "പിന്തുണ" : "Contact support"}
+            <ChevronRight className="h-4 w-4 stroke-[2.5]" />
+          </span>
+        </button>
       </div>
     );
   };
@@ -2564,6 +5410,73 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     convertedBooths: rawMetrics?.convertedBooths || "23,550",
     slaBreaches: Math.max(0, Math.round((rawMetrics?.slaBreaches || 0) * geoScopeMultiplier)),
   };
+
+  const applicationRecordsForActiveFilter: MobileApplicationRecord[] =
+    applicationStatusFilter === "all"
+      ? mobileApplicationAllPreviewRecords
+      : applicationStatusFilter === "pending"
+        ? mobileApplicationRecordsByStatus.application_received
+        : applicationStatusFilter === "assisted"
+          ? mobileApplicationRecordsByStatus.beneficiary
+          : mobileApplicationRecordsByStatus[applicationStatusFilter];
+
+  const applicationQuery = applicationSearchQuery.trim().toLowerCase();
+  const displayedMobileApplicationRecords = applicationRecordsForActiveFilter.filter((application) => {
+    if (!applicationQuery) return true;
+    return [
+      application.schemeNameEn,
+      application.schemeNameMl,
+      application.applicantNameEn,
+      application.applicantNameMl,
+      application.categoryEn,
+      application.categoryMl,
+      application.locationEn,
+      application.locationMl,
+      application.ref,
+      application.trackingId ?? "",
+    ].some((value) => value.toLowerCase().includes(applicationQuery));
+  });
+
+  const renderMobileApplicationListCard = (application: MobileApplicationRecord) => (
+    <div
+      key={application.ref}
+      onClick={() => {
+        setSelectedApplicationRecord(application);
+        setMobileSubPage("app_detail");
+      }}
+      className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+    >
+      <div className="flex items-center justify-between gap-1.5">
+        <span className="inline-flex h-[18px] items-center gap-1 rounded-full border border-slate-200 bg-white px-1.5 text-[9.5px] font-extrabold uppercase tracking-wider text-slate-700 dark:border-slate-700 dark:text-slate-200">
+          <img
+            src={getMobileCategoryIconSrc(application.categoryEn)}
+            alt=""
+            className="h-3.5 w-3.5 shrink-0 object-contain"
+          />
+          {lang === "ml" ? application.categoryMl : application.categoryEn}
+        </span>
+        <MobileApplicationStatusBadge
+          status={application.workflowStatus ?? "application_received"}
+          lang={lang}
+        />
+      </div>
+      <h5 className="font-extrabold text-xs sm:text-[13px] text-[#0a0f1d] dark:text-white leading-tight mt-2">
+        {lang === "ml" ? application.schemeNameMl : application.schemeNameEn}
+      </h5>
+      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug mt-1 font-medium">
+        {lang === "ml"
+          ? `അപേക്ഷകൻ: ${application.applicantNameMl} · ${application.locationMl}`
+          : `Applicant: ${application.applicantNameEn} · ${application.locationEn}`}
+      </p>
+      <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 dark:border-slate-800/60 mt-2.5 text-[10.5px] text-slate-400 font-medium">
+        <span className="font-mono text-[10px] text-slate-400">Ref: {application.ref}</span>
+        <span className="flex items-center gap-0.5 text-[#ff5500] dark:text-orange-400 font-extrabold text-[10.5px]">
+          {lang === "ml" ? "വിശദാംശങ്ങൾ കാണുക" : "View Details"}
+          <ChevronRight className="h-3 w-3 stroke-[2.5]" />
+        </span>
+      </div>
+    </div>
+  );
 
     // Human readable active location label
   const activeLocationLabel = React.useMemo(() => {
@@ -2853,6 +5766,21 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
   const hasAdditionalEligibilityFields = activeRequiredFieldKeys.some((key) =>
     ["minorityStatus", "disabilityStatus", "studentStatus", "bplStatus", "residenceArea"].includes(key)
   );
+  const successWorkflowStatus = selectedApplicationRecord?.workflowStatus ?? "pending";
+  const successStatusMeta = mobileApplicationStatusMeta[successWorkflowStatus];
+  const successApplicantName =
+    lang === "ml"
+      ? selectedApplicationRecord?.applicantNameMl || selectedApplicationRecord?.applicantNameEn || "—"
+      : selectedApplicationRecord?.applicantNameEn || selectedApplicationRecord?.applicantNameMl || "—";
+  const successSchemeName =
+    lang === "ml"
+      ? selectedApplicationRecord?.schemeNameMl || selectedApplicationRecord?.schemeNameEn || "—"
+      : selectedApplicationRecord?.schemeNameEn || selectedApplicationRecord?.schemeNameMl || "—";
+  const successStatusLabelEn =
+    successWorkflowStatus === "document_verification_completed"
+      ? "Document Verified"
+      : successStatusMeta.labelEn;
+  const successStatusLabelMl = successStatusMeta.labelMl;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-2 sm:p-4 overflow-y-auto [ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden animate-in fade-in duration-200">
@@ -2931,6 +5859,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
               userRole={userRole}
               onSwitchRole={setUserRole}
               onNavigateTab={(tab) => {
+                setEditingApplicationRef("");
                 setActiveTab(tab);
                 setMobileSubPage("none");
               }}
@@ -2942,7 +5871,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
           )}
 
           {/* Scrollable Main Content Area based on Selected Bottom Tab */}
-          <div ref={mobileContentRef} className={`flex-1 overflow-y-auto [ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden relative bg-muted/20 ${isGuestEligibilityOpen || isMobileAuthOpen ? "p-0" : `${activeTab === "create" ? "px-4" : "px-3"} pt-1.5 ${!isGuest && (activeTab === "create" || mobileSubPage === "app_detail") ? "pb-6" : "pb-16"} space-y-2.5`}`}>
+          <div ref={mobileContentRef} className={`flex-1 overflow-y-auto [ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden relative bg-muted/20 ${isGuestEligibilityOpen || isMobileAuthOpen ? "p-0" : `${activeTab === "create" || mobileSubPage === "app_detail" ? "px-4" : "px-3"} pt-1.5 ${!isGuest && (activeTab === "create" || mobileSubPage === "app_detail") ? "pb-6" : "pb-16"} space-y-2.5`}`}>
             {isMobileAuthOpen ? (
               <MobileAuthFlow
                 onBack={closeMobileAuthToGuest}
@@ -3056,6 +5985,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           setActiveTab("applications");
                           setMobileSubPage("none");
                           setApplicationStatusFilter("all");
+                          setApplicationSearchQuery("");
                         }}
                         className="min-h-[44px] rounded-lg border border-border bg-card p-1.5 px-2 flex flex-col justify-between shadow-2xs hover:border-blue-500/70 transition-all cursor-pointer"
                       >
@@ -3073,7 +6003,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                         onClick={() => {
                           setActiveTab("applications");
                           setMobileSubPage("none");
-                          setApplicationStatusFilter("all");
+                          setApplicationStatusFilter("applied");
                         }}
                         className="min-h-[44px] rounded-lg border border-border bg-card p-1.5 px-2 flex flex-col justify-between shadow-2xs hover:border-sky-500/70 transition-all cursor-pointer"
                       >
@@ -3105,7 +6035,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                         onClick={() => {
                           setActiveTab("applications");
                           setMobileSubPage("none");
-                          setApplicationStatusFilter("assisted");
+                          setApplicationStatusFilter("review");
                         }}
                         className="min-h-[44px] rounded-lg border border-border bg-card p-1.5 px-2 flex flex-col justify-between shadow-2xs hover:border-indigo-500/70 transition-all cursor-pointer"
                       >
@@ -3123,7 +6053,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                         onClick={() => {
                           setActiveTab("applications");
                           setMobileSubPage("none");
-                          setApplicationStatusFilter("pending");
+                          setApplicationStatusFilter("application_received");
                         }}
                         className="min-h-[44px] rounded-lg border border-border bg-card p-1.5 px-2 flex flex-col justify-between shadow-2xs hover:border-amber-500/70 transition-all cursor-pointer"
                       >
@@ -5005,14 +7935,18 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                     {mobileSubPage === "applications" && (
                       <div className="space-y-3 pt-0.5 animate-in fade-in duration-200">
                         {/* Header */}
-                        <div className="flex items-center justify-between border-b border-border/80 pb-2 gap-1">
+                        <div className="flex items-center justify-between border-b border-border/80 pb-1.5 gap-1">
                           <button
                             type="button"
                             onClick={() => setMobileSubPage("none")}
-                            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1b255a] dark:text-blue-400 hover:text-blue-700 cursor-pointer shrink-0"
+                            className="inline-flex items-center gap-2 shrink-0 cursor-pointer"
                           >
-                            <ChevronRight className="h-4 w-4 rotate-180" />
-                            <span>{lang === "ml" ? "അപേക്ഷകൾ" : "Applications"}</span>
+                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#fff7ec] text-[#1b255a] dark:bg-slate-800 dark:text-white">
+                              <ArrowLeft className="h-3.5 w-3.5 stroke-[2]" />
+                            </span>
+                            <span className="text-[13px] font-bold text-[#1b255a] dark:text-white">
+                              {lang === "ml" ? "അപേക്ഷകൾ" : "Applications"}
+                            </span>
                           </button>
 
                           {/* Period Selector & Filter Action in Header */}
@@ -5099,13 +8033,16 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           <div className="relative shrink-0">
                             <select
                               value={applicationStatusFilter}
-                              onChange={(e) => setApplicationStatusFilter(e.target.value as "all" | "assisted" | "pending" | "rejected")}
+                              onChange={(e) => setApplicationStatusFilter(e.target.value as MobileApplicationStatusFilter)}
                               className="h-7 pl-3 pr-7 text-[11px] font-bold rounded-full border border-amber-200/80 dark:border-orange-800/80 bg-[#fffcf0] dark:bg-slate-900 text-[#0a0f1d] dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs cursor-pointer appearance-none"
                             >
-                              <option value="all">{lang === "ml" ? `എല്ലാം (${applicationsCount})` : `All (${applicationsCount})`}</option>
-                              <option value="assisted">{lang === "ml" ? `പരിശോധനയിലുള്ളവ (${currentMetrics.assisted})` : `In Review (${currentMetrics.assisted})`}</option>
-                              <option value="pending">{lang === "ml" ? `പെൻഡിംഗ് (${currentMetrics.pending})` : `Pending (${currentMetrics.pending})`}</option>
-                              <option value="rejected">{lang === "ml" ? `നിരസിച്ചവ (${currentMetrics.rejected})` : `Rejected (${currentMetrics.rejected})`}</option>
+                              <option value="all">{lang === "ml" ? "എല്ലാ അപേക്ഷകളും" : "All Applications"}</option>
+                              <option value="application_received">{lang === "ml" ? "ലഭിച്ച അപേക്ഷകൾ" : "Application Received"}</option>
+                              <option value="document_verification_completed">{lang === "ml" ? "രേഖാ പരിശോധന പൂർത്തിയായി" : "Document Verification Completed"}</option>
+                              <option value="applied">{lang === "ml" ? "അപേക്ഷിച്ചു" : "Applied"}</option>
+                              <option value="review">{lang === "ml" ? "പരിശോധനയിൽ" : "Review"}</option>
+                              <option value="beneficiary">{lang === "ml" ? "ഗുണഭോക്താവ്" : "Beneficiary"}</option>
+                              <option value="rejected">{lang === "ml" ? "നിരസിച്ചവ" : "Rejected"}</option>
                             </select>
                             <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-[#0a0f1d] dark:text-slate-300 pointer-events-none" />
                           </div>
@@ -5114,13 +8051,13 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                         {/* List of Applications */}
                         <div className="space-y-2 pt-1">
                           {/* Item 1: Pending */}
-                          {matchAppSearch("pending", "Pratibha Merit Scholarship", "പ്രതിഭാ മെരിറ്റ് സ്കോളർഷിപ്പ്", "Ananya Ramesh", "അനന്യ രമേശ്", "Scholarship", "സ്കോളർഷിപ്പ്", "APP-2026-8910") && (
+                          {matchAppSearch("pending", "PM YASASVI Scholarship", "പിഎം യശസ്വി സ്കോളർഷിപ്പ്", "Ananya Ramesh", "അനന്യ രമേശ്", "Scholarship", "സ്കോളർഷിപ്പ്", "APP-2026-8910") && (
                             <div 
                               onClick={() => {
                                 setSelectedApplicationRecord({
                                   ref: "APP-2026-8910",
-                                  schemeNameEn: "Pratibha Merit Scholarship",
-                                  schemeNameMl: "പ്രതിഭാ മെരിറ്റ് സ്കോളർഷിപ്പ്",
+                                  schemeNameEn: "PM YASASVI Scholarship",
+                                  schemeNameMl: "പിഎം യശസ്വി സ്കോളർഷിപ്പ്",
                                   categoryEn: "Scholarship",
                                   categoryMl: "സ്കോളർഷിപ്പ്",
                                   status: "pending",
@@ -5133,7 +8070,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                                   annualIncome: "₹ 1,20,000",
                                   appliedDate: "05/10/2026",
                                   currentStep: 2,
-                                  pendingDocs: ["Class 10 Marklist", "Aadhaar Card", "Income Certificate"],
+                                  pendingDocs: ["Class 10 Marklist.pdf", "Aadhaar Card.jpg", "Income Certificate.pdf"],
                                   nextActionEn: "Income Certificate verification by Village Officer pending",
                                   nextActionMl: "വില്ലേജ് ഓഫീസറുടെ വരുമാന സർട്ടിഫിക്കറ്റ് പരിശോധന കുടിശ്ശികയാണ്",
                                   auditLog: [
@@ -5156,7 +8093,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                                 </span>
                               </div>
                               <h5 className="font-bold text-[12.5px] text-[#0f172a] dark:text-white leading-tight mt-1.5">
-                                {lang === "ml" ? "പ്രതിഭാ മെരിറ്റ് സ്കോളർഷിപ്പ്" : "Pratibha Merit Scholarship"}
+                                {lang === "ml" ? "പിഎം യശസ്വി സ്കോളർഷിപ്പ്" : "PM YASASVI Scholarship"}
                               </h5>
                               <p className="text-[10.5px] text-slate-600 dark:text-slate-400 leading-snug mt-0.5">
                                 {lang === "ml" ? "അപേക്ഷകൻ: അനന്യ രമേശ് · കഴക്കൂട്ടം" : "Applicant: Ananya Ramesh · Kazhakkoottam"}
@@ -5172,13 +8109,13 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           )}
 
                           {/* Item 2: Assisted */}
-                          {matchAppSearch("assisted", "Karunya Health Insurance", "കാരുണ്യ ആരോഗ്യ ഇൻഷുറൻസ്", "Lakshmi Amma", "ലക്ഷ്മി അമ്മ", "Health Insurance", "ആരോഗ്യം", "APP-2026-8922") && (
+                          {matchAppSearch("assisted", "Ayushman Bharat PM-JAY", "ആയുഷ്മാൻ ഭാരത് പിഎം-ജയ്", "Lakshmi Amma", "ലക്ഷ്മി അമ്മ", "Health Insurance", "ആരോഗ്യം", "APP-2026-8922") && (
                             <div 
                               onClick={() => {
                                 setSelectedApplicationRecord({
                                   ref: "APP-2026-8922",
-                                  schemeNameEn: "Karunya Health Insurance",
-                                  schemeNameMl: "കാരുണ്യ ആരോഗ്യ ഇൻഷുറൻസ്",
+                                  schemeNameEn: "Ayushman Bharat PM-JAY",
+                                  schemeNameMl: "ആയുഷ്മാൻ ഭാരത് പിഎം-ജയ്",
                                   categoryEn: "Health Insurance",
                                   categoryMl: "ആരോഗ്യം",
                                   status: "approved",
@@ -5191,7 +8128,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                                   annualIncome: "₹ 75,000",
                                   appliedDate: "03/10/2026",
                                   currentStep: 4,
-                                  pendingDocs: ["Ration Card Copy", "Doctor Certificate"],
+                                  pendingDocs: ["Ration Card Copy.jpg", "Doctor Certificate.docx"],
                                   nextActionEn: "Sanction letter generated. Financial claim process ready.",
                                   nextActionMl: "അനുമതി പത്രം തയാറായി. ധനസഹായ തുക നൽകാൻ വിവരങ്ങൾ ക്രമീകരിച്ചു.",
                                   auditLog: [
@@ -5214,7 +8151,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                                 </span>
                               </div>
                               <h5 className="font-bold text-[12.5px] text-[#0f172a] dark:text-white leading-tight mt-1.5">
-                                {lang === "ml" ? "കാരുണ്യ ആരോഗ്യ ഇൻഷുറൻസ്" : "Karunya Health Insurance"}
+                                {lang === "ml" ? "ആയുഷ്മാൻ ഭാരത് പിഎം-ജയ്" : "Ayushman Bharat PM-JAY"}
                               </h5>
                               <p className="text-[10.5px] text-slate-600 dark:text-slate-400 leading-snug mt-0.5">
                                 {lang === "ml" ? "അപേക്ഷക: ലക്ഷ്മി അമ്മ · വട്ടിയൂർക്കാവ്" : "Applicant: Lakshmi Amma · Vattiyoorkavu"}
@@ -5249,7 +8186,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                                   annualIncome: "₹ 90,000",
                                   appliedDate: "01/10/2026",
                                   currentStep: 2,
-                                  pendingDocs: ["Land Tax Receipt", "Aadhaar e-KYC Verification"],
+                                  pendingDocs: ["Land Tax Receipt.pdf", "Aadhaar e-KYC Verification.png"],
                                   nextActionEn: "Pending e-KYC validation via Biometric / OTP",
                                   nextActionMl: "ബയോമെട്രിക് / ഒടിപി വഴി ഇ-കെവൈസി പരിശോധന പൂർത്തിയാക്കുക",
                                   auditLog: [
@@ -5288,13 +8225,13 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           )}
 
                           {/* Item 4: Rejected */}
-                          {matchAppSearch("rejected", "LIFE Mission Housing Title", "ലൈഫ് മിഷൻ ഭവന പദ്ധതി", "Joseph K", "ജോസഫ് കെ", "Housing", "ഭവന നിർമ്മാണം", "APP-2026-8927") && (
+                          {matchAppSearch("rejected", "Pradhan Mantri Awas Yojana - Urban (PMAY-U)", "പ്രധാനമന്ത്രി ആവാസ് യോജന - അർബൻ (PMAY-U)", "Joseph K", "ജോസഫ് കെ", "Housing", "ഭവന നിർമ്മാണം", "APP-2026-8927") && (
                             <div 
                               onClick={() => {
                                 setSelectedApplicationRecord({
                                   ref: "APP-2026-8927",
-                                  schemeNameEn: "LIFE Mission Housing Title",
-                                  schemeNameMl: "ലൈഫ് മിഷൻ ഭവന പദ്ധതി",
+                                  schemeNameEn: "Pradhan Mantri Awas Yojana - Urban (PMAY-U)",
+                                  schemeNameMl: "പ്രധാനമന്ത്രി ആവാസ് യോജന - അർബൻ (PMAY-U)",
                                   categoryEn: "Housing",
                                   categoryMl: "ഭവന നിർമ്മാണം",
                                   status: "rejected",
@@ -5307,7 +8244,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                                   annualIncome: "₹ 1,80,000",
                                   appliedDate: "29/09/2026",
                                   currentStep: 3,
-                                  pendingDocs: ["Ownership Title Deed"],
+                                  pendingDocs: ["Ownership Title Deed.pdf"],
                                   nextActionEn: "Rejected due to income limit exceeding eligibility criteria",
                                   nextActionMl: "വരുമാന പരിധി യോഗ്യതാ മാനദണ്ഡത്തിൽ കൂടുതൽ ആയതിനാൽ നിരസിച്ചു",
                                   auditLog: [
@@ -5330,7 +8267,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                                 </span>
                               </div>
                               <h5 className="font-bold text-[12.5px] text-[#0f172a] dark:text-white leading-tight mt-1.5">
-                                {lang === "ml" ? "ലൈഫ് മിഷൻ ഭവന പദ്ധതി" : "LIFE Mission Housing Title"}
+                                {lang === "ml" ? "പ്രധാനമന്ത്രി ആവാസ് യോജന - അർബൻ (PMAY-U)" : "Pradhan Mantri Awas Yojana - Urban (PMAY-U)"}
                               </h5>
                               <p className="text-[10.5px] text-slate-600 dark:text-slate-400 leading-snug mt-0.5">
                                 {lang === "ml" ? "അപേക്ഷകൻ: ജോസഫ് കെ · ചാത്തന്നൂർ" : "Applicant: Joseph K · Chathannoor"}
@@ -5346,13 +8283,13 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           )}
 
                           {/* Item 5: Assisted */}
-                          {matchAppSearch("assisted", "Karunya Health Insurance", "കാരുണ്യ ആരോഗ്യ ഇൻഷുറൻസ്", "Lakshmi Amma", "ലക്ഷ്മി അമ്മ", "Health Insurance", "ആരോഗ്യം", "APP-2026-8922") && (
+                          {matchAppSearch("assisted", "Ayushman Bharat PM-JAY", "ആയുഷ്മാൻ ഭാരത് പിഎം-ജയ്", "Lakshmi Amma", "ലക്ഷ്മി അമ്മ", "Health Insurance", "ആരോഗ്യം", "APP-2026-8922") && (
                             <div 
                               onClick={() => {
                                 setSelectedApplicationRecord({
                                   ref: "APP-2026-8921",
-                                  schemeNameEn: "Vayoshreshtha Pension Scheme",
-                                  schemeNameMl: "വയോശ്രേഷ്ഠ പെൻഷൻ",
+                                  schemeNameEn: "Indira Gandhi National Old Age Pension Scheme",
+                                  schemeNameMl: "ഇന്ദിരാഗാന്ധി ദേശീയ വാർധക്യ പെൻഷൻ പദ്ധതി",
                                   categoryEn: "Pension",
                                   categoryMl: "പെൻഷൻ",
                                   status: "disbursed",
@@ -5365,7 +8302,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                                   annualIncome: "₹ 60,000",
                                   appliedDate: "04/10/2026",
                                   currentStep: 5,
-                                  pendingDocs: ["Age Proof Certificate", "Bank Passbook Copy"],
+                                  pendingDocs: ["Age Proof Certificate.pdf", "Bank Passbook Copy.png"],
                                   nextActionEn: "Monthly pension disbursed directly to DBT linked bank account",
                                   nextActionMl: "പ്രതിമാസ പെൻഷൻ ഡിബിടി ബാങ്ക് അക്കൗണ്ടിലേക്ക് അയച്ചു നൽകി",
                                   auditLog: [
@@ -5388,7 +8325,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                                 </span>
                               </div>
                               <h5 className="font-bold text-[12.5px] text-[#0f172a] dark:text-white leading-tight mt-1.5">
-                                {lang === "ml" ? "വയോശ്രേഷ്ഠ പെൻഷൻ" : "Vayoshreshtha Pension Scheme"}
+                                {lang === "ml" ? "ഇന്ദിരാഗാന്ധി ദേശീയ വാർധക്യ പെൻഷൻ പദ്ധതി" : "Indira Gandhi National Old Age Pension Scheme"}
                               </h5>
                               <p className="text-[10.5px] text-slate-600 dark:text-slate-400 leading-snug mt-0.5">
                                 {lang === "ml" ? "അപേക്ഷകൻ: സോമൻ പി · തിരുവനന്തപുരം" : "Applicant: Soman P · Thiruvananthapuram"}
@@ -5910,11 +8847,13 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                       </p>
                     </div>
 
-                    {/* Scheme Cards for Category */}
+                    {/* Scheme Cards for Category - Central Government schemes only */}
                     <div className="space-y-3 pt-1">
-                      {/* Scheme 1 */}
-                      {(schemeSourceFilter === "all" || schemeSourceFilter === "central") && (
-                        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:shadow-md transition-all">
+                      {getMobileCentralSchemeCards(selectedSchemeCategoryDetail.id).map((scheme) => (
+                        <div
+                          key={scheme.titleEn}
+                          className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:shadow-md transition-all"
+                        >
                           <div className="flex items-center justify-between gap-1.5 mb-2">
                             <span className="text-[9px] font-extrabold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/80 border border-blue-200 dark:border-blue-900/60 px-2 py-0.5 rounded-md">
                               {lang === "ml" ? "കേന്ദ്ര സർക്കാർ" : "Central Government"}
@@ -5926,39 +8865,23 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           </div>
 
                           <h5 className="font-extrabold text-xs sm:text-[13px] text-[#0a0f1d] dark:text-white leading-snug">
-                            {selectedSchemeCategoryDetail.id === "agriculture" && (lang === "ml" ? "പിഎം-കിസാൻ സമ്മാൻ നിധി" : "PM Kisan Samman Nidhi")}
-                            {selectedSchemeCategoryDetail.id === "healthcare" && (lang === "ml" ? "ആയുഷ്മാൻ ഭാരത് - പിഎം-ജയ്" : "Ayushman Bharat - PM-JAY Health Protection")}
-                            {selectedSchemeCategoryDetail.id === "pension" && (lang === "ml" ? "ഇന്ദിരാഗാന്ധി ദേശീയ വാർദ്ധക്യ പെൻഷൻ" : "Indira Gandhi National Old Age Pension (IGNOAP)")}
-                            {selectedSchemeCategoryDetail.id === "housing" && (lang === "ml" ? "പിഎംഎവൈ ഭവന പദ്ധതി (ഗ്രാമീൺ / അർബൻ)" : "Pradhan Mantri Awas Yojana (PMAY Housing)")}
-                            {!["agriculture", "healthcare", "pension", "housing"].includes(selectedSchemeCategoryDetail.id) && (lang === "ml" ? "കേന്ദ്ര സർക്കാർ സുരക്ഷാ പദ്ധതി" : "National Welfare & Financial Support Program")}
+                            {lang === "ml" ? scheme.titleMl : scheme.titleEn}
                           </h5>
 
                           <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
-                            {selectedSchemeCategoryDetail.id === "agriculture" && (lang === "ml" ? "കൃഷി മന്ത്രാലയം, ഭാരത സർക്കാർ" : "Ministry of Agriculture & Farmers Welfare, Govt of India")}
-                            {selectedSchemeCategoryDetail.id === "healthcare" && (lang === "ml" ? "ദേശീയ ആരോഗ്യ അതോറിറ്റി" : "National Health Authority, Govt of India")}
-                            {selectedSchemeCategoryDetail.id === "pension" && (lang === "ml" ? "ഗ്രാമീണ വികസന മന്ത്രാലയം" : "Ministry of Rural Development, Govt of India")}
-                            {selectedSchemeCategoryDetail.id === "housing" && (lang === "ml" ? "പാർപ്പിട നഗരകാര്യ മന്ത്രാലയം" : "Ministry of Housing & Urban Affairs, Govt of India")}
-                            {!["agriculture", "healthcare", "pension", "housing"].includes(selectedSchemeCategoryDetail.id) && (lang === "ml" ? "കേന്ദ്ര വികസന മന്ത്രാലയം" : "Central Nodal Department, Govt of India")}
+                            {lang === "ml" ? scheme.deptMl : scheme.deptEn}
                           </p>
 
                           <div className="mt-2.5 p-2 rounded-xl bg-orange-50/60 dark:bg-orange-950/30 border border-orange-100 dark:border-orange-900/30 text-[11px]">
                             <div className="font-extrabold text-orange-800 dark:text-orange-300">
                               {lang === "ml" ? "ആനുകൂല്യം:" : "Financial Benefit:"}
                               <span className="font-medium text-slate-700 dark:text-slate-300 ml-1">
-                                {selectedSchemeCategoryDetail.id === "agriculture" && (lang === "ml" ? "പ്രതിവർഷം ₹6,000 (3 ഗഡുക്കളായി)" : "₹6,000 / year direct bank transfer (3 installments)")}
-                                {selectedSchemeCategoryDetail.id === "healthcare" && (lang === "ml" ? "കുടുംബത്തിന് പ്രതിവർഷം ₹5 ലക്ഷം ചികിത്സാ സഹായം" : "₹5 Lakh / year free hospitalization per family")}
-                                {selectedSchemeCategoryDetail.id === "pension" && (lang === "ml" ? "പ്രതിമാസം ₹1,600 സാമ്പത്തിക പെൻഷൻ" : "₹1,600 / month direct financial pension transfer")}
-                                {selectedSchemeCategoryDetail.id === "housing" && (lang === "ml" ? "വീട് നിർമ്മാണത്തിന് ₹2.50 ലക്ഷം വരെ ധനസഹായം" : "Up to ₹2.50 Lakh financial grant for house construction")}
-                                {!["agriculture", "healthcare", "pension", "housing"].includes(selectedSchemeCategoryDetail.id) && (lang === "ml" ? "നേരിട്ടുള്ള സാമ്പത്തിക സഹായം & സബ്‌സിഡി" : "Direct financial assistance & subsidy transfer")}
+                                {lang === "ml" ? scheme.benefitMl : scheme.benefitEn}
                               </span>
                             </div>
                             <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
                               <span className="font-bold text-slate-600 dark:text-slate-300">{lang === "ml" ? "യോഗ്യത:" : "Eligibility:"} </span>
-                              {selectedSchemeCategoryDetail.id === "agriculture" && (lang === "ml" ? "സ്വന്തമായി കൃഷിഭൂമിയുള്ള എല്ലാ കർഷക കുടുംബങ്ങളും" : "Small & marginal farmers holding cultivable land")}
-                              {selectedSchemeCategoryDetail.id === "healthcare" && (lang === "ml" ? "എസ്‌ഇസിസി കണക്കെടുപ്പ് പ്രകാരം മുൻഗണനാ വിഭാഗങ്ങൾ" : "Low-income & SECC priority household members")}
-                              {selectedSchemeCategoryDetail.id === "pension" && (lang === "ml" ? "60 വയസ്സിന് മുകളിലുള്ള ബിപിഎൽ മുതിർന്ന പൗരന്മാർ" : "Senior citizens aged 60+ living below poverty line")}
-                              {selectedSchemeCategoryDetail.id === "housing" && (lang === "ml" ? "സ്വന്തമായി പക്കാ വീടില്ലാത്ത താഴ്ന്ന വരുമാനക്കാർ" : "Homeless or EWS households without pucca housing")}
-                              {!["agriculture", "healthcare", "pension", "housing"].includes(selectedSchemeCategoryDetail.id) && (lang === "ml" ? "കേരളത്തിലെ സ്ഥിര താമസക്കാരും യോഗ്യതയുള്ളവരും" : "Eligible resident citizens of Kerala")}
+                              {lang === "ml" ? scheme.eligibilityMl : scheme.eligibilityEn}
                             </div>
                           </div>
 
@@ -5969,17 +8892,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                             <button
                               type="button"
                               onClick={() => {
-                                const schemeTitle =
-                                  selectedSchemeCategoryDetail.id === "agriculture"
-                                    ? (lang === "ml" ? "പിഎം-കിസാൻ സമ്മാൻ നിധി" : "PM Kisan Samman Nidhi")
-                                    : selectedSchemeCategoryDetail.id === "healthcare"
-                                    ? (lang === "ml" ? "ആയുഷ്മാൻ ഭാരത് - പിഎം-ജയ്" : "Ayushman Bharat - PM-JAY Health Protection")
-                                    : selectedSchemeCategoryDetail.id === "pension"
-                                    ? (lang === "ml" ? "ഇന്ദിരാഗാന്ധി ദേശീയ വാർദ്ധക്യ പെൻഷൻ" : "Indira Gandhi National Old Age Pension (IGNOAP)")
-                                    : selectedSchemeCategoryDetail.id === "housing"
-                                    ? (lang === "ml" ? "പിഎംഎവൈ ഭവന പദ്ധതി (ഗ്രാമീൺ / അർബൻ)" : "Pradhan Mantri Awas Yojana (PMAY Housing)")
-                                    : (lang === "ml" ? "കേന്ദ്ര സർക്കാർ സുരക്ഷാ പദ്ധതി" : "National Welfare & Financial Support Program");
-                                setSelectedSchemeName(schemeTitle);
+                                setSelectedSchemeName(scheme.titleEn);
                                 setActiveTab("create");
                               }}
                               className="px-3 py-1.5 rounded-lg bg-[#ff5500] hover:bg-orange-600 text-white font-extrabold text-[11px] flex items-center gap-1 shadow-xs cursor-pointer active:scale-95 transition-all"
@@ -5989,156 +8902,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                             </button>
                           </div>
                         </div>
-                      )}
-
-                      {/* Scheme 2 */}
-                      {(schemeSourceFilter === "all" || schemeSourceFilter === "state") && (
-                        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:shadow-md transition-all">
-                          <div className="flex items-center justify-between gap-1.5 mb-2">
-                            <span className="text-[9px] font-extrabold text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-950/80 border border-orange-200 dark:border-orange-900/60 px-2 py-0.5 rounded-md">
-                              {lang === "ml" ? "സംസ്ഥാന സർക്കാർ" : "State Government"}
-                            </span>
-                            <span className="text-[9.5px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-900/40 px-2 py-0.5 rounded-full flex items-center gap-1">
-                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                              {lang === "ml" ? "അപേക്ഷിക്കാം" : "Accepting Applications"}
-                            </span>
-                          </div>
-
-                          <h5 className="font-extrabold text-xs sm:text-[13px] text-[#0a0f1d] dark:text-white leading-snug">
-                            {selectedSchemeCategoryDetail.id === "agriculture" && (lang === "ml" ? "സുഭിക്ഷ കേരളം കൃഷി സബ്‌സിഡി പദ്ധതി" : "Subhiksha Keralam Fallow Land Subsidy")}
-                            {selectedSchemeCategoryDetail.id === "healthcare" && (lang === "ml" ? "കാരുണ്യ ആരോഗ്യ സുരക്ഷാ പദ്ധതി (KASP)" : "Karunya Arogya Suraksha Padhathi (KASP)")}
-                            {selectedSchemeCategoryDetail.id === "pension" && (lang === "ml" ? "കേരള വയോശ്രേഷ്ഠ & കർഷക പെൻഷൻ" : "Kerala Social Security Pension & Vayoshreshtha")}
-                            {selectedSchemeCategoryDetail.id === "housing" && (lang === "ml" ? "ലൈഫ് മിഷൻ ഭവന നിർമ്മാണ പദ്ധതി" : "LIFE Mission Housing Scheme")}
-                            {!["agriculture", "healthcare", "pension", "housing"].includes(selectedSchemeCategoryDetail.id) && (lang === "ml" ? "കേരള സംസ്ഥാന വികസന സഹായ പദ്ധതി" : "Kerala State Welfare & Beneficiary Scheme")}
-                          </h5>
-
-                          <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
-                            {selectedSchemeCategoryDetail.id === "agriculture" && (lang === "ml" ? "കൃഷി വികസന കർഷകക്ഷേമ വകുപ്പ്, കേരളം" : "Dept of Agriculture Development & Farmers Welfare, Kerala")}
-                            {selectedSchemeCategoryDetail.id === "healthcare" && (lang === "ml" ? "ആരോഗ്യ കുടുംബക്ഷേമ വകുപ്പ്, കേരള സർക്കാർ" : "Health & Family Welfare Dept, Govt of Kerala")}
-                            {selectedSchemeCategoryDetail.id === "pension" && (lang === "ml" ? "സാമൂഹികനീതി വകുപ്പ്, കേരള സർക്കാർ" : "Social Justice Department, Govt of Kerala")}
-                            {selectedSchemeCategoryDetail.id === "housing" && (lang === "ml" ? "തദ്ദേശ സ്വയംഭരണ & ഭവന നിർമ്മാണ വകുപ്പ്" : "Local Self Govt & Housing Dept, Govt of Kerala")}
-                            {!["agriculture", "healthcare", "pension", "housing"].includes(selectedSchemeCategoryDetail.id) && (lang === "ml" ? "സംസ്ഥാന നോഡൽ വകുപ്പ്, കേരളം" : "State Nodal Department, Govt of Kerala")}
-                          </p>
-
-                          <div className="mt-2.5 p-2 rounded-xl bg-purple-50/60 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-900/30 text-[11px]">
-                            <div className="font-extrabold text-purple-800 dark:text-purple-300">
-                              {lang === "ml" ? "ആനുകൂല്യം:" : "Financial Benefit:"}
-                              <span className="font-medium text-slate-700 dark:text-slate-300 ml-1">
-                                {selectedSchemeCategoryDetail.id === "agriculture" && (lang === "ml" ? "ഏക്കറിന് ₹10,000 വരെ കൃഷി സബ്‌സിഡി" : "Up to ₹10,000 / acre cultivation & seed subsidy")}
-                                {selectedSchemeCategoryDetail.id === "healthcare" && (lang === "ml" ? "രജിസ്റ്റർ ചെയ്ത ആശുപത്രികളിൽ സൗജന്യ ചികിത്സ" : "Cashless medical treatment up to ₹5 Lakh at empaneled hospitals")}
-                                {selectedSchemeCategoryDetail.id === "pension" && (lang === "ml" ? "പ്രതിമാസം ₹1,600 നേരിട്ടുള്ള ബാങ്ക് പെൻഷൻ" : "₹1,600 / month direct pension to bank account")}
-                                {selectedSchemeCategoryDetail.id === "housing" && (lang === "ml" ? "വീട് നിർമ്മാണത്തിന് ₹4.00 ലക്ഷം ധനസഹായം" : "₹4.00 Lakh financial grant for house construction in 4 stages")}
-                                {!["agriculture", "healthcare", "pension", "housing"].includes(selectedSchemeCategoryDetail.id) && (lang === "ml" ? "സംസ്ഥാന തല സാമ്പത്തിക & സാമൂഹിക സുരക്ഷ" : "State financial grant and welfare subsidies")}
-                              </span>
-                            </div>
-                            <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
-                              <span className="font-bold text-slate-600 dark:text-slate-300">{lang === "ml" ? "യോഗ്യത:" : "Eligibility:"} </span>
-                              {selectedSchemeCategoryDetail.id === "agriculture" && (lang === "ml" ? "വ്യക്തിഗത കർഷകരും കുടുംബശ്രീ ഗ്രൂപ്പുകളും" : "Individual farmers & Kudumbashree farming groups")}
-                              {selectedSchemeCategoryDetail.id === "healthcare" && (lang === "ml" ? "കേരളത്തിലെ ബിപിഎൽ & മുൻഗണനാ റേഷൻ കാർഡ് ഉടമകൾ" : "BPL & priority ration card holders resident in Kerala")}
-                              {selectedSchemeCategoryDetail.id === "pension" && (lang === "ml" ? "വാർഷിക വരുമാനം ₹1 ലക്ഷത്തിൽ താഴെയുള്ളവർ" : "Resident citizens with annual family income below ₹1 Lakh")}
-                              {selectedSchemeCategoryDetail.id === "housing" && (lang === "ml" ? "ഭൂമിയുള്ള ഭവനരഹിതർ & തദ്ദേശീയ പാവപ്പെട്ട കുടുംബങ്ങൾ" : "Landowning homeless families registered with Local Panchayat")}
-                              {!["agriculture", "healthcare", "pension", "housing"].includes(selectedSchemeCategoryDetail.id) && (lang === "ml" ? "കേരളവാസികളായ അർഹരായ ഗുണഭോക്താക്കൾ" : "Eligible resident beneficiaries in Kerala")}
-                            </div>
-                          </div>
-
-                          <div className="flex items-center justify-between pt-2.5 mt-2.5 border-t border-slate-100 dark:border-slate-800">
-                            <span className="text-[10px] text-slate-400 font-medium">
-                              {lang === "ml" ? "അക്ഷയ സെന്റർ / ഓൺലൈൻ വഴി" : "Available via Akshaya & Online Portal"}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const schemeTitle =
-                                  selectedSchemeCategoryDetail.id === "agriculture"
-                                    ? (lang === "ml" ? "സുഭിക്ഷ കേരളം കൃഷി സബ്‌സിഡി പദ്ധതി" : "Subhiksha Keralam Fallow Land Subsidy")
-                                    : selectedSchemeCategoryDetail.id === "healthcare"
-                                    ? (lang === "ml" ? "കാരുണ്യ ആരോഗ്യ സുരക്ഷാ പദ്ധതി (KASP)" : "Karunya Arogya Suraksha Padhathi (KASP)")
-                                    : selectedSchemeCategoryDetail.id === "pension"
-                                    ? (lang === "ml" ? "കേരള വയോശ്രേഷ്ഠ & കർഷക പെൻഷൻ" : "Kerala Social Security Pension & Vayoshreshtha")
-                                    : selectedSchemeCategoryDetail.id === "housing"
-                                    ? (lang === "ml" ? "ലൈഫ് മിഷൻ ഭവന നിർമ്മാണ പദ്ധതി" : "LIFE Mission Housing Scheme")
-                                    : (lang === "ml" ? "കേരള സംസ്ഥാന വികസന സഹായ പദ്ധതി" : "Kerala State Welfare & Beneficiary Scheme");
-                                setSelectedSchemeName(schemeTitle);
-                                setActiveTab("create");
-                              }}
-                              className="px-3 py-1.5 rounded-lg bg-[#ff5500] hover:bg-orange-600 text-white font-extrabold text-[11px] flex items-center gap-1 shadow-xs cursor-pointer active:scale-95 transition-all"
-                            >
-                              <span>{lang === "ml" ? "യോഗ്യത പരിശോധിക്കുക" : "Check Eligibility"}</span>
-                              <ChevronRight className="h-3 w-3 stroke-[2.5]" />
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Scheme 3 */}
-                      {(schemeSourceFilter === "all" || schemeSourceFilter === "state") && (
-                        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:shadow-md transition-all">
-                          <div className="flex items-center justify-between gap-1.5 mb-2">
-                            <span className="text-[9px] font-extrabold text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-950/80 border border-orange-200 dark:border-orange-900/60 px-2 py-0.5 rounded-md">
-                              {lang === "ml" ? "സംസ്ഥാന സർക്കാർ" : "State Government"}
-                            </span>
-                            <span className="text-[9.5px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-900/40 px-2 py-0.5 rounded-full">
-                              {lang === "ml" ? "അടുത്ത ഘട്ടം ഉടൻ" : "Upcoming Phase"}
-                            </span>
-                          </div>
-
-                          <h5 className="font-extrabold text-xs sm:text-[13px] text-[#0a0f1d] dark:text-white leading-snug">
-                            {selectedSchemeCategoryDetail.id === "agriculture" && (lang === "ml" ? "കാർഷിക യന്ത്രവൽക്കരണ സബ്‌സിഡി പദ്ധതി" : "Farm Mechanization & Machinery Subsidy")}
-                            {selectedSchemeCategoryDetail.id === "healthcare" && (lang === "ml" ? "മെഡിസെപ് (MEDISEP) സർക്കാർ ജീവനക്കാരുടെ പദ്ധതി" : "MEDISEP Govt Employee Health Insurance")}
-                            {selectedSchemeCategoryDetail.id === "pension" && (lang === "ml" ? "കർഷക തൊഴിലാളി ക്ഷേമനിധി പെൻഷൻ" : "Agricultural Laborers Welfare Pension")}
-                            {selectedSchemeCategoryDetail.id === "housing" && (lang === "ml" ? "തീരദേശ ഭവന പുനരധിവാസ പദ്ധതി" : "Coastal Housing Rehabilitation Scheme")}
-                            {!["agriculture", "healthcare", "pension", "housing"].includes(selectedSchemeCategoryDetail.id) && (lang === "ml" ? "പ്രത്യേക ക്ഷേമ സഹായ പദ്ധതി" : "Special Welfare & Assistance Initiative")}
-                          </h5>
-
-                          <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
-                            {selectedSchemeCategoryDetail.id === "agriculture" && (lang === "ml" ? "കാർഷിക വികസന വകുപ്പ്, കേരളം" : "Department of Agriculture, Govt of Kerala")}
-                            {selectedSchemeCategoryDetail.id === "healthcare" && (lang === "ml" ? "ധനകാര്യ വകുപ്പ്, കേരള സർക്കാർ" : "Finance Department, Govt of Kerala")}
-                            {selectedSchemeCategoryDetail.id === "pension" && (lang === "ml" ? "തൊഴിൽ നൈപുണ്യ വകുപ്പ്, കേരളം" : "Labour & Skills Department, Govt of Kerala")}
-                            {selectedSchemeCategoryDetail.id === "housing" && (lang === "ml" ? "മത്സ്യബന്ധന വകുപ്പ്, കേരളം" : "Fisheries Department, Govt of Kerala")}
-                            {!["agriculture", "healthcare", "pension", "housing"].includes(selectedSchemeCategoryDetail.id) && (lang === "ml" ? "സാമൂഹിക ക്ഷേമ വകുപ്പ്" : "Social Welfare Department")}
-                          </p>
-
-                          <div className="mt-2.5 p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 text-[11px]">
-                            <div className="font-extrabold text-slate-800 dark:text-slate-200">
-                              {lang === "ml" ? "ആനുകൂല്യം:" : "Financial Benefit:"}
-                              <span className="font-medium text-slate-700 dark:text-slate-300 ml-1">
-                                {selectedSchemeCategoryDetail.id === "agriculture" && (lang === "ml" ? "ഉപകരണങ്ങൾക്ക് 50% വരെയുള്ള സബ്‌സിഡി" : "Up to 50% equipment subsidy for registered farmers")}
-                                {selectedSchemeCategoryDetail.id === "healthcare" && (lang === "ml" ? "ജീവനക്കാർക്കും പെൻഷൻകാർക്കും ക്യാഷ്‌ലെസ് പരിരക്ഷ" : "Cashless health coverage for active & retired staff")}
-                                {selectedSchemeCategoryDetail.id === "pension" && (lang === "ml" ? "പ്രതിമാസം ₹1,600 കർഷക തൊഴിലാളി പെൻഷൻ" : "₹1,600 / month pension for registered agri workers")}
-                                {selectedSchemeCategoryDetail.id === "housing" && (lang === "ml" ? "പുനരധിവാസ ഭവന നിർമ്മാണത്തിന് ₹10 ലക്ഷം grant" : "₹10 Lakh land acquisition & house grant")}
-                                {!["agriculture", "healthcare", "pension", "housing"].includes(selectedSchemeCategoryDetail.id) && (lang === "ml" ? "തൊഴിൽ നൈപുണ്യ വികസന സഹായം" : "Skill training and equipment subsidy")}
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center justify-between pt-2.5 mt-2.5 border-t border-slate-100 dark:border-slate-800">
-                            <span className="text-[10px] text-slate-400 font-medium">
-                              {lang === "ml" ? "അടുത്ത ഘട്ടം വിജ്ഞാപനം ഉടൻ" : "Phase 2 Notification Soon"}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const schemeTitle =
-                                  selectedSchemeCategoryDetail.id === "agriculture"
-                                    ? (lang === "ml" ? "കാർഷിക യന്ത്രവൽക്കരണ സബ്‌സിഡി പദ്ധതി" : "Farm Mechanization & Machinery Subsidy")
-                                    : selectedSchemeCategoryDetail.id === "healthcare"
-                                    ? (lang === "ml" ? "മെഡിസെപ് (MEDISEP) സർക്കാർ ജീവനക്കാരുടെ പദ്ധതി" : "MEDISEP Govt Employee Health Insurance")
-                                    : selectedSchemeCategoryDetail.id === "pension"
-                                    ? (lang === "ml" ? "കർഷക തൊഴിലാളി ക്ഷേമനിധി പെൻഷൻ" : "Agricultural Laborers Welfare Pension")
-                                    : selectedSchemeCategoryDetail.id === "housing"
-                                    ? (lang === "ml" ? "തീരദേശ ഭവന പുനരധിവാസ പദ്ധതി" : "Coastal Housing Rehabilitation Scheme")
-                                    : (lang === "ml" ? "പ്രത്യേക ക്ഷേമ സഹായ പദ്ധതി" : "Special Welfare & Assistance Initiative");
-                                setSelectedSchemeName(schemeTitle);
-                                setActiveTab("create");
-                              }}
-                              className="px-3 py-1.5 rounded-lg bg-[#ff5500] hover:bg-orange-600 text-white font-extrabold text-[11px] flex items-center gap-1 shadow-xs cursor-pointer active:scale-95 transition-all"
-                            >
-                              <span>{lang === "ml" ? "യോഗ്യത പരിശോധിക്കുക" : "Check Eligibility"}</span>
-                              <ChevronRight className="h-3 w-3 stroke-[2.5]" />
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                      ))}
                     </div>
                   </div>
                 ) : (
@@ -6203,8 +8967,8 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                               count: 128,
                               categoryLabelEn: "All Categories",
                               categoryLabelMl: "എല്ലാ വിഭാഗങ്ങളും",
-                              titleEn: "All Central & State Schemes",
-                              titleMl: "എല്ലാ കേന്ദ്ര-സംസ്ഥാന ക്ഷേമപദ്ധതികൾ",
+                              titleEn: "All Central Government Schemes",
+                              titleMl: "എല്ലാ കേന്ദ്ര സർക്കാർ ക്ഷേമപദ്ധതികൾ",
                             });
                             setSchemeCategoryFilter("all");
                             setMobileSubPage("category_schemes");
@@ -6286,8 +9050,8 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                               count: 128,
                               categoryLabelEn: "All Categories",
                               categoryLabelMl: "എല്ലാ വിഭാഗങ്ങളും",
-                              titleEn: "All Central & State Schemes",
-                              titleMl: "എല്ലാ കേന്ദ്ര-സംസ്ഥാന ക്ഷേമപദ്ധതികൾ",
+                              titleEn: "All Central Government Schemes",
+                              titleMl: "എല്ലാ കേന്ദ്ര സർക്കാർ ക്ഷേമപദ്ധതികൾ",
                             });
                             setSchemeCategoryFilter("all");
                             setMobileSubPage("category_schemes");
@@ -6394,11 +9158,11 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                         </div>
                       </div>
 
-                      {/* Scheme Card 2: State Govt */}
+                      {/* Scheme Card 2: Central Govt */}
                       <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:shadow-md transition-all">
                         <div className="flex items-center justify-between gap-1.5 mb-2">
-                          <span className="text-[9px] font-extrabold text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-950/80 border border-orange-200 dark:border-orange-900/60 px-2 py-0.5 rounded-md">
-                            {lang === "ml" ? "സംസ്ഥാന സർക്കാർ" : "State Government"}
+                          <span className="text-[9px] font-extrabold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/80 border border-blue-200 dark:border-blue-900/60 px-2 py-0.5 rounded-md">
+                            {lang === "ml" ? "കേന്ദ്ര സർക്കാർ" : "Central Government"}
                           </span>
                           <span className="text-[9.5px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-900/40 px-2 py-0.5 rounded-full flex items-center gap-1">
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -6407,34 +9171,34 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                         </div>
 
                         <h5 className="font-extrabold text-xs sm:text-[13px] text-[#0a0f1d] dark:text-white leading-snug">
-                          {lang === "ml" ? "സുഭിക്ഷ കേരളം കൃഷി സബ്‌സിഡി പദ്ധതി" : "Subhiksha Keralam Fallow Land Subsidy"}
+                          {lang === "ml" ? "ആയുഷ്മാൻ ഭാരത് - പിഎം-ജയ് ആരോഗ്യ പരിരക്ഷ" : "Ayushman Bharat - PM-JAY Health Protection"}
                         </h5>
 
                         <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
-                          {lang === "ml" ? "കൃഷി വികസന കർഷകക്ഷേമ വകുപ്പ്, കേരളം" : "Dept of Agriculture Development & Farmers Welfare, Kerala"}
+                          {lang === "ml" ? "ദേശീയ ആരോഗ്യ അതോറിറ്റി, ഭാരത സർക്കാർ" : "National Health Authority, Govt of India"}
                         </p>
 
                         <div className="mt-2.5 p-2 rounded-xl bg-purple-50/60 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-900/30 text-[11px]">
                           <div className="font-extrabold text-purple-800 dark:text-purple-300">
                             {lang === "ml" ? "സാമ്പത്തിക ആനുകൂല്യം:" : "Financial Benefit:"}
                             <span className="font-medium text-slate-700 dark:text-slate-300 ml-1">
-                              {lang === "ml" ? "ഏക്കറിന് ₹10,000 വരെ കൃഷി സബ്‌സിഡി" : "Up to ₹10,000 / acre cultivation & seed subsidy"}
+                              {lang === "ml" ? "കുടുംബത്തിന് പ്രതിവർഷം ₹5,00,000 ക്യാഷ്‌ലെസ് ചികിത്സാ പരിരക്ഷ" : "₹5,00,000 / family / year cashless hospital cover"}
                             </span>
                           </div>
                           <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
                             <span className="font-bold text-slate-600 dark:text-slate-300">{lang === "ml" ? "യോഗ്യത:" : "Eligibility:"} </span>
-                            {lang === "ml" ? "വ്യക്തിഗത കർഷകരും കുടുംബശ്രീ ഗ്രൂപ്പുകളും" : "Individual farmers & Kudumbashree farming groups"}
+                            {lang === "ml" ? "താഴ്ന്ന വരുമാന & SECC മുൻഗണനാ കുടുംബങ്ങൾ" : "Low-income & SECC priority household members"}
                           </div>
                         </div>
 
                         <div className="flex items-center justify-between pt-2.5 mt-2.5 border-t border-slate-100 dark:border-slate-800">
                           <span className="text-[10px] text-slate-400 font-medium">
-                            {lang === "ml" ? "അക്ഷയ സെന്റർ / ഓൺലൈൻ വഴി" : "Available via Akshaya & Online Portal"}
+                            {lang === "ml" ? "ഓൺലൈനായി അപേക്ഷിക്കാം" : "Online Application Enabled"}
                           </span>
                           <button
                             type="button"
                             onClick={() => {
-                              setSelectedSchemeName("Subhiksha Keralam Fallow Land Subsidy");
+                              setSelectedSchemeName("Ayushman Bharat - PM-JAY Health Protection");
                               setActiveTab("create");
                             }}
                             className="px-3 py-1.5 rounded-lg bg-[#ff5500] hover:bg-orange-600 text-white font-extrabold text-[11px] flex items-center gap-1 shadow-xs cursor-pointer active:scale-95 transition-all"
@@ -6454,7 +9218,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
               mobileSubPage === "app_detail" ? (
                 renderAppDetailSubpage()
               ) : (
-                <div className="space-y-3 animate-in fade-in duration-200">
+                <div className="space-y-2 animate-in fade-in duration-200">
                 {/* Applications Header with Period Selector & Filter Pill */}
                 <div className="flex items-center justify-between border-b border-border/80 pb-2 gap-1">
                   {/* Left Side: Formatted Period Display replacing 'Applications' title */}
@@ -6520,15 +9284,15 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                 </div>
 
                 {/* Search Input & Status Selection Dropdown Pill */}
-                <div className="flex items-center gap-2 pb-1">
+                <div className="flex items-center gap-2">
                   {/* Application Search Input */}
-                  <div className="relative flex-1">
+                  <div className="relative min-w-0 flex-[7]">
                     <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400 pointer-events-none" />
                     <input
                       type="text"
                       value={applicationSearchQuery}
                       onChange={(e) => setApplicationSearchQuery(e.target.value)}
-                      placeholder={lang === "ml" ? "പേര്, ഐഡി, ടൈപ്പ് തിരയുക..." : "Search by name, ID, type..."}
+                      placeholder={lang === "ml" ? "അപേക്ഷകൾ തിരയുക" : "Search applications"}
                       className="w-full h-7 pl-7 pr-6 text-[11px] font-semibold rounded-full border border-amber-200/80 dark:border-slate-800 bg-[#fffcfa] dark:bg-slate-900 text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs"
                     />
                     {applicationSearchQuery && (
@@ -6543,313 +9307,78 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                   </div>
 
                   {/* Status Selection Dropdown Pill */}
-                  <div className="relative shrink-0">
+                  <div className="relative min-w-0 flex-[3]">
                     <select
                       value={applicationStatusFilter}
-                      onChange={(e) => setApplicationStatusFilter(e.target.value as "all" | "assisted" | "pending" | "rejected")}
-                      className="h-7 pl-3 pr-7 text-[11px] font-bold rounded-full border border-amber-200/80 dark:border-orange-800/80 bg-[#fffcf0] dark:bg-slate-900 text-[#0a0f1d] dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs cursor-pointer appearance-none"
+                      onChange={(e) => setApplicationStatusFilter(e.target.value as MobileApplicationStatusFilter)}
+                      className="h-7 w-full min-w-0 pl-2.5 pr-6 text-[9.5px] font-bold rounded-full border border-amber-200/80 dark:border-orange-800/80 bg-[#fffcf0] dark:bg-slate-900 text-[#0a0f1d] dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs cursor-pointer appearance-none"
                     >
-                      <option value="all">{lang === "ml" ? `എല്ലാം (${applicationsCount})` : `All (${applicationsCount})`}</option>
-                      <option value="assisted">{lang === "ml" ? `പരിശോധനയിലുള്ളവ (${currentMetrics.assisted})` : `In Review (${currentMetrics.assisted})`}</option>
-                      <option value="pending">{lang === "ml" ? `പെൻഡിംഗ് (${currentMetrics.pending})` : `Pending (${currentMetrics.pending})`}</option>
-                      <option value="rejected">{lang === "ml" ? `നിരസിച്ചവ (${currentMetrics.rejected})` : `Rejected (${currentMetrics.rejected})`}</option>
+                      <option value="all">{lang === "ml" ? "എല്ലാ അപേക്ഷകളും" : "All Applications"}</option>
+                      <option value="application_received">{lang === "ml" ? "ലഭിച്ച അപേക്ഷകൾ" : "Application Received"}</option>
+                      <option value="document_verification_completed">{lang === "ml" ? "രേഖാ പരിശോധന പൂർത്തിയായി" : "Document Verification Completed"}</option>
+                      <option value="applied">{lang === "ml" ? "അപേക്ഷിച്ചു" : "Applied"}</option>
+                      <option value="review">{lang === "ml" ? "പരിശോധനയിൽ" : "Review"}</option>
+                      <option value="beneficiary">{lang === "ml" ? "ഗുണഭോക്താവ്" : "Beneficiary"}</option>
+                      <option value="rejected">{lang === "ml" ? "നിരസിച്ചവ" : "Rejected"}</option>
                     </select>
                     <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-[#0a0f1d] dark:text-slate-300 pointer-events-none" />
                   </div>
+                </div>
+
+                {/* Application intake KPIs */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setApplicationStatusFilter("document_verification_completed")}
+                    className={`flex min-h-[64px] items-center justify-between gap-2 rounded-xl border p-2.5 text-left shadow-2xs transition-all cursor-pointer ${
+                      applicationStatusFilter === "document_verification_completed"
+                        ? "border-emerald-300 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30"
+                        : "border-border bg-card hover:border-emerald-200"
+                    }`}
+                  >
+                    <span className="min-w-0">
+                      <span className="block text-[10px] font-bold leading-tight text-muted-foreground">
+                        {lang === "ml" ? "അപേക്ഷിക്കാൻ തയ്യാർ" : "Ready to Apply"}
+                      </span>
+                      <span className="mt-1 block font-display text-base font-bold leading-none text-foreground">
+                        {mobileApplicationRecordsByStatus.document_verification_completed.length.toLocaleString()}
+                      </span>
+                    </span>
+                    <img src={readyToSubmit3dIcon} alt="Ready to Apply" className="h-9 w-9 shrink-0 object-contain" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setApplicationStatusFilter("application_received")}
+                    className={`flex min-h-[64px] items-center justify-between gap-2 rounded-xl border p-2.5 text-left shadow-2xs transition-all cursor-pointer ${
+                      applicationStatusFilter === "application_received"
+                        ? "border-orange-300 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/30"
+                        : "border-border bg-card hover:border-orange-200"
+                    }`}
+                  >
+                    <span className="min-w-0">
+                      <span className="block text-[10px] font-bold leading-tight text-muted-foreground">
+                        {lang === "ml" ? "രേഖകൾ ബാക്കി" : "Document Pending"}
+                      </span>
+                      <span className="mt-1 block font-display text-base font-bold leading-none text-foreground">
+                        {mobileApplicationRecordsByStatus.application_received.length.toLocaleString()}
+                      </span>
+                    </span>
+                    <img src={documentsPending3dIcon} alt="Document Pending" className="h-9 w-9 shrink-0 object-contain" />
+                  </button>
                 </div>
 
                 {/* SLA Breaches Banner */}
                 {/* Removed per user request */}
 
                 {/* List of Applications */}
-                <div className="space-y-2 pt-1">
-                  {/* Item 1: Pending */}
-                  {matchAppSearch("pending", "Pratibha Merit Scholarship", "പ്രതിഭാ മെരിറ്റ് സ്കോളർഷിപ്പ്", "Ananya Ramesh", "അനന്യ രമേശ്", "Scholarship", "സ്കോളർഷിപ്പ്", "APP-2026-8910") && (
-                    <div 
-                      onClick={() => {
-                        setSelectedApplicationRecord({
-                          ref: "APP-2026-8910",
-                          schemeNameEn: "Pratibha Merit Scholarship",
-                          schemeNameMl: "പ്രതിഭാ മെരിറ്റ് സ്കോളർഷിപ്പ്",
-                          categoryEn: "Scholarship",
-                          categoryMl: "സ്കോളർഷിപ്പ്",
-                          status: "pending",
-                          applicantNameEn: "Ananya Ramesh",
-                          applicantNameMl: "അനന്യ രമേശ്",
-                          aadhaar: "XXXX-XXXX-8910",
-                          phone: "+91 94950 33445",
-                          locationEn: "Kazhakkoottam, Thiruvananthapuram",
-                          locationMl: "കഴക്കൂട്ടം, തിരുവനന്തപുരം",
-                          annualIncome: "₹ 1,20,000",
-                          appliedDate: "05/10/2026",
-                          currentStep: 2,
-                          pendingDocs: ["Class 10 Marklist", "Aadhaar Card", "Income Certificate"],
-                          nextActionEn: "Income Certificate verification by Village Officer pending",
-                          nextActionMl: "വില്ലേജ് ഓഫീസറുടെ വരുമാന സർട്ടിഫിക്കറ്റ് പരിശോധന കുടിശ്ശികയാണ്",
-                          auditLog: [
-                            { titleEn: "Application Submitted Online", titleMl: "അപേക്ഷ ഓൺലൈനായി സമർപ്പിച്ചു", date: "05 Oct 2026", status: "completed" },
-                            { titleEn: "Document Verification in Progress", titleMl: "രേഖാ പരിശോധന പുരോഗമിക്കുന്നു", date: "06 Oct 2026", status: "current" },
-                            { titleEn: "Field Level Verification", titleMl: "ഫീൽഡ് തല പരിശോധന", date: "Pending", status: "upcoming" },
-                          ],
-                        });
-                        setMobileSubPage("app_detail");
-                      }}
-                      className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:shadow-xs transition-all cursor-pointer"
-                    >
-                      <div className="flex items-center justify-between gap-1.5">
-                        <span className="text-[9.5px] font-extrabold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/70 dark:border-indigo-900/50 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                          {lang === "ml" ? "സ്കോളർഷിപ്പ്" : "Scholarship"}
-                        </span>
-                        <span className="text-[10px] font-extrabold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-900/40 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
-                          <Hourglass className="h-2.5 w-2.5" />
-                          {lang === "ml" ? "പെൻഡിംഗ്" : "Pending Verification"}
-                        </span>
-                      </div>
-                      <h5 className="font-extrabold text-xs sm:text-[13px] text-[#0a0f1d] dark:text-white leading-tight mt-2">
-                        {lang === "ml" ? "പ്രതിഭാ മെരിറ്റ് സ്കോളർഷിപ്പ്" : "Pratibha Merit Scholarship"}
-                      </h5>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug mt-1 font-medium">
-                        {lang === "ml" ? "അപേക്ഷകൻ: അനന്യ രമേശ് · കഴക്കൂട്ടം" : "Applicant: Ananya Ramesh · Kazhakkoottam"}
+                <div className="space-y-2">
+                  {displayedMobileApplicationRecords.map(renderMobileApplicationListCard)}
+                  {displayedMobileApplicationRecords.length === 0 && (
+                    <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-8 text-center dark:border-slate-800 dark:bg-slate-900">
+                      <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400">
+                        {lang === "ml" ? "അപേക്ഷകൾ കണ്ടെത്തിയില്ല." : "No applications found."}
                       </p>
-                      <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 dark:border-slate-800/60 mt-2.5 text-[10.5px] text-slate-400 font-medium">
-                        <span className="font-mono text-[10px] text-slate-400">Ref: APP-2026-8910</span>
-                        <span className="flex items-center gap-0.5 text-amber-600 dark:text-amber-400 font-extrabold text-[10.5px]">
-                          {lang === "ml" ? "വിശദാംശങ്ങൾ കാണുക" : "View Details"}
-                          <ChevronRight className="h-3 w-3 stroke-[2.5]" />
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Item 2: Assisted - Karunya Health Insurance */}
-                  {matchAppSearch("assisted", "Karunya Health Insurance", "കാരുണ്യ ആരോഗ്യ ഇൻഷുറൻസ്", "Lakshmi Amma", "ലക്ഷ്മി അമ്മ", "Health Insurance", "ആരോഗ്യം", "APP-2026-8922") && (
-                    <div 
-                      onClick={() => {
-                        setSelectedApplicationRecord({
-                          ref: "APP-2026-8922",
-                          schemeNameEn: "Karunya Health Insurance",
-                          schemeNameMl: "കാരുണ്യ ആരോഗ്യ ഇൻഷുറൻസ്",
-                          categoryEn: "Health Insurance",
-                          categoryMl: "ആരോഗ്യം",
-                          status: "approved",
-                          applicantNameEn: "Lakshmi Amma",
-                          applicantNameMl: "ലക്ഷ്മി അമ്മ",
-                          aadhaar: "XXXX-XXXX-8922",
-                          phone: "+91 98470 11223",
-                          locationEn: "Vattiyoorkavu, Thiruvananthapuram",
-                          locationMl: "വട്ടിയൂർക്കാവ്, തിരുവനന്തപുരം",
-                          annualIncome: "₹ 75,000",
-                          appliedDate: "03/10/2026",
-                          currentStep: 4,
-                          pendingDocs: ["Ration Card Copy", "Doctor Certificate"],
-                          nextActionEn: "Sanction letter generated. Financial claim process ready.",
-                          nextActionMl: "അനുമതി പത്രം തയാറായി. ധനസഹായ തുക നൽകാൻ വിവരങ്ങൾ ക്രമീകരിച്ചു.",
-                          auditLog: [
-                            { titleEn: "Application Received", titleMl: "അപേക്ഷ ലഭിച്ചു", date: "03 Oct 2026", status: "completed" },
-                            { titleEn: "Document Verification Completed", titleMl: "രേഖാ പരിശോധന പൂർത്തിയായി", date: "04 Oct 2026", status: "completed" },
-                            { titleEn: "District Medical Sanction", titleMl: "ജില്ലാ മെഡിക്കൽ അനുമതി", date: "05 Oct 2026", status: "completed" },
-                          ],
-                        });
-                        setMobileSubPage("app_detail");
-                      }}
-                      className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:shadow-xs transition-all cursor-pointer"
-                    >
-                      <div className="flex items-center justify-between gap-1.5">
-                        <span className="text-[9.5px] font-extrabold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 border border-purple-200/70 dark:border-purple-900/50 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                          {lang === "ml" ? "ആരോഗ്യം" : "Health Insurance"}
-                        </span>
-                        <span className="text-[10px] font-extrabold text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/40 border border-teal-200/60 dark:border-teal-900/40 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
-                          <CheckCircle2 className="h-2.5 w-2.5" />
-                          {lang === "ml" ? "സഹായം ലഭിച്ചു" : "Approved & Assisted"}
-                        </span>
-                      </div>
-                      <h5 className="font-extrabold text-xs sm:text-[13px] text-[#0a0f1d] dark:text-white leading-tight mt-2">
-                        {lang === "ml" ? "കാരുണ്യ ആരോഗ്യ ഇൻഷുറൻസ്" : "Karunya Health Insurance"}
-                      </h5>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug mt-1 font-medium">
-                        {lang === "ml" ? "അപേക്ഷക: ലക്ഷ്മി അമ്മ · വട്ടിയൂർക്കാവ്" : "Applicant: Lakshmi Amma · Vattiyoorkavu"}
-                      </p>
-                      <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 dark:border-slate-800/60 mt-2.5 text-[10.5px] text-slate-400 font-medium">
-                        <span className="font-mono text-[10px] text-slate-400">Ref: APP-2026-8922</span>
-                        <span className="flex items-center gap-0.5 text-teal-600 dark:text-teal-400 font-extrabold text-[10.5px]">
-                          {lang === "ml" ? "വിശദാംശങ്ങൾ കാണുക" : "View Details"}
-                          <ChevronRight className="h-3 w-3 stroke-[2.5]" />
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Item 3: PM Kisan Samman Nidhi */}
-                  {matchAppSearch("pending", "PM Kisan Samman Nidhi", "പിഎം-കിസാൻ സമ്മാൻ നിധി", "K. Krishnan", "കെ. കൃഷ്ണൻ", "Agriculture", "കൃഷി", "APP-2026-8925") && (
-                    <div 
-                      onClick={() => {
-                        setSelectedApplicationRecord({
-                          ref: "APP-2026-8925",
-                          schemeNameEn: "PM Kisan Samman Nidhi",
-                          schemeNameMl: "പിഎം-കിസാൻ സമ്മാൻ നിധി",
-                          categoryEn: "Agriculture",
-                          categoryMl: "കൃഷി",
-                          status: "pending",
-                          applicantNameEn: "K. Krishnan",
-                          applicantNameMl: "കെ. കൃഷ്ണൻ",
-                          aadhaar: "XXXX-XXXX-8925",
-                          phone: "+91 98463 87654",
-                          locationEn: "Palakkad North, Palakkad",
-                          locationMl: "പാലക്കാട് നോർത്ത്, പാലക്കാട്",
-                          annualIncome: "₹ 90,000",
-                          appliedDate: "01/10/2026",
-                          currentStep: 2,
-                          pendingDocs: ["Land Tax Receipt", "Aadhaar e-KYC Verification"],
-                          nextActionEn: "Pending e-KYC validation via Biometric / OTP",
-                          nextActionMl: "ബയോമെട്രിക് / ഒടിപി വഴി ഇ-കെവൈസി പരിശോധന പൂർത്തിയാക്കുക",
-                          auditLog: [
-                            { titleEn: "Application Registered", titleMl: "അപേക്ഷ രജിസ്റ്റർ ചെയ്തു", date: "01 Oct 2026", status: "completed" },
-                            { titleEn: "Land Record Audit", titleMl: "ഭൂമി വിവര പരിശോധന", date: "03 Oct 2026", status: "completed" },
-                            { titleEn: "Bank Aadhar Seeding", titleMl: "ബാങ്ക് ആധാർ ലിങ്കിംഗ്", date: "Pending", status: "current" },
-                          ],
-                        });
-                        setMobileSubPage("app_detail");
-                      }}
-                      className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:shadow-xs transition-all cursor-pointer"
-                    >
-                      <div className="flex items-center justify-between gap-1.5">
-                        <span className="text-[9.5px] font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/70 dark:border-emerald-900/50 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                          {lang === "ml" ? "കൃഷി" : "Agriculture"}
-                        </span>
-                        <span className="text-[10px] font-extrabold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-900/40 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
-                          <Hourglass className="h-2.5 w-2.5" />
-                          {lang === "ml" ? "പെൻഡിംഗ്" : "Document Review Pending"}
-                        </span>
-                      </div>
-                      <h5 className="font-extrabold text-xs sm:text-[13px] text-[#0a0f1d] dark:text-white leading-tight mt-2">
-                        {lang === "ml" ? "പിഎം-കിസാൻ സമ്മാൻ നിധി" : "PM Kisan Samman Nidhi"}
-                      </h5>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug mt-1 font-medium">
-                        {lang === "ml" ? "അപേക്ഷകൻ: കെ. കൃഷ്ണൻ · പാലക്കാട്" : "Applicant: K. Krishnan · Palakkad"}
-                      </p>
-                      <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 dark:border-slate-800/60 mt-2.5 text-[10.5px] text-slate-400 font-medium">
-                        <span className="font-mono text-[10px] text-slate-400">Ref: APP-2026-8925</span>
-                        <span className="flex items-center gap-0.5 text-amber-600 dark:text-amber-400 font-extrabold text-[10.5px]">
-                          {lang === "ml" ? "വിശദാംശങ്ങൾ കാണുക" : "View Details"}
-                          <ChevronRight className="h-3 w-3 stroke-[2.5]" />
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Item 4: Rejected - LIFE Mission */}
-                  {matchAppSearch("rejected", "LIFE Mission Housing Title", "ലൈഫ് മിഷൻ ഭവന പദ്ധതി", "Joseph K", "ജോസഫ് കെ", "Housing", "ഭവന നിർമ്മാണം", "APP-2026-8927") && (
-                    <div 
-                      onClick={() => {
-                        setSelectedApplicationRecord({
-                          ref: "APP-2026-8927",
-                          schemeNameEn: "LIFE Mission Housing Title",
-                          schemeNameMl: "ലൈഫ് മിഷൻ ഭവന പദ്ധതി",
-                          categoryEn: "Housing",
-                          categoryMl: "ഭവന നിർമ്മാണം",
-                          status: "rejected",
-                          applicantNameEn: "Joseph K",
-                          applicantNameMl: "ജോസഫ് കെ",
-                          aadhaar: "XXXX-XXXX-8927",
-                          phone: "+91 98952 66778",
-                          locationEn: "Chathannoor, Kollam",
-                          locationMl: "ചാത്തന്നൂർ, കൊല്ലം",
-                          annualIncome: "₹ 1,80,000",
-                          appliedDate: "29/09/2026",
-                          currentStep: 3,
-                          pendingDocs: ["Ownership Title Deed"],
-                          nextActionEn: "Rejected due to income limit exceeding eligibility criteria",
-                          nextActionMl: "വരുമാന പരിധി യോഗ്യതാ മാനദണ്ഡത്തിൽ കൂടുതൽ ആയതിനാൽ നിരസിച്ചു",
-                          auditLog: [
-                            { titleEn: "Application Submitted", titleMl: "അപേക്ഷ സമർപ്പിച്ചു", date: "29 Sep 2026", status: "completed" },
-                            { titleEn: "Field Verification Inspection", titleMl: "ഫീൽഡ് തല പരിശോധന", date: "02 Oct 2026", status: "completed" },
-                            { titleEn: "Application Rejected", titleMl: "അപേക്ഷ നിരസിച്ചു", date: "04 Oct 2026", status: "completed" },
-                          ],
-                        });
-                        setMobileSubPage("app_detail");
-                      }}
-                      className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:shadow-xs transition-all cursor-pointer"
-                    >
-                      <div className="flex items-center justify-between gap-1.5">
-                        <span className="text-[9.5px] font-extrabold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border border-blue-200/70 dark:border-blue-900/50 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                          {lang === "ml" ? "ഭവന നിർമ്മാണം" : "Housing"}
-                        </span>
-                        <span className="text-[10px] font-extrabold text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200/60 dark:border-rose-900/40 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
-                          <XCircle className="h-2.5 w-2.5" />
-                          {lang === "ml" ? "നിരസിച്ചു" : "Rejected"}
-                        </span>
-                      </div>
-                      <h5 className="font-extrabold text-xs sm:text-[13px] text-[#0a0f1d] dark:text-white leading-tight mt-2">
-                        {lang === "ml" ? "ലൈഫ് മിഷൻ ഭവന പദ്ധതി" : "LIFE Mission Housing Title"}
-                      </h5>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug mt-1 font-medium">
-                        {lang === "ml" ? "അപേക്ഷകൻ: ജോസഫ് കെ · ചാത്തന്നൂർ" : "Applicant: Joseph K · Chathannoor"}
-                      </p>
-                      <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 dark:border-slate-800/60 mt-2.5 text-[10.5px] text-slate-400 font-medium">
-                        <span className="font-mono text-[10px] text-slate-400">Ref: APP-2026-8927</span>
-                        <span className="flex items-center gap-0.5 text-rose-600 dark:text-rose-400 font-extrabold text-[10.5px]">
-                          {lang === "ml" ? "വിശദാംശങ്ങൾ കാണുക" : "View Details"}
-                          <ChevronRight className="h-3 w-3 stroke-[2.5]" />
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Item 5: Vayoshreshtha Pension */}
-                  {matchAppSearch("assisted", "Vayoshreshtha Pension Scheme", "വയോശ്രേഷ്ഠ പെൻഷൻ", "Soman P", "സോമൻ പി", "Pension", "പെൻഷൻ", "APP-2026-8921") && (
-                    <div 
-                      onClick={() => {
-                        setSelectedApplicationRecord({
-                          ref: "APP-2026-8921",
-                          schemeNameEn: "Vayoshreshtha Pension Scheme",
-                          schemeNameMl: "വയോശ്രേഷ്ഠ പെൻഷൻ",
-                          categoryEn: "Pension",
-                          categoryMl: "പെൻഷൻ",
-                          status: "disbursed",
-                          applicantNameEn: "Soman P",
-                          applicantNameMl: "സോമൻ പി",
-                          aadhaar: "XXXX-XXXX-8921",
-                          phone: "+91 94471 23456",
-                          locationEn: "Kazhakkoottam, Thiruvananthapuram",
-                          locationMl: "കഴക്കൂട്ടം, തിരുവനന്തപുരം",
-                          annualIncome: "₹ 60,000",
-                          appliedDate: "04/10/2026",
-                          currentStep: 5,
-                          pendingDocs: ["Age Proof Certificate", "Bank Passbook Copy"],
-                          nextActionEn: "Monthly pension disbursed directly to DBT linked bank account",
-                          nextActionMl: "പ്രതിമാസ പെൻഷൻ ഡിബിടി ബാങ്ക് അക്കൗണ്ടിലേക്ക് അയച്ചു നൽകി",
-                          auditLog: [
-                            { titleEn: "Application Submitted", titleMl: "അപേക്ഷ സമർപ്പിച്ചു", date: "04 Oct 2026", status: "completed" },
-                            { titleEn: "Verification & Approval", titleMl: "പരിശോധനയും അംഗീകാരവും", date: "05 Oct 2026", status: "completed" },
-                            { titleEn: "First Pension Disbursed", titleMl: "ആദ്യ പെൻഷൻ ലഭിച്ചു", date: "06 Oct 2026", status: "completed" },
-                          ],
-                        });
-                        setMobileSubPage("app_detail");
-                      }}
-                      className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:shadow-xs transition-all cursor-pointer"
-                    >
-                      <div className="flex items-center justify-between gap-1.5">
-                        <span className="text-[9.5px] font-extrabold text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/60 border border-cyan-200/70 dark:border-cyan-900/50 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                          {lang === "ml" ? "പെൻഷൻ" : "Pension"}
-                        </span>
-                        <span className="text-[10px] font-extrabold text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/40 border border-teal-200/60 dark:border-teal-900/40 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
-                          <CheckCircle2 className="h-2.5 w-2.5" />
-                          {lang === "ml" ? "സഹായം ലഭിച്ചു" : "Disbursed"}
-                        </span>
-                      </div>
-                      <h5 className="font-extrabold text-xs sm:text-[13px] text-[#0a0f1d] dark:text-white leading-tight mt-2">
-                        {lang === "ml" ? "വയോശ്രേഷ്ഠ പെൻഷൻ" : "Vayoshreshtha Pension Scheme"}
-                      </h5>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug mt-1 font-medium">
-                        {lang === "ml" ? "അപേക്ഷകൻ: സോമൻ പി · തിരുവനന്തപുരം" : "Applicant: Soman P · Thiruvananthapuram"}
-                      </p>
-                      <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 dark:border-slate-800/60 mt-2.5 text-[10.5px] text-slate-400 font-medium">
-                        <span className="font-mono text-[10px] text-slate-400">Ref: APP-2026-8921</span>
-                        <span className="flex items-center gap-0.5 text-teal-600 dark:text-teal-400 font-extrabold text-[10.5px]">
-                          {lang === "ml" ? "വിശദാംശങ്ങൾ കാണുക" : "View Details"}
-                          <ChevronRight className="h-3 w-3 stroke-[2.5]" />
-                        </span>
-                      </div>
                     </div>
                   )}
                 </div>
@@ -6867,14 +9396,19 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
 
             {(activeTab === "create" || activeTab === "helpdesk") && (
               <div className="space-y-3 animate-in fade-in duration-200">
-                <div className="flex items-center justify-between border-b border-border/80 pb-2 px-0.5">
-                  <div className="flex items-center gap-2">
+                <div className={`flex items-center justify-between border-b border-border/80 ${createFlowStep === "selected_schemes" ? "-mx-4 px-4 pb-1.5" : "px-0.5 pb-2"}`}>
+                  <div className={`flex items-center ${createFlowStep === "selected_schemes" ? "gap-1.5" : "gap-2"}`}>
                     {activeTab === "create" && (
                       <button
                         type="button"
                         onClick={() => {
                           if (createFlowStep === "scheme_details") {
-                            setCreateFlowStep(schemeDetailsReturnStep);
+                            if (schemeDetailsReturnStep === "app_detail") {
+                              setActiveTab("applications");
+                              setMobileSubPage("app_detail");
+                            } else {
+                              setCreateFlowStep(schemeDetailsReturnStep);
+                            }
                           } else if (createFlowStep === "eligibility_result") {
                             setCreateFlowStep("form");
                           } else if (createFlowStep === "eligible_schemes") {
@@ -6896,6 +9430,11 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                             } else {
                               setCreateFlowStep(collectionRecordReturnStep);
                             }
+                          } else if (editingApplicationRef) {
+                            setActiveTab("applications");
+                            setMobileSubPage("app_detail");
+                            setAppDetailView("overview");
+                            setEditingApplicationRef("");
                           } else if (selectedSchemeName) {
                             setActiveTab("schemes");
                             setSelectedSchemeName("");
@@ -6904,22 +9443,28 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                             setMobileSubPage("none");
                           }
                         }}
-                        className="p-1 rounded-lg bg-muted/60 hover:bg-muted text-foreground transition-colors cursor-pointer"
+                        className={`flex cursor-pointer items-center justify-center rounded-full transition-colors ${
+                          createFlowStep === "selected_schemes"
+                            ? "h-7 w-7 bg-[#FFF7EC] text-[#1b255a] hover:bg-orange-100 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700"
+                            : "p-1 bg-muted/60 text-foreground hover:bg-muted"
+                        }`}
                         title={lang === "ml" ? "തിരികെ പോവുക" : "Go back"}
                       >
-                        <ArrowLeft className="h-4 w-4" />
+                        <ArrowLeft className={`${createFlowStep === "selected_schemes" ? "h-3.5 w-3.5" : "h-4 w-4"} stroke-[2.5]`} />
                       </button>
                     )}
-                    <h3 className="font-extrabold text-sm text-foreground">
+                    <h3 className={`font-extrabold text-foreground ${createFlowStep === "selected_schemes" ? "text-[14px] tracking-tight" : "text-sm"}`}>
                       {activeTab === "create" ? (
-                        createFlowStep === "eligibility_result"
+                        createFlowStep === "form" && editingApplicationRef
+                          ? (lang === "ml" ? "അപേക്ഷ തിരുത്തുക" : "Edit Application")
+                          : createFlowStep === "eligibility_result"
                           ? (lang === "ml" ? "അർഹതാ ഫലം" : "Eligibility Result")
                           : createFlowStep === "checking"
                           ? (lang === "ml" ? "യോഗ്യത പരിശോധിക്കുന്നു..." : "Checking eligibility...")
                           : createFlowStep === "eligible_schemes"
                           ? (lang === "ml" ? "യോഗ്യതയുള്ള പദ്ധതികൾ" : "Eligible Schemes")
                           : createFlowStep === "selected_schemes"
-                          ? (lang === "ml" ? "തിരഞ്ഞെടുത്ത പദ്ധതികൾ" : "Selected Schemes")
+                          ? `${lang === "ml" ? "തിരഞ്ഞെടുത്ത പദ്ധതികൾ" : "Selected Schemes"} (${String(currentApplicantApplications.length).padStart(2, "0")})`
                           : createFlowStep === "scheme_details"
                           ? (lang === "ml" ? "അവസാന വിവരങ്ങൾ" : "Final Details")
                           : createFlowStep === "collection_saved"
@@ -6938,11 +9483,17 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                       )}
                     </h3>
                   </div>
-                  {activeTab !== "create" && (
+                  {activeTab !== "create" ? (
                     <span className="text-[10.5px] font-bold text-orange-600 bg-orange-100 dark:bg-orange-950/60 px-2 py-0.5 rounded-full">
                       Helpdesk
                     </span>
-                  )}
+                  ) : createFlowStep === "scheme_details" && currentApplicantApplications.length > 1 ? (
+                    <span className="shrink-0 text-[9px] font-extrabold uppercase tracking-wider text-orange-700 dark:text-orange-300">
+                      {lang === "ml"
+                        ? `പദ്ധതി ${activeSchemePosition} / ${currentApplicantApplications.length}`
+                        : `Scheme ${activeSchemePosition} of ${currentApplicantApplications.length}`}
+                    </span>
+                  ) : null}
                 </div>
 
                 {activeTab === "create" ? (
@@ -6950,10 +9501,6 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                     {/* Step 1: Form Inputs View */}
                     {createFlowStep === "form" && (
                       <div className="space-y-3.5 bg-card p-3.5 rounded-2xl border border-border shadow-2xs">
-                        <h4 className="text-[12px] font-normal text-slate-500 dark:text-slate-400">
-                          {lang === "ml" ? "അടിസ്ഥാന വിവരങ്ങൾ" : "Basic Details"}
-                        </h4>
-
                         {/* 1. Full Name */}
                         <div>
                           <label className="text-[11px] font-bold text-foreground block mb-1">
@@ -7156,10 +9703,6 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                             <option value="Above ₹5,00,000">Above ₹5,00,000</option>
                           </select>
                         </div>
-
-                        <h4 className="pt-1 text-[12px] font-normal text-slate-500 dark:text-slate-400">
-                          {lang === "ml" ? "വിലാസം" : "Address"}
-                        </h4>
 
                         {/* 1. District */}
                         <div>
@@ -7381,32 +9924,6 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           </p>
                         </div>
 
-                        {/* Selected Scheme & Applicant Card Box */}
-                        <div className="w-full max-w-sm rounded-2xl bg-slate-50/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 p-4 text-left space-y-3 shadow-2xs">
-                          <div>
-                            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-1">
-                              {lang === "ml" ? "തിരഞ്ഞെടുത്ത പദ്ധതി" : "SELECTED SCHEME"}
-                            </span>
-                            <h4 className="text-sm sm:text-[15px] font-extrabold text-slate-900 dark:text-white leading-snug">
-                              {selectedSchemeName || (lang === "ml" ? "ദേശീയ ക്ഷേമ പദ്ധതി" : "National Welfare & Financial Support Program")}
-                            </h4>
-                          </div>
-
-                          <div className="border-t border-slate-200/80 dark:border-slate-800 pt-3 flex items-center gap-3">
-                            <div className="p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 shrink-0">
-                              <User className="h-4 w-4" />
-                            </div>
-                            <div>
-                              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 block">
-                                {lang === "ml" ? "അപേക്ഷകൻ" : "Applicant"}
-                              </span>
-                              <span className="text-xs font-black text-slate-900 dark:text-white block">
-                                {createFullName || "Aswin Sasi"}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
                         {/* Animated Progress Bar */}
                         <div className="w-full max-w-sm space-y-2">
                           <div className="h-2 w-full bg-orange-100 dark:bg-slate-800 rounded-full overflow-hidden">
@@ -7606,36 +10123,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
 
                     {/* Step 3: Eligible Schemes View */}
                     {createFlowStep === "eligible_schemes" && (
-                      <div className="space-y-3.5 animate-in fade-in duration-200">
-                        {/* Compact Applicant Summary Card */}
-                        <div className="bg-gradient-to-r from-orange-500/10 via-amber-500/5 to-transparent p-3.5 rounded-2xl border border-orange-200 dark:border-orange-900/60 shadow-2xs flex items-center justify-between gap-2">
-                          <div className="space-y-1 text-left min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-extrabold text-xs text-foreground truncate">
-                                {createFullName || "Soman P"}
-                              </span>
-                              <span className="text-[9.5px] font-bold text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-950/80 px-2 py-0.5 rounded-full shrink-0">
-                                {createCaste || "General"}
-                              </span>
-                            </div>
-                            <p className="text-[10.5px] text-muted-foreground truncate">
-                              Aadhaar: XXXX-XXXX-{(createAadhaar || "8921").slice(-4)} • {createCountryCode} {createPhone || "9847123456"}
-                            </p>
-                            <p className="text-[10px] text-muted-foreground/90 truncate">
-                              {createDistrict || "Thiruvananthapuram"} • {createMandalam || "Kazhakkoottam"} • Income: {createIncomeRange || "Below ₹1,00,000"}
-                            </p>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => setCreateFlowStep("form")}
-                            className="flex items-center gap-1 text-xs font-bold text-orange-600 dark:text-orange-400 bg-orange-100/80 hover:bg-orange-200 dark:bg-orange-950/80 hover:dark:bg-orange-900/80 px-2.5 py-1.5 rounded-xl border border-orange-300 dark:border-orange-800 transition-colors cursor-pointer shrink-0 shadow-2xs"
-                          >
-                            <Edit className="h-3.5 w-3.5" />
-                            <span>{lang === "ml" ? "മാറ്റുക" : "Edit"}</span>
-                          </button>
-                        </div>
-
+                      <div className="space-y-2.5 animate-in fade-in duration-200">
                         {/* Search Bar for Eligible Schemes */}
                         <div className="relative">
                           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -7644,7 +10132,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                             value={eligibleSchemesSearchQuery}
                             onChange={(e) => setEligibleSchemesSearchQuery(e.target.value)}
                             placeholder={lang === "ml" ? "പദ്ധതിയുടെ പേര് തിരയുക..." : "Search eligible schemes..."}
-                            className="w-full text-xs pl-9 pr-3 py-2.5 rounded-xl border border-border bg-card focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
+                            className="w-full text-xs pl-9 pr-3 py-2 rounded-xl border border-border bg-card focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
                           />
                           {eligibleSchemesSearchQuery && (
                             <button
@@ -7655,6 +10143,45 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                               <X className="h-3.5 w-3.5" />
                             </button>
                           )}
+                        </div>
+
+                        <div className="flex items-center justify-between gap-2 px-0.5">
+                          <div className="flex min-w-0 items-center gap-1.5">
+                            <span className="shrink-0 text-[11px] font-semibold text-orange-600 dark:text-orange-400">
+                              {lang === "ml"
+                                ? `${mockEligibleSchemesList.length} യോഗ്യമായ പദ്ധതികൾ`
+                                : `${mockEligibleSchemesList.length} Eligible Schemes for`}
+                            </span>
+                            <span className="inline-flex h-[18px] max-w-[110px] shrink-0 items-center truncate rounded-full border border-slate-200 bg-white px-2 text-[9.5px] font-medium leading-none text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                              {createFullName || "Soman P"}
+                            </span>
+                          </div>
+                          <label className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 text-[10.5px] font-semibold text-muted-foreground">
+                            <input
+                              type="checkbox"
+                              checked={mockEligibleSchemesList.every((scheme) =>
+                                selectedEligibleSchemeIds.includes(scheme.id)
+                              )}
+                              onChange={() => {
+                                const allSchemeIds = mockEligibleSchemesList.map((scheme) => scheme.id);
+                                setSelectedEligibleSchemeIds((current) =>
+                                  mockEligibleSchemesList.every((scheme) => current.includes(scheme.id))
+                                    ? []
+                                    : allSchemeIds
+                                );
+                              }}
+                              className="peer sr-only"
+                            />
+                            <span
+                              aria-hidden="true"
+                              className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border-2 border-orange-300 bg-white text-white transition-all hover:border-orange-500 peer-checked:border-orange-500 peer-checked:bg-orange-500 peer-checked:shadow-xs dark:border-orange-900 dark:bg-slate-900"
+                            >
+                              {mockEligibleSchemesList.every((scheme) =>
+                                selectedEligibleSchemeIds.includes(scheme.id)
+                              ) && <Check className="h-2.5 w-2.5 stroke-[4]" />}
+                            </span>
+                            <span>{lang === "ml" ? "എല്ലാം" : "All"}</span>
+                          </label>
                         </div>
 
                         {/* Eligible Scheme Cards or Empty State */}
@@ -7668,7 +10195,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                             s.benefitEn.toLowerCase().includes(q)
                           );
                         }).length > 0 ? (
-                          <div className="space-y-3">
+                          <div className="space-y-2.5">
                             {mockEligibleSchemesList
                               .filter((s) => {
                                 if (!eligibleSchemesSearchQuery.trim()) return true;
@@ -7691,39 +10218,46 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                                     aria-checked={isSelected}
                                     aria-label={`${lang === "ml" ? "പദ്ധതി തിരഞ്ഞെടുക്കുക" : "Select scheme"}: ${lang === "ml" ? scheme.titleMl : scheme.titleEn}`}
                                     onClick={() => toggleEligibleSchemeSelection(scheme.id)}
-                                    className={`w-full cursor-pointer bg-card p-3.5 rounded-2xl border shadow-2xs transition-all space-y-2.5 text-left ${
+                                    className={`w-full cursor-pointer bg-card p-3 rounded-2xl border shadow-2xs transition-all space-y-2 text-left ${
                                       isSelected
                                         ? "border-orange-400 bg-orange-50/40 ring-2 ring-orange-200/80 dark:border-orange-700 dark:bg-orange-950/20 dark:ring-orange-900/60"
                                         : "border-border hover:border-orange-300 dark:hover:border-orange-800"
                                     }`}
                                   >
                                   <div className="flex items-start justify-between gap-2">
-                                    <div className="min-w-0">
-                                      <h4 className="font-extrabold text-sm text-foreground leading-snug break-words">
-                                        {lang === "ml" ? scheme.titleMl : scheme.titleEn}
-                                      </h4>
-                                      <p className="mt-0.5 text-[10.5px] font-semibold text-muted-foreground leading-snug">
-                                        {lang === "ml" ? category.ml : category.en}
-                                      </p>
+                                    <div className="flex min-w-0 items-start gap-2">
+                                      <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-orange-100 bg-white p-0.5 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
+                                        <img
+                                          src={getEligibleSchemeLogo(scheme)}
+                                          alt=""
+                                          aria-hidden
+                                          className="h-full w-full object-contain"
+                                        />
+                                      </span>
+                                      <div className="min-w-0">
+                                        <h4 className="font-bold text-[13px] text-foreground leading-snug break-words">
+                                          {lang === "ml" ? scheme.titleMl : scheme.titleEn}
+                                        </h4>
+                                        <p className="mt-0.5 text-[10.5px] font-semibold text-muted-foreground leading-snug">
+                                          {lang === "ml" ? category.ml : category.en}
+                                        </p>
+                                      </div>
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0">
-                                      <span className="text-[10px] font-extrabold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-800">
-                                        {lang === "ml" ? scheme.matchLabelMl : scheme.matchLabelEn}
-                                      </span>
                                       <span
                                         aria-hidden="true"
-                                        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 transition-all cursor-pointer active:scale-95 ${
+                                        className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border-2 transition-all cursor-pointer active:scale-95 ${
                                           isSelected
                                             ? "border-orange-500 bg-orange-500 text-white shadow-xs"
                                             : "border-orange-300 bg-white hover:border-orange-500 dark:border-orange-900 dark:bg-slate-900"
                                         }`}
                                       >
-                                        {isSelected && <Check className="h-4 w-4 stroke-[3]" />}
+                                        {isSelected && <Check className="h-2.5 w-2.5 stroke-[4]" />}
                                       </span>
                                     </div>
                                   </div>
 
-                                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                                  <p className="text-[11px] text-muted-foreground leading-snug">
                                     {lang === "ml" ? scheme.benefitMl : scheme.benefitEn}
                                   </p>
 
@@ -7763,28 +10297,58 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                     {/* Step 3b: Selected Schemes - one application per scheme */}
                     {createFlowStep === "selected_schemes" && (
                       <div className="space-y-3 animate-in fade-in duration-200">
-                        {renderApplicantSummaryCard(() => setCreateFlowStep("form"))}
-
-                        <div className="flex items-start gap-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2.5 text-[10.5px] font-medium text-sky-800 dark:border-sky-900/60 dark:bg-sky-950/30 dark:text-sky-200">
-                          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sky-600 dark:text-sky-400" />
-                          <span>{lang === "ml" ? "അപേക്ഷക വിവരങ്ങൾ എല്ലാ പദ്ധതികൾക്കും പങ്കിടുന്നു." : "Applicant details shared across schemes."}</span>
+                        <div className="flex items-start gap-2.5">
+                          <UserRound className="h-5 w-5 shrink-0 text-slate-400 dark:text-slate-500" strokeWidth={1.8} />
+                          <div className="flex min-w-0 flex-1 items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="break-words text-[13px] font-extrabold leading-snug text-foreground">
+                                {createFullName.trim() || "Applicant"}
+                              </p>
+                              <p className="mt-0.5 break-words text-[11px] font-medium leading-snug text-muted-foreground">
+                                {lang === "ml"
+                                  ? [createMandalam ? getConstituencyName(createMandalam, "ml") : "", createDistrict ? getDistrictName(createDistrict, "ml") : ""].filter(Boolean).join(", ") || "കേരളം"
+                                  : [createMandalam.trim(), createDistrict.trim()].filter(Boolean).join(", ") || "Kerala"}
+                              </p>
+                            </div>
+                            <span className="mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-2 py-1 text-[10px] font-extrabold text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300">
+                              <Inbox className="h-3 w-3 shrink-0" strokeWidth={2} />
+                              <span>
+                                {lang === "ml" ? "അപേക്ഷ ലഭിച്ചു" : "Application Received"}
+                              </span>
+                            </span>
+                          </div>
                         </div>
 
-                        <p className="px-0.5 text-[10.5px] text-muted-foreground">
-                          {lang === "ml" ? "ഓരോ പദ്ധതിക്കും വിവരങ്ങൾ വെവ്വേറെ പൂർത്തിയാക്കുക." : "Complete details for each scheme separately."}
+                        <div className="border-t border-orange-100 dark:border-orange-900/40" aria-hidden="true" />
+
+                        <p className="px-1 text-[10.5px] font-medium leading-snug text-muted-foreground">
+                          {lang === "ml"
+                            ? "ഓരോ പദ്ധതിയുടെയും വിവരങ്ങൾ വെവ്വേറെ പൂർത്തിയാക്കുക."
+                            : "Complete details for each scheme separately."}
                         </p>
 
                         {currentApplicantApplications.map((record) => {
                           const statusMeta = getApplicationStatusMeta(record);
-                          const { Icon: SchemeIcon, tileClass } = getSchemeVisual(record.scheme.id);
                           const category = getSchemeCategoryLabel(record.scheme);
                           const isComplete = record.status === "complete" || record.status === "ready";
                           const isIncomplete = record.status === "incomplete";
+                          const StatusIcon = isComplete ? CheckCircle2 : isIncomplete ? Hourglass : Clock3;
+                          const statusIconClass = isComplete
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : isIncomplete
+                              ? "text-amber-600 dark:text-amber-400"
+                              : "text-slate-500 dark:text-slate-400";
                           const actionLabel = isComplete
                             ? (lang === "ml" ? "രേഖ കാണുക" : "View Record")
                             : isIncomplete
                               ? (lang === "ml" ? "ശേഖരണം തുടരുക" : "Continue Collection")
                               : (lang === "ml" ? "വിവരങ്ങൾ പൂർത്തിയാക്കുക" : "Complete Details");
+                          const missingLabels = record.missingItems
+                            .slice(0, 2)
+                            .map((item) => (lang === "ml" ? item.labelMl : item.labelEn)
+                              .replace(/^Required document:\s*/i, "")
+                              .replace(/^ആവശ്യമായ രേഖ:\s*/i, ""));
+                          const remainingMissing = Math.max(0, record.missingItems.length - missingLabels.length);
                           const openRecord = () => {
                             if (isComplete) {
                               openCollectionRecordView(record, "selected_schemes");
@@ -7792,68 +10356,76 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                               openSchemeDetails(record.scheme.id, "selected_schemes");
                             }
                           };
-                          const missingLabels = record.missingItems
-                            .slice(0, 2)
-                            .map((item) => (lang === "ml" ? item.labelMl : item.labelEn)
-                              .replace(/^Required document:\s*/i, "")
-                              .replace(/^ആവശ്യമായ രേഖ:\s*/i, ""));
-                          const remainingMissing = Math.max(0, record.missingItems.length - missingLabels.length);
+
                           return (
-                            <div
+                            <button
                               key={record.reference}
-                              className="rounded-2xl border border-border bg-card p-3.5 shadow-2xs space-y-3 text-left"
+                              type="button"
+                              onClick={openRecord}
+                              className="w-full rounded-2xl border border-orange-100 bg-card p-2 text-left shadow-2xs transition-colors hover:border-orange-200 hover:bg-orange-50/30 dark:border-orange-900/50 dark:hover:bg-orange-950/10"
                             >
-                              <div className="flex items-start gap-2.5">
-                                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${tileClass}`}>
-                                  <SchemeIcon className="h-5 w-5" />
-                                </div>
+                              <div className="flex items-start gap-2 pt-0.5">
+                                <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-orange-100 bg-[#FFF9F2] p-0.5 dark:border-orange-900/50 dark:bg-orange-950/20">
+                                  <img
+                                    src={getEligibleSchemeLogo(record.scheme)}
+                                    alt=""
+                                    aria-hidden
+                                    className="h-full w-full object-contain"
+                                  />
+                                </span>
                                 <div className="min-w-0 flex-1">
-                                  <h5 className="font-extrabold text-sm leading-snug text-foreground break-words">
+                                  <h5 className="break-words text-[13.5px] font-extrabold leading-snug text-foreground">
                                     {lang === "ml" ? record.scheme.titleMl : record.scheme.titleEn}
                                   </h5>
-                                  <p className="mt-0.5 text-[10.5px] font-semibold text-muted-foreground">
+                                  <p className="mt-0.5 text-[11px] font-medium text-muted-foreground">
                                     {lang === "ml" ? category.ml : category.en}
                                   </p>
+                                  {isIncomplete && missingLabels.length > 0 && (
+                                    <p className="mt-1 text-[9.5px] leading-snug text-amber-700 dark:text-amber-300">
+                                      <span className="font-extrabold">{lang === "ml" ? "ബാക്കി: " : "Missing: "}</span>
+                                      {missingLabels.join("; ")}{remainingMissing > 0 ? `; +${remainingMissing}` : ""}
+                                    </p>
+                                  )}
+                                  {record.followUpDate && (
+                                    <p className="mt-1 inline-flex items-center gap-1.5 text-[9.5px] font-semibold text-amber-700 dark:text-amber-300">
+                                      <Calendar className="h-3 w-3" />
+                                      {lang === "ml" ? "തുടർനടപടി: " : "Follow-up: "}
+                                      {formatCollectionDate(record.followUpDate)}
+                                    </p>
+                                  )}
                                 </div>
                               </div>
 
-                              <div className="flex flex-wrap items-center gap-2">
-                                <span className={`rounded-full border px-2 py-0.5 text-[9px] font-extrabold ${statusMeta.className}`}>
-                                  {lang === "ml" ? statusMeta.labelMl : statusMeta.labelEn}
-                                </span>
-                                {record.followUpDate && (
-                                  <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[9px] font-bold text-muted-foreground">
-                                    <Calendar className="h-3 w-3" />
-                                    {formatCollectionDate(record.followUpDate)}
+                              <div className="mt-1.5 flex items-center justify-between gap-2 border-t border-orange-100 pt-1.5 dark:border-orange-900/40">
+                                <span className="inline-flex min-w-0 items-center gap-1 text-[10px] font-extrabold">
+                                  <StatusIcon className={`h-3.5 w-3.5 shrink-0 ${statusIconClass}`} />
+                                  <span className="truncate text-muted-foreground">
+                                    {lang === "ml" ? statusMeta.labelMl : statusMeta.labelEn}
                                   </span>
-                                )}
+                                </span>
+                                <span className="inline-flex min-h-7 shrink-0 items-center justify-center gap-1 bg-transparent px-1 text-[12px] font-extrabold text-[#ff5500] dark:text-orange-400">
+                                  {actionLabel}
+                                  <ChevronRight className="h-4 w-4 stroke-[2.5]" />
+                                </span>
                               </div>
-
-                              {isIncomplete && missingLabels.length > 0 && (
-                                <p className="rounded-xl border border-amber-200/80 bg-amber-50/60 px-2.5 py-2 text-[10px] leading-snug text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-100">
-                                  <span className="font-extrabold">{lang === "ml" ? "ബാക്കി: " : "Missing: "}</span>
-                                  {missingLabels.join("; ")}{remainingMissing > 0 ? `; +${remainingMissing}` : ""}
-                                </p>
-                              )}
-
-                              <div className="flex justify-end border-t border-border/70 pt-2.5">
-                                <button
-                                  type="button"
-                                  onClick={openRecord}
-                                  className="inline-flex min-h-11 min-w-[170px] items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 px-4 py-2.5 text-[11px] font-extrabold text-white shadow-md hover:from-orange-600 hover:to-amber-600 active:scale-[0.98] transition-all cursor-pointer"
-                                >
-                                  <span>{actionLabel}</span>
-                                  <ChevronRight className="h-3.5 w-3.5" />
-                                </button>
-                              </div>
-                            </div>
+                            </button>
                           );
                         })}
 
-                        <div className="flex items-start gap-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2.5 text-[10.5px] font-medium text-sky-800 dark:border-sky-900/60 dark:bg-sky-950/30 dark:text-sky-200">
-                          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sky-600 dark:text-sky-400" />
-                          <span>{lang === "ml" ? "ഓരോ പദ്ധതിയും പ്രത്യേക അപേക്ഷയായി സേവ് ചെയ്യും." : "Each scheme is saved as a separate application."}</span>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={handleAddAnotherScheme}
+                          className="flex min-h-9 w-full items-center justify-center gap-1.5 rounded-2xl border border-dashed border-orange-300 bg-transparent px-3 py-2 text-[11px] font-extrabold text-orange-600 transition-colors hover:bg-orange-50 dark:border-orange-800 dark:text-orange-400 dark:hover:bg-orange-950/20"
+                        >
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full border border-orange-500 text-orange-600 dark:border-orange-500 dark:text-orange-400">
+                            <Plus className="h-2.5 w-2.5 stroke-[3]" />
+                          </span>
+                          {lang === "ml" ? "പദ്ധതി ചേർക്കുക" : "Add Scheme"}
+                        </button>
+
+                        <p className="text-center text-[9.5px] font-medium text-muted-foreground">
+                          {lang === "ml" ? "ഓരോ പദ്ധതിയും വെവ്വേറെ സേവ് ചെയ്യും." : "Each scheme is saved separately."}
+                        </p>
                       </div>
                     )}
 
@@ -8027,44 +10599,45 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                     {/* Step 4: Missing Scheme-Specific Details View */}
                     {createFlowStep === "scheme_details" && selectedEligibleScheme && (
                       <div className="space-y-3.5 text-left animate-in fade-in duration-200">
-                        {renderApplicantSummaryCard()}
-
-                        <div className="flex items-start gap-2 rounded-xl border border-orange-200 bg-orange-50/80 px-3 py-2.5 text-[10.5px] font-medium text-orange-900 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-200">
-                          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-orange-600 dark:text-orange-400" />
-                          <span>{lang === "ml" ? "അപേക്ഷക വിവരങ്ങൾ പ്രൊഫൈലിൽ നിന്ന് ഈ പദ്ധതിയിലേക്ക് കൈമാറി." : "Shared applicant details carried forward from your profile."}</span>
-                        </div>
-
-                        <div className="rounded-2xl border border-border bg-background p-3 shadow-2xs">
+                        <div className="space-y-3">
                           <div className="flex items-start gap-2.5">
-                            {(() => {
-                              const { Icon: SchemeIcon, tileClass } = getSchemeVisual(selectedEligibleScheme.id);
-                              return (
-                                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${tileClass}`}>
-                                  <SchemeIcon className="h-5 w-5" />
-                                </div>
-                              );
-                            })()}
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center justify-between gap-2">
-                                {currentApplicantApplications.length > 1 && (
-                                  <p className="text-[9px] font-extrabold uppercase tracking-wider text-orange-700 dark:text-orange-300">
-                                    {lang === "ml"
-                                      ? `പദ്ധതി ${activeSchemePosition} / ${currentApplicantApplications.length}`
-                                      : `Scheme ${activeSchemePosition} of ${currentApplicantApplications.length}`}
-                                  </p>
-                                )}
-                                {activeCollectionRecord && (
-                                  <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-extrabold ${getApplicationStatusMeta(activeCollectionRecord).className}`}>
-                                    {lang === "ml"
-                                      ? getApplicationStatusMeta(activeCollectionRecord).labelMl
-                                      : getApplicationStatusMeta(activeCollectionRecord).labelEn}
-                                  </span>
-                                )}
+                            <UserRound className="h-5 w-5 shrink-0 text-slate-400 dark:text-slate-500" strokeWidth={1.8} />
+                            <div className="flex min-w-0 flex-1 items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <p className="break-words text-[13px] font-extrabold leading-snug text-foreground">
+                                  {createFullName.trim() || "Applicant"}
+                                </p>
+                                <p className="mt-0.5 break-words text-[11px] font-medium leading-snug text-muted-foreground">
+                                  {lang === "ml"
+                                    ? [createMandalam ? getConstituencyName(createMandalam, "ml") : "", createDistrict ? getDistrictName(createDistrict, "ml") : ""].filter(Boolean).join(", ") || "കേരളം"
+                                    : [createMandalam.trim(), createDistrict.trim()].filter(Boolean).join(", ") || "Kerala"}
+                                </p>
                               </div>
-                              <p className="mt-1 text-sm font-extrabold leading-snug text-foreground break-words">
+                              <span className="mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-2 py-1 text-[10px] font-extrabold text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300">
+                                <Inbox className="h-3 w-3 shrink-0" strokeWidth={2} />
+                                <span>
+                                  {lang === "ml" ? "അപേക്ഷ ലഭിച്ചു" : "Application Received"}
+                                </span>
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="border-t border-orange-100 dark:border-orange-900/40" aria-hidden="true" />
+
+                          <div className="flex items-start gap-2.5 rounded-2xl border border-orange-100 bg-card p-2.5 shadow-2xs dark:border-orange-900/50">
+                            <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-orange-100 bg-[#FFF9F2] p-0.5 dark:border-orange-900/50 dark:bg-orange-950/20">
+                              <img
+                                src={getEligibleSchemeLogo(selectedEligibleScheme)}
+                                alt=""
+                                aria-hidden
+                                className="h-full w-full object-contain"
+                              />
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <p className="break-words text-[13px] font-extrabold leading-snug text-foreground">
                                 {lang === "ml" ? selectedEligibleScheme.titleMl : selectedEligibleScheme.titleEn}
                               </p>
-                              <p className="mt-0.5 text-[10px] font-semibold text-muted-foreground">
+                              <p className="mt-0.5 text-[11px] font-medium text-muted-foreground">
                                 {lang === "ml"
                                   ? getSchemeCategoryLabel(selectedEligibleScheme).ml
                                   : getSchemeCategoryLabel(selectedEligibleScheme).en}
@@ -8073,33 +10646,184 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           </div>
                         </div>
 
-                        {/* Document Upload Box */}
-                        <div className="space-y-1.5">
-                          <label className="text-[11px] font-bold text-foreground block">
-                            {lang === "ml" ? "ആവശ്യമായ രേഖ സമർപ്പിക്കുക *" : "Required Document Upload *"}
-                          </label>
-                          <p className="text-[10.5px] text-muted-foreground">
-                            {lang === "ml" ? selectedEligibleScheme.requiredDocMl : selectedEligibleScheme.requiredDocEn}
-                          </p>
-                          <div className="border-2 border-dashed border-border hover:border-orange-400 p-3.5 rounded-xl text-center bg-background transition-colors cursor-pointer"
-                            onClick={() => {
-                              setUploadedDocName(`${selectedEligibleScheme.id}_Document_Proof.pdf`);
-                              setFinalDetailsSaveNotice(null);
-                            }}
-                          >
-                            <Upload className="h-5 w-5 text-orange-500 mx-auto mb-1" />
-                            {uploadedDocName ? (
-                              <div className="flex items-center justify-center gap-1 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
-                                <FileCheck className="h-4 w-4" />
-                                <span>{uploadedDocName}</span>
+                        {/* Required Documents */}
+                        <div className="space-y-2">
+                          {getSchemeRequiredDocuments(selectedEligibleScheme).map((document) => {
+                            const uploadedDocumentName = uploadedDocuments[document.id] || "";
+                            const uploadError = uploadErrors[document.id] || "";
+                            const fileExtension = uploadedDocumentName.split(".").pop()?.toLowerCase() ?? "";
+                            const fileBadge = fileExtension === "pdf"
+                              ? { label: "PDF", className: "bg-rose-600" }
+                              : ["jpg", "jpeg"].includes(fileExtension)
+                                ? { label: "JPG", className: "bg-sky-600" }
+                                : { label: "PNG", className: "bg-teal-600" };
+                            return (
+                              <div
+                                key={document.id}
+                                className="space-y-1"
+                              >
+                                <label
+                                  htmlFor={`scheme_doc_${document.id}`}
+                                  className="mb-1 block text-[11px] font-bold leading-snug text-foreground"
+                                >
+                                  {lang === "ml" ? document.labelMl : document.labelEn}{" "}
+                                  <span className="text-orange-600 dark:text-orange-400">*</span>
+                                </label>
+
+                                <input
+                                  id={`scheme_doc_${document.id}`}
+                                  type="file"
+                                  accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                                  className="sr-only"
+                                  onChange={(event) => {
+                                    const input = event.currentTarget;
+                                    handleDocumentFileSelect(document.id, input.files?.[0]);
+                                    input.value = "";
+                                  }}
+                                />
+
+                                {uploadedDocumentName ? (
+                                  <div className="flex items-center gap-2 rounded-xl bg-[#FCF5ED] p-2.5 dark:bg-slate-900/70">
+                                    <label
+                                      htmlFor={`scheme_doc_${document.id}`}
+                                      title={lang === "ml" ? "മാറ്റാൻ ക്ലിക്ക് ചെയ്യുക" : "Click to replace"}
+                                      className="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5"
+                                    >
+                                      <span className="relative flex h-10 w-8 shrink-0 items-start justify-center">
+                                        <FileText className="h-8 w-7 text-slate-300 dark:text-slate-600" strokeWidth={1.4} />
+                                        <span className={`absolute -bottom-0.5 left-0 rounded px-1 py-0.5 text-[7px] font-black leading-none text-white ${fileBadge.className}`}>
+                                          {fileBadge.label}
+                                        </span>
+                                      </span>
+                                      <span className="min-w-0 flex-1">
+                                        <span
+                                          title={uploadedDocumentName}
+                                          className="block truncate text-[12px] font-bold leading-snug text-foreground"
+                                        >
+                                          {uploadedDocumentName}
+                                        </span>
+                                        <span className="mt-0.5 block text-[9.5px] font-medium text-muted-foreground">
+                                          {fileBadge.label} · {lang === "ml" ? "അപ്‌ലോഡ് ചെയ്തു" : "Uploaded"}
+                                        </span>
+                                      </span>
+                                    </label>
+                                    <button
+                                      type="button"
+                                      onClick={() => removeDocumentUpload(document.id)}
+                                      title={lang === "ml" ? "നീക്കുക" : "Remove"}
+                                      aria-label={lang === "ml" ? "നീക്കുക" : "Remove"}
+                                      className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[#F1E2D1] bg-white text-red-600 transition-colors hover:border-red-200 hover:bg-red-50 dark:border-slate-700 dark:bg-slate-800 dark:text-red-400 dark:hover:border-red-900 dark:hover:bg-red-950/40"
+                                    >
+                                      <X className="h-3 w-3" strokeWidth={2.2} />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <label
+                                    htmlFor={`scheme_doc_${document.id}`}
+                                    onDragOver={(event) => event.preventDefault()}
+                                    onDrop={(event) => {
+                                      event.preventDefault();
+                                      const file = event.dataTransfer.files?.[0];
+                                      if (file) handleDocumentFileSelect(document.id, file);
+                                    }}
+                                    className={`flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed px-3 py-2.5 text-center transition-colors ${
+                                      uploadError
+                                        ? "border-rose-300 bg-rose-50/50 hover:bg-rose-50 dark:border-rose-900/70 dark:bg-rose-950/20"
+                                        : "border-orange-300 bg-[#FFF9F2]/60 hover:border-orange-400 hover:bg-orange-50/70 dark:border-orange-800 dark:bg-orange-950/20 dark:hover:bg-orange-950/40"
+                                    }`}
+                                  >
+                                    <span className="flex h-8 w-8 items-center justify-center rounded-full border border-orange-200 bg-white text-orange-600 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300">
+                                      <CloudUpload className="h-4 w-4" strokeWidth={1.9} />
+                                    </span>
+                                    <span className="text-[10.5px] font-bold leading-snug text-foreground">
+                                      {lang === "ml" ? "ഫയൽ തിരഞ്ഞെടുക്കുക അല്ലെങ്കിൽ ഇവിടെ ഡ്രാഗ് ചെയ്യുക" : "Choose a file or drag & drop it here"}
+                                    </span>
+                                    <span className="text-[9.5px] font-medium text-muted-foreground">
+                                      {lang === "ml" ? "PDF, JPG അല്ലെങ്കിൽ PNG · പരമാവധി 5MB" : "PDF, JPG or PNG · Max 5MB"}
+                                    </span>
+                                  </label>
+                                )}
+
+                                {uploadError && (
+                                  <p className="text-[9.5px] font-semibold text-rose-600 dark:text-rose-400">{uploadError}</p>
+                                )}
                               </div>
-                            ) : (
-                              <span className="text-xs font-semibold text-muted-foreground">
-                                {lang === "ml" ? "രേഖ അപ്‌ലോഡ് ചെയ്യാൻ ക്ലിക്ക് ചെയ്യുക (PDF/JPG)" : "Tap to upload file (PDF, JPG - Max 5MB)"}
-                              </span>
+                            );
+                          })}
+                        </div>
+
+                        {/* PM-Kisan Eligibility Details */}
+                        {isPmKisanScheme(selectedEligibleScheme) && (
+                          <div className="space-y-3">
+                            {pmKisanQuestions.map((question) => (
+                              <div key={question.key}>
+                                <label
+                                  htmlFor={`pm_kisan_${question.key}`}
+                                  className="mb-1 block text-[11px] font-bold text-foreground"
+                                >
+                                  {lang === "ml" ? question.labelMl : question.labelEn}{" "}
+                                  <span className="text-orange-600 dark:text-orange-400">*</span>
+                                </label>
+
+                                {question.type === "choice" ? (
+                                  <select
+                                    id={`pm_kisan_${question.key}`}
+                                    value={pmKisanDetails[question.key]}
+                                    onChange={(event) => updatePmKisanDetails({ [question.key]: event.target.value } as Partial<PmKisanCollectionDetails>)}
+                                    className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
+                                  >
+                                    <option value="">{lang === "ml" ? "-- തിരഞ്ഞെടുക്കുക --" : "-- Select --"}</option>
+                                    {question.options.map((option) => (
+                                      <option key={option.value} value={option.value}>
+                                        {lang === "ml" ? option.labelMl : option.labelEn}
+                                      </option>
+                                    ))}
+                                  </select>
+                                ) : (
+                                  <div className="space-y-1">
+                                    <input
+                                      id={`pm_kisan_${question.key}`}
+                                      type="date"
+                                      value={pmKisanDetails.landAcquiredDate}
+                                      disabled={pmKisanDetails.landAcquisitionNotSure}
+                                      onChange={(event) => {
+                                        updatePmKisanDetails({ landAcquiredDate: event.target.value, landAcquisitionNotSure: false });
+                                      }}
+                                      className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                                    />
+                                    <label
+                                      htmlFor="pm_kisan_date_not_sure"
+                                      className="mt-1 flex cursor-pointer items-center gap-1.5 text-[10.5px] font-semibold text-muted-foreground"
+                                    >
+                                      <input
+                                        id="pm_kisan_date_not_sure"
+                                        type="checkbox"
+                                        checked={pmKisanDetails.landAcquisitionNotSure}
+                                        onChange={(event) => updatePmKisanDetails({
+                                          landAcquisitionNotSure: event.target.checked,
+                                          landAcquiredDate: "",
+                                        })}
+                                        className="h-4 w-4 cursor-pointer rounded accent-orange-500"
+                                      />
+                                      {lang === "ml" ? "സ്വന്തമാക്കിയ തീയതി ഉറപ്പില്ല" : "Not sure of the acquisition date"}
+                                    </label>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+
+                            {isPmKisanAcquisitionAfterCutoff(pmKisanDetails) && (
+                              <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2 text-[9.5px] leading-snug text-amber-800 dark:border-amber-900/70 dark:bg-amber-950/30 dark:text-amber-200">
+                                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                                <span>
+                                  {lang === "ml"
+                                    ? "അവലോകനം ആവശ്യം: 1 ഫെബ്രുവരി 2019-ന് ശേഷം സ്വന്തമാക്കിയ ഭൂമി പരിശോധനയ്ക്ക് വിധേയമാക്കണം. പാരമ്പര്യമായി ലഭിച്ച ഭൂമി ഇതേ കാരണത്താൽ തനിയെ നിരസിക്കരുത്."
+                                    : "Review required: land acquired after 1 February 2019 may need verification. Do not treat inherited land as an automatic rejection."}
+                                </span>
+                              </div>
                             )}
                           </div>
-                        </div>
+                        )}
 
                         {/* Bank Account Number */}
                         {activeRequiredFieldKeys.includes("bankAccountNumber") && (
@@ -8444,38 +11168,95 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           </p>
                         </div>
 
-                        <div className="rounded-2xl border border-border bg-card p-3.5 shadow-2xs space-y-3">
-                          <div className="flex items-center gap-1.5">
-                            <User className="h-4 w-4 text-orange-600" />
-                            <h5 className="text-[11px] font-extrabold text-foreground">
-                              {lang === "ml" ? "അപേക്ഷക സംഗ്രഹം" : "Applicant Summary"}
-                            </h5>
-                          </div>
-                          <div className="space-y-2 text-[11px]">
-                            <div className="flex items-start justify-between gap-3">
-                              <span className="text-muted-foreground">{lang === "ml" ? "അപേക്ഷകൻ" : "Applicant name"}</span>
-                              <span className="text-right font-extrabold text-foreground">{activeCollectionRecord.applicantName}</span>
+                        <div className="rounded-2xl border border-border bg-card px-3 py-2.5 shadow-2xs">
+                          <h5 className="min-w-0 truncate text-[14px] font-extrabold text-foreground">
+                            {lang === "ml" ? "അപേക്ഷക വിവരങ്ങൾ" : "Applicant Details"}
+                          </h5>
+                          <div className="mt-1">
+                            <div className="flex items-start gap-2 py-1">
+                              <UserRound className="mt-0.5 h-[18px] w-[18px] shrink-0 text-slate-500 dark:text-slate-400" strokeWidth={1.8} />
+                              <div className="flex min-w-0 flex-1 items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                  <p className="text-[13px] font-extrabold leading-snug text-foreground">{activeCollectionRecord.applicantName}</p>
+                                  <p className="mt-0.5 break-words text-[11.5px] font-medium leading-snug text-slate-500 dark:text-slate-400">
+                                    {lang === "ml"
+                                      ? [createMandalam ? getConstituencyName(createMandalam, "ml") : "", createDistrict ? getDistrictName(createDistrict, "ml") : ""].filter(Boolean).join(", ") || "കേരളം"
+                                      : [createMandalam.trim(), createDistrict.trim()].filter(Boolean).join(", ") || "Kerala"}
+                                  </p>
+                                </div>
+                                <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[9.5px] font-extrabold ${getCollectionStatusMeta(activeCollectionRecord.status).className}`}>
+                                  {activeCollectionRecord.status === "complete" ? (
+                                    <CheckCircle2 className="h-3 w-3 shrink-0" strokeWidth={2.2} />
+                                  ) : (
+                                    <AlertTriangle className="h-3 w-3 shrink-0" strokeWidth={2.2} />
+                                  )}
+                                  <span>
+                                    {activeCollectionRecord.status === "complete"
+                                      ? (lang === "ml" ? "രേഖകൾ പരിശോധിച്ചു" : "Document Verified")
+                                      : (lang === "ml" ? getCollectionStatusMeta(activeCollectionRecord.status).labelMl : getCollectionStatusMeta(activeCollectionRecord.status).labelEn)}
+                                  </span>
+                                </span>
+                              </div>
                             </div>
-                            <div className="flex items-start justify-between gap-3">
-                              <span className="text-muted-foreground">{lang === "ml" ? "പദ്ധതി" : "Scheme"}</span>
-                              <span className="max-w-[65%] text-right font-bold text-foreground">
-                                {lang === "ml" ? activeCollectionRecord.scheme.titleMl : activeCollectionRecord.scheme.titleEn}
-                              </span>
+                            <div className="h-px bg-slate-100 dark:bg-slate-800" />
+                            <div className="space-y-1.5 py-1">
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="flex min-w-0 items-center gap-1.5 text-[11px] font-semibold text-foreground">
+                                  <Inbox className="h-3.5 w-3.5 shrink-0 text-slate-500 dark:text-slate-400" strokeWidth={2} />
+                                  {lang === "ml" ? "അപേക്ഷ ലഭിച്ചു" : "Application Received"}
+                                </span>
+                                <span className="shrink-0 text-[10px] font-medium text-slate-500 dark:text-slate-400">
+                                  {formatCollectionDateTime(activeCollectionRecord.createdAt)}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="flex min-w-0 items-center gap-1.5 text-[11px] font-semibold text-foreground">
+                                  <FileCheck
+                                    className={`h-3.5 w-3.5 shrink-0 ${activeCollectionRecord.status === "complete" ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}
+                                    strokeWidth={2}
+                                  />
+                                  {activeCollectionRecord.status === "complete"
+                                    ? (lang === "ml" ? "രേഖകൾ പരിശോധിച്ചു" : "Document Verified")
+                                    : (lang === "ml" ? "രേഖകൾ പരിശോധിക്കുന്നു" : "Document verification pending")}
+                                </span>
+                                <span className="shrink-0 text-[10px] font-medium text-slate-500 dark:text-slate-400">
+                                  {formatCollectionDateTime(activeCollectionRecord.updatedAt)}
+                                </span>
+                              </div>
                             </div>
-                            <div className="flex items-center justify-between gap-3">
-                              <span className="text-muted-foreground">{lang === "ml" ? "നില" : "Status"}</span>
-                              <span className={`rounded-full border px-2 py-0.5 text-[9.5px] font-extrabold ${getCollectionStatusMeta(activeCollectionRecord.status).className}`}>
-                                {lang === "ml" ? getCollectionStatusMeta(activeCollectionRecord.status).labelMl : getCollectionStatusMeta(activeCollectionRecord.status).labelEn}
-                              </span>
+                            <div className="mt-2 rounded-xl border border-[#efe3d3] bg-[#fffcf7] px-3 py-2.5 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
+                              <div className="flex min-w-0 items-center gap-1.5">
+                                <h3
+                                  className="min-w-0 truncate text-[13px] font-semibold leading-[1.35] text-foreground"
+                                  title={lang === "ml" ? activeCollectionRecord.scheme.titleMl : activeCollectionRecord.scheme.titleEn}
+                                >
+                                  {lang === "ml" ? activeCollectionRecord.scheme.titleMl : activeCollectionRecord.scheme.titleEn}
+                                </h3>
+                                {getMobileSchemeWebsiteUrl(activeCollectionRecord.scheme.titleEn) && (
+                                  <a
+                                    href={getMobileSchemeWebsiteUrl(activeCollectionRecord.scheme.titleEn)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label={lang === "ml" ? "പദ്ധതിയുടെ ഔദ്യോഗിക വെബ്സൈറ്റ് തുറക്കുക" : "Open official scheme website"}
+                                    title={lang === "ml" ? "പദ്ധതിയുടെ ഔദ്യോഗിക വെബ്സൈറ്റ്" : "Open official scheme website"}
+                                    className="relative flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded text-slate-400 transition-colors before:absolute before:-inset-2.5 before:content-[''] hover:bg-[#fff4e5] hover:text-[#ff5500] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-orange-300"
+                                  >
+                                    <ExternalLink className="h-[13px] w-[13px]" strokeWidth={2.1} />
+                                  </a>
+                                )}
+                              </div>
+                              <div className="mt-1 flex min-w-0 items-center gap-1.5">
+                                <img
+                                  src={getMobileCategoryIconSrc(activeCollectionRecord.scheme.categoryEn)}
+                                  alt=""
+                                  aria-hidden
+                                  className="h-3.5 w-3.5 shrink-0 object-contain"
+                                />
+                                <p className="truncate text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+                                  {lang === "ml" ? getSchemeCategoryLabel(activeCollectionRecord.scheme).ml : getSchemeCategoryLabel(activeCollectionRecord.scheme).en}
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                          <div className="rounded-xl border border-border bg-muted/50 p-2.5 text-center">
-                            <span className="block text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-                              {lang === "ml" ? "ശേഖരണ റഫറൻസ്" : "Collection Reference"}
-                            </span>
-                            <span className="mt-0.5 block font-mono text-xs font-black tracking-wide text-orange-600 dark:text-orange-400">
-                              {activeCollectionRecord.reference}
-                            </span>
                           </div>
                         </div>
 
@@ -8599,17 +11380,63 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           <p className="rounded-xl border border-border bg-muted/50 px-3 py-2 text-center font-mono text-xs font-black tracking-wide text-orange-600 dark:text-orange-400">
                             {activeCollectionRecord.reference}
                           </p>
-                          <div className="grid grid-cols-2 gap-2 text-[10px]">
+                          <div className="space-y-2 text-[10px]">
                             <div className="rounded-xl border border-border bg-background p-2">
-                              <span className="block text-muted-foreground">{lang === "ml" ? "രേഖ" : "Document"}</span>
-                              <span className="mt-0.5 block truncate font-bold text-foreground">{activeCollectionRecord.uploadedDocName || "—"}</span>
+                              <span className="block font-semibold text-muted-foreground">
+                                {lang === "ml" ? "രേഖകൾ" : "Documents"} ({String(Object.keys(activeCollectionRecordUploadedDocuments).length).padStart(2, "0")})
+                              </span>
+                              {Object.keys(activeCollectionRecordUploadedDocuments).length > 0 ? (
+                                <div className="mt-1.5 space-y-1.5">
+                                  {Object.entries(activeCollectionRecordUploadedDocuments).map(([documentId, fileName]) => {
+                                    const document = getSchemeRequiredDocuments(activeCollectionRecord.scheme).find((item) => item.id === documentId);
+                                    return (
+                                      <div key={documentId} className="flex items-start gap-1.5">
+                                        <FileCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                                        <div className="min-w-0">
+                                          <span className="block font-bold leading-snug text-foreground">
+                                            {document ? (lang === "ml" ? document.labelMl : document.labelEn) : (lang === "ml" ? "രേഖ" : "Document")}
+                                          </span>
+                                          <span className="mt-0.5 block break-all text-muted-foreground">{fileName}</span>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              ) : (
+                                <span className="mt-0.5 block font-bold text-foreground">—</span>
+                              )}
                             </div>
-                            <div className="rounded-xl border border-border bg-background p-2">
-                              <span className="block text-muted-foreground">{lang === "ml" ? "ബാങ്ക് അക്കൗണ്ട്" : "Bank account"}</span>
-                              <span className="mt-0.5 block truncate font-bold text-foreground">{activeCollectionRecord.bankAccountNumber ? `•••• ${activeCollectionRecord.bankAccountNumber.slice(-4)}` : "—"}</span>
-                            </div>
+                            {!isPmKisanScheme(activeCollectionRecord.scheme) && (
+                              <div className="rounded-xl border border-border bg-background p-2">
+                                <span className="block text-muted-foreground">{lang === "ml" ? "ബാങ്ക് അക്കൗണ്ട്" : "Bank account"}</span>
+                                <span className="mt-0.5 block truncate font-bold text-foreground">{activeCollectionRecord.bankAccountNumber ? `•••• ${activeCollectionRecord.bankAccountNumber.slice(-4)}` : "—"}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
+
+                        {isPmKisanScheme(activeCollectionRecord.scheme) && activeCollectionRecord.pmKisanDetails && (
+                          <div className="rounded-2xl border border-border bg-card p-3.5 shadow-2xs space-y-2">
+                            <div className="flex items-center gap-1.5">
+                              <Sprout className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                              <h5 className="text-[11px] font-extrabold text-foreground">
+                                {lang === "ml" ? "പി.എം-കിസാൻ വിവരങ്ങൾ" : "PM-KISAN details"}
+                              </h5>
+                            </div>
+                            <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-2 text-[10.5px]">
+                              {pmKisanQuestions.map((question) => (
+                                <React.Fragment key={question.key}>
+                                  <span className="text-muted-foreground">{lang === "ml" ? question.labelMl : question.labelEn}</span>
+                                  <span className="text-right font-bold text-foreground">
+                                    {activeCollectionRecord.pmKisanDetails
+                                      ? getPmKisanAnswerLabel(activeCollectionRecord.pmKisanDetails, question, lang === "ml" ? "ml" : "en")
+                                      : "—"}
+                                  </span>
+                                </React.Fragment>
+                              ))}
+                            </div>
+                          </div>
+                        )}
 
                         <div className="rounded-2xl border border-border bg-card p-3.5 shadow-2xs space-y-2">
                           <h5 className="text-[11px] font-extrabold text-foreground">{lang === "ml" ? "തുടർനടപടി" : "Follow-up"}</h5>
@@ -8794,7 +11621,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           {lang === "ml" ? "പദ്ധതികൾ" : "Schemes"}
                         </h4>
                         <p className="text-[10.5px] text-muted-foreground">
-                          {lang === "ml" ? "കേന്ദ്ര, സംസ്ഥാന ക്ഷേമപദ്ധതികൾ" : "Central & State welfare schemes"}
+                          {lang === "ml" ? "കേന്ദ്ര സർക്കാർ ക്ഷേമപദ്ധതികൾ" : "Central Government welfare schemes"}
                         </p>
                       </div>
                     </div>
@@ -8831,20 +11658,22 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
           </div>
 
           {/* Sticky Phone App Bottom Footer Navigation */}
-          {activeTab === "create" && createFlowStep !== "applicant_applications" && (
+          {activeTab === "create" && createFlowStep !== "applicant_applications" && createFlowStep !== "selected_schemes" && (
             <div className="sticky bottom-0 left-0 right-0 p-3 bg-card/95 backdrop-blur-md border-t border-border z-30 shadow-lg">
               {createFlowStep === "form" && (
                 <button
                   type="button"
                   disabled={!isCreateFormValid}
-                  onClick={handleStartEligibilityCheck}
+                  onClick={editingApplicationRef ? handleSaveEditedApplicationDetails : handleStartEligibilityCheck}
                   className={`w-full py-3 rounded-xl font-bold text-xs shadow-md transition-all ${
                     isCreateFormValid
                       ? "bg-gradient-to-r from-amber-500 via-orange-500 to-primary text-white active:scale-[0.98] cursor-pointer"
                       : "bg-muted text-muted-foreground opacity-60 cursor-not-allowed"
                   }`}
                 >
-                  {lang === "ml" ? "സേവ് ചെയ്ത് തുടരുക" : "Save and Continue"}
+                  {editingApplicationRef
+                    ? (lang === "ml" ? "സേവ് ചെയ്ത് അപ്ഡേറ്റ് ചെയ്യുക" : "Save and Update")
+                    : (lang === "ml" ? "സേവ് ചെയ്ത് തുടരുക" : "Save and Continue")}
                 </button>
               )}
 
@@ -8877,46 +11706,30 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                       </button>
                     )}
                   </div>
-                  <button
-                    type="button"
-                    disabled={selectedEligibleSchemeIds.length === 0}
-                    onClick={() => startSelectedSchemesCollection()}
-                    className={`min-h-11 w-full rounded-xl px-3 py-3 font-extrabold text-xs shadow-md transition-all ${
-                      selectedEligibleSchemeIds.length > 0
-                        ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-600 hover:to-amber-600 active:scale-[0.98] cursor-pointer"
-                        : "bg-muted text-muted-foreground opacity-60 cursor-not-allowed"
-                    }`}
-                  >
-                    {lang === "ml" ? "തുടരുക" : "Continue"}
-                  </button>
-                </div>
-              )}
-
-              {createFlowStep === "selected_schemes" && (
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={handleAddAnotherScheme}
-                    className="min-h-11 rounded-xl border border-orange-300 bg-orange-50 px-2 py-2.5 text-[11px] font-extrabold text-orange-700 transition-colors hover:bg-orange-100 cursor-pointer dark:border-orange-900 dark:bg-orange-950/40 dark:text-orange-300 dark:hover:bg-orange-950/70"
-                  >
-                    {lang === "ml" ? "പദ്ധതി ചേർക്കുക" : "Add Scheme"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const nextRecord = currentApplicantApplications.find(
-                        (record) => record.status !== "complete" && record.status !== "ready"
-                      ) || currentApplicantApplications[0];
-                      if (nextRecord) {
-                        openSchemeDetails(nextRecord.scheme.id, "selected_schemes");
-                      } else {
-                        setCreateFlowStep("applicant_applications");
-                      }
-                    }}
-                    className="min-h-11 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 px-2 py-2.5 text-[11px] font-extrabold text-white shadow-md transition-all hover:from-orange-600 hover:to-amber-600 active:scale-[0.98] cursor-pointer"
-                  >
-                    {lang === "ml" ? "അവസാന വിവരങ്ങൾ തുടരുക" : "Continue to Final Details"}
-                  </button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab("schemes");
+                        setMobileSubPage("none");
+                      }}
+                      className="min-h-11 rounded-xl border border-orange-200 bg-card px-2 py-2.5 text-[11px] font-extrabold text-orange-600 transition-colors hover:border-orange-300 hover:bg-orange-50 cursor-pointer dark:border-orange-900 dark:bg-orange-950/30 dark:text-orange-300 dark:hover:bg-orange-950/60"
+                    >
+                      {lang === "ml" ? "പദ്ധതികൾ പരിശോധിക്കുക" : "Explore Schemes"}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={selectedEligibleSchemeIds.length === 0}
+                      onClick={() => startSelectedSchemesCollection()}
+                      className={`min-h-11 rounded-xl px-3 py-3 font-extrabold text-xs shadow-md transition-all ${
+                        selectedEligibleSchemeIds.length > 0
+                          ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-600 hover:to-amber-600 active:scale-[0.98] cursor-pointer"
+                          : "bg-muted text-muted-foreground opacity-60 cursor-not-allowed"
+                      }`}
+                    >
+                      {lang === "ml" ? "തുടരുക" : "Continue"}
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -9029,7 +11842,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
           )}
 
           {/* Bottom Nav Bar - Hidden in Guest Mode */}
-          {!isGuest && !isMobileAuthOpen && activeTab !== "create" && mobileSubPage !== "app_detail" && (mobileSubPage === "none" || mobileSubPage === "leaderboard" || mobileSubPage === "beneficiaries") && (
+          {!isGuest && !isMobileAuthOpen && activeTab !== "create" && mobileSubPage !== "app_detail" && (mobileSubPage === "none" || mobileSubPage === "leaderboard" || mobileSubPage === "beneficiaries" || mobileSubPage === "applications") && (
             <AdminMobileAppBottomNav
               activeTab={activeTab}
               onTabChange={(tab) => {
@@ -9069,6 +11882,396 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                 <img src={sahaiAvatar} alt="SahAI Assistant" className="h-full w-full object-cover" />
               </div>
             </button>
+          )}
+
+          {/* Tracking ID bottom sheet */}
+          {isTrackingSheetOpen && (
+            <div
+              className="absolute inset-0 z-[70] flex items-end bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 rounded-[36px]"
+              onClick={() => setIsTrackingSheetOpen(false)}
+            >
+              <div
+                className="w-full rounded-t-3xl border-t border-border bg-background p-4 pb-6 shadow-2xl animate-in slide-in-from-bottom duration-300"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="flex items-center justify-between">
+                  <h3 className="text-[15px] font-extrabold text-[#0F172A] dark:text-white">
+                    {selectedApplicationRecord?.trackingId
+                      ? lang === "ml"
+                        ? "ട്രാക്കിംഗ് ഐഡി എഡിറ്റ് ചെയ്യുക"
+                        : "Edit tracking ID"
+                      : lang === "ml"
+                        ? "ട്രാക്കിംഗ് ഐഡി ചേർക്കുക"
+                        : "Add tracking ID"}
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setIsTrackingSheetOpen(false)}
+                    aria-label={lang === "ml" ? "അടയ്ക്കുക" : "Close"}
+                    className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
+                  >
+                    <X className="h-4.5 w-4.5 stroke-[2]" />
+                  </button>
+                </div>
+
+                <label
+                  htmlFor="tracking-id-input"
+                  className="mt-3 block text-[11.5px] font-medium text-slate-500 dark:text-slate-400"
+                >
+                  {lang === "ml" ? "ട്രാക്കിംഗ് ഐഡി" : "Tracking ID"}
+                </label>
+                <input
+                  id="tracking-id-input"
+                  type="text"
+                  value={trackingIdDraft}
+                  onChange={(event) => setTrackingIdDraft(event.target.value)}
+                  placeholder={lang === "ml" ? "ട്രാക്കിംഗ് ഐഡി നൽകുക" : "Enter tracking ID"}
+                  autoFocus
+                  className="mt-1.5 flex h-11 w-full rounded-xl border border-[#f1ddc7] bg-[#fffaf3] px-3.5 text-[13.5px] font-semibold text-[#0F172A] outline-none transition-colors placeholder:font-normal placeholder:text-slate-400 focus:border-[#ff5500] focus:ring-2 focus:ring-orange-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                />
+
+                <div className="mt-4 flex gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setIsTrackingSheetOpen(false)}
+                    className="flex h-11 flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white text-[13px] font-extrabold text-[#0F172A] transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-800 cursor-pointer"
+                  >
+                    {lang === "ml" ? "റദ്ദാക്കുക" : "Cancel"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveTrackingId}
+                    disabled={!trackingIdDraft.trim()}
+                    className="flex h-11 flex-1 items-center justify-center rounded-xl bg-[#ff5500] text-[13px] font-extrabold text-white shadow-xs transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-700 dark:disabled:text-slate-400 cursor-pointer"
+                  >
+                    {lang === "ml" ? "സേവ് ചെയ്യുക" : "Save"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tracking ID saved success dialog */}
+          {isTrackingSuccessOpen && (
+            <div
+              className="absolute inset-0 z-[80] flex items-center justify-center rounded-[36px] bg-black/60 px-2.5 py-3 backdrop-blur-xs animate-in fade-in duration-200"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="tracking-success-title"
+            >
+              <div className="relative max-h-full w-full max-w-[366px] overflow-y-auto rounded-[22px] bg-white px-4 pb-3 pt-3 shadow-2xl animate-in zoom-in-95 duration-200 dark:bg-slate-900">
+                <button
+                  type="button"
+                  onClick={() => setIsTrackingSuccessOpen(false)}
+                  aria-label={lang === "ml" ? "അടയ്ക്കുക" : "Close"}
+                  className="absolute right-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200 cursor-pointer"
+                >
+                  <X className="h-4 w-4 stroke-[2]" />
+                </button>
+
+                <div className="flex flex-col items-center text-center">
+                  <div className="relative mt-1 flex h-[136px] w-[136px] items-center justify-center rounded-3xl bg-white dark:bg-white/95">
+                    <Sparkles className="absolute -left-2 top-5 h-4 w-4 rotate-12 text-orange-400" />
+                    <Sparkles className="absolute -right-2 top-8 h-3.5 w-3.5 -rotate-12 text-emerald-500" />
+                    <img
+                      src={readyToSubmit3dIcon}
+                      alt=""
+                      aria-hidden
+                      className="h-[128px] w-[128px] scale-125 object-contain"
+                    />
+                  </div>
+                  <h2
+                    id="tracking-success-title"
+                    className="mt-2 text-[26px] font-extrabold leading-tight tracking-tight text-[#0b3b66] dark:text-white"
+                  >
+                    {lang === "ml" ? "മികച്ച ജോലി!" : "Great work!"}
+                  </h2>
+                  <p className="mt-1.5 max-w-[310px] text-[14.5px] font-medium leading-snug text-slate-500 dark:text-slate-400">
+                    {lang === "ml"
+                      ? `${successApplicantName} ഒരു പദ്ധതിക്ക് അപേക്ഷിക്കാൻ നിങ്ങൾ സഹായിച്ചു.`
+                      : `You helped ${successApplicantName} apply for a scheme.`}
+                  </p>
+                </div>
+
+                <div className="mt-4 overflow-hidden rounded-[14px] border border-[#f3e7d7] bg-[#fffaf3] dark:border-slate-700 dark:bg-slate-800/70">
+                  <div className="grid grid-cols-[96px_1fr] items-center gap-3 border-b border-[#efe3d3] px-4 py-3 dark:border-slate-700">
+                    <span className="text-[13.5px] font-medium text-slate-500 dark:text-slate-400">
+                      {lang === "ml" ? "പദ്ധതി" : "Scheme"}
+                    </span>
+                    <span className="min-w-0 text-left text-[14px] font-semibold leading-snug text-[#0F172A] dark:text-white">
+                      {successSchemeName}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-[96px_1fr] items-center gap-3 px-4 py-3">
+                    <span className="text-[13.5px] font-medium text-slate-500 dark:text-slate-400">
+                      {lang === "ml" ? "നില" : "Status"}
+                    </span>
+                    <span className="min-w-0 text-left text-[14px] font-semibold text-[#0F172A] dark:text-white">
+                      {lang === "ml" ? successStatusLabelMl : successStatusLabelEn}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-3.5 flex items-start justify-center gap-2.5 text-center">
+                  <Star className="mt-0.5 h-4 w-4 shrink-0 fill-[#ff5500] text-[#ff5500]" />
+                  <div>
+                    <p className="text-[13px] font-medium leading-snug text-slate-600 dark:text-slate-300">
+                      {lang === "ml"
+                        ? "നിങ്ങളുടെ സംഭാവന രേഖപ്പെടുത്തിയിട്ടുണ്ട്."
+                        : "Your contribution has been recorded."}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsTrackingSuccessOpen(false);
+                        setActiveTab("overview");
+                        setMobileSubPage("leaderboard");
+                      }}
+                      className="mt-1 inline-flex items-center gap-0.5 text-[13px] font-extrabold text-[#ff5500] hover:text-orange-600 cursor-pointer"
+                    >
+                      {lang === "ml" ? "ലീഡർബോർഡ് കാണുക" : "View Leaderboard"}
+                      <ChevronRight className="h-3.5 w-3.5 stroke-[2.5]" />
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsTrackingSuccessOpen(false)}
+                  className="mt-3 flex h-11 w-full items-center justify-center rounded-lg bg-[#ff5500] text-[14px] font-extrabold text-white shadow-xs transition-colors hover:bg-orange-600 cursor-pointer active:scale-[0.99]"
+                >
+                  {lang === "ml" ? "അപേക്ഷാ വിശദാംശങ്ങളിലേക്ക് മടങ്ങുക" : "Back To Application Details"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Confirm scheme decision bottom sheet */}
+          {isDecisionSheetOpen && (
+            <div
+              className="absolute inset-0 z-[72] flex items-end bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 rounded-[36px]"
+              onClick={handleCloseDecisionSheet}
+            >
+              <div
+                className="w-full rounded-t-3xl border-t border-border bg-background p-4 pb-6 shadow-2xl animate-in slide-in-from-bottom duration-300"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="text-[15px] font-extrabold text-[#0F172A] dark:text-white">
+                      {lang === "ml" ? "സ്കീം തീരുമാനം സ്ഥിരീകരിക്കുക" : "Confirm scheme decision"}
+                    </h3>
+                    <p className="mt-1 text-[11.5px] font-medium leading-snug text-slate-500 dark:text-slate-400">
+                      {lang === "ml"
+                        ? "അപേക്ഷയുടെ ഔദ്യോഗിക തീരുമാനം എന്താണ്?"
+                        : "What is the application’s official decision?"}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCloseDecisionSheet}
+                    aria-label={lang === "ml" ? "അടയ്ക്കുക" : "Close"}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
+                  >
+                    <X className="h-4.5 w-4.5 stroke-[2]" />
+                  </button>
+                </div>
+
+                <div className="mt-3 space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => setDecisionChoice("approved")}
+                    aria-pressed={decisionChoice === "approved"}
+                    className={`flex w-full items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-colors cursor-pointer ${
+                      decisionChoice === "approved"
+                        ? "border-[#ff5500] bg-[#fff7ec] dark:border-orange-700 dark:bg-orange-950/40"
+                        : "border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    <span
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+                        decisionChoice === "approved"
+                          ? "bg-[#ff5500] text-white"
+                          : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                      }`}
+                    >
+                      <CheckCircle2 className="h-4 w-4 stroke-[2]" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-[13px] font-extrabold text-[#0F172A] dark:text-white">
+                        {lang === "ml" ? "അംഗീകരിച്ചു" : "Approved"}
+                      </span>
+                      <span className="mt-0.5 block text-[10.5px] font-medium text-slate-500 dark:text-slate-400">
+                        {lang === "ml" ? "അപേക്ഷ അംഗീകരിച്ചു" : "Application approved by the scheme"}
+                      </span>
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setDecisionChoice("rejected")}
+                    aria-pressed={decisionChoice === "rejected"}
+                    className={`flex w-full items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-colors cursor-pointer ${
+                      decisionChoice === "rejected"
+                        ? "border-[#ff5500] bg-[#fff7ec] dark:border-orange-700 dark:bg-orange-950/40"
+                        : "border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    <span
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+                        decisionChoice === "rejected"
+                          ? "bg-[#ff5500] text-white"
+                          : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                      }`}
+                    >
+                      <XCircle className="h-4 w-4 stroke-[2]" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-[13px] font-extrabold text-[#0F172A] dark:text-white">
+                        {lang === "ml" ? "നിരസിച്ചു" : "Rejected"}
+                      </span>
+                      <span className="mt-0.5 block text-[10.5px] font-medium text-slate-500 dark:text-slate-400">
+                        {lang === "ml" ? "അപേക്ഷ നിരസിച്ചു" : "Application rejected by the scheme"}
+                      </span>
+                    </span>
+                  </button>
+                </div>
+
+                {decisionChoice === "rejected" && (
+                  <div className="mt-3">
+                    <label
+                      htmlFor="decision-notes-input"
+                      className="block text-[11.5px] font-medium text-slate-500 dark:text-slate-400"
+                    >
+                      {lang === "ml" ? "കാരണം / കുറിപ്പുകൾ" : "Reason / Notes"}
+                    </label>
+                    <textarea
+                      id="decision-notes-input"
+                      rows={3}
+                      value={decisionNotes}
+                      onChange={(event) => setDecisionNotes(event.target.value)}
+                      placeholder={
+                        lang === "ml" ? "നിരസിക്കാനുള്ള കാരണം രേഖപ്പെടുത്തുക" : "Record the reason for rejection"
+                      }
+                      className="mt-1.5 w-full resize-none rounded-xl border border-[#f1ddc7] bg-[#fffaf3] px-3.5 py-2.5 text-[13px] font-medium text-[#0F172A] outline-none transition-colors placeholder:font-normal placeholder:text-slate-400 focus:border-[#ff5500] focus:ring-2 focus:ring-orange-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    />
+                  </div>
+                )}
+
+                <div className="mt-4 flex gap-2.5">
+                  <button
+                    type="button"
+                    onClick={handleCloseDecisionSheet}
+                    className="flex h-11 flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white text-[13px] font-extrabold text-[#0F172A] transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-800 cursor-pointer"
+                  >
+                    {lang === "ml" ? "റദ്ദാക്കുക" : "Cancel"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveDecision}
+                    disabled={!decisionChoice}
+                    className="flex h-11 flex-1 items-center justify-center rounded-xl bg-[#ff5500] text-[13px] font-extrabold text-white shadow-xs transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-700 dark:disabled:text-slate-400 cursor-pointer"
+                  >
+                    {lang === "ml" ? "തീരുമാനം സേവ് ചെയ്യുക" : "Save Decision"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Document preview bottom sheet */}
+          {previewDocument && (() => {
+            const meta = mobileDocumentKindMeta[previewDocument.kind];
+            const PreviewIcon = meta.Icon;
+            return (
+              <div
+                className="absolute inset-0 z-[75] flex items-end bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 rounded-[36px]"
+                onClick={() => setPreviewDocument(null)}
+              >
+                <div
+                  className="w-full rounded-t-3xl border-t border-border bg-background p-4 pb-6 shadow-2xl animate-in slide-in-from-bottom duration-300"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-[15px] font-extrabold text-[#0F172A] dark:text-white">
+                      {lang === "ml" ? "രേഖാ പ്രിവ്യൂ" : "Document preview"}
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewDocument(null)}
+                      aria-label={lang === "ml" ? "അടയ്ക്കുക" : "Close"}
+                      className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
+                    >
+                      <X className="h-4.5 w-4.5 stroke-[2]" />
+                    </button>
+                  </div>
+
+                  <div className="mt-3 flex items-center gap-3">
+                    <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${meta.tileClass}`}>
+                      <PreviewIcon className="h-5 w-5" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[13px] font-bold text-[#0F172A] dark:text-white">{previewDocument.name}</p>
+                      <p className="mt-0.5 flex items-center gap-1.5 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                        <span className={`rounded px-1 py-px text-[9px] font-extrabold uppercase tracking-wide ${meta.chipClass}`}>
+                          {meta.label}
+                        </span>
+                        <span aria-hidden="true">·</span>
+                        <span>{previewDocument.size}</span>
+                        <span className="inline-flex items-center gap-0.5 font-semibold text-emerald-600 dark:text-emerald-400">
+                          <Check className="h-3 w-3 stroke-[3]" />
+                          {lang === "ml" ? "അപ്‌ലോഡ്" : "Uploaded"}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex h-40 items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/40">
+                    <div className="flex h-[112px] w-[86px] flex-col gap-1.5 rounded-md border border-slate-200 bg-white p-2.5 shadow-xs dark:border-slate-700 dark:bg-slate-900">
+                      <span className={`mb-0.5 inline-flex w-fit rounded px-1 py-px text-[8px] font-extrabold uppercase tracking-wide ${meta.chipClass}`}>
+                        {meta.label}
+                      </span>
+                      <span className="h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-700" />
+                      <span className="h-1.5 w-5/6 rounded-full bg-slate-200 dark:bg-slate-700" />
+                      <span className="h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-700" />
+                      <span className="h-1.5 w-2/3 rounded-full bg-slate-200 dark:bg-slate-700" />
+                      <span className="h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-700" />
+                    </div>
+                  </div>
+                  <p className="mt-2 text-center text-[10.5px] font-medium leading-snug text-slate-500 dark:text-slate-400">
+                    {lang === "ml"
+                      ? "ഡെമോ പ്രിവ്യൂവിൽ യഥാർത്ഥ ഫയൽ ലഭ്യമല്ല."
+                      : "The original file isn't available in this demo preview."}
+                  </p>
+
+                  <div className="mt-3 flex gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewDocument(null)}
+                      className="flex h-11 flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white text-[13px] font-extrabold text-[#0F172A] transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-800 cursor-pointer"
+                    >
+                      {lang === "ml" ? "അടയ്ക്കുക" : "Close"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDownloadDocument}
+                      className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#ff5500] text-[13px] font-extrabold text-white shadow-xs transition-colors hover:bg-orange-600 cursor-pointer"
+                    >
+                      <Download className="h-4 w-4 stroke-[2.5]" />
+                      {lang === "ml" ? "ഡൗൺലോഡ്" : "Download"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {documentActionNotice && (
+            <div className="pointer-events-none absolute inset-x-0 bottom-24 z-[90] flex justify-center px-6">
+              <span className="rounded-full bg-slate-900/90 px-3.5 py-2 text-center text-[11px] font-semibold text-white shadow-lg animate-in fade-in duration-150">
+                {documentActionNotice}
+              </span>
+            </div>
           )}
 
           {/* SahAI Help Chatbot Overlay Modal */}

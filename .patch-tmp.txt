@@ -1,0 +1,41 @@
+*** Begin Patch
+*** Update File: src/components/admin/AdminMobilePreviewModal.tsx
+@@
+   const getSchemeRequiredDocuments = (scheme: MobileEligibleScheme | null): MobileSchemeDocument[] => {
+     if (!scheme) return [];
+     if (scheme.requiredDocuments?.length) return scheme.requiredDocuments;
+     return [{ id: "requiredDocument", labelEn: scheme.requiredDocEn, labelMl: scheme.requiredDocMl }];
+   };
++
++  const isPmKisanScheme = (scheme: MobileEligibleScheme | null) =>
++    scheme?.id === "SCH-001" || /pm[\s-]*kisan/i.test(scheme?.titleEn ?? "");
++
++  const pmKisanReviewCutoffDate = "2019-02-01";
++
++  const getPmKisanMissingItems = (details: PmKisanCollectionDetails): MobileMissingItem[] =>
++    pmKisanQuestions.flatMap((question) => {
++      if (question.type === "choice") {
++        return details[question.key]
++          ? []
++          : [{ key: `pmKisan:${question.key}`, labelEn: question.labelEn, labelMl: question.labelMl, kind: "field" as const }];
++      }
++      return details.landAcquiredDate || details.landAcquisitionNotSure
++        ? []
++        : [{ key: `pmKisan:${question.key}`, labelEn: question.labelEn, labelMl: question.labelMl, kind: "field" as const }];
++    });
++
++  const isPmKisanAcquisitionAfterCutoff = (details: PmKisanCollectionDetails) =>
++    Boolean(details.landAcquiredDate) && details.landAcquiredDate > pmKisanReviewCutoffDate;
+@@
+   const getRequiredItemsForScheme = (scheme: MobileEligibleScheme): MobileMissingItem[] => [
+     ...getSchemeRequiredDocuments(scheme).map(getDocumentMissingItem),
++    ...(isPmKisanScheme(scheme) ? getPmKisanMissingItems(createEmptyPmKisanDetails()) : []),
+     ...getSchemeRequiredFieldKeys(scheme).map((key) => ({
+       key,
+       labelEn: mobileFieldLabels[key].labelEn,
+       labelMl: mobileFieldLabels[key].labelMl,
+       kind: "field" as const,
+     })),
+     { key: "declaration", labelEn: "Declaration confirmation", labelMl: "സത്യവാങ്മൂലം സ്ഥിരീകരണം", kind: "field" },
+   ];
+*** End Patch
