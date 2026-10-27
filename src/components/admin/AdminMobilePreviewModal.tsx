@@ -199,6 +199,8 @@ type MobileCollectionRecord = {
   reference: string;
   createdAt: string;
   applicantName: string;
+  applicantLocationEn?: string;
+  applicantLocationMl?: string;
   scheme: MobileEligibleScheme;
   status: MobileCollectionStatus;
   missingItems: MobileMissingItem[];
@@ -259,6 +261,7 @@ type MobileApplicationRecord = {
   ref: string;
   trackingId?: string;
   trackingUrl?: string;
+  applicationPortalOpened?: boolean;
   schemeNameEn: string;
   schemeNameMl: string;
   categoryEn: string;
@@ -2463,6 +2466,8 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
               })()}
             </div>
 
+            {renderLatestSavedApplicationsSection()}
+
             {/* SECTION: Needs attention - Matching Admin View */}
             <div className="space-y-1.5 pt-1">
               {/* Section Header */}
@@ -2716,6 +2721,8 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
   const [finalDetailsInvalidFields, setFinalDetailsInvalidFields] = useState<string[]>([]);
   const [finalDetailsSaveNotice, setFinalDetailsSaveNotice] = useState<"invalid" | "incomplete" | null>(null);
   const [mobileCollectionRecords, setMobileCollectionRecords] = useState<MobileCollectionRecord[]>([]);
+  const [latestSavedApplicationRefs, setLatestSavedApplicationRefs] = useState<string[]>([]);
+  const [savedApplicationRecords, setSavedApplicationRecords] = useState<MobileApplicationRecord[]>([]);
   const [activeCollectionReference, setActiveCollectionReference] = useState<string>("");
   const [activeApplicantApplicationRefs, setActiveApplicantApplicationRefs] = useState<string[]>([]);
   const [collectionRecordReturnStep, setCollectionRecordReturnStep] = useState<MobileCollectionRecordReturnStep>("collection_saved");
@@ -2725,6 +2732,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
   const [followUpMissingItems, setFollowUpMissingItems] = useState<MobileMissingItem[]>([]);
   const [followUpDateError, setFollowUpDateError] = useState<string>("");
   const collectionReferenceCounter = useRef<number>(849202);
+  const savedApplicationRefCounter = useRef<number>(9401);
   const mobileContentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -2953,7 +2961,10 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     setIsFollowUpSheetOpen(false);
   };
 
-  const startSelectedSchemesCollection = (schemeIds: string[] = selectedEligibleSchemeIds) => {
+  const startSelectedSchemesCollection = (
+    schemeIds: string[] = selectedEligibleSchemeIds,
+    destination: "collection" | "home" = "collection"
+  ) => {
     const selectableSchemes = selectedEligibleScheme
       ? [selectedEligibleScheme, ...mockEligibleSchemesList.filter((scheme) => scheme.id !== selectedEligibleScheme.id)]
       : mockEligibleSchemesList;
@@ -2964,6 +2975,13 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     if (selectedSchemes.length === 0) return;
 
     const applicantName = createFullName.trim() || "Applicant";
+    const applicantLocationEn =
+      [createMandalam.trim(), createDistrict.trim()].filter(Boolean).join(", ") || "Kerala";
+    const applicantLocationMl =
+      [
+        createMandalam ? getConstituencyName(createMandalam, "ml") : "",
+        createDistrict ? getDistrictName(createDistrict, "ml") : "",
+      ].filter(Boolean).join(", ") || "കേരളം";
     const existingForApplicant = mobileCollectionRecords.filter(
       (record) => activeApplicantApplicationRefs.includes(record.reference) || record.applicantName === applicantName
     );
@@ -2986,6 +3004,8 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
         reference,
         createdAt: new Date().toISOString(),
         applicantName,
+        applicantLocationEn,
+        applicantLocationMl,
         scheme: { ...scheme },
         status: "not_started",
         missingItems: getRequiredItemsForScheme(scheme),
@@ -3018,6 +3038,82 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     setFinalDetailsInvalidFields([]);
     setFinalDetailsSaveNotice(null);
     setIsFollowUpSheetOpen(false);
+
+    if (destination === "home") {
+      const phoneDigits = createPhone.replace(/\D/g, "").slice(-10);
+      const phoneDisplay =
+        phoneDigits.length === 10
+          ? `+91 ${phoneDigits.slice(0, 5)} ${phoneDigits.slice(5)}`
+          : `${createCountryCode} ${createPhone.trim()}`.trim() || "—";
+      const aadhaarDigits = createAadhaar.replace(/\D/g, "");
+      const aadhaarDisplay = aadhaarDigits.length >= 4 ? `XXXX-XXXX-${aadhaarDigits.slice(-4)}` : "—";
+      const assistingWorkerEn = userRole === "party_worker" ? "Dhyan M S" : "Jayasurya";
+      const assistingWorkerMl = userRole === "party_worker" ? "ധ്യാൻ എം എസ്" : "ജയസൂര്യ";
+
+      const createdApplicationRefs: string[] = [];
+      const newApplicationRecords: MobileApplicationRecord[] = [];
+
+      recordsForSelection.forEach((record) => {
+        const existingApplication = savedApplicationRecords.find(
+          (item) =>
+            item.applicantNameEn === record.applicantName && item.schemeNameEn === record.scheme.titleEn
+        );
+        if (existingApplication) {
+          createdApplicationRefs.push(existingApplication.ref);
+          return;
+        }
+
+        const savedDate = formatCollectionDate(record.createdAt.slice(0, 10));
+        const applicationRef = `APP-2026-${savedApplicationRefCounter.current++}`;
+        createdApplicationRefs.push(applicationRef);
+        newApplicationRecords.push({
+          ref: applicationRef,
+          schemeNameEn: record.scheme.titleEn,
+          schemeNameMl: record.scheme.titleMl,
+          categoryEn: record.scheme.categoryEn,
+          categoryMl: record.scheme.categoryMl,
+          status: "pending",
+          applicantNameEn: record.applicantName,
+          applicantNameMl: record.applicantName,
+          aadhaar: aadhaarDisplay,
+          phone: phoneDisplay,
+          locationEn: record.applicantLocationEn || "Kerala",
+          locationMl: record.applicantLocationMl || "കേരളം",
+          annualIncome: createIncomeRange || "—",
+          appliedDate: savedDate,
+          currentStep: 1,
+          pendingDocs: getSchemeRequiredDocuments(record.scheme).map((document) => document.labelEn),
+          nextActionEn: "Application received. Document verification is pending.",
+          nextActionMl: "അപേക്ഷ ലഭിച്ചു. രേഖാ പരിശോധന ബാക്കിയുണ്ട്.",
+          auditLog: [
+            {
+              titleEn: "Application received",
+              titleMl: "അപേക്ഷ ലഭിച്ചു",
+              date: savedDate,
+              time: getActivityTimeLabel(new Date(record.createdAt)),
+              actorEn: record.applicantName,
+              actorMl: record.applicantName,
+              status: "completed",
+            },
+          ],
+          workflowStatus: "application_received",
+          assistedByEn: assistingWorkerEn,
+          assistedByMl: assistingWorkerMl,
+        });
+      });
+
+      if (newApplicationRecords.length > 0) {
+        setSavedApplicationRecords((current) => [...newApplicationRecords, ...current]);
+      }
+      setLatestSavedApplicationRefs(createdApplicationRefs);
+      setActiveCollectionReference("");
+      setSelectedEligibleSchemeIds([]);
+      setSchemeDetailsReturnStep("eligible_schemes");
+      setCreateFlowStep("form");
+      setActiveTab("overview");
+      setMobileSubPage("none");
+      return;
+    }
 
     if (recordsForSelection.length === 1) {
       const record = recordsForSelection[0];
@@ -3069,6 +3165,10 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
   const currentApplicantApplications = activeApplicantApplicationRefs
     .map((reference) => mobileCollectionRecords.find((record) => record.reference === reference))
     .filter((record): record is MobileCollectionRecord => Boolean(record));
+
+  const latestSavedApplications = latestSavedApplicationRefs
+    .map((reference) => savedApplicationRecords.find((record) => record.ref === reference))
+    .filter((record): record is MobileApplicationRecord => Boolean(record));
 
   const applicantFollowUpCount = currentApplicantApplications.filter(
     (record) => record.status === "incomplete"
@@ -3903,6 +4003,10 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
         ? {
             ...current,
             trackingId: nextTrackingId,
+            workflowStatus:
+              current.workflowStatus === "document_verification_completed"
+                ? "applied"
+                : current.workflowStatus,
             auditLog: [
               ...current.auditLog,
               createActivityEntry({
@@ -4413,7 +4517,10 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     const hasSchemeWebsite = Boolean(schemeWebsiteUrl);
     const statusLabelEn = isDocumentVerifiedStage ? "Document Verified" : workflowMeta.labelEn;
     const statusLabelMl = workflowMeta.labelMl;
-    const needsTrackingIdEntry = workflowStatus === "applied" && !record.trackingId;
+    const needsTrackingIdEntry =
+      !record.trackingId &&
+      (workflowStatus === "applied" ||
+        (workflowStatus === "document_verification_completed" && Boolean(record.applicationPortalOpened)));
     const showDecisionAction =
       (workflowStatus === "review" || workflowStatus === "applied") &&
       (workflowStatus === "review" || Boolean(record.trackingId));
@@ -4482,7 +4589,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
         const target = current ?? baseRecord;
         return {
           ...target,
-          workflowStatus: "applied",
+          applicationPortalOpened: true,
           auditLog: [
             ...target.auditLog,
             createActivityEntry({
@@ -5015,7 +5122,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
             </div>
           </div>
 
-          {isDocumentVerifiedStage ? (
+          {isDocumentVerifiedStage && !record.applicationPortalOpened ? (
             <div className="mt-2">
               <a
                 href={hasSchemeWebsite ? schemeWebsiteUrl : undefined}
@@ -5411,14 +5518,23 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     slaBreaches: Math.max(0, Math.round((rawMetrics?.slaBreaches || 0) * geoScopeMultiplier)),
   };
 
-  const applicationRecordsForActiveFilter: MobileApplicationRecord[] =
-    applicationStatusFilter === "all"
+  const savedRecordsForActiveFilter: MobileApplicationRecord[] =
+    applicationStatusFilter === "all" ||
+    applicationStatusFilter === "pending" ||
+    applicationStatusFilter === "application_received"
+      ? savedApplicationRecords
+      : [];
+
+  const applicationRecordsForActiveFilter: MobileApplicationRecord[] = [
+    ...savedRecordsForActiveFilter,
+    ...(applicationStatusFilter === "all"
       ? mobileApplicationAllPreviewRecords
       : applicationStatusFilter === "pending"
         ? mobileApplicationRecordsByStatus.application_received
         : applicationStatusFilter === "assisted"
           ? mobileApplicationRecordsByStatus.beneficiary
-          : mobileApplicationRecordsByStatus[applicationStatusFilter];
+          : mobileApplicationRecordsByStatus[applicationStatusFilter]),
+  ];
 
   const applicationQuery = applicationSearchQuery.trim().toLowerCase();
   const displayedMobileApplicationRecords = applicationRecordsForActiveFilter.filter((application) => {
@@ -5436,6 +5552,11 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
       application.trackingId ?? "",
     ].some((value) => value.toLowerCase().includes(applicationQuery));
   });
+
+  const getApplicationCardMeta = (application: MobileApplicationRecord) =>
+    application.trackingId
+      ? `${lang === "ml" ? "ട്രാക്കിംഗ് ഐഡി" : "Tracking ID"}: ${application.trackingId}`
+      : `${lang === "ml" ? "സേവ്" : "Saved"}: ${application.appliedDate}`;
 
   const renderMobileApplicationListCard = (application: MobileApplicationRecord) => (
     <div
@@ -5469,7 +5590,13 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
           : `Applicant: ${application.applicantNameEn} · ${application.locationEn}`}
       </p>
       <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 dark:border-slate-800/60 mt-2.5 text-[10.5px] text-slate-400 font-medium">
-        <span className="font-mono text-[10px] text-slate-400">Ref: {application.ref}</span>
+        <span className={
+          application.trackingId
+            ? "font-mono text-[10px] text-slate-400"
+            : "text-[10px] font-medium text-slate-400"
+        }>
+          {getApplicationCardMeta(application)}
+        </span>
         <span className="flex items-center gap-0.5 text-[#ff5500] dark:text-orange-400 font-extrabold text-[10.5px]">
           {lang === "ml" ? "വിശദാംശങ്ങൾ കാണുക" : "View Details"}
           <ChevronRight className="h-3 w-3 stroke-[2.5]" />
@@ -5477,6 +5604,98 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
       </div>
     </div>
   );
+
+  const openMobileApplicationDetail = (application: MobileApplicationRecord) => {
+    setSelectedApplicationRecord(application);
+    setAppDetailView("overview");
+    setAppDetailMenuOpen(false);
+    setActiveTab("applications");
+    setMobileSubPage("app_detail");
+    mobileContentRef.current?.scrollTo({ top: 0 });
+  };
+
+  const renderLatestSavedApplicationsSection = () => {
+    if (latestSavedApplications.length === 0) return null;
+
+    return (
+      <div className="space-y-1.5 pt-1">
+        <div className="flex items-center justify-between px-0.5 pb-0.5">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="flex h-5 w-5 items-center justify-center rounded-md bg-orange-500/10 dark:bg-orange-950/30 text-[#ff5500] shrink-0">
+              <ClipboardList className="h-3.5 w-3.5 stroke-[2.2]" />
+            </span>
+            <h3 className="font-display text-xs sm:text-[13px] font-black text-[#0a0f1d] dark:text-white tracking-tight truncate">
+              {lang === "ml" ? "പുതിയ അപേക്ഷകൾ" : "Latest Applications"}
+            </h3>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("applications");
+              setApplicationStatusFilter("all");
+              setApplicationSearchQuery("");
+              setMobileSubPage("none");
+            }}
+            className="flex items-center gap-0.5 text-[11px] font-bold text-[#f95700] hover:underline cursor-pointer"
+          >
+            <span className="flex items-center gap-1.5">
+              <span>{lang === "ml" ? "എല്ലാം" : "View all"}</span>
+              <span className="rounded-full bg-orange-500/10 dark:bg-orange-950/40 text-[#f95700] px-1.5 py-0.5 text-[9.5px] font-black leading-none border border-orange-200/80 dark:border-orange-900/50">
+                {String(latestSavedApplications.length).padStart(2, "0")}
+              </span>
+            </span>
+            <ChevronRight className="h-3.5 w-3.5 stroke-[2.5]" />
+          </button>
+        </div>
+
+        <div className="space-y-2">
+          {latestSavedApplications.map((application) => {
+            return (
+              <div
+                key={application.ref}
+                onClick={() => openMobileApplicationDetail(application)}
+                className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+              >
+                <div className="flex items-center justify-between gap-1.5">
+                  <span className="inline-flex h-[18px] min-w-0 max-w-[68%] items-center gap-1 rounded-full border border-slate-200 bg-white px-1.5 text-[9px] font-extrabold uppercase tracking-wide text-slate-700 whitespace-nowrap dark:border-slate-700 dark:text-slate-200">
+                    <img
+                      src={getMobileCategoryIconSrc(application.categoryEn)}
+                      alt=""
+                      className="h-3.5 w-3.5 shrink-0 object-contain"
+                    />
+                    <span className="truncate">
+                      {lang === "ml" ? application.categoryMl : application.categoryEn}
+                    </span>
+                  </span>
+                  <MobileApplicationStatusBadge
+                    status={application.workflowStatus ?? "application_received"}
+                    lang={lang}
+                  />
+                </div>
+                <h5 className="font-extrabold text-xs sm:text-[13px] text-[#0a0f1d] dark:text-white leading-tight mt-2">
+                  {lang === "ml" ? application.schemeNameMl : application.schemeNameEn}
+                </h5>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug mt-1 font-medium">
+                  {lang === "ml"
+                    ? `അപേക്ഷകൻ: ${application.applicantNameMl} · ${application.locationMl}`
+                    : `Applicant: ${application.applicantNameEn} · ${application.locationEn}`}
+                </p>
+                <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 dark:border-slate-800/60 mt-2.5 text-[10.5px] text-slate-400 font-medium">
+                  <span className="text-[10px] text-slate-400">
+                    {getApplicationCardMeta(application)}
+                  </span>
+                  <span className="flex items-center gap-0.5 text-[#ff5500] dark:text-orange-400 font-extrabold text-[10.5px]">
+                    {lang === "ml" ? "വിശദാംശങ്ങൾ കാണുക" : "View Details"}
+                    <ChevronRight className="h-3 w-3 stroke-[2.5]" />
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
 
     // Human readable active location label
   const activeLocationLabel = React.useMemo(() => {
@@ -6343,6 +6562,8 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                         );
                       })()}
                     </div>
+
+                    {renderLatestSavedApplicationsSection()}
 
                     {/* SECTION 1: Needs attention */}
                     <div className="space-y-1.5 pt-1">
@@ -11720,14 +11941,14 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                     <button
                       type="button"
                       disabled={selectedEligibleSchemeIds.length === 0}
-                      onClick={() => startSelectedSchemesCollection()}
+                      onClick={() => startSelectedSchemesCollection(selectedEligibleSchemeIds, "home")}
                       className={`min-h-11 rounded-xl px-3 py-3 font-extrabold text-xs shadow-md transition-all ${
                         selectedEligibleSchemeIds.length > 0
                           ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-600 hover:to-amber-600 active:scale-[0.98] cursor-pointer"
                           : "bg-muted text-muted-foreground opacity-60 cursor-not-allowed"
                       }`}
                     >
-                      {lang === "ml" ? "തുടരുക" : "Continue"}
+                      {lang === "ml" ? "അപേക്ഷ സേവ് ചെയ്യുക" : "Save Application"}
                     </button>
                   </div>
                 </div>
