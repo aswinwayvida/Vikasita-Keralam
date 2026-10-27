@@ -4100,11 +4100,15 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     );
   };
 
-  const handleEditApplicationDetails = () => {
-    const record = selectedApplicationRecord
-      ? { ...selectedApplicationRecord, ...(applicationRecordEdits[selectedApplicationRecord.ref] ?? {}) }
+  const handleEditApplicationDetails = (targetRecord?: MobileApplicationRecord | null) => {
+    const isRecord = targetRecord && typeof targetRecord === "object" && "ref" in targetRecord;
+    const baseRecord = isRecord ? targetRecord : selectedApplicationRecord;
+    const record = baseRecord
+      ? { ...baseRecord, ...(applicationRecordEdits[baseRecord.ref] ?? {}) }
       : null;
     if (!record) return;
+
+    setSelectedApplicationRecord(record);
 
     const details = applicationCollectedDetails[record.ref];
     const pickOption = (value: string | undefined, options: string[], aliases: Record<string, string> = {}) => {
@@ -8945,27 +8949,55 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                         </div>
 
                         <div className="rounded-2xl border border-border bg-card p-3.5 shadow-2xs">
-                          <div className="flex items-center gap-3">
-                            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-slate-200 text-[13px] font-black text-slate-900 dark:bg-slate-700 dark:text-white shadow-2xs">
-                              {getApplicantInitials(selectedApplicationUser.nameEn)}
-                            </span>
-                            <div className="min-w-0">
-                              <p className="truncate text-[14px] font-extrabold text-foreground">
-                                {lang === "ml" ? selectedApplicationUser.nameMl : selectedApplicationUser.nameEn}
-                              </p>
-                              <p className="mt-0.5 flex items-center gap-1 text-[10.5px] text-muted-foreground">
-                                <MapPin className="h-3 w-3 shrink-0 text-orange-500" />
-                                <span className="truncate">
-                                  {lang === "ml" ? selectedApplicationUser.locationMl : selectedApplicationUser.locationEn}
-                                </span>
-                              </p>
-                              {selectedApplicationUser.phone && (
-                                <p className="mt-0.5 flex items-center gap-1 text-[10.5px] text-muted-foreground">
-                                  <Phone className="h-3 w-3 shrink-0 text-orange-500" />
-                                  <span className="truncate">{selectedApplicationUser.phone}</span>
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-slate-200 text-[13px] font-black text-slate-900 dark:bg-slate-700 dark:text-white shadow-2xs">
+                                {getApplicantInitials(selectedApplicationUser.nameEn)}
+                              </span>
+                              <div className="min-w-0">
+                                <p className="truncate text-[14px] font-extrabold text-foreground">
+                                  {lang === "ml" ? selectedApplicationUser.nameMl : selectedApplicationUser.nameEn}
                                 </p>
-                              )}
+                                <p className="mt-0.5 flex items-center gap-1 text-[10.5px] text-muted-foreground">
+                                  <MapPin className="h-3 w-3 shrink-0 text-orange-500" />
+                                  <span className="truncate">
+                                    {lang === "ml" ? selectedApplicationUser.locationMl : selectedApplicationUser.locationEn}
+                                  </span>
+                                </p>
+                                {selectedApplicationUser.phone && (
+                                  <p className="mt-0.5 flex items-center gap-1 text-[10.5px] text-muted-foreground">
+                                    <Phone className="h-3 w-3 shrink-0 text-orange-500" />
+                                    <span className="truncate">{selectedApplicationUser.phone}</span>
+                                  </p>
+                                )}
+                              </div>
                             </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const appToEdit = selectedApplicationUserApplications[0];
+                                if (appToEdit) {
+                                  handleEditApplicationDetails(appToEdit);
+                                } else {
+                                  handleAddAnotherApplicant();
+                                  setCreateFullName(selectedApplicationUser.nameEn);
+                                  const phoneDigits = selectedApplicationUser.phone.replace(/\D/g, "");
+                                  setCreatePhone(
+                                    phoneDigits.length === 12 && phoneDigits.startsWith("91")
+                                      ? phoneDigits.slice(2)
+                                      : phoneDigits,
+                                  );
+                                  setCreateFlowStep("form");
+                                  setActiveTab("create");
+                                  setMobileSubPage("none");
+                                }
+                              }}
+                              className="inline-flex h-8 items-center gap-1 rounded-full border border-[#f1ddc7] bg-[#fff7ec] px-3 text-[11.5px] font-extrabold text-[#ff5500] transition-colors hover:border-orange-300 hover:bg-[#ffefdd] dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300 cursor-pointer shrink-0 shadow-2xs"
+                              title={lang === "ml" ? "അപേക്ഷ തിരുത്തുക" : "Edit Application"}
+                            >
+                              <Pencil className="h-3 w-3 stroke-[2.5]" />
+                              <span>{lang === "ml" ? "തിരുത്തുക" : "Edit"}</span>
+                            </button>
                           </div>
                         </div>
 
