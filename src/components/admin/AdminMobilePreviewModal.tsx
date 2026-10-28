@@ -6706,7 +6706,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
         </div>
 
         {/* How It Works Section */}
-        <div className="pt-0.5 pb-0.5 space-y-1.5">
+        <div className="pt-0.5 pb-0.5 space-y-2">
           <div className="flex items-center justify-between px-1">
             <div className="flex items-center gap-1.5">
               <span className="flex h-5 w-5 items-center justify-center rounded-md bg-[#ff5500]/10 text-[#ff5500] shrink-0">
@@ -6718,50 +6718,55 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-1.5 px-0.5">
-            {/* Step 1 */}
-            <div className="p-2 py-2.5 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 shadow-2xs flex flex-col items-center text-center space-y-1.5">
-              <div className="relative">
-                <div className="h-8 w-8 rounded-full bg-[#ff5500]/10 dark:bg-[#ff5500]/20 text-[#ff5500] flex items-center justify-center">
-                  <SearchCheck className="h-4 w-4 stroke-[2.3]" />
-                </div>
-                <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[#ff5500] text-[8.5px] font-black text-white shadow-2xs">
-                  1
-                </span>
-              </div>
-              <h5 className="text-[10.5px] font-extrabold text-slate-900 dark:text-slate-100 leading-tight">
-                {lang === "ml" ? "യോഗ്യത തിരിയുക" : "Check Eligibility"}
-              </h5>
-            </div>
+          <div className="relative py-2 px-1">
+            {/* Horizontal Connecting Line */}
+            <div className="absolute top-[28px] left-[15%] right-[15%] h-[2px] border-t-2 border-dashed border-[#ff5500]/30 z-0" />
 
-            {/* Step 2 */}
-            <div className="p-2 py-2.5 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 shadow-2xs flex flex-col items-center text-center space-y-1.5">
-              <div className="relative">
-                <div className="h-8 w-8 rounded-full bg-[#ff5500]/10 dark:bg-[#ff5500]/20 text-[#ff5500] flex items-center justify-center">
-                  <FileText className="h-4 w-4 stroke-[2.3]" />
+            <div className="grid grid-cols-3 gap-1 relative z-10">
+              {/* Step 1 */}
+              <div className="flex flex-col items-center text-center space-y-1.5">
+                <div className="relative bg-amber-50/60 dark:bg-slate-950 p-1 rounded-full">
+                  <div className="h-9 w-9 rounded-full bg-[#ff5500]/10 dark:bg-[#ff5500]/20 text-[#ff5500] flex items-center justify-center shadow-xs">
+                    <SearchCheck className="h-4.5 w-4.5 stroke-[2.3]" />
+                  </div>
+                  <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#ff5500] text-[9px] font-black text-white shadow-2xs border border-white dark:border-slate-900">
+                    1
+                  </span>
                 </div>
-                <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[#ff5500] text-[8.5px] font-black text-white shadow-2xs">
-                  2
-                </span>
+                <h5 className="text-[10.5px] font-bold text-slate-800 dark:text-slate-200 leading-tight px-1">
+                  {lang === "ml" ? "യോഗ്യത തിരിയുക" : "Check Eligibility"}
+                </h5>
               </div>
-              <h5 className="text-[10.5px] font-extrabold text-slate-900 dark:text-slate-100 leading-tight">
-                {lang === "ml" ? "അപേക്ഷിക്കുക" : "Apply / Assist"}
-              </h5>
-            </div>
 
-            {/* Step 3 */}
-            <div className="p-2 py-2.5 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 shadow-2xs flex flex-col items-center text-center space-y-1.5">
-              <div className="relative">
-                <div className="h-8 w-8 rounded-full bg-[#ff5500]/10 dark:bg-[#ff5500]/20 text-[#ff5500] flex items-center justify-center">
-                  <CheckCircle2 className="h-4 w-4 stroke-[2.3]" />
+              {/* Step 2 */}
+              <div className="flex flex-col items-center text-center space-y-1.5">
+                <div className="relative bg-amber-50/60 dark:bg-slate-950 p-1 rounded-full">
+                  <div className="h-9 w-9 rounded-full bg-[#ff5500]/10 dark:bg-[#ff5500]/20 text-[#ff5500] flex items-center justify-center shadow-xs">
+                    <FileText className="h-4.5 w-4.5 stroke-[2.3]" />
+                  </div>
+                  <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#ff5500] text-[9px] font-black text-white shadow-2xs border border-white dark:border-slate-900">
+                    2
+                  </span>
                 </div>
-                <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[#ff5500] text-[8.5px] font-black text-white shadow-2xs">
-                  3
-                </span>
+                <h5 className="text-[10.5px] font-bold text-slate-800 dark:text-slate-200 leading-tight px-1">
+                  {lang === "ml" ? "അപേക്ഷിക്കുക" : "Apply / Assist"}
+                </h5>
               </div>
-              <h5 className="text-[10.5px] font-extrabold text-slate-900 dark:text-slate-100 leading-tight">
-                {lang === "ml" ? "ആനുകൂല്യം നേടൂ" : "Get Benefits"}
-              </h5>
+
+              {/* Step 3 */}
+              <div className="flex flex-col items-center text-center space-y-1.5">
+                <div className="relative bg-amber-50/60 dark:bg-slate-950 p-1 rounded-full">
+                  <div className="h-9 w-9 rounded-full bg-[#ff5500]/10 dark:bg-[#ff5500]/20 text-[#ff5500] flex items-center justify-center shadow-xs">
+                    <CheckCircle2 className="h-4.5 w-4.5 stroke-[2.3]" />
+                  </div>
+                  <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#ff5500] text-[9px] font-black text-white shadow-2xs border border-white dark:border-slate-900">
+                    3
+                  </span>
+                </div>
+                <h5 className="text-[10.5px] font-bold text-slate-800 dark:text-slate-200 leading-tight px-1">
+                  {lang === "ml" ? "ആനുകൂല്യം നേടുക" : "Get Benefits"}
+                </h5>
+              </div>
             </div>
           </div>
         </div>
