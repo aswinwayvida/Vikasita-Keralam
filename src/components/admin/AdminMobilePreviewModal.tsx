@@ -6659,8 +6659,12 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
             }}
             className="rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-2.5 flex items-center gap-2.5 shadow-2xs hover:border-orange-500/80 hover:shadow-xs transition-all cursor-pointer group active:scale-98 text-left"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400 shrink-0">
-              <AlertCircle className="h-4 w-4 stroke-[2.3]" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 dark:bg-orange-950/50 p-0.5 shrink-0">
+              <img
+                src={raiseIssue3dIcon}
+                alt="Raise Issue Icon"
+                className="h-full w-full object-contain"
+              />
             </div>
             <div className="min-w-0 flex-1">
               <h5 className="text-[11.5px] font-extrabold text-slate-900 dark:text-slate-100 leading-tight truncate">
