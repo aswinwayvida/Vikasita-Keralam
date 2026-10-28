@@ -101,7 +101,7 @@ function GuidedApplication() {
     if (profile.mobile) setMobileVerified(true);
     if (email) setEmailVerified(true);
   }, []);
-  const totalSteps = 4;
+  const totalSteps = 3;
   const progress = reference ? 100 : ((step + 1) / totalSteps) * 100;
 
   if (!scheme || !guide) {
@@ -359,25 +359,35 @@ function GuidedApplication() {
                   />
                 )}
                 {step === 1 && (
-                  <ProfileStep
-                    draft={draft}
-                    errors={errors}
-                    lang={lang}
-                    text={text}
-                    update={updateDraft}
-                  />
+                  <div className="space-y-8">
+                    <div>
+                      <h3 className="text-lg font-bold border-b border-border pb-2 mb-4">
+                        {lang === "ml" ? "പദ്ധതി അനുബന്ധ വിവരങ്ങൾ" : "Scheme-specific Information"}
+                      </h3>
+                      <ProfileStep
+                        draft={draft}
+                        errors={errors}
+                        lang={lang}
+                        text={text}
+                        update={updateDraft}
+                      />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold border-b border-border pb-2 mb-4">
+                        {lang === "ml" ? "രേഖകൾ അപ്‌ലോഡ് ചെയ്യുക" : "Upload Documents"}
+                      </h3>
+                      <DocumentsStep
+                        documents={uploadDocuments}
+                        informationItems={informationItems}
+                        selected={selectedDocuments}
+                        lang={lang}
+                        text={text}
+                        setSelected={setSelectedDocuments}
+                      />
+                    </div>
+                  </div>
                 )}
                 {step === 2 && (
-                  <DocumentsStep
-                    documents={uploadDocuments}
-                    informationItems={informationItems}
-                    selected={selectedDocuments}
-                    lang={lang}
-                    text={text}
-                    setSelected={setSelectedDocuments}
-                  />
-                )}
-                {step === 3 && (
                   <ReviewStep
                     schemeName={scheme[lang]}
                     draft={draft}
@@ -962,14 +972,12 @@ function createCopy(lang: "ml" | "en") {
     step: "Step",
     stepTitles: [
       "Contact details",
-      "Initial application profile",
-      "Upload documents",
+      "Scheme details & Documents",
       "Review and create request",
     ],
     stepSpeech: [
       "Welcome. Start with your contact details and verify the mobile number.",
-      "Now choose the initial information relevant to this scheme.",
-      "Choose the documents needed for this scheme. The helpdesk can follow up on missing items.",
+      "Now provide scheme details and upload the required documents.",
       "Review the details and submit your application-assistance request.",
     ],
     voiceOn: "Voice guidance on",
