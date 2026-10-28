@@ -11020,7 +11020,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                                         />
                                       </span>
                                       <div className="min-w-0">
-                                        <h4 className="font-bold text-[13px] text-foreground leading-snug break-words">
+                                        <h4 onClick={(e) => { e.stopPropagation(); openSchemeDetails(scheme.id, "eligible_schemes"); }} className="font-bold text-[13px] text-foreground leading-snug break-words hover:text-orange-600 dark:hover:text-orange-400 hover:underline cursor-pointer">
                                           {lang === "ml" ? scheme.titleMl : scheme.titleEn}
                                         </h4>
                                         <p className="mt-0.5 text-[10.5px] font-semibold text-muted-foreground leading-snug">
