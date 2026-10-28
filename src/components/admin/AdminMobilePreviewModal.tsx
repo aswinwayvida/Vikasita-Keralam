@@ -6658,9 +6658,9 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
               setActiveTab("helpdesk");
               setMobileSubPage("none");
             }}
-            className="rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-2.5 flex items-center gap-2.5 shadow-2xs hover:border-orange-500/80 hover:shadow-xs transition-all cursor-pointer group active:scale-98 text-left"
+            className="rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-2 flex items-center gap-1.5 shadow-2xs hover:border-orange-500/80 hover:shadow-xs transition-all cursor-pointer group active:scale-98 text-left"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 dark:bg-orange-950/50 p-0.5 shrink-0">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-orange-50 dark:bg-orange-950/50 p-0.5 shrink-0">
               <img
                 src={raiseIssue3dIcon}
                 alt="Raise Issue Icon"
@@ -6668,10 +6668,10 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
               />
             </div>
             <div className="min-w-0 flex-1">
-              <h5 className="text-[11.5px] font-extrabold text-slate-900 dark:text-slate-100 leading-tight truncate">
+              <h5 className="text-[10.5px] font-extrabold text-slate-900 dark:text-slate-100 leading-tight whitespace-nowrap">
                 {lang === "ml" ? "പരാതി നൽകുക" : "Raise Issue"}
               </h5>
-              <p className="text-[9.5px] font-medium text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
+              <p className="text-[8.5px] font-medium text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
                 {lang === "ml" ? "സഹായം ആവശ്യപ്പെടാം" : "Report a problem"}
               </p>
             </div>
@@ -6685,9 +6685,9 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
               setActiveTab("overview");
               setMobileSubPage("events_announcements");
             }}
-            className="rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-2.5 flex items-center gap-2.5 shadow-2xs hover:border-orange-500/80 hover:shadow-xs transition-all cursor-pointer group active:scale-98 text-left"
+            className="rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-2 flex items-center gap-1.5 shadow-2xs hover:border-orange-500/80 hover:shadow-xs transition-all cursor-pointer group active:scale-98 text-left"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 dark:bg-orange-950/50 p-0.5 shrink-0 overflow-hidden">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-orange-50 dark:bg-orange-950/50 p-0.5 shrink-0 overflow-hidden">
               <img
                 src={aboutVikasitaIcon}
                 alt="About Vikasita Keralam Logo"
@@ -6695,10 +6695,10 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
               />
             </div>
             <div className="min-w-0 flex-1">
-              <h5 className="text-[11.5px] font-extrabold text-slate-900 dark:text-slate-100 leading-tight truncate">
-                {lang === "ml" ? "വികസിത കേരളം" : "About Vikasita Keralam"}
+              <h5 className="text-[10.5px] font-extrabold text-slate-900 dark:text-slate-100 leading-tight whitespace-nowrap">
+                {lang === "ml" ? "വികസിത കേരളം" : "Vikasitha Keralam"}
               </h5>
-              <p className="text-[9.5px] font-medium text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
+              <p className="text-[8.5px] font-medium text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
                 {lang === "ml" ? "വിവരങ്ങൾ അറിയാം" : "Our vision & goal"}
               </p>
             </div>
