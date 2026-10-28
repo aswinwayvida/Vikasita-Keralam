@@ -5,6 +5,7 @@ import { useLang } from "@/i18n/LanguageProvider";
 import officialLotus from "@/assets/bjp-official-lotus.png";
 import vikasitaMlLogo from "@/assets/logo-vikasita-ml-official.png";
 import raiseIssue3dIcon from "@/assets/raise-issue-3d.png";
+import aboutVikasitaIcon from "@/assets/about-vikasita-keralam-icon.png";
 import pmKisanLogoImg from "/pm-kisan-logo.png";
 import users3dIcon from "@/assets/kpi-3d/users.png";
 import inReview3dIcon from "@/assets/kpi-3d/in-review.png";
@@ -6686,11 +6687,11 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
             }}
             className="rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-2.5 flex items-center gap-2.5 shadow-2xs hover:border-orange-500/80 hover:shadow-xs transition-all cursor-pointer group active:scale-98 text-left"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/50 p-1 shrink-0">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 dark:bg-orange-950/50 p-0.5 shrink-0 overflow-hidden">
               <img
-                src={vikasitaMlLogo}
-                alt="Vikasita Keralam Logo"
-                className="h-full w-full object-contain drop-shadow-2xs"
+                src={aboutVikasitaIcon}
+                alt="About Vikasita Keralam Logo"
+                className="h-full w-full object-contain drop-shadow-2xs rounded-md"
               />
             </div>
             <div className="min-w-0 flex-1">
