@@ -4103,6 +4103,20 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
   };
 
     const [mobileSubPage, setMobileSubPage] = useState<"none" | "leaderboard" | "needs_attention" | "recent_activity" | "beneficiaries" | "users" | "user_detail" | "notifications" | "applications" | "events_announcements" | "app_detail" | "category_schemes" | "scheme_details">("none");
+  const [showSupportModal, setShowSupportModal] = useState(false);
+  const [supportModalSubmitted, setSupportModalSubmitted] = useState(false);
+  const [supportForm, setSupportForm] = useState({
+    helpNeeded: "Financial assistance",
+    describeNeed: "",
+    name: "",
+    mobile: "",
+    district: "Palakkad",
+    constituency: "Palakkad",
+    localBody: "Palakkad Municipality",
+    ward: "Ward 12",
+    addressLandmark: "",
+    documents: null as FileList | null,
+  });
   const [selectedSchemeCategoryDetail, setSelectedSchemeCategoryDetail] = useState<{
     id: string;
     titleEn: string;
@@ -6648,28 +6662,26 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
           </div>
         </div>
 
-        {/* Quick Actions: Raise Issue & About Vikasita Keralam */}
+        {/* Quick Actions: Request Support & Vikasitha Keralam */}
         <div className="grid grid-cols-2 gap-2 px-1">
-          {/* Action 1: Raise Issue */}
+          {/* Action 1: Request Support */}
           <button
             type="button"
             onClick={() => {
-              setIsGuest(false);
-              setActiveTab("helpdesk");
-              setMobileSubPage("none");
+              setShowSupportModal(true);
             }}
             className="rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3 flex flex-col items-start text-left gap-2 shadow-2xs hover:border-orange-500/80 hover:shadow-xs transition-all cursor-pointer group active:scale-98"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 dark:bg-orange-950/50 p-1 shrink-0">
               <img
                 src={raiseIssue3dIcon}
-                alt="Raise Issue Icon"
+                alt="Request Support Icon"
                 className="h-full w-full object-contain"
               />
             </div>
             <div className="w-full text-left">
               <h5 className="text-xs font-extrabold text-slate-900 dark:text-slate-100 leading-tight">
-                {lang === "ml" ? "പരാതി നൽകുക" : "Raise Issue"}
+                {lang === "ml" ? "സഹായം അഭ്യർത്ഥിക്കുക" : "Request Support"}
               </h5>
               <p className="text-[9.5px] font-medium text-slate-500 dark:text-slate-400 leading-tight mt-0.5">
                 {lang === "ml" ? "സഹായം ആവശ്യപ്പെടാം" : "Report a problem"}
@@ -14854,6 +14866,282 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
           )}
         </div>
       </div>
+
+      {/* Support Request Modal Overlay Inside Smartphone Screen */}
+      {showSupportModal && (
+        <div className="absolute inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 animate-in fade-in duration-200 rounded-[38px] overflow-hidden">
+          <div className="w-full max-w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[92%] my-auto">
+            {/* Modal Header */}
+            <div className="p-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50 shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400">
+                  <HeartHandshake className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-extrabold text-slate-900 dark:text-slate-100 leading-tight">
+                    {supportModalSubmitted
+                      ? lang === "ml"
+                        ? "അഭ്യർത്ഥന സമർപ്പിച്ചു"
+                        : "Help request sent"
+                      : lang === "ml"
+                      ? "സഹായം അഭ്യർത്ഥിക്കുക"
+                      : "Request Support"}
+                  </h3>
+                  <p className="text-[9px] text-slate-500 dark:text-slate-400">
+                    {supportModalSubmitted
+                      ? lang === "ml"
+                        ? "സ്ഥിരീകരണം"
+                        : "Confirmation"
+                      : lang === "ml"
+                      ? "വിവരങ്ങൾ നൽകുക"
+                      : "Fill in the details below"}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSupportModal(false);
+                  setSupportModalSubmitted(false);
+                }}
+                className="p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 cursor-pointer transition-colors"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-3 overflow-y-auto space-y-2.5 text-left text-xs flex-1">
+              {supportModalSubmitted ? (
+                <div className="py-6 flex flex-col items-center text-center space-y-3">
+                  <div className="h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-inner">
+                    <CheckCircle2 className="h-7 w-7 stroke-[2.5]" />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-extrabold text-slate-900 dark:text-slate-100">
+                      {lang === "ml" ? "സഹായ അഭ്യർത്ഥന അയച്ചു" : "Help request sent"}
+                    </h4>
+                    <p className="text-[11px] text-slate-600 dark:text-slate-300 max-w-xs leading-relaxed px-1">
+                      {lang === "ml"
+                        ? "നിങ്ങളുടെ അഭ്യർത്ഥന നിങ്ങളുടെ പ്രദേശത്തെ പാർട്ടി പ്രവർത്തകരുമായി പങ്കുവെച്ചിട്ടുണ്ട്. കൂടുതൽ വിവരങ്ങൾക്ക് അവർ നിങ്ങളെ ബന്ധപ്പെട്ടേക്കാം."
+                        : "“Your request has been shared with party workers in your area. They may contact you for more details.”"}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    setSupportModalSubmitted(true);
+                  }}
+                  className="space-y-2.5"
+                >
+                  {/* Help needed* */}
+                  <div>
+                    <label className="block text-[10.5px] font-bold text-slate-800 dark:text-slate-200 mb-0.5">
+                      {lang === "ml" ? "ആവശ്യമുള്ള സഹായം *" : "Help needed *"}
+                    </label>
+                    <select
+                      value={supportForm.helpNeeded}
+                      onChange={(e) =>
+                        setSupportForm({ ...supportForm, helpNeeded: e.target.value })
+                      }
+                      className="w-full p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-[11px] font-medium focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer"
+                      required
+                    >
+                      <option value="Financial assistance">Financial assistance</option>
+                      <option value="Medical support">Medical support</option>
+                      <option value="Education support">Education support</option>
+                      <option value="Housing support">Housing support</option>
+                      <option value="Scheme assistance">Scheme assistance</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  {/* Describe your need* */}
+                  <div>
+                    <label className="block text-[10.5px] font-bold text-slate-800 dark:text-slate-200 mb-0.5">
+                      {lang === "ml" ? "ആവശ്യം വിശദീകരിക്കുക *" : "Describe your need *"}
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={supportForm.describeNeed}
+                      onChange={(e) =>
+                        setSupportForm({ ...supportForm, describeNeed: e.target.value })
+                      }
+                      placeholder="“Tell us about your situation…”"
+                      className="w-full p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-[11px] font-medium focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                      required
+                    />
+                  </div>
+
+                  {/* Name* & Mobile number* */}
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <div>
+                      <label className="block text-[10.5px] font-bold text-slate-800 dark:text-slate-200 mb-0.5">
+                        {lang === "ml" ? "പേര് *" : "Name *"}
+                      </label>
+                      <input
+                        type="text"
+                        value={supportForm.name}
+                        onChange={(e) =>
+                          setSupportForm({ ...supportForm, name: e.target.value })
+                        }
+                        placeholder="Person who needs help"
+                        className="w-full p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-[11px] font-medium focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10.5px] font-bold text-slate-800 dark:text-slate-200 mb-0.5">
+                        {lang === "ml" ? "മൊബൈൽ നമ്പർ *" : "Mobile number *"}
+                      </label>
+                      <input
+                        type="tel"
+                        value={supportForm.mobile}
+                        onChange={(e) =>
+                          setSupportForm({ ...supportForm, mobile: e.target.value })
+                        }
+                        placeholder="Contact number"
+                        className="w-full p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-[11px] font-medium focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Location* (State: Kerala fixed, District -> Assembly Constituency -> Local Body -> Ward) */}
+                  <div>
+                    <div className="flex items-center justify-between mb-0.5">
+                      <label className="text-[10.5px] font-bold text-slate-800 dark:text-slate-200">
+                        {lang === "ml" ? "സ്ഥലം *" : "Location *"}
+                      </label>
+                      <span className="text-[9.5px] text-orange-600 dark:text-orange-400 font-semibold bg-orange-50 dark:bg-orange-950/50 px-1.5 py-0.2 rounded-md">
+                        Kerala
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <select
+                        value={supportForm.district}
+                        onChange={(e) =>
+                          setSupportForm({ ...supportForm, district: e.target.value })
+                        }
+                        className="w-full p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-[11px] font-medium"
+                      >
+                        {districts.map((d) => (
+                          <option key={d.id} value={d.en}>
+                            {lang === "ml" ? d.ml : d.en}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        value={supportForm.constituency}
+                        onChange={(e) =>
+                          setSupportForm({ ...supportForm, constituency: e.target.value })
+                        }
+                        className="w-full p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-[11px] font-medium"
+                      >
+                        {constituencies
+                          .filter((c) => {
+                            const distObj = districts.find((d) => d.en === supportForm.district);
+                            return !distObj || c.districtId === distObj.id;
+                          })
+                          .map((c) => (
+                            <option key={c.id} value={c.en}>
+                              {lang === "ml" ? c.ml : c.en}
+                            </option>
+                          ))}
+                      </select>
+                      <input
+                        type="text"
+                        value={supportForm.localBody}
+                        onChange={(e) =>
+                          setSupportForm({ ...supportForm, localBody: e.target.value })
+                        }
+                        placeholder="Local Body"
+                        className="w-full p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-[11px] font-medium"
+                      />
+                      <input
+                        type="text"
+                        value={supportForm.ward}
+                        onChange={(e) =>
+                          setSupportForm({ ...supportForm, ward: e.target.value })
+                        }
+                        placeholder="Ward"
+                        className="w-full p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-[11px] font-medium"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Address / landmark */}
+                  <div>
+                    <label className="block text-[10.5px] font-bold text-slate-800 dark:text-slate-200 mb-0.5">
+                      {lang === "ml" ? "മേൽവിലാസം / ലാൻഡ്മാർക്ക്" : "Address / landmark"}
+                    </label>
+                    <input
+                      type="text"
+                      value={supportForm.addressLandmark}
+                      onChange={(e) =>
+                        setSupportForm({ ...supportForm, addressLandmark: e.target.value })
+                      }
+                      placeholder="Help workers locate the person"
+                      className="w-full p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-[11px] font-medium focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    />
+                  </div>
+
+                  {/* Add documents — optional */}
+                  <div>
+                    <label className="block text-[10.5px] font-bold text-slate-800 dark:text-slate-200 mb-0.5">
+                      {lang === "ml" ? "രേഖകൾ ചേർക്കുക (ഓപ്ഷണൽ)" : "Add documents — optional"}
+                    </label>
+                    <div className="relative border border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-2 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-center gap-1.5 cursor-pointer hover:border-orange-500 transition-colors">
+                      <Upload className="h-3.5 w-3.5 text-slate-500" />
+                      <span className="text-[10px] text-slate-600 dark:text-slate-300 font-medium">
+                        {supportForm.documents && supportForm.documents.length > 0
+                          ? `${supportForm.documents.length} file(s) selected`
+                          : "Supporting photos or documents"}
+                      </span>
+                      <input
+                        type="file"
+                        multiple
+                        onChange={(e) =>
+                          setSupportForm({ ...supportForm, documents: e.target.files })
+                        }
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Submit Button */}
+                  <div className="pt-1">
+                    <button
+                      type="submit"
+                      className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-extrabold text-xs shadow-md shadow-orange-500/20 active:scale-[0.98] transition-all cursor-pointer"
+                    >
+                      {lang === "ml" ? "അഭ്യർത്ഥന അയക്കുക" : "Send Request"}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+
+            {/* Modal Footer for Confirmation state */}
+            {supportModalSubmitted && (
+              <div className="p-2.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex justify-end shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowSupportModal(false);
+                    setSupportModalSubmitted(false);
+                  }}
+                  className="w-full py-2 px-3 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-extrabold text-xs shadow-sm hover:bg-slate-800 dark:hover:bg-white active:scale-[0.98] transition-all cursor-pointer"
+                >
+                  {lang === "ml" ? "ശരി" : "Done"}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
