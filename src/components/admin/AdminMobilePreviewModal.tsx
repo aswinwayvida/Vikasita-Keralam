@@ -1982,6 +1982,11 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
   const [createAadhaar, setCreateAadhaar] = useState<string>("");
   const [createCountryCode, setCreateCountryCode] = useState<string>("+91");
   const [createPhone, setCreatePhone] = useState<string>("");
+  const [createOtpSectionStep, setCreateOtpSectionStep] = useState<"input" | "otp_sent" | "verified">("input");
+  const [createOtpCode, setCreateOtpCode] = useState<string>("");
+  const [isSendingOtp, setIsSendingOtp] = useState<boolean>(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState<boolean>(false);
+  const [otpError, setOtpError] = useState<string>("");
   const [createEmail, setCreateEmail] = useState<string>("");
   const [createDob, setCreateDob] = useState<string>("");
   const [createGender, setCreateGender] = useState<string>("");
@@ -2024,48 +2029,46 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     const activeWorkerLocation = lang === "ml" ? "ബൂത്ത് 1, കഴക്കൂട്ടം തിരുവനന്തപുരം" : "Booth 1, Kazhakkootam Trivandrum";
 
     return (
-      <div className="space-y-2 animate-in fade-in duration-200">
+      <div className="space-y-1.5 animate-in fade-in duration-200">
         {/* Logged in User Header (Party Worker Mode Only) */}
-        <div className="pt-0.5 pb-1 px-0.5">
+        <div className="pt-0 pb-0.5 px-0.5">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <h4 className="font-display text-sm sm:text-base font-black text-foreground truncate leading-snug">
-              {lang === "ml" ? "സ്വാഗതം, " : "Welcome Back, "}{activeWorkerName}
+            <h4 className="font-display text-sm sm:text-base font-black text-foreground truncate leading-snug flex items-center">
+              {lang === "ml" ? "ഹായ്, " : "Hey, "}{activeWorkerName}
+              <span className="inline-block animate-waving-hand ml-1">👋</span>
             </h4>
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-orange-100 dark:bg-orange-950/80 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800">
-              {activeWorkerRole}
-            </span>
           </div>
-          <p className="text-[11px] font-semibold text-muted-foreground truncate mt-0.5">
-            {activeWorkerLocation}
+          <p className="text-[10.5px] sm:text-[11px] font-semibold text-muted-foreground truncate mt-0.5">
+            {activeWorkerRole}, {activeWorkerLocation}
           </p>
         </div>
 
         {/* Top Underline Tabs: My Work | Team */}
-        <div className="border-b border-slate-200/80 dark:border-slate-800 -mx-3.5 px-3.5 pt-1 mb-1">
+        <div className="border-b border-slate-200/80 dark:border-slate-800 -mx-3.5 px-3.5 pt-0.5 mb-0.5">
           <div className="flex items-center justify-around gap-4">
             <button
               type="button"
               onClick={() => setPartyWorkerTab("my_work")}
-              className={`flex-1 flex items-center justify-center gap-1.5 pb-2.5 text-xs sm:text-sm transition-all cursor-pointer border-b-2 font-black ${
+              className={`flex-1 flex items-center justify-center gap-1.5 pb-1.5 text-[11px] sm:text-xs transition-all cursor-pointer border-b-2 font-bold ${
                 partyWorkerTab === "my_work"
                   ? "border-[#ff5500] text-[#ff5500]"
                   : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
               }`}
             >
-              <FileText className={`h-4 w-4 stroke-[2.2] ${partyWorkerTab === "my_work" ? "text-[#ff5500]" : "text-slate-400"}`} />
+              <FileText className={`h-3.5 w-3.5 stroke-[2.2] ${partyWorkerTab === "my_work" ? "text-[#ff5500]" : "text-slate-400"}`} />
               <span className="whitespace-nowrap">{lang === "ml" ? "എന്റെ ജോലി" : "My Work"}</span>
             </button>
 
             <button
               type="button"
               onClick={() => setPartyWorkerTab("team")}
-              className={`flex-1 flex items-center justify-center gap-1.5 pb-2.5 text-xs sm:text-sm transition-all cursor-pointer border-b-2 font-black ${
+              className={`flex-1 flex items-center justify-center gap-1.5 pb-1.5 text-[11px] sm:text-xs transition-all cursor-pointer border-b-2 font-bold ${
                 partyWorkerTab === "team"
                   ? "border-[#ff5500] text-[#ff5500]"
                   : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
               }`}
             >
-              <Users className={`h-4 w-4 stroke-[2.2] ${partyWorkerTab === "team" ? "text-[#ff5500]" : "text-slate-400"}`} />
+              <Users className={`h-3.5 w-3.5 stroke-[2.2] ${partyWorkerTab === "team" ? "text-[#ff5500]" : "text-slate-400"}`} />
               <span className="whitespace-nowrap">{lang === "ml" ? "ടീം" : "Team"}</span>
             </button>
           </div>
@@ -2766,6 +2769,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
   const [createFlowStep, setCreateFlowStep] = useState<MobileCreateFlowStep>("form");
   const [isCheckingEligibility, setIsCheckingEligibility] = useState<boolean>(false);
   const [eligibleSchemesSearchQuery, setEligibleSchemesSearchQuery] = useState<string>("");
+  const [isEligibleSearchExpanded, setIsEligibleSearchExpanded] = useState<boolean>(false);
   const [isSingleSchemeEligible, setIsSingleSchemeEligible] = useState<boolean>(true);
   const [showEligibilityDetails, setShowEligibilityDetails] = useState<boolean>(true);
   const [selectedEligibleScheme, setSelectedEligibleScheme] = useState<MobileEligibleScheme | null>(null);
@@ -9948,499 +9952,748 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
             {(activeTab === "create" || activeTab === "helpdesk") && (
               <div className="space-y-3 animate-in fade-in duration-200">
                 <div className={`flex items-center justify-between border-b border-border/80 ${createFlowStep === "selected_schemes" ? "-mx-4 px-4 pb-1.5" : "px-0.5 pb-2"}`}>
-                  <div className={`flex items-center ${createFlowStep === "selected_schemes" ? "gap-1.5" : "gap-2"}`}>
-                    {activeTab === "create" && (
+                  {activeTab === "create" && createFlowStep === "eligible_schemes" && isEligibleSearchExpanded ? (
+                    <div className="flex-1 flex items-center gap-2 animate-in fade-in duration-150">
                       <button
                         type="button"
                         onClick={() => {
-                          if (createFlowStep === "scheme_details") {
-                            if (schemeDetailsReturnStep === "app_detail") {
-                              setActiveTab("applications");
-                              setMobileSubPage("app_detail");
-                            } else {
-                              setCreateFlowStep(schemeDetailsReturnStep);
-                            }
-                          } else if (createFlowStep === "eligibility_result") {
-                            setCreateFlowStep("form");
-                          } else if (createFlowStep === "eligible_schemes") {
-                            setCreateFlowStep("form");
-                          } else if (createFlowStep === "checking") {
-                            setIsCheckingEligibility(false);
-                            setCreateFlowStep("form");
-                          } else if (createFlowStep === "selected_schemes") {
-                            setCreateFlowStep("eligible_schemes");
-                          } else if (createFlowStep === "applicant_applications") {
-                            setCreateFlowStep(currentApplicantApplications.length > 1 ? "selected_schemes" : "eligible_schemes");
-                          } else if (createFlowStep === "collection_saved" || createFlowStep === "follow_up_scheduled") {
-                            setCreateFlowStep("applicant_applications");
-                          } else if (createFlowStep === "collection_record") {
-                            if (collectionRecordReturnStep === "needs_attention") {
-                              setActiveTab("overview");
-                              setMobileSubPage("needs_attention");
-                              setCreateFlowStep("form");
-                            } else {
-                              setCreateFlowStep(collectionRecordReturnStep);
-                            }
-                          } else if (editingApplicationRef) {
-                            setActiveTab("applications");
-                            setMobileSubPage("app_detail");
-                            setAppDetailView("overview");
-                            setEditingApplicationRef("");
-                          } else if (selectedSchemeName) {
-                            setActiveTab("schemes");
-                            setSelectedSchemeName("");
-                          } else {
-                            setActiveTab("overview");
-                            setMobileSubPage("none");
-                          }
+                          setEligibleSchemesSearchQuery("");
+                          setIsEligibleSearchExpanded(false);
                         }}
-                        className={`flex cursor-pointer items-center justify-center rounded-full transition-colors ${
-                          createFlowStep === "selected_schemes"
-                            ? "h-7 w-7 bg-[#FFF7EC] text-[#1b255a] hover:bg-orange-100 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700"
-                            : "p-1 bg-muted/60 text-foreground hover:bg-muted"
-                        }`}
+                        className="p-1 bg-muted/60 text-foreground hover:bg-muted rounded-full shrink-0"
                         title={lang === "ml" ? "തിരികെ പോവുക" : "Go back"}
                       >
-                        <ArrowLeft className={`${createFlowStep === "selected_schemes" ? "h-3.5 w-3.5" : "h-4 w-4"} stroke-[2.5]`} />
+                        <ArrowLeft className="h-4 w-4 stroke-[2.5]" />
                       </button>
-                    )}
-                    <h3 className={`font-extrabold text-foreground ${createFlowStep === "selected_schemes" ? "text-[14px] tracking-tight" : "text-sm"}`}>
-                      {activeTab === "create" ? (
-                        createFlowStep === "form" && editingApplicationRef
-                          ? (lang === "ml" ? "അപേക്ഷ തിരുത്തുക" : "Edit Application")
-                          : createFlowStep === "eligibility_result"
-                          ? (lang === "ml" ? "അർഹതാ ഫലം" : "Eligibility Result")
-                          : createFlowStep === "checking"
-                          ? (lang === "ml" ? "യോഗ്യത പരിശോധിക്കുന്നു..." : "Checking eligibility...")
-                          : createFlowStep === "eligible_schemes"
-                          ? (lang === "ml" ? "യോഗ്യതയുള്ള പദ്ധതികൾ" : "Eligible Schemes")
-                          : createFlowStep === "selected_schemes"
-                          ? `${lang === "ml" ? "തിരഞ്ഞെടുത്ത പദ്ധതികൾ" : "Selected Schemes"} (${String(currentApplicantApplications.length).padStart(2, "0")})`
-                          : createFlowStep === "scheme_details"
-                          ? (lang === "ml" ? "അവസാന വിവരങ്ങൾ" : "Final Details")
-                          : createFlowStep === "collection_saved"
-                          ? (lang === "ml" ? "വിവരങ്ങൾ സേവ് ചെയ്തു" : "Details Saved")
-                          : createFlowStep === "follow_up_scheduled"
-                          ? (lang === "ml" ? "തുടർനടപടി ഷെഡ്യൂൾ ചെയ്തു" : "Follow-up Scheduled")
-                          : createFlowStep === "collection_record"
-                          ? (lang === "ml" ? "ശേഖരണ രേഖ" : "Collection Record")
-                          : createFlowStep === "applicant_applications"
-                          ? (lang === "ml" ? "അപേക്ഷകന്റെ അപേക്ഷകൾ" : "Applicant Applications")
-                          : selectedSchemeName
-                          ? `${selectedSchemeName} - ${lang === "ml" ? "യോഗ്യത പരിശോധിക്കുക" : "Check Eligibility"}`
-                          : (lang === "ml" ? "പുതിയ അപേക്ഷ സമർപ്പിക്കുക" : "Create New Application")
-                      ) : (
-                        lang === "ml" ? "സ്കീം ഹെൽപ്പ്ഡെസ്ക്" : "Scheme Helpdesk"
+                      <div className="flex-1 flex items-center gap-1.5 bg-card rounded-xl border border-orange-500/70 shadow-2xs px-2.5 py-1">
+                        <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        <input
+                          type="text"
+                          autoFocus
+                          value={eligibleSchemesSearchQuery}
+                          onChange={(e) => setEligibleSchemesSearchQuery(e.target.value)}
+                          placeholder={lang === "ml" ? "പദ്ധതിയുടെ പേര് തിരയുക..." : "Search eligible schemes..."}
+                          className="w-full text-xs bg-transparent outline-none text-foreground placeholder:text-muted-foreground"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEligibleSchemesSearchQuery("");
+                            setIsEligibleSearchExpanded(false);
+                          }}
+                          className="p-0.5 text-muted-foreground hover:text-foreground shrink-0 rounded-full hover:bg-muted"
+                          title={lang === "ml" ? "റദ്ദാക്കുക" : "Cancel"}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className={`flex items-center ${createFlowStep === "selected_schemes" ? "gap-1.5" : "gap-2"}`}>
+                        {activeTab === "create" && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (createFlowStep === "scheme_details") {
+                                if (schemeDetailsReturnStep === "app_detail") {
+                                  setActiveTab("applications");
+                                  setMobileSubPage("app_detail");
+                                } else {
+                                  setCreateFlowStep(schemeDetailsReturnStep);
+                                }
+                              } else if (createFlowStep === "eligibility_result") {
+                                setCreateFlowStep("form");
+                              } else if (createFlowStep === "eligible_schemes") {
+                                setCreateFlowStep("form");
+                              } else if (createFlowStep === "checking") {
+                                setIsCheckingEligibility(false);
+                                setCreateFlowStep("form");
+                              } else if (createFlowStep === "selected_schemes") {
+                                setCreateFlowStep("eligible_schemes");
+                              } else if (createFlowStep === "applicant_applications") {
+                                setCreateFlowStep(currentApplicantApplications.length > 1 ? "selected_schemes" : "eligible_schemes");
+                              } else if (createFlowStep === "collection_saved" || createFlowStep === "follow_up_scheduled") {
+                                setCreateFlowStep("applicant_applications");
+                              } else if (createFlowStep === "collection_record") {
+                                if (collectionRecordReturnStep === "needs_attention") {
+                                  setActiveTab("overview");
+                                  setMobileSubPage("needs_attention");
+                                  setCreateFlowStep("form");
+                                } else {
+                                  setCreateFlowStep(collectionRecordReturnStep);
+                                }
+                              } else if (editingApplicationRef) {
+                                setActiveTab("applications");
+                                setMobileSubPage("app_detail");
+                                setAppDetailView("overview");
+                                setEditingApplicationRef("");
+                              } else if (selectedSchemeName) {
+                                setActiveTab("schemes");
+                                setSelectedSchemeName("");
+                              } else {
+                                setActiveTab("overview");
+                                setMobileSubPage("none");
+                              }
+                            }}
+                            className={`flex cursor-pointer items-center justify-center rounded-full transition-colors ${
+                              createFlowStep === "selected_schemes"
+                                ? "h-7 w-7 bg-[#FFF7EC] text-[#1b255a] hover:bg-orange-100 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700"
+                                : "p-1 bg-muted/60 text-foreground hover:bg-muted"
+                            }`}
+                            title={lang === "ml" ? "തിരികെ പോവുക" : "Go back"}
+                          >
+                            <ArrowLeft className={`${createFlowStep === "selected_schemes" ? "h-3.5 w-3.5" : "h-4 w-4"} stroke-[2.5]`} />
+                          </button>
+                        )}
+                        <h3 className={`font-extrabold text-foreground ${createFlowStep === "selected_schemes" ? "text-[14px] tracking-tight" : "text-sm"}`}>
+                          {activeTab === "create" ? (
+                            createFlowStep === "form" && editingApplicationRef
+                              ? (lang === "ml" ? "അപേക്ഷ തിരുത്തുക" : "Edit Application")
+                              : createFlowStep === "eligibility_result"
+                              ? (lang === "ml" ? "അർഹതാ ഫലം" : "Eligibility Result")
+                              : createFlowStep === "checking"
+                              ? (lang === "ml" ? "യോഗ്യത പരിശോധിക്കുന്നു..." : "Checking eligibility...")
+                              : createFlowStep === "eligible_schemes"
+                              ? (lang === "ml" ? "യോഗ്യതയുള്ള പദ്ധതികൾ" : "Eligible Schemes")
+                              : createFlowStep === "selected_schemes"
+                              ? `${lang === "ml" ? "തിരഞ്ഞെടുത്ത പദ്ധതികൾ" : "Selected Schemes"} (${String(currentApplicantApplications.length).padStart(2, "0")})`
+                              : createFlowStep === "scheme_details"
+                              ? (lang === "ml" ? "അവസാന വിവരങ്ങൾ" : "Final Details")
+                              : createFlowStep === "collection_saved"
+                              ? (lang === "ml" ? "വിവരങ്ങൾ സേവ് ചെയ്തു" : "Details Saved")
+                              : createFlowStep === "follow_up_scheduled"
+                              ? (lang === "ml" ? "തുടർനടപടി ഷെഡ്യൂൾ ചെയ്തു" : "Follow-up Scheduled")
+                              : createFlowStep === "collection_record"
+                              ? (lang === "ml" ? "ശേഖരണ രേഖ" : "Collection Record")
+                              : createFlowStep === "applicant_applications"
+                              ? (lang === "ml" ? "അപേക്ഷകന്റെ അപേക്ഷകൾ" : "Applicant Applications")
+                              : selectedSchemeName
+                              ? `${selectedSchemeName} - ${lang === "ml" ? "യോഗ്യത പരിശോധിക്കുക" : "Check Eligibility"}`
+                              : (lang === "ml" ? "പുതിയ അപേക്ഷ സമർപ്പിക്കുക" : "Create New Application")
+                          ) : (
+                            lang === "ml" ? "സ്കീം ഹെൽപ്പ്ഡെസ്ക്" : "Scheme Helpdesk"
+                          )}
+                        </h3>
+                        {activeTab === "create" && createFlowStep === "form" && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCreateFullName("K. Krishnan");
+                              setCreatePhone("9846387654");
+                              setCreateOtpCode("123456");
+                              setCreateOtpSectionStep("verified");
+                              setCreateAadhaar("987654321012");
+                              setCreateDob("1985-05-15");
+                              setCreateGender("Male");
+                              setCreateReligion("Hinduism");
+                              setCreateCaste("OBC");
+                              setCreateMaritalStatus("Married");
+                              setCreateOccupation("Farmer / Agriculture");
+                              setCreateIncomeRange("Below ₹50,000");
+                              setCreateDistrict("Palakkad");
+                              setCreateLocalBodyType("panchayat");
+                              setCreateLocalBody("Palakkad North");
+                              setCreateWard("Ward 1 - Town North");
+                              setCreateMandalam("Palakkad");
+                              setCreateHouseName("Krishnakripa");
+                              setCreateStreetLocality("Main Road, Palakkad");
+                              setCreatePin("678001");
+                            }}
+                            className="flex items-center gap-1 text-[10px] font-extrabold text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/80 dark:text-amber-300 dark:hover:bg-amber-900/80 px-2 py-0.5 rounded-lg border border-amber-300/80 dark:border-amber-700/60 transition-colors shadow-2xs shrink-0 cursor-pointer ml-1"
+                            title={lang === "ml" ? "ഡെമോ വിവരങ്ങൾ പൂരിപ്പിക്കുക" : "Prefill Demo Data"}
+                          >
+                            <Sparkles className="h-3 w-3 text-amber-600 dark:text-amber-400 stroke-[2.2] animate-pulse" />
+                            <span>{lang === "ml" ? "ഡെമോ ഫിൽ" : "Prefill Data"}</span>
+                          </button>
+                        )}
+                      </div>
+                      {activeTab === "create" && createFlowStep === "eligible_schemes" && (
+                        <button
+                          type="button"
+                          onClick={() => setIsEligibleSearchExpanded(true)}
+                          className="p-1 rounded-full text-foreground hover:bg-muted transition-colors shrink-0 cursor-pointer"
+                          title={lang === "ml" ? "തിരയുക" : "Search"}
+                        >
+                          <Search className="h-4 w-4 text-slate-700 dark:text-slate-300 stroke-[2.2]" />
+                        </button>
                       )}
-                    </h3>
-                  </div>
-                  {activeTab !== "create" ? (
-                    <span className="text-[10.5px] font-bold text-orange-600 bg-orange-100 dark:bg-orange-950/60 px-2 py-0.5 rounded-full">
-                      Helpdesk
-                    </span>
-                  ) : createFlowStep === "scheme_details" && currentApplicantApplications.length > 1 ? (
-                    <span className="shrink-0 text-[9px] font-extrabold uppercase tracking-wider text-orange-700 dark:text-orange-300">
-                      {lang === "ml"
-                        ? `പദ്ധതി ${activeSchemePosition} / ${currentApplicantApplications.length}`
-                        : `Scheme ${activeSchemePosition} of ${currentApplicantApplications.length}`}
-                    </span>
-                  ) : null}
+                      {activeTab !== "create" ? (
+                        <span className="text-[10.5px] font-bold text-orange-600 bg-orange-100 dark:bg-orange-950/60 px-2 py-0.5 rounded-full">
+                          Helpdesk
+                        </span>
+                      ) : createFlowStep === "scheme_details" && currentApplicantApplications.length > 1 ? (
+                        <span className="shrink-0 text-[9px] font-extrabold uppercase tracking-wider text-orange-700 dark:text-orange-300">
+                          {lang === "ml"
+                            ? `പദ്ധതി ${activeSchemePosition} / ${currentApplicantApplications.length}`
+                            : `Scheme ${activeSchemePosition} of ${currentApplicantApplications.length}`}
+                        </span>
+                      ) : null}
+                    </>
+                  )}
                 </div>
 
                 {activeTab === "create" ? (
                   <>
                     {/* Step 1: Form Inputs View */}
                     {createFlowStep === "form" && (
-                      <div className="space-y-3.5 bg-card p-3.5 rounded-2xl border border-border shadow-2xs">
-                        {/* 1. Full Name */}
-                        <div>
-                          <label className="text-[11px] font-bold text-foreground block mb-1">
-                            {lang === "ml" ? "പൂർണ്ണമായ പേര് *" : "Full Name *"}
-                          </label>
-                          <input 
-                            type="text" 
-                            value={createFullName}
-                            onChange={(e) => setCreateFullName(e.target.value)}
-                            placeholder={lang === "ml" ? "ഉദാ: സോമൻ പി" : "Enter Full Name"}
-                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground" 
-                          />
-                        </div>
+                      <div className="space-y-4">
+                        {/* SECTION 1: Full Name, Mobile Number & OTP Verification (Shown before verification) */}
+                        {createOtpSectionStep !== "verified" ? (
+                          <div className="bg-card p-3.5 rounded-2xl border border-border shadow-2xs space-y-3.5">
+                            <div className="flex items-center justify-between pb-1 border-b border-border/60">
+                              <div className="flex items-center gap-1.5">
+                                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-[10px] font-extrabold text-white">
+                                  1
+                                </span>
+                                <h4 className="text-xs font-extrabold text-foreground">
+                                  {lang === "ml" ? "അടിസ്ഥാന വിവരങ്ങളും OTP സ്ഥിരീകരണവും" : "Basic Info & Mobile Verification"}
+                                </h4>
+                              </div>
+                            </div>
 
-                        {/* 2. Aadhaar Number */}
-                        <div>
-                          <label className="text-[11px] font-bold text-foreground block mb-1">
-                            {lang === "ml" ? "ആധാർ നമ്പർ *" : "Aadhaar Number *"}
-                          </label>
-                          <input 
-                            type="text"
-                            maxLength={12}
-                            value={createAadhaar}
-                            onChange={(e) => setCreateAadhaar(e.target.value.replace(/\D/g, ''))}
-                            placeholder="12-digit Aadhaar number"
-                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground" 
-                          />
-                        </div>
+                            {/* 1. Full Name */}
+                            <div>
+                              <label className="text-[11px] font-bold text-foreground block mb-1">
+                                {lang === "ml" ? "പൂർണ്ണമായ പേര് *" : "Full Name *"}
+                              </label>
+                              <input 
+                                type="text" 
+                                value={createFullName}
+                                onChange={(e) => setCreateFullName(e.target.value)}
+                                placeholder={lang === "ml" ? "ഉദാ: സോമൻ പി" : "Enter Full Name"}
+                                className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground" 
+                              />
+                            </div>
 
-                        {/* 3. Mobile Number with Country Code */}
-                        <div>
-                          <label className="text-[11px] font-bold text-foreground block mb-1">
-                            {lang === "ml" ? "മൊബൈൽ നമ്പർ *" : "Mobile Number *"}
-                          </label>
-                          <div className="flex gap-1.5">
-                            <select
-                              value={createCountryCode}
-                              onChange={(e) => setCreateCountryCode(e.target.value)}
-                              className="text-xs font-semibold p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none shrink-0 text-foreground"
-                            >
-                              <option value="+91">🇮🇳 +91</option>
-                              <option value="+1">🇺🇸 +1</option>
-                              <option value="+971">🇦🇪 +971</option>
-                              <option value="+44">🇬🇧 +44</option>
-                            </select>
-                            <input 
-                              type="tel"
-                              maxLength={10}
-                              value={createPhone}
-                              onChange={(e) => setCreatePhone(e.target.value.replace(/\D/g, ''))}
-                              placeholder="10-digit phone number"
-                              className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground" 
-                            />
-                          </div>
-                        </div>
+                            {/* 2. Mobile Number with Country Code */}
+                            <div>
+                              <label className="text-[11px] font-bold text-foreground block mb-1">
+                                {lang === "ml" ? "മൊബൈൽ നമ്പർ *" : "Mobile Number *"}
+                              </label>
+                              <div className="flex gap-1.5">
+                                <select
+                                  value={createCountryCode}
+                                  onChange={(e) => setCreateCountryCode(e.target.value)}
+                                  className="text-xs font-semibold p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none shrink-0 text-foreground"
+                                >
+                                  <option value="+91">🇮🇳 +91</option>
+                                  <option value="+1">🇺🇸 +1</option>
+                                  <option value="+971">🇦🇪 +971</option>
+                                  <option value="+44">🇬🇧 +44</option>
+                                </select>
+                                <input 
+                                  type="tel"
+                                  maxLength={10}
+                                  value={createPhone}
+                                  onChange={(e) => {
+                                    setCreatePhone(e.target.value.replace(/\D/g, ''));
+                                    if (createOtpSectionStep !== "input") {
+                                      setCreateOtpSectionStep("input");
+                                      setCreateOtpCode("");
+                                      setOtpError("");
+                                    }
+                                  }}
+                                  placeholder="10-digit phone number"
+                                  className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground" 
+                                />
+                              </div>
+                            </div>
 
-                        {/* 4. Email (Optional) */}
-                        <div>
-                          <label className="text-[11px] font-bold text-foreground block mb-1">
-                            {lang === "ml" ? "ഇമെയിൽ (ഓപ്ഷണൽ)" : "Email (Optional)"}
-                          </label>
-                          <input 
-                            type="email" 
-                            value={createEmail}
-                            onChange={(e) => setCreateEmail(e.target.value)}
-                            placeholder="name@example.com"
-                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground" 
-                          />
-                        </div>
+                            {/* OTP Action State & Fields */}
+                            {createOtpSectionStep === "input" && (
+                              <div className="pt-1">
+                                <button
+                                  type="button"
+                                  disabled={!createFullName.trim() || createPhone.trim().length < 10 || isSendingOtp}
+                                  onClick={() => {
+                                    setIsSendingOtp(true);
+                                    setOtpError("");
+                                    setTimeout(() => {
+                                      setIsSendingOtp(false);
+                                      setCreateOtpSectionStep("otp_sent");
+                                      setCreateOtpCode("");
+                                    }, 800);
+                                  }}
+                                  className="w-full py-2.5 px-3 rounded-xl bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-extrabold text-xs shadow-xs active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                                >
+                                  {isSendingOtp ? (
+                                    <>
+                                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                      <span>{lang === "ml" ? "OTP അയക്കുന്നു..." : "Sending OTP..."}</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Send className="h-3.5 w-3.5" />
+                                      <span>{lang === "ml" ? "OTP അയക്കുക" : "Send OTP Verification Code"}</span>
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            )}
 
-                        {/* 5. Date of Birth */}
-                        <div>
-                          <label className="text-[11px] font-bold text-foreground block mb-1">
-                            {lang === "ml" ? "ജനന തീയതി *" : "Date of Birth *"}
-                          </label>
-                          <input 
-                            type="date" 
-                            value={createDob}
-                            onChange={(e) => setCreateDob(e.target.value)}
-                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground" 
-                          />
-                        </div>
+                            {createOtpSectionStep === "otp_sent" && (
+                              <div className="p-3 bg-orange-50/70 dark:bg-orange-950/30 rounded-xl border border-orange-200/80 dark:border-orange-900/60 space-y-2.5 animate-in fade-in duration-200">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div>
+                                    <label className="text-[11px] font-bold text-foreground block">
+                                      {lang === "ml" ? "6-അക്ക OTP രേഖപ്പെടുത്തുക *" : "Enter 6-digit OTP *"}
+                                    </label>
+                                    <p className="text-[10px] text-muted-foreground">
+                                      {lang === "ml"
+                                        ? createCountryCode + " " + createPhone + " എന്ന നമ്പറിലേക്ക് OTP അയച്ചിട്ടുണ്ട് (സ്വയം പൂരിപ്പിക്കാൻ: 123456)"
+                                        : "Sent to " + createCountryCode + " " + createPhone + " (Demo code: 123456)"}
+                                    </p>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setCreateOtpSectionStep("input");
+                                      setCreateOtpCode("");
+                                      setOtpError("");
+                                    }}
+                                    className="text-[10.5px] font-bold text-orange-600 hover:underline dark:text-orange-400 shrink-0"
+                                  >
+                                    {lang === "ml" ? "മാറ്റുക" : "Change"}
+                                  </button>
+                                </div>
 
-                        {/* 6. Gender */}
-                        <div>
-                          <label className="text-[11px] font-bold text-foreground block mb-1">
-                            {lang === "ml" ? "ലിംഗഭേദം *" : "Gender *"}
-                          </label>
-                          <select 
-                            value={createGender}
-                            onChange={(e) => setCreateGender(e.target.value)}
-                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
-                          >
-                            <option value="">{lang === "ml" ? "-- ലിംഗഭേദം തിരഞ്ഞെടുക്കുക --" : "-- Select Gender --"}</option>
-                            <option value="Male">{lang === "ml" ? "പുരുഷൻ" : "Male"}</option>
-                            <option value="Female">{lang === "ml" ? "സ്ത്രീ" : "Female"}</option>
-                            <option value="Transgender / Other">{lang === "ml" ? "ട്രാൻസ്‌ജെൻഡർ / മറ്റുള്ളവ" : "Transgender / Other"}</option>
-                          </select>
-                        </div>
+                                <input 
+                                  type="text"
+                                  maxLength={6}
+                                  value={createOtpCode}
+                                  onChange={(e) => {
+                                    setCreateOtpCode(e.target.value.replace(/\D/g, ''));
+                                    setOtpError("");
+                                  }}
+                                  placeholder="123456"
+                                  className="w-full text-center text-sm font-extrabold tracking-widest p-2.5 rounded-xl border border-orange-300 dark:border-orange-800 bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground" 
+                                />
 
-                        {/* 7. Religion */}
-                        <div>
-                          <label className="text-[11px] font-bold text-foreground block mb-1">
-                            {lang === "ml" ? "മതം *" : "Religion *"}
-                          </label>
-                          <select 
-                            value={createReligion}
-                            onChange={(e) => setCreateReligion(e.target.value)}
-                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
-                          >
-                            <option value="">{lang === "ml" ? "-- മതം തിരഞ്ഞെടുക്കുക --" : "-- Select Religion --"}</option>
-                            <option value="Hinduism">Hinduism</option>
-                            <option value="Islam">Islam</option>
-                            <option value="Christianity">Christianity</option>
-                            <option value="Sikhism">Sikhism</option>
-                            <option value="Buddhism">Buddhism</option>
-                            <option value="Jainism">Jainism</option>
-                            <option value="Other">Other</option>
-                          </select>
-                        </div>
+                                {otpError && (
+                                  <p className="text-[10.5px] font-bold text-red-600 dark:text-red-400 text-center">
+                                    {otpError}
+                                  </p>
+                                )}
 
-                        {/* 8. Caste */}
-                        <div>
-                          <label className="text-[11px] font-bold text-foreground block mb-1">
-                            {lang === "ml" ? "ജാതി / വിഭാഗം *" : "Caste *"}
-                          </label>
-                          <select 
-                            value={createCaste}
-                            onChange={(e) => setCreateCaste(e.target.value)}
-                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
-                          >
-                            <option value="">{lang === "ml" ? "-- വിഭാഗം തിരഞ്ഞെടുക്കുക --" : "-- Select Caste --"}</option>
-                            <option value="General">General</option>
-                            <option value="OBC">OBC</option>
-                            <option value="SC">SC</option>
-                            <option value="ST">ST</option>
-                            <option value="OBC-NCL">OBC-NCL</option>
-                            <option value="EWS">EWS</option>
-                          </select>
-                        </div>
-
-                        {/* 9. Marital Status */}
-                        <div>
-                          <label className="text-[11px] font-bold text-foreground block mb-1">
-                            {lang === "ml" ? "വൈവാഹിക അവസ്ഥ *" : "Marital Status *"}
-                          </label>
-                          <select 
-                            value={createMaritalStatus}
-                            onChange={(e) => setCreateMaritalStatus(e.target.value)}
-                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
-                          >
-                            <option value="">{lang === "ml" ? "-- വൈവാഹിക അവസ്ഥ --" : "-- Select Marital Status --"}</option>
-                            <option value="Single / Unmarried">{lang === "ml" ? "അവിവാഹിതൻ / അവിവാഹിത" : "Single / Unmarried"}</option>
-                            <option value="Married">{lang === "ml" ? "വിവാഹിതൻ / വിവാഹിത" : "Married"}</option>
-                            <option value="Widowed">{lang === "ml" ? "വിധവ / വിധവൻ" : "Widowed"}</option>
-                            <option value="Divorcee">{lang === "ml" ? "വിവാഹബന്ധം വേർപെടുത്തിയ വ്യക്തി" : "Divorcee"}</option>
-                            <option value="Separated">{lang === "ml" ? "വേർപിരിഞ്ഞു കഴിയുന്ന വ്യക്തി" : "Separated"}</option>
-                          </select>
-                        </div>
-
-                        {/* 10. Occupation */}
-                        <div>
-                          <label className="text-[11px] font-bold text-foreground block mb-1">
-                            {lang === "ml" ? "തൊഴിൽ *" : "Occupation *"}
-                          </label>
-                          <select 
-                            value={createOccupation}
-                            onChange={(e) => setCreateOccupation(e.target.value)}
-                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
-                          >
-                            <option value="">{lang === "ml" ? "-- തൊഴിൽ തിരഞ്ഞെടുക്കുക --" : "-- Select Occupation --"}</option>
-                            <option value="Farmer / Agriculture">{lang === "ml" ? "കർഷകൻ / കൃഷി" : "Farmer / Agriculture"}</option>
-                            <option value="Daily Wage Worker">{lang === "ml" ? "ദിനബത്ത തൊഴിലാളി" : "Daily Wage Worker"}</option>
-                            <option value="Salaried (Private)">{lang === "ml" ? "സ്വകാര്യ മേഖല ഉദ്യോഗസ്ഥൻ" : "Salaried (Private)"}</option>
-                            <option value="Salaried (Government)">{lang === "ml" ? "സർക്കാർ ഉദ്യോഗസ്ഥൻ" : "Salaried (Government)"}</option>
-                            <option value="Self-Employed / Business">{lang === "ml" ? "സ്വയംതൊഴിൽ / ബിസിനസ്സ്" : "Self-Employed / Business"}</option>
-                            <option value="Homemaker">{lang === "ml" ? "ഗൃഹനാഥ / വീട്ടമ്മ" : "Homemaker"}</option>
-                            <option value="Student">{lang === "ml" ? "വിദ്യാർത്ഥി" : "Student"}</option>
-                            <option value="Unemployed">{lang === "ml" ? "തൊഴിൽ രഹിതൻ" : "Unemployed"}</option>
-                            <option value="Retired">{lang === "ml" ? "വിരമിച്ച വ്യക്തി" : "Retired"}</option>
-                            <option value="Other">{lang === "ml" ? "മറ്റുള്ളവ" : "Other"}</option>
-                          </select>
-                        </div>
-
-                        {/* 11. Income Range */}
-                        <div>
-                          <label className="text-[11px] font-bold text-foreground block mb-1">
-                            {lang === "ml" ? "വാർഷിക വരുമാന പരിധി *" : "Income Range *"}
-                          </label>
-                          <select 
-                            value={createIncomeRange}
-                            onChange={(e) => setCreateIncomeRange(e.target.value)}
-                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
-                          >
-                            <option value="">{lang === "ml" ? "-- വരുമാന പരിധി --" : "-- Select Income Range --"}</option>
-                            <option value="Below ₹50,000">Below ₹50,000</option>
-                            <option value="₹50,000 - ₹1,00,000">₹50,000 - ₹1,00,000</option>
-                            <option value="₹1,00,000 - ₹2,50,000">₹1,00,000 - ₹2,50,000</option>
-                            <option value="₹2,50,000 - ₹5,00,000">₹2,50,000 - ₹5,00,000</option>
-                            <option value="Above ₹5,00,000">Above ₹5,00,000</option>
-                          </select>
-                        </div>
-
-                        {/* 1. District */}
-                        <div>
-                          <label className="text-[11px] font-bold text-foreground block mb-1">
-                            {lang === "ml" ? "ജില്ല *" : "District *"}
-                          </label>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setActiveAddressSheet("district");
-                              setAddressSheetSearch("");
-                            }}
-                            className="w-full text-xs p-3 rounded-xl border border-border bg-background hover:bg-slate-50 dark:hover:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 outline-none text-foreground flex items-center justify-between transition-colors cursor-pointer text-left"
-                          >
-                            <span className={createDistrict ? "font-bold" : "text-muted-foreground"}>
-                              {createDistrict
-                                ? (lang === "ml" ? getDistrictName(createDistrict, "ml") : createDistrict)
-                                : (lang === "ml" ? "-- ജില്ല തിരഞ്ഞെടുക്കുക --" : "-- Select District --")}
-                            </span>
-                            <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
-                          </button>
-                        </div>
-
-                        {/* 2. Local Body Type */}
-                        <div>
-                          <label className="text-[11px] font-bold text-foreground block mb-1">
-                            {lang === "ml" ? "തദ്ദേശ സ്വയംഭരണ തരം *" : "Local Body Type *"}
-                          </label>
-                          <select
-                            value={createLocalBodyType}
-                            onChange={(e) => handleLocalBodyTypeSelect(e.target.value as LocalBodyType)}
-                            className="w-full text-xs p-3 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground cursor-pointer font-medium"
-                          >
-                            <option value="">{lang === "ml" ? "-- തരം തിരഞ്ഞെടുക്കുക --" : "-- Select Local Body Type --"}</option>
-                            <option value="panchayat">{lang === "ml" ? "ഗ്രാമ പഞ്ചായത്ത് (Grama Panchayat)" : "Grama Panchayat"}</option>
-                            <option value="municipality">{lang === "ml" ? "മുനിസിപ്പാലിറ്റി (Municipality)" : "Municipality"}</option>
-                            <option value="corporation">{lang === "ml" ? "കോർപ്പറേഷൻ (Corporation)" : "Corporation"}</option>
-                          </select>
-                        </div>
-
-                        {/* 3. Local Body */}
-                        <div>
-                          <label className="text-[11px] font-bold text-foreground block mb-1">
-                            {lang === "ml" ? "തദ്ദേശ സ്വയംഭരണ സ്ഥാപനം *" : "Local Body *"}
-                          </label>
-                          <button
-                            type="button"
-                            disabled={!createDistrict || !createLocalBodyType}
-                            onClick={() => {
-                              if (createDistrict && createLocalBodyType) {
-                                setActiveAddressSheet("localBody");
-                                setAddressSheetSearch("");
-                              }
-                            }}
-                            className={`w-full text-xs p-3 rounded-xl border outline-none flex items-center justify-between transition-colors text-left ${
-                              !createDistrict || !createLocalBodyType
-                                ? "bg-muted/50 border-border text-muted-foreground cursor-not-allowed opacity-70"
-                                : "bg-background hover:bg-slate-50 dark:hover:bg-slate-800/60 border-border text-foreground cursor-pointer"
-                            }`}
-                          >
-                            <span className={createLocalBody ? "font-bold" : "text-muted-foreground"}>
-                              {createLocalBody
-                                ? createLocalBody
-                                : (lang === "ml" ? "-- തദ്ദേശ സ്ഥാപനം തിരഞ്ഞെടുക്കുക --" : "-- Select Local Body --")}
-                            </span>
-                            <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
-                          </button>
-                        </div>
-
-                        {/* 4. Ward */}
-                        <div>
-                          <label className="text-[11px] font-bold text-foreground block mb-1">
-                            {lang === "ml" ? "വാർഡ് *" : "Ward *"}
-                          </label>
-                          <button
-                            type="button"
-                            disabled={!createLocalBody}
-                            onClick={() => {
-                              if (createLocalBody) {
-                                setActiveAddressSheet("ward");
-                                setAddressSheetSearch("");
-                              }
-                            }}
-                            className={`w-full text-xs p-3 rounded-xl border outline-none flex items-center justify-between transition-colors text-left ${
-                              !createLocalBody
-                                ? "bg-muted/50 border-border text-muted-foreground cursor-not-allowed opacity-70"
-                                : "bg-background hover:bg-slate-50 dark:hover:bg-slate-800/60 border-border text-foreground cursor-pointer"
-                            }`}
-                          >
-                            <span className={createWard ? "font-bold" : "text-muted-foreground"}>
-                              {createWard
-                                ? createWard
-                                : (lang === "ml" ? "-- വാർഡ് തിരഞ്ഞെടുക്കുക --" : "-- Select Ward --")}
-                            </span>
-                            <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
-                          </button>
-                        </div>
-
-                        {/* 5. Assembly Mandalam */}
-                        <div>
-                          <div className="flex items-center justify-between mb-1">
-                            <label className="text-[11px] font-bold text-foreground block">
-                              {lang === "ml" ? "നിയമസഭാ മണ്ഡലം *" : "Assembly Mandalam *"}
-                            </label>
-                            {isMandalamAutoFilled && (
-                              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
-                                {lang === "ml" ? "ഓട്ടോ-മാപ്പ് ചെയ്തത്" : "Auto-Mapped"}
-                              </span>
+                                <div className="flex items-center gap-2 pt-1">
+                                  <button
+                                    type="button"
+                                    disabled={isSendingOtp}
+                                    onClick={() => {
+                                      setIsSendingOtp(true);
+                                      setOtpError("");
+                                      setTimeout(() => {
+                                        setIsSendingOtp(false);
+                                        setCreateOtpCode("");
+                                      }, 800);
+                                    }}
+                                    className="w-1/3 py-2 px-2 rounded-xl bg-card hover:bg-muted text-foreground font-bold text-[11px] border border-border active:scale-95 transition-all cursor-pointer text-center"
+                                  >
+                                    {isSendingOtp ? "..." : (lang === "ml" ? "വീണ്ടും അയക്കുക" : "Resend OTP")}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={createOtpCode.trim().length < 4 || isVerifyingOtp}
+                                    onClick={() => {
+                                      setIsVerifyingOtp(true);
+                                      setOtpError("");
+                                      setTimeout(() => {
+                                        setIsVerifyingOtp(false);
+                                        if (createOtpCode.trim() === "123456" || createOtpCode.trim().length >= 4) {
+                                          setCreateOtpSectionStep("verified");
+                                        } else {
+                                          setOtpError(lang === "ml" ? "തെറ്റായ OTP. 123456 ഉപയോഗിക്കുക." : "Invalid OTP code. Use demo code 123456.");
+                                        }
+                                      }, 600);
+                                    }}
+                                    className="w-2/3 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-extrabold text-[11px] shadow-xs active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1"
+                                  >
+                                    {isVerifyingOtp ? (
+                                      <>
+                                        <Loader2 className="h-3 w-3 animate-spin" />
+                                        <span>{lang === "ml" ? "പരിശോധിക്കുന്നു..." : "Verifying..."}</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Check className="h-3.5 w-3.5 stroke-[3]" />
+                                        <span>{lang === "ml" ? "OTP സ്ഥിരീകരിക്കുക" : "Verify & Continue"}</span>
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
                             )}
                           </div>
-                          <button
-                            type="button"
-                            disabled={!createDistrict}
-                            onClick={() => {
-                              if (createDistrict) {
-                                setActiveAddressSheet("mandalam");
-                                setAddressSheetSearch("");
-                              }
-                            }}
-                            className={`w-full text-xs p-3 rounded-xl border outline-none flex items-center justify-between transition-colors text-left ${
-                              !createDistrict
-                                ? "bg-muted/50 border-border text-muted-foreground cursor-not-allowed opacity-70"
-                                : "bg-background hover:bg-slate-50 dark:hover:bg-slate-800/60 border-border text-foreground cursor-pointer"
-                            }`}
-                          >
-                            <span className={createMandalam ? "font-bold" : "text-muted-foreground"}>
-                              {createMandalam
-                                ? (lang === "ml" ? getConstituencyName(createMandalam, "ml") : createMandalam)
-                                : (lang === "ml" ? "-- മണ്ഡലം തിരഞ്ഞെടുക്കുക --" : "-- Select Assembly Mandalam --")}
-                            </span>
-                            <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
-                          </button>
-                        </div>
-
-                        {/* 6. House / Building Name */}
-                        <div>
-                          <label className="text-[11px] font-bold text-foreground block mb-1">
-                            {lang === "ml" ? "വീട്ടുപേര് / കെട്ടിടത്തിന്റെ പേര് *" : "House / Building Name *"}
-                          </label>
-                          <input 
-                            type="text" 
-                            value={createHouseName}
-                            onChange={(e) => setCreateHouseName(e.target.value)}
-                            placeholder={lang === "ml" ? "ഉദാ: കൃഷ്ണകൃപ, ഡോർ നമ്പർ 12/34" : "House Name / Door No."}
-                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground" 
-                          />
-                        </div>
-
-                        {/* 7. Street / Locality */}
-                        <div>
-                          <label className="text-[11px] font-bold text-foreground block mb-1">
-                            {lang === "ml" ? "സ്ട്രീറ്റ് / സ്ഥലം *" : "Street / Locality *"}
-                          </label>
-                          <input 
-                            type="text" 
-                            value={createStreetLocality}
-                            onChange={(e) => setCreateStreetLocality(e.target.value)}
-                            placeholder={lang === "ml" ? "റോഡ് / പ്രദേശം / അടയാളം" : "Street / Locality / Landmark"}
-                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground" 
-                          />
-                        </div>
-
-                        {/* 8. PIN Code */}
-                        <div>
-                          <label className="text-[11px] font-bold text-foreground block mb-1">
-                            {lang === "ml" ? "പിൻകോഡ് *" : "PIN Code *"}
-                          </label>
-                          <input 
-                            type="text"
-                            maxLength={6}
-                            value={createPin}
-                            onChange={(e) => setCreatePin(e.target.value.replace(/\D/g, ''))}
-                            placeholder="6-digit PIN code"
-                            className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground" 
-                          />
-                        </div>
-
-                        {/* 9. State (Fixed Read-only) */}
-                        <div>
-                          <label className="text-[11px] font-bold text-foreground block mb-1">
-                            {lang === "ml" ? "സംസ്ഥാനം *" : "State *"}
-                          </label>
-                          <div className="w-full text-xs p-2.5 rounded-xl border border-border bg-slate-100 dark:bg-slate-800 font-bold text-foreground flex items-center justify-between">
-                            <span>{lang === "ml" ? "കേരളം (Kerala)" : "Kerala"}</span>
-                            <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-950/60 px-2 py-0.5 rounded-md">Fixed</span>
+                        ) : (
+                          /* Compact Applicant Header Banner shown once OTP is verified */
+                          <div className="flex items-center gap-3 px-1 py-1 text-left animate-in fade-in duration-200">
+                            <div className="h-9 w-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700">
+                              <User className="h-5 w-5 stroke-[1.8]" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <h4 className="font-extrabold text-sm text-foreground leading-snug truncate">
+                                {createFullName.trim() || "K. Krishnan"}
+                              </h4>
+                              <p className="text-xs text-muted-foreground font-medium truncate">
+                                {createDistrict && createLocalBody
+                                  ? createLocalBody + ", " + createDistrict
+                                  : "Palakkad North, Palakkad"}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setCreateOtpSectionStep("input");
+                                setCreateOtpCode("");
+                                setOtpError("");
+                              }}
+                              className="text-[10.5px] font-bold text-orange-600 hover:underline dark:text-orange-400 shrink-0"
+                            >
+                              {lang === "ml" ? "മാറ്റുക" : "Change"}
+                            </button>
                           </div>
-                        </div>
+                        )}
+
+                        {/* SECTION 2: Remaining Informations / Profile Inputs (Unlocked only after OTP verification) */}
+                        {createOtpSectionStep === "verified" ? (
+                          <div className="bg-card p-3.5 rounded-2xl border border-border shadow-2xs space-y-3.5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                            {/* Date of Birth */}
+                            <div>
+                              <label className="text-[11px] font-bold text-foreground block mb-1">
+                                {lang === "ml" ? "ജനന തീയതി *" : "Date of Birth *"}
+                              </label>
+                              <input 
+                                type="date" 
+                                value={createDob}
+                                onChange={(e) => setCreateDob(e.target.value)}
+                                className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground" 
+                              />
+                            </div>
+
+                            {/* Gender */}
+                            <div>
+                              <label className="text-[11px] font-bold text-foreground block mb-1">
+                                {lang === "ml" ? "ലിംഗഭേദം *" : "Gender *"}
+                              </label>
+                              <select 
+                                value={createGender}
+                                onChange={(e) => setCreateGender(e.target.value)}
+                                className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
+                              >
+                                <option value="">{lang === "ml" ? "-- ലിംഗഭേദം തിരഞ്ഞെടുക്കുക --" : "-- Select Gender --"}</option>
+                                <option value="Male">{lang === "ml" ? "പുരുഷൻ" : "Male"}</option>
+                                <option value="Female">{lang === "ml" ? "സ്ത്രീ" : "Female"}</option>
+                                <option value="Transgender / Other">{lang === "ml" ? "ട്രാൻസ്‌ജെൻഡർ / മറ്റുള്ളവ" : "Transgender / Other"}</option>
+                              </select>
+                            </div>
+
+                            {/* Aadhaar Number (Below Gender) */}
+                            <div>
+                              <label className="text-[11px] font-bold text-foreground block mb-1">
+                                {lang === "ml" ? "ആധാർ നമ്പർ *" : "Aadhaar Number *"}
+                              </label>
+                              <input 
+                                type="text"
+                                maxLength={12}
+                                value={createAadhaar}
+                                onChange={(e) => setCreateAadhaar(e.target.value.replace(/\D/g, ''))}
+                                placeholder="12-digit Aadhaar number"
+                                className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground" 
+                              />
+                            </div>
+
+                            {/* Religion */}
+                            <div>
+                              <label className="text-[11px] font-bold text-foreground block mb-1">
+                                {lang === "ml" ? "മതം *" : "Religion *"}
+                              </label>
+                              <select 
+                                value={createReligion}
+                                onChange={(e) => setCreateReligion(e.target.value)}
+                                className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
+                              >
+                                <option value="">{lang === "ml" ? "-- മതം തിരഞ്ഞെടുക്കുക --" : "-- Select Religion --"}</option>
+                                <option value="Hinduism">Hinduism</option>
+                                <option value="Islam">Islam</option>
+                                <option value="Christianity">Christianity</option>
+                                <option value="Sikhism">Sikhism</option>
+                                <option value="Buddhism">Buddhism</option>
+                                <option value="Jainism">Jainism</option>
+                                <option value="Other">Other</option>
+                              </select>
+                            </div>
+
+                            {/* Caste (Below Religion) */}
+                            <div>
+                              <label className="text-[11px] font-bold text-foreground block mb-1">
+                                {lang === "ml" ? "ജാതി / വിഭാഗം *" : "Caste *"}
+                              </label>
+                              <select 
+                                value={createCaste}
+                                onChange={(e) => setCreateCaste(e.target.value)}
+                                className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
+                              >
+                                <option value="">{lang === "ml" ? "-- വിഭാഗം തിരഞ്ഞെടുക്കുക --" : "-- Select Caste --"}</option>
+                                <option value="General">General</option>
+                                <option value="OBC">OBC</option>
+                                <option value="SC">SC</option>
+                                <option value="ST">ST</option>
+                                <option value="OBC-NCL">OBC-NCL</option>
+                                <option value="EWS">EWS</option>
+                              </select>
+                            </div>
+
+                            {/* 9. Marital Status */}
+                            <div>
+                              <label className="text-[11px] font-bold text-foreground block mb-1">
+                                {lang === "ml" ? "വൈവാഹിക അവസ്ഥ *" : "Marital Status *"}
+                              </label>
+                              <select 
+                                value={createMaritalStatus}
+                                onChange={(e) => setCreateMaritalStatus(e.target.value)}
+                                className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
+                              >
+                                <option value="">{lang === "ml" ? "-- വൈവാഹിക അവസ്ഥ --" : "-- Select Marital Status --"}</option>
+                                <option value="Single / Unmarried">{lang === "ml" ? "അവിവാഹിതൻ / അവിവാഹിത" : "Single / Unmarried"}</option>
+                                <option value="Married">{lang === "ml" ? "വിവാഹിതൻ / വിവാഹിത" : "Married"}</option>
+                                <option value="Widowed">{lang === "ml" ? "വിധവ / വിധവൻ" : "Widowed"}</option>
+                                <option value="Divorcee">{lang === "ml" ? "വിവാഹബന്ധം വേർപെടുത്തിയ വ്യക്തി" : "Divorcee"}</option>
+                                <option value="Separated">{lang === "ml" ? "വേർപിരിഞ്ഞു കഴിയുന്ന വ്യക്തി" : "Separated"}</option>
+                              </select>
+                            </div>
+
+                            {/* 10. Occupation */}
+                            <div>
+                              <label className="text-[11px] font-bold text-foreground block mb-1">
+                                {lang === "ml" ? "തൊഴിൽ *" : "Occupation *"}
+                              </label>
+                              <select 
+                                value={createOccupation}
+                                onChange={(e) => setCreateOccupation(e.target.value)}
+                                className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
+                              >
+                                <option value="">{lang === "ml" ? "-- തൊഴിൽ തിരഞ്ഞെടുക്കുക --" : "-- Select Occupation --"}</option>
+                                <option value="Farmer / Agriculture">{lang === "ml" ? "കർഷകൻ / കൃഷി" : "Farmer / Agriculture"}</option>
+                                <option value="Daily Wage Worker">{lang === "ml" ? "ദിനബത്ത തൊഴിലാളി" : "Daily Wage Worker"}</option>
+                                <option value="Salaried (Private)">{lang === "ml" ? "സ്വകാര്യ മേഖല ഉദ്യോഗസ്ഥൻ" : "Salaried (Private)"}</option>
+                                <option value="Salaried (Government)">{lang === "ml" ? "സർക്കാർ ഉദ്യോഗസ്ഥൻ" : "Salaried (Government)"}</option>
+                                <option value="Self-Employed / Business">{lang === "ml" ? "സ്വയംതൊഴിൽ / ബിസിനസ്സ്" : "Self-Employed / Business"}</option>
+                                <option value="Homemaker">{lang === "ml" ? "ഗൃഹനാഥ / വീട്ടമ്മ" : "Homemaker"}</option>
+                                <option value="Student">{lang === "ml" ? "വിദ്യാർത്ഥി" : "Student"}</option>
+                                <option value="Unemployed">{lang === "ml" ? "തൊഴിൽ രഹിതൻ" : "Unemployed"}</option>
+                                <option value="Retired">{lang === "ml" ? "വിരമിച്ച വ്യക്തി" : "Retired"}</option>
+                                <option value="Other">{lang === "ml" ? "മറ്റുള്ളവ" : "Other"}</option>
+                              </select>
+                            </div>
+
+                            {/* 11. Income Range */}
+                            <div>
+                              <label className="text-[11px] font-bold text-foreground block mb-1">
+                                {lang === "ml" ? "വാർഷിക വരുമാന പരിധി *" : "Income Range *"}
+                              </label>
+                              <select 
+                                value={createIncomeRange}
+                                onChange={(e) => setCreateIncomeRange(e.target.value)}
+                                className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
+                              >
+                                <option value="">{lang === "ml" ? "-- വരുമാന പരിധി --" : "-- Select Income Range --"}</option>
+                                <option value="Below ₹50,000">Below ₹50,000</option>
+                                <option value="₹50,000 - ₹1,00,000">₹50,000 - ₹1,00,000</option>
+                                <option value="₹1,00,000 - ₹2,50,000">₹1,00,000 - ₹2,50,000</option>
+                                <option value="₹2,50,000 - ₹5,00,000">₹2,50,000 - ₹5,00,000</option>
+                                <option value="Above ₹5,00,000">Above ₹5,00,000</option>
+                              </select>
+                            </div>
+
+                            {/* 1. District */}
+                            <div>
+                              <label className="text-[11px] font-bold text-foreground block mb-1">
+                                {lang === "ml" ? "ജില്ല *" : "District *"}
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveAddressSheet("district");
+                                  setAddressSheetSearch("");
+                                }}
+                                className="w-full text-xs p-3 rounded-xl border border-border bg-background hover:bg-slate-50 dark:hover:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 outline-none text-foreground flex items-center justify-between transition-colors cursor-pointer text-left"
+                              >
+                                <span className={createDistrict ? "font-bold" : "text-muted-foreground"}>
+                                  {createDistrict
+                                    ? (lang === "ml" ? getDistrictName(createDistrict, "ml") : createDistrict)
+                                    : (lang === "ml" ? "-- ജില്ല തിരഞ്ഞെടുക്കുക --" : "-- Select District --")}
+                                </span>
+                                <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+                              </button>
+                            </div>
+
+                            {/* 2. Local Body Type */}
+                            <div>
+                              <label className="text-[11px] font-bold text-foreground block mb-1">
+                                {lang === "ml" ? "തദ്ദേശ സ്വയംഭരണ തരം *" : "Local Body Type *"}
+                              </label>
+                              <select
+                                value={createLocalBodyType}
+                                onChange={(e) => handleLocalBodyTypeSelect(e.target.value as LocalBodyType)}
+                                className="w-full text-xs p-3 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground cursor-pointer font-medium"
+                              >
+                                <option value="">{lang === "ml" ? "-- തരം തിരഞ്ഞെടുക്കുക --" : "-- Select Local Body Type --"}</option>
+                                <option value="panchayat">{lang === "ml" ? "ഗ്രാമ പഞ്ചായത്ത് (Grama Panchayat)" : "Grama Panchayat"}</option>
+                                <option value="municipality">{lang === "ml" ? "മുനിസിപ്പാലിറ്റി (Municipality)" : "Municipality"}</option>
+                                <option value="corporation">{lang === "ml" ? "കോർപ്പറേഷൻ (Corporation)" : "Corporation"}</option>
+                              </select>
+                            </div>
+
+                            {/* 3. Local Body */}
+                            <div>
+                              <label className="text-[11px] font-bold text-foreground block mb-1">
+                                {lang === "ml" ? "തദ്ദേശ സ്വയംഭരണ സ്ഥാപനം *" : "Local Body *"}
+                              </label>
+                              <button
+                                type="button"
+                                disabled={!createDistrict || !createLocalBodyType}
+                                onClick={() => {
+                                  if (createDistrict && createLocalBodyType) {
+                                    setActiveAddressSheet("localBody");
+                                    setAddressSheetSearch("");
+                                  }
+                                }}
+                                className={`w-full text-xs p-3 rounded-xl border outline-none flex items-center justify-between transition-colors text-left ${
+                                  !createDistrict || !createLocalBodyType
+                                    ? "bg-muted/50 border-border text-muted-foreground cursor-not-allowed opacity-70"
+                                    : "bg-background hover:bg-slate-50 dark:hover:bg-slate-800/60 border-border text-foreground cursor-pointer"
+                                }`}
+                              >
+                                <span className={createLocalBody ? "font-bold" : "text-muted-foreground"}>
+                                  {createLocalBody
+                                    ? createLocalBody
+                                    : (lang === "ml" ? "-- തദ്ദേശ സ്ഥാപനം തിരഞ്ഞെടുക്കുക --" : "-- Select Local Body --")}
+                                </span>
+                                <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+                              </button>
+                            </div>
+
+                            {/* 4. Ward */}
+                            <div>
+                              <label className="text-[11px] font-bold text-foreground block mb-1">
+                                {lang === "ml" ? "വാർഡ് *" : "Ward *"}
+                              </label>
+                              <button
+                                type="button"
+                                disabled={!createLocalBody}
+                                onClick={() => {
+                                  if (createLocalBody) {
+                                    setActiveAddressSheet("ward");
+                                    setAddressSheetSearch("");
+                                  }
+                                }}
+                                className={`w-full text-xs p-3 rounded-xl border outline-none flex items-center justify-between transition-colors text-left ${
+                                  !createLocalBody
+                                    ? "bg-muted/50 border-border text-muted-foreground cursor-not-allowed opacity-70"
+                                    : "bg-background hover:bg-slate-50 dark:hover:bg-slate-800/60 border-border text-foreground cursor-pointer"
+                                }`}
+                              >
+                                <span className={createWard ? "font-bold" : "text-muted-foreground"}>
+                                  {createWard
+                                    ? createWard
+                                    : (lang === "ml" ? "-- വാർഡ് തിരഞ്ഞെടുക്കുക --" : "-- Select Ward --")}
+                                </span>
+                                <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+                              </button>
+                            </div>
+
+                            {/* 5. Assembly Mandalam */}
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <label className="text-[11px] font-bold text-foreground block">
+                                  {lang === "ml" ? "നിയമസഭാ മണ്ഡലം *" : "Assembly Mandalam *"}
+                                </label>
+                                {isMandalamAutoFilled && (
+                                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
+                                    {lang === "ml" ? "ഓട്ടോ-മാപ്പ് ചെയ്തത്" : "Auto-Mapped"}
+                                  </span>
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                disabled={!createDistrict}
+                                onClick={() => {
+                                  if (createDistrict) {
+                                    setActiveAddressSheet("mandalam");
+                                    setAddressSheetSearch("");
+                                  }
+                                }}
+                                className={`w-full text-xs p-3 rounded-xl border outline-none flex items-center justify-between transition-colors text-left ${
+                                  !createDistrict
+                                    ? "bg-muted/50 border-border text-muted-foreground cursor-not-allowed opacity-70"
+                                    : "bg-background hover:bg-slate-50 dark:hover:bg-slate-800/60 border-border text-foreground cursor-pointer"
+                                }`}
+                              >
+                                <span className={createMandalam ? "font-bold" : "text-muted-foreground"}>
+                                  {createMandalam
+                                    ? (lang === "ml" ? getConstituencyName(createMandalam, "ml") : createMandalam)
+                                    : (lang === "ml" ? "-- മണ്ഡലം തിരഞ്ഞെടുക്കുക --" : "-- Select Assembly Mandalam --")}
+                                </span>
+                                <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+                              </button>
+                            </div>
+
+                            {/* 6. House / Building Name */}
+                            <div>
+                              <label className="text-[11px] font-bold text-foreground block mb-1">
+                                {lang === "ml" ? "വീട്ടുപേര് / കെട്ടിടത്തിന്റെ പേര് *" : "House / Building Name *"}
+                              </label>
+                              <input 
+                                type="text" 
+                                value={createHouseName}
+                                onChange={(e) => setCreateHouseName(e.target.value)}
+                                placeholder={lang === "ml" ? "ഉദാ: കൃഷ്ണകൃപ, ഡോർ നമ്പർ 12/34" : "House Name / Door No."}
+                                className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground" 
+                              />
+                            </div>
+
+                            {/* 7. Street / Locality */}
+                            <div>
+                              <label className="text-[11px] font-bold text-foreground block mb-1">
+                                {lang === "ml" ? "സ്ട്രീറ്റ് / സ്ഥലം *" : "Street / Locality *"}
+                              </label>
+                              <input 
+                                type="text" 
+                                value={createStreetLocality}
+                                onChange={(e) => setCreateStreetLocality(e.target.value)}
+                                placeholder={lang === "ml" ? "റോഡ് / പ്രദേശം / അടയാളം" : "Street / Locality / Landmark"}
+                                className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground" 
+                              />
+                            </div>
+
+                            {/* 8. PIN Code */}
+                            <div>
+                              <label className="text-[11px] font-bold text-foreground block mb-1">
+                                {lang === "ml" ? "പിൻകോഡ് *" : "PIN Code *"}
+                              </label>
+                              <input 
+                                type="text"
+                                maxLength={6}
+                                value={createPin}
+                                onChange={(e) => setCreatePin(e.target.value.replace(/\D/g, ''))}
+                                placeholder="6-digit PIN code"
+                                className="w-full text-xs p-2.5 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground" 
+                              />
+                            </div>
+
+                            
+                          </div>
+                        ) : (
+                          <div className="p-3.5 bg-muted/40 rounded-2xl border border-dashed border-border text-center space-y-1">
+                            <Lock className="h-4 w-4 text-muted-foreground mx-auto" />
+                            <p className="text-[11px] font-bold text-muted-foreground">
+                              {lang === "ml"
+                                ? "മറ്റ് വിവരങ്ങൾ രേഖപ്പെടുത്താൻ ആദ്യം OTP സ്ഥിരീകരിക്കുക"
+                                : "Verify OTP in Section 1 above to unlock remaining application details."}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -10675,26 +10928,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                     {/* Step 3: Eligible Schemes View */}
                     {createFlowStep === "eligible_schemes" && (
                       <div className="space-y-2.5 animate-in fade-in duration-200">
-                        {/* Search Bar for Eligible Schemes */}
-                        <div className="relative">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                          <input
-                            type="text"
-                            value={eligibleSchemesSearchQuery}
-                            onChange={(e) => setEligibleSchemesSearchQuery(e.target.value)}
-                            placeholder={lang === "ml" ? "പദ്ധതിയുടെ പേര് തിരയുക..." : "Search eligible schemes..."}
-                            className="w-full text-xs pl-9 pr-3 py-2 rounded-xl border border-border bg-card focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
-                          />
-                          {eligibleSchemesSearchQuery && (
-                            <button
-                              type="button"
-                              onClick={() => setEligibleSchemesSearchQuery("")}
-                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5"
-                            >
-                              <X className="h-3.5 w-3.5" />
-                            </button>
-                          )}
-                        </div>
+                        
 
                         <div className="flex items-center justify-between gap-2 px-0.5">
                           <div className="flex min-w-0 items-center gap-1.5">
