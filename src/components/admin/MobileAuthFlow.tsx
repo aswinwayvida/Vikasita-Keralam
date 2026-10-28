@@ -8,6 +8,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import mobileAuthHero from "@/assets/mobile-auth-hero.png";
+import officialLotus from "@/assets/bjp-official-lotus.png";
 import { useLang } from "@/i18n/LanguageProvider";
 
 type MobileAuthFlowProps = {
@@ -201,34 +202,40 @@ export function MobileAuthFlow({
 
   return (
     <div className="flex min-h-full flex-col bg-white text-[#0a1f44]">
-      <div className="relative overflow-hidden bg-[#0a4d9c]">
-        <img
-          src={mobileAuthHero}
-          alt={t(
-            "Vikasita Keralam with BJP lotus emblem and portraits of Rajeev Chandrasekhar and Narendra Modi",
-            "ബിജെപി താമര ചിഹ്നവും രാജീവ് ചന്ദ്രശേഖറിന്റെയും നരേന്ദ്ര മോദിയുടെയും ചിത്രങ്ങളും ഉള്പ്പെട്ട വികസിത കേരളം",
-          )}
-          className="block h-auto w-full object-cover object-top"
-        />
+      <div className="relative overflow-hidden bg-[#0a4d9c] flex flex-col">
+        {/* Top bar controls so header image faces are completely unobscured */}
+        <div className="relative z-10 flex items-center justify-between px-3 pt-2.5 pb-1">
+          <button
+            type="button"
+            onClick={handleBack}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/40 bg-white/95 text-[#0a1f44] shadow-xs transition-all hover:bg-white active:scale-95 cursor-pointer"
+            aria-label={t("Go back", "പിന്നോട്ട് പോകുക")}
+          >
+            <ArrowLeft className="h-4 w-4 stroke-[2.4]" />
+          </button>
 
-        <button
-          type="button"
-          onClick={handleBack}
-          className="absolute left-3 top-3 flex h-11 w-11 items-center justify-center rounded-xl border border-white/80 bg-white text-[#0a1f44] shadow-sm transition-all hover:bg-[#fffaf4] active:scale-95 cursor-pointer"
-          aria-label={t("Go back", "പിന്നോട്ട് പോകുക")}
-        >
-          <ArrowLeft className="h-5 w-5 stroke-[2.4]" />
-        </button>
+          <button
+            type="button"
+            onClick={() => setLang(lang === "ml" ? "en" : "ml")}
+            className="flex h-8 min-w-[58px] items-center justify-center gap-1 rounded-lg border border-white/40 bg-white/95 px-2.5 text-[11px] font-extrabold text-[#0a1f44] shadow-xs transition-all hover:bg-white active:scale-95 cursor-pointer"
+            aria-label={t("Change language", "ഭാഷ മാറ്റുക")}
+          >
+            <span>{lang === "ml" ? "മല" : "EN"}</span>
+            <ChevronDown className="h-3.5 w-3.5 stroke-[2.5]" />
+          </button>
+        </div>
 
-        <button
-          type="button"
-          onClick={() => setLang(lang === "ml" ? "en" : "ml")}
-          className="absolute right-3 top-3 flex h-11 min-w-[68px] items-center justify-center gap-1.5 rounded-xl border border-white/80 bg-white px-3 text-[12px] font-extrabold text-[#0a1f44] shadow-sm transition-all hover:bg-[#fffaf4] active:scale-95 cursor-pointer"
-          aria-label={t("Change language", "ഭാഷ മാറ്റുക")}
-        >
-          <span>{lang === "ml" ? "മല" : "EN"}</span>
-          <ChevronDown className="h-4 w-4 stroke-[2.5]" />
-        </button>
+        {/* Hero banner image with full face visibility */}
+        <div className="relative w-full">
+          <img
+            src={mobileAuthHero}
+            alt={t(
+              "Vikasita Keralam with BJP lotus emblem and portraits of Rajeev Chandrasekhar and Narendra Modi",
+              "ബിജെപി താമര ചിഹ്നവും രാജീവ് ചന്ദ്രശേഖറിന്റെയും നരേന്ദ്ര മോദിയുടെയും ചിത്രങ്ങളും ഉള്പ്പെട്ട വികസിത കേരളം",
+            )}
+            className="block h-auto w-full object-cover object-top"
+          />
+        </div>
       </div>
 
       <section className="relative -mt-5 flex-1 rounded-t-[28px] border-t border-[#f8dccb] bg-white px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-6 shadow-[0_-8px_22px_rgba(11,59,102,0.06)]">
@@ -236,11 +243,11 @@ export function MobileAuthFlow({
           <div className="animate-in fade-in slide-in-from-right-2 duration-200">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-[#f4d3bf] bg-[#fff8f2] px-2.5 py-1 text-[9.5px] font-extrabold uppercase tracking-[0.08em] text-[#e15307]">
-                  <ShieldCheck className="h-3.5 w-3.5" />
-                  {t("Secure mobile access", "സുരക്ഷിത മൊബൈല്‍ പ്രവേശനം")}
+                <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-[#f4d3bf] bg-[#fff8f2] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-[#e15307]">
+                  <img src={officialLotus} alt="BJP Logo" className="h-4 w-4 object-contain shrink-0" />
+                  <span>BJP KERALAM</span>
                 </div>
-                <h1 className="max-w-[285px] text-[26px] font-extrabold leading-[1.08] tracking-[-0.025em] text-[#0a1f44]">
+                <h1 className="text-[17px] sm:text-[18px] font-extrabold leading-tight tracking-tight text-[#0a1f44] whitespace-nowrap truncate min-w-0">
                   {t("Welcome to Vikasita Keralam", "വികസിത കേരളത്തിലേക്ക് സ്വാഗതം")}
                 </h1>
                 <p className="mt-2 text-[13.5px] leading-5 text-[#45516a]">
@@ -335,6 +342,13 @@ export function MobileAuthFlow({
               <span className="whitespace-nowrap">{t("Continue as Guest", "അതിഥിയായി തുടരുക")}</span>
               <span className="h-px flex-1 bg-[#dce1e9]" />
             </button>
+
+            {/* Powered By Wayvida */}
+            <div className="mt-4 pb-1 text-center">
+              <span className="text-[10px] font-bold tracking-wider text-slate-400 dark:text-slate-500 uppercase">
+                Powered by <span className="font-extrabold text-[#f15a0a]">Wayvida</span>
+              </span>
+            </div>
           </div>
         ) : (
           <div className="animate-in fade-in slide-in-from-right-2 duration-200">

@@ -3,6 +3,8 @@ import { Link } from "@tanstack/react-router";
 import { X, Smartphone, Wifi, Battery, Signal, ChevronRight, ChevronLeft, ArrowLeft, Users, HeartHandshake, Database, Layers, Sparkles, MessageSquare, Clock3, UserCheck, LayoutDashboard, Sliders, Calendar, FileText, XCircle, CheckCircle2, Hourglass, MapPin, Trophy, AlertTriangle, Activity, Globe, Map, Network, Store, ShieldCheck, ChevronDown, Filter, Search, SearchCheck, Megaphone, CalendarDays, BellRing, Phone, RotateCcw, GraduationCap, Sprout, LayoutGrid, MoreVertical, AlertCircle, Star, Zap, Headphones, Edit, Upload, FileCheck, Loader2, SearchX, RefreshCw, Check, Lock, User, Eye, Send, Info, Plus, Inbox, FileSearch, HandCoins, UserRound, Paperclip, ClipboardList, Headset, Copy, Pencil, Download, FileImage, ExternalLink, CloudUpload, Home, Building2, Flame, HelpCircle } from "lucide-react";
 import { useLang } from "@/i18n/LanguageProvider";
 import officialLotus from "@/assets/bjp-official-lotus.png";
+import vikasitaMlLogo from "@/assets/logo-vikasita-ml-official.png";
+import raiseIssue3dIcon from "@/assets/raise-issue-3d.png";
 import pmKisanLogoImg from "/pm-kisan-logo.png";
 import users3dIcon from "@/assets/kpi-3d/users.png";
 import inReview3dIcon from "@/assets/kpi-3d/in-review.png";
@@ -2663,40 +2665,169 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
         ) : (
           /* Team Tab Content */
           <div className="space-y-3">
-            <div className="flex items-center justify-between px-0.5 pt-0.5">
-              <h2 className="font-display text-sm sm:text-base font-black text-[#0a0f1d] dark:text-white tracking-tight">
-                {lang === "ml" ? "ടീം പ്രവർത്തനം" : "Team Performance"}
-              </h2>
-              <span className="text-xs font-extrabold text-[#ea580c] bg-orange-100 dark:bg-orange-950/60 px-2 py-0.5 rounded-full">
-                Booth 42
-              </span>
+            {/* Header Row: Date Title Left + Action Buttons Right (<, >, Calendar, Filter) - Matching My Work tab exactly */}
+            <div className="flex items-center justify-between gap-2 pt-0.5 pb-0.5 my-0">
+              {/* Left Side: Bold Date/Period Title with same exact font sizing as My Work */}
+              <button
+                type="button"
+                onClick={() => setIsDatePickerOpen(true)}
+                className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0"
+                title="Click to Open Date Picker"
+              >
+                {getFormattedPeriodDisplay()}
+              </button>
+
+              {/* Right Side: Circular Action Buttons (Previous, Next, Calendar, Filter) */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => handleStepPeriod(-1)}
+                  className="flex h-6 w-6 items-center justify-center rounded-full border border-orange-100 dark:border-slate-800 bg-orange-50/50 dark:bg-slate-900 text-orange-600 hover:bg-orange-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shadow-2xs"
+                  title="Previous Period"
+                >
+                  <ChevronLeft className="h-3 w-3 stroke-[2.5]" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleStepPeriod(1)}
+                  className="flex h-6 w-6 items-center justify-center rounded-full border border-orange-100 dark:border-slate-800 bg-orange-50/50 dark:bg-slate-900 text-orange-600 hover:bg-orange-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shadow-2xs"
+                  title="Next Period"
+                >
+                  <ChevronRight className="h-3 w-3 stroke-[2.5]" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsDatePickerOpen(true)}
+                  className="flex h-6 w-6 items-center justify-center rounded-full border border-orange-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 text-[#ff5500] hover:bg-orange-50 dark:hover:bg-orange-950/30 transition-colors cursor-pointer shadow-2xs"
+                  title="Open Date Picker"
+                >
+                  <Calendar className="h-3.5 w-3.5 stroke-[2.2]" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowFilterMenu(!showFilterMenu)}
+                  className={`relative flex h-6 w-6 items-center justify-center rounded-full border transition-all shadow-2xs cursor-pointer ${
+                    showFilterMenu || appliedFilterChips.length > 0
+                      ? "border-orange-500 bg-orange-500 text-white ring-2 ring-orange-500/30"
+                      : "border-orange-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-orange-500 hover:bg-orange-50"
+                  }`}
+                  title="Toggle Filters"
+                >
+                  <Filter className={`h-3 w-3 stroke-[2.2] ${appliedFilterChips.length > 0 || showFilterMenu ? "text-white" : "text-orange-500"}`} />
+
+                  {appliedFilterChips.length > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-600 text-[8px] font-black text-white ring-1.5 ring-white dark:ring-slate-900 animate-pulse">
+                      {appliedFilterChips.length}
+                    </span>
+                  )}
+                </button>
+              </div>
             </div>
 
-            {/* Team Metrics Summary */}
-            <div className="grid grid-cols-2 gap-2.5">
-              <div className="rounded-2xl border border-orange-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-2xs">
-                <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Active Workers</p>
-                <p className="text-xl font-black text-slate-900 dark:text-white mt-1">18</p>
-              </div>
-              <div className="rounded-2xl border border-orange-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-2xs">
-                <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Applications Done</p>
-                <p className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-1">142</p>
-              </div>
-            </div>
+            {/* Applied Filters & Current Scope UI */}
+            <MobileAppliedFiltersScope
+              currentScopeTitle={filterGeoScope !== "state" ? activeLocationLabel : "All Kerala • State Level"}
+              currentScopeSubLabel={filterGeoScope !== "state" ? "Sector 1, Kazhakuttam" : "All 14 Districts & 140 Constituencies"}
+              onResetScope={filterGeoScope !== "state" ? () => setFilterGeoScope("state") : undefined}
+              appliedFilters={dashboardFilterChips}
+              onResetAllFilters={() => {
+                setFilterSchemeType("all");
+                setFilterSchemeCategory("all");
+                setFilterDepartment("all");
+                setFilterPerformance("all");
+                setFilterGeoScope("state");
+              }}
+            />
 
-            {/* Leaderboard Callout */}
-            <div
-              onClick={() => setMobileSubPage("leaderboard")}
-              className="flex items-center justify-between rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 p-3 text-white shadow-md cursor-pointer hover:opacity-95 transition-all"
-            >
-              <div className="flex items-center gap-2.5">
-                <Trophy className="h-6 w-6 text-amber-200 shrink-0" />
-                <div>
-                  <h4 className="font-extrabold text-xs sm:text-sm">Booth Leaderboard #1</h4>
-                  <p className="text-[11px] text-orange-100 font-medium">Kazhakkoottam Mandalam</p>
+            {/* 2 KPI Cards matching My Work tab card styling */}
+            <div className="grid grid-cols-2 gap-2 pt-0.5">
+              {/* 1. Total Workers */}
+              <div
+                className="rounded-lg border border-border bg-card py-1.5 px-2.5 flex flex-col justify-between shadow-2xs hover:border-orange-500/70 transition-all"
+              >
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-[10.5px] font-bold text-muted-foreground truncate leading-tight">
+                    {lang === "ml" ? "ആകെ പ്രവർത്തകർ" : "Total Workers"}
+                  </span>
+                  <img src={users3dIcon} alt="Total Workers" className="h-6 w-6 object-contain shrink-0" />
                 </div>
+                <p className="font-display text-base font-bold text-foreground leading-none mt-1">
+                  18
+                </p>
               </div>
-              <ChevronRight className="h-5 w-5 text-white shrink-0" />
+
+              {/* 2. Total Applications */}
+              <div
+                onClick={() => {
+                  setActiveTab("applications");
+                  setMobileSubPage("none");
+                }}
+                className="rounded-lg border border-border bg-card py-1.5 px-2.5 flex flex-col justify-between shadow-2xs hover:border-emerald-500/70 transition-all cursor-pointer"
+              >
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-[10.5px] font-bold text-muted-foreground truncate leading-tight">
+                    {lang === "ml" ? "ആകെ അപേക്ഷകൾ" : "Total Applications"}
+                  </span>
+                  <img src={openApplication3dIcon} alt="Total Applications" className="h-6 w-6 object-contain shrink-0" />
+                </div>
+                <p className="font-display text-base font-bold text-emerald-600 dark:text-emerald-400 leading-none mt-1">
+                  142
+                </p>
+              </div>
+            </div>
+
+            {/* Workers List Section with Application Counts */}
+            <div className="space-y-2 pt-1">
+              <div className="flex items-center justify-between px-0.5">
+                <h3 className="font-display text-xs sm:text-[13px] font-black text-[#0a0f1d] dark:text-white tracking-tight">
+                  {lang === "ml" ? "ബൂത്ത് പ്രവർത്തകർ" : "Booth Workers"}
+                </h3>
+                <span className="text-[10.5px] font-bold text-slate-500 dark:text-slate-400">
+                  18 {lang === "ml" ? "പേർ" : "Workers"}
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                {[
+                  { name: "Sujith Kumar", nameMl: "സുജിത് കുമാർ", role: "Booth Convenor", applications: 28, avatarBg: "bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300" },
+                  { name: "Ananthakrishnan V", nameMl: "അനന്തകൃഷ്ണൻ വി", role: "Panna Pramukh", applications: 22, avatarBg: "bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300" },
+                  { name: "Reshma S Nair", nameMl: "രേഷ്മ എസ് നായർ", role: "Mahila Morcha Lead", applications: 19, avatarBg: "bg-pink-100 dark:bg-pink-950/60 text-pink-700 dark:text-pink-300" },
+                  { name: "Arun Varma", nameMl: "അരുൺ വർമ്മ", role: "Yuva Morcha Member", applications: 15, avatarBg: "bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300" },
+                  { name: "Vishnu Prasad", nameMl: "വിഷ്ണു പ്രസാദ്", role: "Panna Pramukh", applications: 12, avatarBg: "bg-teal-100 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300" },
+                  { name: "Lakshmi Priya", nameMl: "ലക്ഷ്മി പ്രിയ", role: "Booth Volunteer", applications: 9, avatarBg: "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300" },
+                ].map((worker, i) => (
+                  <div
+                    key={i}
+                    onClick={() => setActiveTab("applications")}
+                    className="rounded-2xl bg-white dark:bg-slate-900 border border-orange-100 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <div className={`flex h-9 w-9 items-center justify-center rounded-full ${worker.avatarBg} font-extrabold text-xs shrink-0`}>
+                        {worker.name.split(" ").map(n => n[0]).slice(0, 2).join("")}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-black text-[12px] sm:text-[12.5px] text-slate-900 dark:text-white leading-tight truncate">
+                          {lang === "ml" ? worker.nameMl : worker.name}
+                        </h4>
+                        <p className="font-medium text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
+                          {worker.role}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0 ml-2">
+                      <div className="flex items-center gap-1.5 rounded-full bg-orange-50 dark:bg-orange-950/50 border border-orange-200/80 dark:border-orange-900/50 px-2.5 py-1 text-[11px] font-black text-[#ff5500] dark:text-orange-400">
+                        <FileText className="h-3.5 w-3.5 text-[#ff5500]" />
+                        <span>{worker.applications}</span>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -6514,6 +6645,59 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Quick Actions: Raise Issue & About Vikasita Keralam */}
+        <div className="grid grid-cols-2 gap-2 px-1">
+          {/* Action 1: Raise Issue */}
+          <button
+            type="button"
+            onClick={() => {
+              setIsGuest(false);
+              setActiveTab("helpdesk");
+              setMobileSubPage("none");
+            }}
+            className="rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-2.5 flex items-center gap-2.5 shadow-2xs hover:border-orange-500/80 hover:shadow-xs transition-all cursor-pointer group active:scale-98 text-left"
+          >
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400 shrink-0">
+              <AlertCircle className="h-4 w-4 stroke-[2.3]" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h5 className="text-[11.5px] font-extrabold text-slate-900 dark:text-slate-100 leading-tight truncate">
+                {lang === "ml" ? "പരാതി നൽകുക" : "Raise Issue"}
+              </h5>
+              <p className="text-[9.5px] font-medium text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
+                {lang === "ml" ? "സഹായം ആവശ്യപ്പെടാം" : "Report a problem"}
+              </p>
+            </div>
+          </button>
+
+          {/* Action 2: About Vikasita Keralam */}
+          <button
+            type="button"
+            onClick={() => {
+              setIsGuest(false);
+              setActiveTab("overview");
+              setMobileSubPage("events_announcements");
+            }}
+            className="rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-2.5 flex items-center gap-2.5 shadow-2xs hover:border-orange-500/80 hover:shadow-xs transition-all cursor-pointer group active:scale-98 text-left"
+          >
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/50 p-1 shrink-0">
+              <img
+                src={vikasitaMlLogo}
+                alt="Vikasita Keralam Logo"
+                className="h-full w-full object-contain drop-shadow-2xs"
+              />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h5 className="text-[11.5px] font-extrabold text-slate-900 dark:text-slate-100 leading-tight truncate">
+                {lang === "ml" ? "വികസിത കേരളം" : "About Vikasita Keralam"}
+              </h5>
+              <p className="text-[9.5px] font-medium text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
+                {lang === "ml" ? "വിവരങ്ങൾ അറിയാം" : "Our vision & goal"}
+              </p>
+            </div>
+          </button>
         </div>
 
         {/* How It Works Section */}
