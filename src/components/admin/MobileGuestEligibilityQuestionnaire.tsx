@@ -63,6 +63,7 @@ type Props = {
   lang: EligibilityLanguage;
   onClose: () => void;
   onHelpRequestSent: () => void;
+  onOpenSchemeDetails?: (schemeId: string) => void;
 };
 
 type View = "questions" | "loading" | "results" | "browse" | "error" | "success";
@@ -354,6 +355,7 @@ export function MobileGuestEligibilityQuestionnaire({
   lang,
   onClose,
   onHelpRequestSent,
+  onOpenSchemeDetails,
 }: Props) {
   const t = (en: string, ml: string) => (lang === "ml" ? ml : en);
   const [answers, setAnswers] = useState<GuestEligibilityAnswers>(EMPTY);
@@ -361,6 +363,7 @@ export function MobileGuestEligibilityQuestionnaire({
   const [view, setView] = useState<View>("questions");
   const [results, setResults] = useState<EligibilityMatch[]>([]);
   const [resultQuery, setResultQuery] = useState("");
+  const [showHeaderSearch, setShowHeaderSearch] = useState(false);
   const [resultError, setResultError] = useState("");
   const [dobError, setDobError] = useState("");
   const [occupationQuery, setOccupationQuery] = useState("");
@@ -1050,81 +1053,101 @@ export function MobileGuestEligibilityQuestionnaire({
     return null;
   };
 
+  const getSchemeLogoSrc = (scheme: Scheme) => {
+    const title = (scheme.en || "").toLowerCase();
+    if (/(kisan|pm-kisan|pm kisan)/.test(title)) {
+      return "/pm-kisan-logo.png";
+    }
+    if (/(farmer|agri|crop)/.test(title) || scheme.category === "agriculture") {
+      return "/images/category-icons/cat_agriculture.png";
+    }
+    if (/(karunya|arogya|health|hospital|pmjay)/.test(title) || scheme.category === "health") {
+      return "/images/category-icons/cat_health.png";
+    }
+    if (/(life mission|housing|home|shelter|awas)/.test(title) || scheme.category === "housing") {
+      return "/images/category-icons/cat_housing.png";
+    }
+    if (/(pension|vayoshreshtha|bima|apy|pmsby|pmjjby)/.test(title) || scheme.category === "welfare") {
+      return "/images/category-icons/cat_banking.png";
+    }
+    if (scheme.category === "women") {
+      return "/images/category-icons/cat_women.png";
+    }
+    if (scheme.category === "education") {
+      return "/images/category-icons/cat_education.png";
+    }
+    if (scheme.category === "msme") {
+      return "/images/category-icons/cat_business.png";
+    }
+    return "/images/category-icons/cat_governance.png";
+  };
+
   const renderSchemeCard = (scheme: Scheme, match?: EligibilityMatch) => {
     const meta = CATEGORY_META[scheme.category];
     const strong = match?.status === "strong";
     const possible = match?.status === "possible";
-    const selected = selectedSchemeIds.includes(scheme.id);
+    const isSelected = selectedSchemeIds.includes(scheme.id);
+    const logoSrc = getSchemeLogoSrc(scheme);
+
     return (
       <button
-        key={scheme.id}
         type="button"
+        key={scheme.id}
         role="checkbox"
-        aria-checked={selected}
+        aria-checked={isSelected}
+        aria-label={`${lang === "ml" ? "പദ്ധതി തിരഞ്ഞെടുക്കുക" : "Select scheme"}: ${lang === "ml" ? scheme.ml : scheme.en}`}
         onClick={() => toggleScheme(scheme.id)}
-        className={`block w-full rounded-2xl border p-3.5 text-left transition-all active:scale-[0.995] ${
-          selected
-            ? "border-orange-400 bg-orange-50 shadow-[0_4px_16px_rgba(249,115,22,0.14)]"
-            : "border-slate-200 bg-white hover:border-orange-200"
+        className={`w-full cursor-pointer bg-card p-3 rounded-2xl border shadow-2xs transition-all space-y-2 text-left ${
+          isSelected
+            ? "border-orange-400 bg-orange-50/40 ring-2 ring-orange-200/80 dark:border-orange-700 dark:bg-orange-950/20 dark:ring-orange-900/60"
+            : "border-border hover:border-orange-300 dark:hover:border-orange-800 bg-white dark:bg-slate-900"
         }`}
       >
-        <div className="flex items-start gap-2.5">
-          <div className="min-w-0 flex-1">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex min-w-0 items-start gap-2">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-orange-100 bg-white p-0.5 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
+              <img
+                src={logoSrc}
+                alt=""
+                aria-hidden
+                className="h-full w-full object-contain"
+                onError={(e) => {
+                  e.currentTarget.src = "/pm-kisan-logo.png";
+                }}
+              />
+            </span>
+            <div className="min-w-0">
+              <h4
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenSchemeDetails?.(scheme.id);
+                }}
+                className="font-bold text-[13px] text-foreground leading-snug break-words hover:text-orange-600 dark:hover:text-orange-400 hover:underline cursor-pointer"
+              >
+                {lang === "ml" ? scheme.ml : scheme.en}
+              </h4>
+              <p className="mt-0.5 text-[10.5px] font-semibold text-muted-foreground leading-snug">
+                {lang === "ml" ? meta.ml : meta.en}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
             <span
-              className={`inline-flex max-w-full rounded-full px-2 py-0.5 text-[8.5px] font-extrabold uppercase tracking-wide ${
-                selected ? "bg-orange-100 text-orange-700" : "bg-slate-100 text-slate-600"
+              aria-hidden="true"
+              className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border-2 transition-all cursor-pointer active:scale-95 ${
+                isSelected
+                  ? "border-orange-500 bg-orange-500 text-white shadow-xs"
+                  : "border-orange-300 bg-white hover:border-orange-500 dark:border-orange-900 dark:bg-slate-900"
               }`}
             >
-              {lang === "ml" ? meta.ml : meta.en}
+              {isSelected && <Check className="h-2.5 w-2.5 stroke-[4]" />}
             </span>
-            <h3 className="mt-1.5 text-[13px] font-extrabold leading-snug text-slate-900">
-              {lang === "ml" ? scheme.ml : scheme.en}
-            </h3>
-            <p className="mt-0.5 text-[9.5px] font-semibold text-slate-500">
-              {lang === "ml" ? scheme.ministry.ml : scheme.ministry.en}
-            </p>
-            <p className="mt-1.5 text-[10.5px] font-medium leading-relaxed text-slate-600">
-              {lang === "ml" ? scheme.benefit.ml : scheme.benefit.en}
-            </p>
           </div>
-          <span
-            aria-hidden="true"
-            className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
-              selected
-                ? "border-orange-500 bg-orange-500 text-white"
-                : "border-slate-300 bg-white text-transparent"
-            }`}
-          >
-            <Check className="h-3.5 w-3.5 stroke-[3.5]" />
-          </span>
         </div>
-        {strong || possible ? (
-          <p
-            className={`mt-2.5 flex items-start gap-1.5 text-[9.5px] font-bold leading-relaxed ${
-              strong ? "text-emerald-700" : "text-amber-700"
-            }`}
-          >
-            {strong ? (
-              <Check className="mt-0.5 h-3 w-3 shrink-0 stroke-[3]" />
-            ) : (
-              <Sparkles className="mt-0.5 h-3 w-3 shrink-0" />
-            )}
-            <span>
-              {strong
-                ? t(
-                    "Likely match based on your answers",
-                    "നിങ്ങളുടെ ഉത്തരങ്ങളെ അടിസ്ഥാനമാക്കി സാധ്യമായ പൊരുത്തം",
-                  )
-                : t("More information needed", "കൂടുതൽ വിവരം ആവശ്യം")}
-              {possible && match.pendingCriteria.length > 0 ? (
-                <span className="font-medium text-slate-500">
-                  {` · ${lang === "ml" ? match.pendingCriteria[0].ml : match.pendingCriteria[0].en}`}
-                  {match.pendingCriteria.length > 1 ? ` +${match.pendingCriteria.length - 1}` : ""}
-                </span>
-              ) : null}
-            </span>
-          </p>
-        ) : null}
+
+        <p className="text-[11px] text-muted-foreground leading-snug">
+          {lang === "ml" ? scheme.benefit.ml : scheme.benefit.en}
+        </p>
       </button>
     );
   };
@@ -1144,15 +1167,50 @@ export function MobileGuestEligibilityQuestionnaire({
         <div className="min-w-0 flex-1 text-center">
           <h1 className="truncate text-[12.5px] font-extrabold text-slate-900">{title}</h1>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
-          aria-label={t("Close eligibility check", "യോഗ്യതാ പരിശോധന അടയ്ക്കുക")}
-        >
-          <X className="h-4 w-4 stroke-[2.2]" />
-        </button>
+        <div className="flex items-center gap-1 shrink-0">
+          {(view === "results" || view === "browse") && (
+            <button
+              type="button"
+              onClick={() => setShowHeaderSearch((prev) => !prev)}
+              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors ${
+                showHeaderSearch || resultQuery ? "bg-orange-100 text-orange-600" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+              }`}
+              aria-label={t("Search schemes", "പദ്ധതികൾ തിരയുക")}
+            >
+              <Search className="h-4 w-4 stroke-[2.2]" />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
+            aria-label={t("Close eligibility check", "യോഗ്യതാ പരിശോധന അടയ്ക്കുക")}
+          >
+            <X className="h-4 w-4 stroke-[2.2]" />
+          </button>
+        </div>
       </div>
+      {(showHeaderSearch || resultQuery) && (view === "results" || view === "browse") && (
+        <div className="mt-2 flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 shadow-2xs">
+          <Search className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+          <input
+            autoFocus
+            value={resultQuery}
+            onChange={(event) => setResultQuery(event.target.value)}
+            placeholder={t("Search schemes...", "പദ്ധതികൾ തിരയുക...")}
+            className="min-w-0 flex-1 bg-transparent text-[11px] font-medium text-slate-800 outline-none placeholder:text-slate-400"
+          />
+          {resultQuery ? (
+            <button
+              type="button"
+              onClick={() => setResultQuery("")}
+              className="text-[9.5px] font-bold text-orange-600"
+            >
+              {t("Clear", "മായ്ക്കുക")}
+            </button>
+          ) : null}
+        </div>
+      )}
       {progress ? (
         <div className="mt-2">
           <div className="mb-1 flex items-center justify-between text-[9px] font-extrabold text-slate-500">
@@ -1178,42 +1236,6 @@ export function MobileGuestEligibilityQuestionnaire({
 
   const renderResults = () => (
     <>
-      <div className="rounded-2xl border border-orange-100 bg-gradient-to-br from-orange-50 via-white to-amber-50 px-3.5 py-3">
-        <p className="flex items-center gap-1.5 text-[9.5px] font-extrabold uppercase tracking-wide text-orange-600">
-          <Sparkles className="h-3.5 w-3.5" />
-          {t("Preliminary screening", "പ്രാഥമിക പരിശോധന")}
-        </p>
-        <h2 className="mt-1 text-[16px] font-extrabold leading-snug text-slate-900">
-          {t("Select schemes for assistance", "സഹായത്തിനായി പദ്ധതികൾ തിരഞ്ഞെടുക്കുക")}
-        </h2>
-        <p className="mt-0.5 text-[10.5px] font-semibold text-slate-700">
-          {t("Choose one or more schemes.", "ഒന്നോ അതിലധികമോ പദ്ധതികൾ തിരഞ്ഞെടുക്കുക.")}
-        </p>
-        <p className="mt-1 text-[10px] font-medium leading-relaxed text-slate-600">
-          {t(
-            "Based on your answers. This is preliminary screening, not verified eligibility or guaranteed approval.",
-            "നിങ്ങളുടെ ഉത്തരങ്ങളെ അടിസ്ഥാനമാക്കി. ഇത് പ്രാഥമിക പരിശോധന മാത്രം; സ്ഥിരീകരിച്ച യോഗ്യതയോ ഉറപ്പുള്ള അനുമതിയോ അല്ല.",
-          )}
-        </p>
-      </div>
-      <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5">
-        <Search className="h-4 w-4 shrink-0 text-slate-400" />
-        <input
-          value={resultQuery}
-          onChange={(event) => setResultQuery(event.target.value)}
-          placeholder={t("Search eligible schemes", "യോഗ്യതയുള്ള പദ്ധതികൾ തിരയുക")}
-          className="min-w-0 flex-1 bg-transparent text-[11.5px] font-medium text-slate-800 outline-none placeholder:text-slate-400"
-        />
-        {resultQuery ? (
-          <button
-            type="button"
-            onClick={() => setResultQuery("")}
-            className="text-[9.5px] font-bold text-orange-600"
-          >
-            {t("Clear", "മായ്ക്കുക")}
-          </button>
-        ) : null}
-      </div>
       {matchedResults.length > 0 ? (
         filteredResults.length > 0 ? (
           <>

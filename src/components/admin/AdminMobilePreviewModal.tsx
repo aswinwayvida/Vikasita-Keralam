@@ -36,6 +36,82 @@ import { MobileAppliedFiltersScope, FilterChip } from "./MobileAppliedFiltersSco
 import { PartyFlagIcon } from "@/components/common/PartyFlagIcon";
 import { districts, constituencies, panchayats, wards, getDistrictName, getConstituencyName, getWardsForLocalBody, getMappedConstituencyForWard, LocalBodyType, WardItem } from "@/data/geo";
 import { LeaderboardTop3Podium } from "./LeaderboardTop3Podium";
+import { loadHelpdeskRequests, type HelpdeskRequest } from "@/lib/helpdesk-requests";
+
+const INITIAL_MOCK_HELP_REQUESTS: HelpdeskRequest[] = [
+  {
+    reference: "VK-HELP-G-2026-A8K29P",
+    applicant: "Anand V S",
+    contactName: "Anand V S",
+    contactMobile: "9847123456",
+    mobile: "9847123456",
+    schemeId: "pm-kisan",
+    schemeIds: ["pm-kisan", "pm-surya-ghar"],
+    district: "Thiruvananthapuram",
+    helpdeskId: "tvm-helpdesk",
+    helpdeskName: "Thiruvananthapuram Main Help Desk",
+    notes: "Requires assistance in applying for solar scheme subsidy and PM-Kisan documentation.",
+    location: {
+      districtId: "tvm",
+      districtName: "Thiruvananthapuram",
+      mandalamId: "kazhakoottam",
+      mandalamName: "Kazhakoottam",
+    },
+    source: "guest_eligibility",
+    documents: [],
+    missingDocuments: [],
+    status: "helpdesk_request_created",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    reference: "VK-HELP-G-2026-B7M14Q",
+    applicant: "Deepa Lakshmi",
+    contactName: "Deepa Lakshmi",
+    contactMobile: "9447234567",
+    mobile: "9447234567",
+    schemeId: "pm-matru-vandana",
+    schemeIds: ["pm-matru-vandana"],
+    district: "Thiruvananthapuram",
+    helpdeskId: "tvm-helpdesk",
+    helpdeskName: "Thiruvananthapuram Main Help Desk",
+    notes: "Checking eligibility for maternity benefit installment.",
+    location: {
+      districtId: "tvm",
+      districtName: "Thiruvananthapuram",
+      mandalamId: "nemom",
+      mandalamName: "Nemom",
+    },
+    source: "guest_eligibility",
+    documents: [],
+    missingDocuments: [],
+    status: "helpdesk_request_created",
+    createdAt: new Date(Date.now() - 86400000).toISOString(),
+  },
+  {
+    reference: "VK-HELP-G-2026-C3K90R",
+    applicant: "Suresh Kumar",
+    contactName: "Suresh Kumar",
+    contactMobile: "9895345678",
+    mobile: "9895345678",
+    schemeId: "pm-awas",
+    schemeIds: ["pm-awas"],
+    district: "Thiruvananthapuram",
+    helpdeskId: "tvm-helpdesk",
+    helpdeskName: "Thiruvananthapuram Main Help Desk",
+    notes: "Needs ward worker guidance for house sanction documents.",
+    location: {
+      districtId: "tvm",
+      districtName: "Thiruvananthapuram",
+      mandalamId: "vattiyoorkavu",
+      mandalamName: "Vattiyoorkavu",
+    },
+    source: "guest_eligibility",
+    documents: [],
+    missingDocuments: [],
+    status: "helpdesk_request_created",
+    createdAt: new Date(Date.now() - 172800000).toISOString(),
+  },
+];
 
 interface AdminMobilePreviewModalProps {
   isOpen: boolean;
@@ -1852,8 +1928,135 @@ const mobileCentralSchemeCardsByCategory: Record<string, MobileCentralSchemeCard
   ],
 };
 
-const getMobileCentralSchemeCards = (categoryId: string) =>
-  mobileCentralSchemeCardsByCategory[categoryId] ?? mobileCentralSchemeCardsByCategory.default;
+const ALL_GUEST_SCHEMES_CARDS: MobileCentralSchemeCard[] = [
+  {
+    titleEn: "PM Kisan Samman Nidhi",
+    titleMl: "പി.എം. കിസാൻ സമ്മാൻ നിധി",
+    deptEn: "Ministry of Agriculture & Farmers Welfare",
+    deptMl: "കൃഷി കർഷകക്ഷേമ മന്ത്രാലയം, ഭാരത സർക്കാർ",
+    benefitEn: "₹6,000 / year direct bank transfer (3 installments)",
+    benefitMl: "പ്രതിവർഷം ₹6,000 (3 ഗഡുക്കളായി)",
+    eligibilityEn: "Small & marginal farmers holding cultivable land",
+    eligibilityMl: "കൃഷിഭൂമിയുള്ള ചെറുകിട-നാമമാത്ര കർഷകർ",
+  },
+  {
+    titleEn: "Ayushman Bharat - PM-JAY",
+    titleMl: "ആയുഷ്മാൻ ഭാരത് - പിഎം-ജയ്",
+    deptEn: "National Health Authority, Govt of India",
+    deptMl: "ദേശീയ ആരോഗ്യ അതോറിറ്റി, ഭാരത സർക്കാർ",
+    benefitEn: "₹5 Lakh annual health insurance per family",
+    benefitMl: "കുടുംബത്തിന് പ്രതിവർഷം ₹5 ലക്ഷം ആരോഗ്യ ഇൻഷുറൻസ്",
+    eligibilityEn: "Low income households as per SECC database",
+    eligibilityMl: "SECC ഡാറ്റാബേസ് പ്രകാരമുള്ള താഴ്ന്ന വരുമാനക്കാർ",
+  },
+  {
+    titleEn: "PM Ujjwala Yojana",
+    titleMl: "പിഎം ഉജ്ജ്വല യോജന",
+    deptEn: "Ministry of Petroleum & Natural Gas",
+    deptMl: "പെട്രോളിയം-പ്രകൃതിവാതക മന്ത്രാലയം, ഭാരത സർക്കാർ",
+    benefitEn: "Free LPG connection with subsidised refills",
+    benefitMl: "സൗജന്യ എൽപിജി കണക്ഷനും സബ്‍സിഡി റീഫില്ലും",
+    eligibilityEn: "BPL women from eligible households",
+    eligibilityMl: "ബിപിഎൽ കുടുംബങ്ങളിലെ വനിതകൾ",
+  },
+  {
+    titleEn: "PM Awas Yojana (PMAY)",
+    titleMl: "പിഎം ആവാസ് യോജന (PMAY)",
+    deptEn: "Ministry of Housing & Urban Affairs",
+    deptMl: "പാർപ്പിട നഗരകാര്യ മന്ത്രാലയം, ഭാരത സർക്കാർ",
+    benefitEn: "Up to ₹2.50 Lakh financial assistance for house construction",
+    benefitMl: "വീട് നിർമ്മാണത്തിന് ₹2.50 ലക്ഷം വരെ ധനസഹായം",
+    eligibilityEn: "Homeless or EWS households without pucca housing",
+    eligibilityMl: "സ്വന്തമായി വീടില്ലാത്ത കുടുംബങ്ങൾ",
+  },
+  {
+    titleEn: "Atal Pension Yojana (APY)",
+    titleMl: "അടൽ പെൻഷൻ യോജന (APY)",
+    deptEn: "Pension Fund Regulatory & Development Authority",
+    deptMl: "പെൻഷൻ ഫണ്ട് റെഗുലേറ്ററി വികസന അതോറിറ്റി",
+    benefitEn: "Guaranteed pension of ₹1,000–₹5,000 per month after 60",
+    benefitMl: "60 വയസ്സിന് ശേഷം പ്രതിമാസം ₹1,000–₹5,000 പെൻഷൻ",
+    eligibilityEn: "Citizens aged 18–40 with a savings bank account",
+    eligibilityMl: "18–40 വയസ്സുള്ള പൗരന്മാർ",
+  },
+  {
+    titleEn: "PM Jan Dhan Yojana (PMJDY)",
+    titleMl: "പ്രധാനമന്ത്രി ജൻ ധൻ യോജന (PMJDY)",
+    deptEn: "Ministry of Finance, Govt of India",
+    deptMl: "ധനകാര്യ മന്ത്രാലയം, ഭാരത സർക്കാർ",
+    benefitEn: "Zero-balance account with RuPay card & ₹2 Lakh accident cover",
+    benefitMl: "സീറോ ബാലൻസ് അക്കൗണ്ട്, ₹2 ലക്ഷം അപകട പരിരക്ഷ",
+    eligibilityEn: "Any citizen aged 10+ without a bank account",
+    eligibilityMl: "ബാങ്ക് അക്കൗണ്ട് ഇല്ലാത്ത പൗരന്മാർ",
+  },
+  {
+    titleEn: "PM Surya Ghar: Muft Bijli Yojana",
+    titleMl: "പിഎം സൂര്യ ഘർ: സൗജന്യ വൈദ്യുതി പദ്ധതി",
+    deptEn: "Ministry of New & Renewable Energy",
+    deptMl: "പുതിയ പുനരുപയോഗ ഊർജ്ജ മന്ത്രാലയം, ഭാരത സർക്കാർ",
+    benefitEn: "Up to 300 units free electricity per month with rooftop solar subsidy",
+    benefitMl: "പ്രതിമാസം 300 യൂണിറ്റ് വരെ സൗജന്യ വൈദ്യുതി",
+    eligibilityEn: "Residential households with suitable roof space",
+    eligibilityMl: "വീടുകളിൽ മേൽക്കൂര സൗകര്യമുള്ള കുടുംബങ്ങൾ",
+  },
+  {
+    titleEn: "PM Vishwakarma Scheme",
+    titleMl: "പിഎം വിശ്വകർമ്മ യോജന",
+    deptEn: "Ministry of Micro, Small & Medium Enterprises",
+    deptMl: "സൂക്ഷ്മ-ചെറുകിട സംരംഭ മന്ത്രാലയം, ഭാരത സർക്കാർ",
+    benefitEn: "₹15,000 toolkit grant & collateral-free loan up to ₹3 Lakh",
+    benefitMl: "₹15,000 ടൂൾകിറ്റ് ഗ്രാൻറും ₹3 ലക്ഷം വരെ വായ്പയും",
+    eligibilityEn: "Traditional artisans & craftspeople",
+    eligibilityMl: "പരമ്പരാഗത കൈത്തൊഴിൽ വിദഗ്ധർ",
+  },
+  {
+    titleEn: "Pradhan Mantri Fasal Bima Yojana (PMFBY)",
+    titleMl: "പ്രധാനമന്ത്രി ഫസൽ ബീമാ യോജന (PMFBY)",
+    deptEn: "Ministry of Agriculture & Farmers Welfare",
+    deptMl: "കൃഷി കർഷകക്ഷേമ മന്ത്രാലയം, ഭാരത സർക്കാർ",
+    benefitEn: "Up to ₹2 Lakh crop insurance cover with subsidised premium",
+    benefitMl: "വിള ഇൻഷുറൻസിന് ₹2 ലക്ഷം വരെ പരിരക്ഷ",
+    eligibilityEn: "All farmers including tenant & sharecropper farmers",
+    eligibilityMl: "എല്ലാ കർഷകരും",
+  },
+  {
+    titleEn: "PM SVANidhi",
+    titleMl: "പിഎം സ്വനിധി",
+    deptEn: "Ministry of Housing & Urban Affairs",
+    deptMl: "പാർപ്പിട നഗരകാര്യ മന്ത്രാലയം, ഭാരത സർക്കാർ",
+    benefitEn: "Collateral-free working capital loan up to ₹50,000",
+    benefitMl: "ഈടില്ലാത്ത ₹50,000 വരെ വായ്പ",
+    eligibilityEn: "Street vendors holding a vending certificate",
+    eligibilityMl: "തെരുവ് വ്യാപാരികൾ",
+  },
+  {
+    titleEn: "Pradhan Mantri Mudra Yojana (PMMY)",
+    titleMl: "പ്രധാനമന്ത്രി മുദ്ര യോജന (PMMY)",
+    deptEn: "Department of Financial Services",
+    deptMl: "ധനകാര്യ സേവന വകുപ്പ്, ഭാരത സർക്കാർ",
+    benefitEn: "Business loans up to ₹10 Lakh (Shishu / Kishor / Tarun)",
+    benefitMl: "₹10 ലക്ഷം വരെ വായ്പ",
+    eligibilityEn: "Non-farm micro & small enterprises",
+    eligibilityMl: "സൂക്ഷ്മ-ചെറുകിട സംരംഭങ്ങൾ",
+  },
+  {
+    titleEn: "PM YASASVI Scholarship",
+    titleMl: "പിഎം യശസ്വി സ്കോളർഷിപ്പ്",
+    deptEn: "Ministry of Social Justice & Empowerment",
+    deptMl: "സാമൂഹിക നീതി ശാക്തീകരണ മന്ത്രാലയം, ഭാരത സർക്കാർ",
+    benefitEn: "Scholarship for OBC / EBC / DNT students in classes 9 to 12",
+    benefitMl: "9 മുതൽ 12 വരെ ക്ലാസുകളിലെ വിദ്യാർത്ഥികൾക്ക് സ്കോളർഷിപ്പ്",
+    eligibilityEn: "OBC / EBC / DNT students meeting the income limit",
+    eligibilityMl: "യോഗ്യരായ വിദ്യാർത്ഥികൾ",
+  },
+];
+
+const getMobileCentralSchemeCards = (categoryId: string) => {
+  if (categoryId === "all") {
+    return ALL_GUEST_SCHEMES_CARDS;
+  }
+  return mobileCentralSchemeCardsByCategory[categoryId] ?? mobileCentralSchemeCardsByCategory.default;
+};
 
 const metricsByPeriod: Record<
   string,
@@ -1933,6 +2136,23 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
   const [isSahAiOpen, setIsSahAiOpen] = useState<boolean>(false);
   const [isGuestEligibilityOpen, setIsGuestEligibilityOpen] = useState<boolean>(false);
   const [isMobileAuthOpen, setIsMobileAuthOpen] = useState<boolean>(false);
+  const [isSideMenuOpen, setIsSideMenuOpen] = useState<boolean>(false);
+
+  const [helpdeskRequests, setHelpdeskRequests] = useState<HelpdeskRequest[]>(INITIAL_MOCK_HELP_REQUESTS);
+
+  useEffect(() => {
+    const updateRequests = () => {
+      const loaded = loadHelpdeskRequests();
+      if (loaded.length > 0) {
+        setHelpdeskRequests(loaded);
+      } else {
+        setHelpdeskRequests(INITIAL_MOCK_HELP_REQUESTS);
+      }
+    };
+    updateRequests();
+    window.addEventListener("vk-helpdesk-requests-changed", updateRequests);
+    return () => window.removeEventListener("vk-helpdesk-requests-changed", updateRequests);
+  }, []);
 
   const handleLogout = () => {
     setIsGuest(true);
@@ -2515,10 +2735,13 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                 <button
                   type="button"
                   onClick={() => setActiveTab("applications")}
-                  className="flex items-center gap-0.5 text-[11px] font-bold text-[#f95700] hover:underline cursor-pointer"
+                  className="flex items-center gap-1 text-[11px] font-bold text-[#ff5500] hover:text-orange-600 transition-colors cursor-pointer shrink-0"
                 >
-                  <span className="flex items-center gap-1.5"><span>{lang === "ml" ? "എല്ലാം" : "View all"}</span><span className="rounded-full bg-orange-500/10 dark:bg-orange-950/40 text-[#f95700] px-1.5 py-0.5 text-[9.5px] font-black leading-none border border-orange-200/80 dark:border-orange-900/50">{2 + followUpCollectionRecords.length}</span></span>
-                  <ChevronRight className="h-3.5 w-3.5 stroke-[2.5]" />
+                  <span>{lang === "ml" ? "എല്ലാം" : "View All"}</span>
+                  <span className="flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-[#ff3b30] text-white text-[9.5px] font-black shadow-2xs">
+                    {2 + followUpCollectionRecords.length}
+                  </span>
+                  <ChevronRight className="h-3.5 w-3.5 text-[#ff5500] stroke-[2.5]" />
                 </button>
               </div>
 
@@ -4139,6 +4362,8 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
     categoryLabelMl: string;
     count: number;
   } | null>(null);
+  const [categorySchemeQuery, setCategorySchemeQuery] = useState("");
+  const [showCategorySearch, setShowCategorySearch] = useState(false);
   const [eventsSubTab, setEventsSubTab] = useState<"events" | "announcements">("events");
   const [applicationStatusFilter, setApplicationStatusFilter] = useState<MobileApplicationStatusFilter>("all");
   const [appSchemeCategoryFilter, setAppSchemeCategoryFilter] = useState<string>("all");
@@ -5834,6 +6059,12 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
       (Boolean(selectedSchemeName) && selectedSchemeName.toLowerCase().includes(detail.id));
 
     const handlePrimaryAction = () => {
+      if (isGuest) {
+        setIsGuestEligibilityOpen(true);
+        setSelectedSchemeName(detail.fullSchemeNameEn);
+        setMobileSubPage("none");
+        return;
+      }
       if (activeTab === "create" || createFlowStep === "scheme_details" || createFlowStep === "applicant_applications") {
         if (!selectedEligibleSchemeIds.includes(detail.id)) {
           setSelectedEligibleSchemeIds((prev) => [...prev, detail.id]);
@@ -6396,15 +6627,13 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
               setApplicationSearchQuery("");
               setMobileSubPage("none");
             }}
-            className="flex items-center gap-0.5 text-[11px] font-bold text-[#f95700] hover:underline cursor-pointer"
+            className="flex items-center gap-1 text-[11px] font-bold text-[#ff5500] hover:text-orange-600 transition-colors cursor-pointer shrink-0"
           >
-            <span className="flex items-center gap-1.5">
-              <span>{lang === "ml" ? "എല്ലാം" : "View all"}</span>
-              <span className="rounded-full bg-orange-500/10 dark:bg-orange-950/40 text-[#f95700] px-1.5 py-0.5 text-[9.5px] font-black leading-none border border-orange-200/80 dark:border-orange-900/50">
-                {String(latestSavedApplications.length).padStart(2, "0")}
-              </span>
+            <span>{lang === "ml" ? "എല്ലാം" : "View All"}</span>
+            <span className="flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-[#ff3b30] text-white text-[9.5px] font-black shadow-2xs">
+              {String(latestSavedApplications.length).padStart(2, "0")}
             </span>
-            <ChevronRight className="h-3.5 w-3.5 stroke-[2.5]" />
+            <ChevronRight className="h-3.5 w-3.5 text-[#ff5500] stroke-[2.5]" />
           </button>
         </div>
 
@@ -6682,6 +6911,9 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
   ];
 
   const renderGuestScreen = () => {
+    if (mobileSubPage === "scheme_details") {
+      return renderSchemeDetailsSubpage();
+    }
     if (mobileSubPage === "guest_popular_schemes" || mobileSubPage === "guest_schemes") {
       const q = guestSchemeSearchQuery.toLowerCase().trim();
       const filteredSchemes = guestSchemesFullList.filter((s) => {
@@ -6711,8 +6943,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                 <div
                   key={scheme.id}
                   onClick={() => {
-                    setIsGuestEligibilityOpen(true);
-                    setSelectedSchemeName(scheme.nameEn);
+                    openMobileSchemeDetailsView(scheme.nameEn);
                   }}
                   className="group bg-white dark:bg-slate-900 rounded-2xl py-2.5 px-3.5 border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:shadow-xs hover:border-orange-300 dark:hover:border-slate-700 transition-all cursor-pointer flex items-center gap-3 active:scale-[0.995]"
                 >
@@ -6778,8 +7009,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                 key={item.id}
                 type="button"
                 onClick={() => {
-                  setIsGuestEligibilityOpen(true);
-                  setSelectedSchemeName(item.nameEn);
+                  openMobileSchemeDetailsView(item.nameEn);
                 }}
                 className="snap-start shrink-0 w-[calc(25%-6px)] min-w-[72px] flex flex-col items-center text-center p-0 group cursor-pointer transition-all duration-200 hover:scale-105"
               >
@@ -7004,7 +7234,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
           </div>
 
           {/* Mobile App Standard Header or Application Details / Document Verification Back Header */}
-          {!isGuestEligibilityOpen && !isMobileAuthOpen && (
+          {!isGuestEligibilityOpen && !isMobileAuthOpen && mobileSubPage !== "category_schemes" && (
             mobileSubPage === "guest_popular_schemes" || mobileSubPage === "guest_schemes" || mobileSubPage === "app_detail" || mobileSubPage === "scheme_details" || (activeTab === "create" && (createFlowStep === "scheme_details" || createFlowStep === "eligible_schemes" || createFlowStep === "form")) ? (
               <header className="relative z-40 w-full bg-[#FFFDF9] dark:bg-slate-900 border-b border-slate-200/60 dark:border-slate-800/60 shadow-2xs">
                 {mobileSubPage === "guest_popular_schemes" || mobileSubPage === "guest_schemes" ? (
@@ -7301,6 +7531,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                   setActiveTab("overview");
                   setMobileSubPage("notifications");
                 }}
+                onMenuOpenChange={setIsSideMenuOpen}
               />
             )
           )}
@@ -7346,6 +7577,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                 lang={lang}
                 onClose={() => setIsGuestEligibilityOpen(false)}
                 onHelpRequestSent={handleGuestHelpRequestSent}
+                onOpenSchemeDetails={(schemeId) => openMobileSchemeDetailsView(schemeId)}
               />
             ) : isGuest ? (
               renderGuestScreen()
@@ -7823,10 +8055,13 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                         <button
                           type="button"
                           onClick={() => setActiveTab("applications")}
-                          className="flex items-center gap-0.5 text-[11px] font-bold text-[#f95700] hover:underline cursor-pointer"
+                          className="flex items-center gap-1 text-[11px] font-bold text-[#ff5500] hover:text-orange-600 transition-colors cursor-pointer shrink-0"
                         >
-                          <span className="flex items-center gap-1.5"><span>{lang === "ml" ? "എല്ലാം" : "View all"}</span><span className="rounded-full bg-orange-500/10 dark:bg-orange-950/40 text-[#f95700] px-1.5 py-0.5 text-[9.5px] font-black leading-none border border-orange-200/80 dark:border-orange-900/50">{2 + followUpCollectionRecords.length}</span></span>
-                          <ChevronRight className="h-3.5 w-3.5 stroke-[2.5]" />
+                          <span>{lang === "ml" ? "എല്ലാം" : "View All"}</span>
+                          <span className="flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-[#ff3b30] text-white text-[9.5px] font-black shadow-2xs">
+                            {2 + followUpCollectionRecords.length}
+                          </span>
+                          <ChevronRight className="h-3.5 w-3.5 text-[#ff5500] stroke-[2.5]" />
                         </button>
                       </div>
 
@@ -10465,103 +10700,131 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                   renderSchemeDetailsSubpage()
                 ) : mobileSubPage === "category_schemes" && selectedSchemeCategoryDetail ? (
                   /* Separate Category Schemes Page view */
-                  <div className="space-y-3 animate-in fade-in slide-in-from-right-2 duration-200">
+                  <div className="space-y-2 animate-in fade-in slide-in-from-right-2 duration-200 pt-0.5">
                     {/* Back Header */}
-                    <div className="flex items-center justify-between border-b border-border/80 pb-2 px-0.5">
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setMobileSubPage("none");
-                            setSelectedSchemeCategoryDetail(null);
-                          }}
-                          className="p-1 rounded-lg bg-muted/60 hover:bg-muted text-foreground transition-colors cursor-pointer"
-                          title={lang === "ml" ? "തിരികെ പോവുക" : "Go back"}
-                        >
+                    <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-slate-800 pb-2 px-0.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMobileSubPage("none");
+                          setSelectedSchemeCategoryDetail(null);
+                          setCategorySchemeQuery("");
+                          setShowCategorySearch(false);
+                        }}
+                        className="flex items-center gap-2 text-slate-900 dark:text-white hover:text-orange-600 transition-colors cursor-pointer group"
+                      >
+                        <div className="p-1 rounded-full bg-slate-100 dark:bg-slate-800 group-hover:bg-orange-50 dark:group-hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors">
                           <ArrowLeft className="h-4 w-4" />
-                        </button>
-                        <h3 className="font-extrabold text-sm text-foreground">
-                          {lang === "ml" ? "തിരികെ പദ്ധതികളിലേക്ക്" : "Back to Schemes"}
+                        </div>
+                        <h3 className="font-extrabold text-[13.5px] sm:text-[14px] text-slate-900 dark:text-white">
+                          {lang === "ml"
+                            ? `പദ്ധതികളുടെ പട്ടിക (${
+                                getMobileCentralSchemeCards(selectedSchemeCategoryDetail.id).filter((scheme) => {
+                                  if (!categorySchemeQuery.trim()) return true;
+                                  const q = categorySchemeQuery.toLowerCase();
+                                  return (
+                                    scheme.titleEn.toLowerCase().includes(q) ||
+                                    scheme.titleMl.toLowerCase().includes(q) ||
+                                    scheme.deptEn.toLowerCase().includes(q) ||
+                                    scheme.deptMl.toLowerCase().includes(q)
+                                  );
+                                }).length
+                              })`
+                            : `Schemes List (${
+                                getMobileCentralSchemeCards(selectedSchemeCategoryDetail.id).filter((scheme) => {
+                                  if (!categorySchemeQuery.trim()) return true;
+                                  const q = categorySchemeQuery.toLowerCase();
+                                  return (
+                                    scheme.titleEn.toLowerCase().includes(q) ||
+                                    scheme.titleMl.toLowerCase().includes(q) ||
+                                    scheme.deptEn.toLowerCase().includes(q) ||
+                                    scheme.deptMl.toLowerCase().includes(q)
+                                  );
+                                }).length
+                              })`}
                         </h3>
-                      </div>
-                      <span className="text-[10px] font-extrabold text-orange-700 dark:text-orange-300 bg-orange-100/80 dark:bg-orange-950/70 border border-orange-200/80 dark:border-orange-900/60 px-2.5 py-0.5 rounded-full">
-                        {selectedSchemeCategoryDetail.count} {lang === "ml" ? "പദ്ധതികൾ" : "Schemes"}
-                      </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowCategorySearch((prev) => !prev)}
+                        className={`p-1.5 rounded-full transition-colors ${
+                          showCategorySearch || categorySchemeQuery
+                            ? "bg-orange-100 text-orange-600 dark:bg-orange-950 dark:text-orange-400"
+                            : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        }`}
+                        title={lang === "ml" ? "തിരയുക" : "Search"}
+                      >
+                        <Search className="h-4 w-4 stroke-[2.2]" />
+                      </button>
                     </div>
 
-                    {/* Category Title Header */}
-                    <div className="p-3 rounded-2xl bg-gradient-to-r from-orange-500/10 via-amber-500/5 to-purple-500/10 border border-orange-200/60 dark:border-orange-900/40">
-                      <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-orange-600 dark:text-orange-400 bg-white dark:bg-slate-900 px-2 py-0.5 rounded-md border border-orange-200 dark:border-orange-800">
-                        {lang === "ml" ? selectedSchemeCategoryDetail.categoryLabelMl : selectedSchemeCategoryDetail.categoryLabelEn}
-                      </span>
-                      <h4 className="font-extrabold text-sm sm:text-base text-[#0a0f1d] dark:text-white leading-tight mt-1.5">
-                        {lang === "ml" ? selectedSchemeCategoryDetail.titleMl : selectedSchemeCategoryDetail.titleEn}
-                      </h4>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
-                        {lang === "ml" ? "ലഭ്യമായ പദ്ധതികളും അപേക്ഷ പ്രക്രിയകളും ചുവടെ കാണുക" : "Browse available schemes, eligibility criteria, and instant application options below."}
-                      </p>
-                    </div>
-
-                    {/* Scheme Cards for Category - Central Government schemes only */}
-                    <div className="space-y-3 pt-1">
-                      {getMobileCentralSchemeCards(selectedSchemeCategoryDetail.id).map((scheme) => (
-                        <div
-                          key={scheme.titleEn}
-                          className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:shadow-md transition-all"
-                        >
-                          <div className="flex items-center justify-between gap-1.5 mb-2">
-                            <span className="text-[9px] font-extrabold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/80 border border-blue-200 dark:border-blue-900/60 px-2 py-0.5 rounded-md">
-                              {lang === "ml" ? "കേന്ദ്ര സർക്കാർ" : "Central Government"}
-                            </span>
-                            <span className="text-[9.5px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-900/40 px-2 py-0.5 rounded-full flex items-center gap-1">
-                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                              {lang === "ml" ? "അപേക്ഷിക്കാം" : "Accepting Applications"}
-                            </span>
-                          </div>
-
+                    {/* Search Input Bar (Toggled or active) */}
+                    {(showCategorySearch || categorySchemeQuery) && (
+                      <div className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 shadow-2xs my-1">
+                        <Search className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                        <input
+                          autoFocus
+                          value={categorySchemeQuery}
+                          onChange={(e) => setCategorySchemeQuery(e.target.value)}
+                          placeholder={lang === "ml" ? "പദ്ധതികൾ തിരയുക..." : "Search schemes..."}
+                          className="min-w-0 flex-1 bg-transparent text-xs font-medium text-slate-800 dark:text-slate-100 outline-none placeholder:text-slate-400"
+                        />
+                        {categorySchemeQuery ? (
                           <button
                             type="button"
-                            onClick={() => openMobileSchemeDetailsView(scheme.titleEn, "category_schemes")}
-                            className="text-left font-extrabold text-xs sm:text-[13px] text-[#0a0f1d] dark:text-white leading-snug hover:text-orange-600 dark:hover:text-orange-400 cursor-pointer transition-colors"
+                            onClick={() => setCategorySchemeQuery("")}
+                            className="text-[10px] font-bold text-orange-600 dark:text-orange-400"
                           >
-                            {lang === "ml" ? scheme.titleMl : scheme.titleEn}
+                            {lang === "ml" ? "മായ്ക്കുക" : "Clear"}
                           </button>
+                        ) : null}
+                      </div>
+                    )}
 
-                          <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
-                            {lang === "ml" ? scheme.deptMl : scheme.deptEn}
-                          </p>
-
-                          <div className="mt-2.5 p-2 rounded-xl bg-orange-50/60 dark:bg-orange-950/30 border border-orange-100 dark:border-orange-900/30 text-[11px]">
-                            <div className="font-extrabold text-orange-800 dark:text-orange-300">
-                              {lang === "ml" ? "ആനുകൂല്യം:" : "Financial Benefit:"}
-                              <span className="font-medium text-slate-700 dark:text-slate-300 ml-1">
-                                {lang === "ml" ? scheme.benefitMl : scheme.benefitEn}
-                              </span>
+                    {/* Scheme Cards List matching user mockup */}
+                    <div className="space-y-1.5 pt-0.5">
+                      {getMobileCentralSchemeCards(selectedSchemeCategoryDetail.id)
+                        .filter((scheme) => {
+                          if (!categorySchemeQuery.trim()) return true;
+                          const q = categorySchemeQuery.toLowerCase();
+                          return (
+                            scheme.titleEn.toLowerCase().includes(q) ||
+                            scheme.titleMl.toLowerCase().includes(q) ||
+                            scheme.deptEn.toLowerCase().includes(q) ||
+                            scheme.deptMl.toLowerCase().includes(q)
+                          );
+                        })
+                        .map((scheme) => (
+                          <div
+                            key={scheme.titleEn}
+                            onClick={() => openMobileSchemeDetailsView(scheme.titleEn, "category_schemes")}
+                            className="p-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:shadow-md transition-all cursor-pointer flex items-center justify-between gap-2.5 group"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                              <div className="h-10 w-10 rounded-2xl bg-orange-50/70 dark:bg-slate-800 border border-orange-100/80 dark:border-slate-700 flex items-center justify-center shrink-0 p-1 shadow-2xs overflow-hidden">
+                                <img
+                                  src={getEligibleSchemeLogo({
+                                    titleEn: scheme.titleEn,
+                                    categoryEn: (scheme as any).categoryEn || selectedSchemeCategoryDetail.id,
+                                  } as any)}
+                                  alt={scheme.titleEn}
+                                  className="h-full w-full object-contain"
+                                />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-extrabold text-[12.5px] text-[#0a0f1d] dark:text-white leading-snug group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors truncate">
+                                  {lang === "ml" ? scheme.titleMl : scheme.titleEn}
+                                </h4>
+                                <p className="text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                                  {lang === "ml" ? scheme.deptMl : scheme.deptEn}
+                                </p>
+                              </div>
                             </div>
-                            <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
-                              <span className="font-bold text-slate-600 dark:text-slate-300">{lang === "ml" ? "യോഗ്യത:" : "Eligibility:"} </span>
-                              {lang === "ml" ? scheme.eligibilityMl : scheme.eligibilityEn}
+                            <div className="h-6.5 w-6.5 rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center shrink-0 text-slate-400 group-hover:text-orange-600 group-hover:bg-orange-50 dark:group-hover:bg-slate-700 transition-all">
+                              <ChevronRight className="h-3.5 w-3.5 stroke-[2.2]" />
                             </div>
                           </div>
-
-                          <div className="flex items-center justify-between pt-2.5 mt-2.5 border-t border-slate-100 dark:border-slate-800">
-                            <span className="text-[10px] text-slate-400 font-medium">
-                              {lang === "ml" ? "ഓൺലൈനായി അപേക്ഷിക്കാം" : "Online Application Enabled"}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedSchemeName(scheme.titleEn);
-                                setActiveTab("create");
-                              }}
-                              className="px-3 py-1.5 rounded-lg bg-[#ff5500] hover:bg-orange-600 text-white font-extrabold text-[11px] flex items-center gap-1 shadow-xs cursor-pointer active:scale-95 transition-all"
-                            >
-                              <span>{lang === "ml" ? "യോഗ്യത പരിശോധിക്കുക" : "Check Eligibility"}</span>
-                              <ChevronRight className="h-3 w-3 stroke-[2.5]" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   </div>
                 ) : (
@@ -10629,22 +10892,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                             key={item.id}
                             type="button"
                             onClick={() => {
-                              const foundCat = schemeCategories2Row.find(c => c.id === item.categoryId || c.detail.id === item.categoryId);
-                              if (foundCat) {
-                                setSelectedSchemeCategoryDetail(foundCat.detail);
-                                setSchemeCategoryFilter(foundCat.id);
-                              } else {
-                                setSelectedSchemeCategoryDetail({
-                                  id: item.id,
-                                  count: 18,
-                                  categoryLabelEn: item.nameEn,
-                                  categoryLabelMl: item.nameMl,
-                                  titleEn: item.nameEn,
-                                  titleMl: item.nameMl,
-                                });
-                                setSchemeCategoryFilter("all");
-                              }
-                              setMobileSubPage("category_schemes");
+                              openMobileSchemeDetailsView(item.nameEn);
                             }}
                             className="snap-start shrink-0 min-w-[72px] flex flex-col items-center text-center p-0 group cursor-pointer transition-all duration-200 hover:scale-105"
                           >
@@ -13423,32 +13671,158 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                     )}
                   </>
                 ) : (
-                  <div className="space-y-3 bg-card p-3 rounded-2xl border border-border shadow-2xs">
-                    <div className="flex items-center gap-3 p-3 bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800 rounded-xl">
-                      <div className="h-10 w-10 rounded-full bg-orange-500 text-white flex items-center justify-center shrink-0 font-bold">
-                        AI
+                  <div className="space-y-3.5">
+                    {/* SahAI Scheme Assistant & Helpline */}
+                    <div className="space-y-3 bg-card p-3 rounded-2xl border border-border shadow-2xs">
+                      <div className="flex items-center gap-3 p-3 bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800 rounded-xl">
+                        <div className="h-10 w-10 rounded-full bg-orange-500 text-white flex items-center justify-center shrink-0 font-bold">
+                          AI
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-bold text-foreground">SahAI Scheme Assistant</h4>
+                          <p className="text-[10.5px] text-muted-foreground">
+                            {lang === "ml" ? "പദ്ധതി സംശയങ്ങൾക്കും സഹായങ്ങൾക്കുമായി സംസാരിക്കൂ." : "Instant assistance for scheme eligibility and application guidance."}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-foreground">SahAI Scheme Assistant</h4>
-                        <p className="text-[10.5px] text-muted-foreground">
-                          {lang === "ml" ? "പദ്ധതി സംശയങ്ങൾക്കും സഹായങ്ങൾക്കുമായി സംസാരിക്കൂ." : "Instant assistance for scheme eligibility and application guidance."}
+                      <div className="border border-border rounded-xl p-2.5 bg-background text-xs space-y-2">
+                        <p className="text-muted-foreground font-medium">
+                          {lang === "ml" ? "ഹെൽപ്പ്ഡെസ്ക് നമ്പർ: +91 1800 200 400" : "Helpdesk Helpline: 1800-200-400 (Toll Free)"}
                         </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveTab("create");
+                            setCreateFlowStep("form");
+                          }}
+                          className="w-full py-2 rounded-lg bg-primary/10 text-primary font-bold text-xs hover:bg-primary/20 transition-colors"
+                        >
+                          {lang === "ml" ? "നേരിട്ട് അപേക്ഷിക്കുക" : "Apply Directly"}
+                        </button>
                       </div>
                     </div>
-                    <div className="border border-border rounded-xl p-2.5 bg-background text-xs space-y-2">
-                      <p className="text-muted-foreground font-medium">
-                        {lang === "ml" ? "ഹെൽപ്പ്ഡെസ്ക് നമ്പർ: +91 1800 200 400" : "Helpdesk Helpline: 1800-200-400 (Toll Free)"}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveTab("create");
-                          setCreateFlowStep("form");
-                        }}
-                        className="w-full py-2 rounded-lg bg-primary/10 text-primary font-bold text-xs hover:bg-primary/20 transition-colors"
-                      >
-                        {lang === "ml" ? "നേരിട്ട് അപേക്ഷിക്കുക" : "Apply Directly"}
-                      </button>
+
+                    {/* Public / Guest Eligibility Assistance Requests */}
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between px-1">
+                        <div className="flex items-center gap-1.5">
+                          <HeartHandshake className="h-4 w-4 text-orange-500" />
+                          <h3 className="font-extrabold text-xs text-foreground">
+                            {lang === "ml" ? "പൊതുജന സഹായ അഭ്യർത്ഥനകൾ" : "Public Help Requests"}
+                          </h3>
+                        </div>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300 border border-orange-200">
+                          {helpdeskRequests.length} {lang === "ml" ? "അഭ്യർത്ഥനകൾ" : "Requests"}
+                        </span>
+                      </div>
+
+                      {helpdeskRequests.length === 0 ? (
+                        <div className="p-6 text-center bg-card rounded-2xl border border-border">
+                          <p className="text-xs text-muted-foreground">
+                            {lang === "ml" ? "സഹായ അഭ്യർത്ഥനകളൊന്നും ലഭിച്ചിട്ടില്ല" : "No public help requests received yet"}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2.5">
+                          {helpdeskRequests.map((req, idx) => (
+                            <div
+                              key={req.reference || idx}
+                              className="bg-card p-3.5 rounded-2xl border border-border shadow-2xs hover:border-orange-200 transition-all space-y-2.5"
+                            >
+                              {/* Header: Name & Status */}
+                              <div className="flex items-start justify-between gap-2 border-b border-border/60 pb-2">
+                                <div className="flex items-center gap-2">
+                                  <div className="h-8 w-8 rounded-full bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold text-xs shrink-0">
+                                    {(req.contactName || req.applicant || "A").charAt(0).toUpperCase()}
+                                  </div>
+                                  <div>
+                                    <h4 className="font-extrabold text-xs text-foreground leading-tight">
+                                      {req.contactName || req.applicant}
+                                    </h4>
+                                    <p className="text-[10px] text-muted-foreground font-medium flex items-center gap-1 mt-0.5">
+                                      <Phone className="h-3 w-3 text-emerald-500 shrink-0" />
+                                      {req.contactMobile || req.mobile}
+                                    </p>
+                                  </div>
+                                </div>
+                                <span className="px-2 py-0.5 rounded-full text-[9.5px] font-bold bg-orange-50 text-orange-700 dark:bg-orange-950/80 dark:text-orange-300 border border-orange-200/80 shrink-0">
+                                  {lang === "ml" ? "പൊതു സഹായം" : "Public Request"}
+                                </span>
+                              </div>
+
+                              {/* Location Card: Mandalam & District */}
+                              <div className="grid grid-cols-2 gap-2 bg-muted/40 dark:bg-slate-800/50 p-2.5 rounded-xl border border-border/50 text-[11px]">
+                                <div className="space-y-0.5">
+                                  <span className="text-[9.5px] font-bold text-muted-foreground block uppercase tracking-wider">
+                                    {lang === "ml" ? "അസംബ്ലി മണ്ഡലം" : "Mandalam"}
+                                  </span>
+                                  <span className="font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+                                    <MapPin className="h-3 w-3 text-orange-500 shrink-0" />
+                                    {req.location?.mandalamName || "Kazhakoottam"}
+                                  </span>
+                                </div>
+                                <div className="space-y-0.5">
+                                  <span className="text-[9.5px] font-bold text-muted-foreground block uppercase tracking-wider">
+                                    {lang === "ml" ? "ജില്ല" : "District"}
+                                  </span>
+                                  <span className="font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+                                    <Building2 className="h-3 w-3 text-slate-400 shrink-0" />
+                                    {req.location?.districtName || req.district || "Thiruvananthapuram"}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Schemes Requested */}
+                              {req.schemeIds && req.schemeIds.length > 0 && (
+                                <div className="space-y-1">
+                                  <span className="text-[9.5px] font-bold text-muted-foreground block">
+                                    {lang === "ml" ? "ആവശ്യപ്പെട്ട പദ്ധതികൾ:" : "Requested Schemes:"}
+                                  </span>
+                                  <div className="flex flex-wrap gap-1">
+                                    {req.schemeIds.map((sId) => {
+                                      const foundScheme = schemes.find((s) => s.id === sId);
+                                      return (
+                                        <span
+                                          key={sId}
+                                          className="px-2 py-0.5 rounded-md bg-orange-100/70 dark:bg-orange-950/60 text-orange-800 dark:text-orange-300 text-[10px] font-bold border border-orange-200/60"
+                                        >
+                                          {foundScheme ? (lang === "ml" ? foundScheme.ml : foundScheme.en) : sId}
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Notes if available */}
+                              {req.notes && (
+                                <p className="text-[10.5px] italic text-muted-foreground bg-background p-2 rounded-lg border border-border/60">
+                                  "{req.notes}"
+                                </p>
+                              )}
+
+                              {/* Footer Action */}
+                              <div className="flex items-center justify-between pt-1 text-[10px]">
+                                <span className="text-muted-foreground font-medium">
+                                  Ref: {req.reference}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setCreateFullName(req.contactName || req.applicant);
+                                    setCreatePhone((req.contactMobile || req.mobile).replace(/\*/g, "9"));
+                                    setActiveTab("create");
+                                    setCreateFlowStep("form");
+                                  }}
+                                  className="px-2.5 py-1 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-extrabold transition-colors cursor-pointer shadow-2xs"
+                                >
+                                  {lang === "ml" ? "അപേക്ഷ ആരംഭിക്കുക" : "Create Application"}
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -13768,8 +14142,9 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
             </div>
           )}
 
-          {/* Bottom Nav Bar - Hidden in Guest Mode */}
+          {/* Bottom Nav Bar - Hidden in Guest Mode or when Side Menu is Open */}
           {!isGuest &&
+            !isSideMenuOpen &&
             !isMobileAuthOpen &&
             mobileSubPage !== "app_detail" &&
             (activeTab !== "create" || createFlowStep === "applicant_applications") &&

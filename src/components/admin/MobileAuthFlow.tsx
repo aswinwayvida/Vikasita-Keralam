@@ -263,9 +263,6 @@ export function MobileAuthFlow({
                       : "border-[#f3d2bf] focus-within:border-[#f15a0a] focus-within:ring-2 focus-within:ring-[#f15a0a]/15"
                   }`}
                 >
-                  <span className="flex shrink-0 items-center border-r border-[#e9d8cb] px-3.5 text-[13px] font-bold text-[#0a1f44]">
-                    +91
-                  </span>
                   <input
                     ref={mobileInputRef}
                     id="mobile-number"
@@ -276,7 +273,7 @@ export function MobileAuthFlow({
                     onChange={(event) => handleMobileChange(event.target.value)}
                     placeholder={t("Enter 10-digit mobile number", "10 അക്ക മൊബൈല്‍ നമ്പര്‍ നല്‍കുക")}
                     maxLength={10}
-                    className="min-w-0 flex-1 bg-transparent px-3.5 text-[14px] font-semibold text-[#0a1f44] outline-none placeholder:font-normal placeholder:text-[#9a9aa2]"
+                    className="min-w-0 flex-1 bg-transparent px-4 text-[14px] font-semibold text-[#0a1f44] outline-none placeholder:font-normal placeholder:text-[#9a9aa2]"
                     aria-invalid={Boolean(mobileError)}
                     aria-describedby={mobileError ? "mobile-error" : "mobile-helper"}
                   />
@@ -335,15 +332,16 @@ export function MobileAuthFlow({
             </div>
 
             {/* Powered By Wayvida */}
-            <div className="mt-6 pb-1 flex items-center justify-center gap-1.5 text-center">
-              <span className="text-[9.5px] font-extrabold tracking-widest text-[#8e9bb0] uppercase">
-                POWERED BY
-              </span>
-              <img
-                src="/wayvida-logo-transparent.png"
-                alt="Wayvida"
-                className="h-3.5 w-auto object-contain shrink-0"
-              />
+            <div className="mt-6 pb-1 flex items-center justify-center text-center">
+              <a
+                href="https://wayvida.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors inline-flex items-center gap-1 cursor-pointer"
+              >
+                <span>Powered by</span>
+                <strong className="font-bold text-slate-700 hover:text-orange-600 dark:text-slate-200">Wayvida</strong>
+              </a>
             </div>
           </div>
         ) : (
@@ -474,15 +472,16 @@ export function MobileAuthFlow({
             </div>
 
             {/* Powered By Wayvida */}
-            <div className="mt-6 pb-1 flex items-center justify-center gap-1.5 text-center">
-              <span className="text-[9.5px] font-extrabold tracking-widest text-[#8e9bb0] uppercase">
-                POWERED BY
-              </span>
-              <img
-                src="/wayvida-logo-transparent.png"
-                alt="Wayvida"
-                className="h-3.5 w-auto object-contain shrink-0"
-              />
+            <div className="mt-6 pb-1 flex items-center justify-center text-center">
+              <a
+                href="https://wayvida.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors inline-flex items-center gap-1 cursor-pointer"
+              >
+                <span>Powered by</span>
+                <strong className="font-bold text-slate-700 hover:text-orange-600 dark:text-slate-200">Wayvida</strong>
+              </a>
             </div>
           </div>
         )}
