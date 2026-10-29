@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link } from "@tanstack/react-router";
-import { X, Smartphone, Wifi, Battery, Signal, ChevronRight, ChevronLeft, ArrowLeft, Users, HeartHandshake, Database, Layers, Sparkles, MessageSquare, Clock3, UserCheck, LayoutDashboard, Sliders, Calendar, FileText, XCircle, CheckCircle2, Hourglass, MapPin, Trophy, AlertTriangle, Activity, Globe, Map, Network, Store, ShieldCheck, ChevronDown, Filter, Search, SearchCheck, Megaphone, CalendarDays, BellRing, Phone, RotateCcw, GraduationCap, Sprout, LayoutGrid, MoreVertical, AlertCircle, Star, Zap, Headphones, Edit, Upload, FileCheck, Loader2, SearchX, RefreshCw, Check, Lock, User, Eye, Send, Info, Plus, Inbox, FileSearch, HandCoins, UserRound, Paperclip, ClipboardList, Headset, Copy, Pencil, Download, FileImage, ExternalLink, CloudUpload, Home, Building2, Flame, HelpCircle } from "lucide-react";
+import { X, Smartphone, Wifi, Battery, Signal, ChevronRight, ChevronLeft, ArrowLeft, Users, HeartHandshake, Database, Layers, Sparkles, MessageSquare, Clock3, UserCheck, LayoutDashboard, Sliders, Calendar, FileText, XCircle, CheckCircle2, Hourglass, MapPin, Trophy, AlertTriangle, Activity, Globe, Map, Network, Store, ShieldCheck, ChevronDown, Filter, Search, SearchCheck, Megaphone, CalendarDays, BellRing, Phone, RotateCcw, GraduationCap, Sprout, LayoutGrid, MoreVertical, AlertCircle, Star, Zap, Headphones, Edit, Upload, FileCheck, Loader2, SearchX, RefreshCw, Check, Lock, User, Eye, Send, Info, Plus, Inbox, FileSearch, HandCoins, UserRound, Paperclip, ClipboardList, Headset, Copy, Pencil, Download, FileImage, ExternalLink, CloudUpload, Home, Building2, Flame, HelpCircle, UserPlus, Trash2 } from "lucide-react";
 import { useLang } from "@/i18n/LanguageProvider";
 import officialLotus from "@/assets/bjp-official-lotus.png";
 import vikasitaMlLogo from "@/assets/logo-vikasita-ml-official.png";
@@ -41,22 +41,17 @@ import { loadHelpdeskRequests, type HelpdeskRequest } from "@/lib/helpdesk-reque
 const INITIAL_MOCK_HELP_REQUESTS: HelpdeskRequest[] = [
   {
     reference: "VK-HELP-G-2026-A8K29P",
-    applicant: "Anand V S",
-    contactName: "Anand V S",
-    contactMobile: "9847123456",
-    mobile: "9847123456",
+    applicant: "Aswin Sasi",
+    contactName: "Aswin Sasi",
+    contactMobile: "9633360166",
+    mobile: "9633360166",
     schemeId: "pm-kisan",
-    schemeIds: ["pm-kisan", "pm-surya-ghar"],
-    district: "Thiruvananthapuram",
-    helpdeskId: "tvm-helpdesk",
-    helpdeskName: "Thiruvananthapuram Main Help Desk",
-    notes: "Requires assistance in applying for solar scheme subsidy and PM-Kisan documentation.",
-    location: {
-      districtId: "tvm",
-      districtName: "Thiruvananthapuram",
-      mandalamId: "kazhakoottam",
-      mandalamName: "Kazhakoottam",
-    },
+    schemeIds: ["pm-kisan"],
+    district: "Kollam",
+    helpdeskId: "klm-helpdesk",
+    helpdeskName: "Kollam Main Help Desk",
+    notes: "",
+    location: { districtId: "klm", districtName: "Kollam", mandalamId: "chavara", mandalamName: "Chavara" },
     source: "guest_eligibility",
     documents: [],
     missingDocuments: [],
@@ -65,6 +60,25 @@ const INITIAL_MOCK_HELP_REQUESTS: HelpdeskRequest[] = [
   },
   {
     reference: "VK-HELP-G-2026-B7M14Q",
+    applicant: "Anand V S",
+    contactName: "Anand V S",
+    contactMobile: "9847123456",
+    mobile: "9847123456",
+    schemeId: "pm-surya-ghar",
+    schemeIds: ["pm-surya-ghar"],
+    district: "Thiruvananthapuram",
+    helpdeskId: "tvm-helpdesk",
+    helpdeskName: "Thiruvananthapuram Main Help Desk",
+    notes: "",
+    location: { districtId: "tvm", districtName: "Thiruvananthapuram", mandalamId: "kazhakoottam", mandalamName: "Kazhakoottam" },
+    source: "guest_eligibility",
+    documents: [],
+    missingDocuments: [],
+    status: "helpdesk_request_created",
+    createdAt: new Date(Date.now() - 3600000).toISOString(),
+  },
+  {
+    reference: "VK-HELP-G-2026-C3K90R",
     applicant: "Deepa Lakshmi",
     contactName: "Deepa Lakshmi",
     contactMobile: "9447234567",
@@ -74,21 +88,16 @@ const INITIAL_MOCK_HELP_REQUESTS: HelpdeskRequest[] = [
     district: "Thiruvananthapuram",
     helpdeskId: "tvm-helpdesk",
     helpdeskName: "Thiruvananthapuram Main Help Desk",
-    notes: "Checking eligibility for maternity benefit installment.",
-    location: {
-      districtId: "tvm",
-      districtName: "Thiruvananthapuram",
-      mandalamId: "nemom",
-      mandalamName: "Nemom",
-    },
+    notes: "",
+    location: { districtId: "tvm", districtName: "Thiruvananthapuram", mandalamId: "nemom", mandalamName: "Nemom" },
     source: "guest_eligibility",
     documents: [],
     missingDocuments: [],
     status: "helpdesk_request_created",
-    createdAt: new Date(Date.now() - 86400000).toISOString(),
+    createdAt: new Date(Date.now() - 7200000).toISOString(),
   },
   {
-    reference: "VK-HELP-G-2026-C3K90R",
+    reference: "VK-HELP-G-2026-D4P82S",
     applicant: "Suresh Kumar",
     contactName: "Suresh Kumar",
     contactMobile: "9895345678",
@@ -98,18 +107,317 @@ const INITIAL_MOCK_HELP_REQUESTS: HelpdeskRequest[] = [
     district: "Thiruvananthapuram",
     helpdeskId: "tvm-helpdesk",
     helpdeskName: "Thiruvananthapuram Main Help Desk",
-    notes: "Needs ward worker guidance for house sanction documents.",
-    location: {
-      districtId: "tvm",
-      districtName: "Thiruvananthapuram",
-      mandalamId: "vattiyoorkavu",
-      mandalamName: "Vattiyoorkavu",
-    },
+    notes: "",
+    location: { districtId: "tvm", districtName: "Thiruvananthapuram", mandalamId: "vattiyoorkavu", mandalamName: "Vattiyoorkavu" },
     source: "guest_eligibility",
     documents: [],
     missingDocuments: [],
     status: "helpdesk_request_created",
-    createdAt: new Date(Date.now() - 172800000).toISOString(),
+    createdAt: new Date(Date.now() - 10800000).toISOString(),
+  },
+  {
+    reference: "VK-HELP-G-2026-E5R93T",
+    applicant: "Rajesh Nair",
+    contactName: "Rajesh Nair",
+    contactMobile: "9744123890",
+    mobile: "9744123890",
+    schemeId: "pm-vishwakarma",
+    schemeIds: ["pm-vishwakarma"],
+    district: "Kollam",
+    helpdeskId: "klm-helpdesk",
+    helpdeskName: "Kollam Main Help Desk",
+    notes: "",
+    location: { districtId: "klm", districtName: "Kollam", mandalamId: "kottarakkara", mandalamName: "Kottarakkara" },
+    source: "guest_eligibility",
+    documents: [],
+    missingDocuments: [],
+    status: "helpdesk_request_created",
+    createdAt: new Date(Date.now() - 14400000).toISOString(),
+  },
+  {
+    reference: "VK-HELP-G-2026-F6S14U",
+    applicant: "Smitha Pillai",
+    contactName: "Smitha Pillai",
+    contactMobile: "9562345123",
+    mobile: "9562345123",
+    schemeId: "ayushman-bharat",
+    schemeIds: ["ayushman-bharat"],
+    district: "Alappuzha",
+    helpdeskId: "alp-helpdesk",
+    helpdeskName: "Alappuzha Main Help Desk",
+    notes: "",
+    location: { districtId: "alp", districtName: "Alappuzha", mandalamId: "cherthala", mandalamName: "Cherthala" },
+    source: "guest_eligibility",
+    documents: [],
+    missingDocuments: [],
+    status: "helpdesk_request_created",
+    createdAt: new Date(Date.now() - 18000000).toISOString(),
+  },
+  {
+    reference: "VK-HELP-G-2026-G7T25V",
+    applicant: "Meena K",
+    contactName: "Meena K",
+    contactMobile: "9846012345",
+    mobile: "9846012345",
+    schemeId: "kudumbashree-loan",
+    schemeIds: ["kudumbashree-loan"],
+    district: "Ernakulam",
+    helpdeskId: "ekm-helpdesk",
+    helpdeskName: "Ernakulam Main Help Desk",
+    notes: "",
+    location: { districtId: "ekm", districtName: "Ernakulam", mandalamId: "paravur", mandalamName: "Paravur" },
+    source: "guest_eligibility",
+    documents: [],
+    missingDocuments: [],
+    status: "helpdesk_request_created",
+    createdAt: new Date(Date.now() - 21600000).toISOString(),
+  },
+  {
+    reference: "VK-HELP-G-2026-H8U36W",
+    applicant: "Vishnu Dev",
+    contactName: "Vishnu Dev",
+    contactMobile: "9947890123",
+    mobile: "9947890123",
+    schemeId: "subhiksha-keralam",
+    schemeIds: ["subhiksha-keralam"],
+    district: "Thrissur",
+    helpdeskId: "tsr-helpdesk",
+    helpdeskName: "Thrissur Main Help Desk",
+    notes: "",
+    location: { districtId: "tsr", districtName: "Thrissur", mandalamId: "guruvayur", mandalamName: "Guruvayur" },
+    source: "guest_eligibility",
+    documents: [],
+    missingDocuments: [],
+    status: "helpdesk_request_created",
+    createdAt: new Date(Date.now() - 25200000).toISOString(),
+  },
+  {
+    reference: "VK-HELP-G-2026-I9V47X",
+    applicant: "Arya Mohan",
+    contactName: "Arya Mohan",
+    contactMobile: "9400567890",
+    mobile: "9400567890",
+    schemeId: "pm-svanidhi",
+    schemeIds: ["pm-svanidhi"],
+    district: "Kozhikode",
+    helpdeskId: "kkd-helpdesk",
+    helpdeskName: "Kozhikode Main Help Desk",
+    notes: "",
+    location: { districtId: "kkd", districtName: "Kozhikode", mandalamId: "kozhikode-north", mandalamName: "Kozhikode North" },
+    source: "guest_eligibility",
+    documents: [],
+    missingDocuments: [],
+    status: "helpdesk_request_created",
+    createdAt: new Date(Date.now() - 28800000).toISOString(),
+  },
+  {
+    reference: "VK-HELP-G-2026-J0W58Y",
+    applicant: "Akhil V",
+    contactName: "Akhil V",
+    contactMobile: "9745678901",
+    mobile: "9745678901",
+    schemeId: "stand-up-india",
+    schemeIds: ["stand-up-india"],
+    district: "Kottayam",
+    helpdeskId: "ktm-helpdesk",
+    helpdeskName: "Kottayam Main Help Desk",
+    notes: "",
+    location: { districtId: "ktm", districtName: "Kottayam", mandalamId: "pala", mandalamName: "Pala" },
+    source: "guest_eligibility",
+    documents: [],
+    missingDocuments: [],
+    status: "helpdesk_request_created",
+    createdAt: new Date(Date.now() - 32400000).toISOString(),
+  },
+  {
+    reference: "VK-HELP-G-2026-K1X69Z",
+    applicant: "Maya S",
+    contactName: "Maya S",
+    contactMobile: "9605123456",
+    mobile: "9605123456",
+    schemeId: "pm-kisan",
+    schemeIds: ["pm-kisan"],
+    district: "Palakkad",
+    helpdeskId: "pkd-helpdesk",
+    helpdeskName: "Palakkad Main Help Desk",
+    notes: "",
+    location: { districtId: "pkd", districtName: "Palakkad", mandalamId: "alathur", mandalamName: "Alathur" },
+    source: "guest_eligibility",
+    documents: [],
+    missingDocuments: [],
+    status: "helpdesk_request_created",
+    createdAt: new Date(Date.now() - 36000000).toISOString(),
+  },
+  {
+    reference: "VK-HELP-G-2026-L2Y70A",
+    applicant: "Reshma R",
+    contactName: "Reshma R",
+    contactMobile: "9847890123",
+    mobile: "9847890123",
+    schemeId: "pm-matru-vandana",
+    schemeIds: ["pm-matru-vandana"],
+    district: "Malappuram",
+    helpdeskId: "mlp-helpdesk",
+    helpdeskName: "Malappuram Main Help Desk",
+    notes: "",
+    location: { districtId: "mlp", districtName: "Malappuram", mandalamId: "tirur", mandalamName: "Tirur" },
+    source: "guest_eligibility",
+    documents: [],
+    missingDocuments: [],
+    status: "helpdesk_request_created",
+    createdAt: new Date(Date.now() - 39600000).toISOString(),
+  },
+  {
+    reference: "VK-HELP-G-2026-M3Z81B",
+    applicant: "Arun Kumar",
+    contactName: "Arun Kumar",
+    contactMobile: "9539012345",
+    mobile: "9539012345",
+    schemeId: "pm-awas",
+    schemeIds: ["pm-awas"],
+    district: "Kannur",
+    helpdeskId: "knr-helpdesk",
+    helpdeskName: "Kannur Main Help Desk",
+    notes: "",
+    location: { districtId: "knr", districtName: "Kannur", mandalamId: "thalassery", mandalamName: "Thalassery" },
+    source: "guest_eligibility",
+    documents: [],
+    missingDocuments: [],
+    status: "helpdesk_request_created",
+    createdAt: new Date(Date.now() - 43200000).toISOString(),
+  },
+  {
+    reference: "VK-HELP-G-2026-N4A92C",
+    applicant: "Gokul Krishna",
+    contactName: "Gokul Krishna",
+    contactMobile: "9995123456",
+    mobile: "9995123456",
+    schemeId: "pm-surya-ghar",
+    schemeIds: ["pm-surya-ghar"],
+    district: "Pathanamthitta",
+    helpdeskId: "pta-helpdesk",
+    helpdeskName: "Pathanamthitta Main Help Desk",
+    notes: "",
+    location: { districtId: "pta", districtName: "Pathanamthitta", mandalamId: "thiruvalla", mandalamName: "Thiruvalla" },
+    source: "guest_eligibility",
+    documents: [],
+    missingDocuments: [],
+    status: "helpdesk_request_created",
+    createdAt: new Date(Date.now() - 46800000).toISOString(),
+  },
+  {
+    reference: "VK-HELP-G-2026-O5B03D",
+    applicant: "Priya P",
+    contactName: "Priya P",
+    contactMobile: "9846234567",
+    mobile: "9846234567",
+    schemeId: "ayushman-bharat",
+    schemeIds: ["ayushman-bharat"],
+    district: "Idukki",
+    helpdeskId: "idk-helpdesk",
+    helpdeskName: "Idukki Main Help Desk",
+    notes: "",
+    location: { districtId: "idk", districtName: "Idukki", mandalamId: "thodupuzha", mandalamName: "Thodupuzha" },
+    source: "guest_eligibility",
+    documents: [],
+    missingDocuments: [],
+    status: "helpdesk_request_created",
+    createdAt: new Date(Date.now() - 50400000).toISOString(),
+  },
+  {
+    reference: "VK-HELP-G-2026-P6C14E",
+    applicant: "Jayakrishnan",
+    contactName: "Jayakrishnan",
+    contactMobile: "9446345678",
+    mobile: "9446345678",
+    schemeId: "pm-vishwakarma",
+    schemeIds: ["pm-vishwakarma"],
+    district: "Wayanad",
+    helpdeskId: "wyd-helpdesk",
+    helpdeskName: "Wayanad Main Help Desk",
+    notes: "",
+    location: { districtId: "wyd", districtName: "Wayanad", mandalamId: "sulthan-bathery", mandalamName: "Sulthan Bathery" },
+    source: "guest_eligibility",
+    documents: [],
+    missingDocuments: [],
+    status: "helpdesk_request_created",
+    createdAt: new Date(Date.now() - 54000000).toISOString(),
+  },
+  {
+    reference: "VK-HELP-G-2026-Q7D25F",
+    applicant: "Divya M",
+    contactName: "Divya M",
+    contactMobile: "9747456789",
+    mobile: "9747456789",
+    schemeId: "kudumbashree-loan",
+    schemeIds: ["kudumbashree-loan"],
+    district: "Kasaragod",
+    helpdeskId: "ksd-helpdesk",
+    helpdeskName: "Kasaragod Main Help Desk",
+    notes: "",
+    location: { districtId: "ksd", districtName: "Kasaragod", mandalamId: "kanhangad", mandalamName: "Kanhangad" },
+    source: "guest_eligibility",
+    documents: [],
+    missingDocuments: [],
+    status: "helpdesk_request_created",
+    createdAt: new Date(Date.now() - 57600000).toISOString(),
+  },
+  {
+    reference: "VK-HELP-G-2026-R8E36G",
+    applicant: "Renjith R",
+    contactName: "Renjith R",
+    contactMobile: "9895567890",
+    mobile: "9895567890",
+    schemeId: "subhiksha-keralam",
+    schemeIds: ["subhiksha-keralam"],
+    district: "Kollam",
+    helpdeskId: "klm-helpdesk",
+    helpdeskName: "Kollam Main Help Desk",
+    notes: "",
+    location: { districtId: "klm", districtName: "Kollam", mandalamId: "karunagappally", mandalamName: "Karunagappally" },
+    source: "guest_eligibility",
+    documents: [],
+    missingDocuments: [],
+    status: "helpdesk_request_created",
+    createdAt: new Date(Date.now() - 61200000).toISOString(),
+  },
+  {
+    reference: "VK-HELP-G-2026-S9F47H",
+    applicant: "Lakshmi Amma",
+    contactName: "Lakshmi Amma",
+    contactMobile: "9400678901",
+    mobile: "9400678901",
+    schemeId: "pm-kisan",
+    schemeIds: ["pm-kisan"],
+    district: "Thiruvananthapuram",
+    helpdeskId: "tvm-helpdesk",
+    helpdeskName: "Thiruvananthapuram Main Help Desk",
+    notes: "",
+    location: { districtId: "tvm", districtName: "Thiruvananthapuram", mandalamId: "neyyattinkara", mandalamName: "Neyyattinkara" },
+    source: "guest_eligibility",
+    documents: [],
+    missingDocuments: [],
+    status: "helpdesk_request_created",
+    createdAt: new Date(Date.now() - 64800000).toISOString(),
+  },
+  {
+    reference: "VK-HELP-G-2026-T0G58I",
+    applicant: "Unnikrishnan N",
+    contactName: "Unnikrishnan N",
+    contactMobile: "9562789012",
+    mobile: "9562789012",
+    schemeId: "pm-svanidhi",
+    schemeIds: ["pm-svanidhi"],
+    district: "Ernakulam",
+    helpdeskId: "ekm-helpdesk",
+    helpdeskName: "Ernakulam Main Help Desk",
+    notes: "",
+    location: { districtId: "ekm", districtName: "Ernakulam", mandalamId: "kochi", mandalamName: "Kochi" },
+    source: "guest_eligibility",
+    documents: [],
+    missingDocuments: [],
+    status: "helpdesk_request_created",
+    createdAt: new Date(Date.now() - 68400000).toISOString(),
   },
 ];
 
@@ -2139,11 +2447,16 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
   const [isSideMenuOpen, setIsSideMenuOpen] = useState<boolean>(false);
 
   const [helpdeskRequests, setHelpdeskRequests] = useState<HelpdeskRequest[]>(INITIAL_MOCK_HELP_REQUESTS);
+  const [openHelpdeskMenuIndex, setOpenHelpdeskMenuIndex] = useState<number | null>(null);
+  const [isHelpdeskSearchOpen, setIsHelpdeskSearchOpen] = useState<boolean>(false);
+  const [helpdeskSearchQuery, setHelpdeskSearchQuery] = useState<string>("");
+  const [isHelpdeskFilterOpen, setIsHelpdeskFilterOpen] = useState<boolean>(false);
+  const [helpdeskSelectedDistrict, setHelpdeskSelectedDistrict] = useState<string>("all");
 
   useEffect(() => {
     const updateRequests = () => {
       const loaded = loadHelpdeskRequests();
-      if (loaded.length > 0) {
+      if (loaded && loaded.length >= 20) {
         setHelpdeskRequests(loaded);
       } else {
         setHelpdeskRequests(INITIAL_MOCK_HELP_REQUESTS);
@@ -13672,49 +13985,87 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                   </>
                 ) : (
                   <div className="space-y-3.5">
-                    {/* SahAI Scheme Assistant & Helpline */}
-                    <div className="space-y-3 bg-card p-3 rounded-2xl border border-border shadow-2xs">
-                      <div className="flex items-center gap-3 p-3 bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800 rounded-xl">
-                        <div className="h-10 w-10 rounded-full bg-orange-500 text-white flex items-center justify-center shrink-0 font-bold">
-                          AI
-                        </div>
-                        <div>
-                          <h4 className="text-xs font-bold text-foreground">SahAI Scheme Assistant</h4>
-                          <p className="text-[10.5px] text-muted-foreground">
-                            {lang === "ml" ? "പദ്ധതി സംശയങ്ങൾക്കും സഹായങ്ങൾക്കുമായി സംസാരിക്കൂ." : "Instant assistance for scheme eligibility and application guidance."}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="border border-border rounded-xl p-2.5 bg-background text-xs space-y-2">
-                        <p className="text-muted-foreground font-medium">
-                          {lang === "ml" ? "ഹെൽപ്പ്ഡെസ്ക് നമ്പർ: +91 1800 200 400" : "Helpdesk Helpline: 1800-200-400 (Toll Free)"}
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setActiveTab("create");
-                            setCreateFlowStep("form");
-                          }}
-                          className="w-full py-2 rounded-lg bg-primary/10 text-primary font-bold text-xs hover:bg-primary/20 transition-colors"
-                        >
-                          {lang === "ml" ? "നേരിട്ട് അപേക്ഷിക്കുക" : "Apply Directly"}
-                        </button>
-                      </div>
-                    </div>
-
                     {/* Public / Guest Eligibility Assistance Requests */}
                     <div className="space-y-2.5">
                       <div className="flex items-center justify-between px-1">
-                        <div className="flex items-center gap-1.5">
-                          <HeartHandshake className="h-4 w-4 text-orange-500" />
-                          <h3 className="font-extrabold text-xs text-foreground">
-                            {lang === "ml" ? "പൊതുജന സഹായ അഭ്യർത്ഥനകൾ" : "Public Help Requests"}
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <HeartHandshake className="h-4 w-4 text-orange-500 shrink-0" />
+                          <h3 className="font-extrabold text-xs text-foreground truncate">
+                            {lang === "ml"
+                              ? `പൊതുജന സഹായ അഭ്യർത്ഥനകൾ (${helpdeskRequests.length})`
+                              : `Public Help Requests (${helpdeskRequests.length})`}
                           </h3>
                         </div>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300 border border-orange-200">
-                          {helpdeskRequests.length} {lang === "ml" ? "അഭ്യർത്ഥനകൾ" : "Requests"}
-                        </span>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setIsHelpdeskSearchOpen(!isHelpdeskSearchOpen)}
+                            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                              isHelpdeskSearchOpen || helpdeskSearchQuery
+                                ? "bg-orange-100 dark:bg-orange-950 text-orange-600 dark:text-orange-400"
+                                : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400"
+                            }`}
+                            title={lang === "ml" ? "തിരയുക" : "Search"}
+                          >
+                            <Search className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setIsHelpdeskFilterOpen(!isHelpdeskFilterOpen)}
+                            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                              isHelpdeskFilterOpen || helpdeskSelectedDistrict !== "all"
+                                ? "bg-orange-100 dark:bg-orange-950 text-orange-600 dark:text-orange-400"
+                                : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400"
+                            }`}
+                            title={lang === "ml" ? "ഫിൽട്ടർ" : "Filter"}
+                          >
+                            <Filter className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                       </div>
+
+                      {/* Interactive Search Bar */}
+                      {isHelpdeskSearchOpen && (
+                        <div className="relative px-0.5 animate-in fade-in slide-in-from-top-1 duration-150">
+                          <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                          <input
+                            type="text"
+                            value={helpdeskSearchQuery}
+                            onChange={(e) => setHelpdeskSearchQuery(e.target.value)}
+                            placeholder={lang === "ml" ? "പേര്, മണ്ഡലം, അല്ലെങ്കിൽ ജില്ല തിരയുക..." : "Search name, mandalam, or district..."}
+                            className="w-full pl-8 pr-7 py-1.5 bg-background rounded-xl border border-input text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
+                          />
+                          {helpdeskSearchQuery && (
+                            <button
+                              type="button"
+                              onClick={() => setHelpdeskSearchQuery("")}
+                              className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Interactive Filter Pills */}
+                      {isHelpdeskFilterOpen && (
+                        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 px-0.5 no-scrollbar text-xs animate-in fade-in slide-in-from-top-1 duration-150">
+                          {["all", "Kollam", "Thiruvananthapuram", "Ernakulam", "Alappuzha", "Thrissur", "Kozhikode"].map((dist) => (
+                            <button
+                              key={dist}
+                              type="button"
+                              onClick={() => setHelpdeskSelectedDistrict(dist)}
+                              className={`px-2.5 py-1 rounded-full text-[10.5px] font-bold shrink-0 transition-colors cursor-pointer border ${
+                                helpdeskSelectedDistrict === dist
+                                  ? "bg-orange-500 text-white border-orange-500"
+                                  : "bg-card text-muted-foreground border-border hover:bg-muted"
+                              }`}
+                            >
+                              {dist === "all" ? (lang === "ml" ? "എല്ലാ ജില്ലകളും" : "All Districts") : dist}
+                            </button>
+                          ))}
+                        </div>
+                      )}
 
                       {helpdeskRequests.length === 0 ? (
                         <div className="p-6 text-center bg-card rounded-2xl border border-border">
@@ -13723,68 +14074,124 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                           </p>
                         </div>
                       ) : (
-                        <div className="space-y-2.5">
-                          {helpdeskRequests.map((req, idx) => (
+                        <div className="space-y-1.5">
+                          {helpdeskRequests
+                            .filter((req) => {
+                              const q = helpdeskSearchQuery.toLowerCase().trim();
+                              const nameMatch = !q || (req.contactName || req.applicant || "").toLowerCase().includes(q);
+                              const mandalamMatch = !q || (req.location?.mandalamName || "").toLowerCase().includes(q);
+                              const districtMatch = !q || (req.location?.districtName || req.district || "").toLowerCase().includes(q);
+                              const searchMatch = nameMatch || mandalamMatch || districtMatch;
+
+                              const distMatch =
+                                helpdeskSelectedDistrict === "all" ||
+                                (req.location?.districtName || req.district || "").toLowerCase() === helpdeskSelectedDistrict.toLowerCase();
+
+                              return searchMatch && distMatch;
+                            })
+                            .map((req, idx) => (
                             <div
                               key={req.reference || idx}
-                              className="bg-card p-3.5 rounded-2xl border border-border shadow-2xs hover:border-orange-200 transition-all space-y-2.5"
+                              className="bg-card p-2 rounded-xl border border-border shadow-2xs hover:border-orange-200 transition-all space-y-1"
                             >
-                              {/* Header: Name & Status */}
-                              <div className="flex items-start justify-between gap-2 border-b border-border/60 pb-2">
-                                <div className="flex items-center gap-2">
-                                  <div className="h-8 w-8 rounded-full bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold text-xs shrink-0">
+                              {/* Header: Name, Mandalam & District, 3-Dot Action Menu */}
+                              <div className="flex items-center justify-between gap-2 border-b border-border/50 pb-1.5">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <div className="h-6.5 w-6.5 rounded-full bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold text-[11px] shrink-0">
                                     {(req.contactName || req.applicant || "A").charAt(0).toUpperCase()}
                                   </div>
-                                  <div>
-                                    <h4 className="font-extrabold text-xs text-foreground leading-tight">
+                                  <div className="min-w-0">
+                                    <h4 className="font-extrabold text-[11.5px] text-foreground leading-tight truncate">
                                       {req.contactName || req.applicant}
                                     </h4>
-                                    <p className="text-[10px] text-muted-foreground font-medium flex items-center gap-1 mt-0.5">
-                                      <Phone className="h-3 w-3 text-emerald-500 shrink-0" />
-                                      {req.contactMobile || req.mobile}
+                                    <p className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1 mt-0.5 truncate">
+                                      <MapPin className="h-2.5 w-2.5 text-orange-500 shrink-0" />
+                                      {req.location?.mandalamName || "Chavara"}, {req.location?.districtName || req.district || "Kollam"}
                                     </p>
                                   </div>
                                 </div>
-                                <span className="px-2 py-0.5 rounded-full text-[9.5px] font-bold bg-orange-50 text-orange-700 dark:bg-orange-950/80 dark:text-orange-300 border border-orange-200/80 shrink-0">
-                                  {lang === "ml" ? "പൊതു സഹായം" : "Public Request"}
-                                </span>
+
+                                {/* 3-Dot Action Menu */}
+                                <div className="relative shrink-0">
+                                  <button
+                                    type="button"
+                                    onClick={() => setOpenHelpdeskMenuIndex(openHelpdeskMenuIndex === idx ? null : idx)}
+                                    className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors cursor-pointer"
+                                    title={lang === "ml" ? "കൂടുതൽ പ്രവർത്തനങ്ങൾ" : "More options"}
+                                  >
+                                    <MoreVertical className="h-4 w-4" />
+                                  </button>
+
+                                  {openHelpdeskMenuIndex === idx && (
+                                    <div className="absolute right-0 top-7 z-30 w-48 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl py-1 text-xs animate-in fade-in zoom-in-95 duration-150">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          alert(lang === "ml" ? `${req.contactName || req.applicant}-നെ പ്രവർത്തകന് നൽകി.` : `Assigned ${req.contactName || req.applicant} to worker.`);
+                                          setOpenHelpdeskMenuIndex(null);
+                                        }}
+                                        className="w-full text-left px-3 py-2 hover:bg-orange-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium flex items-center gap-2 transition-colors cursor-pointer"
+                                      >
+                                        <UserPlus className="h-3.5 w-3.5 text-orange-500 shrink-0" />
+                                        <span>{lang === "ml" ? "പ്രവർത്തകന് നൽകുക" : "Assign to Worker"}</span>
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setCreateFullName(req.contactName || req.applicant);
+                                          setCreatePhone((req.contactMobile || req.mobile).replace(/\*/g, "9"));
+                                          setActiveTab("create");
+                                          setCreateFlowStep("form");
+                                          setOpenHelpdeskMenuIndex(null);
+                                        }}
+                                        className="w-full text-left px-3 py-2 hover:bg-orange-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium flex items-center gap-2 transition-colors cursor-pointer border-t border-slate-100 dark:border-slate-800/80"
+                                      >
+                                        <FileText className="h-3.5 w-3.5 text-orange-500 shrink-0" />
+                                        <span>{lang === "ml" ? "അപേക്ഷയാക്കി മാറ്റുക" : "Convert to Application"}</span>
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          openMobileSchemeDetailsView(req.schemeId || req.schemeIds?.[0] || "pm-kisan", "central_schemes");
+                                          setOpenHelpdeskMenuIndex(null);
+                                        }}
+                                        className="w-full text-left px-3 py-2 hover:bg-orange-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium flex items-center gap-2 transition-colors cursor-pointer border-t border-slate-100 dark:border-slate-800/80"
+                                      >
+                                        <Eye className="h-3.5 w-3.5 text-orange-500 shrink-0" />
+                                        <span>{lang === "ml" ? "വിശദാംശങ്ങൾ കാണുക" : "View Details"}</span>
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setHelpdeskRequests((prev) => prev.filter((_, i) => i !== idx));
+                                          setOpenHelpdeskMenuIndex(null);
+                                        }}
+                                        className="w-full text-left px-3 py-2 hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 font-medium flex items-center gap-2 transition-colors cursor-pointer border-t border-slate-100 dark:border-slate-800/80"
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5 text-red-500 shrink-0" />
+                                        <span>{lang === "ml" ? "നീക്കം ചെയ്യുക" : "Delete"}</span>
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
 
-                              {/* Location Card: Mandalam & District */}
-                              <div className="grid grid-cols-2 gap-2 bg-muted/40 dark:bg-slate-800/50 p-2.5 rounded-xl border border-border/50 text-[11px]">
-                                <div className="space-y-0.5">
-                                  <span className="text-[9.5px] font-bold text-muted-foreground block uppercase tracking-wider">
-                                    {lang === "ml" ? "അസംബ്ലി മണ്ഡലം" : "Mandalam"}
-                                  </span>
-                                  <span className="font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1">
-                                    <MapPin className="h-3 w-3 text-orange-500 shrink-0" />
-                                    {req.location?.mandalamName || "Kazhakoottam"}
-                                  </span>
-                                </div>
-                                <div className="space-y-0.5">
-                                  <span className="text-[9.5px] font-bold text-muted-foreground block uppercase tracking-wider">
-                                    {lang === "ml" ? "ജില്ല" : "District"}
-                                  </span>
-                                  <span className="font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1">
-                                    <Building2 className="h-3 w-3 text-slate-400 shrink-0" />
-                                    {req.location?.districtName || req.district || "Thiruvananthapuram"}
-                                  </span>
-                                </div>
-                              </div>
-
-                              {/* Schemes Requested */}
+                              {/* Schemes Requested (Single Row) */}
                               {req.schemeIds && req.schemeIds.length > 0 && (
-                                <div className="space-y-1">
-                                  <span className="text-[9.5px] font-bold text-muted-foreground block">
+                                <div className="flex items-center gap-1.5 flex-wrap text-xs pt-0.5">
+                                  <span className="text-[10.5px] font-bold text-slate-700 dark:text-slate-300 shrink-0">
                                     {lang === "ml" ? "ആവശ്യപ്പെട്ട പദ്ധതികൾ:" : "Requested Schemes:"}
                                   </span>
-                                  <div className="flex flex-wrap gap-1">
+                                  <div className="flex flex-wrap gap-1 items-center">
                                     {req.schemeIds.map((sId) => {
                                       const foundScheme = schemes.find((s) => s.id === sId);
                                       return (
                                         <span
                                           key={sId}
-                                          className="px-2 py-0.5 rounded-md bg-orange-100/70 dark:bg-orange-950/60 text-orange-800 dark:text-orange-300 text-[10px] font-bold border border-orange-200/60"
+                                          className="px-2.5 py-0.5 rounded-full bg-orange-100/80 dark:bg-orange-950/60 text-orange-800 dark:text-orange-300 text-[10.5px] font-bold border border-orange-200/80"
                                         >
                                           {foundScheme ? (lang === "ml" ? foundScheme.ml : foundScheme.en) : sId}
                                         </span>
@@ -13793,32 +14200,6 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                                   </div>
                                 </div>
                               )}
-
-                              {/* Notes if available */}
-                              {req.notes && (
-                                <p className="text-[10.5px] italic text-muted-foreground bg-background p-2 rounded-lg border border-border/60">
-                                  "{req.notes}"
-                                </p>
-                              )}
-
-                              {/* Footer Action */}
-                              <div className="flex items-center justify-between pt-1 text-[10px]">
-                                <span className="text-muted-foreground font-medium">
-                                  Ref: {req.reference}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setCreateFullName(req.contactName || req.applicant);
-                                    setCreatePhone((req.contactMobile || req.mobile).replace(/\*/g, "9"));
-                                    setActiveTab("create");
-                                    setCreateFlowStep("form");
-                                  }}
-                                  className="px-2.5 py-1 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-extrabold transition-colors cursor-pointer shadow-2xs"
-                                >
-                                  {lang === "ml" ? "അപേക്ഷ ആരംഭിക്കുക" : "Create Application"}
-                                </button>
-                              </div>
                             </div>
                           ))}
                         </div>
