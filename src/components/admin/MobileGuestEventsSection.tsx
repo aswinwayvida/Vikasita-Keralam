@@ -188,6 +188,18 @@ export function MobileGuestEventsSection({
           </div>
         </div>
       )}
+
+      {/* Powered By Wayvida */}
+      <div className="mt-6 mb-3 flex items-center justify-center gap-1.5 text-center">
+        <span className="text-[9.5px] font-extrabold tracking-widest text-[#8e9bb0] dark:text-slate-400 uppercase">
+          POWERED BY
+        </span>
+        <img
+          src="/wayvida-logo-transparent.png"
+          alt="Wayvida"
+          className="h-3.5 w-auto object-contain shrink-0"
+        />
+      </div>
     </div>
   );
 }

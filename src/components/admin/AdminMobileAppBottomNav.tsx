@@ -48,7 +48,7 @@ export function AdminMobileAppBottomNav({
                 type="button"
                 onClick={() => onTabChange("create")}
                 className="relative flex flex-col items-center justify-center flex-1 cursor-pointer group z-20"
-                title={isMl ? "പുതിയ അപേക്ഷ നൽകുക" : "Create New Application"}
+                title={isMl ? "അപേക്ഷക പ്രൊഫൈൽ നിർമ്മിക്കുക" : "Create Applicant Profile"}
               >
                 <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-tr from-amber-500 via-orange-500 to-[#ff5500] text-white shadow-md ring-4 ring-white dark:ring-slate-900 transition-transform active:scale-95 group-hover:scale-105 -mt-5">
                   <Plus className="h-6 w-6 stroke-[2.5]" />

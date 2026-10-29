@@ -145,7 +145,7 @@ export function AdminMobileAppHeader({
 
                 {/* Profile Popover */}
                 {isProfileOpen && (
-                  <div className="absolute right-0 top-14 z-50 w-[240px] rounded-2xl border border-amber-200/80 bg-white dark:bg-slate-900 p-3.5 shadow-2xl space-y-3 animate-in fade-in-50 zoom-in-95 text-foreground">
+                  <div className="absolute right-0 top-14 z-50 w-[250px] rounded-2xl border border-amber-200/80 bg-white dark:bg-slate-900 p-3.5 shadow-2xl space-y-3 animate-in fade-in-50 zoom-in-95 text-foreground">
                     <div className="flex items-center gap-2.5 border-b border-amber-100 dark:border-slate-800 pb-3">
                       <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-[#FFEDD5] text-[#F97316] font-bold shadow-2xs overflow-hidden shrink-0">
                         <img
@@ -162,12 +162,11 @@ export function AdminMobileAppHeader({
                         <h3 className="font-bold text-xs text-foreground">
                           {userRole === "party_worker" ? "Dhyan M S" : "Jayasurya"}
                         </h3>
-                        <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
-                          <ShieldCheck className="h-3 w-3" />{" "}
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium leading-tight">
                           {userRole === "party_worker"
                             ? lang === "ml"
-                              ? "പാർട്ടി ലീഡർ"
-                              : "Party Leader"
+                              ? "ബൂത്ത് പ്രസിഡന്റ്, ബൂത്ത് 1, കഴക്കൂട്ടം തിരുവനന്തപുരം"
+                              : "Booth President, Booth 1, Kazhakoottam Trivandrum"
                             : lang === "ml"
                             ? "സംസ്ഥാന ഭരണം"
                             : "State Administration"}
