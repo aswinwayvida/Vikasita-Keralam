@@ -1765,11 +1765,25 @@ const getMobileAuditFallbackActor = ({
   return index === 0 ? applicantName : assistedBy;
 };
 
+const getApplicantAvatarInfo = (name: string) => {
+  const cleanName = (name || "").replace(/^(Shri|Smt|Kumari|Dr|Mr|Mrs|Ms)\.?\s+/i, "").trim();
+  const parts = cleanName.split(/\s+/).filter(Boolean);
+  let initials = "";
+  if (parts.length === 0) {
+    initials = "A";
+  } else if (parts.length === 1) {
+    initials = parts[0].substring(0, 2).toUpperCase();
+  } else {
+    initials = (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+
+  const colorStyle = "bg-[#FFF1E6] text-[#B54708] dark:bg-orange-950/60 dark:text-orange-300";
+
+  return { initials, colorStyle };
+};
+
 const getApplicantInitials = (name: string) => {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "AP";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  return getApplicantAvatarInfo(name).initials;
 };
 
 const mockBeneficiariesFullList = [
@@ -3068,9 +3082,14 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     className="rounded-2xl bg-white dark:bg-slate-900 border border-amber-100 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
                   >
                     <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 font-extrabold text-xs shrink-0">
-                        {getApplicantInitials(record.applicantName)}
-                      </div>
+                      {(() => {
+                        const avatar = getApplicantAvatarInfo(record.applicantName);
+                        return (
+                          <div className={`flex h-9 w-9 items-center justify-center rounded-full font-extrabold text-xs shrink-0 ${avatar.colorStyle}`}>
+                            {avatar.initials}
+                          </div>
+                        );
+                      })()}
                       <div className="min-w-0 flex-1">
                         <h4 className="font-black text-[12px] sm:text-[12.5px] text-slate-900 dark:text-white leading-tight truncate">
                           {record.applicantName}
@@ -3103,7 +3122,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   className="rounded-2xl bg-white dark:bg-slate-900 border border-orange-100 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
                 >
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-pink-100 dark:bg-pink-950/60 text-pink-600 dark:text-pink-400 font-extrabold text-xs shrink-0">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FFF1E6] dark:bg-orange-950/60 text-[#B54708] dark:text-orange-300 font-extrabold text-xs shrink-0 shadow-2xs">
                       MN
                     </div>
                     <div className="min-w-0 flex-1">
@@ -3131,7 +3150,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   className="rounded-2xl bg-white dark:bg-slate-900 border border-orange-100 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
                 >
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-extrabold text-xs shrink-0">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FFF1E6] dark:bg-orange-950/60 text-[#B54708] dark:text-orange-300 font-extrabold text-xs shrink-0 shadow-2xs">
                       RK
                     </div>
                     <div className="min-w-0 flex-1">
@@ -3285,12 +3304,12 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
               <div className="space-y-2">
                 {[
-                  { name: "Sujith Kumar", nameMl: "സുജിത് കുമാർ", role: "Booth Convenor", applications: 28, avatarBg: "bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300" },
-                  { name: "Ananthakrishnan V", nameMl: "അനന്തകൃഷ്ണൻ വി", role: "Panna Pramukh", applications: 22, avatarBg: "bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300" },
-                  { name: "Reshma S Nair", nameMl: "രേഷ്മ എസ് നായർ", role: "Mahila Morcha Lead", applications: 19, avatarBg: "bg-pink-100 dark:bg-pink-950/60 text-pink-700 dark:text-pink-300" },
-                  { name: "Arun Varma", nameMl: "അരുൺ വർമ്മ", role: "Yuva Morcha Member", applications: 15, avatarBg: "bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300" },
-                  { name: "Vishnu Prasad", nameMl: "വിഷ്ണു പ്രസാദ്", role: "Panna Pramukh", applications: 12, avatarBg: "bg-teal-100 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300" },
-                  { name: "Lakshmi Priya", nameMl: "ലക്ഷ്മി പ്രിയ", role: "Booth Volunteer", applications: 9, avatarBg: "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300" },
+                  { name: "Sujith Kumar", nameMl: "സുജിത് കുമാർ", role: "Booth Convenor", applications: 28, avatarBg: "bg-[#FFF1E6] dark:bg-orange-950/60 text-[#B54708] dark:text-orange-300" },
+                  { name: "Ananthakrishnan V", nameMl: "അനന്തകൃഷ്ണൻ വി", role: "Panna Pramukh", applications: 22, avatarBg: "bg-[#FFF1E6] dark:bg-orange-950/60 text-[#B54708] dark:text-orange-300" },
+                  { name: "Reshma S Nair", nameMl: "രേഷ്മ എസ് നായർ", role: "Mahila Morcha Lead", applications: 19, avatarBg: "bg-[#FFF1E6] dark:bg-orange-950/60 text-[#B54708] dark:text-orange-300" },
+                  { name: "Arun Varma", nameMl: "അരുൺ വർമ്മ", role: "Yuva Morcha Member", applications: 15, avatarBg: "bg-[#FFF1E6] dark:bg-orange-950/60 text-[#B54708] dark:text-orange-300" },
+                  { name: "Vishnu Prasad", nameMl: "വിഷ്ണു പ്രസാദ്", role: "Panna Pramukh", applications: 12, avatarBg: "bg-[#FFF1E6] dark:bg-orange-950/60 text-[#B54708] dark:text-orange-300" },
+                  { name: "Lakshmi Priya", nameMl: "ലക്ഷ്മി പ്രിയ", role: "Booth Volunteer", applications: 9, avatarBg: "bg-[#FFF1E6] dark:bg-orange-950/60 text-[#B54708] dark:text-orange-300" },
                 ].map((worker, i) => (
                   <div
                     key={i}
@@ -6048,9 +6067,14 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           {/* Applicant Info with Right Aligned Status Badge */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-3 min-w-0">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fff4e5] text-[16px] font-black text-[#ff5500] dark:bg-slate-800 dark:text-orange-300 shadow-2xs">
-                {(applicantName?.trim() ? applicantName.trim().charAt(0).toUpperCase() : "A")}
-              </span>
+              {(() => {
+                const avatar = getApplicantAvatarInfo(applicantName || "");
+                return (
+                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[14px] font-extrabold shadow-2xs ${avatar.colorStyle}`}>
+                    {avatar.initials}
+                  </span>
+                );
+              })()}
               <div className="min-w-0">
                 <p className="text-[15px] font-black leading-snug text-[#0F172A] dark:text-white truncate">{applicantName}</p>
                 <p className="mt-0.5 text-[12px] font-medium text-slate-500 dark:text-slate-400 truncate">{applicantLocation}</p>
@@ -6856,59 +6880,68 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       )
     : [];
 
-  const renderMobileApplicationListCard = (application: MobileApplicationRecord) => (
-    <div
-      key={application.ref}
-      onClick={() => {
-        setAppDetailReturnSubPage(mobileSubPage === "user_detail" ? "user_detail" : "applications");
-        setSelectedApplicationRecord(application);
-        setMobileSubPage("app_detail");
-      }}
-      className="group p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:shadow-xs transition-all cursor-pointer space-y-2"
-    >
-      {/* Top Section: User icon + Applicant Name & Location on left, Status Badge on right */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex-1 space-y-0.5">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <User className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500" />
-            <p className="font-extrabold text-[13.5px] text-[#0a0f1d] dark:text-white leading-tight truncate">
-              {lang === "ml" ? application.applicantNameMl : application.applicantNameEn}
-            </p>
-          </div>
-          <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 leading-tight truncate pl-5">
-            {lang === "ml" ? application.locationMl : application.locationEn}
-          </p>
-        </div>
-        <MobileApplicationStatusBadge
-          status={application.workflowStatus ?? "application_received"}
-          lang={lang}
-        />
-      </div>
 
-      {/* Bottom Section: Category & Scheme Name on left, Arrow icon right-aligned */}
-      <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100/70 dark:border-slate-800/40">
-        <div className="min-w-0 flex-1 space-y-0.5">
-          <div className="flex items-center gap-1.5 text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
-            <img
-              src={getMobileCategoryIconSrc(application.categoryEn)}
-              alt=""
-              className="h-3.5 w-3.5 shrink-0 object-contain"
-            />
-            <span className="truncate">
-              {lang === "ml" ? application.categoryMl : application.categoryEn}
-            </span>
+
+  const renderMobileApplicationListCard = (application: MobileApplicationRecord) => {
+    const nameToUse = application.applicantNameEn || application.applicantNameMl || "";
+    const avatar = getApplicantAvatarInfo(nameToUse);
+
+    return (
+      <div
+        key={application.ref}
+        onClick={() => {
+          setAppDetailReturnSubPage(mobileSubPage === "user_detail" ? "user_detail" : "applications");
+          setSelectedApplicationRecord(application);
+          setMobileSubPage("app_detail");
+        }}
+        className="group p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:shadow-xs transition-all cursor-pointer space-y-2"
+      >
+        {/* Top Section: User Avatar Circle + Applicant Name & Location on left, Status Badge on right */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            <div className={`flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full font-extrabold text-xs shrink-0 ${avatar.colorStyle}`}>
+              {avatar.initials}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-extrabold text-[13.5px] text-[#0a0f1d] dark:text-white leading-tight truncate">
+                {lang === "ml" ? application.applicantNameMl : application.applicantNameEn}
+              </p>
+              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 leading-tight truncate mt-0.5">
+                {lang === "ml" ? application.locationMl : application.locationEn}
+              </p>
+            </div>
           </div>
-          <h5 className="font-bold text-[12px] text-[#0a0f1d] dark:text-white leading-tight truncate">
-            {lang === "ml" ? application.schemeNameMl : application.schemeNameEn}
-          </h5>
+          <MobileApplicationStatusBadge
+            status={application.workflowStatus ?? "application_received"}
+            lang={lang}
+          />
         </div>
 
-        <div className="shrink-0 flex items-center justify-center p-1 text-slate-400 group-hover:text-[#f15a0a] transition-colors">
-          <ChevronRight className="h-4 w-4 stroke-[2]" />
+        {/* Bottom Section: Category & Scheme Name on left, Arrow icon right-aligned */}
+        <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100/70 dark:border-slate-800/40">
+          <div className="min-w-0 flex-1 space-y-0.5">
+            <div className="flex items-center gap-1.5 text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
+              <img
+                src={getMobileCategoryIconSrc(application.categoryEn)}
+                alt=""
+                className="h-3.5 w-3.5 shrink-0 object-contain"
+              />
+              <span className="truncate">
+                {lang === "ml" ? application.categoryMl : application.categoryEn}
+              </span>
+            </div>
+            <h5 className="font-bold text-[12px] text-[#0a0f1d] dark:text-white leading-tight truncate">
+              {lang === "ml" ? application.schemeNameMl : application.schemeNameEn}
+            </h5>
+          </div>
+
+          <div className="shrink-0 flex items-center justify-center p-1 text-slate-400 group-hover:text-[#f15a0a] transition-colors">
+            <ChevronRight className="h-4 w-4 stroke-[2]" />
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const openMobileApplicationDetail = (application: MobileApplicationRecord) => {
     setSelectedApplicationRecord(application);
@@ -6953,6 +6986,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
         <div className="space-y-2">
           {latestSavedApplications.map((application) => {
+            const nameToUse = application.applicantNameEn || application.applicantNameMl || "";
+            const avatar = getApplicantAvatarInfo(nameToUse);
+
             return (
               <div
                 key={application.ref}
@@ -6960,16 +6996,18 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 className="group p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:shadow-xs transition-all cursor-pointer space-y-2"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1 space-y-0.5">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <User className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500" />
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div className={`flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full font-extrabold text-xs shrink-0 ${avatar.colorStyle}`}>
+                      {avatar.initials}
+                    </div>
+                    <div className="min-w-0 flex-1">
                       <p className="font-extrabold text-[13.5px] text-[#0a0f1d] dark:text-white leading-tight truncate">
                         {lang === "ml" ? application.applicantNameMl : application.applicantNameEn}
                       </p>
+                      <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 leading-tight truncate mt-0.5">
+                        {lang === "ml" ? application.locationMl : application.locationEn}
+                      </p>
                     </div>
-                    <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 leading-tight truncate pl-5">
-                      {lang === "ml" ? application.locationMl : application.locationEn}
-                    </p>
                   </div>
                   <MobileApplicationStatusBadge
                     status={application.workflowStatus ?? "application_received"}
@@ -8294,9 +8332,14 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             className="rounded-2xl bg-white dark:bg-slate-900 border border-amber-100 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
                           >
                             <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 font-extrabold text-xs shrink-0">
-                                {getApplicantInitials(record.applicantName)}
-                              </div>
+                              {(() => {
+                                const avatar = getApplicantAvatarInfo(record.applicantName);
+                                return (
+                                  <div className={`flex h-9 w-9 items-center justify-center rounded-full font-extrabold text-xs shrink-0 ${avatar.colorStyle}`}>
+                                    {avatar.initials}
+                                  </div>
+                                );
+                              })()}
                               <div className="min-w-0 flex-1">
                                 <h4 className="font-black text-[12px] sm:text-[12.5px] text-slate-900 dark:text-white leading-tight truncate">
                                   {record.applicantName}
@@ -8329,7 +8372,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           className="rounded-2xl bg-white dark:bg-slate-900 border border-orange-100 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
                         >
                           <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-pink-100 dark:bg-pink-950/60 text-pink-600 dark:text-pink-400 font-extrabold text-xs shrink-0">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FFF1E6] dark:bg-orange-950/60 text-[#B54708] dark:text-orange-300 font-extrabold text-xs shrink-0 shadow-2xs">
                               MN
                             </div>
                             <div className="min-w-0 flex-1">
@@ -8357,7 +8400,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           className="rounded-2xl bg-white dark:bg-slate-900 border border-orange-100 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
                         >
                           <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-extrabold text-xs shrink-0">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FFF1E6] dark:bg-orange-950/60 text-[#B54708] dark:text-orange-300 font-extrabold text-xs shrink-0 shadow-2xs">
                               RK
                             </div>
                             <div className="min-w-0 flex-1">
@@ -10515,36 +10558,39 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         </p>
 
                         <div className="space-y-2">
-                          {filteredMobileApplicationUsers.map((user) => (
-                            <button
-                              key={user.id}
-                              type="button"
-                              onClick={() => {
-                                setSelectedApplicationUserId(user.id);
-                                setMobileSubPage("user_detail");
-                              }}
-                              className="flex w-full items-center justify-between gap-2 rounded-2xl border border-border bg-card p-3 text-left shadow-2xs transition-all hover:border-orange-300 dark:hover:border-orange-800 cursor-pointer"
-                            >
-                              <span className="flex min-w-0 items-center gap-2.5">
-                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-[11px] font-black text-slate-900 dark:bg-slate-700 dark:text-white shadow-2xs">
-                                  {getApplicantInitials(user.nameEn)}
-                                </span>
-                                <span className="min-w-0">
-                                  <span className="block truncate text-[12px] font-bold text-foreground">
-                                    {lang === "ml" ? user.nameMl : user.nameEn}
+                          {filteredMobileApplicationUsers.map((user) => {
+                            const avatar = getApplicantAvatarInfo(user.nameEn || user.nameMl || "");
+                            return (
+                              <button
+                                key={user.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedApplicationUserId(user.id);
+                                  setMobileSubPage("user_detail");
+                                }}
+                                className="flex w-full items-center justify-between gap-2 rounded-2xl border border-border bg-card p-3 text-left shadow-2xs transition-all hover:border-orange-300 dark:hover:border-orange-800 cursor-pointer"
+                              >
+                                <span className="flex min-w-0 items-center gap-2.5">
+                                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[12px] font-extrabold shadow-2xs ${avatar.colorStyle}`}>
+                                    {avatar.initials}
                                   </span>
-                                  <span className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground">
-                                    <MapPin className="h-3 w-3 shrink-0 text-orange-500" />
-                                    <span className="truncate">{lang === "ml" ? user.locationMl : user.locationEn}</span>
+                                  <span className="min-w-0">
+                                    <span className="block truncate text-[12px] font-bold text-foreground">
+                                      {lang === "ml" ? user.nameMl : user.nameEn}
+                                    </span>
+                                    <span className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground">
+                                      <MapPin className="h-3 w-3 shrink-0 text-orange-500" />
+                                      <span className="truncate">{lang === "ml" ? user.locationMl : user.locationEn}</span>
+                                    </span>
                                   </span>
                                 </span>
-                              </span>
 
-                              <span className="flex shrink-0 items-center">
-                                <ChevronRight className="h-4 w-4 text-slate-400" />
-                              </span>
-                            </button>
-                          ))}
+                                <span className="flex shrink-0 items-center">
+                                  <ChevronRight className="h-4 w-4 text-slate-400" />
+                                </span>
+                              </button>
+                            );
+                          })}
 
                           {filteredMobileApplicationUsers.length === 0 && (
                             <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-8 text-center dark:border-slate-800 dark:bg-slate-900">
@@ -10575,9 +10621,14 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         <div className="rounded-2xl border border-border bg-card p-3.5 shadow-2xs">
                           <div className="flex items-center justify-between gap-3">
                             <div className="flex items-center gap-3 min-w-0 flex-1">
-                              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-slate-200 text-[13px] font-black text-slate-900 dark:bg-slate-700 dark:text-white shadow-2xs">
-                                {getApplicantInitials(selectedApplicationUser.nameEn)}
-                              </span>
+                              {(() => {
+                                const avatar = getApplicantAvatarInfo(selectedApplicationUser.nameEn || selectedApplicationUser.nameMl || "");
+                                return (
+                                  <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-[15px] font-extrabold shadow-2xs ${avatar.colorStyle}`}>
+                                    {avatar.initials}
+                                  </span>
+                                );
+                              })()}
                               <div className="min-w-0">
                                 <p className="truncate text-[14px] font-extrabold text-foreground">
                                   {lang === "ml" ? selectedApplicationUser.nameMl : selectedApplicationUser.nameEn}
@@ -11866,9 +11917,14 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             <div className="bg-card p-2.5 pb-2 rounded-2xl border border-border shadow-2xs space-y-2 relative">
                               {/* User details header INSIDE the card */}
                               <div className="flex items-center gap-2.5 pb-2.5 border-b border-border/60">
-                                <div className="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700">
-                                  <User className="h-4 w-4 stroke-[2]" />
-                                </div>
+                                {(() => {
+                                  const avatar = getApplicantAvatarInfo(createFullName.trim() || "K. Krishnan");
+                                  return (
+                                    <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 font-extrabold text-xs shadow-2xs ${avatar.colorStyle}`}>
+                                      {avatar.initials}
+                                    </div>
+                                  );
+                                })()}
                                 <div className="min-w-0 flex-1">
                                   <h4 className="font-extrabold text-xs text-foreground leading-snug truncate">
                                     {createFullName.trim() || "K. Krishnan"}
