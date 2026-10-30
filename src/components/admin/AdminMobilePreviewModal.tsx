@@ -1,12 +1,16 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
+import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
-import { X, Smartphone, Wifi, Battery, Signal, ChevronRight, ChevronLeft, ArrowLeft, ArrowRight, Users, HeartHandshake, Database, Layers, Sparkles, MessageSquare, Clock3, UserCheck, LayoutDashboard, Sliders, Calendar, FileText, XCircle, CheckCircle2, Hourglass, MapPin, Trophy, AlertTriangle, Activity, Globe, Map as MapIcon, Network, Store, ShieldCheck, ChevronDown, Filter, Search, SearchCheck, Megaphone, CalendarDays, BellRing, Phone, RotateCcw, GraduationCap, Sprout, LayoutGrid, MoreVertical, AlertCircle, Star, Zap, Headphones, Edit, Upload, FileCheck, Loader2, SearchX, RefreshCw, Check, Lock, User, Eye, Send, Info, Plus, Inbox, FileSearch, HandCoins, UserRound, Paperclip, ClipboardList, Headset, Copy, Pencil, Download, FileImage, ExternalLink, CloudUpload, Home, Building2, Flame, HelpCircle, UserPlus, Trash2 } from "lucide-react";
+import { X, Smartphone, Wifi, Battery, Signal, ChevronRight, ChevronLeft, ArrowLeft, ArrowRight, Users, Users2, HeartHandshake, Database, Layers, Sparkles, MessageSquare, Clock3, UserCheck, LayoutDashboard, Sliders, Calendar, FileText, XCircle, CheckCircle2, Hourglass, MapPin, Trophy, AlertTriangle, Activity, Globe, Map as MapIcon, Network, Store, ShieldCheck, ChevronDown, Filter, Search, SearchCheck, Megaphone, CalendarDays, BellRing, Phone, RotateCcw, GraduationCap, Sprout, LayoutGrid, MoreVertical, AlertCircle, Star, Zap, Headphones, Edit, Upload, FileCheck, Loader2, SearchX, RefreshCw, Check, Lock, User, Eye, Send, Info, Plus, Inbox, FileSearch, HandCoins, UserRound, Paperclip, ClipboardList, Headset, Copy, Pencil, Download, FileImage, ExternalLink, CloudUpload, Home, Building2, Flame, HelpCircle, UserPlus, Trash2 } from "lucide-react";
 import { useLang } from "@/i18n/LanguageProvider";
 import officialLotus from "@/assets/bjp-official-lotus.png";
 import vikasitaMlLogo from "@/assets/logo-vikasita-ml-official.png";
 import raiseIssue3dIcon from "@/assets/raise-issue-3d.png";
 import aboutVikasitaIcon from "@/assets/about-vikasita-keralam-icon.png";
 import pmKisanLogoImg from "/pm-kisan-logo.png";
+import createSchemeAvatar from "@/assets/create-scheme-3d-avatar.jpg";
+import createApplicantAvatar from "@/assets/create-applicant-3d-avatar.jpg";
+import createPartyWorkerAvatar from "@/assets/create-partyworker-3d-avatar.jpg";
 import users3dIcon from "@/assets/kpi-3d/users.png";
 import inReview3dIcon from "@/assets/kpi-3d/in-review.png";
 import documentsPending3dIcon from "@/assets/kpi-3d/documents-pending.png";
@@ -2501,12 +2505,34 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [isMobileAuthOpen, setIsMobileAuthOpen] = useState<boolean>(false);
   const [isSideMenuOpen, setIsSideMenuOpen] = useState<boolean>(false);
 
+  // State Admin Create Actions Modals/Sheets
+  const [isStateAdminCreateMenuOpen, setIsStateAdminCreateMenuOpen] = useState<boolean>(false);
+  const [isCreateSchemeModalOpen, setIsCreateSchemeModalOpen] = useState<boolean>(false);
+  const [isCreatePartyWorkerModalOpen, setIsCreatePartyWorkerModalOpen] = useState<boolean>(false);
+
+  // Form states for Create Scheme
+  const [newSchemeNameEn, setNewSchemeNameEn] = useState<string>("");
+  const [newSchemeNameMl, setNewSchemeNameMl] = useState<string>("");
+  const [newSchemeCategory, setNewSchemeCategory] = useState<string>("agriculture");
+  const [newSchemeDept, setNewSchemeDept] = useState<string>("");
+  const [newSchemeBenefit, setNewSchemeBenefit] = useState<string>("");
+  const [newSchemeEligibility, setNewSchemeEligibility] = useState<string>("");
+
+  // Form states for Create Party Worker
+  const [newPwName, setNewPwName] = useState<string>("");
+  const [newPwMobile, setNewPwMobile] = useState<string>("");
+  const [newPwDesignation, setNewPwDesignation] = useState<string>("Booth President");
+  const [newPwDistrict, setNewPwDistrict] = useState<string>("Thiruvananthapuram");
+  const [newPwMandalam, setNewPwMandalam] = useState<string>("Kazhakoottam");
+  const [newPwBooth, setNewPwBooth] = useState<string>("101");
+
   const [helpdeskRequests, setHelpdeskRequests] = useState<HelpdeskRequest[]>(INITIAL_MOCK_HELP_REQUESTS);
   const [openHelpdeskMenuIndex, setOpenHelpdeskMenuIndex] = useState<number | null>(null);
   const [isHelpdeskSearchOpen, setIsHelpdeskSearchOpen] = useState<boolean>(false);
   const [helpdeskSearchQuery, setHelpdeskSearchQuery] = useState<string>("");
   const [isHelpdeskFilterOpen, setIsHelpdeskFilterOpen] = useState<boolean>(false);
   const [helpdeskSelectedDistrict, setHelpdeskSelectedDistrict] = useState<string>("all");
+  const [isUserSearchExpanded, setIsUserSearchExpanded] = useState<boolean>(false);
 
   useEffect(() => {
     const updateRequests = () => {
@@ -3156,36 +3182,36 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 </div>
                 <button
                   type="button"
-                  onClick={() => setActiveTab("applications")}
+                  onClick={() => setMobileSubPage("needs_attention")}
                   className="flex items-center gap-1 text-[13px] font-bold text-orange-600 dark:text-orange-400 hover:underline transition-colors cursor-pointer shrink-0"
                 >
                   <span>{lang === "ml" ? "എല്ലാം കാണുക" : "See All"}</span>
                   <span className="flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-[#ff3b30] text-white text-[9.5px] font-black shadow-2xs">
-                    {2 + followUpCollectionRecords.length}
+                    12
                   </span>
                   <ChevronRight className="h-3.5 w-3.5 stroke-[2.2]" />
                 </button>
               </div>
 
-              {/* Needs Attention Items */}
-              <div className="space-y-2">
+              {/* Needs Attention Items - Showing 2 Cards on Home */}
+              <div className="space-y-1.5">
                 {followUpCollectionRecords.map((record) => (
                   <div
                     key={record.reference}
                     onClick={() => openCollectionRecordView(record, "needs_attention")}
-                    className="rounded-2xl bg-white dark:bg-slate-900 border border-amber-100 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
+                    className="rounded-xl bg-white dark:bg-slate-900 border border-amber-100 dark:border-slate-800/80 py-2 px-2.5 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-[0.99]"
                   >
-                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
                       {(() => {
                         const avatar = getApplicantAvatarInfo(record.applicantName);
                         return (
-                          <div className={`flex h-9 w-9 items-center justify-center rounded-full font-extrabold text-xs shrink-0 ${avatar.colorStyle}`}>
+                          <div className={`flex h-7.5 w-7.5 items-center justify-center rounded-full font-black text-[11px] shrink-0 shadow-2xs ${avatar.colorStyle}`}>
                             {avatar.initials}
                           </div>
                         );
                       })()}
                       <div className="min-w-0 flex-1">
-                        <h4 className="font-black text-[12px] sm:text-[12.5px] text-slate-900 dark:text-white leading-tight truncate">
+                        <h4 className="font-bold text-[12px] text-slate-900 dark:text-white leading-tight truncate">
                           {record.applicantName}
                         </h4>
                         <p className="font-medium text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
@@ -3194,9 +3220,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0 ml-2">
-                      <div className="flex items-center gap-1.5 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 px-2.5 py-1 text-[10px] font-bold text-red-600 dark:text-red-400">
-                        <Calendar className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
+                    <div className="flex items-center gap-1 shrink-0 ml-1.5">
+                      <div className="flex items-center gap-1 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 px-1.5 py-0.5 text-[8.5px] font-bold text-red-600 dark:text-red-400">
+                        <Calendar className="h-2.5 w-2.5 text-red-600 dark:text-red-400" />
                         <span className="whitespace-nowrap">
                           {record.followUpDate
                             ? formatCollectionDate(record.followUpDate)
@@ -3205,22 +3231,54 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                               : `${record.missingItems.length} missing`}
                         </span>
                       </div>
-                      <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform" />
+                      <ChevronRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform stroke-[2]" />
                     </div>
                   </div>
                 ))}
 
                 {/* Item 1: Meera Nair */}
                 <div
-                  onClick={() => setActiveTab("applications")}
-                  className="rounded-2xl bg-white dark:bg-slate-900 border border-red-100 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
+                  onClick={() => {
+                    const record = mobileCollectionRecords.find((r) => r.applicantName.includes("Meera") || r.applicantName.includes("മീര")) || {
+                      reference: "VK-2026-849201",
+                      applicantName: lang === "ml" ? "മീര നായർ" : "Meera Nair",
+                      applicantPhone: "9876543210",
+                      scheme: {
+                        id: "SCH-005",
+                        titleEn: "PM Vishwakarma",
+                        titleMl: "പി.എം വിശ്വകർമ്മ",
+                        benefitEn: "Collateral-free enterprise loan & skill training toolkit incentive up to ₹3,00,000.",
+                        benefitMl: "ഉപകരണങ്ങൾ വാങ്ങാനും പരിശീലനത്തിനും ₹3,00,000 വരെയുള്ള വായ്പ.",
+                        matchLabelEn: "100% Match",
+                        matchLabelMl: "100% യോഗ്യത",
+                        deptEn: "Ministry of MSME",
+                        deptMl: "എംഎസ്എംഇ മന്ത്രാലയം",
+                        categoryEn: "Central Government",
+                        categoryMl: "കേന്ദ്ര സർക്കാർ",
+                        requiredDocEn: "Artisan Certificate / Skill Proof Copy",
+                        requiredDocMl: "കൈത്തൊഴിൽ സാക്ഷ്യപത്രം / വൈദഗ്ധ്യ തെളിവ്",
+                        requiredFieldKeys: ["bankAccountNumber", "bankIfscCode"],
+                      },
+                      status: "incomplete",
+                      bankAccountNumber: "987654321098",
+                      bankIfscCode: "SBIN0001234",
+                      minorityStatus: "No",
+                      disabilityStatus: "No",
+                      studentStatus: "No",
+                      employmentStatus: "Self-Employed",
+                      missingItems: [{ key: "doc:artisanProof", labelEn: "Artisan / Skill Certificate", labelMl: "കൈത്തൊഴിൽ സാക്ഷ്യപത്രം", kind: "document" }],
+                      createdAt: new Date().toISOString(),
+                    };
+                    openCollectionRecordView(record, "needs_attention");
+                  }}
+                  className="rounded-xl bg-white dark:bg-slate-900 border border-red-100 dark:border-slate-800/80 py-2 px-2.5 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-[0.99]"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FFF1E6] dark:bg-orange-950/60 text-[#B54708] dark:text-orange-300 font-extrabold text-xs shrink-0 shadow-2xs">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <div className="flex h-7.5 w-7.5 items-center justify-center rounded-full bg-[#FFF1E6] dark:bg-orange-950/60 text-[#B54708] dark:text-orange-300 font-black text-[11px] shrink-0 shadow-2xs">
                       MN
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h4 className="font-black text-[12px] sm:text-[12.5px] text-slate-900 dark:text-white leading-tight truncate">
+                      <h4 className="font-bold text-[12px] text-slate-900 dark:text-white leading-tight truncate">
                         {lang === "ml" ? "മീര നായർ" : "Meera Nair"}
                       </h4>
                       <p className="font-medium text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
@@ -3229,26 +3287,59 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0 ml-2">
-                    <div className="flex items-center gap-1.5 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 px-2.5 py-1 text-[10px] font-bold text-red-600 dark:text-red-400">
-                      <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-600 text-white text-[8.5px] font-black leading-none">!</span>
+                  <div className="flex items-center gap-1 shrink-0 ml-1.5">
+                    <div className="flex items-center gap-1 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 px-1.5 py-0.5 text-[8.5px] font-bold text-red-600 dark:text-red-400">
+                      <span className="flex h-2.5 w-2.5 items-center justify-center rounded-full bg-red-600 text-white text-[7.5px] font-black leading-none">!</span>
                       <span>{lang === "ml" ? "1 രേഖ വിട്ടുപോയി" : "1 document missing"}</span>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform" />
+                    <ChevronRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform stroke-[2]" />
                   </div>
                 </div>
 
                 {/* Item 2: Ravi Kumar */}
                 <div
-                  onClick={() => setActiveTab("applications")}
-                  className="rounded-2xl bg-white dark:bg-slate-900 border border-red-100 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
+                  onClick={() => {
+                    const record = mobileCollectionRecords.find((r) => r.applicantName.includes("Ravi") || r.applicantName.includes("രവി")) || {
+                      reference: "VK-2026-849202",
+                      applicantName: lang === "ml" ? "രവി കുമാർ" : "Ravi Kumar",
+                      applicantPhone: "9876543211",
+                      scheme: {
+                        id: "SCH-006",
+                        titleEn: "PM SVANidhi",
+                        titleMl: "പി.എം സ്വനിധി",
+                        benefitEn: "Micro-credit scheme for street vendors with 7% interest subsidy.",
+                        benefitMl: "തെരുവ് കച്ചവടക്കാർക്ക് 7% പലിശ ഇളവോടെ വായ്പ സഹായം.",
+                        matchLabelEn: "95% Match",
+                        matchLabelMl: "95% യോഗ്യത",
+                        deptEn: "Ministry of Housing & Urban Affairs",
+                        deptMl: "ഭവന നഗരകാര്യ മന്ത്രാലയം",
+                        categoryEn: "Central Government",
+                        categoryMl: "കേന്ദ്ര സർക്കാർ",
+                        requiredDocEn: "Vending Certificate / Urban Livelihood Identity",
+                        requiredDocMl: "വ്യാപാര സാക്ഷ്യപത്രം / തിരിച്ചറിയൽ കാർഡ്",
+                        requiredFieldKeys: ["bankAccountNumber", "bankIfscCode"],
+                      },
+                      status: "incomplete",
+                      bankAccountNumber: "987654321099",
+                      bankIfscCode: "SBIN0001235",
+                      minorityStatus: "No",
+                      disabilityStatus: "No",
+                      studentStatus: "No",
+                      employmentStatus: "Self-Employed",
+                      missingItems: [{ key: "doc:vendingCert", labelEn: "Vending Certificate Copy", labelMl: "വ്യാപാര സാക്ഷ്യപത്ര പകർപ്പ്", kind: "document" }],
+                      followUpDate: new Date().toISOString().split("T")[0],
+                      createdAt: new Date().toISOString(),
+                    };
+                    openCollectionRecordView(record, "needs_attention");
+                  }}
+                  className="rounded-xl bg-white dark:bg-slate-900 border border-red-100 dark:border-slate-800/80 py-2 px-2.5 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-[0.99]"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FFF1E6] dark:bg-orange-950/60 text-[#B54708] dark:text-orange-300 font-extrabold text-xs shrink-0 shadow-2xs">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <div className="flex h-7.5 w-7.5 items-center justify-center rounded-full bg-[#FFF1E6] dark:bg-orange-950/60 text-[#B54708] dark:text-orange-300 font-black text-[11px] shrink-0 shadow-2xs">
                       RK
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h4 className="font-black text-[12px] sm:text-[12.5px] text-slate-900 dark:text-white leading-tight truncate">
+                      <h4 className="font-bold text-[12px] text-slate-900 dark:text-white leading-tight truncate">
                         {lang === "ml" ? "രവി കുമാർ" : "Ravi Kumar"}
                       </h4>
                       <p className="font-medium text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
@@ -3257,12 +3348,75 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0 ml-2">
-                    <div className="flex items-center gap-1.5 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 px-2.5 py-1 text-[10px] font-bold text-red-600 dark:text-red-400">
-                      <Calendar className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
+                  <div className="flex items-center gap-1 shrink-0 ml-1.5">
+                    <div className="flex items-center gap-1 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 px-1.5 py-0.5 text-[8.5px] font-bold text-red-600 dark:text-red-400">
+                      <Calendar className="h-2.5 w-2.5 text-red-600 dark:text-red-400" />
                       <span>{lang === "ml" ? "ഇന്ന് തുടർനടപടി" : "Follow-up due today"}</span>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform" />
+                    <ChevronRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform stroke-[2]" />
+                  </div>
+                </div>
+
+                {/* Item 3: Ananya Sharma */}
+                <div
+                  onClick={() => {
+                    const record = mobileCollectionRecords.find((r) => r.applicantName.includes("Ananya") || r.applicantName.includes("അനന്യ")) || {
+                      reference: "VK-2026-849203",
+                      applicantName: lang === "ml" ? "അനന്യ ശർമ്മ" : "Ananya Sharma",
+                      applicantPhone: "9876543212",
+                      scheme: {
+                        id: "SCH-007",
+                        titleEn: "Subhadra Yojana",
+                        titleMl: "സുഭദ്ര യോജന",
+                        benefitEn: "Financial assistance of ₹10,000 per year for eligible women.",
+                        benefitMl: "സ്ത്രീകൾക്കായി വർഷത്തിൽ ₹10,000 ധനസഹായം.",
+                        matchLabelEn: "100% Match",
+                        matchLabelMl: "100% യോഗ്യത",
+                        deptEn: "Women & Child Development",
+                        deptMl: "വനിതാ ശിശു വികസന വകുപ്പ്",
+                        categoryEn: "State Government",
+                        categoryMl: "സംസ്ഥാന സർക്കാർ",
+                        requiredDocEn: "Income Certificate & Bank Passbook",
+                        requiredDocMl: "വരുമാന സർട്ടിഫിക്കറ്റും ബാങ്ക് പാസ്ബുക്കും",
+                        requiredFieldKeys: ["bankAccountNumber", "bankIfscCode"],
+                      },
+                      status: "incomplete",
+                      bankAccountNumber: "987654321100",
+                      bankIfscCode: "SBIN0001236",
+                      minorityStatus: "No",
+                      disabilityStatus: "No",
+                      studentStatus: "No",
+                      employmentStatus: "Unemployed",
+                      missingItems: [
+                        { key: "doc:incomeCert", labelEn: "Income Certificate", labelMl: "വരുമാന സർട്ടിഫിക്കറ്റ്", kind: "document" },
+                        { key: "doc:passbook", labelEn: "Bank Passbook Copy", labelMl: "ബാങ്ക് പാസ്ബുക്ക് പകർപ്പ്", kind: "document" },
+                      ],
+                      createdAt: new Date().toISOString(),
+                    };
+                    openCollectionRecordView(record, "needs_attention");
+                  }}
+                  className="rounded-xl bg-white dark:bg-slate-900 border border-red-100 dark:border-slate-800/80 py-2 px-2.5 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-[0.99]"
+                >
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <div className="flex h-7.5 w-7.5 items-center justify-center rounded-full bg-[#FFF1E6] dark:bg-orange-950/60 text-[#B54708] dark:text-orange-300 font-black text-[11px] shrink-0 shadow-2xs">
+                      AS
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-bold text-[12px] text-slate-900 dark:text-white leading-tight truncate">
+                        {lang === "ml" ? "അനന്യ ശർമ്മ" : "Ananya Sharma"}
+                      </h4>
+                      <p className="font-medium text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
+                        {lang === "ml" ? "സുഭദ്ര യോജന" : "Subhadra Yojana"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1 shrink-0 ml-1.5">
+                    <div className="flex items-center gap-1 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 px-1.5 py-0.5 text-[8.5px] font-bold text-red-600 dark:text-red-400">
+                      <span className="flex h-2.5 w-2.5 items-center justify-center rounded-full bg-red-600 text-white text-[7.5px] font-black leading-none">!</span>
+                      <span>{lang === "ml" ? "2 രേഖകൾ വിട്ടുപോയി" : "2 documents missing"}</span>
+                    </div>
+                    <ChevronRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform stroke-[2]" />
                   </div>
                 </div>
               </div>
@@ -4531,7 +4685,36 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     setCollectionRecordReturnStep(returnStep);
     setActiveTab("create");
     setMobileSubPage("none");
-    setCreateFlowStep("collection_record");
+
+    setSelectedEligibleScheme({ ...record.scheme });
+    setSelectedEligibleSchemeIds([record.scheme.id]);
+    setCreateFullName(record.applicantName === "Applicant" ? "" : record.applicantName);
+    setUploadedDocuments(getUploadedDocumentsForRecord(record));
+    setUploadErrors({});
+    setBankAccountNumber(record.bankAccountNumber);
+    setBankIfscCode(record.bankIfscCode);
+    setFinalMinorityStatus(record.minorityStatus);
+    setFinalDisabilityStatus(record.disabilityStatus);
+    setFinalStudentStatus(record.studentStatus);
+    setFinalEmploymentStatus(record.employmentStatus);
+    setFinalBplStatus(record.bplStatus);
+    setFinalFinancialHardshipStatus(record.financialHardshipStatus);
+    setFinalAnnualFamilyIncome(record.annualFamilyIncome);
+    setFinalResidenceArea(record.residenceArea);
+    setPmKisanDetails(record.pmKisanDetails ? { ...record.pmKisanDetails } : createEmptyPmKisanDetails());
+    setDeclarationAccepted(record.declarationAccepted);
+    setFollowUpDate(record.followUpDate);
+    setFollowUpNotes(record.followUpNotes);
+    setFollowUpMissingItems(record.missingItems);
+    setFinalDetailsInvalidFields([]);
+    setFinalDetailsSaveNotice(record.status === "incomplete" ? "incomplete" : null);
+    setActiveApplicantApplicationRefs((current) =>
+      current.includes(record.reference)
+        ? current
+        : [record.reference, ...current]
+    );
+    setSchemeDetailsReturnStep("form");
+    setCreateFlowStep("scheme_details");
   };
 
   const handleEditActiveCollectionRecord = () => {
@@ -7623,7 +7806,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
           {/* Mobile App Standard Header or Application Details / Document Verification Back Header */}
           {!isLogoutSplashScreen && !isGuestEligibilityOpen && !isMobileAuthOpen && mobileSubPage !== "category_schemes" && (
-            mobileSubPage === "guest_popular_schemes" || mobileSubPage === "guest_schemes" || mobileSubPage === "app_detail" || mobileSubPage === "scheme_details" || (activeTab === "create" && (createFlowStep === "scheme_details" || createFlowStep === "eligible_schemes" || createFlowStep === "form")) ? (
+            mobileSubPage === "guest_popular_schemes" || mobileSubPage === "guest_schemes" || mobileSubPage === "app_detail" || mobileSubPage === "needs_attention" || mobileSubPage === "notifications" || mobileSubPage === "scheme_details" || (activeTab === "create" && (createFlowStep === "scheme_details" || createFlowStep === "eligible_schemes" || createFlowStep === "form")) ? (
               <header className="relative z-40 w-full bg-[#FFFDF9] dark:bg-slate-900 border-b border-slate-200/60 dark:border-slate-800/60 shadow-2xs">
                 {mobileSubPage === "guest_popular_schemes" || mobileSubPage === "guest_schemes" ? (
                   isGuestSearchOpen ? (
@@ -7746,6 +7929,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         } else {
                           setCreateFlowStep(schemeDetailsReturnStep);
                         }
+                      } else if (mobileSubPage === "needs_attention" || mobileSubPage === "notifications") {
+                        setMobileSubPage("none");
                       } else if (mobileSubPage === "app_detail" && appDetailView !== "overview") {
                         setAppDetailView("overview");
                       } else {
@@ -7768,17 +7953,21 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         ? (lang === "ml" ? "യോഗ്യമായ പദ്ധതികൾ" : "Eligible Schemes")
                         : mobileSubPage === "scheme_details"
                           ? (lang === "ml" ? "പദ്ധതി വിവരങ്ങൾ" : "Scheme Details")
-                          : activeTab === "create" && createFlowStep === "scheme_details"
+                          : activeTab === "create" && (createFlowStep === "scheme_details" || createFlowStep === "collection_record")
                             ? (lang === "ml" ? "രേഖാ പരിശോധന" : "Document Verification")
-                            : appDetailView === "applicant"
-                              ? (lang === "ml" ? "അപേക്ഷക വിവരങ്ങൾ" : "Applicant Information")
-                              : appDetailView === "documents"
-                                ? (lang === "ml" ? "ശേഖരിച്ച വിവരങ്ങളും ഫയലുകളും" : "Collected Details & Files")
-                                : appDetailView === "scheme"
-                                  ? (lang === "ml" ? "പദ്ധതി വിവരങ്ങൾ" : "Scheme Details")
-                                  : appDetailView === "history"
-                                    ? (lang === "ml" ? "അപേക്ഷാ ചരിത്രം" : "Activity Log")
-                                    : (lang === "ml" ? "അപേക്ഷാ വിവരങ്ങൾ" : "Application Details")}
+                            : mobileSubPage === "needs_attention"
+                              ? (lang === "ml" ? "ശ്രദ്ധ ആവശ്യമുണ്ട്" : "Needs Attention")
+                              : mobileSubPage === "notifications"
+                                ? (lang === "ml" ? "അറിയിപ്പുകൾ" : "Notifications")
+                                : appDetailView === "applicant"
+                                  ? (lang === "ml" ? "അപേക്ഷക വിവരങ്ങൾ" : "Applicant Information")
+                                  : appDetailView === "documents"
+                                    ? (lang === "ml" ? "ശേഖരിച്ച വിവരങ്ങളും ഫയലുകളും" : "Collected Details & Files")
+                                    : appDetailView === "scheme"
+                                      ? (lang === "ml" ? "പദ്ധതി വിവരങ്ങൾ" : "Scheme Details")
+                                      : appDetailView === "history"
+                                        ? (lang === "ml" ? "അപേക്ഷാ ചരിത്രം" : "Activity Log")
+                                        : (lang === "ml" ? "അപേക്ഷാ വിവരങ്ങൾ" : "Application Details")}
                   </h3>
 
                   {/* Right side action or search button */}
@@ -7802,6 +7991,19 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       >
                         <Search className="h-3.5 w-3.5 stroke-[2.2]" />
                       </button>
+                    ) : mobileSubPage === "notifications" ? (
+                      <span className="shrink-0 text-[10px] font-extrabold text-blue-700 bg-blue-50 dark:bg-blue-950/80 dark:text-blue-300 px-2.5 py-0.5 rounded-full border border-blue-200/80 dark:border-blue-900/50 z-10">
+                        {lang === "ml" ? "4 പുതിയത്" : "4 unread"}
+                      </span>
+                    ) : mobileSubPage === "needs_attention" ? (
+                      <span className="shrink-0 text-[10px] font-bold text-red-600 bg-red-50 dark:bg-red-950/50 dark:text-red-300 px-2 py-0.5 rounded-full flex items-center gap-1 border border-red-100 dark:border-red-900/50 z-10">
+                        <AlertTriangle className="h-3 w-3 text-red-600" />
+                        <span>
+                          {lang === "ml"
+                            ? `${3 + followUpCollectionRecords.length} കാര്യങ്ങൾ`
+                            : `${3 + followUpCollectionRecords.length} Items`}
+                        </span>
+                      </span>
                     ) : mobileSubPage === "scheme_details" || (activeTab === "create" && createFlowStep === "scheme_details") ? null : (
                       <>
                         <button
@@ -7908,13 +8110,13 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     !isGuest &&
                     !isMobileAuthOpen &&
                     mobileSubPage !== "app_detail" &&
+                    mobileSubPage !== "needs_attention" &&
                     (activeTab !== "create" || createFlowStep === "applicant_applications") &&
                     (mobileSubPage === "none" ||
                       mobileSubPage === "leaderboard" ||
                       mobileSubPage === "beneficiaries" ||
                       mobileSubPage === "applications" ||
                       mobileSubPage === "recent_activity" ||
-                      mobileSubPage === "needs_attention" ||
                       mobileSubPage === "events_announcements")
                       ? "pb-16"
                       : "pb-6"
@@ -8418,36 +8620,36 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         </div>
                         <button
                           type="button"
-                          onClick={() => setActiveTab("applications")}
+                          onClick={() => setMobileSubPage("needs_attention")}
                           className="flex items-center gap-1 text-[11px] font-bold text-[#ff5500] hover:text-orange-600 transition-colors cursor-pointer shrink-0"
                         >
                           <span>{lang === "ml" ? "എല്ലാം" : "View All"}</span>
                           <span className="flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-[#ff3b30] text-white text-[9.5px] font-black shadow-2xs">
-                            {2 + followUpCollectionRecords.length}
+                            12
                           </span>
                           <ChevronRight className="h-3.5 w-3.5 text-[#ff5500] stroke-[2.5]" />
                         </button>
                       </div>
 
-                      {/* Needs Attention Items */}
-                      <div className="space-y-2">
+                      {/* Needs Attention Items - Showing 3 Cards on Home */}
+                      <div className="space-y-1.5">
                         {followUpCollectionRecords.map((record) => (
                           <div
                             key={record.reference}
                             onClick={() => openCollectionRecordView(record, "needs_attention")}
-                            className="rounded-2xl bg-white dark:bg-slate-900 border border-amber-100 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
+                            className="rounded-xl bg-white dark:bg-slate-900 border border-amber-100 dark:border-slate-800/80 py-2 px-2.5 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-[0.99]"
                           >
-                            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
                               {(() => {
                                 const avatar = getApplicantAvatarInfo(record.applicantName);
                                 return (
-                                  <div className={`flex h-9 w-9 items-center justify-center rounded-full font-extrabold text-xs shrink-0 ${avatar.colorStyle}`}>
+                                  <div className={`flex h-7.5 w-7.5 items-center justify-center rounded-full font-black text-[11px] shrink-0 shadow-2xs ${avatar.colorStyle}`}>
                                     {avatar.initials}
                                   </div>
                                 );
                               })()}
                               <div className="min-w-0 flex-1">
-                                <h4 className="font-black text-[12px] sm:text-[12.5px] text-slate-900 dark:text-white leading-tight truncate">
+                                <h4 className="font-bold text-[12px] text-slate-900 dark:text-white leading-tight truncate">
                                   {record.applicantName}
                                 </h4>
                                 <p className="font-medium text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
@@ -8456,9 +8658,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-2 shrink-0 ml-2">
-                              <div className="flex items-center gap-1.5 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 px-2.5 py-1 text-[10px] font-bold text-red-600 dark:text-red-400">
-                                <Calendar className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
+                            <div className="flex items-center gap-1 shrink-0 ml-1.5">
+                              <div className="flex items-center gap-1 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 px-1.5 py-0.5 text-[8.5px] font-bold text-red-600 dark:text-red-400">
+                                <Calendar className="h-2.5 w-2.5 text-red-600 dark:text-red-400" />
                                 <span className="whitespace-nowrap">
                                   {record.followUpDate
                                     ? formatCollectionDate(record.followUpDate)
@@ -8467,22 +8669,54 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       : `${record.missingItems.length} missing`}
                                 </span>
                               </div>
-                              <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform" />
+                              <ChevronRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform stroke-[2]" />
                             </div>
                           </div>
                         ))}
 
                         {/* Item 1: Meera Nair */}
                         <div
-                          onClick={() => setActiveTab("applications")}
-                          className="rounded-2xl bg-white dark:bg-slate-900 border border-red-100 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
+                          onClick={() => {
+                            const record = mobileCollectionRecords.find((r) => r.applicantName.includes("Meera") || r.applicantName.includes("മീര")) || {
+                              reference: "VK-2026-849201",
+                              applicantName: lang === "ml" ? "മീര നായർ" : "Meera Nair",
+                              applicantPhone: "9876543210",
+                              scheme: {
+                                id: "SCH-005",
+                                titleEn: "PM Vishwakarma",
+                                titleMl: "പി.എം വിശ്വകർമ്മ",
+                                benefitEn: "Collateral-free enterprise loan & skill training toolkit incentive up to ₹3,00,000.",
+                                benefitMl: "ഉപകരണങ്ങൾ വാങ്ങാനും പരിശീലനത്തിനും ₹3,00,000 വരെയുള്ള വായ്പ.",
+                                matchLabelEn: "100% Match",
+                                matchLabelMl: "100% യോഗ്യത",
+                                deptEn: "Ministry of MSME",
+                                deptMl: "എംഎസ്എംഇ മന്ത്രാലയം",
+                                categoryEn: "Central Government",
+                                categoryMl: "കേന്ദ്ര സർക്കാർ",
+                                requiredDocEn: "Artisan Certificate / Skill Proof Copy",
+                                requiredDocMl: "കൈത്തൊഴിൽ സാക്ഷ്യപത്രം / വൈദഗ്ധ്യ തെളിവ്",
+                                requiredFieldKeys: ["bankAccountNumber", "bankIfscCode"],
+                              },
+                              status: "incomplete",
+                              bankAccountNumber: "987654321098",
+                              bankIfscCode: "SBIN0001234",
+                              minorityStatus: "No",
+                              disabilityStatus: "No",
+                              studentStatus: "No",
+                              employmentStatus: "Self-Employed",
+                              missingItems: [{ key: "doc:artisanProof", labelEn: "Artisan / Skill Certificate", labelMl: "കൈത്തൊഴിൽ സാക്ഷ്യപത്രം", kind: "document" }],
+                              createdAt: new Date().toISOString(),
+                            };
+                            openCollectionRecordView(record, "needs_attention");
+                          }}
+                          className="rounded-xl bg-white dark:bg-slate-900 border border-red-100 dark:border-slate-800/80 py-2 px-2.5 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-[0.99]"
                         >
-                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FFF1E6] dark:bg-orange-950/60 text-[#B54708] dark:text-orange-300 font-extrabold text-xs shrink-0 shadow-2xs">
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <div className="flex h-7.5 w-7.5 items-center justify-center rounded-full bg-[#FFF1E6] dark:bg-orange-950/60 text-[#B54708] dark:text-orange-300 font-black text-[11px] shrink-0 shadow-2xs">
                               MN
                             </div>
                             <div className="min-w-0 flex-1">
-                              <h4 className="font-black text-[12px] sm:text-[12.5px] text-slate-900 dark:text-white leading-tight truncate">
+                              <h4 className="font-bold text-[12px] text-slate-900 dark:text-white leading-tight truncate">
                                 {lang === "ml" ? "മീര നായർ" : "Meera Nair"}
                               </h4>
                               <p className="font-medium text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
@@ -8491,26 +8725,59 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2 shrink-0 ml-2">
-                            <div className="flex items-center gap-1.5 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 px-2.5 py-1 text-[10px] font-bold text-red-600 dark:text-red-400">
-                              <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-600 text-white text-[8.5px] font-black leading-none">!</span>
+                          <div className="flex items-center gap-1 shrink-0 ml-1.5">
+                            <div className="flex items-center gap-1 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 px-1.5 py-0.5 text-[8.5px] font-bold text-red-600 dark:text-red-400">
+                              <span className="flex h-2.5 w-2.5 items-center justify-center rounded-full bg-red-600 text-white text-[7.5px] font-black leading-none">!</span>
                               <span>{lang === "ml" ? "1 രേഖ വിട്ടുപോയി" : "1 document missing"}</span>
                             </div>
-                            <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform" />
+                            <ChevronRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform stroke-[2]" />
                           </div>
                         </div>
 
                         {/* Item 2: Ravi Kumar */}
                         <div
-                          onClick={() => setActiveTab("applications")}
-                          className="rounded-2xl bg-white dark:bg-slate-900 border border-red-100 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
+                          onClick={() => {
+                            const record = mobileCollectionRecords.find((r) => r.applicantName.includes("Ravi") || r.applicantName.includes("രവി")) || {
+                              reference: "VK-2026-849202",
+                              applicantName: lang === "ml" ? "രവി കുമാർ" : "Ravi Kumar",
+                              applicantPhone: "9876543211",
+                              scheme: {
+                                id: "SCH-006",
+                                titleEn: "PM SVANidhi",
+                                titleMl: "പി.എം സ്വനിധി",
+                                benefitEn: "Micro-credit scheme for street vendors with 7% interest subsidy.",
+                                benefitMl: "തെരുവ് കച്ചവടക്കാർക്ക് 7% പലിശ ഇളവോടെ വായ്പ സഹായം.",
+                                matchLabelEn: "95% Match",
+                                matchLabelMl: "95% യോഗ്യത",
+                                deptEn: "Ministry of Housing & Urban Affairs",
+                                deptMl: "ഭവന നഗരകാര്യ മന്ത്രാലയം",
+                                categoryEn: "Central Government",
+                                categoryMl: "കേന്ദ്ര സർക്കാർ",
+                                requiredDocEn: "Vending Certificate / Urban Livelihood Identity",
+                                requiredDocMl: "വ്യാപാര സാക്ഷ്യപത്രം / തിരിച്ചറിയൽ കാർഡ്",
+                                requiredFieldKeys: ["bankAccountNumber", "bankIfscCode"],
+                              },
+                              status: "incomplete",
+                              bankAccountNumber: "987654321099",
+                              bankIfscCode: "SBIN0001235",
+                              minorityStatus: "No",
+                              disabilityStatus: "No",
+                              studentStatus: "No",
+                              employmentStatus: "Self-Employed",
+                              missingItems: [{ key: "doc:vendingCert", labelEn: "Vending Certificate Copy", labelMl: "വ്യാപാര സാക്ഷ്യപത്ര പകർപ്പ്", kind: "document" }],
+                              followUpDate: new Date().toISOString().split("T")[0],
+                              createdAt: new Date().toISOString(),
+                            };
+                            openCollectionRecordView(record, "needs_attention");
+                          }}
+                          className="rounded-xl bg-white dark:bg-slate-900 border border-red-100 dark:border-slate-800/80 py-2 px-2.5 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-[0.99]"
                         >
-                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FFF1E6] dark:bg-orange-950/60 text-[#B54708] dark:text-orange-300 font-extrabold text-xs shrink-0 shadow-2xs">
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <div className="flex h-7.5 w-7.5 items-center justify-center rounded-full bg-[#FFF1E6] dark:bg-orange-950/60 text-[#B54708] dark:text-orange-300 font-black text-[11px] shrink-0 shadow-2xs">
                               RK
                             </div>
                             <div className="min-w-0 flex-1">
-                              <h4 className="font-black text-[12px] sm:text-[12.5px] text-slate-900 dark:text-white leading-tight truncate">
+                              <h4 className="font-bold text-[12px] text-slate-900 dark:text-white leading-tight truncate">
                                 {lang === "ml" ? "രവി കുമാർ" : "Ravi Kumar"}
                               </h4>
                               <p className="font-medium text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
@@ -8519,12 +8786,75 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2 shrink-0 ml-2">
-                            <div className="flex items-center gap-1.5 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 px-2.5 py-1 text-[10px] font-bold text-red-600 dark:text-red-400">
-                              <Calendar className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
+                          <div className="flex items-center gap-1 shrink-0 ml-1.5">
+                            <div className="flex items-center gap-1 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 px-1.5 py-0.5 text-[8.5px] font-bold text-red-600 dark:text-red-400">
+                              <Calendar className="h-2.5 w-2.5 text-red-600 dark:text-red-400" />
                               <span>{lang === "ml" ? "ഇന്ന് തുടർനടപടി" : "Follow-up due today"}</span>
                             </div>
-                            <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform" />
+                            <ChevronRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform stroke-[2]" />
+                          </div>
+                        </div>
+
+                        {/* Item 3: Ananya Sharma */}
+                        <div
+                          onClick={() => {
+                            const record = mobileCollectionRecords.find((r) => r.applicantName.includes("Ananya") || r.applicantName.includes("അനന്യ")) || {
+                              reference: "VK-2026-849203",
+                              applicantName: lang === "ml" ? "അനന്യ ശർമ്മ" : "Ananya Sharma",
+                              applicantPhone: "9876543212",
+                              scheme: {
+                                id: "SCH-007",
+                                titleEn: "Subhadra Yojana",
+                                titleMl: "സുഭദ്ര യോജന",
+                                benefitEn: "Financial assistance of ₹10,000 per year for eligible women.",
+                                benefitMl: "സ്ത്രീകൾക്കായി വർഷത്തിൽ ₹10,000 ധനസഹായം.",
+                                matchLabelEn: "100% Match",
+                                matchLabelMl: "100% യോഗ്യത",
+                                deptEn: "Women & Child Development",
+                                deptMl: "വനിതാ ശിശു വികസന വകുപ്പ്",
+                                categoryEn: "State Government",
+                                categoryMl: "സംസ്ഥാന സർക്കാർ",
+                                requiredDocEn: "Income Certificate & Bank Passbook",
+                                requiredDocMl: "വരുമാന സർട്ടിഫിക്കറ്റും ബാങ്ക് പാസ്ബുക്കും",
+                                requiredFieldKeys: ["bankAccountNumber", "bankIfscCode"],
+                              },
+                              status: "incomplete",
+                              bankAccountNumber: "987654321100",
+                              bankIfscCode: "SBIN0001236",
+                              minorityStatus: "No",
+                              disabilityStatus: "No",
+                              studentStatus: "No",
+                              employmentStatus: "Unemployed",
+                              missingItems: [
+                                { key: "doc:incomeCert", labelEn: "Income Certificate", labelMl: "വരുമാന സർട്ടിഫിക്കറ്റ്", kind: "document" },
+                                { key: "doc:passbook", labelEn: "Bank Passbook Copy", labelMl: "ബാങ്ക് പാസ്ബുക്ക് പകർപ്പ്", kind: "document" },
+                              ],
+                              createdAt: new Date().toISOString(),
+                            };
+                            openCollectionRecordView(record, "needs_attention");
+                          }}
+                          className="rounded-xl bg-white dark:bg-slate-900 border border-red-100 dark:border-slate-800/80 py-2 px-2.5 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-[0.99]"
+                        >
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <div className="flex h-7.5 w-7.5 items-center justify-center rounded-full bg-[#FFF1E6] dark:bg-orange-950/60 text-[#B54708] dark:text-orange-300 font-black text-[11px] shrink-0 shadow-2xs">
+                              AS
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <h4 className="font-bold text-[12px] text-slate-900 dark:text-white leading-tight truncate">
+                                {lang === "ml" ? "അനന്യ ശർമ്മ" : "Ananya Sharma"}
+                              </h4>
+                              <p className="font-medium text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
+                                {lang === "ml" ? "സുഭദ്ര യോജന" : "Subhadra Yojana"}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1 shrink-0 ml-1.5">
+                            <div className="flex items-center gap-1 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 px-1.5 py-0.5 text-[8.5px] font-bold text-red-600 dark:text-red-400">
+                              <span className="flex h-2.5 w-2.5 items-center justify-center rounded-full bg-red-600 text-white text-[7.5px] font-black leading-none">!</span>
+                              <span>{lang === "ml" ? "2 രേഖകൾ വിട്ടുപോയി" : "2 documents missing"}</span>
+                            </div>
+                            <ChevronRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform stroke-[2]" />
                           </div>
                         </div>
                       </div>
@@ -9082,378 +9412,716 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         );
                       })()}
 
-                    {/* Dedicated Subpage 2: Needs Attention Page */}
+                    {/* Dedicated Subpage 2: Needs Attention Page - 12 Cards */}
                     {mobileSubPage === "needs_attention" && (
-                      <div className="space-y-4 pt-1 pb-4">
-                        {/* Subpage Back Header */}
-                        <div className="flex items-center justify-between border-b border-border pb-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-            setMobileSubPage("none");
-            setActiveTab("applications");
-          }}
-                            className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-600 hover:text-rose-700 cursor-pointer"
-                          >
-                            <ChevronRight className="h-4 w-4 rotate-180" />
-                            <span>{lang === "ml" ? "ശ്രദ്ധിക്കേണ്ടവ" : "Needs Attention"}</span>
-                          </button>
-                          <span className="text-[10px] font-bold text-rose-600 bg-rose-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
-                            <AlertTriangle className="h-3 w-3" />
-                            {lang === "ml"
-                              ? `${5 + followUpCollectionRecords.length} അടിയന്തര കാര്യങ്ങൾ`
-                              : `${5 + followUpCollectionRecords.length} Items`}
-                          </span>
-                        </div>
-
-                        {/* --- Section 0: Saved collection follow-ups --- */}
-                        {followUpCollectionRecords.length > 0 && (
-                          <div className="space-y-2.5">
-                            <div className="flex items-center justify-between">
-                              <h4 className="text-sm font-extrabold text-foreground">
-                                {lang === "ml" ? "തുടർനടപടികൾ" : "Collection Follow-ups"}
-                              </h4>
-                              <span className="text-[10px] font-bold text-amber-700 bg-amber-100 dark:bg-amber-950/60 dark:text-amber-300 px-2.5 py-0.5 rounded-full">
-                                {followUpCollectionRecords.length} {lang === "ml" ? "ബാക്കി" : "open"}
-                              </span>
-                            </div>
-
-                            {followUpCollectionRecords.map((record) => (
-                              <button
-                                key={record.reference}
-                                type="button"
-                                onClick={() => openCollectionRecordView(record, "needs_attention")}
-                                className="w-full text-left p-3.5 rounded-2xl bg-amber-50/80 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-900/40 shadow-2xs hover:shadow-xs transition-all cursor-pointer active:scale-98"
-                              >
-                                <div className="flex items-center justify-between gap-2">
-                                  <span className="font-extrabold text-[13.5px] text-[#0F172A] dark:text-amber-100 leading-tight truncate">
+                      <div className="space-y-3 pt-1 pb-4">
+                        {/* List of Needs Attention Cards */}
+                        <div className="space-y-1.5">
+                          {/* Item 1: K. Krishnan (from followUpCollectionRecords) */}
+                          {followUpCollectionRecords.map((record) => (
+                            <div
+                              key={record.reference}
+                              onClick={() => openCollectionRecordView(record, "needs_attention")}
+                              className="rounded-xl bg-white dark:bg-slate-900 border border-red-100 dark:border-slate-800/80 py-2 px-2.5 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-[0.99]"
+                            >
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                {(() => {
+                                  const avatar = getApplicantAvatarInfo(record.applicantName);
+                                  return (
+                                    <div className={`flex h-7.5 w-7.5 items-center justify-center rounded-full font-black text-[11px] shrink-0 shadow-2xs ${avatar.colorStyle}`}>
+                                      {avatar.initials}
+                                    </div>
+                                  );
+                                })()}
+                                <div className="min-w-0 flex-1">
+                                  <h4 className="font-bold text-[12px] text-slate-900 dark:text-white leading-tight truncate">
                                     {record.applicantName}
-                                  </span>
-                                  <span className="text-[10px] font-bold text-amber-700 bg-amber-100 dark:bg-amber-950/60 dark:text-amber-300 px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
-                                    {lang === "ml" ? "ശേഖരണം അപൂർണ്ണം" : "Collection incomplete"}
-                                  </span>
+                                  </h4>
+                                  <p className="font-medium text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
+                                    {lang === "ml" ? record.scheme.titleMl : record.scheme.titleEn}
+                                  </p>
                                 </div>
+                              </div>
 
-                                <p className="text-[11px] text-[#64748B] dark:text-amber-200/70 leading-snug mt-1 truncate">
-                                  {lang === "ml" ? record.scheme.titleMl : record.scheme.titleEn}
-                                </p>
-
-                                <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#B45309] dark:text-amber-300 pt-1.5">
-                                  <Calendar className="h-3.5 w-3.5 shrink-0" />
+                              <div className="flex items-center gap-1 shrink-0 ml-1.5">
+                                <div className="flex items-center gap-1 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 px-1.5 py-0.5 text-[8.5px] font-bold text-red-600 dark:text-red-400">
+                                  <Calendar className="h-2.5 w-2.5 text-red-600 dark:text-red-400" />
                                   <span className="whitespace-nowrap">
                                     {record.followUpDate
-                                      ? lang === "ml"
-                                        ? `തുടർനടപടി: ${formatCollectionDate(record.followUpDate)}`
-                                        : `Follow-up: ${formatCollectionDate(record.followUpDate)}`
+                                      ? formatCollectionDate(record.followUpDate)
                                       : lang === "ml"
-                                        ? "തുടർനടപടി ഷെഡ്യൂൾ ചെയ്തിട്ടില്ല"
-                                        : "Follow-up not scheduled"}
-                                  </span>
-                                  <span className="text-amber-300 dark:text-amber-700">•</span>
-                                  <span className="whitespace-nowrap">
-                                    {lang === "ml"
-                                      ? `${record.missingItems.length} ബാക്കി`
-                                      : `${record.missingItems.length} outstanding`}
+                                        ? `${record.missingItems.length} ബാക്കി`
+                                        : `${record.missingItems.length} missing`}
                                   </span>
                                 </div>
+                                <ChevronRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform stroke-[2]" />
+                              </div>
+                            </div>
+                          ))}
 
-                                {record.followUpNotes && (
-                                  <p className="text-[11px] text-[#64748B] dark:text-amber-200/70 leading-snug mt-1 line-clamp-2">
-                                    {record.followUpNotes}
-                                  </p>
-                                )}
-
-                                <div className="flex items-center justify-between pt-1.5">
-                                  <span className="text-[10px] font-bold text-muted-foreground tracking-wide">
-                                    {record.reference}
-                                  </span>
-                                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 dark:text-amber-300">
-                                    {lang === "ml" ? "റെക്കോർഡ് കാണുക" : "View record"}
-                                    <ChevronRight className="h-3.5 w-3.5" />
-                                  </span>
-                                </div>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* --- Section 1: Today --- */}
-                        <div className="space-y-2.5">
-                          <div className="flex items-center justify-between">
-                            <h4 className="text-sm font-extrabold text-foreground">
-                              {lang === "ml" ? "ഇന്ന്" : "Today"}
-                            </h4>
-                            <span className="text-[10px] font-bold text-[#E11D48] bg-[#FFE4E6] dark:bg-rose-950/60 dark:text-rose-300 px-2.5 py-0.5 rounded-full">
-                              {lang === "ml" ? "2 പുതിയത്" : "2 new"}
-                            </span>
-                          </div>
-
-                          {/* Card 1: NSP (Red/Rose) */}
-                          <div className="p-3.5 rounded-2xl bg-[#FFF5F6] dark:bg-rose-950/20 border border-[#FFE2E5] dark:border-rose-900/40 shadow-2xs relative overflow-hidden">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-[10px] font-extrabold text-[#71717A] uppercase tracking-wider truncate flex-1 min-w-0">
-                                {lang === "ml" ? "നാഷണൽ സ്കോളർഷിപ്പ് പോർട്ടൽ" : "NATIONAL SCHOLARSHIP PORTAL"}
-                              </span>
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                <span className="text-[10.5px] font-medium text-[#71717A]">10:30 AM</span>
-                                <span className="text-[10px] font-bold text-[#E11D48] bg-[#FFE4E6] px-2 py-0.5 rounded-full whitespace-nowrap">
-                                  {lang === "ml" ? "നടപടി ആവശ്യം" : "Action required"}
-                                </span>
-                                <button type="button" className="text-gray-400 hover:text-gray-600 p-0.5">
-                                  <MoreVertical className="h-4 w-4" />
-                                </button>
+                          {/* Item 2: Meera Nair */}
+                          <div
+                            onClick={() => {
+                              const record = mobileCollectionRecords.find((r) => r.applicantName.includes("Meera") || r.applicantName.includes("മീര")) || {
+                                reference: "VK-2026-849201",
+                                applicantName: lang === "ml" ? "മീര നായർ" : "Meera Nair",
+                                applicantPhone: "9876543210",
+                                scheme: {
+                                  id: "SCH-005",
+                                  titleEn: "PM Vishwakarma",
+                                  titleMl: "പി.എം വിശ്വകർമ്മ",
+                                  benefitEn: "Collateral-free enterprise loan & skill training toolkit incentive up to ₹3,00,000.",
+                                  benefitMl: "ഉപകരണങ്ങൾ വാങ്ങാനും പരിശീലനത്തിനും ₹3,00,000 വരെയുള്ള വായ്പ.",
+                                  matchLabelEn: "100% Match",
+                                  matchLabelMl: "100% യോഗ്യത",
+                                  deptEn: "Ministry of MSME",
+                                  deptMl: "എംഎസ്എംഇ മന്ത്രാലയം",
+                                  categoryEn: "Central Government",
+                                  categoryMl: "കേന്ദ്ര സർക്കാർ",
+                                  requiredDocEn: "Artisan Certificate / Skill Proof Copy",
+                                  requiredDocMl: "കൈത്തൊഴിൽ സാക്ഷ്യപത്രം / വൈദഗ്ധ്യ തെളിവ്",
+                                  requiredFieldKeys: ["bankAccountNumber", "bankIfscCode"],
+                                },
+                                status: "incomplete",
+                                bankAccountNumber: "987654321098",
+                                bankIfscCode: "SBIN0001234",
+                                minorityStatus: "No",
+                                disabilityStatus: "No",
+                                studentStatus: "No",
+                                employmentStatus: "Self-Employed",
+                                missingItems: [{ key: "doc:artisanProof", labelEn: "Artisan / Skill Certificate", labelMl: "കൈത്തൊഴിൽ സാക്ഷ്യപത്രം", kind: "document" }],
+                                createdAt: new Date().toISOString(),
+                              };
+                              openCollectionRecordView(record, "needs_attention");
+                            }}
+                            className="rounded-xl bg-white dark:bg-slate-900 border border-red-100 dark:border-slate-800/80 py-2 px-2.5 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-[0.99]"
+                          >
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <div className="flex h-7.5 w-7.5 items-center justify-center rounded-full bg-[#FFF1E6] dark:bg-orange-950/60 text-[#B54708] dark:text-orange-300 font-black text-[11px] shrink-0 shadow-2xs">
+                                MN
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-bold text-[12px] text-slate-900 dark:text-white leading-tight truncate">
+                                  {lang === "ml" ? "മീര നായർ" : "Meera Nair"}
+                                </h4>
+                                <p className="font-medium text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
+                                  {lang === "ml" ? "പി.എം വിശ്വകർമ്മ" : "PM Vishwakarma"}
+                                </p>
                               </div>
                             </div>
 
-                            <div className="mt-1.5 space-y-1.5 pr-18">
-                              <h5 className="font-extrabold text-[13.5px] text-[#0F172A] dark:text-rose-100 leading-tight">
-                                {lang === "ml" ? "അപേക്ഷ പൂർത്തിയാക്കുക" : "Complete your application"}
-                              </h5>
-                              <p className="text-[11px] text-[#64748B] dark:text-rose-300/80 leading-snug">
-                                {lang === "ml"
-                                  ? "വെരിഫിക്കേഷൻ പൂർത്തിയാക്കാൻ മുൻവർഷത്തെ മാർക്ക് ലിസ്റ്റ് അപ്‌ലോഡ് ചെയ്യുക."
-                                  : "Upload your previous year mark list to complete the verification process."}
-                              </p>
-
-                              <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#E11D48] pt-1">
-                                <Calendar className="h-3.5 w-3.5 text-[#E11D48] shrink-0" />
-                                <span className="whitespace-nowrap">{lang === "ml" ? "അവസാന തീയതി: 12 Nov 2024" : "Due by 12 Nov 2024"}</span>
+                            <div className="flex items-center gap-1 shrink-0 ml-1.5">
+                              <div className="flex items-center gap-1 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 px-1.5 py-0.5 text-[8.5px] font-bold text-red-600 dark:text-red-400">
+                                <span className="flex h-2.5 w-2.5 items-center justify-center rounded-full bg-red-600 text-white text-[7.5px] font-black leading-none">!</span>
+                                <span>{lang === "ml" ? "1 രേഖ വിട്ടുപോയി" : "1 document missing"}</span>
                               </div>
-
-                              <div className="pt-1.5">
-                                <button
-                                  type="button"
-                                  className="inline-flex items-center gap-1 text-[11.5px] font-bold text-white bg-[#E11D48] hover:bg-rose-700 px-4 py-1.5 rounded-full transition-colors cursor-pointer shadow-xs whitespace-nowrap"
-                                >
-                                  <span>{lang === "ml" ? "തുടരുക" : "Continue Application"}</span>
-                                  <ChevronRight className="h-3.5 w-3.5" />
-                                </button>
-                              </div>
-                            </div>
-
-                            <div className="absolute right-3 bottom-3 pointer-events-none w-16 h-18 bg-white/90 dark:bg-card/90 rounded-xl shadow-xs border border-rose-200/80 p-2 flex flex-col justify-between">
-                              <div className="space-y-1.5">
-                                <div className="h-1.5 w-8 bg-rose-200 rounded-full" />
-                                <div className="h-1.5 w-10 bg-rose-100 rounded-full" />
-                                <div className="h-1.5 w-6 bg-rose-100 rounded-full" />
-                              </div>
-                              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-rose-500 rounded-full flex items-center justify-center text-white shadow-xs">
-                                <ChevronRight className="h-3.5 w-3.5 -rotate-90 stroke-[3]" />
-                              </div>
+                              <ChevronRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform stroke-[2]" />
                             </div>
                           </div>
 
-                          {/* Card 2: PM-KISAN (Amber/Orange) */}
-                          <div className="p-3.5 rounded-2xl bg-[#FFFDF3] dark:bg-amber-950/20 border border-[#FEF3C7] dark:border-amber-900/40 shadow-2xs relative overflow-hidden">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-[10px] font-extrabold text-[#71717A] uppercase tracking-wider truncate flex-1 min-w-0">
-                                {lang === "ml" ? "പിഎം-കിസാൻ" : "PM-KISAN"}
-                              </span>
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                <span className="text-[10.5px] font-medium text-[#71717A]">09:15 AM</span>
-                                <span className="text-[10px] font-bold text-[#D97706] bg-[#FEF3C7] px-2 py-0.5 rounded-full whitespace-nowrap">
-                                  {lang === "ml" ? "വെരിഫിക്കേഷൻ വേണം" : "Verification needed"}
-                                </span>
-                                <button type="button" className="text-gray-400 hover:text-gray-600 p-0.5">
-                                  <MoreVertical className="h-4 w-4" />
-                                </button>
+                          {/* Item 3: Ravi Kumar */}
+                          <div
+                            onClick={() => {
+                              const record = mobileCollectionRecords.find((r) => r.applicantName.includes("Ravi") || r.applicantName.includes("രവി")) || {
+                                reference: "VK-2026-849202",
+                                applicantName: lang === "ml" ? "രവി കുമാർ" : "Ravi Kumar",
+                                applicantPhone: "9876543211",
+                                scheme: {
+                                  id: "SCH-006",
+                                  titleEn: "PM SVANidhi",
+                                  titleMl: "പി.എം സ്വനിധി",
+                                  benefitEn: "Micro-credit scheme for street vendors with 7% interest subsidy.",
+                                  benefitMl: "തെരുവ് കച്ചവടക്കാർക്ക് 7% പലിശ ഇളവോടെ വായ്പ സഹായം.",
+                                  matchLabelEn: "95% Match",
+                                  matchLabelMl: "95% യോഗ്യത",
+                                  deptEn: "Ministry of Housing & Urban Affairs",
+                                  deptMl: "ഭവന നഗരകാര്യ മന്ത്രാലയം",
+                                  categoryEn: "Central Government",
+                                  categoryMl: "കേന്ദ്ര സർക്കാർ",
+                                  requiredDocEn: "Vending Certificate / Urban Livelihood Identity",
+                                  requiredDocMl: "വ്യാപാര സാക്ഷ്യപത്രം / തിരിച്ചറിയൽ കാർഡ്",
+                                  requiredFieldKeys: ["bankAccountNumber", "bankIfscCode"],
+                                },
+                                status: "incomplete",
+                                bankAccountNumber: "987654321099",
+                                bankIfscCode: "SBIN0001235",
+                                minorityStatus: "No",
+                                disabilityStatus: "No",
+                                studentStatus: "No",
+                                employmentStatus: "Self-Employed",
+                                missingItems: [{ key: "doc:vendingCert", labelEn: "Vending Certificate Copy", labelMl: "വ്യാപാര സാക്ഷ്യപത്ര പകർപ്പ്", kind: "document" }],
+                                followUpDate: new Date().toISOString().split("T")[0],
+                                createdAt: new Date().toISOString(),
+                              };
+                              openCollectionRecordView(record, "needs_attention");
+                            }}
+                            className="rounded-xl bg-white dark:bg-slate-900 border border-red-100 dark:border-slate-800/80 py-2 px-2.5 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-[0.99]"
+                          >
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <div className="flex h-7.5 w-7.5 items-center justify-center rounded-full bg-[#FFF1E6] dark:bg-orange-950/60 text-[#B54708] dark:text-orange-300 font-black text-[11px] shrink-0 shadow-2xs">
+                                RK
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-bold text-[12px] text-slate-900 dark:text-white leading-tight truncate">
+                                  {lang === "ml" ? "രവി കുമാർ" : "Ravi Kumar"}
+                                </h4>
+                                <p className="font-medium text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
+                                  {lang === "ml" ? "പി.എം സ്വനിധി" : "PM SVANidhi"}
+                                </p>
                               </div>
                             </div>
 
-                            <div className="mt-1.5 space-y-1.5 pr-18">
-                              <h5 className="font-extrabold text-[13.5px] text-[#0F172A] dark:text-amber-100 leading-tight">
-                                {lang === "ml" ? "ഇ-കെവൈസി പൂർത്തിയാക്കുക" : "Complete e-KYC"}
-                              </h5>
-                              <p className="text-[11px] text-[#64748B] dark:text-amber-300/80 leading-snug">
-                                {lang === "ml"
-                                  ? "അടുത്ത ഗഡു ലഭ്യമാക്കാൻ ആധാർ ഒടിപി വെരിഫിക്കേഷൻ പൂർത്തിയാക്കുക."
-                                  : "Perform Aadhaar OTP verification to enable your next installment."}
-                              </p>
-
-                              <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#D97706] pt-1">
-                                <Calendar className="h-3.5 w-3.5 text-[#D97706] shrink-0" />
-                                <span className="whitespace-nowrap">{lang === "ml" ? "അവസാന തീയതി: 15 Nov 2024" : "Due by 15 Nov 2024"}</span>
+                            <div className="flex items-center gap-1 shrink-0 ml-1.5">
+                              <div className="flex items-center gap-1 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 px-1.5 py-0.5 text-[8.5px] font-bold text-red-600 dark:text-red-400">
+                                <Calendar className="h-2.5 w-2.5 text-red-600 dark:text-red-400" />
+                                <span>{lang === "ml" ? "ഇന്ന് തുടർനടപടി" : "Follow-up due today"}</span>
                               </div>
-
-                              <div className="pt-1.5">
-                                <button
-                                  type="button"
-                                  className="inline-flex items-center gap-1 text-[11.5px] font-bold text-white bg-[#EA580C] hover:bg-orange-700 px-4 py-1.5 rounded-full transition-colors cursor-pointer shadow-xs whitespace-nowrap"
-                                >
-                                  <span>{lang === "ml" ? "വെരിഫൈ ചെയ്യുക" : "Verify Now"}</span>
-                                  <ChevronRight className="h-3.5 w-3.5" />
-                                </button>
-                              </div>
-                            </div>
-
-                            <div className="absolute right-3 bottom-3 pointer-events-none w-16 h-14 bg-white/90 dark:bg-card/90 rounded-xl shadow-xs border border-amber-200/80 p-2 flex flex-col justify-between">
-                              <div className="flex items-center gap-1">
-                                <span className="text-[7px] font-extrabold text-amber-700">Aadhaar</span>
-                                <div className="h-1 w-3 bg-amber-400 rounded-xs" />
-                              </div>
-                              <div className="space-y-1">
-                                <div className="h-1 w-10 bg-amber-100 rounded-full" />
-                                <div className="h-1 w-7 bg-amber-100 rounded-full" />
-                              </div>
-                              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center text-white shadow-xs">
-                                <ShieldCheck className="h-3.5 w-3.5" />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* --- Section 2: This Week --- */}
-                        <div className="space-y-2.5 pt-2">
-                          <h4 className="text-sm font-extrabold text-foreground">
-                            {lang === "ml" ? "ഈ ആഴ്ച" : "This Week"}
-                          </h4>
-
-                          {/* Card 3: Income Certificate (Blue) */}
-                          <div className="p-3.5 rounded-2xl bg-[#F5F8FF] dark:bg-blue-950/20 border border-[#E0E7FF] dark:border-blue-900/40 shadow-2xs relative overflow-hidden">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-[10px] font-extrabold text-[#71717A] uppercase tracking-wider truncate flex-1 min-w-0">
-                                {lang === "ml" ? "വരുമാന സർട്ടിഫിക്കറ്റ് (ഇ-ഡിസ്ട്രിക്റ്റ്)" : "INCOME CERTIFICATE (KERALA E-DISTRICT)"}
-                              </span>
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                <span className="text-[10.5px] font-medium text-[#71717A]">Tue, 5 Nov</span>
-                                <span className="text-[10px] font-bold text-[#2563EB] bg-[#DBEAFE] px-2 py-0.5 rounded-full whitespace-nowrap">
-                                  {lang === "ml" ? "അപ്ഡേറ്റ്" : "Application Update"}
-                                </span>
-                                <button type="button" className="text-gray-400 hover:text-gray-600 p-0.5">
-                                  <MoreVertical className="h-4 w-4" />
-                                </button>
-                              </div>
-                            </div>
-
-                            <div className="mt-1.5 space-y-1.5 pr-18">
-                              <h5 className="font-extrabold text-[13.5px] text-[#0F172A] dark:text-blue-100 leading-tight">
-                                {lang === "ml" ? "അപേക്ഷ അംഗീകരിച്ചു" : "Application approved"}
-                              </h5>
-                              <p className="text-[11px] text-[#64748B] dark:text-blue-300/80 leading-snug">
-                                {lang === "ml"
-                                  ? "നിങ്ങളുടെ വരുമാന സർട്ടിഫിക്കറ്റ് അപേക്ഷ വില്ലേജ് ഓഫീസർ അംഗീകരിച്ചു."
-                                  : "Your income certificate application has been approved by the Village Officer."}
-                              </p>
-
-                              <div className="pt-2">
-                                <button
-                                  type="button"
-                                  className="inline-flex items-center gap-1 text-[11.5px] font-bold text-[#2563EB] bg-white dark:bg-blue-950 hover:bg-blue-50 border border-[#2563EB] px-4 py-1.5 rounded-full transition-colors cursor-pointer shadow-2xs whitespace-nowrap"
-                                >
-                                  <span>{lang === "ml" ? "വിവരങ്ങൾ കാണുക" : "View Details"}</span>
-                                  <ChevronRight className="h-3.5 w-3.5" />
-                                </button>
-                              </div>
-                            </div>
-
-                            <div className="absolute right-3 bottom-3 pointer-events-none w-16 h-18 bg-white/90 dark:bg-card/90 rounded-xl shadow-xs border border-blue-200/80 p-2 flex flex-col justify-between">
-                              <div className="space-y-1.5">
-                                <div className="h-1.5 w-8 bg-blue-200 rounded-full" />
-                                <div className="h-1.5 w-10 bg-blue-100 rounded-full" />
-                                <div className="h-1.5 w-6 bg-blue-100 rounded-full" />
-                              </div>
-                              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center text-white shadow-xs">
-                                <CheckCircle2 className="h-4 w-4" />
-                              </div>
+                              <ChevronRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform stroke-[2]" />
                             </div>
                           </div>
 
-                          {/* Card 4: New Scheme (Green/Mint) */}
-                          <div className="p-3.5 rounded-2xl bg-[#F4FAF6] dark:bg-emerald-950/20 border border-[#D1FAE5] dark:border-emerald-900/40 shadow-2xs relative overflow-hidden">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-[10px] font-extrabold text-[#71717A] uppercase tracking-wider truncate flex-1 min-w-0">
-                                {lang === "ml" ? "പുതിയ പദ്ധതി" : "NEW SCHEME"}
-                              </span>
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                <span className="text-[10.5px] font-medium text-[#71717A]">Sun, 3 Nov</span>
-                                <span className="text-[10px] font-bold text-[#059669] bg-[#D1FAE5] px-2 py-0.5 rounded-full whitespace-nowrap">
-                                  {lang === "ml" ? "പദ്ധതി അപ്ഡേറ്റ്" : "Scheme Update"}
-                                </span>
-                                <button type="button" className="text-gray-400 hover:text-gray-600 p-0.5">
-                                  <MoreVertical className="h-4 w-4" />
-                                </button>
+                          {/* Item 4: Ananya Sharma */}
+                          <div
+                            onClick={() => {
+                              const record = mobileCollectionRecords.find((r) => r.applicantName.includes("Ananya") || r.applicantName.includes("അനന്യ")) || {
+                                reference: "VK-2026-849203",
+                                applicantName: lang === "ml" ? "അനന്യ ശർമ്മ" : "Ananya Sharma",
+                                applicantPhone: "9876543212",
+                                scheme: {
+                                  id: "SCH-007",
+                                  titleEn: "Subhadra Yojana",
+                                  titleMl: "സുഭദ്ര യോജന",
+                                  benefitEn: "Financial assistance of ₹10,000 per year for eligible women.",
+                                  benefitMl: "സ്ത്രീകൾക്കായി വർഷത്തിൽ ₹10,000 ധനസഹായം.",
+                                  matchLabelEn: "100% Match",
+                                  matchLabelMl: "100% യോഗ്യത",
+                                  deptEn: "Women & Child Development",
+                                  deptMl: "വനിതാ ശിശു വികസന വകുപ്പ്",
+                                  categoryEn: "State Government",
+                                  categoryMl: "സംസ്ഥാന സർക്കാർ",
+                                  requiredDocEn: "Income Certificate & Bank Passbook",
+                                  requiredDocMl: "വരുമാന സർട്ടിഫിക്കറ്റും ബാങ്ക് പാസ്ബുക്കും",
+                                  requiredFieldKeys: ["bankAccountNumber", "bankIfscCode"],
+                                },
+                                status: "incomplete",
+                                bankAccountNumber: "987654321100",
+                                bankIfscCode: "SBIN0001236",
+                                minorityStatus: "No",
+                                disabilityStatus: "No",
+                                studentStatus: "No",
+                                employmentStatus: "Unemployed",
+                                missingItems: [
+                                  { key: "doc:incomeCert", labelEn: "Income Certificate", labelMl: "വരുമാന സർട്ടിഫിക്കറ്റ്", kind: "document" },
+                                  { key: "doc:passbook", labelEn: "Bank Passbook Copy", labelMl: "ബാങ്ക് പാസ്ബുക്ക് പകർപ്പ്", kind: "document" },
+                                ],
+                                createdAt: new Date().toISOString(),
+                              };
+                              openCollectionRecordView(record, "needs_attention");
+                            }}
+                            className="rounded-xl bg-white dark:bg-slate-900 border border-red-100 dark:border-slate-800/80 py-2 px-2.5 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-[0.99]"
+                          >
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <div className="flex h-7.5 w-7.5 items-center justify-center rounded-full bg-[#FFF1E6] dark:bg-orange-950/60 text-[#B54708] dark:text-orange-300 font-black text-[11px] shrink-0 shadow-2xs">
+                                AS
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-bold text-[12px] text-slate-900 dark:text-white leading-tight truncate">
+                                  {lang === "ml" ? "അനന്യ ശർമ്മ" : "Ananya Sharma"}
+                                </h4>
+                                <p className="font-medium text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
+                                  {lang === "ml" ? "സുഭദ്ര യോജന" : "Subhadra Yojana"}
+                                </p>
                               </div>
                             </div>
 
-                            <div className="mt-1.5 space-y-1.5 pr-18">
-                              <h5 className="font-extrabold text-[13.5px] text-[#0F172A] dark:text-emerald-100 leading-tight">
-                                {lang === "ml" ? "പുതിയ ക്ഷേമ പദ്ധതി പ്രസിദ്ധീകരിച്ചു" : "New welfare scheme published"}
-                              </h5>
-                              <p className="text-[11px] text-[#64748B] dark:text-emerald-300/80 leading-snug">
-                                {lang === "ml"
-                                  ? "പ്രധാനമന്ത്രി വിശ്വകർമ്മ യോജന ഇപ്പോൾ ലഭ്യമാണ്. അർഹത പരിശോധിച്ച് അപേക്ഷിക്കുക."
-                                  : "Pradhan Mantri Vishwakarma Yojana is now available. Check eligibility and apply."}
-                              </p>
-
-                              <div className="pt-2">
-                                <button
-                                  type="button"
-                                  className="inline-flex items-center gap-1 text-[11.5px] font-bold text-[#059669] bg-white dark:bg-emerald-950 hover:bg-emerald-50 border border-[#059669] px-4 py-1.5 rounded-full transition-colors cursor-pointer shadow-2xs whitespace-nowrap"
-                                >
-                                  <span>{lang === "ml" ? "പരിശോധിക്കുക" : "Explore Scheme"}</span>
-                                  <ChevronRight className="h-3.5 w-3.5" />
-                                </button>
+                            <div className="flex items-center gap-1 shrink-0 ml-1.5">
+                              <div className="flex items-center gap-1 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 px-1.5 py-0.5 text-[8.5px] font-bold text-red-600 dark:text-red-400">
+                                <span className="flex h-2.5 w-2.5 items-center justify-center rounded-full bg-red-600 text-white text-[7.5px] font-black leading-none">!</span>
+                                <span>{lang === "ml" ? "2 രേഖകൾ വിട്ടുപോയി" : "2 documents missing"}</span>
                               </div>
-                            </div>
-
-                            <div className="absolute right-3 bottom-3 pointer-events-none w-16 h-16 bg-emerald-100/70 dark:bg-emerald-950/50 rounded-2xl flex items-center justify-center p-2 text-emerald-600">
-                              <Megaphone className="h-8 w-8 stroke-[2.2]" />
+                              <ChevronRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform stroke-[2]" />
                             </div>
                           </div>
-                        </div>
 
-                        {/* --- Section 3: Earlier --- */}
-                        <div className="space-y-2.5 pt-2">
-                          <h4 className="text-sm font-extrabold text-foreground">
-                            {lang === "ml" ? "മുൻപ്" : "Earlier"}
-                          </h4>
-
-                          {/* Card 5: My Application (Purple) */}
-                          <div className="p-3.5 rounded-2xl bg-[#FAF7FF] dark:bg-purple-950/20 border border-[#F3E8FF] dark:border-purple-900/40 shadow-2xs relative overflow-hidden">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-[10px] font-extrabold text-[#71717A] uppercase tracking-wider truncate flex-1 min-w-0">
-                                {lang === "ml" ? "എന്റെ അപേക്ഷ" : "MY APPLICATION"}
-                              </span>
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                <span className="text-[10.5px] font-medium text-[#71717A]">Fri, 1 Nov</span>
-                                <span className="text-[10px] font-bold text-[#7C3AED] bg-[#F3E8FF] px-2 py-0.5 rounded-full whitespace-nowrap">
-                                  {lang === "ml" ? "തുടർനടപടി" : "Follow up"}
-                                </span>
-                                <button type="button" className="text-gray-400 hover:text-gray-600 p-0.5">
-                                  <MoreVertical className="h-4 w-4" />
-                                </button>
+                          {/* Item 5: Suresh Pillai */}
+                          <div
+                            onClick={() => {
+                              const record = {
+                                reference: "VK-2026-849204",
+                                applicantName: lang === "ml" ? "സുരേഷ് പിള്ള" : "Suresh Pillai",
+                                applicantPhone: "9876543213",
+                                scheme: {
+                                  id: "SCH-008",
+                                  titleEn: "Karunya Health Scheme",
+                                  titleMl: "കാരുണ്യ ആരോഗ്യ സുരക്ഷ പദ്ധതി",
+                                  benefitEn: "Comprehensive health coverage up to ₹5,00,000 per family per year.",
+                                  benefitMl: "കുടുംബത്തിന് പ്രതിവർഷം ₹5,00,000 വരെയുള്ള ചികിത്സാ സഹായം.",
+                                  matchLabelEn: "100% Match",
+                                  matchLabelMl: "100% യോഗ്യത",
+                                  deptEn: "Health & Family Welfare",
+                                  deptMl: "ആരോഗ്യ കുടുംബക്ഷേമ വകുപ്പ്",
+                                  categoryEn: "State Government",
+                                  categoryMl: "സംസ്ഥാന സർക്കാർ",
+                                  requiredDocEn: "Ration Card Copy & Income Certificate",
+                                  requiredDocMl: "റേഷൻ കാർഡ് പകർപ്പും വരുമാന സർട്ടിഫിക്കറ്റും",
+                                  requiredFieldKeys: ["bankAccountNumber", "bankIfscCode"],
+                                },
+                                status: "incomplete" as const,
+                                bankAccountNumber: "987654321101",
+                                bankIfscCode: "SBIN0001237",
+                                minorityStatus: "No",
+                                disabilityStatus: "No",
+                                studentStatus: "No",
+                                employmentStatus: "Self-Employed",
+                                missingItems: [{ key: "doc:incomeCert", labelEn: "Income Certificate Copy", labelMl: "വരുമാന സർട്ടിഫിക്കറ്റ് പകർപ്പ്", kind: "document" }],
+                                createdAt: new Date().toISOString(),
+                              };
+                              openCollectionRecordView(record, "needs_attention");
+                            }}
+                            className="rounded-xl bg-white dark:bg-slate-900 border border-red-100 dark:border-slate-800/80 py-2 px-2.5 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-[0.99]"
+                          >
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <div className="flex h-7.5 w-7.5 items-center justify-center rounded-full bg-[#E0F2FE] dark:bg-blue-950/60 text-[#0369A1] dark:text-blue-300 font-black text-[11px] shrink-0 shadow-2xs">
+                                SP
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-bold text-[12px] text-slate-900 dark:text-white leading-tight truncate">
+                                  {lang === "ml" ? "സുരേഷ് പിള്ള" : "Suresh Pillai"}
+                                </h4>
+                                <p className="font-medium text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
+                                  {lang === "ml" ? "കാരുണ്യ ആരോഗ്യ സുരക്ഷ" : "Karunya Health Scheme"}
+                                </p>
                               </div>
                             </div>
 
-                            <div className="mt-1.5 space-y-1.5 pr-18">
-                              <h5 className="font-extrabold text-[13.5px] text-[#0F172A] dark:text-purple-100 leading-tight">
-                                {lang === "ml" ? "കൂടുതൽ വിവരങ്ങൾ ആവശ്യപ്പെട്ടു" : "Additional information requested"}
-                              </h5>
-                              <p className="text-[11px] text-[#64748B] dark:text-purple-300/80 leading-snug">
-                                {lang === "ml"
-                                  ? "നിങ്ങളുടെ ഭവന നിർമ്മാണ ഗ്രാന്റ് അപേക്ഷയ്ക്ക് അധിക രേഖകൾ ആവശ്യമാണ്."
-                                  : "Your housing grant application requires additional documents."}
-                              </p>
+                            <div className="flex items-center gap-1 shrink-0 ml-1.5">
+                              <div className="flex items-center gap-1 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 px-1.5 py-0.5 text-[8.5px] font-bold text-red-600 dark:text-red-400">
+                                <span className="flex h-2.5 w-2.5 items-center justify-center rounded-full bg-red-600 text-white text-[7.5px] font-black leading-none">!</span>
+                                <span>{lang === "ml" ? "1 രേഖ വിട്ടുപോയി" : "1 document missing"}</span>
+                              </div>
+                              <ChevronRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform stroke-[2]" />
+                            </div>
+                          </div>
 
-                              <div className="pt-2">
-                                <button
-                                  type="button"
-                                  className="inline-flex items-center gap-1 text-[11.5px] font-bold text-[#7C3AED] bg-white dark:bg-purple-950 hover:bg-purple-50 border border-[#7C3AED] px-4 py-1.5 rounded-full transition-colors cursor-pointer shadow-2xs whitespace-nowrap"
-                                >
-                                  <span>{lang === "ml" ? "പരിശോധിക്കുക" : "Review"}</span>
-                                  <ChevronRight className="h-3.5 w-3.5" />
-                                </button>
+                          {/* Item 6: Lakshmi Amma */}
+                          <div
+                            onClick={() => {
+                              const record = {
+                                reference: "VK-2026-849205",
+                                applicantName: lang === "ml" ? "ലക്ഷ്മി അമ്മ" : "Lakshmi Amma",
+                                applicantPhone: "9876543214",
+                                scheme: {
+                                  id: "SCH-009",
+                                  titleEn: "Indira Gandhi Old Age Pension",
+                                  titleMl: "ഇന്ദിരാഗാന്ധി വാർദ്ധക്യകാല പെൻഷൻ",
+                                  benefitEn: "Monthly pension support of ₹1,600 for senior citizens.",
+                                  benefitMl: "മുതിർന്ന പൗരന്മാർക്ക് പ്രതിമാസം ₹1,600 പെൻഷൻ.",
+                                  matchLabelEn: "100% Match",
+                                  matchLabelMl: "100% യോഗ്യത",
+                                  deptEn: "Social Justice Department",
+                                  deptMl: "സാമൂഹികനീതി വകുപ്പ്",
+                                  categoryEn: "State Government",
+                                  categoryMl: "സംസ്ഥാന സർക്കാർ",
+                                  requiredDocEn: "Aadhaar Copy & Life Certificate",
+                                  requiredDocMl: "ആധാർ പകർപ്പും ലൈഫ് സർട്ടിഫിക്കറ്റും",
+                                  requiredFieldKeys: ["bankAccountNumber", "bankIfscCode"],
+                                },
+                                status: "incomplete" as const,
+                                bankAccountNumber: "987654321102",
+                                bankIfscCode: "SBIN0001238",
+                                minorityStatus: "No",
+                                disabilityStatus: "No",
+                                studentStatus: "No",
+                                employmentStatus: "Unemployed",
+                                missingItems: [{ key: "doc:aadhaarLink", labelEn: "Aadhaar Seeding Proof", labelMl: "ആധാർ ബന്ധിപ്പിക്കൽ സാക്ഷ്യപത്രം", kind: "document" }],
+                                followUpDate: new Date().toISOString().split("T")[0],
+                                createdAt: new Date().toISOString(),
+                              };
+                              openCollectionRecordView(record, "needs_attention");
+                            }}
+                            className="rounded-xl bg-white dark:bg-slate-900 border border-red-100 dark:border-slate-800/80 py-2 px-2.5 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-[0.99]"
+                          >
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <div className="flex h-7.5 w-7.5 items-center justify-center rounded-full bg-[#FCE7F3] dark:bg-pink-950/60 text-[#BE185D] dark:text-pink-300 font-black text-[11px] shrink-0 shadow-2xs">
+                                LA
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-bold text-[12px] text-slate-900 dark:text-white leading-tight truncate">
+                                  {lang === "ml" ? "ലക്ഷ്മി അമ്മ" : "Lakshmi Amma"}
+                                </h4>
+                                <p className="font-medium text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
+                                  {lang === "ml" ? "ഇന്ദിരാഗാന്ധി വാർദ്ധക്യകാല പെൻഷൻ" : "Indira Gandhi Old Age Pension"}
+                                </p>
                               </div>
                             </div>
 
-                            <div className="absolute right-3 bottom-3 pointer-events-none w-16 h-16 bg-purple-100/70 dark:bg-purple-950/50 rounded-2xl p-2 flex items-center justify-center">
-                              <div className="relative w-12 h-10 bg-white dark:bg-card rounded-md shadow-xs border border-purple-200 p-1 flex flex-col justify-between">
-                                <div className="h-1 w-6 bg-purple-200 rounded-full" />
-                                <div className="h-1 w-8 bg-purple-100 rounded-full" />
-                                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-purple-600 rounded-full flex items-center justify-center text-white text-[10px] font-bold shadow-xs">
-                                  i
-                                </div>
+                            <div className="flex items-center gap-1 shrink-0 ml-1.5">
+                              <div className="flex items-center gap-1 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 px-1.5 py-0.5 text-[8.5px] font-bold text-red-600 dark:text-red-400">
+                                <Calendar className="h-2.5 w-2.5 text-red-600 dark:text-red-400" />
+                                <span>{lang === "ml" ? "ഇന്ന് തുടർനടപടി" : "Follow-up due today"}</span>
                               </div>
+                              <ChevronRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform stroke-[2]" />
+                            </div>
+                          </div>
+
+                          {/* Item 7: Fathima Beevi */}
+                          <div
+                            onClick={() => {
+                              const record = {
+                                reference: "VK-2026-849206",
+                                applicantName: lang === "ml" ? "ഫാത്തിമ ബീവി" : "Fathima Beevi",
+                                applicantPhone: "9876543215",
+                                scheme: {
+                                  id: "SCH-010",
+                                  titleEn: "PM Awas Yojana (Gramin)",
+                                  titleMl: "പി.എം ആവാസ് യോജന (ഗ്രാമീൺ)",
+                                  benefitEn: "Financial assistance up to ₹1,20,000 for constructing a pucca house.",
+                                  benefitMl: "വീട് നിർമ്മാണത്തിനായി ₹1,20,000 സാമ്പത്തിക സഹായം.",
+                                  matchLabelEn: "100% Match",
+                                  matchLabelMl: "100% യോഗ്യത",
+                                  deptEn: "Rural Development Department",
+                                  deptMl: "തദ്ദേശ സ്വയംഭരണ വകുപ്പ്",
+                                  categoryEn: "Central Government",
+                                  categoryMl: "കേന്ദ്ര സർക്കാർ",
+                                  requiredDocEn: "Land Ownership Document & BPL Certificate",
+                                  requiredDocMl: "സ്ഥല ഉടമസ്ഥാവകാശ രേഖയും ബി.പി.എൽ സർട്ടിഫിക്കറ്റും",
+                                  requiredFieldKeys: ["bankAccountNumber", "bankIfscCode"],
+                                },
+                                status: "incomplete" as const,
+                                bankAccountNumber: "987654321103",
+                                bankIfscCode: "SBIN0001239",
+                                minorityStatus: "Yes",
+                                disabilityStatus: "No",
+                                studentStatus: "No",
+                                employmentStatus: "Unemployed",
+                                missingItems: [{ key: "doc:landTax", labelEn: "Land Tax Receipt", labelMl: "ഭൂനികുതി രസീത് പകർപ്പ്", kind: "document" }],
+                                createdAt: new Date().toISOString(),
+                              };
+                              openCollectionRecordView(record, "needs_attention");
+                            }}
+                            className="rounded-xl bg-white dark:bg-slate-900 border border-red-100 dark:border-slate-800/80 py-2 px-2.5 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-[0.99]"
+                          >
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <div className="flex h-7.5 w-7.5 items-center justify-center rounded-full bg-[#FEF3C7] dark:bg-amber-950/60 text-[#D97706] dark:text-amber-300 font-black text-[11px] shrink-0 shadow-2xs">
+                                FB
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-bold text-[12px] text-slate-900 dark:text-white leading-tight truncate">
+                                  {lang === "ml" ? "ഫാത്തിമ ബീവി" : "Fathima Beevi"}
+                                </h4>
+                                <p className="font-medium text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
+                                  {lang === "ml" ? "പി.എം ആവാസ് യോജന" : "PM Awas Yojana (Gramin)"}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1 shrink-0 ml-1.5">
+                              <div className="flex items-center gap-1 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 px-1.5 py-0.5 text-[8.5px] font-bold text-red-600 dark:text-red-400">
+                                <span className="flex h-2.5 w-2.5 items-center justify-center rounded-full bg-red-600 text-white text-[7.5px] font-black leading-none">!</span>
+                                <span>{lang === "ml" ? "1 രേഖ വിട്ടുപോയി" : "1 document missing"}</span>
+                              </div>
+                              <ChevronRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform stroke-[2]" />
+                            </div>
+                          </div>
+
+                          {/* Item 8: Joseph Thomas */}
+                          <div
+                            onClick={() => {
+                              const record = {
+                                reference: "VK-2026-849207",
+                                applicantName: lang === "ml" ? "ജോസഫ് തോമസ്" : "Joseph Thomas",
+                                applicantPhone: "9876543216",
+                                scheme: {
+                                  id: "SCH-011",
+                                  titleEn: "Matsya Samridhi Scheme",
+                                  titleMl: "മത്സ്യ സമൃദ്ധി പദ്ധതി",
+                                  benefitEn: "Incentives and insurance subsidy for inland and coastal fishermen.",
+                                  benefitMl: "മത്സ്യത്തൊഴിലാളികൾക്കുള്ള ഇൻഷുറൻസ് സബ്‌സിഡിയും ഇൻസെന്റീവും.",
+                                  matchLabelEn: "95% Match",
+                                  matchLabelMl: "95% യോഗ്യത",
+                                  deptEn: "Fisheries Department",
+                                  deptMl: "മത്സ്യബന്ധന വകുപ്പ്",
+                                  categoryEn: "State Government",
+                                  categoryMl: "സംസ്ഥാന സർക്കാർ",
+                                  requiredDocEn: "Fisherman Registration & Ration Card",
+                                  requiredDocMl: "മത്സ്യത്തൊഴിലാളി രജിസ്ട്രേഷനും റേഷൻ കാർഡും",
+                                  requiredFieldKeys: ["bankAccountNumber", "bankIfscCode"],
+                                },
+                                status: "incomplete" as const,
+                                bankAccountNumber: "987654321104",
+                                bankIfscCode: "SBIN0001240",
+                                minorityStatus: "No",
+                                disabilityStatus: "No",
+                                studentStatus: "No",
+                                employmentStatus: "Self-Employed",
+                                missingItems: [{ key: "doc:rationCard", labelEn: "Ration Card Copy", labelMl: "റേഷൻ കാർഡ് പകർപ്പ്", kind: "document" }],
+                                createdAt: new Date().toISOString(),
+                              };
+                              openCollectionRecordView(record, "needs_attention");
+                            }}
+                            className="rounded-xl bg-white dark:bg-slate-900 border border-red-100 dark:border-slate-800/80 py-2 px-2.5 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-[0.99]"
+                          >
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <div className="flex h-7.5 w-7.5 items-center justify-center rounded-full bg-[#DCFCE7] dark:bg-emerald-950/60 text-[#15803D] dark:text-emerald-300 font-black text-[11px] shrink-0 shadow-2xs">
+                                JT
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-bold text-[12px] text-slate-900 dark:text-white leading-tight truncate">
+                                  {lang === "ml" ? "ജോസഫ് തോമസ്" : "Joseph Thomas"}
+                                </h4>
+                                <p className="font-medium text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
+                                  {lang === "ml" ? "മത്സ്യ സമൃദ്ധി പദ്ധതി" : "Matsya Samridhi Scheme"}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1 shrink-0 ml-1.5">
+                              <div className="flex items-center gap-1 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 px-1.5 py-0.5 text-[8.5px] font-bold text-red-600 dark:text-red-400">
+                                <span className="flex h-2.5 w-2.5 items-center justify-center rounded-full bg-red-600 text-white text-[7.5px] font-black leading-none">!</span>
+                                <span>{lang === "ml" ? "1 രേഖ വിട്ടുപോയി" : "1 document missing"}</span>
+                              </div>
+                              <ChevronRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform stroke-[2]" />
+                            </div>
+                          </div>
+
+                          {/* Item 9: Devika R. */}
+                          <div
+                            onClick={() => {
+                              const record = {
+                                reference: "VK-2026-849208",
+                                applicantName: lang === "ml" ? "ദേവിക ആർ." : "Devika R.",
+                                applicantPhone: "9876543217",
+                                scheme: {
+                                  id: "SCH-012",
+                                  titleEn: "Vayoshreshtha Samman",
+                                  titleMl: "വയോശ്രേഷ്ഠ സമ്മാൻ",
+                                  benefitEn: "Financial incentive and welfare kit for senior citizens aged 70+.",
+                                  benefitMl: "70 വയസ്സ് കഴിഞ്ഞ മുതിർന്ന പൗരന്മാർക്കുള്ള ക്ഷേമ സഹായം.",
+                                  matchLabelEn: "100% Match",
+                                  matchLabelMl: "100% യോഗ്യത",
+                                  deptEn: "Social Justice Department",
+                                  deptMl: "സാമൂഹികനീതി വകുപ്പ്",
+                                  categoryEn: "State Government",
+                                  categoryMl: "സംസ്ഥാന സർക്കാർ",
+                                  requiredDocEn: "Age Proof Document & ID Card",
+                                  requiredDocMl: "വയസ്സ് തെളിയിക്കുന്ന രേഖയും ഐഡി കാർഡും",
+                                  requiredFieldKeys: ["bankAccountNumber", "bankIfscCode"],
+                                },
+                                status: "incomplete" as const,
+                                bankAccountNumber: "987654321105",
+                                bankIfscCode: "SBIN0001241",
+                                minorityStatus: "No",
+                                disabilityStatus: "No",
+                                studentStatus: "No",
+                                employmentStatus: "Unemployed",
+                                missingItems: [{ key: "doc:ageProof", labelEn: "Age Certificate", labelMl: "വയസ്സ് തെളിയിക്കുന്ന സർട്ടിഫിക്കറ്റ്", kind: "document" }],
+                                createdAt: new Date().toISOString(),
+                              };
+                              openCollectionRecordView(record, "needs_attention");
+                            }}
+                            className="rounded-xl bg-white dark:bg-slate-900 border border-red-100 dark:border-slate-800/80 py-2 px-2.5 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-[0.99]"
+                          >
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <div className="flex h-7.5 w-7.5 items-center justify-center rounded-full bg-[#F3E8FF] dark:bg-purple-950/60 text-[#7E22CE] dark:text-purple-300 font-black text-[11px] shrink-0 shadow-2xs">
+                                DR
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-bold text-[12px] text-slate-900 dark:text-white leading-tight truncate">
+                                  {lang === "ml" ? "ദേവിക ആർ." : "Devika R."}
+                                </h4>
+                                <p className="font-medium text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
+                                  {lang === "ml" ? "വയോശ്രേഷ്ഠ സമ്മാൻ" : "Vayoshreshtha Samman"}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1 shrink-0 ml-1.5">
+                              <div className="flex items-center gap-1 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 px-1.5 py-0.5 text-[8.5px] font-bold text-red-600 dark:text-red-400">
+                                <span className="flex h-2.5 w-2.5 items-center justify-center rounded-full bg-red-600 text-white text-[7.5px] font-black leading-none">!</span>
+                                <span>{lang === "ml" ? "1 രേഖ വിട്ടുപോയി" : "1 document missing"}</span>
+                              </div>
+                              <ChevronRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform stroke-[2]" />
+                            </div>
+                          </div>
+
+                          {/* Item 10: Gokul Das */}
+                          <div
+                            onClick={() => {
+                              const record = {
+                                reference: "VK-2026-849209",
+                                applicantName: lang === "ml" ? "ഗോകുൽ ദാസ്" : "Gokul Das",
+                                applicantPhone: "9876543218",
+                                scheme: {
+                                  id: "SCH-013",
+                                  titleEn: "Kera Suraksha Bima Yojana",
+                                  titleMl: "കേര സുരക്ഷാ ബീമാ യോജന",
+                                  benefitEn: "Insurance coverage up to ₹2,00,000 for coconut tree climbers & farm workers.",
+                                  benefitMl: "തെങ്ങ് കയറ്റ തൊഴിലാളികൾക്കുള്ള ₹2,00,000 ഇൻഷുറൻസ് പരിരക്ഷ.",
+                                  matchLabelEn: "90% Match",
+                                  matchLabelMl: "90% യോഗ്യത",
+                                  deptEn: "Agriculture Development",
+                                  deptMl: "കാർഷിക വികസന കർഷകക്ഷേമ വകുപ്പ്",
+                                  categoryEn: "State Government",
+                                  categoryMl: "സംസ്ഥാന സർക്കാർ",
+                                  requiredDocEn: "Worker Card & Bank Passbook Copy",
+                                  requiredDocMl: "തൊഴിലാളി കാർഡും ബാങ്ക് പാസ്ബുക്ക് പകർപ്പും",
+                                  requiredFieldKeys: ["bankAccountNumber", "bankIfscCode"],
+                                },
+                                status: "incomplete" as const,
+                                bankAccountNumber: "987654321106",
+                                bankIfscCode: "SBIN0001242",
+                                minorityStatus: "No",
+                                disabilityStatus: "No",
+                                studentStatus: "No",
+                                employmentStatus: "Self-Employed",
+                                missingItems: [{ key: "doc:passbook", labelEn: "Bank Passbook Copy", labelMl: "ബാങ്ക് പാസ്ബുക്ക് പകർപ്പ്", kind: "document" }],
+                                followUpDate: new Date().toISOString().split("T")[0],
+                                createdAt: new Date().toISOString(),
+                              };
+                              openCollectionRecordView(record, "needs_attention");
+                            }}
+                            className="rounded-xl bg-white dark:bg-slate-900 border border-red-100 dark:border-slate-800/80 py-2 px-2.5 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-[0.99]"
+                          >
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <div className="flex h-7.5 w-7.5 items-center justify-center rounded-full bg-[#CCFBF1] dark:bg-teal-950/60 text-[#0D9488] dark:text-teal-300 font-black text-[11px] shrink-0 shadow-2xs">
+                                GD
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-bold text-[12px] text-slate-900 dark:text-white leading-tight truncate">
+                                  {lang === "ml" ? "ഗോകുൽ ദാസ്" : "Gokul Das"}
+                                </h4>
+                                <p className="font-medium text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
+                                  {lang === "ml" ? "കേര സുരക്ഷാ ബീമാ യോജന" : "Kera Suraksha Bima Yojana"}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1 shrink-0 ml-1.5">
+                              <div className="flex items-center gap-1 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 px-1.5 py-0.5 text-[8.5px] font-bold text-red-600 dark:text-red-400">
+                                <Calendar className="h-2.5 w-2.5 text-red-600 dark:text-red-400" />
+                                <span>{lang === "ml" ? "ഇന്ന് തുടർനടപടി" : "Follow-up due today"}</span>
+                              </div>
+                              <ChevronRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform stroke-[2]" />
+                            </div>
+                          </div>
+
+                          {/* Item 11: Saraswathi Amma */}
+                          <div
+                            onClick={() => {
+                              const record = {
+                                reference: "VK-2026-849210",
+                                applicantName: lang === "ml" ? "സരസ്വതി അമ്മ" : "Saraswathi Amma",
+                                applicantPhone: "9876543219",
+                                scheme: {
+                                  id: "SCH-014",
+                                  titleEn: "Chief Minister's Distress Relief Fund",
+                                  titleMl: "മുഖ്യമന്ത്രിയുടെ ദുരിതാശ്വാസ നിധി",
+                                  benefitEn: "Financial grant up to ₹50,000 for critical medical emergency.",
+                                  benefitMl: "ഗുരുതര രോഗചികിത്സയ്ക്ക് ₹50,000 വരെയുള്ള സഹായം.",
+                                  matchLabelEn: "100% Match",
+                                  matchLabelMl: "100% യോഗ്യത",
+                                  deptEn: "Revenue Department",
+                                  deptMl: "റവന്യൂ വകുപ്പ്",
+                                  categoryEn: "State Government",
+                                  categoryMl: "സംസ്ഥാന സർക്കാർ",
+                                  requiredDocEn: "Medical Certificate & Discharge Summary",
+                                  requiredDocMl: "മെഡിക്കൽ സർട്ടിഫിക്കറ്റും ഡിസ്ചാർജ് സമ്മറിയും",
+                                  requiredFieldKeys: ["bankAccountNumber", "bankIfscCode"],
+                                },
+                                status: "incomplete" as const,
+                                bankAccountNumber: "987654321107",
+                                bankIfscCode: "SBIN0001243",
+                                minorityStatus: "No",
+                                disabilityStatus: "No",
+                                studentStatus: "No",
+                                employmentStatus: "Unemployed",
+                                missingItems: [{ key: "doc:medicalCert", labelEn: "Doctor Medical Certificate", labelMl: "മെഡിക്കൽ സർട്ടിഫിക്കറ്റ് പകർപ്പ്", kind: "document" }],
+                                createdAt: new Date().toISOString(),
+                              };
+                              openCollectionRecordView(record, "needs_attention");
+                            }}
+                            className="rounded-xl bg-white dark:bg-slate-900 border border-red-100 dark:border-slate-800/80 py-2 px-2.5 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-[0.99]"
+                          >
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <div className="flex h-7.5 w-7.5 items-center justify-center rounded-full bg-[#FFE4E6] dark:bg-rose-950/60 text-[#E11D48] dark:text-rose-300 font-black text-[11px] shrink-0 shadow-2xs">
+                                SA
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-bold text-[12px] text-slate-900 dark:text-white leading-tight truncate">
+                                  {lang === "ml" ? "സരസ്വതി അമ്മ" : "Saraswathi Amma"}
+                                </h4>
+                                <p className="font-medium text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
+                                  {lang === "ml" ? "മുഖ്യമന്ത്രിയുടെ ദുരിതാശ്വാസ നിധി" : "Chief Minister's Relief Fund"}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1 shrink-0 ml-1.5">
+                              <div className="flex items-center gap-1 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 px-1.5 py-0.5 text-[8.5px] font-bold text-red-600 dark:text-red-400">
+                                <span className="flex h-2.5 w-2.5 items-center justify-center rounded-full bg-red-600 text-white text-[7.5px] font-black leading-none">!</span>
+                                <span>{lang === "ml" ? "1 രേഖ വിട്ടുപോയി" : "1 document missing"}</span>
+                              </div>
+                              <ChevronRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform stroke-[2]" />
+                            </div>
+                          </div>
+
+                          {/* Item 12: Muhammed Shafi */}
+                          <div
+                            onClick={() => {
+                              const record = {
+                                reference: "VK-2026-849211",
+                                applicantName: lang === "ml" ? "മുഹമ്മദ് ഷാഫി" : "Muhammed Shafi",
+                                applicantPhone: "9876543220",
+                                scheme: {
+                                  id: "SCH-015",
+                                  titleEn: "PM Employment Generation Programme",
+                                  titleMl: "പ്രധാനമന്ത്രി തൊഴിൽ ദായക പദ്ധതി (PMEGP)",
+                                  benefitEn: "Credit-linked subsidy program for micro-enterprise setup up to ₹50,000,000.",
+                                  benefitMl: "സൂക്ഷ്മ സംരംഭങ്ങൾക്ക് 15% മുതൽ 35% വരെ വായ്പ സബ്‌സിഡി.",
+                                  matchLabelEn: "95% Match",
+                                  matchLabelMl: "95% യോഗ്യത",
+                                  deptEn: "Khadi & Village Industries Commission",
+                                  deptMl: "ഖാദി വില്ലേജ് ഇൻഡസ്ട്രീസ്",
+                                  categoryEn: "Central Government",
+                                  categoryMl: "കേന്ദ്ര സർക്കാർ",
+                                  requiredDocEn: "Detailed Project Report & EDP Certificate",
+                                  requiredDocMl: "വിശദമായ പ്രൊജക്ട് റിപ്പോർട്ടും പരിശീലന രേഖയും",
+                                  requiredFieldKeys: ["bankAccountNumber", "bankIfscCode"],
+                                },
+                                status: "incomplete" as const,
+                                bankAccountNumber: "987654321108",
+                                bankIfscCode: "SBIN0001244",
+                                minorityStatus: "Yes",
+                                disabilityStatus: "No",
+                                studentStatus: "No",
+                                employmentStatus: "Self-Employed",
+                                missingItems: [{ key: "doc:projectReport", labelEn: "Project Report Copy", labelMl: "പ്രൊജക്ട് റിപ്പോർട്ട് പകർപ്പ്", kind: "document" }],
+                                createdAt: new Date().toISOString(),
+                              };
+                              openCollectionRecordView(record, "needs_attention");
+                            }}
+                            className="rounded-xl bg-white dark:bg-slate-900 border border-red-100 dark:border-slate-800/80 py-2 px-2.5 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-[0.99]"
+                          >
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <div className="flex h-7.5 w-7.5 items-center justify-center rounded-full bg-[#E0E7FF] dark:bg-indigo-950/60 text-[#4338CA] dark:text-indigo-300 font-black text-[11px] shrink-0 shadow-2xs">
+                                MS
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-bold text-[12px] text-slate-900 dark:text-white leading-tight truncate">
+                                  {lang === "ml" ? "മുഹമ്മദ് ഷാഫി" : "Muhammed Shafi"}
+                                </h4>
+                                <p className="font-medium text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
+                                  {lang === "ml" ? "പ്രധാനമന്ത്രി തൊഴിൽ ദായക പദ്ധതി (PMEGP)" : "PMEGP Employment Scheme"}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1 shrink-0 ml-1.5">
+                              <div className="flex items-center gap-1 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 px-1.5 py-0.5 text-[8.5px] font-bold text-red-600 dark:text-red-400">
+                                <span className="flex h-2.5 w-2.5 items-center justify-center rounded-full bg-red-600 text-white text-[7.5px] font-black leading-none">!</span>
+                                <span>{lang === "ml" ? "1 രേഖ വിട്ടുപോയി" : "1 document missing"}</span>
+                              </div>
+                              <ChevronRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform stroke-[2]" />
                             </div>
                           </div>
                         </div>
@@ -9677,30 +10345,15 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
   {mobileSubPage === "notifications" && (
                       <div className="space-y-3 pt-0.5 animate-in fade-in duration-200">
-                        {/* Header */}
-                        <div className="flex items-center justify-between border-b border-border/80 pb-2">
-                          <button
-                            type="button"
-                            onClick={() => setMobileSubPage("none")}
-                            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1b255a] dark:text-blue-400 hover:text-blue-700 cursor-pointer"
-                          >
-                            <ChevronRight className="h-4 w-4 rotate-180" />
-                            <span>{lang === "ml" ? "അറിയിപ്പുകൾ" : "Notifications"}</span>
-                          </button>
-                          <span className="text-[10px] font-extrabold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/80 px-2.5 py-0.5 rounded-full border border-blue-200/80">
-                            {lang === "ml" ? "4 പുതിയത്" : "4 unread"}
-                          </span>
-                        </div>
-
                         {/* Top Horizontally Scrollable Filter Pills */}
-                        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden text-[11px] font-bold">
+                        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden text-[11px] font-bold">
                           <button
                             type="button"
                             onClick={() => setActiveNotificationFilter("all")}
                             className={`px-3 py-1 rounded-full whitespace-nowrap transition-all cursor-pointer ${
                               activeNotificationFilter === "all"
-                                ? "bg-[#0b132b] text-white shadow-xs"
-                                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
+                                ? "bg-[#0b132b] text-white font-extrabold shadow-xs border border-transparent"
+                                : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/80"
                             }`}
                           >
                             {lang === "ml" ? "എല്ലാം (6)" : "All (6)"}
@@ -9709,52 +10362,52 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           <button
                             type="button"
                             onClick={() => setActiveNotificationFilter("unread")}
-                            className={`inline-flex items-center gap-1 px-3 py-1 rounded-full whitespace-nowrap transition-all cursor-pointer ${
+                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full whitespace-nowrap transition-all cursor-pointer ${
                               activeNotificationFilter === "unread"
-                                ? "bg-[#0b132b] text-white shadow-xs"
-                                : "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200/80 dark:border-rose-900/40 hover:bg-rose-100"
+                                ? "bg-[#0b132b] text-white font-extrabold shadow-xs border border-transparent"
+                                : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/80"
                             }`}
                           >
-                            <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+                            <span className={`h-1.5 w-1.5 rounded-full ${activeNotificationFilter === "unread" ? "bg-white" : "bg-rose-500"}`} />
                             <span>{lang === "ml" ? "വായിക്കാത്തവ (4)" : "Unread (4)"}</span>
                           </button>
 
                           <button
                             type="button"
                             onClick={() => setActiveNotificationFilter("applications")}
-                            className={`inline-flex items-center gap-1 px-3 py-1 rounded-full whitespace-nowrap transition-all cursor-pointer ${
+                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full whitespace-nowrap transition-all cursor-pointer ${
                               activeNotificationFilter === "applications"
-                                ? "bg-[#0b132b] text-white shadow-xs"
-                                : "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-900/40 hover:bg-blue-100"
+                                ? "bg-[#0b132b] text-white font-extrabold shadow-xs border border-transparent"
+                                : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/80"
                             }`}
                           >
-                            <FileText className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                            <FileText className={`h-3 w-3 ${activeNotificationFilter === "applications" ? "text-white" : "text-slate-500 dark:text-slate-400"}`} />
                             <span>{lang === "ml" ? "അപേക്ഷകൾ (2)" : "Applications (2)"}</span>
                           </button>
 
                           <button
                             type="button"
                             onClick={() => setActiveNotificationFilter("schemes")}
-                            className={`inline-flex items-center gap-1 px-3 py-1 rounded-full whitespace-nowrap transition-all cursor-pointer ${
+                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full whitespace-nowrap transition-all cursor-pointer ${
                               activeNotificationFilter === "schemes"
-                                ? "bg-[#0b132b] text-white shadow-xs"
-                                : "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-900/40 hover:bg-purple-100"
+                                ? "bg-[#0b132b] text-white font-extrabold shadow-xs border border-transparent"
+                                : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/80"
                             }`}
                           >
-                            <Megaphone className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                            <Megaphone className={`h-3 w-3 ${activeNotificationFilter === "schemes" ? "text-white" : "text-slate-500 dark:text-slate-400"}`} />
                             <span>{lang === "ml" ? "പദ്ധതികൾ (1)" : "Schemes (1)"}</span>
                           </button>
 
                           <button
                             type="button"
                             onClick={() => setActiveNotificationFilter("support")}
-                            className={`inline-flex items-center gap-1 px-3 py-1 rounded-full whitespace-nowrap transition-all cursor-pointer ${
+                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full whitespace-nowrap transition-all cursor-pointer ${
                               activeNotificationFilter === "support"
-                                ? "bg-[#0b132b] text-white shadow-xs"
-                                : "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-900/40 hover:bg-emerald-100"
+                                ? "bg-[#0b132b] text-white font-extrabold shadow-xs border border-transparent"
+                                : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/80"
                             }`}
                           >
-                            <Phone className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                            <Phone className={`h-3 w-3 ${activeNotificationFilter === "support" ? "text-white" : "text-slate-500 dark:text-slate-400"}`} />
                             <span>{lang === "ml" ? "സഹായം (1)" : "Support (1)"}</span>
                           </button>
                         </div>
@@ -10632,36 +11285,67 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     {/* Dedicated Subpage: Users List (users from applications) */}
                     {mobileSubPage === "users" && (
                       <div className="space-y-3 pt-0.5 animate-in fade-in duration-200">
-                        <div className="flex items-center justify-between border-b border-border/80 pb-2 gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setMobileSubPage("none")}
-                            className="inline-flex items-center gap-1 text-xs font-extrabold text-[#ff5500] hover:text-orange-600 cursor-pointer shrink-0"
-                          >
-                            <ChevronRight className="h-4 w-4 rotate-180" />
-                            <span>{lang === "ml" ? "ഉപയോക്താക്കളുടെ പട്ടിക" : "Users List"}</span>
-                          </button>
+                        <div className="flex items-center justify-between border-b border-border/80 pb-2 gap-2 min-h-[36px]">
+                          {isUserSearchExpanded ? (
+                            <div className="flex items-center gap-2 w-full animate-in fade-in duration-200">
+                              <div className="relative flex-1">
+                                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                                <input
+                                  type="text"
+                                  autoFocus
+                                  value={userSearchQuery}
+                                  onChange={(e) => setUserSearchQuery(e.target.value)}
+                                  placeholder={lang === "ml" ? "പേര്, സ്ഥലം, ഫോൺ സെർച്ച് ചെയ്യുക..." : "Search name, location, phone..."}
+                                  className="w-full rounded-xl border border-border bg-card pl-8 pr-7 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs"
+                                />
+                                {userSearchQuery && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setUserSearchQuery("")}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setUserSearchQuery("");
+                                  setIsUserSearchExpanded(false);
+                                }}
+                                className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors shrink-0 cursor-pointer"
+                                title="Close Search"
+                              >
+                                <X className="h-3.5 w-3.5 stroke-[2.2]" />
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => setMobileSubPage("none")}
+                                className="inline-flex items-center gap-1 text-xs font-extrabold text-[#ff5500] hover:text-orange-600 cursor-pointer shrink-0"
+                              >
+                                <ChevronRight className="h-4 w-4 rotate-180" />
+                                <span>
+                                  {lang === "ml"
+                                    ? `ഉപയോക്താക്കൾ (${filteredMobileApplicationUsers.length})`
+                                    : `Users (${filteredMobileApplicationUsers.length})`}
+                                </span>
+                              </button>
 
-                          <span className="inline-flex items-center gap-1 rounded-full border border-orange-200/80 bg-orange-500/10 px-2 py-0.5 text-[10px] font-extrabold text-[#ff5500] dark:border-orange-800/60 dark:bg-orange-950/40 dark:text-orange-300 shrink-0">
-                            <Users className="h-3 w-3" />
-                            {filteredMobileApplicationUsers.length} {lang === "ml" ? "ഉപയോക്താക്കൾ" : "Users"}
-                          </span>
+                              <button
+                                type="button"
+                                onClick={() => setIsUserSearchExpanded(true)}
+                                className="flex h-7 w-7 items-center justify-center rounded-full border border-orange-200/80 bg-orange-500/10 text-[#ff5500] hover:bg-orange-500/20 dark:border-orange-800/60 dark:bg-orange-950/40 dark:text-orange-300 transition-colors cursor-pointer shrink-0"
+                                title="Search Users"
+                              >
+                                <Search className="h-3.5 w-3.5 stroke-[2.2]" />
+                              </button>
+                            </>
+                          )}
                         </div>
-
-                        <div className="relative">
-                          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                          <input
-                            type="text"
-                            value={userSearchQuery}
-                            onChange={(e) => setUserSearchQuery(e.target.value)}
-                            placeholder={lang === "ml" ? "പേര്, സ്ഥലം, ഫോൺ സെർച്ച് ചെയ്യുക..." : "Search name, location, phone..."}
-                            className="w-full rounded-xl border border-border bg-card pl-8 pr-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs"
-                          />
-                        </div>
-
-                        <p className="px-0.5 text-[10px] font-semibold text-muted-foreground">
-                          {lang === "ml" ? "എല്ലാ അപേക്ഷകളിൽ നിന്നുമുള്ള ഉപയോക്താക്കൾ" : "Users from all applications"}
-                        </p>
 
                         <div className="space-y-2">
                           {filteredMobileApplicationUsers.map((user) => {
@@ -11798,7 +12482,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                               : createFlowStep === "follow_up_scheduled"
                               ? (lang === "ml" ? "തുടർനടപടി ഷെഡ്യൂൾ ചെയ്തു" : "Follow-up Scheduled")
                               : createFlowStep === "collection_record"
-                              ? (lang === "ml" ? "ശേഖരണ രേഖ" : "Collection Record")
+                              ? (lang === "ml" ? "രേഖാ പരിശോധന" : "Document Verification")
                               : createFlowStep === "applicant_applications"
                               ? (lang === "ml" ? "അപേക്ഷകന്റെ അപേക്ഷകൾ" : "Applicant Applications")
                               : selectedSchemeName
@@ -14725,13 +15409,13 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             !isSideMenuOpen &&
             !isMobileAuthOpen &&
             mobileSubPage !== "app_detail" &&
+            mobileSubPage !== "needs_attention" &&
             (activeTab !== "create" || createFlowStep === "applicant_applications") &&
             (mobileSubPage === "none" ||
               mobileSubPage === "leaderboard" ||
               mobileSubPage === "beneficiaries" ||
               mobileSubPage === "applications" ||
               mobileSubPage === "recent_activity" ||
-              mobileSubPage === "needs_attention" ||
               mobileSubPage === "events_announcements") && (
               <AdminMobileAppBottomNav
                 activeTab={
@@ -14740,12 +15424,416 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     : activeTab
                 }
                 onTabChange={(tab) => {
-                  setActiveTab(tab);
-                  setMobileSubPage("none");
-                  setShowMoreMenu(false);
+                  if (tab === "create" && userRole === "state_admin") {
+                    setIsStateAdminCreateMenuOpen(true);
+                  } else {
+                    setActiveTab(tab);
+                    setMobileSubPage("none");
+                    setShowMoreMenu(false);
+                  }
                 }}
               />
             )}
+
+          {/* State Admin Create Actions Sheet (3 Create Actions: Scheme, Applicant, Party Worker) */}
+          {isStateAdminCreateMenuOpen && (
+            <div
+              className="absolute inset-0 z-[70] flex items-end bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 rounded-[36px]"
+              onClick={() => setIsStateAdminCreateMenuOpen(false)}
+            >
+              <div
+                className="w-full rounded-t-3xl border-t border-amber-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 pb-6 shadow-2xl animate-in slide-in-from-bottom duration-300 space-y-3.5"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                  <div>
+                    <h3 className="font-extrabold text-sm text-slate-900 dark:text-white">
+                      {lang === "ml" ? "പുതിയത് സൃഷ്ടിക്കുക" : "Create Action"}
+                    </h3>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                      {lang === "ml"
+                        ? "നിങ്ങൾ സൃഷ്ടിക്കാൻ ആഗ്രഹിക്കുന്ന ഇനം തിരഞ്ഞെടുക്കുക"
+                        : "Select an option to create new record"}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsStateAdminCreateMenuOpen(false)}
+                    className="p-1 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  >
+                    <X className="h-5 w-5 stroke-[2.2]" />
+                  </button>
+                </div>
+
+                {/* 3 Action Option Cards */}
+                <div className="space-y-2 pt-1">
+                  {/* 1. Scheme */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsStateAdminCreateMenuOpen(false);
+                      setIsCreateSchemeModalOpen(true);
+                    }}
+                    className="flex w-full items-center gap-3 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-left shadow-2xs group cursor-pointer"
+                  >
+                    <div className="relative h-12 w-12 rounded-full overflow-hidden shrink-0 group-hover:scale-105 transition-transform bg-amber-50">
+                      <img src={createSchemeAvatar} alt="Scheme" className="h-full w-full object-cover scale-[1.22]" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-extrabold text-xs sm:text-[13px] text-slate-900 dark:text-white">
+                        {lang === "ml" ? "പദ്ധതി (Scheme)" : "Scheme"}
+                      </h4>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-tight mt-0.5">
+                        {lang === "ml"
+                          ? "പുതിയ ക്ഷേമപദ്ധതിയോ വികസന പ്രോഗ്രാമോ സൃഷ്ടിക്കുക"
+                          : "Add new welfare scheme or central program"}
+                      </p>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0 group-hover:translate-x-0.5 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-all" />
+                  </button>
+
+                  {/* 2. Applicant */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsStateAdminCreateMenuOpen(false);
+                      setActiveTab("create");
+                      setCreateFlowStep("form");
+                      setCreateProfileStep(1);
+                      setMobileSubPage("none");
+                    }}
+                    className="flex w-full items-center gap-3 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-left shadow-2xs group cursor-pointer"
+                  >
+                    <div className="relative h-12 w-12 rounded-full overflow-hidden shrink-0 group-hover:scale-105 transition-transform bg-emerald-50">
+                      <img src={createApplicantAvatar} alt="Applicant" className="h-full w-full object-cover scale-[1.22]" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-extrabold text-xs sm:text-[13px] text-slate-900 dark:text-white">
+                        {lang === "ml" ? "അപേക്ഷകൻ (Applicant)" : "Applicant"}
+                      </h4>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-tight mt-0.5">
+                        {lang === "ml"
+                          ? "അപേക്ഷകന്റെ വിവരങ്ങൾ ചേർക്കുക, യോഗ്യത പരിശോധിക്കുക"
+                          : "Create applicant profile & check scheme eligibility"}
+                      </p>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0 group-hover:translate-x-0.5 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-all" />
+                  </button>
+
+                  {/* 3. Party Worker */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsStateAdminCreateMenuOpen(false);
+                      setIsCreatePartyWorkerModalOpen(true);
+                    }}
+                    className="flex w-full items-center gap-3 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-left shadow-2xs group cursor-pointer"
+                  >
+                    <div className="relative h-12 w-12 rounded-full overflow-hidden shrink-0 group-hover:scale-105 transition-transform bg-indigo-50">
+                      <img src={createPartyWorkerAvatar} alt="Party Worker" className="h-full w-full object-cover scale-[1.22]" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-extrabold text-xs sm:text-[13px] text-slate-900 dark:text-white">
+                        {lang === "ml" ? "പാർട്ടി പ്രവർത്തകൻ (Party Worker)" : "Party Worker"}
+                      </h4>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-tight mt-0.5">
+                        {lang === "ml"
+                          ? "പുതിയ പാർട്ടി പ്രവർത്തകനെയോ ബൂത്ത് ലീഡറെയോ ചേർക്കുക"
+                          : "Add new party worker, booth leader or executive"}
+                      </p>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0 group-hover:translate-x-0.5 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-all" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Create Scheme Modal Sheet */}
+          {isCreateSchemeModalOpen && (
+            <div
+              className="absolute inset-0 z-[80] flex items-end bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 rounded-[36px]"
+              onClick={() => setIsCreateSchemeModalOpen(false)}
+            >
+              <div
+                className="w-full h-[85%] rounded-t-3xl border-t border-amber-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 pb-6 shadow-2xl animate-in slide-in-from-bottom duration-300 flex flex-col justify-between"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="space-y-3 overflow-y-auto pr-1">
+                  {/* Header */}
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-100 dark:bg-orange-950/80 text-[#ff5500]">
+                        <Layers className="h-5 w-5 stroke-[2.2]" />
+                      </div>
+                      <div>
+                        <h3 className="font-extrabold text-sm text-slate-900 dark:text-white leading-tight">
+                          {lang === "ml" ? "പുതിയ പദ്ധതി ചേർക്കുക" : "Create New Scheme"}
+                        </h3>
+                        <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-medium">
+                          {lang === "ml" ? "സംസ്ഥാന ലെവൽ ക്ഷേമപദ്ധതി വിവരങ്ങൾ" : "State level welfare scheme details"}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsCreateSchemeModalOpen(false)}
+                      className="p-1 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+
+                  {/* Form */}
+                  <div className="space-y-3 pt-1 text-xs">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-800 dark:text-slate-200 mb-1">
+                        {lang === "ml" ? "പദ്ധതിയുടെ പേര് (English) *" : "Scheme Name (English) *"}
+                      </label>
+                      <input
+                        type="text"
+                        value={newSchemeNameEn}
+                        onChange={(e) => setNewSchemeNameEn(e.target.value)}
+                        placeholder="e.g. PM Micro Credit Assistance"
+                        className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-800 dark:text-slate-200 mb-1">
+                        {lang === "ml" ? "പദ്ധതിയുടെ പേര് (മലയാളം) *" : "Scheme Name (Malayalam) *"}
+                      </label>
+                      <input
+                        type="text"
+                        value={newSchemeNameMl}
+                        onChange={(e) => setNewSchemeNameMl(e.target.value)}
+                        placeholder="ഉദാ: പി.എം മൈക്രോ ക്രഡിറ്റ് പദ്ധതി"
+                        className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-800 dark:text-slate-200 mb-1">
+                          {lang === "ml" ? "വിഭാഗം *" : "Category *"}
+                        </label>
+                        <select
+                          value={newSchemeCategory}
+                          onChange={(e) => setNewSchemeCategory(e.target.value)}
+                          className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-semibold"
+                        >
+                          <option value="agriculture">Agriculture</option>
+                          <option value="health">Health & Medical</option>
+                          <option value="housing">Housing</option>
+                          <option value="social">Social Welfare & Pension</option>
+                          <option value="education">Education</option>
+                          <option value="skills">Employment & Skills</option>
+                          <option value="finance">Finance & Business</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-800 dark:text-slate-200 mb-1">
+                          {lang === "ml" ? "വകുപ്പ് *" : "Department *"}
+                        </label>
+                        <input
+                          type="text"
+                          value={newSchemeDept}
+                          onChange={(e) => setNewSchemeDept(e.target.value)}
+                          placeholder="Ministry / Department"
+                          className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-semibold"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-800 dark:text-slate-200 mb-1">
+                        {lang === "ml" ? "ആനുകൂല്യം *" : "Benefit Summary *"}
+                      </label>
+                      <input
+                        type="text"
+                        value={newSchemeBenefit}
+                        onChange={(e) => setNewSchemeBenefit(e.target.value)}
+                        placeholder="e.g. ₹10,000 subsidy with zero interest loan"
+                        className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-semibold"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-800 dark:text-slate-200 mb-1">
+                        {lang === "ml" ? "യോഗ്യത *" : "Eligibility Summary *"}
+                      </label>
+                      <input
+                        type="text"
+                        value={newSchemeEligibility}
+                        onChange={(e) => setNewSchemeEligibility(e.target.value)}
+                        placeholder="e.g. BPL card holders & micro entrepreneurs"
+                        className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-semibold"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCreateSchemeModalOpen(false);
+                      toast.success(lang === "ml" ? "പദ്ധതി വിജയകരമായി സൃഷ്ടിച്ചു!" : "Scheme created successfully!");
+                      setActiveTab("schemes");
+                    }}
+                    className="w-full py-3 rounded-xl bg-gradient-to-r from-[#ff5500] to-[#e64a00] hover:from-[#e64a00] hover:to-[#cc3e00] text-white font-extrabold text-xs shadow-md active:scale-98 transition-all cursor-pointer"
+                  >
+                    {lang === "ml" ? "പദ്ധതി സമർപ്പിക്കുക" : "Create Scheme"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Create Party Worker Modal Sheet */}
+          {isCreatePartyWorkerModalOpen && (
+            <div
+              className="absolute inset-0 z-[80] flex items-end bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 rounded-[36px]"
+              onClick={() => setIsCreatePartyWorkerModalOpen(false)}
+            >
+              <div
+                className="w-full h-[85%] rounded-t-3xl border-t border-indigo-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 pb-6 shadow-2xl animate-in slide-in-from-bottom duration-300 flex flex-col justify-between"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="space-y-3 overflow-y-auto pr-1">
+                  {/* Header */}
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-100 dark:bg-orange-950/80 text-[#ff5500]">
+                        <Users2 className="h-5 w-5 stroke-[2.2]" />
+                      </div>
+                      <div>
+                        <h3 className="font-extrabold text-sm text-slate-900 dark:text-white leading-tight">
+                          {lang === "ml" ? "പാർട്ടി പ്രവർത്തകനെ ചേർക്കുക" : "Create Party Worker"}
+                        </h3>
+                        <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-medium">
+                          {lang === "ml" ? "ബൂത്ത് ലെവൽ ലീഡർ / ഭാരവാഹി പ്രൊഫൈൽ" : "Booth level leader & worker registration"}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsCreatePartyWorkerModalOpen(false)}
+                      className="p-1 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+
+                  {/* Form */}
+                  <div className="space-y-3 pt-1 text-xs">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-800 dark:text-slate-200 mb-1">
+                        {lang === "ml" ? "പൂർണ്ണമായ പേര് *" : "Full Name *"}
+                      </label>
+                      <input
+                        type="text"
+                        value={newPwName}
+                        onChange={(e) => setNewPwName(e.target.value)}
+                        placeholder="e.g. Dhyan M S"
+                        className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#ff5500]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-800 dark:text-slate-200 mb-1">
+                        {lang === "ml" ? "മൊബൈൽ നമ്പർ *" : "Mobile Number *"}
+                      </label>
+                      <input
+                        type="text"
+                        value={newPwMobile}
+                        onChange={(e) => setNewPwMobile(e.target.value)}
+                        placeholder="+91 98470 12345"
+                        className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#ff5500]"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-800 dark:text-slate-200 mb-1">
+                          {lang === "ml" ? "പദവി / റോൾ *" : "Designation / Role *"}
+                        </label>
+                        <select
+                          value={newPwDesignation}
+                          onChange={(e) => setNewPwDesignation(e.target.value)}
+                          className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-semibold"
+                        >
+                          <option value="Booth President">Booth President</option>
+                          <option value="Mandalam In-Charge">Mandalam In-Charge</option>
+                          <option value="Panchayat Convener">Panchayat Convener</option>
+                          <option value="District Executive">District Executive</option>
+                          <option value="Booth Volunteer">Booth Volunteer</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-800 dark:text-slate-200 mb-1">
+                          {lang === "ml" ? "ജില്ല *" : "District *"}
+                        </label>
+                        <select
+                          value={newPwDistrict}
+                          onChange={(e) => setNewPwDistrict(e.target.value)}
+                          className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-semibold"
+                        >
+                          {districts.map((d) => (
+                            <option key={d.id} value={d.en}>
+                              {lang === "ml" ? d.ml : d.en}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-800 dark:text-slate-200 mb-1">
+                          {lang === "ml" ? "നിയമസഭാ മണ്ഡലം *" : "Mandalam *"}
+                        </label>
+                        <input
+                          type="text"
+                          value={newPwMandalam}
+                          onChange={(e) => setNewPwMandalam(e.target.value)}
+                          placeholder="Kazhakoottam"
+                          className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-semibold"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-800 dark:text-slate-200 mb-1">
+                          {lang === "ml" ? "ബൂത്ത് നമ്പർ *" : "Booth No. *"}
+                        </label>
+                        <input
+                          type="text"
+                          value={newPwBooth}
+                          onChange={(e) => setNewPwBooth(e.target.value)}
+                          placeholder="Booth 101"
+                          className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-semibold"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCreatePartyWorkerModalOpen(false);
+                      toast.success(lang === "ml" ? "പാർട്ടി പ്രവർത്തകനെ വിജയകരമായി ചേർത്തു!" : "Party worker created successfully!");
+                      setActiveTab("users");
+                    }}
+                    className="w-full py-3 rounded-xl bg-gradient-to-r from-[#ff5500] to-[#e64a00] hover:from-[#e64a00] hover:to-[#cc3e00] text-white font-extrabold text-xs shadow-md active:scale-98 transition-all cursor-pointer"
+                  >
+                    {lang === "ml" ? "പ്രവർത്തകനെ ചേർക്കുക" : "Create Party Worker"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Floating SahAI Help Chatbot Button - Guest (public) mode only */}
           {isGuest && !isLogoutSplashScreen && !isGuestEligibilityOpen && !isMobileAuthOpen && (
@@ -15292,37 +16380,32 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     </div>
                   </div>
 
-                  {activeCollectionRecord && (
-                    <div className="rounded-xl border border-border bg-muted/40 px-3 py-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="truncate text-[11px] font-extrabold text-foreground">{activeCollectionRecord.applicantName}</p>
-                          <p className="truncate text-[9.5px] text-muted-foreground">{lang === "ml" ? activeCollectionRecord.scheme.titleMl : activeCollectionRecord.scheme.titleEn}</p>
-                        </div>
-                        <span className="shrink-0 font-mono text-[9px] font-bold text-orange-600 dark:text-orange-400">{activeCollectionRecord.reference}</span>
+                  {/* Missing items Accordion */}
+                  <details className="group rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden" open>
+                    <summary className="flex cursor-pointer items-center justify-between p-3 font-extrabold text-xs text-slate-900 dark:text-white select-none hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <span>{lang === "ml" ? "ബാക്കിയുള്ള കാര്യങ്ങൾ" : "Missing items"}</span>
+                        <span className="flex h-4.5 min-w-4.5 px-1.5 items-center justify-center rounded-full bg-orange-100 text-orange-600 dark:bg-orange-950/80 dark:text-orange-400 text-[10px] font-black">
+                          {followUpMissingItems.length}
+                        </span>
                       </div>
-                    </div>
-                  )}
-
-                  <div className="space-y-2">
-                    <h4 className="text-[11px] font-extrabold text-foreground">
-                      {lang === "ml" ? "ബാക്കിയുള്ള കാര്യങ്ങൾ" : "Missing items"}
-                    </h4>
-                    {followUpMissingItems.length > 0 ? (
-                      <div className="space-y-1.5">
-                        {followUpMissingItems.map((item) => (
-                          <div key={item.key} className="flex items-start gap-2 rounded-xl border border-border bg-card px-2.5 py-2 text-[10.5px] text-foreground shadow-2xs">
+                      <ChevronDown className="h-4 w-4 text-slate-400 group-open:rotate-180 transition-transform duration-200" />
+                    </summary>
+                    <div className="p-3 pt-0 space-y-1.5 border-t border-slate-100 dark:border-slate-800/80 mt-1">
+                      {followUpMissingItems.length > 0 ? (
+                        followUpMissingItems.map((item) => (
+                          <div key={item.key} className="flex items-start gap-2 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 px-2.5 py-2 text-[10.5px] text-slate-800 dark:text-slate-200">
                             {item.kind === "document" ? <FileCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-orange-600" /> : <FileText className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" />}
                             <span>{lang === "ml" ? item.labelMl : item.labelEn}</span>
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="rounded-xl border border-border bg-muted/40 px-3 py-2 text-[10.5px] text-muted-foreground">
-                        {lang === "ml" ? "ബാക്കിയുള്ള കാര്യങ്ങളൊന്നുമില്ല." : "No outstanding items recorded."}
-                      </p>
-                    )}
-                  </div>
+                        ))
+                      ) : (
+                        <p className="text-[10.5px] text-slate-500 py-1">
+                          {lang === "ml" ? "ബാക്കിയുള്ള കാര്യങ്ങളൊന്നുമില്ല." : "No outstanding items recorded."}
+                        </p>
+                      )}
+                    </div>
+                  </details>
 
                   <div>
                     <label className="mb-1 block text-[11px] font-bold text-foreground">
@@ -15341,7 +16424,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         className={`w-full rounded-xl border bg-background py-2.5 pl-8 pr-2.5 text-xs text-foreground outline-none focus:ring-1 ${
                           followUpDateError
                             ? "border-rose-400 focus:ring-rose-400"
-                            : "border-border focus:ring-orange-500"
+                            : "border-border focus:ring-[#ff5500]"
                         }`}
                       />
                     </div>
@@ -15363,7 +16446,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       value={followUpNotes}
                       onChange={(event) => setFollowUpNotes(event.target.value)}
                       placeholder={lang === "ml" ? "ശേഖരണ നിർദ്ദേശങ്ങൾ രേഖപ്പെടുത്തുക..." : "Add collection instructions..."}
-                      className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2.5 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500"
+                      className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2.5 text-xs text-foreground outline-none focus:ring-1 focus:ring-[#ff5500]"
                     />
                   </div>
                 </div>
@@ -15372,7 +16455,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   <button
                     type="button"
                     onClick={handleSaveFollowUp}
-                    className="w-full rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 py-3 text-xs font-extrabold text-white shadow-md transition-all hover:from-orange-600 hover:to-amber-600 active:scale-[0.98]"
+                    className="w-full rounded-xl bg-[#ff5500] hover:bg-[#e64a00] py-3 text-xs font-extrabold text-white transition-all active:scale-[0.98] cursor-pointer"
                   >
                     {lang === "ml" ? "തുടർനടപടി സേവ് ചെയ്യുക" : "Save Follow-up"}
                   </button>
