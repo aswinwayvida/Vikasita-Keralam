@@ -7295,7 +7295,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         </div>
 
         {/* Popular Schemes Section */}
-        <div className="pt-1 pb-2.5 border-b border-slate-100 dark:border-slate-800/80 space-y-1">
+        <div className="pt-1 pb-0.5 border-b border-slate-100 dark:border-slate-800/80 space-y-1">
           <div className="flex items-center justify-between px-1">
             <div className="flex items-center gap-1.5">
               <span className="flex h-5 w-5 items-center justify-center rounded-md bg-orange-500/10 dark:bg-orange-950/30 text-[#ff5500] shrink-0">
@@ -7343,7 +7343,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         </div>
 
         {/* Check Eligibility Banner Section (Replacing static button with rich promotional card) */}
-        <div className="pt-2 px-1">
+        <div className="px-1">
           <div
             onClick={() => {
               setIsGuestEligibilityOpen(true);
@@ -11074,7 +11074,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     </div>
 
                     {/* Popular Schemes - Single Row with Horizontal Scrolling */}
-                    <div className="pt-1 pb-2.5 border-b border-slate-100 dark:border-slate-800/80">
+                    <div className="pt-1 pb-0.5">
                       <div className="flex items-center justify-between mb-1 px-1">
                         <div className="flex items-center gap-1.5">
                           <span className="flex h-5 w-5 items-center justify-center rounded-md bg-orange-500/10 dark:bg-orange-950/30 text-[#ff5500] shrink-0">
@@ -11132,7 +11132,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     </div>
 
                     {/* Single Full Width Banner */}
-                    <div className="pt-2 pb-0.5">
+                    <div className="pt-0.5 pb-0.5">
                       <div className="w-full p-2.5 rounded-2xl bg-gradient-to-r from-orange-50 via-white to-orange-100 dark:from-slate-800 dark:via-slate-800 dark:to-slate-900 border border-orange-200/90 dark:border-slate-700 shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[92px]">
                         <div className="flex items-center justify-between gap-2 z-10">
                           <div className="space-y-0.5 min-w-0 flex-1">
