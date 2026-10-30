@@ -4,7 +4,7 @@ import { BrandLogo } from "./BrandLogo";
 import { LanguageToggle } from "./LanguageToggle";
 import { SaffronTopBar } from "./SaffronTopBar";
 import { Button } from "@/components/ui/button";
-import { LogIn, Menu, X } from "lucide-react";
+import { LogIn, Menu, X, Smartphone } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { FEATURES } from "@/config/features";
 
@@ -78,6 +78,12 @@ export function Header() {
             <Button asChild size="sm" variant="outline" className="border-primary/30 bg-card font-semibold hover:bg-primary/10 hover:text-primary">
               <Link to="/auth/login" className="gap-2"><LogIn className="h-4 w-4" />{loginLabel}</Link>
             </Button>
+            <Button asChild size="sm" variant="outline" className="border-orange-500/40 bg-orange-50/80 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 font-bold hover:bg-orange-100 dark:hover:bg-orange-900/60 shadow-2xs">
+              <Link to="/mobile" target="_blank" rel="noopener noreferrer" className="gap-1.5" title={lang === "ml" ? "മൊബൈൽ ബ്രൗസറിൽ തുറക്കുക" : "Open on Mobile Browser"}>
+                <Smartphone className="h-4 w-4 text-orange-500" />
+                <span>{lang === "ml" ? "മൊബൈൽ ആപ്പ്" : "Mobile App"}</span>
+              </Link>
+            </Button>
           </div>
           <button
             onClick={() => setOpen((o) => !o)}
@@ -102,16 +108,29 @@ export function Header() {
               ))}
               <div className="mt-3 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <LanguageToggle />
-                <Button
-                  asChild
-                  size="sm"
-                  variant="outline"
-                  className="h-auto min-h-9 max-w-full border-primary/30 bg-card font-semibold hover:bg-primary/10 hover:text-primary sm:w-auto"
-                >
-                  <Link to="/auth/login" onClick={() => setOpen(false)} className="gap-2">
-                    <LogIn className="h-4 w-4" />{loginLabel}
-                  </Link>
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    asChild
+                    size="sm"
+                    variant="outline"
+                    className="h-auto min-h-9 flex-1 border-primary/30 bg-card font-semibold hover:bg-primary/10 hover:text-primary"
+                  >
+                    <Link to="/auth/login" onClick={() => setOpen(false)} className="gap-2">
+                      <LogIn className="h-4 w-4" />{loginLabel}
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    size="sm"
+                    variant="outline"
+                    className="h-auto min-h-9 border-orange-500/40 bg-orange-50/80 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 font-bold hover:bg-orange-100 dark:hover:bg-orange-900/60"
+                  >
+                    <Link to="/mobile" target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)} className="gap-1.5">
+                      <Smartphone className="h-4 w-4 text-orange-500" />
+                      <span>{lang === "ml" ? "മൊബൈൽ ആപ്പ്" : "Mobile App"}</span>
+                    </Link>
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

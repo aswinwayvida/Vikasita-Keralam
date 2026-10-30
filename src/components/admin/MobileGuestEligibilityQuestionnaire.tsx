@@ -271,14 +271,14 @@ function SearchableSelect({
     );
   });
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1">
       <label className="block text-[10.5px] font-extrabold text-slate-700">{label}</label>
       <button
         type="button"
         disabled={disabled}
         aria-expanded={open}
         onClick={onToggle}
-        className={`flex w-full items-center justify-between gap-2 rounded-xl border px-3 py-3 text-left text-[11.5px] transition-colors ${
+        className={`flex w-full items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-left text-[11.5px] transition-colors ${
           disabled
             ? "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400"
             : "cursor-pointer border-slate-200 bg-white text-slate-800 hover:border-orange-300"
@@ -384,6 +384,9 @@ export function MobileGuestEligibilityQuestionnaire({
   const [assistanceErrors, setAssistanceErrors] = useState<Record<string, string>>({});
   const [assistanceSending, setAssistanceSending] = useState(false);
   const [assistanceSubmitError, setAssistanceSubmitError] = useState("");
+  const [assistanceStep, setAssistanceStep] = useState<"form" | "otp" | "success">("form");
+  const [assistanceOtp, setAssistanceOtp] = useState("");
+  const [assistanceOtpError, setAssistanceOtpError] = useState("");
   const [schemeNamesExpanded, setSchemeNamesExpanded] = useState(false);
   const [requestReference, setRequestReference] = useState("");
   const [openPicker, setOpenPicker] = useState<PickerKey | null>(null);
@@ -436,6 +439,32 @@ export function MobileGuestEligibilityQuestionnaire({
         .includes(normalized);
     return queryMatch && (browseCategory === "all" || scheme.category === browseCategory);
   });
+
+  const isAllResultsSelected =
+    filteredResults.length > 0 &&
+    filteredResults.every((match) => selectedSchemeIds.includes(match.scheme.id));
+
+  const toggleSelectAllResults = () => {
+    const allIds = filteredResults.map((match) => match.scheme.id);
+    if (isAllResultsSelected) {
+      setSelectedSchemeIds((current) => current.filter((id) => !allIds.includes(id)));
+    } else {
+      setSelectedSchemeIds((current) => Array.from(new Set([...current, ...allIds])));
+    }
+  };
+
+  const isAllBrowsedSelected =
+    browsedSchemes.length > 0 &&
+    browsedSchemes.every((scheme) => selectedSchemeIds.includes(scheme.id));
+
+  const toggleSelectAllBrowsed = () => {
+    const allIds = browsedSchemes.map((scheme) => scheme.id);
+    if (isAllBrowsedSelected) {
+      setSelectedSchemeIds((current) => current.filter((id) => !allIds.includes(id)));
+    } else {
+      setSelectedSchemeIds((current) => Array.from(new Set([...current, ...allIds])));
+    }
+  };
 
   const canContinue = (() => {
     if (step === 1) return Boolean(answers.gender);
@@ -548,6 +577,9 @@ export function MobileGuestEligibilityQuestionnaire({
     setAssistanceMobile((current) => current || profile.mobile || "");
     setAssistanceErrors({});
     setAssistanceSubmitError("");
+    setAssistanceStep("form");
+    setAssistanceOtp("");
+    setAssistanceOtpError("");
     setSchemeNamesExpanded(false);
     setOpenPicker(null);
     setAssistanceOpen(true);
@@ -556,6 +588,9 @@ export function MobileGuestEligibilityQuestionnaire({
   const closeAssistance = () => {
     if (assistanceSending) return;
     setOpenPicker(null);
+    setAssistanceStep("form");
+    setAssistanceOtp("");
+    setAssistanceOtpError("");
     setAssistanceOpen(false);
   };
 
@@ -582,6 +617,29 @@ export function MobileGuestEligibilityQuestionnaire({
     setAssistanceErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
+    setAssistanceSubmitError("");
+    setAssistanceOtp("");
+    setAssistanceOtpError("");
+    setAssistanceStep("otp");
+  };
+
+  const verifyAndSubmitAssistance = async () => {
+    if (assistanceSending) return;
+    const cleanOtp = assistanceOtp.trim();
+    if (cleanOtp.length < 6) {
+      setAssistanceOtpError(
+        t("Enter the 6-digit OTP code.", "6 അക്ക OTP നൽകുക."),
+      );
+      return;
+    }
+    if (cleanOtp !== "123456") {
+      setAssistanceOtpError(
+        t("Invalid OTP code. (Demo OTP: 123456)", "തെറ്റായ OTP. (ഡെമോ OTP: 123456)"),
+      );
+      return;
+    }
+
+    setAssistanceOtpError("");
     setAssistanceSubmitError("");
     setAssistanceSending(true);
     const result = await sendGuestAssistanceRequest({
@@ -616,8 +674,7 @@ export function MobileGuestEligibilityQuestionnaire({
       /* Guest handoff is complete. */
     }
     setRequestReference(result.reference);
-    setAssistanceOpen(false);
-    setView("success");
+    setAssistanceStep("success");
   };
 
   const renderStepIcon = () => {
@@ -1097,7 +1154,7 @@ export function MobileGuestEligibilityQuestionnaire({
         aria-checked={isSelected}
         aria-label={`${lang === "ml" ? "പദ്ധതി തിരഞ്ഞെടുക്കുക" : "Select scheme"}: ${lang === "ml" ? scheme.ml : scheme.en}`}
         onClick={() => toggleScheme(scheme.id)}
-        className={`w-full cursor-pointer bg-card p-3 rounded-2xl border shadow-2xs transition-all space-y-2 text-left ${
+        className={`w-full cursor-pointer bg-card px-3 py-2.5 rounded-2xl border shadow-2xs transition-all space-y-1.5 text-left ${
           isSelected
             ? "border-orange-400 bg-orange-50/40 ring-2 ring-orange-200/80 dark:border-orange-700 dark:bg-orange-950/20 dark:ring-orange-900/60"
             : "border-border hover:border-orange-300 dark:hover:border-orange-800 bg-white dark:bg-slate-900"
@@ -1153,7 +1210,7 @@ export function MobileGuestEligibilityQuestionnaire({
   };
 
   const renderHeader = (title: string, progress: boolean) => (
-    <div className="sticky top-0 z-20 shrink-0 border-b border-slate-200 bg-[#FFFDF9]/95 px-3 pb-2.5 pt-2 backdrop-blur">
+    <div className="sticky top-0 z-20 shrink-0 border-b border-slate-200 bg-[#FFFDF9]/95 px-3 pb-2 pt-1.5 backdrop-blur">
       <div className="flex items-center justify-between gap-2">
         <button
           type="button"
@@ -1239,13 +1296,32 @@ export function MobileGuestEligibilityQuestionnaire({
       {matchedResults.length > 0 ? (
         filteredResults.length > 0 ? (
           <>
-            <p className="text-[9px] font-semibold text-slate-500">
-              {t(
-                `${filteredResults.length} eligible scheme${filteredResults.length === 1 ? "" : "s"}`,
-                `${filteredResults.length} അനുയോജ്യ പദ്ധതികൾ`,
-              )}
-            </p>
-            <div className="space-y-2.5">
+            <div className="flex items-center justify-between pb-0.5 pt-0.5">
+              <p className="text-[12px] font-semibold text-slate-500">
+                {t(
+                  `${filteredResults.length} eligible scheme${filteredResults.length === 1 ? "" : "s"}`,
+                  `${filteredResults.length} അനുയോജ്യ പദ്ധതികൾ`,
+                )}
+              </p>
+              <button
+                type="button"
+                onClick={toggleSelectAllResults}
+                className="flex items-center gap-1.5 cursor-pointer text-[12px] font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300"
+              >
+                <span
+                  aria-hidden="true"
+                  className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border-2 transition-all active:scale-95 ${
+                    isAllResultsSelected
+                      ? "border-orange-500 bg-orange-500 text-white shadow-xs"
+                      : "border-orange-300 bg-white hover:border-orange-500 dark:border-orange-900 dark:bg-slate-900"
+                  }`}
+                >
+                  {isAllResultsSelected && <Check className="h-2.5 w-2.5 stroke-[4]" />}
+                </span>
+                <span>{t("Select all", "എല്ലാം തിരഞ്ഞെടുക്കുക")}</span>
+              </button>
+            </div>
+            <div className="space-y-2">
               {filteredResults.map((match) => renderSchemeCard(match.scheme, match))}
             </div>
           </>
@@ -1385,9 +1461,28 @@ export function MobileGuestEligibilityQuestionnaire({
             );
           })}
         </div>
-        <p className="text-[9px] font-semibold text-slate-500">
-          {t(`${browsedSchemes.length} schemes`, `${browsedSchemes.length} പദ്ധതികൾ`)}
-        </p>
+        <div className="flex items-center justify-between py-1">
+          <p className="text-[12px] font-semibold text-slate-500">
+            {t(`${browsedSchemes.length} schemes`, `${browsedSchemes.length} പദ്ധതികൾ`)}
+          </p>
+          <button
+            type="button"
+            onClick={toggleSelectAllBrowsed}
+            className="flex items-center gap-1.5 cursor-pointer text-[12px] font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300"
+          >
+            <span
+              aria-hidden="true"
+              className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border-2 transition-all active:scale-95 ${
+                isAllBrowsedSelected
+                  ? "border-orange-500 bg-orange-500 text-white shadow-xs"
+                  : "border-orange-300 bg-white hover:border-orange-500 dark:border-orange-900 dark:bg-slate-900"
+              }`}
+            >
+              {isAllBrowsedSelected && <Check className="h-2.5 w-2.5 stroke-[4]" />}
+            </span>
+            <span>{t("Select all", "എല്ലാം തിരഞ്ഞെടുക്കുക")}</span>
+          </button>
+        </div>
       </div>
       {browsedSchemes.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-6 text-center">
@@ -1427,11 +1522,179 @@ export function MobileGuestEligibilityQuestionnaire({
           }`}
         >
           <HeartHandshake className="h-4 w-4 stroke-[2.5]" />
-          {t("Ask for Help", "സഹായം അഭ്യർത്ഥിക്കുക")}
+          {t("Help Me", "സഹായം അഭ്യർത്ഥിക്കുക")}
         </button>
       </div>
     );
   };
+
+  const renderAssistanceOtp = () => (
+    <>
+      <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 px-3.5 pb-2.5 pt-2.5">
+        <div className="min-w-0">
+          <h2 className="text-[14px] font-extrabold text-slate-900">
+            {t("OTP Verification", "OTP സ്ഥിരീകരണം")}
+          </h2>
+          <p className="mt-0.5 text-[10px] font-medium leading-relaxed text-slate-500">
+            {t(
+              "Enter the 6-digit verification code sent to your mobile.",
+              "നിങ്ങളുടെ മൊബൈലിലേക്ക് അയച്ച 6 അക്ക സ്ഥിരീകരണ കോഡ് നൽകുക.",
+            )}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={closeAssistance}
+          disabled={assistanceSending}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 disabled:opacity-40"
+          aria-label={t("Close request assistance", "സഹായ അഭ്യർത്ഥന അടയ്ക്കുക")}
+        >
+          <X className="h-4 w-4 stroke-[2.2]" />
+        </button>
+      </div>
+
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3.5 py-3">
+        <div className="rounded-xl border border-orange-200 bg-orange-50/70 p-3 text-center">
+          <p className="text-[11px] font-semibold text-orange-950">
+            {t("Verification code sent to", "OTP അയച്ച മൊബൈൽ നമ്പർ")}
+          </p>
+          <div className="mt-1 flex items-center justify-center gap-2">
+            <span className="text-[13px] font-bold text-slate-900">
+              +91 {assistanceMobile}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setAssistanceStep("form");
+                setAssistanceOtpError("");
+              }}
+              className="text-[10.5px] font-extrabold text-orange-600 underline hover:text-orange-700"
+            >
+              {t("Change", "മാറ്റുക")}
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-1.5 pt-1">
+          <label className="block text-center text-[11px] font-extrabold text-slate-700">
+            {t("Enter 6-digit OTP", "6 അക്ക OTP നൽകുക")}
+          </label>
+          <input
+            type="text"
+            inputMode="numeric"
+            autoFocus
+            maxLength={6}
+            value={assistanceOtp}
+            onChange={(event) => {
+              setAssistanceOtp(event.target.value.replace(/\D/g, "").slice(0, 6));
+              setAssistanceOtpError("");
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") verifyAndSubmitAssistance();
+            }}
+            placeholder="123456"
+            className="w-full rounded-xl border border-slate-200 bg-white py-2.5 text-center text-lg font-bold tracking-[0.35em] text-slate-900 outline-none transition-colors focus:border-orange-500"
+          />
+          {assistanceOtpError ? (
+            <p className="text-center text-[10px] font-semibold text-rose-600">
+              {assistanceOtpError}
+            </p>
+          ) : (
+            <p className="text-center text-[9.5px] font-medium text-slate-400">
+              {t("Demo OTP: 123456", "ഡെമോ OTP: 123456")}
+            </p>
+          )}
+        </div>
+
+        <div className="pt-1 text-center">
+          <button
+            type="button"
+            onClick={() => {
+              setAssistanceOtp("123456");
+              setAssistanceOtpError("");
+            }}
+            className="text-[10.5px] font-semibold text-slate-500 hover:text-orange-600"
+          >
+            {t("Didn't receive code? Resend OTP", "കോഡ് ലഭിച്ചില്ലേ? OTP വീണ്ടും അയക്കുക")}
+          </button>
+        </div>
+
+        {assistanceSubmitError ? (
+          <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-[9.5px] font-semibold text-rose-700">
+            {assistanceSubmitError}
+          </div>
+        ) : null}
+      </div>
+
+      <div className="shrink-0 border-t border-slate-200 bg-white px-3.5 pb-3 pt-2">
+        <button
+          type="button"
+          onClick={verifyAndSubmitAssistance}
+          disabled={assistanceSending}
+          className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[12px] font-extrabold text-white shadow-md transition-all ${
+            assistanceSending
+              ? "cursor-wait bg-orange-300 shadow-none"
+              : "bg-orange-500 hover:bg-orange-600 active:scale-[0.99]"
+          }`}
+        >
+          {assistanceSending ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Check className="h-4 w-4 stroke-[2.5]" />
+          )}
+          {assistanceSending
+            ? t("Verifying…", "സ്ഥിരീകരിക്കുന്നു…")
+            : t("Verify & Submit", "സ്ഥിരീകരിച്ചു സമർപ്പിക്കുക")}
+        </button>
+      </div>
+    </>
+  );
+
+  const renderAssistanceSuccess = () => (
+    <div className="flex flex-col items-center justify-center px-6 pb-6 pt-3 text-center animate-in fade-in zoom-in-95 duration-200">
+      {/* Top Grab Handle */}
+      <div className="h-1.5 w-12 rounded-full bg-slate-300/80 mb-3" />
+
+      {/* 3D Leader Illustration Image without border box */}
+      <div className="relative w-full max-w-[260px] h-48 sm:h-52 flex items-center justify-center my-1 overflow-hidden">
+        <img
+          src="/images/request_sent_leader.png"
+          alt="Request sent party leader"
+          className="h-full w-auto object-contain mix-blend-multiply"
+        />
+      </div>
+
+      {/* Title */}
+      <h2 className="mt-3 text-[22px] font-black tracking-tight text-[#0f172a]">
+        {t("Request sent", "അഭ്യർത്ഥന അയച്ചു")}
+      </h2>
+
+      {/* Subtitle */}
+      <p className="mt-2 text-[13px] font-semibold leading-relaxed text-slate-500 max-w-[280px]">
+        {t(
+          "Your local party team will review your request and assign a worker to help you.",
+          "നിങ്ങളുടെ പ്രാദേശിക പാർട്ടി ടീം അഭ്യർത്ഥന പരിശോധിച്ച് നിങ്ങളെ സഹായിക്കാൻ പ്രവർത്തകനെ ചുമതലപ്പെടുത്തും.",
+        )}
+      </p>
+
+      {/* Back to Home Button */}
+      <button
+        type="button"
+        onClick={() => {
+          setAssistanceOpen(false);
+          setAssistanceStep("form");
+          if (onHelpRequestSent) {
+            onHelpRequestSent();
+          } else {
+            setView("questionnaire");
+          }
+        }}
+        className="mt-6 w-full rounded-2xl bg-[#ff5500] hover:bg-[#e04b00] active:scale-[0.99] py-3.5 text-[15px] font-extrabold text-white shadow-md shadow-orange-500/20 transition-all cursor-pointer"
+      >
+        {t("Back to Home", "ഹോം പേജിലേക്ക് മടങ്ങുക")}
+      </button>
+    </div>
+  );
 
   const renderAssistanceSheet = () => {
     if (!assistanceOpen) return null;
@@ -1445,276 +1708,309 @@ export function MobileGuestEligibilityQuestionnaire({
           className="flex max-h-[92%] w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl"
           onClick={(event) => event.stopPropagation()}
         >
-          <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 px-4 pb-3 pt-3">
-            <div className="min-w-0">
-              <h2 className="text-[14px] font-extrabold text-slate-900">
-                {t("Request assistance", "സഹായം അഭ്യർത്ഥിക്കുക")}
-              </h2>
-              <p className="mt-0.5 text-[10px] font-medium leading-relaxed text-slate-500">
-                {t(
-                  "Share your contact details so a party leader can help.",
-                  "ഒരു പാർട്ടി നേതാവിന് സഹായിക്കാൻ കഴിയുന്ന വിധം നിങ്ങളുടെ കോൺടാക്റ്റ് വിവരങ്ങൾ പങ്കിടുക.",
-                )}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={closeAssistance}
-              disabled={assistanceSending}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 disabled:opacity-40"
-              aria-label={t("Close request assistance", "സഹായ അഭ്യർത്ഥന അടയ്ക്കുക")}
-            >
-              <X className="h-4 w-4 stroke-[2.2]" />
-            </button>
-          </div>
-          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3">
-            <div className="overflow-hidden rounded-xl border border-orange-200 bg-orange-50/70">
-              <button
-                type="button"
-                onClick={() => setSchemeNamesExpanded((current) => !current)}
-                className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left"
-              >
-                <span className="flex items-center gap-1.5 text-[10.5px] font-extrabold text-orange-800">
-                  <HeartHandshake className="h-3.5 w-3.5" />
-                  {count === 1
-                    ? t("1 scheme selected", "1 പദ്ധതി തിരഞ്ഞെടുത്തു")
-                    : t(`${count} schemes selected`, `${count} പദ്ധതികൾ തിരഞ്ഞെടുത്തു`)}
-                </span>
-                <ChevronDown
-                  className={`h-4 w-4 shrink-0 text-orange-700 transition-transform ${schemeNamesExpanded ? "rotate-180" : ""}`}
-                />
-              </button>
-              {schemeNamesExpanded ? (
-                <ul className="space-y-1 border-t border-orange-200/70 px-3 py-2">
-                  {selectedSchemes.map((scheme) => (
-                    <li
-                      key={scheme.id}
-                      className="flex items-start gap-1.5 text-[10px] font-semibold text-orange-900"
-                    >
-                      <Check className="mt-0.5 h-3 w-3 shrink-0 stroke-[3]" />
-                      <span>{lang === "ml" ? scheme.ml : scheme.en}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </div>
-
-            <div className="space-y-1">
-              <label
-                htmlFor="guest-assistance-name"
-                className="block text-[10.5px] font-extrabold text-slate-700"
-              >
-                {t("Full name", "മുഴുവൻ പേര്")} <span className="text-rose-500">*</span>
-              </label>
-              <input
-                id="guest-assistance-name"
-                value={assistanceName}
-                autoComplete="name"
-                onChange={(event) => {
-                  setAssistanceName(event.target.value);
-                  setAssistanceErrors((current) => ({ ...current, name: "" }));
-                }}
-                placeholder={t("Enter your full name", "നിങ്ങളുടെ മുഴുവൻ പേര് നൽകുക")}
-                className={`w-full rounded-xl border bg-white px-3 py-2.5 text-[11.5px] font-semibold text-slate-800 outline-none transition-colors focus:border-orange-400 ${
-                  assistanceErrors.name ? "border-rose-400" : "border-slate-200"
-                }`}
-              />
-              {assistanceErrors.name ? (
-                <p className="text-[9.5px] font-semibold text-rose-600">{assistanceErrors.name}</p>
-              ) : null}
-            </div>
-
-            <div className="space-y-1">
-              <label
-                htmlFor="guest-assistance-mobile"
-                className="block text-[10.5px] font-extrabold text-slate-700"
-              >
-                {t("Mobile number", "മൊബൈൽ നമ്പർ")} <span className="text-rose-500">*</span>
-              </label>
-              <input
-                id="guest-assistance-mobile"
-                value={assistanceMobile}
-                autoComplete="tel"
-                inputMode="numeric"
-                maxLength={10}
-                onChange={(event) => {
-                  setAssistanceMobile(event.target.value.replace(/\D/g, "").slice(0, 10));
-                  setAssistanceErrors((current) => ({ ...current, mobile: "" }));
-                }}
-                placeholder={t("10-digit mobile number", "10 അക്ക മൊബൈൽ നമ്പർ")}
-                className={`w-full rounded-xl border bg-white px-3 py-2.5 text-[11.5px] font-semibold text-slate-800 outline-none transition-colors focus:border-orange-400 ${
-                  assistanceErrors.mobile ? "border-rose-400" : "border-slate-200"
-                }`}
-              />
-              {assistanceErrors.mobile ? (
-                <p className="text-[9.5px] font-semibold text-rose-600">
-                  {assistanceErrors.mobile}
-                </p>
-              ) : null}
-            </div>
-
-            <div className="space-y-2.5 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
-              <SearchableSelect
-                label={t("District", "ജില്ല")}
-                valueLabel={
-                  selectedDistrict ? (lang === "ml" ? selectedDistrict.ml : selectedDistrict.en) : ""
-                }
-                placeholder={t("Select district", "ജില്ല തിരഞ്ഞെടുക്കുക")}
-                searchPlaceholder={t("Search districts", "ജില്ലകൾ തിരയുക")}
-                options={districts.map((district) => ({
-                  value: district.id,
-                  label: lang === "ml" ? district.ml : district.en,
-                }))}
-                open={openPicker === "district"}
-                onToggle={() =>
-                  setOpenPicker((current) => (current === "district" ? null : "district"))
-                }
-                onSelect={handleAssistanceDistrictChange}
-              />
-              <SearchableSelect
-                label={t("Assembly Mandalam", "അസംബ്ലി മണ്ഡലം")}
-                valueLabel={
-                  selectedMandalam ? (lang === "ml" ? selectedMandalam.ml : selectedMandalam.en) : ""
-                }
-                placeholder={t(
-                  "Select Assembly Mandalam",
-                  "അസംബ്ലി മണ്ഡലം തിരഞ്ഞെടുക്കുക",
-                )}
-                searchPlaceholder={t("Search constituencies", "മണ്ഡലങ്ങൾ തിരയുക")}
-                options={districtConstituencies.map((item) => ({
-                  value: item.id,
-                  label: lang === "ml" ? item.ml : item.en,
-                }))}
-                disabled={!assistanceDistrictId}
-                open={openPicker === "mandalam"}
-                onToggle={() =>
-                  setOpenPicker((current) => (current === "mandalam" ? null : "mandalam"))
-                }
-                onSelect={handleAssistanceMandalamChange}
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label
-                htmlFor="guest-assistance-notes"
-                className="block text-[10.5px] font-extrabold text-slate-700"
-              >
-                {t("Notes (optional)", "കുറിപ്പുകൾ (ഐച്ഛികം)")}
-              </label>
-              <textarea
-                id="guest-assistance-notes"
-                value={assistanceNotes}
-                rows={3}
-                onChange={(event) => setAssistanceNotes(event.target.value)}
-                placeholder={t(
-                  "Anything the party leader should know",
-                  "പാർട്ടി നേതാവ് അറിയേണ്ട കാര്യങ്ങൾ",
-                )}
-                className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[11px] font-medium leading-relaxed text-slate-800 outline-none transition-colors focus:border-orange-400"
-              />
-            </div>
-
-            <div>
-              <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-slate-200 bg-slate-50/60 p-2.5">
-                <input
-                  type="checkbox"
-                  checked={assistanceConsent}
-                  onChange={(event) => {
-                    setAssistanceConsent(event.target.checked);
-                    setAssistanceErrors((current) => ({ ...current, consent: "" }));
-                  }}
-                  className="mt-0.5 h-4 w-4 shrink-0 accent-orange-500"
-                />
-                <span className="text-[9.5px] font-semibold leading-relaxed text-slate-600">
-                  {t(
-                    "I agree to share these details with the party leaders handling my request.",
-                    "എന്റെ അഭ്യർത്ഥന കൈകാര്യം ചെയ്യുന്ന പാർട്ടി നേതാക്കളുമായി ഈ വിവരങ്ങൾ പങ്കിടാൻ ഞാൻ സമ്മതിക്കുന്നു.",
-                  )}
-                </span>
-              </label>
-              {assistanceErrors.consent ? (
-                <p className="mt-1 text-[9.5px] font-semibold text-rose-600">
-                  {assistanceErrors.consent}
-                </p>
-              ) : null}
-            </div>
-
-            {assistanceErrors.schemes ? (
-              <p className="text-[9.5px] font-semibold text-rose-600">{assistanceErrors.schemes}</p>
-            ) : null}
-            {assistanceSubmitError ? (
-              <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-[9.5px] font-semibold leading-relaxed text-rose-700">
-                {assistanceSubmitError}
+          {assistanceStep === "success" ? (
+            renderAssistanceSuccess()
+          ) : assistanceStep === "otp" ? (
+            renderAssistanceOtp()
+          ) : (
+            <>
+              <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 px-3.5 pb-2.5 pt-2.5">
+                <div className="min-w-0">
+                  <h2 className="text-[14px] font-extrabold text-slate-900">
+                    {t("Request assistance", "സഹായം അഭ്യർത്ഥിക്കുക")}
+                  </h2>
+                  <p className="mt-0.5 text-[10px] font-medium leading-relaxed text-slate-500">
+                    {t(
+                      "Share your contact details so a party leader can help.",
+                      "ഒരു പാർട്ടി നേതാവിന് സഹായിക്കാൻ കഴിയുന്ന വിധം നിങ്ങളുടെ കോൺടാക്റ്റ് വിവരങ്ങൾ പങ്കിടുക.",
+                    )}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeAssistance}
+                  disabled={assistanceSending}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 disabled:opacity-40"
+                  aria-label={t("Close request assistance", "സഹായ അഭ്യർത്ഥന അടയ്ക്കുക")}
+                >
+                  <X className="h-4 w-4 stroke-[2.2]" />
+                </button>
               </div>
-            ) : null}
-          </div>
-          <div className="shrink-0 border-t border-slate-200 bg-white px-4 pb-4 pt-2.5">
-            <button
-              type="button"
-              onClick={submitAssistance}
-              disabled={assistanceSending}
-              className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[12px] font-extrabold text-white shadow-md transition-all ${
-                assistanceSending
-                  ? "cursor-wait bg-orange-300 shadow-none"
-                  : "bg-orange-500 hover:bg-orange-600 active:scale-[0.99]"
-              }`}
-            >
-              {assistanceSending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4 stroke-[2.5]" />
-              )}
-              {assistanceSending
-                ? t("Sending…", "അയക്കുന്നു…")
-                : assistanceSubmitError
-                  ? t("Try Again", "വീണ്ടും ശ്രമിക്കുക")
-                  : t("Send Request", "അഭ്യർത്ഥന അയക്കുക")}
-            </button>
-          </div>
+              <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-3.5 py-2.5">
+                <div className="overflow-hidden rounded-xl border border-orange-200 bg-orange-50/70">
+                  <button
+                    type="button"
+                    onClick={() => setSchemeNamesExpanded((current) => !current)}
+                    className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left"
+                  >
+                    <span className="flex items-center gap-1.5 text-[10.5px] font-extrabold text-orange-800">
+                      <HeartHandshake className="h-3.5 w-3.5" />
+                      {count === 1
+                        ? t("1 scheme selected", "1 പദ്ധതി തിരഞ്ഞെടുത്തു")
+                        : t(`${count} schemes selected`, `${count} പദ്ധതികൾ തിരഞ്ഞെടുത്തു`)}
+                    </span>
+                    <ChevronDown
+                      className={`h-4 w-4 shrink-0 text-orange-700 transition-transform ${schemeNamesExpanded ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                  {schemeNamesExpanded ? (
+                    <ul className="space-y-1 border-t border-orange-200/70 px-3 py-2">
+                      {selectedSchemes.map((scheme) => (
+                        <li
+                          key={scheme.id}
+                          className="flex items-start gap-1.5 text-[10px] font-semibold text-orange-900"
+                        >
+                          <Check className="mt-0.5 h-3 w-3 shrink-0 stroke-[3]" />
+                          <span>{lang === "ml" ? scheme.ml : scheme.en}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
+
+                <div className="space-y-1">
+                  <label
+                    htmlFor="guest-assistance-name"
+                    className="block text-[10.5px] font-extrabold text-slate-700"
+                  >
+                    {t("Full name", "മുഴുവൻ പേര്")} <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    id="guest-assistance-name"
+                    value={assistanceName}
+                    autoComplete="name"
+                    onChange={(event) => {
+                      setAssistanceName(event.target.value);
+                      setAssistanceErrors((current) => ({ ...current, name: "" }));
+                    }}
+                    placeholder={t("Enter your full name", "നിങ്ങളുടെ മുഴുവൻ പേര് നൽകുക")}
+                    className={`w-full rounded-xl border bg-white px-3 py-2 text-[11.5px] font-semibold text-slate-800 outline-none transition-colors focus:border-orange-400 ${
+                      assistanceErrors.name ? "border-rose-400" : "border-slate-200"
+                    }`}
+                  />
+                  {assistanceErrors.name ? (
+                    <p className="text-[9.5px] font-semibold text-rose-600">{assistanceErrors.name}</p>
+                  ) : null}
+                </div>
+
+                <div className="space-y-1">
+                  <label
+                    htmlFor="guest-assistance-mobile"
+                    className="block text-[10.5px] font-extrabold text-slate-700"
+                  >
+                    {t("Mobile number", "മൊബൈൽ നമ്പർ")} <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    id="guest-assistance-mobile"
+                    value={assistanceMobile}
+                    autoComplete="tel"
+                    inputMode="numeric"
+                    maxLength={10}
+                    onChange={(event) => {
+                      setAssistanceMobile(event.target.value.replace(/\D/g, "").slice(0, 10));
+                      setAssistanceErrors((current) => ({ ...current, mobile: "" }));
+                    }}
+                    placeholder={t("10-digit mobile number", "10 അക്ക മൊബൈൽ നമ്പർ")}
+                    className={`w-full rounded-xl border bg-white px-3 py-2 text-[11.5px] font-semibold text-slate-800 outline-none transition-colors focus:border-orange-400 ${
+                      assistanceErrors.mobile ? "border-rose-400" : "border-slate-200"
+                    }`}
+                  />
+                  {assistanceErrors.mobile ? (
+                    <p className="text-[9.5px] font-semibold text-rose-600">
+                      {assistanceErrors.mobile}
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/60 p-2.5">
+                  <SearchableSelect
+                    label={t("District", "ജില്ല")}
+                    valueLabel={
+                      selectedDistrict ? (lang === "ml" ? selectedDistrict.ml : selectedDistrict.en) : ""
+                    }
+                    placeholder={t("Select district", "ജില്ല തിരഞ്ഞെടുക്കുക")}
+                    searchPlaceholder={t("Search districts", "ജില്ലകൾ തിരയുക")}
+                    options={districts.map((district) => ({
+                      value: district.id,
+                      label: lang === "ml" ? district.ml : district.en,
+                    }))}
+                    open={openPicker === "district"}
+                    onToggle={() =>
+                      setOpenPicker((current) => (current === "district" ? null : "district"))
+                    }
+                    onSelect={handleAssistanceDistrictChange}
+                  />
+                  <SearchableSelect
+                    label={t("Assembly Mandalam", "അസംബ്ലി മണ്ഡലം")}
+                    valueLabel={
+                      selectedMandalam ? (lang === "ml" ? selectedMandalam.ml : selectedMandalam.en) : ""
+                    }
+                    placeholder={t(
+                      "Select Assembly Mandalam",
+                      "അസംബ്ലി മണ്ഡലം തിരഞ്ഞെടുക്കുക",
+                    )}
+                    searchPlaceholder={t("Search constituencies", "മണ്ഡലങ്ങൾ തിരയുക")}
+                    options={districtConstituencies.map((item) => ({
+                      value: item.id,
+                      label: lang === "ml" ? item.ml : item.en,
+                    }))}
+                    disabled={!assistanceDistrictId}
+                    open={openPicker === "mandalam"}
+                    onToggle={() =>
+                      setOpenPicker((current) => (current === "mandalam" ? null : "mandalam"))
+                    }
+                    onSelect={handleAssistanceMandalamChange}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label
+                    htmlFor="guest-assistance-notes"
+                    className="block text-[10.5px] font-extrabold text-slate-700"
+                  >
+                    {t("Notes (optional)", "കുറിപ്പുകൾ (ഐച്ഛികം)")}
+                  </label>
+                  <textarea
+                    id="guest-assistance-notes"
+                    value={assistanceNotes}
+                    rows={2}
+                    onChange={(event) => setAssistanceNotes(event.target.value)}
+                    placeholder={t(
+                      "Anything the party leader should know",
+                      "പാർട്ടി നേതാവ് അറിയേണ്ട കാര്യങ്ങൾ",
+                    )}
+                    className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-medium leading-relaxed text-slate-800 outline-none transition-colors focus:border-orange-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-slate-200 bg-slate-50/60 p-2">
+                    <input
+                      type="checkbox"
+                      checked={assistanceConsent}
+                      onChange={(event) => {
+                        setAssistanceConsent(event.target.checked);
+                        setAssistanceErrors((current) => ({ ...current, consent: "" }));
+                      }}
+                      className="mt-0.5 h-4 w-4 shrink-0 accent-orange-500"
+                    />
+                    <span className="text-[9.5px] font-semibold leading-relaxed text-slate-600">
+                      {t(
+                        "I agree to share these details with the party leaders handling my request.",
+                        "എന്റെ അഭ്യർത്ഥന കൈകാര്യം ചെയ്യുന്ന പാർട്ടി നേതാക്കളുമായി ഈ വിവരങ്ങൾ പങ്കിടാൻ ഞാൻ സമ്മതിക്കുന്നു.",
+                      )}
+                    </span>
+                  </label>
+                  {assistanceErrors.consent ? (
+                    <p className="mt-1 text-[9.5px] font-semibold text-rose-600">
+                      {assistanceErrors.consent}
+                    </p>
+                  ) : null}
+                </div>
+
+                {assistanceErrors.schemes ? (
+                  <p className="text-[9.5px] font-semibold text-rose-600">{assistanceErrors.schemes}</p>
+                ) : null}
+                {assistanceSubmitError ? (
+                  <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-[9.5px] font-semibold leading-relaxed text-rose-700">
+                    {assistanceSubmitError}
+                  </div>
+                ) : null}
+              </div>
+              <div className="shrink-0 border-t border-slate-200 bg-white px-3.5 pb-3 pt-2">
+                <button
+                  type="button"
+                  onClick={submitAssistance}
+                  disabled={assistanceSending}
+                  className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[12px] font-extrabold text-white shadow-md transition-all ${
+                    assistanceSending
+                      ? "cursor-wait bg-orange-300 shadow-none"
+                      : "bg-orange-500 hover:bg-orange-600 active:scale-[0.99]"
+                  }`}
+                >
+                  {assistanceSending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4 stroke-[2.5]" />
+                  )}
+                  {assistanceSending
+                    ? t("Sending…", "അയക്കുന്നു…")
+                    : assistanceSubmitError
+                      ? t("Try Again", "വീണ്ടും ശ്രമിക്കുക")
+                      : t("Help Me", "എന്നെ സഹായിക്കൂ")}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     );
   };
 
   const renderSuccess = () => (
-    <div className="flex min-h-[420px] flex-col items-center justify-center px-4 py-10 text-center">
-      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100">
-        <Check className="h-10 w-10 stroke-[2.5]" />
-      </div>
-      <p className="mt-4 text-[9px] font-extrabold uppercase tracking-[0.16em] text-emerald-700">
-        {t("Request complete", "അഭ്യർത്ഥന പൂർത്തിയായി")}
-      </p>
-      <h2 className="mt-1.5 text-[18px] font-extrabold leading-snug text-slate-900">
-        {t("Help request sent", "സഹായ അഭ്യർത്ഥന അയച്ചു")}
-      </h2>
-      <p className="mt-2 max-w-[270px] text-[11.5px] font-medium leading-relaxed text-slate-700">
-        {t(
-          "Your request has been sent to the party leaders for assistance.",
-          "സഹായത്തിനായി നിങ്ങളുടെ അഭ്യർത്ഥന പാർട്ടി നേതാക്കൾക്ക് അയച്ചു.",
-        )}
-      </p>
-      <p className="mt-1.5 max-w-[260px] text-[10.5px] font-medium leading-relaxed text-slate-500">
-        {t(
-          "They can contact you using the details provided.",
-          "നൽകിയ വിവരങ്ങൾ ഉപയോഗിച്ച് അവർ നിങ്ങളെ ബന്ധപ്പെടും.",
-        )}
-      </p>
-      {requestReference ? (
-        <p className="mt-3 rounded-full border border-slate-200 bg-white px-3 py-1 font-mono text-[9px] font-semibold text-slate-500">
-          {requestReference}
+    <div className="flex min-h-[440px] flex-col items-center justify-center px-3 py-6 text-center animate-in fade-in zoom-in-95 duration-300">
+      <div className="w-full max-w-[320px] rounded-3xl border border-emerald-100 bg-gradient-to-b from-emerald-50/90 via-white to-orange-50/30 p-5 shadow-xs">
+        {/* Animated Check Icon */}
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 ring-4 ring-emerald-100">
+          <Check className="h-7 w-7 stroke-[3]" />
+        </div>
+
+        {/* Status Badge */}
+        <div className="mt-3.5 inline-flex items-center gap-1.5 rounded-full bg-emerald-100/90 px-3 py-0.5 text-[9.5px] font-extrabold uppercase tracking-wider text-emerald-800">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse" />
+          {t("Request Completed", "അഭ്യർത്ഥന പൂർത്തിയായി")}
+        </div>
+
+        <h2 className="mt-2 text-[17px] font-extrabold leading-tight text-slate-900">
+          {t("Help Request Sent!", "സഹായ അഭ്യർത്ഥന അയച്ചു!")}
+        </h2>
+
+        <p className="mt-1.5 text-[11px] font-medium leading-relaxed text-slate-600">
+          {t(
+            "Your request has been sent to party leaders for assistance. They will contact you shortly.",
+            "സഹായത്തിനായി നിങ്ങളുടെ വിവരങ്ങൾ പാർട്ടി നേതാക്കൾക്ക് കൈമാറി. അവർ നിങ്ങളെ ഉടൻ ബന്ധപ്പെടും.",
+          )}
         </p>
-      ) : null}
-      <button
-        type="button"
-        onClick={onHelpRequestSent}
-        className="mt-6 flex w-full max-w-[280px] items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-[12px] font-extrabold text-white shadow-md transition-all hover:bg-orange-600 active:scale-[0.99]"
-      >
-        <Home className="h-4 w-4 stroke-[2.5]" />
-        {t("Go to Home", "ഹോം പേജിലേക്ക് പോകുക")}
-      </button>
-      <p className="mt-2 text-[9px] font-medium text-slate-400">
-        {t("Returning to the guest home page…", "അതിഥി ഹോം പേജിലേക്ക് മടങ്ങുന്നു…")}
-      </p>
+
+        {/* Reference ID Box */}
+        {requestReference ? (
+          <div className="mt-3.5 rounded-xl border border-slate-200/80 bg-slate-900 p-2.5 text-white shadow-inner">
+            <p className="text-[8.5px] font-bold tracking-wider text-slate-400 uppercase">
+              {t("Reference ID", "റഫറൻസ് നമ്പർ")}
+            </p>
+            <p className="mt-0.5 font-mono text-[12.5px] font-black text-orange-400 tracking-wider">
+              {requestReference}
+            </p>
+          </div>
+        ) : null}
+
+        {/* Summary Pill */}
+        <div className="mt-2.5 flex items-center justify-between rounded-xl bg-slate-100/80 px-3 py-1.5 text-[10.5px]">
+          <span className="font-semibold text-slate-600">
+            {t("Schemes selected", "തിരഞ്ഞെടുത്ത പദ്ധതികൾ")}
+          </span>
+          <span className="font-extrabold text-slate-900">
+            {selectedSchemeIds.length}{" "}
+            {t(selectedSchemeIds.length === 1 ? "scheme" : "schemes", "പദ്ധതികൾ")}
+          </span>
+        </div>
+      </div>
+
+      {/* Primary Action Button */}
+      <div className="mt-4 w-full max-w-[320px] space-y-1.5">
+        <button
+          type="button"
+          onClick={onHelpRequestSent}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 py-2.5 text-[12px] font-extrabold text-white shadow-md shadow-orange-500/20 transition-all hover:bg-orange-600 active:scale-[0.99]"
+        >
+          <Home className="h-4 w-4 stroke-[2.5]" />
+          {t("Go to Home", "ഹോം പേജിലേക്ക് പോകുക")}
+        </button>
+
+        <p className="text-[9px] font-medium text-slate-400">
+          {t("Returning to the guest home page…", "അതിഥി ഹോം പേജിലേക്ക് മടങ്ങുന്നു…")}
+        </p>
+      </div>
     </div>
   );
 
@@ -1774,8 +2070,8 @@ export function MobileGuestEligibilityQuestionnaire({
           )}
       <div
         ref={contentRef}
-        className={`min-h-0 flex-1 overflow-y-auto px-4 pt-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
-          view === "results" || view === "browse" ? "pb-6" : "pb-24"
+        className={`min-h-0 flex-1 overflow-y-auto px-3.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
+          view === "results" || view === "browse" ? "pt-2 pb-6" : "pt-4 pb-24"
         }`}
       >
         {view === "questions" ? (

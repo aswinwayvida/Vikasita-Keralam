@@ -16,6 +16,7 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as EligibilityRouteImport } from './routes/eligibility'
 import { Route as HelpdeskRouteImport } from './routes/helpdesk'
 import { Route as JanashabdamRouteImport } from './routes/janashabdam'
+import { Route as MobileRouteImport } from './routes/mobile'
 import { Route as VolunteerRouteImport } from './routes/volunteer'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminApplicationsRouteImport } from './routes/admin.applications'
@@ -80,6 +81,11 @@ const HelpdeskRoute = HelpdeskRouteImport.update({
 const JanashabdamRoute = JanashabdamRouteImport.update({
   id: '/janashabdam',
   path: '/janashabdam',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MobileRoute = MobileRouteImport.update({
+  id: '/mobile',
+  path: '/mobile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VolunteerRoute = VolunteerRouteImport.update({
@@ -244,6 +250,7 @@ export interface FileRoutesByFullPath {
   '/eligibility': typeof EligibilityRoute
   '/helpdesk': typeof HelpdeskRoute
   '/janashabdam': typeof JanashabdamRouteWithChildren
+  '/mobile': typeof MobileRoute
   '/volunteer': typeof VolunteerRoute
   '/admin/applications': typeof AdminApplicationsRouteWithChildren
   '/admin/beneficiaries': typeof AdminBeneficiariesRoute
@@ -281,6 +288,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/eligibility': typeof EligibilityRoute
   '/helpdesk': typeof HelpdeskRoute
+  '/mobile': typeof MobileRoute
   '/volunteer': typeof VolunteerRoute
   '/admin/applications': typeof AdminApplicationsRouteWithChildren
   '/admin/beneficiaries': typeof AdminBeneficiariesRoute
@@ -321,6 +329,7 @@ export interface FileRoutesById {
   '/eligibility': typeof EligibilityRoute
   '/helpdesk': typeof HelpdeskRoute
   '/janashabdam': typeof JanashabdamRouteWithChildren
+  '/mobile': typeof MobileRoute
   '/volunteer': typeof VolunteerRoute
   '/admin/applications': typeof AdminApplicationsRouteWithChildren
   '/admin/beneficiaries': typeof AdminBeneficiariesRoute
@@ -362,6 +371,7 @@ export interface FileRouteTypes {
     | '/eligibility'
     | '/helpdesk'
     | '/janashabdam'
+    | '/mobile'
     | '/volunteer'
     | '/admin/applications'
     | '/admin/beneficiaries'
@@ -399,6 +409,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/eligibility'
     | '/helpdesk'
+    | '/mobile'
     | '/volunteer'
     | '/admin/applications'
     | '/admin/beneficiaries'
@@ -438,6 +449,7 @@ export interface FileRouteTypes {
     | '/eligibility'
     | '/helpdesk'
     | '/janashabdam'
+    | '/mobile'
     | '/volunteer'
     | '/admin/applications'
     | '/admin/beneficiaries'
@@ -478,6 +490,7 @@ export interface RootRouteChildren {
   EligibilityRoute: typeof EligibilityRoute
   HelpdeskRoute: typeof HelpdeskRoute
   JanashabdamRoute: typeof JanashabdamRouteWithChildren
+  MobileRoute: typeof MobileRoute
   VolunteerRoute: typeof VolunteerRoute
   ApplySchemeIdRoute: typeof ApplySchemeIdRoute
   AuthLoginRoute: typeof AuthLoginRoute
@@ -534,6 +547,13 @@ declare module '@tanstack/react-router' {
       path: '/janashabdam'
       fullPath: '/janashabdam'
       preLoaderRoute: typeof JanashabdamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mobile': {
+      id: '/mobile'
+      path: '/mobile'
+      fullPath: '/mobile'
+      preLoaderRoute: typeof MobileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/volunteer': {
@@ -834,6 +854,7 @@ const rootRouteChildren: RootRouteChildren = {
   EligibilityRoute: EligibilityRoute,
   HelpdeskRoute: HelpdeskRoute,
   JanashabdamRoute: JanashabdamRouteWithChildren,
+  MobileRoute: MobileRoute,
   VolunteerRoute: VolunteerRoute,
   ApplySchemeIdRoute: ApplySchemeIdRoute,
   AuthLoginRoute: AuthLoginRoute,

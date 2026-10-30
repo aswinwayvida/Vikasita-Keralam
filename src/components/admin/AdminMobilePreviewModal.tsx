@@ -422,8 +422,9 @@ const INITIAL_MOCK_HELP_REQUESTS: HelpdeskRequest[] = [
 ];
 
 interface AdminMobilePreviewModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
+  standalone?: boolean;
 }
 
 type MobileSchemeFieldKey =
@@ -2437,7 +2438,7 @@ const metricsByPeriod: Record<
   },
 };
 
-export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewModalProps) {
+export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, standalone = false }: AdminMobilePreviewModalProps) {
   const { lang } = useLang();
   const [userRole, setUserRole] = useState<"state_admin" | "party_worker">("state_admin");
   const [isGuest, setIsGuest] = useState<boolean>(false);
@@ -7478,73 +7479,11 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
       : successStatusMeta.labelEn;
   const successStatusLabelMl = successStatusMeta.labelMl;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-2 sm:p-4 overflow-y-auto [ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden animate-in fade-in duration-200">
-      {/* Modal Shell Container */}
-      <div className="relative flex flex-col items-center max-w-full my-auto">
-        {/* Top Control Bar for Modal */}
-        <div className="flex items-center justify-between w-full max-w-[390px] mb-3 px-2 text-white">
-          <div className="flex items-center gap-2">
-            <Smartphone className="h-5 w-5 text-emerald-400" />
-            <span className="text-xs font-bold tracking-wide">
-              {lang === "ml" ? "മൊബൈൽ ആപ്പ് പ്രിവ്യൂ" : "Mobile App Preview"}
-            </span>
-          </div>
+  if (!isOpen && !standalone) return null;
 
-          <div className="flex items-center gap-2">
-            {/* Device Model Switcher */}
-            <div className="flex bg-white/10 rounded-lg p-0.5 text-[10px] font-semibold">
-              <button
-                onClick={() => setDeviceModel("iphone")}
-                className={`px-2 py-0.5 rounded-md transition-all ${
-                  deviceModel === "iphone" ? "bg-white text-black font-bold" : "text-white/80 hover:text-white"
-                }`}
-              >
-                iOS
-              </button>
-              <button
-                onClick={() => setDeviceModel("android")}
-                className={`px-2 py-0.5 rounded-md transition-all ${
-                  deviceModel === "android" ? "bg-white text-black font-bold" : "text-white/80 hover:text-white"
-                }`}
-              >
-                Android
-              </button>
-            </div>
-
-            {/* Close Modal Button */}
-            <button
-              onClick={onClose}
-              className="rounded-full bg-white/20 p-1.5 text-white hover:bg-white/30 transition-all"
-              aria-label="Close Preview"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* Smartphone Device Shell Frame */}
-        <div className={`relative w-[360px] sm:w-[390px] h-[700px] sm:h-[760px] bg-card rounded-[44px] border-[10px] ${
-          deviceModel === "iphone" ? "border-slate-800 shadow-2xl" : "border-slate-900 rounded-[36px] shadow-2xl"
-        } flex flex-col overflow-hidden text-foreground select-none`}>
-
-          {/* Notch / Dynamic Island */}
-          {deviceModel === "iphone" && (
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 h-5 w-28 bg-black rounded-b-xl z-50 flex items-center justify-center">
-              <div className="h-2 w-2 rounded-full bg-slate-900 mr-2" />
-              <div className="h-1.5 w-1.5 rounded-full bg-blue-900" />
-            </div>
-          )}
-
-          {/* Phone Status Bar */}
-          <div className="flex items-center justify-between px-6 pt-2.5 pb-1 text-[11px] font-bold text-foreground/80 bg-background/90 shrink-0 z-40">
-            <span>9:41</span>
-            <div className="flex items-center gap-1.5 text-foreground/70">
-              <Signal className="h-3 w-3" />
-              <Wifi className="h-3 w-3" />
-              <Battery className="h-3.5 w-3.5" />
-            </div>
-          </div>
+  const appContent = (
+    <div className={standalone ? "w-full min-h-screen bg-card text-foreground flex flex-col relative select-none" : "flex flex-col flex-1 h-full w-full overflow-hidden relative"}>
+        {/* Mobile App Standard Header or Application Details / Document Verification Back Header */}
 
           {/* Mobile App Standard Header or Application Details / Document Verification Back Header */}
           {!isGuestEligibilityOpen && !isMobileAuthOpen && mobileSubPage !== "category_schemes" && (
@@ -7727,39 +7666,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                       >
                         <Search className="h-3.5 w-3.5 stroke-[2.2]" />
                       </button>
-                    ) : mobileSubPage === "scheme_details" || (activeTab === "create" && createFlowStep === "scheme_details") ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setUploadedDocuments({
-                            land_record: "Land_Tax_Receipt_2026.pdf",
-                            aadhaar: "Aadhaar_Card_Copy.pdf",
-                            ration_card: "Ration_Card_Copy.pdf",
-                            bank_passbook: "Bank_Passbook_Copy.pdf",
-                            income_certificate: "Income_Certificate_2026.pdf",
-                          });
-                          setPmKisanDetails({
-                            ownsCultivableLand: "Yes",
-                            landOwner: "Self / Applicant",
-                            landRecorded: "Yes",
-                            landAcquiredDate: "2018-04-12",
-                            landAcquisitionNotSure: false,
-                          });
-                          setBankAccountNumber("987654321098");
-                          setBankIfscCode("SBIN0000892");
-                          setFinalAnnualFamilyIncome("Below ₹50,000");
-                          setFinalResidenceArea("Rural");
-                          setDeclarationAccepted(true);
-                          setUploadErrors({});
-                          setFinalDetailsInvalidFields([]);
-                        }}
-                        className="flex items-center gap-1 text-[10px] font-extrabold text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/80 dark:text-amber-300 dark:hover:bg-amber-900/80 px-2 py-0.5 rounded-lg border border-amber-300/80 dark:border-amber-700/60 transition-colors shadow-2xs shrink-0 cursor-pointer"
-                        title={lang === "ml" ? "ഡെമോ വിവരങ്ങൾ പൂരിപ്പിക്കുക" : "Prefill Demo Data"}
-                      >
-                        <Sparkles className="h-3 w-3 text-amber-600 dark:text-amber-400 stroke-[2.2] animate-pulse" />
-                        <span>{lang === "ml" ? "ഡെമോ ഫിൽ" : "Prefill Data"}</span>
-                      </button>
-                    ) : (
+                    ) : mobileSubPage === "scheme_details" || (activeTab === "create" && createFlowStep === "scheme_details") ? null : (
                       <>
                         <button
                           type="button"
@@ -7782,7 +7689,7 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
                                 onClick={() => {
                                   setAppInfoMenuOpen(false);
                                   if (appDetailView === "documents") {
-                                    handleVerifyDocuments();
+                                    setAppDetailView("documents");
                                   } else {
                                     handleEditApplicationDetails();
                                   }
@@ -15904,9 +15811,6 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
               </div>
             </div>
           )}
-        </div>
-
-      </div>
 
       {/* Support Request Modal */}
       {showSupportModal && (
@@ -16183,6 +16087,84 @@ export function AdminMobilePreviewModal({ isOpen, onClose }: AdminMobilePreviewM
           </div>
         </div>
       )}
+    </div>
+  );
+
+  if (standalone) {
+    return appContent;
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-2 sm:p-4 overflow-y-auto [ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden animate-in fade-in duration-200">
+      {/* Modal Shell Container */}
+      <div className="relative flex flex-col items-center max-w-full my-auto">
+        {/* Top Control Bar for Modal */}
+        <div className="flex items-center justify-between w-full max-w-[390px] mb-3 px-2 text-white">
+          <div className="flex items-center gap-2">
+            <Smartphone className="h-5 w-5 text-emerald-400" />
+            <span className="text-xs font-bold tracking-wide">
+              {lang === "ml" ? "മൊബൈൽ ആപ്പ് പ്രിവ്യൂ" : "Mobile App Preview"}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Device Model Switcher */}
+            <div className="flex bg-white/10 rounded-lg p-0.5 text-[10px] font-semibold">
+              <button
+                onClick={() => setDeviceModel("iphone")}
+                className={`px-2 py-0.5 rounded-md transition-all ${
+                  deviceModel === "iphone" ? "bg-white text-black font-bold" : "text-white/80 hover:text-white"
+                }`}
+              >
+                iOS
+              </button>
+              <button
+                onClick={() => setDeviceModel("android")}
+                className={`px-2 py-0.5 rounded-md transition-all ${
+                  deviceModel === "android" ? "bg-white text-black font-bold" : "text-white/80 hover:text-white"
+                }`}
+              >
+                Android
+              </button>
+            </div>
+
+            {/* Close Modal Button */}
+            <button
+              onClick={onClose}
+              className="rounded-full bg-white/20 p-1.5 text-white hover:bg-white/30 transition-all cursor-pointer"
+              aria-label="Close Preview"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Smartphone Device Shell Frame */}
+        <div className={`relative w-[360px] sm:w-[390px] h-[700px] sm:h-[760px] bg-card rounded-[44px] border-[10px] ${
+          deviceModel === "iphone" ? "border-slate-800 shadow-2xl" : "border-slate-900 rounded-[36px] shadow-2xl"
+        } flex flex-col overflow-hidden text-foreground select-none`}>
+
+          {/* Notch / Dynamic Island */}
+          {deviceModel === "iphone" && (
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 h-5 w-28 bg-black rounded-b-xl z-50 flex items-center justify-center">
+              <div className="h-2 w-2 rounded-full bg-slate-900 mr-2" />
+              <div className="h-1.5 w-1.5 rounded-full bg-blue-900" />
+            </div>
+          )}
+
+          {/* Phone Status Bar */}
+          <div className="flex items-center justify-between px-6 pt-2.5 pb-1 text-[11px] font-bold text-foreground/80 bg-background/90 shrink-0 z-40">
+            <span>9:41</span>
+            <div className="flex items-center gap-1.5 text-foreground/70">
+              <Signal className="h-3 w-3" />
+              <Wifi className="h-3 w-3" />
+              <Battery className="h-3.5 w-3.5" />
+            </div>
+          </div>
+
+          {appContent}
+        </div>
+      </div>
     </div>
   );
 }
