@@ -7295,7 +7295,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         </div>
 
         {/* Popular Schemes Section */}
-        <div className="pt-1 pb-0.5 border-b border-slate-100 dark:border-slate-800/80 space-y-1">
+        <div className="pt-1 pb-2.5 border-b border-slate-100 dark:border-slate-800/80 space-y-1">
           <div className="flex items-center justify-between px-1">
             <div className="flex items-center gap-1.5">
               <span className="flex h-5 w-5 items-center justify-center rounded-md bg-orange-500/10 dark:bg-orange-950/30 text-[#ff5500] shrink-0">
@@ -7317,7 +7317,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             </button>
           </div>
 
-          <div className="flex overflow-x-auto gap-2 pb-0 pt-0.5 px-0.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory">
+          <div className="flex overflow-x-auto gap-1.5 pb-0 pt-0.5 px-0.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory">
             {popularSchemesList.map((item) => (
               <button
                 key={item.id}
@@ -7325,7 +7325,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 onClick={() => {
                   openMobileSchemeDetailsView(item.nameEn);
                 }}
-                className="snap-start shrink-0 w-[calc(25%-6px)] min-w-[72px] flex flex-col items-center text-center p-0 group cursor-pointer transition-all duration-200 hover:scale-105"
+                className="snap-start shrink-0 w-[calc((100%-24px)/4.5)] min-w-[68px] flex flex-col items-center text-center p-0 group cursor-pointer transition-all duration-200 hover:scale-105"
               >
                 <div className="relative h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-white dark:bg-slate-900 border-2 border-slate-200/90 dark:border-slate-700/80 shadow-2xs group-hover:border-orange-500 dark:group-hover:border-orange-400 group-hover:shadow-xs flex items-center justify-center p-0.5 transition-all overflow-hidden">
                   <img
@@ -7343,7 +7343,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         </div>
 
         {/* Check Eligibility Banner Section (Replacing static button with rich promotional card) */}
-        <div className="px-1">
+        <div className="pt-2 px-1">
           <div
             onClick={() => {
               setIsGuestEligibilityOpen(true);
@@ -11074,7 +11074,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     </div>
 
                     {/* Popular Schemes - Single Row with Horizontal Scrolling */}
-                    <div className="pt-1 pb-0.5">
+                    <div className="pt-1 pb-2.5 border-b border-slate-100 dark:border-slate-800/80">
                       <div className="flex items-center justify-between mb-1 px-1">
                         <div className="flex items-center gap-1.5">
                           <span className="flex h-5 w-5 items-center justify-center rounded-md bg-orange-500/10 dark:bg-orange-950/30 text-[#ff5500] shrink-0">
@@ -11105,7 +11105,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         </button>
                       </div>
 
-                      {/* Single Row Horizontal Scrolling with decreased gap */}
+                      {/* Single Row Horizontal Scrolling with decreased gap showing 4.5 schemes */}
                       <div className="flex overflow-x-auto gap-1.5 pb-0 pt-0.5 px-0.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory">
                         {popularSchemesList.map((item) => (
                           <button
@@ -11114,7 +11114,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             onClick={() => {
                               openMobileSchemeDetailsView(item.nameEn);
                             }}
-                            className="snap-start shrink-0 min-w-[72px] flex flex-col items-center text-center p-0 group cursor-pointer transition-all duration-200 hover:scale-105"
+                            className="snap-start shrink-0 w-[calc((100%-24px)/4.5)] min-w-[68px] flex flex-col items-center text-center p-0 group cursor-pointer transition-all duration-200 hover:scale-105"
                           >
                             <div className="relative h-14 w-14 rounded-full bg-white dark:bg-slate-900 border-2 border-slate-200/90 dark:border-slate-700/80 shadow-2xs group-hover:border-orange-500 dark:group-hover:border-orange-400 group-hover:shadow-xs flex items-center justify-center p-0.5 transition-all overflow-hidden">
                               <img
@@ -11132,7 +11132,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     </div>
 
                     {/* Single Full Width Banner */}
-                    <div className="pt-0.5 pb-0.5">
+                    <div className="pt-2 pb-0.5">
                       <div className="w-full p-2.5 rounded-2xl bg-gradient-to-r from-orange-50 via-white to-orange-100 dark:from-slate-800 dark:via-slate-800 dark:to-slate-900 border border-orange-200/90 dark:border-slate-700 shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[92px]">
                         <div className="flex items-center justify-between gap-2 z-10">
                           <div className="space-y-0.5 min-w-0 flex-1">
@@ -14463,9 +14463,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               type="button"
               onClick={() => setIsSahAiOpen(true)}
               className="absolute bottom-5 right-3.5 z-40 flex items-center gap-1.5 p-1.5 pl-2.5 bg-gradient-to-r from-amber-500 via-orange-500 to-orange-600 text-white rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer border border-white/40 group"
-              title="Help / SahAI Assistant"
+              title="SahAI Assistant"
             >
-              <span className="text-[10.5px] font-black tracking-tight">{lang === "ml" ? "സഹായം" : "Help"}</span>
+              <span className="text-[10.5px] font-black tracking-tight">SahAI</span>
               <div className="h-7 w-7 rounded-full overflow-hidden border border-white/80 bg-white/20 shrink-0">
                 <img src={sahaiAvatar} alt="SahAI Assistant" className="h-full w-full object-cover" />
               </div>
