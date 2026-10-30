@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Link } from "@tanstack/react-router";
-import { X, Smartphone, Wifi, Battery, Signal, ChevronRight, ChevronLeft, ArrowLeft, Users, HeartHandshake, Database, Layers, Sparkles, MessageSquare, Clock3, UserCheck, LayoutDashboard, Sliders, Calendar, FileText, XCircle, CheckCircle2, Hourglass, MapPin, Trophy, AlertTriangle, Activity, Globe, Map, Network, Store, ShieldCheck, ChevronDown, Filter, Search, SearchCheck, Megaphone, CalendarDays, BellRing, Phone, RotateCcw, GraduationCap, Sprout, LayoutGrid, MoreVertical, AlertCircle, Star, Zap, Headphones, Edit, Upload, FileCheck, Loader2, SearchX, RefreshCw, Check, Lock, User, Eye, Send, Info, Plus, Inbox, FileSearch, HandCoins, UserRound, Paperclip, ClipboardList, Headset, Copy, Pencil, Download, FileImage, ExternalLink, CloudUpload, Home, Building2, Flame, HelpCircle, UserPlus, Trash2 } from "lucide-react";
+import { X, Smartphone, Wifi, Battery, Signal, ChevronRight, ChevronLeft, ArrowLeft, ArrowRight, Users, HeartHandshake, Database, Layers, Sparkles, MessageSquare, Clock3, UserCheck, LayoutDashboard, Sliders, Calendar, FileText, XCircle, CheckCircle2, Hourglass, MapPin, Trophy, AlertTriangle, Activity, Globe, Map as MapIcon, Network, Store, ShieldCheck, ChevronDown, Filter, Search, SearchCheck, Megaphone, CalendarDays, BellRing, Phone, RotateCcw, GraduationCap, Sprout, LayoutGrid, MoreVertical, AlertCircle, Star, Zap, Headphones, Edit, Upload, FileCheck, Loader2, SearchX, RefreshCw, Check, Lock, User, Eye, Send, Info, Plus, Inbox, FileSearch, HandCoins, UserRound, Paperclip, ClipboardList, Headset, Copy, Pencil, Download, FileImage, ExternalLink, CloudUpload, Home, Building2, Flame, HelpCircle, UserPlus, Trash2 } from "lucide-react";
 import { useLang } from "@/i18n/LanguageProvider";
 import officialLotus from "@/assets/bjp-official-lotus.png";
 import vikasitaMlLogo from "@/assets/logo-vikasita-ml-official.png";
@@ -1597,21 +1597,60 @@ const getMobileCategoryIconSrc = (category: string) => {
 };
 
 const getEligibleSchemeLogo = (scheme: MobileEligibleScheme) => {
-  const title = (scheme.titleEn || "").toLowerCase();
+  const title = (scheme.titleEn || (scheme as any).nameEn || "").toLowerCase();
   if (/(kisan|pm-kisan|pm kisan)/.test(title)) {
-    return pmKisanLogoImg;
+    return "/images/popular-schemes/pm_kisan.png";
   }
-  if (/(farmer|agri|crop)/.test(title)) {
-    return "/images/category-icons/cat_agriculture.png";
+  if (/(ayushman|pm-jay|pmjay|health)/.test(title)) {
+    return "/images/popular-schemes/pm_jay.png";
   }
-  if (/(karunya|arogya|health|hospital)/.test(title)) {
-    return "/images/category-icons/cat_health.png";
+  if (/(ujjwala|lpg|gas)/.test(title)) {
+    return "/images/popular-schemes/pm_ujjwala.png";
   }
-  if (/(life mission|housing|home|shelter|awas)/.test(title)) {
-    return "/images/category-icons/cat_housing.png";
+  if (/(awas|housing|pmay|shelter)/.test(title)) {
+    return "/images/popular-schemes/pm_awas.png";
   }
-  if (/(pension|vayoshreshtha)/.test(title)) {
-    return "/images/category-icons/cat_banking.png";
+  if (/(atal pension|apy)/.test(title)) {
+    return "/images/popular-schemes/atal_pension.png";
+  }
+  if (/(jan dhan|pmjdy)/.test(title)) {
+    return "/images/popular-schemes/pm_jan_dhan.png";
+  }
+  if (/(surya ghar|solar|bijli)/.test(title)) {
+    return "/images/popular-schemes/pm_surya_ghar.png";
+  }
+  if (/(vishwakarma|artisan)/.test(title)) {
+    return "/images/popular-schemes/pm_vishwakarma.png";
+  }
+  if (/(matru vandana|pmmvy)/.test(title)) {
+    return "/images/popular-schemes/pm_matru_vandana.png";
+  }
+  if (/(jeevan jyoti|pmjjby)/.test(title)) {
+    return "/images/popular-schemes/pmjjby.png";
+  }
+  if (/(suraksha bima|pmsby)/.test(title)) {
+    return "/images/popular-schemes/pmsby.png";
+  }
+  if (/(mudra)/.test(title)) {
+    return "/images/popular-schemes/mudra.png";
+  }
+  if (/(digital india)/.test(title)) {
+    return "/images/popular-schemes/digital_india.png";
+  }
+  if (/(kaushal|pmkvy)/.test(title)) {
+    return "/images/popular-schemes/pmkvy.png";
+  }
+  if (/(smart city|smart cities)/.test(title)) {
+    return "/images/popular-schemes/smart_city.png";
+  }
+  if (/(stand up india)/.test(title)) {
+    return "/images/popular-schemes/stand_up_india.png";
+  }
+  if (/(poshan|mid day meal)/.test(title)) {
+    return "/images/popular-schemes/mid_day_meal.png";
+  }
+  if (/(khelo india)/.test(title)) {
+    return "/images/popular-schemes/khelo_india.png";
   }
   return getMobileCategoryIconSrc(scheme.categoryEn);
 };
@@ -2456,6 +2495,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const { lang } = useLang();
   const [userRole, setUserRole] = useState<"state_admin" | "party_worker">("state_admin");
   const [isGuest, setIsGuest] = useState<boolean>(false);
+  const [isLogoutSplashScreen, setIsLogoutSplashScreen] = useState<boolean>(false);
   const [isSahAiOpen, setIsSahAiOpen] = useState<boolean>(false);
   const [isGuestEligibilityOpen, setIsGuestEligibilityOpen] = useState<boolean>(false);
   const [isMobileAuthOpen, setIsMobileAuthOpen] = useState<boolean>(false);
@@ -2483,12 +2523,17 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   }, []);
 
   const handleLogout = () => {
+    setIsLogoutSplashScreen(true);
     setIsGuest(true);
     setIsGuestEligibilityOpen(false);
     setActiveTab("overview");
     setMobileSubPage("none");
     setShowFilterMenu(false);
     setShowMoreMenu(false);
+    setIsSideMenuOpen(false);
+    setTimeout(() => {
+      setIsLogoutSplashScreen(false);
+    }, 3000);
   };
 
   const handleLogin = () => {
@@ -2539,6 +2584,55 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [createAadhaar, setCreateAadhaar] = useState<string>("");
   const [createCountryCode, setCreateCountryCode] = useState<string>("+91");
   const [createPhone, setCreatePhone] = useState<string>("");
+
+  const [selectedExistingApplicantName, setSelectedExistingApplicantName] = useState<string>("");
+
+  const existingApplicantsList = useMemo(() => {
+    const cleanPhone = createPhone.replace(/\D/g, "");
+    if (cleanPhone.length < 10) return [];
+    
+    const matches: Array<{ name: string; phone: string; district: string; mandalam: string }> = [];
+    
+    helpdeskRequests.forEach(r => {
+      if ((r.contactMobile || r.mobile || "").replace(/\D/g, "") === cleanPhone) {
+        matches.push({
+          name: r.contactName || r.applicant || "Aswin Sasi",
+          phone: cleanPhone,
+          district: r.location?.districtName || r.district || "Kollam",
+          mandalam: r.location?.mandalamName || "Chavara",
+        });
+      }
+    });
+
+    const uniqueMap = new Map<string, { name: string; phone: string; district: string; mandalam: string }>();
+    matches.forEach(m => uniqueMap.set(m.name, m));
+
+    if (cleanPhone === "9633360166") {
+      if (!uniqueMap.has("Aswin Sasi")) uniqueMap.set("Aswin Sasi", { name: "Aswin Sasi", phone: "9633360166", district: "Kollam", mandalam: "Chavara" });
+      if (!uniqueMap.has("Anjana Sasi")) uniqueMap.set("Anjana Sasi", { name: "Anjana Sasi", phone: "9633360166", district: "Kollam", mandalam: "Chavara" });
+      if (!uniqueMap.has("Sasidharan P")) uniqueMap.set("Sasidharan P", { name: "Sasidharan P", phone: "9633360166", district: "Kollam", mandalam: "Chavara" });
+    } else if (cleanPhone === "9847123456") {
+      if (!uniqueMap.has("Anand V S")) uniqueMap.set("Anand V S", { name: "Anand V S", phone: "9847123456", district: "Thiruvananthapuram", mandalam: "Kazhakoottam" });
+      if (!uniqueMap.has("Sunitha Anand")) uniqueMap.set("Sunitha Anand", { name: "Sunitha Anand", phone: "9847123456", district: "Thiruvananthapuram", mandalam: "Kazhakoottam" });
+    } else if (cleanPhone === "9447112233") {
+      if (!uniqueMap.has("Deepa Lakshmi")) uniqueMap.set("Deepa Lakshmi", { name: "Deepa Lakshmi", phone: "9447112233", district: "Thiruvananthapuram", mandalam: "Vattiyoorkavu" });
+    } else if (cleanPhone === "9744556677") {
+      if (!uniqueMap.has("Suresh Kumar")) uniqueMap.set("Suresh Kumar", { name: "Suresh Kumar", phone: "9744556677", district: "Thiruvananthapuram", mandalam: "Nemom" });
+    } else if (cleanPhone === "9846001122") {
+      if (!uniqueMap.has("Rajesh Nair")) uniqueMap.set("Rajesh Nair", { name: "Rajesh Nair", phone: "9846001122", district: "Kollam", mandalam: "Kollam" });
+    } else if (cleanPhone === "9947889900") {
+      if (!uniqueMap.has("Smitha Pillai")) uniqueMap.set("Smitha Pillai", { name: "Smitha Pillai", phone: "9947889900", district: "Alappuzha", mandalam: "Cherthala" });
+    }
+
+    return Array.from(uniqueMap.values());
+  }, [createPhone, helpdeskRequests]);
+
+  const activeSelectedApplicant = useMemo(() => {
+    if (!existingApplicantsList.length) return null;
+    return existingApplicantsList.find(a => a.name === selectedExistingApplicantName) || existingApplicantsList[0];
+  }, [existingApplicantsList, selectedExistingApplicantName]);
+
+  const existingApplicant = activeSelectedApplicant;
   const [createOtpSectionStep, setCreateOtpSectionStep] = useState<"input" | "otp_sent" | "verified">("input");
   const [createProfileStep, setCreateProfileStep] = useState<1 | 2>(1);
   const [createOtpCode, setCreateOtpCode] = useState<string>("");
@@ -2592,7 +2686,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               <button
                 type="button"
                 onClick={() => setIsDatePickerOpen(true)}
-                className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0"
+                className="font-display text-[14px] font-extrabold text-[#0a0f1d] dark:text-slate-100 tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0"
                 title="Click to Open Date Picker"
               >
                 {getFormattedPeriodDisplay()}
@@ -2795,20 +2889,20 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   <span className="flex h-5 w-5 items-center justify-center rounded-md bg-orange-500/10 dark:bg-orange-950/30 text-[#ff5500] shrink-0">
                     <Megaphone className="h-3.5 w-3.5 stroke-[2.2]" />
                   </span>
-                  <h3 className="font-display text-xs sm:text-[13px] font-black text-[#0a0f1d] dark:text-white tracking-tight truncate">
+                  <h3 className="font-display text-[14px] font-extrabold text-[#0a0f1d] dark:text-slate-100 tracking-tight truncate">
                     {lang === "ml" ? "പരിപാടികളും അറിയിപ്പുകളും" : "Events & Announcements"}
                   </h3>
                 </div>
                 <button
                   type="button"
                   onClick={() => setMobileSubPage("events_announcements")}
-                  className="flex items-center gap-1 text-[11px] font-bold text-[#ff5500] hover:text-orange-600 transition-colors cursor-pointer shrink-0"
+                  className="flex items-center gap-1 text-[13px] font-bold text-orange-600 dark:text-orange-400 hover:underline transition-colors cursor-pointer shrink-0"
                 >
-                  <span>{lang === "ml" ? "എല്ലാം" : "View All"}</span>
-                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#ff3b30] text-white text-[9.5px] font-black shadow-2xs">
+                  <span>{lang === "ml" ? "എല്ലാം കാണുക" : "See All"}</span>
+                  <span className="flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-[#ff3b30] text-white text-[9.5px] font-black shadow-2xs">
                     3
                   </span>
-                  <ChevronRight className="h-3.5 w-3.5 text-[#ff5500] stroke-[2.5]" />
+                  <ChevronRight className="h-3.5 w-3.5 stroke-[2.2]" />
                 </button>
               </div>
 
@@ -3056,20 +3150,20 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   <span className="flex h-5 w-5 items-center justify-center rounded-md bg-orange-500/10 dark:bg-orange-950/30 text-[#ff5500] shrink-0">
                     <AlertCircle className="h-3.5 w-3.5 stroke-[2.2]" />
                   </span>
-                  <h3 className="font-display text-xs sm:text-[13px] font-black text-[#0a0f1d] dark:text-white tracking-tight truncate">
+                  <h3 className="font-display text-[14px] font-extrabold text-[#0a0f1d] dark:text-slate-100 tracking-tight truncate">
                     {lang === "ml" ? "ശ്രദ്ധ ആവശ്യമുണ്ട്" : "Needs attention"}
                   </h3>
                 </div>
                 <button
                   type="button"
                   onClick={() => setActiveTab("applications")}
-                  className="flex items-center gap-1 text-[11px] font-bold text-[#ff5500] hover:text-orange-600 transition-colors cursor-pointer shrink-0"
+                  className="flex items-center gap-1 text-[13px] font-bold text-orange-600 dark:text-orange-400 hover:underline transition-colors cursor-pointer shrink-0"
                 >
-                  <span>{lang === "ml" ? "എല്ലാം" : "View All"}</span>
+                  <span>{lang === "ml" ? "എല്ലാം കാണുക" : "See All"}</span>
                   <span className="flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-[#ff3b30] text-white text-[9.5px] font-black shadow-2xs">
                     {2 + followUpCollectionRecords.length}
                   </span>
-                  <ChevronRight className="h-3.5 w-3.5 text-[#ff5500] stroke-[2.5]" />
+                  <ChevronRight className="h-3.5 w-3.5 stroke-[2.2]" />
                 </button>
               </div>
 
@@ -3101,8 +3195,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0 ml-2">
-                      <div className="flex items-center gap-1.5 rounded-full bg-[#fff4ed] dark:bg-orange-950/50 border border-[#ffebd9] dark:border-orange-900/50 px-2.5 py-1 text-[10px] font-bold text-[#f95700] dark:text-orange-400">
-                        <Calendar className="h-3.5 w-3.5 text-[#f95700]" />
+                      <div className="flex items-center gap-1.5 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 px-2.5 py-1 text-[10px] font-bold text-red-600 dark:text-red-400">
+                        <Calendar className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
                         <span className="whitespace-nowrap">
                           {record.followUpDate
                             ? formatCollectionDate(record.followUpDate)
@@ -3119,7 +3213,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 {/* Item 1: Meera Nair */}
                 <div
                   onClick={() => setActiveTab("applications")}
-                  className="rounded-2xl bg-white dark:bg-slate-900 border border-orange-100 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
+                  className="rounded-2xl bg-white dark:bg-slate-900 border border-red-100 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
                 >
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
                     <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FFF1E6] dark:bg-orange-950/60 text-[#B54708] dark:text-orange-300 font-extrabold text-xs shrink-0 shadow-2xs">
@@ -3136,8 +3230,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0 ml-2">
-                    <div className="flex items-center gap-1.5 rounded-full bg-[#fff4ed] dark:bg-orange-950/50 border border-[#ffebd9] dark:border-orange-900/50 px-2.5 py-1 text-[10px] font-bold text-[#f95700] dark:text-orange-400">
-                      <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[#f95700] text-white text-[8.5px] font-black leading-none">!</span>
+                    <div className="flex items-center gap-1.5 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 px-2.5 py-1 text-[10px] font-bold text-red-600 dark:text-red-400">
+                      <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-600 text-white text-[8.5px] font-black leading-none">!</span>
                       <span>{lang === "ml" ? "1 രേഖ വിട്ടുപോയി" : "1 document missing"}</span>
                     </div>
                     <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform" />
@@ -3147,7 +3241,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 {/* Item 2: Ravi Kumar */}
                 <div
                   onClick={() => setActiveTab("applications")}
-                  className="rounded-2xl bg-white dark:bg-slate-900 border border-orange-100 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
+                  className="rounded-2xl bg-white dark:bg-slate-900 border border-red-100 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
                 >
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
                     <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FFF1E6] dark:bg-orange-950/60 text-[#B54708] dark:text-orange-300 font-extrabold text-xs shrink-0 shadow-2xs">
@@ -3164,8 +3258,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0 ml-2">
-                    <div className="flex items-center gap-1.5 rounded-full bg-[#fff4ed] dark:bg-orange-950/50 border border-[#ffebd9] dark:border-orange-900/50 px-2.5 py-1 text-[10px] font-bold text-[#f95700] dark:text-orange-400">
-                      <Calendar className="h-3.5 w-3.5 text-[#f95700]" />
+                    <div className="flex items-center gap-1.5 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 px-2.5 py-1 text-[10px] font-bold text-red-600 dark:text-red-400">
+                      <Calendar className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
                       <span>{lang === "ml" ? "ഇന്ന് തുടർനടപടി" : "Follow-up due today"}</span>
                     </div>
                     <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform" />
@@ -7284,10 +7378,10 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
       return (
         <div className="space-y-2 animate-in fade-in duration-200 pb-8 pt-1">
-          {/* Scheme Cards matching design */}
-          <div className="space-y-2.5">
+          {/* Scheme Cards matching compact spacing design */}
+          <div className="space-y-1.5">
             {filteredSchemes.length === 0 ? (
-              <div className="text-center py-8 text-slate-400 text-xs font-medium">
+              <div className="text-center py-6 text-slate-400 text-xs font-medium">
                 {lang === "ml" ? "പദ്ധതികളൊന്നും കണ്ടെത്തിയില്ല" : "No schemes found matching search"}
               </div>
             ) : (
@@ -7297,21 +7391,25 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   onClick={() => {
                     openMobileSchemeDetailsView(scheme.nameEn);
                   }}
-                  className="group bg-white dark:bg-slate-900 rounded-2xl py-2.5 px-3.5 border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:shadow-xs hover:border-orange-300 dark:hover:border-slate-700 transition-all cursor-pointer flex items-center gap-3 active:scale-[0.995]"
+                  className="group bg-white dark:bg-slate-900 rounded-xl py-1.5 px-2.5 border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:shadow-xs hover:border-orange-300 dark:hover:border-slate-700 transition-all cursor-pointer flex items-center gap-2 active:scale-[0.995]"
                 >
-                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-orange-50 to-amber-50/50 dark:from-slate-800 dark:to-slate-800/80 border border-orange-100/80 dark:border-slate-700 flex items-center justify-center p-1 shrink-0 overflow-hidden shadow-2xs">
-                    <img src={scheme.logo} alt={scheme.nameEn} className="h-full w-full object-contain rounded-lg" />
+                  <div className="h-8.5 w-8.5 rounded-lg bg-orange-50/60 dark:bg-slate-800 border border-orange-100/70 dark:border-slate-700 flex items-center justify-center p-0.5 shrink-0 overflow-hidden shadow-2xs">
+                    <img
+                      src={getEligibleSchemeLogo({ titleEn: scheme.nameEn, categoryEn: scheme.categoryEn } as any)}
+                      alt={scheme.nameEn}
+                      className="h-full w-full object-contain"
+                    />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h5 className="text-xs font-extrabold text-slate-900 dark:text-slate-100 leading-snug tracking-tight">
+                    <h5 className="text-[11.5px] font-bold text-slate-900 dark:text-slate-100 leading-tight tracking-tight truncate">
                       {lang === "ml" ? scheme.nameMl : scheme.nameEn}
                     </h5>
-                    <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                    <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 truncate">
                       {lang === "ml" ? scheme.ministryMl : scheme.ministryEn}
                     </p>
                   </div>
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-50 dark:bg-slate-800/80 text-slate-400 group-hover:bg-orange-50 group-hover:text-orange-600 dark:group-hover:bg-orange-950/40 dark:group-hover:text-orange-400 shrink-0 transition-colors">
-                    <ChevronRight className="h-4 w-4 stroke-[2.2]" />
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-50 dark:bg-slate-800/80 text-slate-400 group-hover:bg-orange-50 group-hover:text-orange-600 dark:group-hover:bg-orange-950/40 dark:group-hover:text-orange-400 shrink-0 transition-colors">
+                    <ChevronRight className="h-3.5 w-3.5 stroke-[2.2]" />
                   </div>
                 </div>
               ))
@@ -7524,7 +7622,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         {/* Mobile App Standard Header or Application Details / Document Verification Back Header */}
 
           {/* Mobile App Standard Header or Application Details / Document Verification Back Header */}
-          {!isGuestEligibilityOpen && !isMobileAuthOpen && mobileSubPage !== "category_schemes" && (
+          {!isLogoutSplashScreen && !isGuestEligibilityOpen && !isMobileAuthOpen && mobileSubPage !== "category_schemes" && (
             mobileSubPage === "guest_popular_schemes" || mobileSubPage === "guest_schemes" || mobileSubPage === "app_detail" || mobileSubPage === "scheme_details" || (activeTab === "create" && (createFlowStep === "scheme_details" || createFlowStep === "eligible_schemes" || createFlowStep === "form")) ? (
               <header className="relative z-40 w-full bg-[#FFFDF9] dark:bg-slate-900 border-b border-slate-200/60 dark:border-slate-800/60 shadow-2xs">
                 {mobileSubPage === "guest_popular_schemes" || mobileSubPage === "guest_schemes" ? (
@@ -7823,7 +7921,15 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   } space-y-2.5`
             }`}
           >
-            {isMobileAuthOpen ? (
+            {isLogoutSplashScreen ? (
+              <div className="absolute inset-0 z-50 h-full w-full bg-[#f96302] flex flex-col items-center justify-center overflow-hidden animate-in fade-in duration-300">
+                <img
+                  src="/images/splash_screen_logout.png"
+                  alt="Vikasita Keralam Splash Screen"
+                  className="h-full w-full object-cover object-center"
+                />
+              </div>
+            ) : isMobileAuthOpen ? (
               <MobileAuthFlow
                 onBack={closeMobileAuthToGuest}
                 onAuthenticated={completeMobileAuth}
@@ -8351,8 +8457,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             </div>
 
                             <div className="flex items-center gap-2 shrink-0 ml-2">
-                              <div className="flex items-center gap-1.5 rounded-full bg-[#fff4ed] dark:bg-orange-950/50 border border-[#ffebd9] dark:border-orange-900/50 px-2.5 py-1 text-[10px] font-bold text-[#f95700] dark:text-orange-400">
-                                <Calendar className="h-3.5 w-3.5 text-[#f95700]" />
+                              <div className="flex items-center gap-1.5 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 px-2.5 py-1 text-[10px] font-bold text-red-600 dark:text-red-400">
+                                <Calendar className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
                                 <span className="whitespace-nowrap">
                                   {record.followUpDate
                                     ? formatCollectionDate(record.followUpDate)
@@ -8369,7 +8475,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         {/* Item 1: Meera Nair */}
                         <div
                           onClick={() => setActiveTab("applications")}
-                          className="rounded-2xl bg-white dark:bg-slate-900 border border-orange-100 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
+                          className="rounded-2xl bg-white dark:bg-slate-900 border border-red-100 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
                         >
                           <div className="flex items-center gap-2.5 min-w-0 flex-1">
                             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FFF1E6] dark:bg-orange-950/60 text-[#B54708] dark:text-orange-300 font-extrabold text-xs shrink-0 shadow-2xs">
@@ -8386,8 +8492,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           </div>
 
                           <div className="flex items-center gap-2 shrink-0 ml-2">
-                            <div className="flex items-center gap-1.5 rounded-full bg-[#fff4ed] dark:bg-orange-950/50 border border-[#ffebd9] dark:border-orange-900/50 px-2.5 py-1 text-[10px] font-bold text-[#f95700] dark:text-orange-400">
-                              <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[#f95700] text-white text-[8.5px] font-black leading-none">!</span>
+                            <div className="flex items-center gap-1.5 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 px-2.5 py-1 text-[10px] font-bold text-red-600 dark:text-red-400">
+                              <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-600 text-white text-[8.5px] font-black leading-none">!</span>
                               <span>{lang === "ml" ? "1 രേഖ വിട്ടുപോയി" : "1 document missing"}</span>
                             </div>
                             <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform" />
@@ -8397,7 +8503,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         {/* Item 2: Ravi Kumar */}
                         <div
                           onClick={() => setActiveTab("applications")}
-                          className="rounded-2xl bg-white dark:bg-slate-900 border border-orange-100 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
+                          className="rounded-2xl bg-white dark:bg-slate-900 border border-red-100 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
                         >
                           <div className="flex items-center gap-2.5 min-w-0 flex-1">
                             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FFF1E6] dark:bg-orange-950/60 text-[#B54708] dark:text-orange-300 font-extrabold text-xs shrink-0 shadow-2xs">
@@ -8414,8 +8520,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           </div>
 
                           <div className="flex items-center gap-2 shrink-0 ml-2">
-                            <div className="flex items-center gap-1.5 rounded-full bg-[#fff4ed] dark:bg-orange-950/50 border border-[#ffebd9] dark:border-orange-900/50 px-2.5 py-1 text-[10px] font-bold text-[#f95700] dark:text-orange-400">
-                              <Calendar className="h-3.5 w-3.5 text-[#f95700]" />
+                            <div className="flex items-center gap-1.5 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 px-2.5 py-1 text-[10px] font-bold text-red-600 dark:text-red-400">
+                              <Calendar className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
                               <span>{lang === "ml" ? "ഇന്ന് തുടർനടപടി" : "Follow-up due today"}</span>
                             </div>
                             <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform" />
@@ -8434,7 +8540,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       const hierarchyTabs = [
                         { id: "districts", label: lang === "ml" ? "ജില്ലകൾ" : "Districts", icon: MapPin },
                         { id: "mandalam", label: lang === "ml" ? "മണ്ഡലം" : "Mandalam", icon: Network },
-                        { id: "area", label: lang === "ml" ? "മേഖല" : "Area", icon: Map },
+                        { id: "area", label: lang === "ml" ? "മേഖല" : "Area", icon: MapIcon },
                         { id: "booths", label: lang === "ml" ? "ബൂത്തുകൾ" : "Booths", icon: Store },
                         { id: "workers", label: lang === "ml" ? "ഉപയോക്താക്കൾ" : "Users", icon: Users },
                       ];
@@ -11069,10 +11175,10 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           <div
                             key={scheme.titleEn}
                             onClick={() => openMobileSchemeDetailsView(scheme.titleEn, "category_schemes")}
-                            className="p-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:shadow-md transition-all cursor-pointer flex items-center justify-between gap-2.5 group"
+                            className="py-1.5 px-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:shadow-md transition-all cursor-pointer flex items-center justify-between gap-2 group"
                           >
-                            <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                              <div className="h-10 w-10 rounded-2xl bg-orange-50/70 dark:bg-slate-800 border border-orange-100/80 dark:border-slate-700 flex items-center justify-center shrink-0 p-1 shadow-2xs overflow-hidden">
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <div className="h-8.5 w-8.5 rounded-lg bg-orange-50/70 dark:bg-slate-800 border border-orange-100/80 dark:border-slate-700 flex items-center justify-center shrink-0 p-0.5 shadow-2xs overflow-hidden">
                                 <img
                                   src={getEligibleSchemeLogo({
                                     titleEn: scheme.titleEn,
@@ -11083,15 +11189,15 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 />
                               </div>
                               <div className="min-w-0 flex-1">
-                                <h4 className="font-extrabold text-[12.5px] text-[#0a0f1d] dark:text-white leading-snug group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors truncate">
+                                <h4 className="font-extrabold text-[11.5px] text-[#0a0f1d] dark:text-white leading-tight group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors truncate">
                                   {lang === "ml" ? scheme.titleMl : scheme.titleEn}
                                 </h4>
-                                <p className="text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                                <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 truncate">
                                   {lang === "ml" ? scheme.deptMl : scheme.deptEn}
                                 </p>
                               </div>
                             </div>
-                            <div className="h-6.5 w-6.5 rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center shrink-0 text-slate-400 group-hover:text-orange-600 group-hover:bg-orange-50 dark:group-hover:bg-slate-700 transition-all">
+                            <div className="h-6 w-6 rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center shrink-0 text-slate-400 group-hover:text-orange-600 group-hover:bg-orange-50 dark:group-hover:bg-slate-700 transition-all">
                               <ChevronRight className="h-3.5 w-3.5 stroke-[2.2]" />
                             </div>
                           </div>
@@ -11126,12 +11232,12 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
                     {/* Popular Schemes - Single Row with Horizontal Scrolling */}
                     <div className="pt-1 pb-0.5">
-                      <div className="flex items-center justify-between mb-1 px-1">
+                      <div className="flex items-center justify-between mb-1.5 px-1">
                         <div className="flex items-center gap-1.5">
                           <span className="flex h-5 w-5 items-center justify-center rounded-md bg-orange-500/10 dark:bg-orange-950/30 text-[#ff5500] shrink-0">
                             <Sparkles className="h-3.5 w-3.5 stroke-[2.2]" />
                           </span>
-                          <h4 className="text-sm font-black text-slate-900 dark:text-slate-100 tracking-tight">
+                          <h4 className="text-[14px] font-extrabold text-[#0a0f1d] dark:text-slate-100 tracking-tight">
                             {lang === "ml" ? "ജനപ്രിയ പദ്ധതികൾ" : "Popular Schemes"}
                           </h4>
                         </div>
@@ -11151,8 +11257,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           }}
                           className="inline-flex items-center gap-0.5 text-[13px] font-bold text-orange-600 dark:text-orange-400 hover:underline cursor-pointer"
                         >
-                          <span>{lang === "ml" ? "എല്ലാം കാണുക" : "View All"}</span>
-                          <ChevronRight className="h-3.5 w-3.5" />
+                          <span>{lang === "ml" ? "എല്ലാം കാണുക" : "See All"}</span>
+                          <ChevronRight className="h-3.5 w-3.5 stroke-[2.2]" />
                         </button>
                       </div>
 
@@ -11222,13 +11328,17 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       </div>
                     </div>
 
-                    {/* 4 Schemes List with See All / View All button */}
-                    <div className="pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-2.5">
-                      <div className="flex items-center justify-between px-1">
-                        <h4 className="text-sm font-black text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-1.5">
-                          <Flame className="h-4 w-4 text-orange-500 fill-orange-500 shrink-0" />
-                          <span>{lang === "ml" ? "പ്രധാന ക്ഷേമപദ്ധതികൾ" : "Featured Schemes"}</span>
-                        </h4>
+                    {/* 5 Featured Schemes List with See All button */}
+                    <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800/80 space-y-2">
+                      <div className="flex items-center justify-between px-1 mb-2">
+                        <div className="flex items-center gap-1.5">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-md bg-orange-500/10 dark:bg-orange-950/30 text-orange-500 shrink-0">
+                            <Flame className="h-3.5 w-3.5 fill-orange-500 stroke-[2.2]" />
+                          </span>
+                          <h4 className="text-[14px] font-extrabold text-[#0a0f1d] dark:text-slate-100 tracking-tight">
+                            {lang === "ml" ? "പ്രധാന ക്ഷേമപദ്ധതികൾ" : "Featured Schemes"}
+                          </h4>
+                        </div>
                         <button
                           type="button"
                           onClick={() => {
@@ -11246,100 +11356,128 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           className="inline-flex items-center gap-0.5 text-[13px] font-bold text-orange-600 dark:text-orange-400 hover:underline cursor-pointer"
                         >
                           <span>{lang === "ml" ? "എല്ലാം കാണുക" : "See All"}</span>
-                          <ChevronRight className="h-3.5 w-3.5" />
+                          <ChevronRight className="h-3.5 w-3.5 stroke-[2.2]" />
                         </button>
                       </div>
 
-                      {/* Card 1 */}
-                      <div className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:shadow-md transition-all">
-                        <div className="flex items-center gap-3">
+                      {/* Card 1: PM Kisan */}
+                      <div className="py-2 px-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:shadow-xs transition-all flex items-center gap-2.5">
+                        <div className="h-9.5 w-9.5 rounded-xl bg-orange-50/70 dark:bg-slate-800 border border-orange-100 dark:border-slate-700 flex items-center justify-center shrink-0 p-0.5 shadow-2xs overflow-hidden">
                           <img
-                            src="/pm-kisan-logo.png"
+                            src="/images/popular-schemes/pm_kisan.png"
                             alt="PM Kisan"
-                            className="h-10 w-12 shrink-0 object-contain p-0.5 rounded-lg bg-orange-50 dark:bg-slate-800 border border-orange-100 dark:border-slate-700"
+                            className="h-full w-full object-contain"
                           />
-                          <div className="min-w-0 flex-1">
-                            <button
-                              type="button"
-                              onClick={() => openMobileSchemeDetailsView("PM Kisan Samman Nidhi")}
-                              className="text-left font-black text-[14px] text-[#0a0f1d] dark:text-white leading-snug hover:text-orange-600 dark:hover:text-orange-400 cursor-pointer transition-colors block w-full"
-                            >
-                              {lang === "ml" ? "പി.എം. കിസാൻ സമ്മാൻ നിധി" : "PM Kisan Samman Nidhi"}
-                            </button>
-                            <p className="text-[11.5px] text-slate-500 dark:text-slate-400 mt-0.5 font-semibold truncate">
-                              {lang === "ml" ? "കൃഷി വികസന മന്ത്രാലയം" : "Ministry of Agriculture & Farmers Welfare"}
-                            </p>
-                          </div>
                         </div>
+                        <div className="min-w-0 flex-1">
+                          <button
+                            type="button"
+                            onClick={() => openMobileSchemeDetailsView("PM Kisan Samman Nidhi")}
+                            className="text-left font-extrabold text-xs sm:text-[13px] text-[#0a0f1d] dark:text-white leading-snug hover:text-orange-600 dark:hover:text-orange-400 cursor-pointer transition-colors block w-full truncate"
+                          >
+                            {lang === "ml" ? "പി.എം. കിസാൻ സമ്മാൻ നിധി" : "PM Kisan Samman Nidhi"}
+                          </button>
+                          <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium truncate">
+                            {lang === "ml" ? "കാർഷിക കർഷകക്ഷേമ മന്ത്രാലയം" : "Ministry of Agriculture & Farmers Welfare"}
+                          </p>
+                        </div>
+                        <ChevronRight className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                       </div>
 
-                      {/* Card 2 */}
-                      <div className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:shadow-md transition-all">
-                        <div className="flex items-center gap-3">
+                      {/* Card 2: Ayushman Bharat */}
+                      <div className="py-2 px-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:shadow-xs transition-all flex items-center gap-2.5">
+                        <div className="h-9.5 w-9.5 rounded-xl bg-purple-50/70 dark:bg-slate-800 border border-purple-100 dark:border-slate-700 flex items-center justify-center shrink-0 p-0.5 shadow-2xs overflow-hidden">
                           <img
                             src="/images/popular-schemes/pm_jay.png"
                             alt="Ayushman Bharat"
-                            className="h-10 w-12 shrink-0 object-contain p-0.5 rounded-lg bg-purple-50 dark:bg-slate-800 border border-purple-100 dark:border-slate-700"
+                            className="h-full w-full object-contain"
                           />
-                          <div className="min-w-0 flex-1">
-                            <button
-                              type="button"
-                              onClick={() => openMobileSchemeDetailsView("Ayushman Bharat - PM-JAY Health Protection")}
-                              className="text-left font-black text-[14px] text-[#0a0f1d] dark:text-white leading-snug hover:text-orange-600 dark:hover:text-orange-400 cursor-pointer transition-colors block w-full"
-                            >
-                              {lang === "ml" ? "ആയുഷ്മാൻ ഭാരത് - പിഎം-ജയ്" : "Ayushman Bharat - PM-JAY"}
-                            </button>
-                            <p className="text-[11.5px] text-slate-500 dark:text-slate-400 mt-0.5 font-semibold truncate">
-                              {lang === "ml" ? "ദേശീയ ആരോഗ്യ അതോറിറ്റി" : "National Health Authority, Govt of India"}
-                            </p>
-                          </div>
                         </div>
+                        <div className="min-w-0 flex-1">
+                          <button
+                            type="button"
+                            onClick={() => openMobileSchemeDetailsView("Ayushman Bharat - PM-JAY Health Protection")}
+                            className="text-left font-extrabold text-xs sm:text-[13px] text-[#0a0f1d] dark:text-white leading-snug hover:text-orange-600 dark:hover:text-orange-400 cursor-pointer transition-colors block w-full truncate"
+                          >
+                            {lang === "ml" ? "ആയുഷ്മാൻ ഭാരത് - പി.എം-ജെ.എ.വൈ" : "Ayushman Bharat - PM-JAY"}
+                          </button>
+                          <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium truncate">
+                            {lang === "ml" ? "ദേശീയ ആരോഗ്യ അതോറിറ്റി" : "National Health Authority, Govt of India"}
+                          </p>
+                        </div>
+                        <ChevronRight className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                       </div>
 
-                      {/* Card 3 */}
-                      <div className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:shadow-md transition-all">
-                        <div className="flex items-center gap-3">
+                      {/* Card 3: PM Vishwakarma */}
+                      <div className="py-2 px-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:shadow-xs transition-all flex items-center gap-2.5">
+                        <div className="h-9.5 w-9.5 rounded-xl bg-amber-50/70 dark:bg-slate-800 border border-amber-100 dark:border-slate-700 flex items-center justify-center shrink-0 p-0.5 shadow-2xs overflow-hidden">
                           <img
-                            src="/images/popular-schemes/pmkvy.png"
+                            src="/images/popular-schemes/pm_vishwakarma.png"
                             alt="PM Vishwakarma"
-                            className="h-10 w-12 shrink-0 object-contain p-0.5 rounded-lg bg-amber-50 dark:bg-slate-800 border border-amber-100 dark:border-slate-700"
+                            className="h-full w-full object-contain"
                           />
-                          <div className="min-w-0 flex-1">
-                            <button
-                              type="button"
-                              onClick={() => openMobileSchemeDetailsView("PM Vishwakarma Yojana")}
-                              className="text-left font-black text-[14px] text-[#0a0f1d] dark:text-white leading-snug hover:text-orange-600 dark:hover:text-orange-400 cursor-pointer transition-colors block w-full"
-                            >
-                              {lang === "ml" ? "പി.എം. വിശ്വകർമ്മ യോജന" : "PM Vishwakarma Yojana"}
-                            </button>
-                            <p className="text-[11.5px] text-slate-500 dark:text-slate-400 mt-0.5 font-semibold truncate">
-                              {lang === "ml" ? "എം.എസ്.എം.ഇ മന്ത്രാലയം" : "Ministry of MSME, Govt of India"}
-                            </p>
-                          </div>
                         </div>
+                        <div className="min-w-0 flex-1">
+                          <button
+                            type="button"
+                            onClick={() => openMobileSchemeDetailsView("PM Vishwakarma Yojana")}
+                            className="text-left font-extrabold text-xs sm:text-[13px] text-[#0a0f1d] dark:text-white leading-snug hover:text-orange-600 dark:hover:text-orange-400 cursor-pointer transition-colors block w-full truncate"
+                          >
+                            {lang === "ml" ? "പി.എം. വിശ്വകർമ്മ പദ്ധതി" : "PM Vishwakarma Scheme"}
+                          </button>
+                          <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium truncate">
+                            {lang === "ml" ? "എം.എസ്.എം.ഇ മന്ത്രാലയം" : "Ministry of MSME, Govt of India"}
+                          </p>
+                        </div>
+                        <ChevronRight className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                       </div>
 
-                      {/* Card 4 */}
-                      <div className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:shadow-md transition-all">
-                        <div className="flex items-center gap-3">
+                      {/* Card 4: PM Awas Yojana */}
+                      <div className="py-2 px-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:shadow-xs transition-all flex items-center gap-2.5">
+                        <div className="h-9.5 w-9.5 rounded-xl bg-blue-50/70 dark:bg-slate-800 border border-blue-100 dark:border-slate-700 flex items-center justify-center shrink-0 p-0.5 shadow-2xs overflow-hidden">
                           <img
-                            src="/pm-yasasvi-logo.png"
-                            alt="PM YASASVI"
-                            className="h-10 w-12 shrink-0 object-contain p-0.5 rounded-lg bg-blue-50 dark:bg-slate-800 border border-blue-100 dark:border-slate-700"
+                            src="/images/popular-schemes/pm_awas.png"
+                            alt="PM Awas Yojana"
+                            className="h-full w-full object-contain"
                           />
-                          <div className="min-w-0 flex-1">
-                            <button
-                              type="button"
-                              onClick={() => openMobileSchemeDetailsView("PM YASASVI Scholarship")}
-                              className="text-left font-black text-[14px] text-[#0a0f1d] dark:text-white leading-snug hover:text-orange-600 dark:hover:text-orange-400 cursor-pointer transition-colors block w-full"
-                            >
-                              {lang === "ml" ? "പി.എം യശസ്വി സ്കോളർഷിപ്പ്" : "PM YASASVI Scholarship"}
-                            </button>
-                            <p className="text-[11.5px] text-slate-500 dark:text-slate-400 mt-0.5 font-semibold truncate">
-                              {lang === "ml" ? "സാമൂഹിക നീതി മന്ത്രാലയം" : "Ministry of Social Justice & Empowerment"}
-                            </p>
-                          </div>
                         </div>
+                        <div className="min-w-0 flex-1">
+                          <button
+                            type="button"
+                            onClick={() => openMobileSchemeDetailsView("PM Awas Yojana (PMAY)")}
+                            className="text-left font-extrabold text-xs sm:text-[13px] text-[#0a0f1d] dark:text-white leading-snug hover:text-orange-600 dark:hover:text-orange-400 cursor-pointer transition-colors block w-full truncate"
+                          >
+                            {lang === "ml" ? "പി.എം. ആവാസ് യോജന" : "PM Awas Yojana (PMAY)"}
+                          </button>
+                          <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium truncate">
+                            {lang === "ml" ? "ഭവന നഗരകാര്യ മന്ത്രാലയം" : "Ministry of Housing & Urban Affairs"}
+                          </p>
+                        </div>
+                        <ChevronRight className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                      </div>
+
+                      {/* Card 5: PM Surya Ghar */}
+                      <div className="py-2 px-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:shadow-xs transition-all flex items-center gap-2.5">
+                        <div className="h-9.5 w-9.5 rounded-xl bg-emerald-50/70 dark:bg-slate-800 border border-emerald-100 dark:border-slate-700 flex items-center justify-center shrink-0 p-0.5 shadow-2xs overflow-hidden">
+                          <img
+                            src="/images/popular-schemes/pm_surya_ghar.png"
+                            alt="PM Surya Ghar"
+                            className="h-full w-full object-contain"
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <button
+                            type="button"
+                            onClick={() => openMobileSchemeDetailsView("PM Surya Ghar: Muft Bijli Yojana")}
+                            className="text-left font-extrabold text-xs sm:text-[13px] text-[#0a0f1d] dark:text-white leading-snug hover:text-orange-600 dark:hover:text-orange-400 cursor-pointer transition-colors block w-full truncate"
+                          >
+                            {lang === "ml" ? "പി.എം. സൂര്യഘർ സൗജന്യ വൈദ്യുതി യോജന" : "PM Surya Ghar: Muft Bijli Yojana"}
+                          </button>
+                          <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium truncate">
+                            {lang === "ml" ? "പുതിയ പുനരുപയോഗ ഊർജ്ജ മന്ത്രാലയം" : "Ministry of New & Renewable Energy"}
+                          </p>
+                        </div>
+                        <ChevronRight className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                       </div>
                     </div>
                   </div>
@@ -11767,30 +11905,111 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
                             {/* OTP Action State & Fields */}
                             {createOtpSectionStep === "input" && (
-                              <div className="pt-0.5">
-                                <button
-                                  type="button"
-                                  disabled={!createFullName.trim() || createPhone.trim().length < 10 || isSendingOtp}
-                                  onClick={() => {
-                                    setIsSendingOtp(true);
-                                    setOtpError("");
-                                    setTimeout(() => {
-                                      setIsSendingOtp(false);
-                                      setCreateOtpSectionStep("otp_sent");
-                                      setCreateOtpCode("");
-                                    }, 800);
-                                  }}
-                                  className="w-full h-12 px-3 rounded-[12px] bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm active:scale-[0.99] transition-all cursor-pointer flex items-center justify-center"
-                                >
-                                  {isSendingOtp ? (
-                                    <div className="flex items-center gap-2">
-                                      <Loader2 className="h-4 w-4 animate-spin" />
-                                      <span>{lang === "ml" ? "OTP അയക്കുന്നു..." : "Sending OTP..."}</span>
+                              <div className="pt-1 space-y-2">
+                                {createPhone.trim().length === 10 && existingApplicant ? (
+                                  /* Existing Applicant Found Section */
+                                  <div className="space-y-2.5 animate-in fade-in duration-200">
+                                    {/* Existing Applicants Selection Dropdown */}
+                                    {existingApplicantsList.length > 0 && (
+                                      <div>
+                                        <label className="text-[11px] font-bold text-foreground block mb-0.5">
+                                          {lang === "ml" ? "നിലവിലുള്ള അപേക്ഷകനെ തിരഞ്ഞെടുക്കുക:" : "Select Existing Applicant:"}
+                                        </label>
+                                        <select
+                                          value={activeSelectedApplicant?.name || ""}
+                                          onChange={(e) => setSelectedExistingApplicantName(e.target.value)}
+                                          className="w-full text-xs h-9 px-2.5 rounded-lg border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground font-bold cursor-pointer"
+                                        >
+                                          {existingApplicantsList.map((app) => (
+                                            <option key={app.name} value={app.name}>
+                                              {app.name} (+91 {app.phone})
+                                            </option>
+                                          ))}
+                                        </select>
+                                      </div>
+                                    )}
+
+                                    <div className="space-y-2 pt-0.5">
+                                      {/* Primary Option: Continue with [First Name] → */}
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          if (activeSelectedApplicant) {
+                                            setCreateFullName(activeSelectedApplicant.name);
+                                            setCreateOtpSectionStep("verified");
+                                            setCreateProfileStep(2);
+                                          }
+                                        }}
+                                        className="w-full h-9 px-3 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-extrabold text-xs shadow-xs active:scale-[0.99] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                                      >
+                                        <span>
+                                          {lang === "ml"
+                                            ? `${activeSelectedApplicant?.name?.split(" ")[0] || "അപേക്ഷകനു"}മായി തുടരുക →`
+                                            : `Continue with ${activeSelectedApplicant?.name?.split(" ")[0] || "Applicant"} →`}
+                                        </span>
+                                      </button>
+
+                                      {/* Secondary Option: Add Another Applicant */}
+                                      <button
+                                        type="button"
+                                        disabled={isSendingOtp}
+                                        onClick={() => {
+                                          setIsSendingOtp(true);
+                                          setOtpError("");
+                                          setTimeout(() => {
+                                            setIsSendingOtp(false);
+                                            setCreateOtpSectionStep("otp_sent");
+                                            setCreateOtpCode("");
+                                          }, 800);
+                                        }}
+                                        className="w-full h-9 px-2.5 rounded-lg border border-border bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-foreground font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                                      >
+                                        <UserPlus className="h-3.5 w-3.5 text-orange-500" />
+                                        <span>
+                                          {lang === "ml"
+                                            ? "മറ്റൊരു അപേക്ഷകനെ ചേർക്കുക"
+                                            : "Add Another Applicant"}
+                                        </span>
+                                      </button>
                                     </div>
-                                  ) : (
-                                    <span>{lang === "ml" ? "OTP അയക്കുക" : "Send OTP"}</span>
-                                  )}
-                                </button>
+                                  </div>
+                                ) : (
+                                  /* New Applicant / Standard Send OTP Button */
+                                  <div className="space-y-2">
+                                    {createPhone.trim().length === 10 && (
+                                      <div className="flex items-center gap-1.5 px-0.5 py-0.5 animate-in fade-in duration-200">
+                                        <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 stroke-[2.5]" />
+                                        <span className="text-[11.5px] font-extrabold text-emerald-700 dark:text-emerald-400">
+                                          {lang === "ml" ? "പുതിയ അപേക്ഷകൻ" : "New Applicant"}
+                                        </span>
+                                      </div>
+                                    )}
+
+                                    <button
+                                      type="button"
+                                      disabled={!createFullName.trim() || createPhone.trim().length < 10 || isSendingOtp}
+                                      onClick={() => {
+                                        setIsSendingOtp(true);
+                                        setOtpError("");
+                                        setTimeout(() => {
+                                          setIsSendingOtp(false);
+                                          setCreateOtpSectionStep("otp_sent");
+                                          setCreateOtpCode("");
+                                        }, 800);
+                                      }}
+                                      className="w-full h-11 px-3 rounded-[12px] bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs active:scale-[0.99] transition-all cursor-pointer flex items-center justify-center shadow-2xs"
+                                    >
+                                      {isSendingOtp ? (
+                                        <div className="flex items-center gap-2">
+                                          <Loader2 className="h-4 w-4 animate-spin" />
+                                          <span>{lang === "ml" ? "OTP അയക്കുന്നു..." : "Sending OTP..."}</span>
+                                        </div>
+                                      ) : (
+                                        <span>{lang === "ml" ? "OTP അയക്കുക" : "Send OTP"}</span>
+                                      )}
+                                    </button>
+                                  </div>
+                                )}
                               </div>
                             )}
 
@@ -14055,7 +14274,17 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             .map((req, idx) => (
                             <div
                               key={req.reference || idx}
-                              className="bg-card p-2 rounded-xl border border-border shadow-2xs hover:border-orange-200 transition-all space-y-1"
+                              onClick={(e) => {
+                                if ((e.target as HTMLElement).closest(".relative.shrink-0")) return;
+                                setCreateFullName(req.contactName || req.applicant);
+                                setCreatePhone((req.contactMobile || req.mobile || "9633360166").replace(/\*/g, "9"));
+                                setCreateOtpSectionStep("verified");
+                                setCreateProfileStep(1);
+                                setActiveTab("create");
+                                setCreateFlowStep("form");
+                                setOpenHelpdeskMenuIndex(null);
+                              }}
+                              className="bg-card p-2 rounded-xl border border-border shadow-2xs hover:border-orange-200 transition-all space-y-1 cursor-pointer"
                             >
                               {/* Header: Name, Mandalam & District, 3-Dot Action Menu */}
                               <div className="flex items-center justify-between gap-2 border-b border-border/50 pb-1.5">
@@ -14078,7 +14307,10 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 <div className="relative shrink-0">
                                   <button
                                     type="button"
-                                    onClick={() => setOpenHelpdeskMenuIndex(openHelpdeskMenuIndex === idx ? null : idx)}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setOpenHelpdeskMenuIndex(openHelpdeskMenuIndex === idx ? null : idx);
+                                    }}
                                     className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors cursor-pointer"
                                     title={lang === "ml" ? "കൂടുതൽ പ്രവർത്തനങ്ങൾ" : "More options"}
                                   >
@@ -14104,6 +14336,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                         onClick={() => {
                                           setCreateFullName(req.contactName || req.applicant);
                                           setCreatePhone((req.contactMobile || req.mobile).replace(/\*/g, "9"));
+                                          setCreateOtpSectionStep("verified");
+                                          setCreateProfileStep(1);
                                           setActiveTab("create");
                                           setCreateFlowStep("form");
                                           setOpenHelpdeskMenuIndex(null);
@@ -14514,7 +14748,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             )}
 
           {/* Floating SahAI Help Chatbot Button - Guest (public) mode only */}
-          {isGuest && !isGuestEligibilityOpen && !isMobileAuthOpen && (
+          {isGuest && !isLogoutSplashScreen && !isGuestEligibilityOpen && !isMobileAuthOpen && (
             <button
               type="button"
               onClick={() => setIsSahAiOpen(true)}
