@@ -622,7 +622,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
   // RENDER MODAL VIEW
   // ---------------------------------------------------------------------------
   return (
-    <div className="flex flex-col h-full bg-background text-foreground font-sans relative overflow-hidden">
+    <div className="absolute inset-0 flex flex-col h-full bg-[#FFFDF9] dark:bg-slate-900 text-foreground font-sans overflow-hidden z-10">
       {/* --------------------------------------------------------------------- */}
       {/* FIXED HEADER */}
       {/* --------------------------------------------------------------------- */}
