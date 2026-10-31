@@ -626,7 +626,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
       {/* --------------------------------------------------------------------- */}
       {/* FIXED HEADER */}
       {/* --------------------------------------------------------------------- */}
-      <div className="sticky top-0 z-20 bg-[#FFFDF9] dark:bg-slate-900 border-b border-orange-100 dark:border-slate-800 px-3.5 pt-3 pb-2.5 space-y-2">
+      <div className="shrink-0 z-20 bg-[#FFFDF9] dark:bg-slate-900 border-b border-orange-100 dark:border-slate-800 px-3.5 pt-3 pb-2.5 space-y-2">
         <div className="flex items-center justify-between">
           <button
             type="button"
@@ -1513,7 +1513,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
       {/* --------------------------------------------------------------------- */}
       {/* FIXED FOOTER WITH ACTIONS */}
       {/* --------------------------------------------------------------------- */}
-      <div className="sticky bottom-0 z-20 bg-[#FFFDF9] dark:bg-slate-900 border-t border-orange-100 dark:border-slate-800 px-4 py-3 flex items-center justify-between gap-3 shadow-md">
+      <div className="shrink-0 z-20 bg-[#FFFDF9] dark:bg-slate-900 border-t border-orange-100 dark:border-slate-800 px-4 py-3 flex items-center justify-between gap-3 shadow-md">
         {isPreviewMode ? (
           <>
             <button
