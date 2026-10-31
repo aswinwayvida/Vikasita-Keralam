@@ -622,11 +622,11 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
   // RENDER MODAL VIEW
   // ---------------------------------------------------------------------------
   return (
-    <div className="flex flex-col h-full bg-background text-foreground font-sans max-w-md mx-auto relative overflow-hidden shadow-xl border border-border">
+    <div className="flex flex-col h-full bg-background text-foreground font-sans relative overflow-hidden">
       {/* --------------------------------------------------------------------- */}
       {/* FIXED HEADER */}
       {/* --------------------------------------------------------------------- */}
-      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/80 px-4 pt-3 pb-2.5 space-y-2">
+      <div className="sticky top-0 z-20 bg-[#FFFDF9] dark:bg-slate-900 border-b border-orange-100 dark:border-slate-800 px-3.5 pt-3 pb-2.5 space-y-2">
         <div className="flex items-center justify-between">
           <button
             type="button"
@@ -639,57 +639,30 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                 onClose();
               }
             }}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-muted/60 text-foreground hover:bg-muted transition-colors cursor-pointer"
+            className="flex h-7.5 w-7.5 items-center justify-center rounded-full bg-[#FFF7EC] text-[#1B255A] hover:bg-orange-100 dark:bg-slate-800 dark:text-white transition-colors cursor-pointer shadow-2xs"
             title={lang === "ml" ? "തിരികെ പോവുക" : "Go Back"}
           >
-            <ArrowLeft className="h-4 w-4 stroke-[2.5]" />
+            <ArrowLeft className="h-4 w-4 stroke-[2.2]" />
           </button>
 
-          <div className="text-center">
-            <h1 className="text-sm font-black text-foreground tracking-tight">
-              {isPreviewMode
-                ? lang === "ml"
-                  ? "പദ്ധതി പ്രിവ്യൂ"
-                  : "Preview Scheme"
-                : lang === "ml"
-                ? "പുതിയ പദ്ധതി ഉണ്ടാക്കുക"
-                : "Create New Scheme"}
-            </h1>
-            {!isPreviewMode && (
-              <p className="text-[10px] font-extrabold text-[#ff5500]">
-                {lang === "ml"
-                  ? `ഘട്ടം ${currentStep} / 3`
-                  : `Step ${currentStep} of 3 — ${
-                      currentStep === 1
-                        ? "Basic Info"
-                        : currentStep === 2
-                        ? "Benefits & Eligibility"
-                        : "Details & Documents"
-                    }`}
-              </p>
-            )}
-          </div>
+          <h1 className="text-[13.5px] font-extrabold text-[#0F172A] dark:text-white tracking-tight">
+            {isPreviewMode
+              ? lang === "ml"
+                ? "പദ്ധതി പ്രിവ്യൂ"
+                : "Preview Scheme"
+              : lang === "ml"
+              ? "പുതിയ പദ്ധതി ചേർക്കുക"
+              : "Create New Scheme"}
+          </h1>
 
-          <div className="w-8" />
+          {!isPreviewMode ? (
+            <span className="shrink-0 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-[#FFF2E6] dark:bg-orange-950/80 text-[#C2410C] dark:text-orange-300 border border-orange-200/80 dark:border-orange-800/80 shadow-2xs">
+              {lang === "ml" ? `ഘട്ടം ${currentStep} / 3` : `Step ${currentStep} of 3`}
+            </span>
+          ) : (
+            <div className="w-12" />
+          )}
         </div>
-
-        {/* Slim Progress Indicator (3 Steps) */}
-        {!isPreviewMode && (
-          <div className="flex items-center gap-1.5 pt-0.5">
-            {[1, 2, 3].map((stepNum) => (
-              <div
-                key={stepNum}
-                className={`h-1.5 flex-1 rounded-full transition-all ${
-                  stepNum === currentStep
-                    ? "bg-[#ff5500]"
-                    : stepNum < currentStep
-                    ? "bg-orange-300 dark:bg-orange-900"
-                    : "bg-muted"
-                }`}
-              />
-            ))}
-          </div>
-        )}
       </div>
 
       {/* --------------------------------------------------------------------- */}
@@ -918,14 +891,19 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
             {/* STEP 1 OF 3 — BASIC INFORMATION */}
             {/* =================================------------------------------ */}
             {currentStep === 1 && (
-              <div className="rounded-2xl border border-border bg-card p-3.5 shadow-2xs space-y-3.5">
-                <h2 className="text-xs font-black text-foreground uppercase tracking-wider text-[#ff5500] border-b border-border/60 pb-1.5">
-                  {lang === "ml" ? "1. അടിസ്ഥാന വിവരങ്ങൾ" : "1. Basic Information"}
-                </h2>
+              <div className="rounded-2xl border border-orange-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 shadow-2xs space-y-3.5">
+                <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#FF5500] text-white font-black text-[10px] shrink-0">
+                    1
+                  </span>
+                  <h2 className="text-[12px] font-black text-[#1E293B] dark:text-slate-100 tracking-tight">
+                    {lang === "ml" ? "അടിസ്ഥാന വിവരങ്ങൾ" : "Basic Information"}
+                  </h2>
+                </div>
 
                 {/* Scheme Name English */}
                 <div className="space-y-1">
-                  <label className="text-[11px] font-extrabold text-foreground block">
+                  <label className="text-[11px] font-bold text-[#1E293B] dark:text-slate-200 block">
                     {lang === "ml" ? "പദ്ധതിയുടെ പേര് (English) *" : "Scheme Name (English) *"}
                   </label>
                   <input
@@ -933,8 +911,10 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                     value={schemeNameEn}
                     onChange={(e) => setSchemeNameEn(e.target.value)}
                     placeholder="e.g. Karunya Health Scheme"
-                    className={`w-full rounded-xl border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 ${
-                      errors.schemeNameEn ? "border-red-500 ring-1 ring-red-500" : "border-border"
+                    className={`w-full rounded-2xl border px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 transition-colors ${
+                      errors.schemeNameEn
+                        ? "border-red-500 bg-red-50/50 ring-1 ring-red-500"
+                        : "border-orange-200/80 dark:border-slate-700 bg-[#FFFDF7] dark:bg-slate-800/80"
                     }`}
                   />
                   {errors.schemeNameEn && (
@@ -946,7 +926,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
 
                 {/* Scheme Name Malayalam */}
                 <div className="space-y-1">
-                  <label className="text-[11px] font-extrabold text-foreground block">
+                  <label className="text-[11px] font-bold text-[#1E293B] dark:text-slate-200 block">
                     {lang === "ml" ? "പദ്ധതിയുടെ പേര് (മലയാളം) *" : "Scheme Name (Malayalam) *"}
                   </label>
                   <input
@@ -954,8 +934,10 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                     value={schemeNameMl}
                     onChange={(e) => setSchemeNameMl(e.target.value)}
                     placeholder="ഉദാ. കാരുണ്യ ആരോഗ്യ സുരക്ഷ പദ്ധതി"
-                    className={`w-full rounded-xl border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 ${
-                      errors.schemeNameMl ? "border-red-500 ring-1 ring-red-500" : "border-border"
+                    className={`w-full rounded-2xl border px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 transition-colors ${
+                      errors.schemeNameMl
+                        ? "border-red-500 bg-red-50/50 ring-1 ring-red-500"
+                        : "border-orange-200/80 dark:border-slate-700 bg-[#FFFDF7] dark:bg-slate-800/80"
                     }`}
                   />
                   {errors.schemeNameMl && (
@@ -967,7 +949,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
 
                 {/* Short Name / Abbreviation */}
                 <div className="space-y-1">
-                  <label className="text-[11px] font-extrabold text-foreground block">
+                  <label className="text-[11px] font-bold text-[#1E293B] dark:text-slate-200 block">
                     {lang === "ml" ? "ലഘുനാമം / ചുരുക്കെഴുത്ത്" : "Short Name / Abbreviation"}
                   </label>
                   <input
@@ -975,37 +957,37 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                     value={shortName}
                     onChange={(e) => setShortName(e.target.value)}
                     placeholder="e.g. KASP / PM-KISAN"
-                    className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
+                    className="w-full rounded-2xl border border-orange-200/80 dark:border-slate-700 bg-[#FFFDF7] dark:bg-slate-800/80 px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
                   />
                 </div>
 
                 {/* Official Scheme Logo Upload */}
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-extrabold text-foreground block">
+                  <label className="text-[11px] font-bold text-[#1E293B] dark:text-slate-200 block">
                     {lang === "ml" ? "ഔദ്യോഗിക സ്കീം ലോഗോ" : "Official Scheme Logo"}
                   </label>
                   {logoUrl ? (
-                    <div className="flex items-center gap-3 p-2 rounded-xl border border-border bg-muted/40">
-                      <img src={logoUrl} alt="Logo" className="h-12 w-12 rounded-lg object-contain bg-background border border-border p-1" />
+                    <div className="flex items-center gap-3 p-2 rounded-2xl border border-orange-200/80 dark:border-slate-700 bg-[#FFFDF7] dark:bg-slate-800/80">
+                      <img src={logoUrl} alt="Logo" className="h-12 w-12 rounded-xl object-contain bg-white dark:bg-slate-900 border border-orange-100 p-1" />
                       <div className="flex items-center gap-2">
-                        <label className="px-2.5 py-1 rounded-lg bg-orange-100 text-[#ff5500] text-[11px] font-bold cursor-pointer hover:bg-orange-200 transition-colors">
+                        <label className="px-3 py-1 rounded-xl bg-[#FFF2E6] text-[#FF5500] text-[11px] font-extrabold cursor-pointer hover:bg-orange-200 transition-colors">
                           Replace
                           <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
                         </label>
                         <button
                           type="button"
                           onClick={() => setLogoUrl(null)}
-                          className="px-2.5 py-1 rounded-lg bg-red-100 text-red-600 text-[11px] font-bold hover:bg-red-200 transition-colors cursor-pointer"
+                          className="px-3 py-1 rounded-xl bg-red-50 text-red-600 text-[11px] font-extrabold hover:bg-red-100 transition-colors cursor-pointer"
                         >
                           Remove
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-dashed border-orange-300 bg-orange-50/40 dark:bg-orange-950/20 text-[#ff5500] cursor-pointer hover:bg-orange-100/50 transition-colors">
-                      <Upload className="h-5 w-5 mb-1" />
+                    <label className="flex flex-col items-center justify-center p-3.5 rounded-2xl border border-dashed border-orange-300 bg-[#FFFBF5] dark:bg-orange-950/20 text-[#FF5500] cursor-pointer hover:bg-orange-100/50 transition-colors">
+                      <Upload className="h-5 w-5 mb-1 stroke-[2.2]" />
                       <span className="text-xs font-extrabold">Upload Scheme Logo</span>
-                      <span className="text-[10px] text-muted-foreground font-medium">PNG, JPG or SVG (Max 2MB)</span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">PNG, JPG or SVG (Max 2MB)</span>
                       <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
                     </label>
                   )}
@@ -1013,13 +995,13 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
 
                 {/* Category Dropdown */}
                 <div className="space-y-1">
-                  <label className="text-[11px] font-extrabold text-foreground block">
+                  <label className="text-[11px] font-bold text-[#1E293B] dark:text-slate-200 block">
                     {lang === "ml" ? "വിഭാഗം *" : "Category *"}
                   </label>
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer"
+                    className="w-full rounded-2xl border border-orange-200/80 dark:border-slate-700 bg-[#FFFDF7] dark:bg-slate-800/80 px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer"
                   >
                     {categoryOptions.map((cat) => (
                       <option key={cat.en} value={cat.en}>
@@ -1031,13 +1013,13 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
 
                 {/* Department Dropdown */}
                 <div className="space-y-1">
-                  <label className="text-[11px] font-extrabold text-foreground block">
+                  <label className="text-[11px] font-bold text-[#1E293B] dark:text-slate-200 block">
                     {lang === "ml" ? "മന്ത്രാലയം / വകുപ്പ് *" : "Ministry / Department *"}
                   </label>
                   <select
                     value={department}
                     onChange={(e) => setDepartment(e.target.value)}
-                    className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer"
+                    className="w-full rounded-2xl border border-orange-200/80 dark:border-slate-700 bg-[#FFFDF7] dark:bg-slate-800/80 px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer"
                   >
                     {departmentOptions.map((dept) => (
                       <option key={dept} value={dept}>{dept}</option>
@@ -1049,14 +1031,14 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                       value={customDepartment}
                       onChange={(e) => setDepartmentCustom(e.target.value)}
                       placeholder="Enter custom department name..."
-                      className="w-full mt-1.5 rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
+                      className="w-full mt-1.5 rounded-2xl border border-orange-200/80 dark:border-slate-700 bg-[#FFFDF7] dark:bg-slate-800/80 px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
                     />
                   )}
                 </div>
 
                 {/* About the Scheme */}
                 <div className="space-y-1">
-                  <label className="text-[11px] font-extrabold text-foreground block">
+                  <label className="text-[11px] font-bold text-[#1E293B] dark:text-slate-200 block">
                     {lang === "ml" ? "പദ്ധതിയെക്കുറിച്ച് *" : "About the Scheme *"}
                   </label>
                   <textarea
@@ -1064,8 +1046,10 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                     value={aboutScheme}
                     onChange={(e) => setAboutScheme(e.target.value)}
                     placeholder="Enter detailed objective and background of the scheme..."
-                    className={`w-full rounded-xl border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none ${
-                      errors.aboutScheme ? "border-red-500 ring-1 ring-red-500" : "border-border"
+                    className={`w-full rounded-2xl border px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none transition-colors ${
+                      errors.aboutScheme
+                        ? "border-red-500 bg-red-50/50 ring-1 ring-red-500"
+                        : "border-orange-200/80 dark:border-slate-700 bg-[#FFFDF7] dark:bg-slate-800/80"
                     }`}
                   />
                   {errors.aboutScheme && (
@@ -1097,11 +1081,15 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
             {currentStep === 2 && (
               <div className="space-y-4">
                 {/* SECTION 1: BENEFITS */}
-                <div className="rounded-2xl border border-border bg-card p-3.5 shadow-2xs space-y-3">
-                  <h2 className="text-xs font-black text-foreground uppercase tracking-wider text-[#ff5500] border-b border-border/60 pb-1.5 flex items-center gap-1.5">
-                    <DollarSign className="h-4 w-4" />
-                    {lang === "ml" ? "2A. പദ്ധതി ആനുകൂല്യങ്ങൾ" : "2A. Scheme Benefits"}
-                  </h2>
+                <div className="rounded-2xl border border-orange-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 shadow-2xs space-y-3">
+                  <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#FF5500] text-white font-black text-[10px] shrink-0">
+                      2
+                    </span>
+                    <h2 className="text-[12px] font-black text-[#1E293B] dark:text-slate-100 tracking-tight">
+                      {lang === "ml" ? "പദ്ധതി ആനുകൂല്യങ്ങൾ" : "Scheme Benefits"}
+                    </h2>
+                  </div>
 
                   {/* Benefit Types Multi Select */}
                   <div className="space-y-1.5">
@@ -1402,11 +1390,16 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
             {/* STEP 3 OF 3 — DETAILS & DOCUMENTS (CUSTOM FIELDS) */}
             {/* =================================------------------------------ */}
             {currentStep === 3 && (
-              <div className="rounded-2xl border border-border bg-card p-3.5 shadow-2xs space-y-3.5">
-                <div className="flex items-center justify-between border-b border-border/60 pb-1.5">
-                  <h2 className="text-xs font-black text-foreground uppercase tracking-wider text-[#ff5500]">
-                    {lang === "ml" ? "3. ഫീൽഡുകളും രേഖകളും" : "3. Custom Fields & Documents"}
-                  </h2>
+              <div className="rounded-2xl border border-orange-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 shadow-2xs space-y-3.5">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#FF5500] text-white font-black text-[10px] shrink-0">
+                      3
+                    </span>
+                    <h2 className="text-[12px] font-black text-[#1E293B] dark:text-slate-100 tracking-tight">
+                      {lang === "ml" ? "ഫീൽഡുകളും രേഖകളും" : "Custom Fields & Documents"}
+                    </h2>
+                  </div>
 
                   {/* Add Field Button */}
                   <div className="relative group">
@@ -1520,20 +1513,20 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
       {/* --------------------------------------------------------------------- */}
       {/* FIXED FOOTER WITH ACTIONS */}
       {/* --------------------------------------------------------------------- */}
-      <div className="sticky bottom-0 z-20 bg-background/95 backdrop-blur-md border-t border-border px-4 py-3 flex items-center justify-between gap-3">
+      <div className="sticky bottom-0 z-20 bg-[#FFFDF9] dark:bg-slate-900 border-t border-orange-100 dark:border-slate-800 px-4 py-3 flex items-center justify-between gap-3 shadow-md">
         {isPreviewMode ? (
           <>
             <button
               type="button"
               onClick={() => setIsPreviewMode(false)}
-              className="flex-1 py-2.5 rounded-xl border border-border bg-background hover:bg-muted text-foreground font-extrabold text-xs transition-colors cursor-pointer"
+              className="flex-1 py-2.5 rounded-2xl border border-orange-200/80 bg-white hover:bg-orange-50/50 text-[#1E293B] font-extrabold text-xs transition-colors cursor-pointer dark:bg-slate-800 dark:text-white dark:border-slate-700"
             >
               {lang === "ml" ? "എഡിറ്റ് ക്രമീകരണങ്ങളിലേക്ക് മടങ്ങുക" : "Back to Edit"}
             </button>
             <button
               type="button"
               onClick={handlePublishScheme}
-              className="flex-1 py-2.5 rounded-xl bg-[#ff5500] hover:bg-orange-600 text-white font-extrabold text-xs shadow-2xs transition-colors cursor-pointer"
+              className="flex-1 py-2.5 rounded-2xl bg-[#FF5500] hover:bg-[#E64D00] text-white font-extrabold text-xs shadow-xs transition-colors cursor-pointer"
             >
               {lang === "ml" ? "പദ്ധതി പബ്ലിഷ് ചെയ്യുക" : "Publish Scheme"}
             </button>
@@ -1543,7 +1536,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-3.5 py-2.5 rounded-xl border border-border bg-background hover:bg-muted text-muted-foreground font-bold text-xs transition-colors cursor-pointer"
+              className="px-4 py-2.5 rounded-2xl border border-orange-200/80 bg-white hover:bg-orange-50/50 text-[#1E293B] font-extrabold text-xs transition-colors cursor-pointer dark:bg-slate-800 dark:text-white dark:border-slate-700"
             >
               {lang === "ml" ? "ഡ്രാഫ്റ്റ് സേവ് ചെയ്യുക" : "Save Draft"}
             </button>
@@ -1552,7 +1545,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
               <button
                 type="button"
                 onClick={currentStep === 1 ? handleContinueFromStep1 : handleContinueFromStep2}
-                className="flex-1 py-2.5 rounded-xl bg-[#ff5500] hover:bg-orange-600 text-white font-extrabold text-xs shadow-2xs transition-colors cursor-pointer"
+                className="flex-1 py-2.5 rounded-2xl bg-[#FF5500] hover:bg-[#E64D00] text-white font-extrabold text-xs shadow-xs transition-colors cursor-pointer"
               >
                 {lang === "ml" ? "തുടരുക →" : "Continue →"}
               </button>
@@ -1560,7 +1553,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
               <button
                 type="button"
                 onClick={handleOpenPreview}
-                className="flex-1 py-2.5 rounded-xl bg-[#ff5500] hover:bg-orange-600 text-white font-extrabold text-xs shadow-2xs transition-colors cursor-pointer"
+                className="flex-1 py-2.5 rounded-2xl bg-[#FF5500] hover:bg-[#E64D00] text-white font-extrabold text-xs shadow-xs transition-colors cursor-pointer"
               >
                 {lang === "ml" ? "സ്കീം പ്രിവ്യൂ കാണുക" : "Preview Scheme"}
               </button>
