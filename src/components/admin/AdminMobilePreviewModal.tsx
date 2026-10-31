@@ -15755,141 +15755,132 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             </div>
           )}
 
-          {/* Create Scheme Modal Sheet */}
-          {isCreateSchemeModalOpen && (
-            <div
-              className="absolute inset-0 z-[80] flex items-end bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 rounded-[36px]"
-              onClick={() => setIsCreateSchemeModalOpen(false)}
-            >
-              <div
-                className="w-full h-[85%] rounded-t-3xl border-t border-amber-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 pb-6 shadow-2xl animate-in slide-in-from-bottom duration-300 flex flex-col justify-between"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="space-y-3 overflow-y-auto pr-1">
-                  {/* Header */}
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-100 dark:bg-orange-950/80 text-[#ff5500]">
-                        <Layers className="h-5 w-5 stroke-[2.2]" />
-                      </div>
-                      <div>
-                        <h3 className="font-extrabold text-sm text-slate-900 dark:text-white leading-tight">
-                          {lang === "ml" ? "പുതിയ പദ്ധതി ചേർക്കുക" : "Create New Scheme"}
-                        </h3>
-                        <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-medium">
-                          {lang === "ml" ? "സംസ്ഥാന ലെവൽ ക്ഷേമപദ്ധതി വിവരങ്ങൾ" : "State level welfare scheme details"}
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setIsCreateSchemeModalOpen(false)}
-                      className="p-1 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-                    >
-                      <X className="h-5 w-5" />
-                    </button>
+          {/* Create Scheme Subpage View (or Modal Sheet fallback) */}
+          {(mobileSubPage === "create_scheme" || isCreateSchemeModalOpen) && (
+            <div className="space-y-3 pt-0.5 animate-in fade-in duration-200">
+              {/* Top Navigation Bar with Back Button */}
+              <div className="flex items-center justify-between border-b border-border/80 pb-2 px-0.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileSubPage("none");
+                    setIsCreateSchemeModalOpen(false);
+                  }}
+                  className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#ff5500] hover:text-orange-600 cursor-pointer shrink-0"
+                >
+                  <ArrowLeft className="h-4 w-4 stroke-[2.5]" />
+                  <span>{lang === "ml" ? "മടങ്ങുക" : "Back"}</span>
+                </button>
+                <div className="flex items-center gap-2">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-orange-100 dark:bg-orange-950/80 text-[#ff5500]">
+                    <Layers className="h-4 w-4 stroke-[2.2]" />
                   </div>
+                  <h3 className="font-extrabold text-xs text-foreground">
+                    {lang === "ml" ? "പുതിയ പദ്ധതി ചേർക്കുക" : "Create New Scheme"}
+                  </h3>
+                </div>
+              </div>
 
-                  {/* Form */}
-                  <div className="space-y-3 pt-1 text-xs">
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-800 dark:text-slate-200 mb-1">
-                        {lang === "ml" ? "പദ്ധതിയുടെ പേര് (English) *" : "Scheme Name (English) *"}
-                      </label>
-                      <input
-                        type="text"
-                        value={newSchemeNameEn}
-                        onChange={(e) => setNewSchemeNameEn(e.target.value)}
-                        placeholder="e.g. PM Micro Credit Assistance"
-                        className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      />
-                    </div>
+              {/* Form Container */}
+              <div className="rounded-2xl border border-border/80 bg-card p-3.5 shadow-2xs space-y-3 text-xs">
+                <div>
+                  <label className="block text-[11px] font-bold text-foreground mb-1">
+                    {lang === "ml" ? "പദ്ധതിയുടെ പേര് (English) *" : "Scheme Name (English) *"}
+                  </label>
+                  <input
+                    type="text"
+                    value={newSchemeNameEn}
+                    onChange={(e) => setNewSchemeNameEn(e.target.value)}
+                    placeholder="e.g. PM Micro Credit Assistance"
+                    className="w-full p-2.5 rounded-xl border border-border bg-background text-foreground text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  />
+                </div>
 
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-800 dark:text-slate-200 mb-1">
-                        {lang === "ml" ? "പദ്ധതിയുടെ പേര് (മലയാളം) *" : "Scheme Name (Malayalam) *"}
-                      </label>
-                      <input
-                        type="text"
-                        value={newSchemeNameMl}
-                        onChange={(e) => setNewSchemeNameMl(e.target.value)}
-                        placeholder="ഉദാ: പി.എം മൈക്രോ ക്രഡിറ്റ് പദ്ധതി"
-                        className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      />
-                    </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-foreground mb-1">
+                    {lang === "ml" ? "പദ്ധതിയുടെ പേര് (മലയാളം) *" : "Scheme Name (Malayalam) *"}
+                  </label>
+                  <input
+                    type="text"
+                    value={newSchemeNameMl}
+                    onChange={(e) => setNewSchemeNameMl(e.target.value)}
+                    placeholder="ഉദാ: പി.എം മൈക്രോ ക്രഡിറ്റ് പദ്ധതി"
+                    className="w-full p-2.5 rounded-xl border border-border bg-background text-foreground text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  />
+                </div>
 
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-800 dark:text-slate-200 mb-1">
-                          {lang === "ml" ? "വിഭാഗം *" : "Category *"}
-                        </label>
-                        <select
-                          value={newSchemeCategory}
-                          onChange={(e) => setNewSchemeCategory(e.target.value)}
-                          className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-semibold"
-                        >
-                          <option value="agriculture">Agriculture</option>
-                          <option value="health">Health & Medical</option>
-                          <option value="housing">Housing</option>
-                          <option value="social">Social Welfare & Pension</option>
-                          <option value="education">Education</option>
-                          <option value="skills">Employment & Skills</option>
-                          <option value="finance">Finance & Business</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-800 dark:text-slate-200 mb-1">
-                          {lang === "ml" ? "വകുപ്പ് *" : "Department *"}
-                        </label>
-                        <input
-                          type="text"
-                          value={newSchemeDept}
-                          onChange={(e) => setNewSchemeDept(e.target.value)}
-                          placeholder="Ministry / Department"
-                          className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-semibold"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-800 dark:text-slate-200 mb-1">
-                        {lang === "ml" ? "ആനുകൂല്യം *" : "Benefit Summary *"}
-                      </label>
-                      <input
-                        type="text"
-                        value={newSchemeBenefit}
-                        onChange={(e) => setNewSchemeBenefit(e.target.value)}
-                        placeholder="e.g. ₹10,000 subsidy with zero interest loan"
-                        className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-semibold"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-800 dark:text-slate-200 mb-1">
-                        {lang === "ml" ? "യോഗ്യത *" : "Eligibility Summary *"}
-                      </label>
-                      <input
-                        type="text"
-                        value={newSchemeEligibility}
-                        onChange={(e) => setNewSchemeEligibility(e.target.value)}
-                        placeholder="e.g. BPL card holders & micro entrepreneurs"
-                        className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-semibold"
-                      />
-                    </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[11px] font-bold text-foreground mb-1">
+                      {lang === "ml" ? "വിഭാഗം *" : "Category *"}
+                    </label>
+                    <select
+                      value={newSchemeCategory}
+                      onChange={(e) => setNewSchemeCategory(e.target.value)}
+                      className="w-full p-2.5 rounded-xl border border-border bg-background text-foreground text-xs font-semibold"
+                    >
+                      <option value="agriculture">Agriculture</option>
+                      <option value="health">Health & Medical</option>
+                      <option value="housing">Housing</option>
+                      <option value="social">Social Welfare & Pension</option>
+                      <option value="education">Education</option>
+                      <option value="skills">Employment & Skills</option>
+                      <option value="finance">Finance & Business</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-foreground mb-1">
+                      {lang === "ml" ? "വകുപ്പ് *" : "Department *"}
+                    </label>
+                    <input
+                      type="text"
+                      value={newSchemeDept}
+                      onChange={(e) => setNewSchemeDept(e.target.value)}
+                      placeholder="Ministry / Department"
+                      className="w-full p-2.5 rounded-xl border border-border bg-background text-foreground text-xs font-semibold"
+                    />
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+                <div>
+                  <label className="block text-[11px] font-bold text-foreground mb-1">
+                    {lang === "ml" ? "ആനുകൂല്യം *" : "Benefit Summary *"}
+                  </label>
+                  <input
+                    type="text"
+                    value={newSchemeBenefit}
+                    onChange={(e) => setNewSchemeBenefit(e.target.value)}
+                    placeholder="e.g. ₹10,000 subsidy with zero interest loan"
+                    className="w-full p-2.5 rounded-xl border border-border bg-background text-foreground text-xs font-semibold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-foreground mb-1">
+                    {lang === "ml" ? "യോഗ്യത *" : "Eligibility Summary *"}
+                  </label>
+                  <input
+                    type="text"
+                    value={newSchemeEligibility}
+                    onChange={(e) => setNewSchemeEligibility(e.target.value)}
+                    placeholder="e.g. BPL card holders & micro entrepreneurs"
+                    className="w-full p-2.5 rounded-xl border border-border bg-background text-foreground text-xs font-semibold"
+                  />
+                </div>
+
+                <div className="pt-2">
                   <button
                     type="button"
                     onClick={() => {
                       setIsCreateSchemeModalOpen(false);
+                      setMobileSubPage("none");
                       toast.success(lang === "ml" ? "പദ്ധതി വിജയകരമായി സൃഷ്ടിച്ചു!" : "Scheme created successfully!");
                       setActiveTab("schemes");
                     }}
-                    className="w-full py-3 rounded-xl bg-gradient-to-r from-[#ff5500] to-[#e64a00] hover:from-[#e64a00] hover:to-[#cc3e00] text-white font-extrabold text-xs shadow-md active:scale-98 transition-all cursor-pointer"
+                    className="w-full py-3 rounded-xl bg-gradient-to-r from-[#ff5500] to-[#e64a00] hover:from-[#e64a00] hover:to-[#cc3e00] text-white font-extrabold text-xs shadow-md active:scale-98 transition-all cursor-pointer flex items-center justify-center gap-2"
                   >
-                    {lang === "ml" ? "പദ്ധതി സമർപ്പിക്കുക" : "Create Scheme"}
+                    <Plus className="h-4 w-4 stroke-[3]" />
+                    <span>{lang === "ml" ? "പദ്ധതി സമർപ്പിക്കുക" : "Create Scheme"}</span>
                   </button>
                 </div>
               </div>
