@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
-import { X, Smartphone, Wifi, Battery, Signal, ChevronRight, ChevronLeft, ArrowLeft, ArrowRight, Users, Users2, HeartHandshake, Database, Layers, Sparkles, MessageSquare, Clock3, UserCheck, LayoutDashboard, Sliders, Calendar, FileText, XCircle, CheckCircle2, Hourglass, MapPin, Trophy, AlertTriangle, Activity, Globe, Map as MapIcon, Network, Store, ShieldCheck, ChevronDown, Filter, Search, SearchCheck, Megaphone, CalendarDays, BellRing, Phone, RotateCcw, GraduationCap, Sprout, LayoutGrid, MoreVertical, AlertCircle, Star, Zap, Headphones, Edit, Upload, FileCheck, Loader2, SearchX, RefreshCw, Check, Lock, User, Eye, Send, Info, Plus, Inbox, FileSearch, HandCoins, UserRound, Paperclip, ClipboardList, Headset, Copy, Pencil, Download, FileImage, ExternalLink, CloudUpload, Home, Building2, Flame, HelpCircle, UserPlus, Trash2 } from "lucide-react";
+import { X, Smartphone, Wifi, Battery, Signal, ChevronRight, ChevronLeft, ArrowLeft, ArrowRight, Users, Users2, HeartHandshake, Database, Layers, Sparkles, MessageSquare, Clock3, Clock, UserCheck, LayoutDashboard, Sliders, Calendar, FileText, XCircle, CheckCircle2, Hourglass, MapPin, Trophy, AlertTriangle, Activity, Globe, Map as MapIcon, Network, Store, ShieldCheck, ChevronDown, Filter, Search, SearchCheck, Megaphone, CalendarDays, BellRing, Phone, RotateCcw, GraduationCap, Sprout, LayoutGrid, MoreVertical, AlertCircle, Star, Zap, Headphones, Edit, Upload, FileCheck, Loader2, SearchX, RefreshCw, Check, Lock, User, Eye, Send, Info, Plus, Inbox, FileSearch, HandCoins, UserRound, Paperclip, ClipboardList, Headset, Copy, Pencil, Download, FileImage, ExternalLink, CloudUpload, Home, Building2, Flame, HelpCircle, UserPlus, Trash2 } from "lucide-react";
 import { useLang } from "@/i18n/LanguageProvider";
 import officialLotus from "@/assets/bjp-official-lotus.png";
 import vikasitaMlLogo from "@/assets/logo-vikasita-ml-official.png";
@@ -36,6 +36,7 @@ import {
 import { schemes } from "@/data/schemes";
 import { DatePickerModal } from "./DatePickerModal";
 import { MobileUsersListTab } from "./MobileUsersListTab";
+import { MobileCreateSchemeFlow } from "./MobileCreateSchemeFlow";
 import { MobileAppliedFiltersScope, FilterChip } from "./MobileAppliedFiltersScope";
 import { PartyFlagIcon } from "@/components/common/PartyFlagIcon";
 import { districts, constituencies, panchayats, wards, getDistrictName, getConstituencyName, getWardsForLocalBody, getMappedConstituencyForWard, LocalBodyType, WardItem } from "@/data/geo";
@@ -2552,6 +2553,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [isStateAdminCreateMenuOpen, setIsStateAdminCreateMenuOpen] = useState<boolean>(false);
   const [isCreateSchemeModalOpen, setIsCreateSchemeModalOpen] = useState<boolean>(false);
   const [isCreatePartyWorkerModalOpen, setIsCreatePartyWorkerModalOpen] = useState<boolean>(false);
+  const [isSkipDocumentVerifyModalOpen, setIsSkipDocumentVerifyModalOpen] = useState<boolean>(false);
+  const [isOfflineDocChecked, setIsOfflineDocChecked] = useState<boolean>(false);
 
   // Form states for Create Scheme
   const [newSchemeNameEn, setNewSchemeNameEn] = useState<string>("");
@@ -4591,6 +4594,40 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         const assistingWorkerEn = userRole === "party_worker" ? "Dhyan M S" : "Jayasurya";
         const assistingWorkerMl = userRole === "party_worker" ? "ധ്യാൻ എം എസ്" : "ജയസൂര്യ";
 
+        // Check if existing auditLog had a pending follow-up and mark it completed along with document verification
+        const existingAuditLog = selectedApplicationRecord?.auditLog || [];
+        const updatedAuditLog = existingAuditLog.length > 0
+          ? existingAuditLog.map((logItem) => {
+              if (logItem.titleEn?.toLowerCase().includes("follow-up") || logItem.status === "pending") {
+                return { ...logItem, status: "completed" as const };
+              }
+              return logItem;
+            })
+          : [
+              {
+                titleEn: "Application received",
+                titleMl: "അപേക്ഷ ലഭിച്ചു",
+                date: receivedDate,
+                time: getActivityTimeLabel(new Date(savedRecord.createdAt)),
+                actorEn: savedRecord.applicantName,
+                actorMl: savedRecord.applicantName,
+                status: "completed" as const,
+              },
+            ];
+
+        // Ensure "Documents Checked" entry exists as completed
+        if (!updatedAuditLog.some((log) => log.titleEn === "Documents Checked" || log.titleEn === "Documents Verified" || log.titleEn === "Documents checked")) {
+          updatedAuditLog.push({
+            titleEn: "Documents Checked",
+            titleMl: "രേഖകൾ പരിശോധിച്ചു",
+            date: verifiedDate,
+            time: getActivityTimeLabel(new Date(savedRecord.updatedAt)),
+            actorEn: assistingWorkerEn,
+            actorMl: assistingWorkerMl,
+            status: "completed" as const,
+          });
+        }
+
         setSelectedApplicationRecord({
           ref: savedRecord.reference,
           schemeNameEn: savedRecord.scheme.titleEn,
@@ -4610,26 +4647,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           pendingDocs: uploadedFiles,
           nextActionEn: "Ready for submission to the scheme portal",
           nextActionMl: "സ്കീം പോർട്ടലിൽ സമർപ്പിക്കാൻ തയ്യാർ",
-          auditLog: [
-            {
-              titleEn: "Application received",
-              titleMl: "അപേക്ഷ ലഭിച്ചു",
-              date: receivedDate,
-              time: getActivityTimeLabel(new Date(savedRecord.createdAt)),
-              actorEn: savedRecord.applicantName,
-              actorMl: savedRecord.applicantName,
-              status: "completed",
-            },
-            {
-              titleEn: "Documents checked",
-              titleMl: "രേഖകൾ പരിശോധിച്ചു",
-              date: verifiedDate,
-              time: getActivityTimeLabel(new Date(savedRecord.updatedAt)),
-              actorEn: assistingWorkerEn,
-              actorMl: assistingWorkerMl,
-              status: "completed",
-            },
-          ],
+          auditLog: updatedAuditLog,
           workflowStatus: "document_verification_completed",
           assistedByEn: assistingWorkerEn,
           assistedByMl: assistingWorkerMl,
@@ -4718,7 +4736,87 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     setFollowUpDateError("");
     setIsFollowUpSheetOpen(false);
     setFinalDetailsSaveNotice(null);
-    setCreateFlowStep("follow_up_scheduled");
+
+    // Update selectedApplicationRecord so Application Details Page showcases the updated follow-up details & activity log
+    const category = getSchemeCategoryLabel(updatedRecord.scheme);
+    const phoneDigits = createPhone.replace(/\D/g, "").slice(-10);
+    const phoneDisplay =
+      phoneDigits.length === 10
+        ? `+91 ${phoneDigits.slice(0, 5)} ${phoneDigits.slice(5)}`
+        : `${createCountryCode} ${createPhone.trim()}`.trim() || "—";
+    const aadhaarDigits = createAadhaar.replace(/\D/g, "");
+    const locationEn =
+      [createMandalam.trim(), createDistrict.trim()].filter(Boolean).join(", ") || "Kerala";
+    const locationMl =
+      [
+        createMandalam ? getConstituencyName(createMandalam, "ml") : "",
+        createDistrict ? getDistrictName(createDistrict, "ml") : "",
+      ]
+        .filter(Boolean)
+        .join(", ") || "കേരളം";
+    const receivedDate = formatCollectionDate(updatedRecord.createdAt.slice(0, 10));
+    const verifiedDate = formatCollectionDate(updatedRecord.updatedAt.slice(0, 10));
+    const uploadedFiles = Object.values(updatedRecord.uploadedDocuments ?? {}).filter(Boolean);
+    const assistingWorkerEn = userRole === "party_worker" ? "Dhyan M S" : "Jayasurya";
+    const assistingWorkerMl = userRole === "party_worker" ? "ധ്യാൻ എം എസ്" : "ജയസൂര്യ";
+
+    setSelectedApplicationRecord({
+      ref: updatedRecord.reference,
+      schemeNameEn: updatedRecord.scheme.titleEn,
+      schemeNameMl: updatedRecord.scheme.titleMl,
+      categoryEn: category.en,
+      categoryMl: category.ml,
+      status: "pending",
+      applicantNameEn: updatedRecord.applicantName,
+      applicantNameMl: updatedRecord.applicantName,
+      aadhaar: aadhaarDigits.length >= 4 ? `XXXX-XXXX-${aadhaarDigits.slice(-4)}` : "—",
+      phone: phoneDisplay,
+      locationEn,
+      locationMl,
+      annualIncome: createIncomeRange || "—",
+      appliedDate: receivedDate,
+      currentStep: 2,
+      pendingDocs: uploadedFiles,
+      nextActionEn: `Follow-up scheduled on ${formatCollectionDate(followUpDate)}${followUpNotes ? `: ${followUpNotes}` : ""}`,
+      nextActionMl: `തുടർനടപടി ${formatCollectionDate(followUpDate)} ലേക്ക് മാറ്റിവെച്ചു${followUpNotes ? `: ${followUpNotes}` : ""}`,
+      auditLog: [
+        {
+          titleEn: "Application received",
+          titleMl: "അപേക്ഷ ലഭിച്ചു",
+          date: receivedDate,
+          time: getActivityTimeLabel(new Date(updatedRecord.createdAt)),
+          actorEn: updatedRecord.applicantName,
+          actorMl: updatedRecord.applicantName,
+          status: "completed",
+        },
+        {
+          titleEn: `Follow-up Scheduled (${formatCollectionDate(followUpDate)})`,
+          titleMl: `തുടർനടപടി ഷെഡ്യൂൾ ചെയ്തു (${formatCollectionDate(followUpDate)})`,
+          date: verifiedDate,
+          time: getActivityTimeLabel(new Date(updatedRecord.updatedAt)),
+          actorEn: assistingWorkerEn,
+          actorMl: assistingWorkerMl,
+          status: "pending",
+          notes: followUpNotes ? followUpNotes : undefined,
+        },
+      ],
+      workflowStatus: "application_received",
+      assistedByEn: assistingWorkerEn,
+      assistedByMl: assistingWorkerMl,
+    });
+
+    // Redirect to Application Details Page
+    setActiveTab("applications");
+    setMobileSubPage("app_detail");
+    setAppDetailView("overview");
+    setAppDetailMenuOpen(false);
+    setEditingApplicationRef("");
+    mobileContentRef.current?.scrollTo({ top: 0 });
+    showDocumentActionNotice(
+      lang === "ml"
+        ? "തുടർനടപടി ഷെഡ്യൂൾ ചെയ്തു അപേക്ഷാ വിവരങ്ങളിലേക്ക് റീഡയറക്ട് ചെയ്തു."
+        : "Follow-up scheduled and redirected to application details."
+    );
   };
 
   const openCollectionRecordView = (
@@ -6306,12 +6404,55 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
             {appDetailView === "history" && (
               <div className="space-y-4">
-                {auditEvents.length === 0 ? (
-                  <p className="rounded-lg border border-dashed border-slate-200 p-4 text-center text-[12px] font-medium text-slate-500 dark:border-slate-700 dark:text-slate-400">
-                    {lang === "ml" ? "ഇതുവരെ പ്രവർത്തനങ്ങളൊന്നുമില്ല." : "No activity recorded yet."}
-                  </p>
-                ) : (
-                  auditEvents.map((event, index) => {
+                {(() => {
+                  // Standard application steps flow
+                  const futureWorkflowSteps: Array<{ titleEn: string; titleMl: string }> = [];
+                  const existingTitles = auditEvents.map((e) => e.titleEn.toLowerCase());
+
+                  if (!existingTitles.some((t) => t.includes("documents checked") || t.includes("documents verified"))) {
+                    futureWorkflowSteps.push({
+                      titleEn: "Documents Check & Verification",
+                      titleMl: "രേഖ പരിശോധനയും സ്ഥിരീകരണവും",
+                    });
+                  }
+                  if (!existingTitles.some((t) => t.includes("submitted") || t.includes("portal"))) {
+                    futureWorkflowSteps.push({
+                      titleEn: "Submission to Scheme Portal",
+                      titleMl: "സ്കീം പോർട്ടലിൽ സമർപ്പിക്കൽ",
+                    });
+                  }
+                  if (!existingTitles.some((t) => t.includes("review") || t.includes("under review"))) {
+                    futureWorkflowSteps.push({
+                      titleEn: "Departmental Review & Approval",
+                      titleMl: "വകുപ്പുതല പരിശോധനയും അംഗീകാരവും",
+                    });
+                  }
+
+                  const allTimelineEvents = [
+                    ...auditEvents,
+                    ...futureWorkflowSteps.map((step) => ({
+                      titleEn: step.titleEn,
+                      titleMl: step.titleMl,
+                      date: lang === "ml" ? "തീരുമാനമായിട്ടില്ല" : "Pending",
+                      time: "",
+                      actorEn: "—",
+                      actorMl: "—",
+                      status: "pending" as const,
+                    })),
+                  ];
+
+                  if (allTimelineEvents.length === 0) {
+                    return (
+                      <p className="rounded-lg border border-dashed border-slate-200 p-4 text-center text-[12px] font-medium text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                        {lang === "ml" ? "ഇതുവരെ പ്രവർത്തനങ്ങളൊന്നുമില്ല." : "No activity recorded yet."}
+                      </p>
+                    );
+                  }
+
+                  // Determine current active step (first non-completed event)
+                  const firstUncompletedIndex = allTimelineEvents.findIndex((e) => e.status !== "completed");
+
+                  return allTimelineEvents.map((event, index) => {
                     const eventActorEn = event.actorEn?.trim();
                     const eventActorMl = event.actorMl?.trim();
                     const eventActor =
@@ -6329,32 +6470,48 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     const timestamp = event.time ? `${event.date} · ${event.time}` : event.date;
                     const meta = eventActor && eventActor !== "—" ? `${eventActor} · ${timestamp}` : timestamp;
 
+                    const isCompleted = event.status === "completed";
+                    const isCurrent = event.status === "current" || (firstUncompletedIndex !== -1 && index === firstUncompletedIndex);
+                    const isPending = !isCompleted && !isCurrent;
+
                     return (
                       <div key={`${event.titleEn}-${index}`} className="relative flex items-start gap-3 pb-4 last:pb-0">
-                        {index < auditEvents.length - 1 && (
-                          <span className="absolute left-[9px] top-[22px] bottom-0 w-0.5 bg-slate-200 dark:bg-slate-700" />
+                        {index < allTimelineEvents.length - 1 && (
+                          <span
+                            className={`absolute left-[9px] top-[22px] bottom-0 w-0.5 ${
+                              isCompleted
+                                ? "bg-emerald-500"
+                                : isCurrent
+                                  ? "border-l-2 border-dashed border-[#ff5500]"
+                                  : "border-l-2 border-dashed border-slate-300 dark:border-slate-700 bg-transparent"
+                            }`}
+                          />
                         )}
                         <span
-                          className={`relative z-10 flex h-[20px] w-[20px] shrink-0 items-center justify-center rounded-full ${
-                            event.status === "completed"
+                          className={`relative z-10 flex h-[20px] w-[20px] shrink-0 items-center justify-center rounded-full shadow-2xs ${
+                            isCompleted
                               ? "bg-emerald-500 text-white"
-                              : event.status === "current"
-                                ? "border-2 border-[#ff5500] bg-white text-[#ff5500] dark:bg-slate-900"
-                                : "border-2 border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"
+                              : isCurrent
+                                ? "border-2 border-[#ff5500] bg-orange-50 text-[#ff5500] dark:bg-orange-950/60 dark:text-orange-400"
+                                : "border-2 border-slate-300 bg-white text-slate-400 dark:border-slate-700 dark:bg-slate-900"
                           }`}
                         >
-                          {event.status === "completed" ? (
+                          {isCompleted ? (
                             <Check className="h-3 w-3 stroke-[3]" />
+                          ) : isCurrent ? (
+                            <Clock className="h-2.5 w-2.5 stroke-[2.5]" />
                           ) : (
-                            <span
-                              className={`h-1.5 w-1.5 rounded-full ${
-                                event.status === "current" ? "bg-[#ff5500]" : "bg-slate-300 dark:bg-slate-600"
-                              }`}
-                            />
+                            <Clock className="h-2.5 w-2.5 stroke-[2.5]" />
                           )}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <p className="text-[12.5px] font-bold leading-snug text-[#0F172A] dark:text-white">
+                          <p className={`text-[12.5px] font-bold leading-snug ${
+                            isCompleted
+                              ? "text-[#0F172A] dark:text-white"
+                              : isCurrent
+                                ? "text-[#ff5500] dark:text-orange-400"
+                                : "text-slate-500 dark:text-slate-400"
+                          }`}>
                             {lang === "ml" ? event.titleMl : event.titleEn}
                           </p>
                           <p className="mt-0.5 text-[11px] font-medium leading-snug text-slate-500 dark:text-slate-400">
@@ -6373,8 +6530,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         </div>
                       </div>
                     );
-                  })
-                )}
+                  });
+                })()}
               </div>
             )}
           </div>
@@ -6387,6 +6544,22 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         className="space-y-2.5 pt-2 animate-in fade-in duration-200 text-slate-900 dark:text-slate-100"
         style={{ paddingBottom: "max(24px, env(safe-area-inset-bottom))" }}
       >
+        {/* Scheduled Follow-up Red Indicator Below Header */}
+        {(() => {
+          const followUpEvent = auditEvents.find(
+            (e) => (e.titleEn && e.titleEn.toLowerCase().includes("follow-up scheduled")) || (e.titleMl && e.titleMl.includes("തുടർനടപടി"))
+          );
+          if (!followUpEvent) return null;
+          return (
+            <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50/90 px-3 py-2 text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300">
+              <Calendar className="h-4 w-4 shrink-0 stroke-[2.2] text-red-600 dark:text-red-400" />
+              <span className="text-[12px] font-bold tracking-tight min-w-0 flex-1 truncate">
+                {lang === "ml" ? "തുടർനടപടി ഷെഡ്യൂൾ ചെയ്തു:" : "Follow-up Scheduled:"} {followUpEvent.date}
+              </span>
+            </div>
+          );
+        })()}
+
         {/* Application Details Card (Merged) */}
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-2xs p-3 space-y-2.5">
           {/* Applicant Info with Right Aligned Status Badge */}
@@ -6415,6 +6588,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               />
             </div>
           </div>
+
+
             {/* Scheme Card */}
             {(() => {
               const getTitleEn = (s: any) => s?.titleEn || s?.en || s?.nameEn || "";
@@ -7854,7 +8029,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
           {/* Mobile App Standard Header or Application Details / Document Verification Back Header */}
           {!isLogoutSplashScreen && !isGuestEligibilityOpen && !isMobileAuthOpen && mobileSubPage !== "category_schemes" && (
-            mobileSubPage === "guest_popular_schemes" || mobileSubPage === "guest_schemes" || mobileSubPage === "app_detail" || mobileSubPage === "needs_attention" || mobileSubPage === "notifications" || mobileSubPage === "scheme_details" || (activeTab === "create" && (createFlowStep === "scheme_details" || createFlowStep === "eligible_schemes" || createFlowStep === "form")) ? (
+            mobileSubPage === "create_scheme" || mobileSubPage === "guest_popular_schemes" || mobileSubPage === "guest_schemes" || mobileSubPage === "app_detail" || mobileSubPage === "needs_attention" || mobileSubPage === "notifications" || mobileSubPage === "scheme_details" || (activeTab === "create" && (createFlowStep === "scheme_details" || createFlowStep === "eligible_schemes" || createFlowStep === "form")) ? (
               <header className="relative z-40 w-full bg-[#FFFDF9] dark:bg-slate-900 border-b border-slate-200/60 dark:border-slate-800/60 shadow-2xs">
                 {mobileSubPage === "guest_popular_schemes" || mobileSubPage === "guest_schemes" ? (
                   isGuestSearchOpen ? (
@@ -7966,6 +8141,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           setActiveTab("overview");
                           setMobileSubPage("none");
                         }
+                      } else if (mobileSubPage === "create_scheme") {
+                        setMobileSubPage("none");
+                        setIsCreateSchemeModalOpen(false);
                       } else if (activeTab === "create" && createFlowStep === "eligible_schemes") {
                         setCreateFlowStep("form");
                       } else if (mobileSubPage === "scheme_details") {
@@ -7993,10 +8171,12 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   </button>
 
                   <h3 className="absolute inset-x-0 text-center text-[13.5px] font-extrabold text-[#0F172A] dark:text-white pointer-events-none px-10 truncate">
-                    {activeTab === "create" && createFlowStep === "form"
-                      ? editingApplicationRef
-                        ? (lang === "ml" ? "അപേക്ഷ തിരുത്തുക" : "Edit Application")
-                        : (lang === "ml" ? "അപേക്ഷക പ്രൊഫൈൽ നിർമ്മിക്കുക" : "Create Applicant Profile")
+                    {mobileSubPage === "create_scheme"
+                      ? (lang === "ml" ? "പുതിയ പദ്ധതി ചേർക്കുക" : "Create New Scheme")
+                      : activeTab === "create" && createFlowStep === "form"
+                        ? editingApplicationRef
+                          ? (lang === "ml" ? "അപേക്ഷ തിരുത്തുക" : "Edit Application")
+                          : (lang === "ml" ? "അപേക്ഷക പ്രൊഫൈൽ നിർമ്മിക്കുക" : "Create Applicant Profile")
                       : activeTab === "create" && createFlowStep === "eligible_schemes"
                         ? (lang === "ml" ? "യോഗ്യമായ പദ്ധതികൾ" : "Eligible Schemes")
                         : mobileSubPage === "scheme_details"
@@ -8153,7 +8333,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       ? "px-4"
                       : "px-3"
                   } ${
-                    createFlowStep === "scheme_details" ? "pt-3" : "pt-1.5"
+                    mobileSubPage === "create_scheme" ? "pt-0" : createFlowStep === "scheme_details" ? "pt-3" : "pt-1.5"
                   } ${
                     !isGuest &&
                     !isMobileAuthOpen &&
@@ -11664,6 +11844,22 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       </div>
                     )}
 
+                    {/* Dedicated Subpage: Create New Scheme Form (3-Step Flow) */}
+                    {mobileSubPage === "create_scheme" && (
+                      <MobileCreateSchemeFlow
+                        lang={lang}
+                        onClose={() => setMobileSubPage("none")}
+                        onPublishSuccess={(schemeData) => {
+                          toast.success(
+                            lang === "ml"
+                              ? `പദ്ധതി '${schemeData.nameMl || schemeData.nameEn}' വിജയകരമായി പബ്ലിഷ് ചെയ്തു!`
+                              : `Scheme '${schemeData.nameEn}' successfully published!`
+                          );
+                          setMobileSubPage("none");
+                        }}
+                      />
+                    )}
+
                     {/* Dedicated Subpage: Events & Announcements Page */}
                     {mobileSubPage === "events_announcements" && (
                       <div className="space-y-3 pt-0.5 animate-in fade-in duration-200">
@@ -12506,7 +12702,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
             {(activeTab === "create" || activeTab === "helpdesk") && (
               <div className="space-y-3 animate-in fade-in duration-200">
-                {createFlowStep !== "scheme_details" && createFlowStep !== "eligible_schemes" && createFlowStep !== "form" && (
+                {mobileSubPage !== "create_scheme" && createFlowStep !== "scheme_details" && createFlowStep !== "eligible_schemes" && createFlowStep !== "form" && (
                 <div className={`flex items-center justify-between border-b border-border/80 ${createFlowStep === "selected_schemes" ? "-mx-4 px-4 pb-1.5" : "px-0.5 pb-2"}`}>
                   {activeTab === "create" && createFlowStep === "eligible_schemes" && isEligibleSearchExpanded ? (
                     <div className="flex-1 flex items-center gap-2 animate-in fade-in duration-150">
@@ -14788,6 +14984,24 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                   {formatCollectionDateTime(activeCollectionRecord.updatedAt)}
                                 </span>
                               </div>
+                              {activeCollectionRecord.followUpDate && (
+                                <div className="flex items-start justify-between gap-3 border-t border-slate-100 pt-1.5 dark:border-slate-800">
+                                  <span className="flex min-w-0 items-start gap-1.5 text-[11px] font-semibold text-orange-700 dark:text-orange-300">
+                                    <Calendar className="mt-0.5 h-3.5 w-3.5 shrink-0 text-orange-600 dark:text-orange-400" strokeWidth={2} />
+                                    <div>
+                                      <span>{lang === "ml" ? "അടുത്ത തുടർനടപടി" : "Next follow-up"}</span>
+                                      {activeCollectionRecord.followUpNotes && (
+                                        <p className="mt-0.5 text-[10px] font-normal leading-tight text-slate-500 dark:text-slate-400">
+                                          {activeCollectionRecord.followUpNotes}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </span>
+                                  <span className="shrink-0 text-[10px] font-bold text-orange-600 dark:text-orange-400">
+                                    {formatCollectionDate(activeCollectionRecord.followUpDate)}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                             <div className="mt-2 rounded-xl border border-[#efe3d3] bg-[#fffcf7] px-3 py-2.5 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
                               <div className="flex min-w-0 items-center gap-1.5">
@@ -15433,7 +15647,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
           {/* Sticky Phone App Bottom Footer Navigation */}
           {activeTab === "create" && createFlowStep !== "applicant_applications" && createFlowStep !== "selected_schemes" && createFlowStep !== "form" && (
-            <div className="sticky bottom-0 left-0 right-0 px-4 pt-3 pb-2 bg-card/95 backdrop-blur-md border-t border-border z-30 shadow-lg">
+            <div className="sticky bottom-0 left-0 right-0 px-4 pt-3 pb-6 bg-card/95 backdrop-blur-md border-t border-border z-30 shadow-lg">
               {createFlowStep === "checking" && (
                 <button
                   type="button"
@@ -15518,13 +15732,22 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           : `${finalDetailsValidation.missingItems.length} required item${finalDetailsValidation.missingItems.length === 1 ? "" : "s"} remaining`)
                       : (lang === "ml" ? "എല്ലാ ആവശ്യമായ വിവരങ്ങളും ശേഖരിച്ചു" : "All required details collected")}
                   </p>
-                  <button
-                    type="button"
-                    onClick={handleFinalDetailsSave}
-                    className="w-full h-11 rounded-[12px] bg-orange-500 hover:bg-orange-600 active:scale-[0.99] text-white font-bold text-xs transition-all cursor-pointer flex items-center justify-center shadow-none"
-                  >
-                    {lang === "ml" ? "വിവരങ്ങൾ സേവ് ചെയ്യുക" : "Save Details"}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsSkipDocumentVerifyModalOpen(true)}
+                      className="w-[35%] h-9 rounded-[10px] border border-orange-300 bg-white hover:bg-orange-50/50 active:scale-[0.99] text-orange-600 dark:border-orange-800 dark:bg-slate-900 dark:text-orange-400 font-extrabold text-[11.5px] transition-all cursor-pointer flex items-center justify-center shadow-2xs shrink-0"
+                    >
+                      {lang === "ml" ? "സ്കിപ്പ് ചെയ്യുക" : "Skip"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleFinalDetailsSave}
+                      className="w-[65%] h-9 rounded-[10px] bg-orange-500 hover:bg-orange-600 active:scale-[0.99] text-white font-bold text-[11.5px] transition-all cursor-pointer flex items-center justify-center shadow-none shrink-0"
+                    >
+                      {lang === "ml" ? "വിവരങ്ങൾ സേവ് ചെയ്യുക" : "Save Details"}
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -15757,30 +15980,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
           {/* Create Scheme Subpage View (or Modal Sheet fallback) */}
           {(mobileSubPage === "create_scheme" || isCreateSchemeModalOpen) && (
-            <div className="space-y-3 pt-0.5 animate-in fade-in duration-200">
-              {/* Top Navigation Bar with Back Button */}
-              <div className="flex items-center justify-between border-b border-border/80 pb-2 px-0.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMobileSubPage("none");
-                    setIsCreateSchemeModalOpen(false);
-                  }}
-                  className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#ff5500] hover:text-orange-600 cursor-pointer shrink-0"
-                >
-                  <ArrowLeft className="h-4 w-4 stroke-[2.5]" />
-                  <span>{lang === "ml" ? "മടങ്ങുക" : "Back"}</span>
-                </button>
-                <div className="flex items-center gap-2">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-orange-100 dark:bg-orange-950/80 text-[#ff5500]">
-                    <Layers className="h-4 w-4 stroke-[2.2]" />
-                  </div>
-                  <h3 className="font-extrabold text-xs text-foreground">
-                    {lang === "ml" ? "പുതിയ പദ്ധതി ചേർക്കുക" : "Create New Scheme"}
-                  </h3>
-                </div>
-              </div>
-
+            <div className="space-y-3 pt-0 animate-in fade-in duration-200">
               {/* Form Container */}
               <div className="rounded-2xl border border-border/80 bg-card p-3.5 shadow-2xs space-y-3 text-xs">
                 <div>
@@ -16539,10 +16739,10 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               onClick={() => setIsFollowUpSheetOpen(false)}
             >
               <div
-                className="flex max-h-[90%] w-full flex-col overflow-hidden rounded-t-3xl border-t border-border bg-background shadow-2xl animate-in slide-in-from-bottom duration-300"
+                className="flex max-h-[90%] w-full flex-col overflow-hidden rounded-t-3xl border-t border-border bg-white dark:bg-slate-900 shadow-2xl animate-in slide-in-from-bottom duration-300"
                 onClick={(event) => event.stopPropagation()}
               >
-                <div className="flex items-center justify-between border-b border-border px-4 pb-2.5 pt-2.5">
+                <div className="flex items-center justify-between border-b border-border bg-white dark:bg-slate-900 px-4 pb-2.5 pt-2.5">
                   <div>
                     <div className="mx-auto mb-2 h-1 w-9 rounded-full bg-muted-foreground/30" />
                     <h3 className="max-w-[240px] text-sm font-extrabold leading-tight text-foreground">
@@ -16561,36 +16761,30 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   </button>
                 </div>
 
-                <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-3 [ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden space-y-3">
-                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/30">
-                    <div className="flex items-start gap-2">
-                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                      <div>
-                        <p className="text-[11px] font-extrabold text-amber-800 dark:text-amber-200">
-                          {lang === "ml" ? "പുരോഗതി സേവ് ചെയ്തു · ശേഖരണം അപൂർണ്ണം" : "Progress saved · Collection incomplete"}
-                        </p>
-                        <p className="mt-0.5 text-[10px] leading-snug text-amber-700 dark:text-amber-300">
-                          {lang === "ml" ? "അടുത്ത സന്ദർശനത്തിൽ ഇനിപ്പറയുന്ന കാര്യങ്ങൾ ശേഖരിക്കുക." : "Collect the following items during your next visit."}
-                        </p>
+                <div className="min-h-0 flex-1 overflow-y-auto bg-white dark:bg-slate-900 px-4 pb-4 pt-3 [ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden space-y-3">
+                  {/* Missing Details & Documents Accordion Card */}
+                  <details className="group rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30 overflow-hidden">
+                    <summary className="flex cursor-pointer items-start justify-between p-3 select-none hover:bg-amber-100/50 dark:hover:bg-amber-900/40 transition-colors">
+                      <div className="flex items-start gap-2 pr-2">
+                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                        <div>
+                          <p className="text-[11px] font-extrabold text-amber-800 dark:text-amber-200">
+                            {lang === "ml" ? "ലഭ്യമാകാത്ത വിവരങ്ങളും രേഖകളും" : "Missing Details & Documents"}
+                          </p>
+                          <p className="mt-0.5 text-[10px] leading-snug text-amber-700 dark:text-amber-300">
+                            {lang === "ml" ? "അടുത്ത സന്ദർശനത്തിൽ ഇവ ശേഖരിക്കുക." : "Collect them during your next visit."}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Missing items Accordion */}
-                  <details className="group rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden" open>
-                    <summary className="flex cursor-pointer items-center justify-between p-3 font-extrabold text-xs text-slate-900 dark:text-white select-none hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
-                      <div className="flex items-center gap-2">
-                        <span>{lang === "ml" ? "ബാക്കിയുള്ള കാര്യങ്ങൾ" : "Missing items"}</span>
-                        <span className="flex h-4.5 min-w-4.5 px-1.5 items-center justify-center rounded-full bg-orange-100 text-orange-600 dark:bg-orange-950/80 dark:text-orange-400 text-[10px] font-black">
-                          {followUpMissingItems.length}
-                        </span>
+                      <div className="flex items-center gap-1.5 shrink-0 bg-amber-100/90 dark:bg-amber-900/80 px-2 py-1 rounded-full text-amber-800 dark:text-amber-200 font-extrabold text-[11px]">
+                        <span>{followUpMissingItems.length}</span>
+                        <ChevronDown className="h-3.5 w-3.5 text-amber-700 dark:text-amber-300 group-open:rotate-180 transition-transform duration-200" />
                       </div>
-                      <ChevronDown className="h-4 w-4 text-slate-400 group-open:rotate-180 transition-transform duration-200" />
                     </summary>
-                    <div className="p-3 pt-0 space-y-1.5 border-t border-slate-100 dark:border-slate-800/80 mt-1">
+                    <div className="p-3 pt-0 space-y-1.5 border-t border-amber-200/60 dark:border-amber-900/60 mt-1">
                       {followUpMissingItems.length > 0 ? (
                         followUpMissingItems.map((item) => (
-                          <div key={item.key} className="flex items-start gap-2 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 px-2.5 py-2 text-[10.5px] text-slate-800 dark:text-slate-200">
+                          <div key={item.key} className="flex items-start gap-2 rounded-lg border border-amber-200/50 dark:border-amber-900/40 bg-white/70 dark:bg-slate-900/60 px-2.5 py-2 text-[10.5px] text-slate-800 dark:text-slate-200">
                             {item.kind === "document" ? <FileCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-orange-600" /> : <FileText className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" />}
                             <span>{lang === "ml" ? item.labelMl : item.labelEn}</span>
                           </div>
@@ -16617,7 +16811,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           setFollowUpDate(event.target.value);
                           setFollowUpDateError("");
                         }}
-                        className={`w-full rounded-xl border bg-background py-2.5 pl-8 pr-2.5 text-xs text-foreground outline-none focus:ring-1 ${
+                        className={`w-full rounded-xl border bg-white dark:bg-slate-900 py-2.5 pl-8 pr-2.5 text-xs text-foreground outline-none focus:ring-1 ${
                           followUpDateError
                             ? "border-rose-400 focus:ring-rose-400"
                             : "border-border focus:ring-[#ff5500]"
@@ -16642,12 +16836,12 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       value={followUpNotes}
                       onChange={(event) => setFollowUpNotes(event.target.value)}
                       placeholder={lang === "ml" ? "ശേഖരണ നിർദ്ദേശങ്ങൾ രേഖപ്പെടുത്തുക..." : "Add collection instructions..."}
-                      className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2.5 text-xs text-foreground outline-none focus:ring-1 focus:ring-[#ff5500]"
+                      className="w-full resize-none rounded-xl border border-border bg-white dark:bg-slate-900 px-3 py-2.5 text-xs text-foreground outline-none focus:ring-1 focus:ring-[#ff5500]"
                     />
                   </div>
                 </div>
 
-                <div className="shrink-0 border-t border-border bg-background px-4 pb-5 pt-3">
+                <div className="shrink-0 border-t border-border bg-white dark:bg-slate-900 px-4 pb-5 pt-3">
                   <button
                     type="button"
                     onClick={handleSaveFollowUp}
@@ -18566,6 +18760,177 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Mark as Document Verified Skip Popup Modal */}
+      {isSkipDocumentVerifyModalOpen && (
+        <div
+          className="absolute inset-0 z-[80] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200 rounded-[36px]"
+          onClick={() => setIsSkipDocumentVerifyModalOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-[325px] rounded-3xl bg-white dark:bg-slate-900 p-5 shadow-2xl animate-in zoom-in-95 duration-200 space-y-4 text-left"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button Top Right */}
+            <button
+              type="button"
+              onClick={() => setIsSkipDocumentVerifyModalOpen(false)}
+              className="absolute top-4 right-4 rounded-full p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            {/* Document Check Icon */}
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-orange-100/70 text-orange-600 dark:bg-orange-950/60 dark:text-orange-400">
+              <FileCheck className="h-6 w-6 stroke-[2.2]" />
+            </div>
+
+            {/* Title & Subtitle */}
+            <div className="space-y-1">
+              <h3 className="font-extrabold text-[17px] text-slate-900 dark:text-white leading-tight tracking-tight">
+                {lang === "ml" ? "രേഖകൾ ശരിയാണെന്ന് സ്ഥിരീകരിക്കണോ?" : "Mark documents as verified?"}
+              </h3>
+              <p className="text-[12.5px] text-slate-500 dark:text-slate-400 font-normal leading-snug">
+                {lang === "ml"
+                  ? "രേഖകളുടെ കോപ്പികൾ അപ്ലോഡ് ചെയ്യാതെ തുടരുക."
+                  : "Continue without uploading document copies."}
+              </p>
+            </div>
+
+            {/* Applicant Card */}
+            <div className="rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-3 flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-100 text-orange-600 dark:bg-orange-950/80 dark:text-orange-400 font-black text-sm">
+                {(createFullName.trim() || "K. Krishnan")
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")
+                  .toUpperCase()
+                  .slice(0, 2) || "KK"}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-extrabold text-[13.5px] text-slate-900 dark:text-white leading-tight truncate">
+                  {createFullName.trim() || "K. Krishnan"}
+                </p>
+                <p className="text-[11.5px] font-medium text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                  {selectedEligibleScheme
+                    ? (lang === "ml" ? selectedEligibleScheme.titleMl : selectedEligibleScheme.titleEn)
+                    : "PM-KISAN Samman Nidhi"}
+                </p>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsSkipDocumentVerifyModalOpen(false)}
+                className="h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold text-xs hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer flex items-center justify-center"
+              >
+                {lang === "ml" ? "റദ്ദാക്കുക" : "Cancel"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSkipDocumentVerifyModalOpen(false);
+                  
+                  // Force save collection record as complete (document verification completed)
+                  const savedRecord = buildCollectionRecord("complete", []);
+                  setFollowUpDate("");
+                  setFollowUpNotes("");
+                  setFollowUpMissingItems([]);
+                  setFinalDetailsSaveNotice(null);
+                  setIsFollowUpSheetOpen(false);
+
+                  if (savedRecord) {
+                    const category = getSchemeCategoryLabel(savedRecord.scheme);
+                    const phoneDigits = createPhone.replace(/\D/g, "").slice(-10);
+                    const phoneDisplay =
+                      phoneDigits.length === 10
+                        ? `+91 ${phoneDigits.slice(0, 5)} ${phoneDigits.slice(5)}`
+                        : `${createCountryCode} ${createPhone.trim()}`.trim() || "—";
+                    const aadhaarDigits = createAadhaar.replace(/\D/g, "");
+                    const locationEn =
+                      [createMandalam.trim(), createDistrict.trim()].filter(Boolean).join(", ") || "Kerala";
+                    const locationMl =
+                      [
+                        createMandalam ? getConstituencyName(createMandalam, "ml") : "",
+                        createDistrict ? getDistrictName(createDistrict, "ml") : "",
+                      ]
+                        .filter(Boolean)
+                        .join(", ") || "കേരളം";
+                    const receivedDate = formatCollectionDate(savedRecord.createdAt.slice(0, 10));
+                    const verifiedDate = formatCollectionDate(savedRecord.updatedAt.slice(0, 10));
+                    const assistingWorkerEn = userRole === "party_worker" ? "Dhyan M S" : "Jayasurya";
+                    const assistingWorkerMl = userRole === "party_worker" ? "ധ്യാൻ എം എസ്" : "ജയസൂര്യ";
+
+                    setSelectedApplicationRecord({
+                      ref: savedRecord.reference,
+                      schemeNameEn: savedRecord.scheme.titleEn,
+                      schemeNameMl: savedRecord.scheme.titleMl,
+                      categoryEn: category.en,
+                      categoryMl: category.ml,
+                      status: "pending",
+                      applicantNameEn: savedRecord.applicantName,
+                      applicantNameMl: savedRecord.applicantName,
+                      aadhaar: aadhaarDigits.length >= 4 ? `XXXX-XXXX-${aadhaarDigits.slice(-4)}` : "—",
+                      phone: phoneDisplay,
+                      locationEn,
+                      locationMl,
+                      annualIncome: createIncomeRange || "—",
+                      appliedDate: receivedDate,
+                      currentStep: 2,
+                      pendingDocs: [],
+                      nextActionEn: "Ready for submission to the scheme portal",
+                      nextActionMl: "സ്കീം പോർട്ടലിൽ സമർപ്പിക്കാൻ തയ്യാർ",
+                      auditLog: [
+                        {
+                          titleEn: "Application received",
+                          titleMl: "അപേക്ഷ ലഭിച്ചു",
+                          date: receivedDate,
+                          time: getActivityTimeLabel(new Date(savedRecord.createdAt)),
+                          actorEn: savedRecord.applicantName,
+                          actorMl: savedRecord.applicantName,
+                          status: "completed",
+                        },
+                        {
+                          titleEn: "Documents checked",
+                          titleMl: "രേഖകൾ പരിശോധിച്ചു",
+                          date: verifiedDate,
+                          time: getActivityTimeLabel(new Date(savedRecord.updatedAt)),
+                          actorEn: assistingWorkerEn,
+                          actorMl: assistingWorkerMl,
+                          status: "completed",
+                        },
+                      ],
+                      workflowStatus: "document_verification_completed",
+                      assistedByEn: assistingWorkerEn,
+                      assistedByMl: assistingWorkerMl,
+                    });
+                  }
+
+                  // Direct redirection to Application Details Page
+                  setActiveTab("applications");
+                  setMobileSubPage("app_detail");
+                  setAppDetailView("overview");
+                  setAppDetailMenuOpen(false);
+                  setEditingApplicationRef("");
+                  setCreateFlowStep("form");
+                  mobileContentRef.current?.scrollTo({ top: 0 });
+                  showDocumentActionNotice(
+                    lang === "ml"
+                      ? "രേഖകൾ പരിശോധിച്ച് ഉറപ്പുവരുത്തി അപേക്ഷ വിവരങ്ങളിലേക്ക് മാറ്റി."
+                      : "Marked as Document Verified successfully."
+                  );
+                }}
+                className="h-10 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center shadow-none"
+              >
+                {lang === "ml" ? "ശരിയാണെന്ന് സാക്ഷ്യപ്പെടുത്തുക" : "Mark as Verified"}
+              </button>
+            </div>
           </div>
         </div>
       )}
