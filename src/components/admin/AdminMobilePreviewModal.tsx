@@ -2498,6 +2498,49 @@ const metricsByPeriod: Record<
 export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, standalone = false }: AdminMobilePreviewModalProps) {
   const { lang } = useLang();
   const [userRole, setUserRole] = useState<"state_admin" | "party_worker">("state_admin");
+  const [selectedDistrictIds, setSelectedDistrictIds] = useState<string[]>(["all"]);
+  const [isDistrictDropdownOpen, setIsDistrictDropdownOpen] = useState<boolean>(false);
+  const [districtSearchQuery, setDistrictSearchQuery] = useState<string>("");
+
+  const [selectedMandalamIds, setSelectedMandalamIds] = useState<string[]>(["all"]);
+  const [isMandalamDropdownOpen, setIsMandalamDropdownOpen] = useState<boolean>(false);
+  const [mandalamSearchQuery, setMandalamSearchQuery] = useState<string>("");
+
+  const [selectedLocalBodyTypeIds, setSelectedLocalBodyTypeIds] = useState<string[]>(["all"]);
+  const [isLocalBodyTypeDropdownOpen, setIsLocalBodyTypeDropdownOpen] = useState<boolean>(false);
+  const [localBodyTypeSearchQuery, setLocalBodyTypeSearchQuery] = useState<string>("");
+
+  const [selectedLocalBodyIds, setSelectedLocalBodyIds] = useState<string[]>(["all"]);
+  const [isLocalBodyDropdownOpen, setIsLocalBodyDropdownOpen] = useState<boolean>(false);
+  const [localBodySearchQuery, setLocalBodySearchQuery] = useState<string>("");
+
+  const [selectedWardIds, setSelectedWardIds] = useState<string[]>(["all"]);
+  const [isWardDropdownOpen, setIsWardDropdownOpen] = useState<boolean>(false);
+  const [wardSearchQuery, setWardSearchQuery] = useState<string>("");
+
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>(["all"]);
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState<boolean>(false);
+  const [categorySearchQuery, setCategorySearchQuery] = useState<string>("");
+
+  const [selectedSchemeIds, setSelectedSchemeIdsState] = useState<string[]>(["all"]);
+  const [isSchemeDropdownOpen, setIsSchemeDropdownOpen] = useState<boolean>(false);
+  const [homeFilterSchemeSearchQuery, setHomeFilterSchemeSearchQuery] = useState<string>("");
+
+  // Application Filter Specific States
+  const [selectedAppStatusFilters, setSelectedAppStatusFilters] = useState<string[]>(["all"]);
+  const [isAppStatusDropdownOpen, setIsAppStatusDropdownOpen] = useState<boolean>(false);
+
+  const [appFilterLocation, setAppFilterLocation] = useState<string>("all");
+  const [isAppLocationDropdownOpen, setIsAppLocationDropdownOpen] = useState<boolean>(false);
+  const [appLocationSearchQuery, setAppLocationSearchQuery] = useState<string>("");
+
+  const [appFilterAssignedWorker, setAppFilterAssignedWorker] = useState<string>("all");
+  const [isAppWorkerDropdownOpen, setIsAppWorkerDropdownOpen] = useState<boolean>(false);
+  const [appWorkerSearchQuery, setAppWorkerSearchQuery] = useState<string>("");
+
+  const [appFilterFollowUp, setAppFilterFollowUp] = useState<string>("all");
+  const [isAppFollowUpDropdownOpen, setIsAppFollowUpDropdownOpen] = useState<boolean>(false);
+
   const [isGuest, setIsGuest] = useState<boolean>(false);
   const [isLogoutSplashScreen, setIsLogoutSplashScreen] = useState<boolean>(false);
   const [isSahAiOpen, setIsSahAiOpen] = useState<boolean>(false);
@@ -2680,6 +2723,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [createLocalBody, setCreateLocalBody] = useState<string>("");
   const [createWard, setCreateWard] = useState<string>("");
   const [createMandalam, setCreateMandalam] = useState<string>("");
+  const [createHouseNumber, setCreateHouseNumber] = useState<string>("");
   const [createHouseName, setCreateHouseName] = useState<string>("");
   const [createStreetLocality, setCreateStreetLocality] = useState<string>("");
   const [createPin, setCreatePin] = useState<string>("");
@@ -3655,7 +3699,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     createLocalBody.trim() &&
     createWard.trim() &&
     createMandalam.trim() &&
-    createHouseName.trim() &&
+    (createHouseNumber.trim() || createHouseName.trim()) &&
     createStreetLocality.trim() &&
     createPin.trim()
   );
@@ -4949,7 +4993,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     setCreateFlowStep("form");
   };
 
-    const [mobileSubPage, setMobileSubPage] = useState<"none" | "leaderboard" | "needs_attention" | "recent_activity" | "beneficiaries" | "users" | "user_detail" | "notifications" | "applications" | "events_announcements" | "app_detail" | "category_schemes" | "scheme_details" | "guest_popular_schemes" | "guest_schemes">("none");
+    const [mobileSubPage, setMobileSubPage] = useState<"none" | "leaderboard" | "needs_attention" | "recent_activity" | "beneficiaries" | "users" | "user_detail" | "notifications" | "applications" | "events_announcements" | "app_detail" | "category_schemes" | "scheme_details" | "guest_popular_schemes" | "guest_schemes" | "create_scheme">("none");
   const [showSupportModal, setShowSupportModal] = useState(false);
   const [supportModalSubmitted, setSupportModalSubmitted] = useState(false);
   const [supportForm, setSupportForm] = useState({
@@ -4991,7 +5035,11 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     typeMl: string,
     ref: string
   ) => {
-    const matchesStatus = applicationStatusFilter === "all" || applicationStatusFilter === status;
+    const matchesStatus =
+      selectedAppStatusFilters.length === 0 ||
+      selectedAppStatusFilters.includes("all") ||
+      selectedAppStatusFilters.includes(status as string) ||
+      (applicationStatusFilter !== "all" && applicationStatusFilter === status);
     if (!matchesStatus) return false;
     if (!applicationSearchQuery.trim()) return true;
     const q = applicationSearchQuery.toLowerCase();
@@ -5592,7 +5640,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         maritalStatus: createMaritalStatus,
         occupation: createOccupation,
         email: createEmail.trim(),
-        houseName: createHouseName.trim(),
+        houseName: [createHouseNumber.trim(), createHouseName.trim()].filter(Boolean).join(", "),
         streetLocality: createStreetLocality.trim(),
         pincode: createPin.trim(),
         district: createDistrict,
@@ -8124,12 +8172,17 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             }`}
           >
             {isLogoutSplashScreen ? (
-              <div className="absolute inset-0 z-50 h-full w-full bg-[#f96302] flex flex-col items-center justify-center overflow-hidden animate-in fade-in duration-300">
+              <div className="absolute inset-0 z-50 h-full w-full bg-[#f96302] flex flex-col items-center justify-between overflow-hidden animate-in fade-in duration-300">
                 <img
                   src="/images/splash_screen_logout.png"
                   alt="Vikasita Keralam Splash Screen"
                   className="h-full w-full object-cover object-center"
                 />
+                <div className="absolute bottom-6 left-0 right-0 z-10 flex flex-col items-center justify-center text-center text-white pointer-events-none drop-shadow-md">
+                  <p className="text-[11px] font-medium tracking-wider opacity-90 uppercase">
+                    Powered by <span className="font-bold tracking-normal">Wayvida</span>
+                  </p>
+                </div>
               </div>
             ) : isMobileAuthOpen ? (
               <MobileAuthFlow
@@ -10713,18 +10766,37 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                               </button>
                             </div>
 
-                            <button
-                              type="button"
-                              onClick={() => setShowFilterMenu(!showFilterMenu)}
-                              className={`relative flex h-7 w-7 items-center justify-center rounded-full border transition-all shadow-2xs cursor-pointer shrink-0 ${
-                                showFilterMenu
-                                  ? "border-orange-500 bg-orange-500 text-white ring-2 ring-orange-500/30 shadow-xs"
-                                  : "border-amber-200/60 dark:border-slate-800 bg-[#fffcf0] dark:bg-slate-900 text-[#0a0f1d] dark:text-slate-200 hover:bg-amber-100/50"
-                              }`}
-                              title="Toggle Filters"
-                            >
-                              <Filter className={`h-3.5 w-3.5 stroke-[2.2] shrink-0 ${showFilterMenu ? "text-white" : "text-[#ff5500]"}`} />
-                            </button>
+                            {(() => {
+                              let activeFilterCount = 0;
+                              if (selectedAppStatusFilters.length > 0 && !selectedAppStatusFilters.includes("all")) {
+                                activeFilterCount += selectedAppStatusFilters.length;
+                              }
+                              if (appFilterLocation !== "all") activeFilterCount += 1;
+                              if (appSchemeCategoryFilter !== "all") activeFilterCount += 1;
+                              if (appFilterAssignedWorker !== "all") activeFilterCount += 1;
+                              if (appFilterFollowUp !== "all") activeFilterCount += 1;
+                              const isFilterApplied = activeFilterCount > 0;
+
+                              return (
+                                <button
+                                  type="button"
+                                  onClick={() => setShowFilterMenu(!showFilterMenu)}
+                                  className={`relative flex h-7.5 w-7.5 items-center justify-center rounded-full border transition-all cursor-pointer shrink-0 ${
+                                    isFilterApplied || showFilterMenu
+                                      ? "border-[#ff5500] bg-[#fff2ea] dark:bg-orange-950/40 text-[#ff5500] ring-1 ring-orange-500/20"
+                                      : "border-[#ffdcc8] dark:border-slate-800 bg-[#fffcf8] dark:bg-slate-900 text-[#ff5500] hover:bg-[#fff2ea]"
+                                  }`}
+                                  title="Toggle Filters"
+                                >
+                                  <Filter className="h-3.5 w-3.5 stroke-[2.4] text-[#ff5500] shrink-0" />
+                                  {isFilterApplied && (
+                                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#ff5500] text-white text-[9.5px] font-black leading-none shadow-xs border border-white dark:border-slate-900">
+                                      {activeFilterCount}
+                                    </span>
+                                  )}
+                                </button>
+                              );
+                            })()}
                           </div>
                         </div>
 
@@ -10751,22 +10823,105 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             )}
                           </div>
 
-                          {/* Status Selection Dropdown Pill */}
+                          {/* Custom Multi-Select Status Dropdown Pill */}
                           <div className="relative shrink-0">
-                            <select
-                              value={applicationStatusFilter}
-                              onChange={(e) => setApplicationStatusFilter(e.target.value as MobileApplicationStatusFilter)}
-                              className="h-7 pl-3 pr-7 text-[11px] font-bold rounded-full border border-amber-200/80 dark:border-orange-800/80 bg-[#fffcf0] dark:bg-slate-900 text-[#0a0f1d] dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs cursor-pointer appearance-none"
+                            <button
+                              type="button"
+                              onClick={() => setIsAppStatusDropdownOpen(!isAppStatusDropdownOpen)}
+                              className="h-7 pl-2.5 pr-2.5 text-[11px] font-extrabold rounded-full border border-amber-200/80 dark:border-orange-800/80 bg-[#fffcf0] dark:bg-slate-900 text-[#0a0f1d] dark:text-slate-200 hover:border-orange-300 transition-colors shadow-2xs cursor-pointer flex items-center gap-1 max-w-[130px]"
                             >
-                              <option value="all">{lang === "ml" ? "എല്ലാ അപേക്ഷകളും" : "All Applications"}</option>
-                              <option value="application_received">{lang === "ml" ? "ലഭിച്ച അപേക്ഷകൾ" : "Application Received"}</option>
-                              <option value="document_verification_completed">{lang === "ml" ? "രേഖാ പരിശോധന പൂർത്തിയായി" : "Document Verification Completed"}</option>
-                              <option value="applied">{lang === "ml" ? "അപേക്ഷിച്ചു" : "Applied"}</option>
-                              <option value="review">{lang === "ml" ? "പരിശോധനയിൽ" : "Review"}</option>
-                              <option value="beneficiary">{lang === "ml" ? "ഗുണഭോക്താവ്" : "Beneficiary"}</option>
-                              <option value="rejected">{lang === "ml" ? "നിരസിച്ചവ" : "Rejected"}</option>
-                            </select>
-                            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-[#0a0f1d] dark:text-slate-300 pointer-events-none" />
+                              <span className="truncate">
+                                {selectedAppStatusFilters.length === 0 || selectedAppStatusFilters.includes("all")
+                                  ? (lang === "ml" ? "എല്ലാ അപേക്ഷകളും" : "All Applications")
+                                  : selectedAppStatusFilters.length === 1
+                                    ? selectedAppStatusFilters[0] === "application_received"
+                                      ? (lang === "ml" ? "ലഭിച്ച അപേക്ഷകൾ" : "Application Received")
+                                      : selectedAppStatusFilters[0] === "document_verification_completed"
+                                        ? (lang === "ml" ? "രേഖാ പരിശോധന പൂർത്തിയായി" : "Document Verification")
+                                        : selectedAppStatusFilters[0] === "applied"
+                                          ? (lang === "ml" ? "അപേക്ഷിച്ചു" : "Applied")
+                                          : selectedAppStatusFilters[0] === "review"
+                                            ? (lang === "ml" ? "പരിശോധനയിൽ" : "Review")
+                                            : selectedAppStatusFilters[0] === "beneficiary"
+                                              ? (lang === "ml" ? "ഗുണഭോക്താവ്" : "Beneficiary")
+                                              : (lang === "ml" ? "നിരസിച്ചവ" : "Rejected")
+                                    : `${selectedAppStatusFilters.length} Selected`}
+                              </span>
+                              <ChevronDown className={`h-3 w-3 text-[#0a0f1d] dark:text-slate-300 transition-transform shrink-0 ${isAppStatusDropdownOpen ? "rotate-180" : ""}`} />
+                            </button>
+
+                            {/* Dropdown Menu - Right aligned & bounded inside app width */}
+                            {isAppStatusDropdownOpen && (
+                              <div className="absolute right-0 top-full mt-1.5 w-56 z-50 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-2 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+                                <div className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase px-2 py-1 border-b border-slate-100 dark:border-slate-800 mb-1 flex items-center justify-between">
+                                  <span>{lang === "ml" ? "അവസ്ഥ തിരഞ്ഞെടുക്കുക" : "Select Statuses"}</span>
+                                  {selectedAppStatusFilters.length > 0 && !selectedAppStatusFilters.includes("all") && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedAppStatusFilters(["all"]);
+                                        setApplicationStatusFilter("all");
+                                      }}
+                                      className="text-orange-500 hover:underline normal-case font-bold cursor-pointer"
+                                    >
+                                      {lang === "ml" ? "എല്ലാം മായ്ക്കുക" : "Reset"}
+                                    </button>
+                                  )}
+                                </div>
+                                <div className="max-h-48 overflow-y-auto space-y-0.5 pr-0.5">
+                                  {[
+                                    { id: "all", en: "All Applications", ml: "എല്ലാ അപേക്ഷകളും" },
+                                    { id: "pending", en: "Pending Verification", ml: "പെൻഡിംഗ് അപേക്ഷകൾ" },
+                                    { id: "application_received", en: "Application Received", ml: "ലഭിച്ച അപേക്ഷകൾ" },
+                                    { id: "document_verification_completed", en: "Document Verification Completed", ml: "രേഖാ പരിശോധന പൂർത്തിയായി" },
+                                    { id: "applied", en: "Applied", ml: "അപേക്ഷിച്ചു" },
+                                    { id: "review", en: "Review", ml: "പരിശോധനയിൽ" },
+                                    { id: "beneficiary", en: "Beneficiary / Disbursed", ml: "ഗുണഭോക്താവ്" },
+                                    { id: "assisted", en: "Approved & Assisted", ml: "സഹായം ലഭിച്ചു" },
+                                    { id: "rejected", en: "Rejected", ml: "നിരസിച്ചവ" },
+                                  ].map((st) => {
+                                    const isSelected = selectedAppStatusFilters.includes(st.id);
+                                    return (
+                                      <label
+                                        key={st.id}
+                                        onClick={() => {
+                                          let updated: string[];
+                                          if (st.id === "all") {
+                                            updated = ["all"];
+                                          } else {
+                                            const filtered = selectedAppStatusFilters.filter((id) => id !== "all");
+                                            if (filtered.includes(st.id)) {
+                                              updated = filtered.filter((id) => id !== st.id);
+                                            } else {
+                                              updated = [...filtered, st.id];
+                                            }
+                                            if (updated.length === 0) updated = ["all"];
+                                          }
+                                          setSelectedAppStatusFilters(updated);
+                                          setApplicationStatusFilter(updated.length === 1 ? (updated[0] as any) : "all");
+                                        }}
+                                        className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-[11.5px] font-bold cursor-pointer transition-colors ${
+                                          isSelected
+                                            ? "bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400"
+                                            : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200"
+                                        }`}
+                                      >
+                                        <div
+                                          className={`w-4 h-4 rounded-md flex items-center justify-center border transition-colors shrink-0 ${
+                                            isSelected
+                                              ? "bg-orange-500 border-orange-500 text-white"
+                                              : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                                          }`}
+                                        >
+                                          {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
+                                        </div>
+                                        <span className="truncate">{lang === "ml" ? st.ml : st.en}</span>
+                                      </label>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -13200,18 +13355,68 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     </button>
                                   </div>
 
-                                  {/* 6. House / Building Name & Number */}
-                                  <div>
-                                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 block mb-1 leading-snug">
-                                      {lang === "ml" ? "വീട്ടുപേര് / കെട്ടിടത്തിന്റെ പേരും നമ്പറും *" : "House / Building Name & Number *"}
-                                    </label>
-                                    <input 
-                                      type="text" 
-                                      value={createHouseName}
-                                      onChange={(e) => setCreateHouseName(e.target.value)}
-                                      placeholder={lang === "ml" ? "ഉദാ: കൃഷ്ണകൃപ, ഡോർ നമ്പർ 12/34" : "House Name / Door No."}
-                                      className="w-full text-xs h-9 px-2.5 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-amber-50/40 dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 font-normal transition-colors" 
-                                    />
+                                  {/* 6. House/Flat Number & House Name (Side-by-side in 1 row) */}
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                      <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 block mb-1 leading-snug truncate">
+                                        {lang === "ml" ? "വീട് / ഫ്ലാറ്റ് നമ്പർ" : "House / Flat Number"}
+                                      </label>
+                                      <input 
+                                        type="text" 
+                                        value={createHouseNumber}
+                                        onChange={(e) => {
+                                          let val = e.target.value;
+                                          // Auto-formatting helper for House/Flat Number based on typed digits/text
+                                          if (createLocalBodyType === "corporation") {
+                                            // Corporation e.g. TC 12/3456 or 12/3456
+                                            // If user starts typing digits directly, prefix TC automatically or format 12 to 12/
+                                            if (/^\d{1,3}$/.test(val) && val.length === 2 && !val.includes("/")) {
+                                              val = val + "/";
+                                            } else if (/^TC\s?\d{1,3}$/i.test(val) && !val.includes("/")) {
+                                              val = val + "/";
+                                            }
+                                          } else if (createLocalBodyType === "municipality") {
+                                            // Municipality e.g. 12/345-A
+                                            if (/^\d{1,3}$/.test(val) && val.length === 2 && !val.includes("/")) {
+                                              val = val + "/";
+                                            } else if (/^\d{1,3}\/\d{3,4}$/.test(val) && !val.includes("-")) {
+                                              val = val + "-";
+                                            }
+                                          } else {
+                                            // Panchayat e.g. 12/345 or VII/234
+                                            if (/^\d{1,3}$/.test(val) && val.length === 2 && !val.includes("/")) {
+                                              val = val + "/";
+                                            } else if (/^[IVXLCDM]+\d*$/i.test(val) && !val.includes("/")) {
+                                              // Roman numeral ward number followed by house e.g. VII -> VII/
+                                              if (val.length >= 2 && e.nativeEvent && (e.nativeEvent as any).inputType === "insertText") {
+                                                // don't force slash immediately on Roman numerals until digit typed or slash typed
+                                              }
+                                            }
+                                          }
+                                          setCreateHouseNumber(val);
+                                        }}
+                                        placeholder={
+                                          createLocalBodyType === "corporation"
+                                            ? "e.g. TC 12/3456"
+                                            : createLocalBodyType === "municipality"
+                                            ? "e.g. 12/345-A"
+                                            : "e.g. 12/345 or VII/234"
+                                        }
+                                        className="w-full text-xs h-9 px-2 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-amber-50/40 dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 font-normal transition-colors" 
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 block mb-1 leading-snug truncate">
+                                        {lang === "ml" ? "വീട്ടുപേര്" : "House Name"}
+                                      </label>
+                                      <input 
+                                        type="text" 
+                                        value={createHouseName}
+                                        onChange={(e) => setCreateHouseName(e.target.value)}
+                                        placeholder={lang === "ml" ? "ഉദാ: കൃഷ്ണകൃപ" : "e.g. Krishnakripa"}
+                                        className="w-full text-xs h-9 px-2 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-amber-50/40 dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 font-normal transition-colors" 
+                                      />
+                                    </div>
                                   </div>
 
                                   {/* 7. Street / Locality */}
@@ -15473,7 +15678,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     type="button"
                     onClick={() => {
                       setIsStateAdminCreateMenuOpen(false);
-                      setIsCreateSchemeModalOpen(true);
+                      setMobileSubPage("create_scheme");
                     }}
                     className="flex w-full items-center gap-3 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-left shadow-2xs group cursor-pointer"
                   >
@@ -15493,7 +15698,32 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0 group-hover:translate-x-0.5 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-all" />
                   </button>
 
-                  {/* 2. Applicant */}
+                  {/* 2. Party Worker */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsStateAdminCreateMenuOpen(false);
+                      setIsCreatePartyWorkerModalOpen(true);
+                    }}
+                    className="flex w-full items-center gap-3 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-left shadow-2xs group cursor-pointer"
+                  >
+                    <div className="relative h-12 w-12 rounded-full overflow-hidden shrink-0 group-hover:scale-105 transition-transform bg-indigo-50">
+                      <img src={createPartyWorkerAvatar} alt="Party Worker" className="h-full w-full object-cover scale-[1.22]" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-extrabold text-xs sm:text-[13px] text-slate-900 dark:text-white">
+                        {lang === "ml" ? "പാർട്ടി പ്രവർത്തകൻ (Party Worker)" : "Party Worker"}
+                      </h4>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-tight mt-0.5">
+                        {lang === "ml"
+                          ? "പുതിയ പാർട്ടി പ്രവർത്തകനെയോ ബൂത്ത് ലീഡറെയോ ചേർക്കുക"
+                          : "Add new party worker, booth leader or executive"}
+                      </p>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0 group-hover:translate-x-0.5 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-all" />
+                  </button>
+
+                  {/* 3. Applicant */}
                   <button
                     type="button"
                     onClick={() => {
@@ -15516,31 +15746,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         {lang === "ml"
                           ? "അപേക്ഷകന്റെ വിവരങ്ങൾ ചേർക്കുക, യോഗ്യത പരിശോധിക്കുക"
                           : "Create applicant profile & check scheme eligibility"}
-                      </p>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0 group-hover:translate-x-0.5 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-all" />
-                  </button>
-
-                  {/* 3. Party Worker */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsStateAdminCreateMenuOpen(false);
-                      setIsCreatePartyWorkerModalOpen(true);
-                    }}
-                    className="flex w-full items-center gap-3 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-left shadow-2xs group cursor-pointer"
-                  >
-                    <div className="relative h-12 w-12 rounded-full overflow-hidden shrink-0 group-hover:scale-105 transition-transform bg-indigo-50">
-                      <img src={createPartyWorkerAvatar} alt="Party Worker" className="h-full w-full object-cover scale-[1.22]" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h4 className="font-extrabold text-xs sm:text-[13px] text-slate-900 dark:text-white">
-                        {lang === "ml" ? "പാർട്ടി പ്രവർത്തകൻ (Party Worker)" : "Party Worker"}
-                      </h4>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-tight mt-0.5">
-                        {lang === "ml"
-                          ? "പുതിയ പാർട്ടി പ്രവർത്തകനെയോ ബൂത്ത് ലീഡറെയോ ചേർക്കുക"
-                          : "Add new party worker, booth leader or executive"}
                       </p>
                     </div>
                     <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0 group-hover:translate-x-0.5 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-all" />
@@ -16591,425 +16796,1338 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             inlineInApp={true}
           />
 
-          {/* Interactive Filter Modal Overlay (Same popup UI as Calendar Modal) */}
+          {/* Interactive Filter Modal Overlay - Home Filters UI matching reference mock */}
           {showFilterMenu && (
             <div 
               className="absolute inset-0 z-50 flex items-end bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200 rounded-[36px] overflow-hidden"
               onClick={() => {
-                      setAppliedGeoMode(geoMode);
-                      if (geoMode === "assembly") {
-                        setAppliedDistrict(draftDistrict);
-                        setAppliedMandalam(draftMandalam);
-                        setAppliedBooth(draftBooth);
-                        if (draftBooth !== "all") {
-                          setFilterGeoScope("booth");
-                          setSelectedDistrict(draftDistrict);
-                          setSelectedMandalam(draftMandalam);
-                          setSelectedBooth(draftBooth);
-                        } else if (draftMandalam !== "all") {
-                          setFilterGeoScope("mandalam");
-                          setSelectedDistrict(draftDistrict);
-                          setSelectedMandalam(draftMandalam);
-                        } else if (draftDistrict !== "all") {
-                          setFilterGeoScope("district");
-                          setSelectedDistrict(draftDistrict);
-                        } else {
-                          setFilterGeoScope("state");
-                        }
-                      } else {
-                        setAppliedLBType(draftLBType);
-                        setAppliedLBDistrict(draftLBDistrict);
-                        setAppliedLocalBody(draftLocalBody);
-                        setAppliedWard(draftWard);
-                        if (draftWard !== "all") {
-                          setFilterGeoScope("booth");
-                        } else if (draftLocalBody !== "all") {
-                          setFilterGeoScope("area");
-                        } else if (draftLBDistrict !== "all") {
-                          setFilterGeoScope("district");
-                        } else {
-                          setFilterGeoScope("state");
-                        }
-                      }
-                      setShowFilterMenu(false);
-                    }}
+                setAppliedGeoMode(geoMode);
+                if (geoMode === "assembly") {
+                  setAppliedDistrict(draftDistrict);
+                  setAppliedMandalam(draftMandalam);
+                  setAppliedBooth(draftBooth);
+                  if (draftBooth !== "all") {
+                    setFilterGeoScope("booth");
+                    setSelectedDistrict(draftDistrict);
+                    setSelectedMandalam(draftMandalam);
+                    setSelectedBooth(draftBooth);
+                  } else if (draftMandalam !== "all") {
+                    setFilterGeoScope("mandalam");
+                    setSelectedDistrict(draftDistrict);
+                    setSelectedMandalam(draftMandalam);
+                  } else if (draftDistrict !== "all") {
+                    setFilterGeoScope("district");
+                    setSelectedDistrict(draftDistrict);
+                  } else {
+                    setFilterGeoScope("state");
+                  }
+                } else {
+                  setAppliedLBType(draftLBType);
+                  setAppliedLBDistrict(draftLBDistrict);
+                  setAppliedLocalBody(draftLocalBody);
+                  setAppliedWard(draftWard);
+                  if (draftWard !== "all") {
+                    setFilterGeoScope("booth");
+                  } else if (draftLocalBody !== "all") {
+                    setFilterGeoScope("area");
+                  } else if (draftLBDistrict !== "all") {
+                    setFilterGeoScope("district");
+                  } else {
+                    setFilterGeoScope("state");
+                  }
+                }
+                setShowFilterMenu(false);
+              }}
             >
               <div 
-                className="w-full rounded-t-[28px] bg-white dark:bg-slate-900 p-3.5 sm:p-4 shadow-2xl transition-all border-t border-x border-amber-200/80 dark:border-amber-900/60 animate-in slide-in-from-bottom-full duration-300 flex flex-col"
+                className="w-full rounded-t-[28px] bg-white dark:bg-slate-900 p-4 shadow-2xl transition-all border-t border-slate-200 dark:border-slate-800 animate-in slide-in-from-bottom-full duration-300 flex flex-col max-h-[90%] overflow-y-auto"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Top Sheet Handle */}
-                <div className="w-9 h-1 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto -mt-1 mb-2 shrink-0" />
+                <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto -mt-1 mb-3 shrink-0" />
                 
                 {/* Modal Header */}
-                <div className="flex items-center justify-between pb-2 mb-1.5 border-b border-amber-200/60 dark:border-amber-900/40 shrink-0">
-                  <span className="text-sm sm:text-base font-black text-amber-950 dark:text-amber-200 uppercase tracking-wider flex items-center gap-1.5">
-                    <Filter className="h-4 w-4 text-[#ff5500]" />
-                    <span>{lang === "ml" ? "ഫിൽട്ടറുകൾ" : "Filters"}</span>
-                  </span>
+                <div className="flex items-center justify-between pb-2 mb-1.5 border-b border-slate-100 dark:border-slate-800 shrink-0">
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-4.5 w-4.5 text-orange-500 stroke-[2.2]" />
+                    <div>
+                      <span className="text-base font-extrabold text-slate-900 dark:text-white leading-tight block">
+                        {activeTab === "applications"
+                          ? (lang === "ml" ? "അപേക്ഷാ ഫിൽട്ടറുകൾ" : "Application Filters")
+                          : (lang === "ml" ? "ഹോം ഫിൽട്ടറുകൾ" : "Home Filters")}
+                      </span>
+                      <p className="text-[10px] text-slate-400 dark:text-slate-400 font-semibold leading-none mt-0.5">
+                        {activeTab === "applications"
+                          ? (lang === "ml" ? "അപേക്ഷാ പട്ടിക ഫിൽട്ടറുകൾ" : "Application list filters & preferences")
+                          : (lang === "ml" ? "ഡാഷ്‌ബോർഡ് കാലയളവ്: ഒക്ടോബർ 2026" : "Dashboard period: October 2026")}
+                      </p>
+                    </div>
+                  </div>
                   <button
                     type="button"
                     onClick={() => setShowFilterMenu(false)}
-                    className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                    className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
                     title="Close"
                   >
-                    <X className="h-3.5 w-3.5" />
+                    <X className="h-4 w-4 stroke-[2.2]" />
                   </button>
                 </div>
 
-                {/* Filter Inputs Area - Clean layout with generous spacing */}
-                <div className="space-y-3.5 my-2.5 flex-1">
-                  {/* Work View Mode Switch (My Work vs Team) */}
-                  <div className="flex items-center justify-between p-3 rounded-xl bg-orange-50/70 dark:bg-slate-800/80 border border-orange-200/80 dark:border-slate-700/80 shadow-2xs">
-                    <div className="flex items-center gap-2">
-                      <div className="p-1.5 rounded-lg bg-orange-500 text-white shadow-2xs">
-                        {partyWorkerTab === "my_work" ? <FileText className="h-4 w-4 stroke-[2.2]" /> : <Users className="h-4 w-4 stroke-[2.2]" />}
-                      </div>
-                      <div>
-                        <span className="block text-xs font-bold text-slate-900 dark:text-slate-100">
-                          {lang === "ml" ? "വർക്ക് കാഴ്ച" : "Work View"}
-                        </span>
-                        <span className="block text-[10px] font-medium text-slate-500 dark:text-slate-400">
-                          {partyWorkerTab === "my_work" 
-                            ? (lang === "ml" ? "എന്റെ ജോലി അപേക്ഷകൾ" : "My Work Overview") 
-                            : (lang === "ml" ? "ടീം അംഗങ്ങളുടെ ജോലി" : "Team Performance")}
-                        </span>
+                {/* Filter Inputs Area */}
+                {activeTab === "applications" ? (
+                  /* APPLICATION LIST FILTERS */
+                  <div className="space-y-3 my-1 flex-1">
+                    {/* 1. Work View: My Work / Team */}
+                    <div className="space-y-1">
+                      <label className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 block">
+                        {lang === "ml" ? "തൊഴിൽ കാഴ്ച (Work View)" : "Work View"}
+                      </label>
+                      <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700/60">
+                        <button
+                          type="button"
+                          onClick={() => setPartyWorkerTab("my_work")}
+                          className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                            partyWorkerTab === "my_work"
+                              ? "bg-white dark:bg-slate-900 text-orange-600 dark:text-orange-400 shadow-2xs border border-orange-200/60 dark:border-slate-700"
+                              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                          }`}
+                        >
+                          <FileText className="w-3.5 h-3.5 stroke-[2.2]" />
+                          <span>{lang === "ml" ? "എന്റെ ജോലി" : "My Work"}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setPartyWorkerTab("team")}
+                          className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                            partyWorkerTab === "team"
+                              ? "bg-white dark:bg-slate-900 text-orange-600 dark:text-orange-400 shadow-2xs border border-orange-200/60 dark:border-slate-700"
+                              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                          }`}
+                        >
+                          <Users className="w-3.5 h-3.5 stroke-[2.2]" />
+                          <span>{lang === "ml" ? "ടീം" : "Team"}</span>
+                        </button>
                       </div>
                     </div>
 
-                    {/* Interactive Switch Control */}
-                    <div className="flex items-center gap-1 bg-amber-100/80 dark:bg-slate-900 p-1 rounded-full border border-amber-200/80 dark:border-slate-700">
+                    {/* 2. Location Filter */}
+                    <div className="space-y-0.5 relative">
+                      <label className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 block">
+                        {lang === "ml" ? "സ്ഥലം (വാർഡ് / ബൂത്ത്)" : "Location (Ward / Booth)"}
+                      </label>
                       <button
                         type="button"
-                        onClick={() => setPartyWorkerTab("my_work")}
-                        className={`px-3 py-1.5 rounded-full text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
-                          partyWorkerTab === "my_work"
-                            ? "bg-orange-500 text-white shadow-xs"
-                            : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-                        }`}
+                        onClick={() => setIsAppLocationDropdownOpen(!isAppLocationDropdownOpen)}
+                        className="w-full flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-orange-300 transition-colors"
                       >
-                        <FileText className="h-3.5 w-3.5 stroke-[2.2]" />
-                        <span>{lang === "ml" ? "എന്റെ ജോലി" : "My Work"}</span>
+                        <span className="truncate">
+                          {appFilterLocation === "all"
+                            ? (lang === "ml" ? "എല്ലാ സ്ഥലങ്ങളും (വാർഡ് / ബൂത്ത്)" : "All Locations (Ward / Booth)")
+                            : appFilterLocation === "ward_1"
+                              ? (lang === "ml" ? "വാർഡ് 1 — കഴക്കൂട്ടം" : "Ward 1 — Kazhakoottam")
+                              : appFilterLocation === "ward_2"
+                                ? (lang === "ml" ? "വാർഡ് 2 — കാര്യവട്ടം" : "Ward 2 — Kariavattom")
+                                : appFilterLocation === "booth_101"
+                                  ? (lang === "ml" ? "ബൂത്ത് 101 — ഗവ. എച്ച്.എസ്" : "Booth 101 — Govt H.S")
+                                  : (lang === "ml" ? "ബൂത്ത് 102 — എൽ.പി.എസ്" : "Booth 102 — L.P.S")}
+                        </span>
+                        <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isAppLocationDropdownOpen ? "rotate-180" : ""}`} />
                       </button>
+
+                      {isAppLocationDropdownOpen && (
+                        <div className="absolute top-full left-0 right-0 mt-1 z-50 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-xl animate-in fade-in duration-150 space-y-1">
+                          <div className="relative mb-1.5">
+                            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input
+                              type="text"
+                              value={appLocationSearchQuery}
+                              onChange={(e) => setAppLocationSearchQuery(e.target.value)}
+                              placeholder={lang === "ml" ? "വാർഡ്/ബൂത്ത് തിരയുക..." : "Search Ward/Booth..."}
+                              className="w-full pl-8 pr-2.5 py-1.5 text-xs rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 outline-none focus:border-orange-500"
+                            />
+                          </div>
+                          <div className="max-h-36 overflow-y-auto space-y-0.5">
+                            {[
+                              { id: "all", en: "All Assigned Areas", ml: "എല്ലാ നിശ്ചിത പ്രദേശങ്ങളും" },
+                              { id: "ward_1", en: "Ward 1 — Kazhakoottam", ml: "വാർഡ് 1 — കഴക്കൂട്ടം" },
+                              { id: "ward_2", en: "Ward 2 — Kariavattom", ml: "വാർഡ് 2 — കാര്യവട്ടം" },
+                              { id: "booth_101", en: "Booth 101 — Govt H.S", ml: "ബൂത്ത് 101 — ഗവ. എച്ച്.എസ്" },
+                              { id: "booth_102", en: "Booth 102 — L.P.S Kariavattom", ml: "ബൂത്ത് 102 — എൽ.പി.എസ് കാര്യവട്ടം" },
+                            ]
+                              .filter((loc) => loc[lang].toLowerCase().includes(appLocationSearchQuery.toLowerCase()))
+                              .map((loc) => (
+                                <button
+                                  key={loc.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setAppFilterLocation(loc.id);
+                                    setIsAppLocationDropdownOpen(false);
+                                  }}
+                                  className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs font-semibold flex items-center justify-between transition-colors ${
+                                    appFilterLocation === loc.id
+                                      ? "bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400"
+                                      : "hover:bg-slate-100 dark:hover:bg-slate-700/60 text-slate-800 dark:text-slate-200"
+                                  }`}
+                                >
+                                  <span>{loc[lang]}</span>
+                                  {appFilterLocation === loc.id && <Check className="w-3.5 h-3.5 text-orange-500 stroke-[3]" />}
+                                </button>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 4. Category Filter */}
+                    <div className="space-y-0.5 relative">
+                      <label className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 block">
+                        {lang === "ml" ? "വിഭാഗം" : "Category"}
+                      </label>
                       <button
                         type="button"
-                        onClick={() => setPartyWorkerTab("team")}
-                        className={`px-3 py-1.5 rounded-full text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
-                          partyWorkerTab === "team"
-                            ? "bg-orange-500 text-white shadow-xs"
-                            : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-                        }`}
+                        onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+                        className="w-full flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-orange-300 transition-colors"
                       >
-                        <Users className="h-3.5 w-3.5 stroke-[2.2]" />
-                        <span>{lang === "ml" ? "ടീം" : "Team"}</span>
+                        <span className="truncate">
+                          {appSchemeCategoryFilter === "all"
+                            ? (lang === "ml" ? "എല്ലാ വിഭാഗങ്ങളും" : "All Categories")
+                            : appSchemeCategoryFilter === "agriculture"
+                              ? (lang === "ml" ? "കൃഷി & കർഷകക്ഷേമം" : "Agriculture & Farming")
+                              : appSchemeCategoryFilter === "healthcare"
+                                ? (lang === "ml" ? "ആരോഗ്യം & മെഡിക്കൽ" : "Health & Medical")
+                                : appSchemeCategoryFilter === "housing"
+                                  ? (lang === "ml" ? "ഭവനനിർമ്മാണം & പാർപ്പിടം" : "Housing & Shelter")
+                                  : appSchemeCategoryFilter === "pension"
+                                    ? (lang === "ml" ? "പെൻഷൻ & സാമൂഹിക ക്ഷേമം" : "Pension & Social Welfare")
+                                    : (lang === "ml" ? "വിദ്യാഭ്യാസം & സ്കോളർഷിപ്പ്" : "Education & Scholarship")}
+                        </span>
+                        <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isCategoryDropdownOpen ? "rotate-180" : ""}`} />
                       </button>
+
+                      {isCategoryDropdownOpen && (
+                        <div className="absolute top-full left-0 right-0 mt-1 z-50 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-xl animate-in fade-in duration-150 space-y-1">
+                          <div className="relative mb-1.5">
+                            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input
+                              type="text"
+                              value={categorySearchQuery}
+                              onChange={(e) => setCategorySearchQuery(e.target.value)}
+                              placeholder={lang === "ml" ? "വിഭാഗം തിരയുക..." : "Search Category..."}
+                              className="w-full pl-8 pr-2.5 py-1.5 text-xs rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 outline-none focus:border-orange-500"
+                            />
+                          </div>
+                          <div className="max-h-36 overflow-y-auto space-y-0.5">
+                            {[
+                              { id: "all", en: "All Categories", ml: "എല്ലാ വിഭാഗങ്ങളും" },
+                              { id: "agriculture", en: "Agriculture & Farming", ml: "കൃഷി & കർഷകക്ഷേമം" },
+                              { id: "healthcare", en: "Health & Medical", ml: "ആരോഗ്യം & മെഡിക്കൽ" },
+                              { id: "housing", en: "Housing & Shelter", ml: "ഭവനനിർമ്മാണം & പാർപ്പിടം" },
+                              { id: "pension", en: "Pension & Social Welfare", ml: "പെൻഷൻ & സാമൂഹിക ക്ഷേമം" },
+                              { id: "education", en: "Education & Scholarship", ml: "വിദ്യാഭ്യാസം & സ്കോളർഷിപ്പ്" },
+                            ]
+                              .filter((cat) => cat[lang].toLowerCase().includes(categorySearchQuery.toLowerCase()))
+                              .map((cat) => (
+                                <button
+                                  key={cat.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setAppSchemeCategoryFilter(cat.id);
+                                    setIsCategoryDropdownOpen(false);
+                                  }}
+                                  className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs font-semibold flex items-center justify-between transition-colors ${
+                                    appSchemeCategoryFilter === cat.id
+                                      ? "bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400"
+                                      : "hover:bg-slate-100 dark:hover:bg-slate-700/60 text-slate-800 dark:text-slate-200"
+                                  }`}
+                                >
+                                  <span>{cat[lang]}</span>
+                                  {appSchemeCategoryFilter === cat.id && <Check className="w-3.5 h-3.5 text-orange-500 stroke-[3]" />}
+                                </button>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 5. Scheme Filter */}
+                    <div className="space-y-0.5 relative">
+                      <label className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 block">
+                        {lang === "ml" ? "പദ്ധതി (Scheme)" : "Scheme"}
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setIsSchemeDropdownOpen(!isSchemeDropdownOpen)}
+                        className="w-full flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-orange-300 transition-colors"
+                      >
+                        <span className="truncate">
+                          {filterScheme === "all"
+                            ? (lang === "ml" ? "എല്ലാ പദ്ധതികളും" : "All Schemes")
+                            : filterScheme === "ayushman"
+                              ? (lang === "ml" ? "ആയുഷ്മാൻ ഭാരത് — PMJAY" : "Ayushman Bharat — PMJAY")
+                              : filterScheme === "pmkisan"
+                                ? (lang === "ml" ? "പിഎം കിസാൻ സമ്മാൻ നിധി" : "PM Kisan Samman Nidhi")
+                                : (lang === "ml" ? "പിഎം ഫസൽ ഭീമ യോജന" : "PM Fasal Bima Yojana")}
+                        </span>
+                        <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isSchemeDropdownOpen ? "rotate-180" : ""}`} />
+                      </button>
+
+                      {isSchemeDropdownOpen && (
+                        <div className="absolute top-full left-0 right-0 mt-1 z-50 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-xl animate-in fade-in duration-150 space-y-1">
+                          <div className="relative mb-1.5">
+                            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input
+                              type="text"
+                              value={homeFilterSchemeSearchQuery}
+                              onChange={(e) => setHomeFilterSchemeSearchQuery(e.target.value)}
+                              placeholder={lang === "ml" ? "പദ്ധതി തിരയുക..." : "Search Scheme..."}
+                              className="w-full pl-8 pr-2.5 py-1.5 text-xs rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 outline-none focus:border-orange-500"
+                            />
+                          </div>
+                          <div className="max-h-36 overflow-y-auto space-y-0.5">
+                            {[
+                              { id: "all", en: "All Schemes", ml: "എല്ലാ പദ്ധതികളും", category: "all" },
+                              { id: "pmkisan", en: "PM Kisan Samman Nidhi", ml: "പിഎം കിസാൻ സമ്മാൻ നിധി", category: "agriculture" },
+                              { id: "pmfby", en: "PM Fasal Bima Yojana", ml: "പിഎം ഫസൽ ഭീമ യോജന", category: "agriculture" },
+                              { id: "ayushman", en: "Ayushman Bharat — PMJAY", ml: "ആയുഷ്മാൻ ഭാരത് - പിഎംജെഎവൈ", category: "healthcare" },
+                            ]
+                              .filter((sch) => appSchemeCategoryFilter === "all" || sch.category === "all" || sch.category === appSchemeCategoryFilter)
+                              .filter((sch) => sch[lang].toLowerCase().includes(homeFilterSchemeSearchQuery.toLowerCase()))
+                              .map((sch) => (
+                                <button
+                                  key={sch.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setFilterScheme(sch.id);
+                                    setIsSchemeDropdownOpen(false);
+                                  }}
+                                  className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs font-semibold flex items-center justify-between transition-colors ${
+                                    filterScheme === sch.id
+                                      ? "bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400"
+                                      : "hover:bg-slate-100 dark:hover:bg-slate-700/60 text-slate-800 dark:text-slate-200"
+                                  }`}
+                                >
+                                  <span>{sch[lang]}</span>
+                                  {filterScheme === sch.id && <Check className="w-3.5 h-3.5 text-orange-500 stroke-[3]" />}
+                                </button>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 6. Assigned Worker (Show in Team view only) */}
+                    {partyWorkerTab === "team" && (
+                      <div className="space-y-0.5 relative animate-in fade-in duration-200">
+                        <label className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 block">
+                          {lang === "ml" ? "ചുമതലപ്പെടുത്തിയ പ്രവർത്തകൻ (Assigned Worker)" : "Assigned Worker"}
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setIsAppWorkerDropdownOpen(!isAppWorkerDropdownOpen)}
+                          className="w-full flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-orange-300 transition-colors"
+                        >
+                          <span className="truncate">
+                            {appFilterAssignedWorker === "all"
+                              ? (lang === "ml" ? "എല്ലാ പ്രവർത്തകരും" : "All Workers")
+                              : appFilterAssignedWorker === "unassigned"
+                                ? (lang === "ml" ? "ചുമതലപ്പെടുത്താത്തവ (Unassigned)" : "Unassigned")
+                                : appFilterAssignedWorker === "dhyan"
+                                  ? "Dhyan M S (Area President)"
+                                  : "Anjali Nair (Booth Worker)"}
+                          </span>
+                          <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isAppWorkerDropdownOpen ? "rotate-180" : ""}`} />
+                        </button>
+
+                        {isAppWorkerDropdownOpen && (
+                          <div className="absolute top-full left-0 right-0 mt-1 z-50 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-xl animate-in fade-in duration-150 space-y-1">
+                            <div className="relative mb-1.5">
+                              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                              <input
+                                type="text"
+                                value={appWorkerSearchQuery}
+                                onChange={(e) => setAppWorkerSearchQuery(e.target.value)}
+                                placeholder={lang === "ml" ? "പ്രവർത്തകനെ തിരയുക..." : "Search Worker..."}
+                                className="w-full pl-8 pr-2.5 py-1.5 text-xs rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 outline-none focus:border-orange-500"
+                              />
+                            </div>
+                            <div className="max-h-36 overflow-y-auto space-y-0.5">
+                              {[
+                                { id: "all", en: "All Workers", ml: "എല്ലാ പ്രവർത്തകരും" },
+                                { id: "unassigned", en: "Unassigned", ml: "ചുമതലപ്പെടുത്താത്തവ" },
+                                { id: "dhyan", en: "Dhyan M S (Area President)", ml: "ധ്യൻ M S (ഏരിയ പ്രസിഡന്റ്)" },
+                                { id: "anjali", en: "Anjali Nair (Booth Worker)", ml: "അഞ്ജലി നായർ (ബൂത്ത് പ്രവർത്തക)" },
+                              ]
+                                .filter((wk) => wk[lang].toLowerCase().includes(appWorkerSearchQuery.toLowerCase()))
+                                .map((wk) => (
+                                  <button
+                                    key={wk.id}
+                                    type="button"
+                                    onClick={() => {
+                                      setAppFilterAssignedWorker(wk.id);
+                                      setIsAppWorkerDropdownOpen(false);
+                                    }}
+                                    className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs font-semibold flex items-center justify-between transition-colors ${
+                                      appFilterAssignedWorker === wk.id
+                                        ? "bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400"
+                                        : "hover:bg-slate-100 dark:hover:bg-slate-700/60 text-slate-800 dark:text-slate-200"
+                                    }`}
+                                  >
+                                    <span>{wk[lang]}</span>
+                                    {appFilterAssignedWorker === wk.id && <Check className="w-3.5 h-3.5 text-orange-500 stroke-[3]" />}
+                                  </button>
+                                ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* 7. Follow-up Filter */}
+                    <div className="space-y-0.5 relative">
+                      <label className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 block">
+                        {lang === "ml" ? "തുടർനടപടി (Follow-up)" : "Follow-up Status"}
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setIsAppFollowUpDropdownOpen(!isAppFollowUpDropdownOpen)}
+                        className="w-full flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-orange-300 transition-colors"
+                      >
+                        <span className="truncate">
+                          {appFilterFollowUp === "all"
+                            ? (lang === "ml" ? "എല്ലാ തുടർനടപടികളും" : "All Follow-ups")
+                            : appFilterFollowUp === "overdue"
+                              ? (lang === "ml" ? "സമയം കഴിഞ്ഞവ (Overdue)" : "Overdue")
+                              : appFilterFollowUp === "today"
+                                ? (lang === "ml" ? "ഇന്നുള്ളവ (Due Today)" : "Due Today")
+                                : appFilterFollowUp === "upcoming"
+                                  ? (lang === "ml" ? "വരാനിരിക്കുന്നവ (Upcoming)" : "Upcoming")
+                                  : (lang === "ml" ? "തുടർനടപടി ഷെഡ്യൂൾ ചെയ്യാത്തവ" : "No Follow-up Scheduled")}
+                        </span>
+                        <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isAppFollowUpDropdownOpen ? "rotate-180" : ""}`} />
+                      </button>
+
+                      {isAppFollowUpDropdownOpen && (
+                        <div className="absolute top-full left-0 right-0 mt-1 z-50 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-xl animate-in fade-in duration-150 space-y-0.5">
+                          {[
+                            { id: "all", en: "All Follow-ups", ml: "എല്ലാ തുടർനടപടികളും" },
+                            { id: "overdue", en: "Overdue", ml: "സമയം കഴിഞ്ഞവ (Overdue)" },
+                            { id: "today", en: "Due Today", ml: "ഇന്നുള്ളവ (Due Today)" },
+                            { id: "upcoming", en: "Upcoming", ml: "വരാനിരിക്കുന്നവ (Upcoming)" },
+                            { id: "none", en: "No Follow-up Scheduled", ml: "തുടർനടപടി ഷെഡ്യൂൾ ചെയ്യാത്തവ" },
+                          ].map((fl) => (
+                            <button
+                              key={fl.id}
+                              type="button"
+                              onClick={() => {
+                                setAppFilterFollowUp(fl.id);
+                                setIsAppFollowUpDropdownOpen(false);
+                              }}
+                              className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs font-semibold flex items-center justify-between transition-colors ${
+                                appFilterFollowUp === fl.id
+                                  ? "bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400"
+                                  : "hover:bg-slate-100 dark:hover:bg-slate-700/60 text-slate-800 dark:text-slate-200"
+                              }`}
+                            >
+                              <span>{fl[lang]}</span>
+                              {appFilterFollowUp === fl.id && <Check className="w-3.5 h-3.5 text-orange-500 stroke-[3]" />}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
+                ) : (
+                  /* Filter Inputs Area for Home */
+                  <div className="space-y-2.5 my-1 flex-1">
+                  
+                  {/* Location & Local Body & Category & Scheme Controls */}
+                  <div className="space-y-2">
+                    {userRole === "party_worker" ? (
+                      /* Party Worker: Unified My Work Switch & Fixed Location Card */
+                      <div className="rounded-lg border border-orange-200/80 dark:border-slate-700 bg-orange-50/60 dark:bg-slate-800/60 p-2.5 space-y-2 shadow-2xs">
+                        {/* Top Row: My Work / Teams Switch */}
+                        <div className="flex items-center justify-between pb-2 border-b border-orange-200/50 dark:border-slate-700/60">
+                          <div className="flex items-center gap-2">
+                            {partyWorkerTab === "my_work" ? (
+                              <FileText className="h-3.5 w-3.5 text-orange-500 stroke-[2.2]" />
+                            ) : (
+                              <Users className="h-3.5 w-3.5 text-orange-500 stroke-[2.2]" />
+                            )}
+                            <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                              {partyWorkerTab === "my_work"
+                                ? (lang === "ml" ? "എന്റെ ജോലി" : "My Work")
+                                : (lang === "ml" ? "ടീമുകൾ" : "Teams")}
+                            </span>
+                          </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    {/* Geography / Scope Filter + Cascading Selection Controls */}
-                    <div className="col-span-2 flex flex-col gap-3 p-3 rounded-xl bg-amber-100/60 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800/80">
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-black text-amber-950 dark:text-amber-200 uppercase tracking-wider flex items-center gap-1">
-                          <span>{lang === "ml" ? "ഭൂമിശാസ്ത്രം / മേഖല" : "GEOGRAPHY SCOPE"}</span>
-                        </label>
-                        <span className="text-[10px] font-bold text-amber-800 dark:text-amber-300 bg-amber-200/80 dark:bg-amber-900/80 px-2 py-0.5 rounded-full uppercase">
-                          {geoMode === "assembly" ? "Assembly / Booth" : "Local Bodies"}
+                          {/* Toggle Switch */}
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={partyWorkerTab === "team"}
+                            onClick={() => setPartyWorkerTab(partyWorkerTab === "team" ? "my_work" : "team")}
+                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                              partyWorkerTab === "team" ? "bg-orange-500" : "bg-slate-300 dark:bg-slate-700"
+                            }`}
+                          >
+                            <span
+                              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                                partyWorkerTab === "team" ? "translate-x-4" : "translate-x-0"
+                              }`}
+                            />
+                          </button>
+                        </div>
+
+                        {/* Fixed Location Info */}
+                        <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] font-semibold text-slate-800 dark:text-slate-200">
+                            <div>
+                              <span className="text-slate-500 dark:text-slate-400 font-medium">{lang === "ml" ? "ജില്ല: " : "District: "}</span>
+                              <span className="font-bold text-slate-900 dark:text-white">
+                                {lang === "ml" ? "തിരുവനന്തപുരം" : "Trivandrum"}
+                              </span>
+                              <span className="text-slate-400 ml-0.5">,</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-500 dark:text-slate-400 font-medium">{lang === "ml" ? "മണ്ഡലം: " : "Constituency: "}</span>
+                              <span className="font-bold text-slate-900 dark:text-white">
+                                {lang === "ml" ? "കഴക്കൂട്ടം" : "Kazhakkoottam"}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 text-[11px] font-semibold text-slate-800 dark:text-slate-200 border-t border-orange-200/50 dark:border-slate-700/60 pt-1">
+                            <span className="text-slate-500 dark:text-slate-400 font-medium">{lang === "ml" ? "തദ്ദേശ സ്ഥാപനം: " : "Local Body: "}</span>
+                            <span className="font-bold text-slate-900 dark:text-white">
+                              {lang === "ml" ? "തിരുവനന്തപുരം കോർപ്പറേഷൻ" : "Trivandrum Corporation"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                    {/* District - Multi-select */}
+                    <div className="space-y-0.5 relative">
+                      <label className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 block">
+                        {lang === "ml" ? "ജില്ല" : "District"}
+                      </label>
+
+                      {/* Trigger Button displaying selected count or labels */}
+                      <button
+                        type="button"
+                        onClick={() => setIsDistrictDropdownOpen(!isDistrictDropdownOpen)}
+                        className="w-full h-8.5 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer flex items-center justify-between gap-2"
+                      >
+                        <span className="truncate">
+                          {selectedDistrictIds.length === 0 || selectedDistrictIds.includes("all") || selectedDistrictIds.length === districts.length
+                            ? (lang === "ml" ? "എല്ലാ ജില്ലകളും" : "All Districts")
+                            : selectedDistrictIds.length === 1
+                            ? (districts.find((d) => d.id === selectedDistrictIds[0])?.[lang] || selectedDistrictIds[0])
+                            : `${selectedDistrictIds.length} ${lang === "ml" ? "ജില്ലകൾ തിരഞ്ഞെടുത്തു" : "districts selected"}`}
                         </span>
+                        <ChevronDown className={`h-3.5 w-3.5 text-slate-400 shrink-0 transition-transform ${isDistrictDropdownOpen ? "rotate-180" : ""}`} />
+                      </button>
+
+                      {/* Multi-select Dropdown Popover */}
+                      {isDistrictDropdownOpen && (
+                        <div className="absolute top-full left-0 right-0 mt-1 z-30 max-h-56 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg p-1.5 flex flex-col animate-in fade-in slide-in-from-top-1 duration-150">
+                          {/* Search Bar */}
+                          <div className="relative mb-1.5 shrink-0">
+                            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2" />
+                            <input
+                              type="text"
+                              value={districtSearchQuery}
+                              onChange={(e) => setDistrictSearchQuery(e.target.value)}
+                              placeholder={lang === "ml" ? "തിരയുക..." : "Search..."}
+                              className="w-full pl-7 pr-2 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs font-medium text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500"
+                            />
+                          </div>
+
+                            <div className="overflow-y-auto space-y-0.5 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none]">
+                              {/* All Districts Option */}
+                              <label
+                                className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (selectedDistrictIds.includes("all") || selectedDistrictIds.length === districts.length) {
+                                    setSelectedDistrictIds([]);
+                                  } else {
+                                    setSelectedDistrictIds(["all", ...districts.map((d) => d.id)]);
+                                  }
+                                  setDraftDistrict("all");
+                                  setDraftLBDistrict("all");
+                                }}
+                              >
+                                <div
+                                  className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
+                                    selectedDistrictIds.includes("all") || selectedDistrictIds.length === districts.length
+                                      ? "bg-orange-500 border-orange-500 text-white"
+                                      : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                                  }`}
+                                >
+                                  {(selectedDistrictIds.includes("all") || selectedDistrictIds.length === districts.length) && (
+                                    <Check className="w-3 h-3 text-white stroke-[3]" />
+                                  )}
+                                </div>
+                                <span>{lang === "ml" ? "എല്ലാ ജില്ലകളും" : "All Districts"}</span>
+                              </label>
+
+                              <div className="h-px bg-slate-100 dark:bg-slate-700 my-1" />
+
+                              {districts
+                                .filter((d) => d[lang].toLowerCase().includes(districtSearchQuery.toLowerCase()))
+                                .map((d) => {
+                                  const isExplicitAll = selectedDistrictIds.includes("all") || selectedDistrictIds.length === districts.length;
+                                  const isSelected = isExplicitAll || selectedDistrictIds.includes(d.id);
+                                  return (
+                                    <label
+                                      key={d.id}
+                                      className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        let updated: string[];
+                                        if (isExplicitAll) {
+                                          updated = districts.map((dis) => dis.id).filter((id) => id !== d.id);
+                                        } else if (selectedDistrictIds.includes(d.id)) {
+                                          updated = selectedDistrictIds.filter((id) => id !== d.id && id !== "all");
+                                        } else {
+                                          updated = [...selectedDistrictIds.filter((id) => id !== "all"), d.id];
+                                        }
+                                        if (updated.length === districts.length) updated = ["all", ...districts.map((dis) => dis.id)];
+                                        setSelectedDistrictIds(updated);
+                                        setDraftDistrict(updated.length === 1 ? updated[0] : "all");
+                                        setDraftLBDistrict(updated.length === 1 ? updated[0] : "all");
+                                      }}
+                                    >
+                                      <div
+                                        className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
+                                          isSelected ? "bg-orange-500 border-orange-500 text-white" : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                                        }`}
+                                      >
+                                        {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
+                                      </div>
+                                      <span>{d[lang]}</span>
+                                    </label>
+                                  );
+                                })}
+                            </div>
+                          </div>
+                        )}
                       </div>
 
-                      {/* Mode Segmented Tab Selector */}
-                      <div className="flex rounded-lg bg-amber-200/60 dark:bg-amber-950/60 p-0.5 border border-amber-300/80 dark:border-amber-800/80">
+                      {/* Assembly Constituency - Multi-select */}
+                      <div className="space-y-0.5 relative">
+                        <label className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 block">
+                          {lang === "ml" ? "അസംബ്ലി മണ്ഡലം" : "Assembly Constituency"}
+                        </label>
                         <button
                           type="button"
-                          onClick={() => setGeoMode("assembly")}
-                          className={`flex-1 rounded-md py-1.5 text-xs font-bold transition-all cursor-pointer ${
-                            geoMode === "assembly"
-                              ? "bg-white dark:bg-slate-900 text-amber-950 dark:text-amber-100 shadow-2xs"
-                              : "text-amber-800 dark:text-amber-300 hover:text-amber-950"
-                          }`}
+                          onClick={() => setIsMandalamDropdownOpen(!isMandalamDropdownOpen)}
+                          className="w-full h-8.5 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer flex items-center justify-between gap-2"
                         >
-                          {lang === "ml" ? "അസംബ്ലി / ബൂത്ത്" : "Assembly / Booth"}
+                          <span className="truncate">
+                            {selectedMandalamIds.length === 0 || selectedMandalamIds.includes("all") || selectedMandalamIds.length === constituencies.length
+                              ? (lang === "ml" ? "എല്ലാ മണ്ഡലങ്ങളും" : "All Constituencies")
+                              : selectedMandalamIds.length === 1
+                              ? (constituencies.find((c) => c.id === selectedMandalamIds[0])?.[lang] || selectedMandalamIds[0])
+                              : `${selectedMandalamIds.length} ${lang === "ml" ? "മണ്ഡലങ്ങൾ" : "constituencies"}`}
+                          </span>
+                          <ChevronDown className={`h-3.5 w-3.5 text-slate-400 shrink-0 transition-transform ${isMandalamDropdownOpen ? "rotate-180" : ""}`} />
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => setGeoMode("local_body")}
-                          className={`flex-1 rounded-md py-1.5 text-xs font-bold transition-all cursor-pointer ${
-                            geoMode === "local_body"
-                              ? "bg-white dark:bg-slate-900 text-amber-950 dark:text-amber-100 shadow-2xs"
-                              : "text-amber-800 dark:text-amber-300 hover:text-amber-950"
-                          }`}
-                        >
-                          {lang === "ml" ? "തദ്ദേശ സ്ഥാപനങ്ങൾ" : "Local Bodies"}
-                        </button>
+
+                        {isMandalamDropdownOpen && (
+                          <div className="absolute top-full left-0 right-0 mt-1 z-30 max-h-56 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg p-1.5 flex flex-col animate-in fade-in slide-in-from-top-1 duration-150">
+                            {/* Search Bar */}
+                            <div className="relative mb-1.5 shrink-0">
+                              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2" />
+                              <input
+                                type="text"
+                                value={mandalamSearchQuery}
+                                onChange={(e) => setMandalamSearchQuery(e.target.value)}
+                                placeholder={lang === "ml" ? "തിരയുക..." : "Search..."}
+                                className="w-full pl-7 pr-2 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs font-medium text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500"
+                              />
+                            </div>
+
+                            <div className="overflow-y-auto space-y-0.5 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none]">
+                              {/* All Constituencies Option */}
+                              <label
+                                className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (selectedMandalamIds.includes("all") || selectedMandalamIds.length === constituencies.length) {
+                                    setSelectedMandalamIds([]);
+                                  } else {
+                                    setSelectedMandalamIds(["all", ...constituencies.map((c) => c.id)]);
+                                  }
+                                  setDraftMandalam("all");
+                                }}
+                              >
+                                <div
+                                  className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
+                                    selectedMandalamIds.includes("all") || selectedMandalamIds.length === constituencies.length
+                                      ? "bg-orange-500 border-orange-500 text-white"
+                                      : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                                  }`}
+                                >
+                                  {(selectedMandalamIds.includes("all") || selectedMandalamIds.length === constituencies.length) && (
+                                    <Check className="w-3 h-3 text-white stroke-[3]" />
+                                  )}
+                                </div>
+                                <span>{lang === "ml" ? "എല്ലാ മണ്ഡലങ്ങളും" : "All Constituencies"}</span>
+                              </label>
+
+                              <div className="h-px bg-slate-100 dark:bg-slate-700 my-1" />
+
+                              {constituencies
+                                .filter((c) => (selectedDistrictIds.includes("all") || selectedDistrictIds.includes(c.districtId)) && c[lang].toLowerCase().includes(mandalamSearchQuery.toLowerCase()))
+                                .map((c) => {
+                                  const isExplicitAll = selectedMandalamIds.includes("all") || selectedMandalamIds.length === constituencies.length;
+                                  const isSelected = isExplicitAll || selectedMandalamIds.includes(c.id);
+                                  return (
+                                    <label
+                                      key={c.id}
+                                      className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        let updated: string[];
+                                        if (isExplicitAll) {
+                                          updated = constituencies.map((con) => con.id).filter((id) => id !== c.id);
+                                        } else if (selectedMandalamIds.includes(c.id)) {
+                                          updated = selectedMandalamIds.filter((id) => id !== c.id && id !== "all");
+                                        } else {
+                                          updated = [...selectedMandalamIds.filter((id) => id !== "all"), c.id];
+                                        }
+                                        if (updated.length === constituencies.length) updated = ["all", ...constituencies.map((con) => con.id)];
+                                        setSelectedMandalamIds(updated);
+                                        setDraftMandalam(updated.length === 1 ? updated[0] : "all");
+                                      }}
+                                    >
+                                      <div
+                                        className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
+                                          isSelected ? "bg-orange-500 border-orange-500 text-white" : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                                        }`}
+                                      >
+                                        {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
+                                      </div>
+                                      <span>{c[lang]}</span>
+                                    </label>
+                                  );
+                                })}
+                            </div>
+                          </div>
+                        )}
                       </div>
 
-                      {/* Mode 1: Assembly / Booth */}
-                      {geoMode === "assembly" && (
-                        <div className="grid grid-cols-2 gap-2.5">
-                          {/* District */}
-                          <div className="flex flex-col gap-1 col-span-2 sm:col-span-1">
-                            <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                              {lang === "ml" ? "ജില്ല" : "District"}
-                            </label>
-                            <select
-                              value={draftDistrict}
-                              onChange={(e) => {
-                                const newDist = e.target.value;
-                                setDraftDistrict(newDist);
-                                setDraftMandalam("all");
-                                setDraftBooth("all");
-                              }}
-                              className="rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
-                            >
-                              <option value="all">{lang === "ml" ? "എല്ലാ ജില്ലകളും" : "All Districts"}</option>
-                              {districts.map((d) => (
-                                <option key={d.id} value={d.id}>
-                                  {d[lang]}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
+                    {/* Local Body Type & Local Body in a single row */}
+                    <div className="grid grid-cols-2 gap-2">
+                      {/* Local Body Type - Multi-select */}
+                      <div className="space-y-0.5 relative">
+                        <label className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 block">
+                          {lang === "ml" ? "തദ്ദേശ സ്ഥാപന തരം" : "Local Body Type"}
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setIsLocalBodyTypeDropdownOpen(!isLocalBodyTypeDropdownOpen)}
+                          className="w-full h-8.5 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer flex items-center justify-between gap-2"
+                        >
+                          <span className="truncate">
+                            {selectedLocalBodyTypeIds.length === 0 || selectedLocalBodyTypeIds.includes("all") || selectedLocalBodyTypeIds.length === 3
+                              ? (lang === "ml" ? "എല്ലാ തരങ്ങളും" : "All Types")
+                              : `${selectedLocalBodyTypeIds.length} ${lang === "ml" ? "തരങ്ങൾ" : "types"}`}
+                          </span>
+                          <ChevronDown className={`h-3.5 w-3.5 text-slate-400 shrink-0 transition-transform ${isLocalBodyTypeDropdownOpen ? "rotate-180" : ""}`} />
+                        </button>
 
-                          {/* Mandalam */}
-                          <div className="flex flex-col gap-1 col-span-2 sm:col-span-1">
-                            <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                              {lang === "ml" ? "മണ്ഡലം" : "Mandalam"}
-                            </label>
-                            <select
-                              value={draftMandalam}
-                              disabled={draftDistrict === "all"}
-                              onChange={(e) => {
-                                setDraftMandalam(e.target.value);
-                                setDraftBooth("all");
-                              }}
-                              className="rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer disabled:opacity-50"
-                            >
-                              <option value="all">{lang === "ml" ? "എല്ലാ മണ്ഡലങ്ങളും" : "All Mandalams"}</option>
-                              {(draftDistrict === "all"
-                                ? constituencies
-                                : constituencies.filter((c) => c.districtId === draftDistrict)
-                              ).map((c) => (
-                                <option key={c.id} value={c.id}>
-                                  {c[lang]}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
+                        {isLocalBodyTypeDropdownOpen && (
+                          <div className="absolute top-full left-0 right-0 mt-1 z-30 max-h-56 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg p-1.5 flex flex-col animate-in fade-in slide-in-from-top-1 duration-150">
+                            {/* Search Bar */}
+                            <div className="relative mb-1.5 shrink-0">
+                              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2" />
+                              <input
+                                type="text"
+                                value={localBodyTypeSearchQuery}
+                                onChange={(e) => setLocalBodyTypeSearchQuery(e.target.value)}
+                                placeholder={lang === "ml" ? "തിരയുക..." : "Search..."}
+                                className="w-full pl-7 pr-2 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs font-medium text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500"
+                              />
+                            </div>
 
-                          {/* Booth */}
-                          <div className="flex flex-col gap-1 col-span-2">
-                            <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                              {lang === "ml" ? "ബൂത്ത്" : "Booth"}
-                            </label>
-                            <select
-                              value={draftBooth}
-                              disabled={draftMandalam === "all"}
-                              onChange={(e) => setDraftBooth(e.target.value)}
-                              className="rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer disabled:opacity-50"
-                            >
-                              <option value="all">{lang === "ml" ? "എല്ലാ ബൂത്തുകളും" : "All Booths"}</option>
-                              {[101, 102, 103, 104, 105, 106, 107, 108, 109, 110].map((num) => (
-                                <option key={num} value={`booth_${num}`}>
-                                  {lang === "ml" ? `ബൂത്ത് #${num}` : `Booth #${num}`}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-                      )}
+                            <div className="overflow-y-auto space-y-0.5 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none]">
+                              {/* All Types Option */}
+                              <label
+                                className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const types = ["corporation", "municipality", "panchayat"];
+                                  if (selectedLocalBodyTypeIds.includes("all") || selectedLocalBodyTypeIds.length === 3) {
+                                    setSelectedLocalBodyTypeIds([]);
+                                  } else {
+                                    setSelectedLocalBodyTypeIds(["all", ...types]);
+                                  }
+                                  setDraftLBType("all");
+                                }}
+                              >
+                                <div
+                                  className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
+                                    selectedLocalBodyTypeIds.includes("all") || selectedLocalBodyTypeIds.length === 3
+                                      ? "bg-orange-500 border-orange-500 text-white"
+                                      : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                                  }`}
+                                >
+                                  {(selectedLocalBodyTypeIds.includes("all") || selectedLocalBodyTypeIds.length === 3) && (
+                                    <Check className="w-3 h-3 text-white stroke-[3]" />
+                                  )}
+                                </div>
+                                <span>{lang === "ml" ? "എല്ലാ തരങ്ങളും" : "All Types"}</span>
+                              </label>
 
-                      {/* Mode 2: Local Bodies */}
-                      {geoMode === "local_body" && (
-                        <div className="grid grid-cols-2 gap-2.5">
-                          {/* District */}
-                          <div className="flex flex-col gap-1 col-span-2 sm:col-span-1">
-                            <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                              {lang === "ml" ? "ജില്ല" : "District"}
-                            </label>
-                            <select
-                              value={draftLBDistrict}
-                              onChange={(e) => {
-                                setDraftLBDistrict(e.target.value);
-                                setDraftLocalBody("all");
-                                setDraftWard("all");
-                              }}
-                              className="rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
-                            >
-                              <option value="all">{lang === "ml" ? "എല്ലാ ജില്ലകളും" : "All Districts"}</option>
-                              {districts.map((d) => (
-                                <option key={d.id} value={d.id}>
-                                  {d[lang]}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
+                              <div className="h-px bg-slate-100 dark:bg-slate-700 my-1" />
 
-                          {/* Local Body Type */}
-                          <div className="flex flex-col gap-1 col-span-2 sm:col-span-1">
-                            <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                              {lang === "ml" ? "തദ്ദേശ സ്ഥാപന തരം" : "Local Body Type"}
-                            </label>
-                            <select
-                              value={draftLBType}
-                              onChange={(e) => {
-                                setDraftLBType(e.target.value);
-                                setDraftLocalBody("all");
-                                setDraftWard("all");
-                              }}
-                              className="rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
-                            >
-                              <option value="all">{lang === "ml" ? "എല്ലാ തരങ്ങളും" : "All Types"}</option>
-                              <option value="corporation">{lang === "ml" ? "കോർപ്പറേഷൻ" : "Corporation"}</option>
-                              <option value="municipality">{lang === "ml" ? "മുനിസിപ്പാലിറ്റി" : "Municipality"}</option>
-                              <option value="panchayat">{lang === "ml" ? "ഗ്രാമ പഞ്ചായത്ത്" : "Grama Panchayat"}</option>
-                            </select>
+                              {[
+                                { id: "corporation", en: "Corporation", ml: "കോർപ്പറേഷൻ" },
+                                { id: "municipality", en: "Municipality", ml: "മുനിസിപ്പാലിറ്റി" },
+                                { id: "panchayat", en: "Grama Panchayat", ml: "ഗ്രാമ പഞ്ചായത്ത്" },
+                              ]
+                                .filter((t) => t[lang].toLowerCase().includes(localBodyTypeSearchQuery.toLowerCase()))
+                                .map((t) => {
+                                  const types = ["corporation", "municipality", "panchayat"];
+                                  const isExplicitAll = selectedLocalBodyTypeIds.includes("all") || selectedLocalBodyTypeIds.length === 3;
+                                  const isSelected = isExplicitAll || selectedLocalBodyTypeIds.includes(t.id);
+                                  return (
+                                    <label
+                                      key={t.id}
+                                      className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        let updated: string[];
+                                        if (isExplicitAll) {
+                                          updated = types.filter((id) => id !== t.id);
+                                        } else if (selectedLocalBodyTypeIds.includes(t.id)) {
+                                          updated = selectedLocalBodyTypeIds.filter((id) => id !== t.id && id !== "all");
+                                        } else {
+                                          updated = [...selectedLocalBodyTypeIds.filter((id) => id !== "all"), t.id];
+                                        }
+                                        if (updated.length === 3) updated = ["all", ...types];
+                                        setSelectedLocalBodyTypeIds(updated);
+                                        setDraftLBType(updated.length === 1 ? updated[0] : "all");
+                                      }}
+                                    >
+                                      <div
+                                        className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
+                                          isSelected ? "bg-orange-500 border-orange-500 text-white" : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                                        }`}
+                                      >
+                                        {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
+                                      </div>
+                                      <span>{t[lang]}</span>
+                                    </label>
+                                  );
+                                })}
+                            </div>
                           </div>
+                        )}
+                      </div>
 
-                          {/* Local Body */}
-                          <div className="flex flex-col gap-1 col-span-2 sm:col-span-1">
-                            <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                              {lang === "ml" ? "തദ്ദേശ സ്ഥാപനം" : "Local Body"}
-                            </label>
-                            <select
-                              value={draftLocalBody}
-                              onChange={(e) => {
-                                setDraftLocalBody(e.target.value);
-                                setDraftWard("all");
-                              }}
-                              className="rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
-                            >
-                              <option value="all">{lang === "ml" ? "എല്ലാ തദ്ദേശ സ്ഥാപനങ്ങളും" : "All Local Bodies"}</option>
+                      {/* Local Body - Multi-select */}
+                      <div className="space-y-0.5 relative">
+                        <label className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 block">
+                          {lang === "ml" ? "തദ്ദേശ സ്ഥാപനം" : "Local Body"}
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setIsLocalBodyDropdownOpen(!isLocalBodyDropdownOpen)}
+                          className="w-full h-8.5 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer flex items-center justify-between gap-2"
+                        >
+                          <span className="truncate">
+                            {selectedLocalBodyIds.length === 0 || selectedLocalBodyIds.includes("all") || selectedLocalBodyIds.length === panchayats.length
+                              ? (lang === "ml" ? "എല്ലാ തദ്ദേശ സ്ഥാപനങ്ങളും" : "All Local Bodies")
+                              : `${selectedLocalBodyIds.length} ${lang === "ml" ? "തദ്ദേശ സ്ഥാപനങ്ങൾ" : "local bodies"}`}
+                          </span>
+                          <ChevronDown className={`h-3.5 w-3.5 text-slate-400 shrink-0 transition-transform ${isLocalBodyDropdownOpen ? "rotate-180" : ""}`} />
+                        </button>
+
+                        {isLocalBodyDropdownOpen && (
+                          <div className="absolute top-full left-0 right-0 mt-1 z-30 max-h-56 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg p-1.5 flex flex-col animate-in fade-in slide-in-from-top-1 duration-150">
+                            {/* Search Bar */}
+                            <div className="relative mb-1.5 shrink-0">
+                              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2" />
+                              <input
+                                type="text"
+                                value={localBodySearchQuery}
+                                onChange={(e) => setLocalBodySearchQuery(e.target.value)}
+                                placeholder={lang === "ml" ? "തിരയുക..." : "Search..."}
+                                className="w-full pl-7 pr-2 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs font-medium text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500"
+                              />
+                            </div>
+
+                            <div className="overflow-y-auto space-y-0.5 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none]">
+                              {/* All Local Bodies Option */}
+                              <label
+                                className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (selectedLocalBodyIds.includes("all") || selectedLocalBodyIds.length === panchayats.length) {
+                                    setSelectedLocalBodyIds([]);
+                                  } else {
+                                    setSelectedLocalBodyIds(["all", ...panchayats.map((p) => p.id)]);
+                                  }
+                                  setDraftLocalBody("all");
+                                }}
+                              >
+                                <div
+                                  className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
+                                    selectedLocalBodyIds.includes("all") || selectedLocalBodyIds.length === panchayats.length
+                                      ? "bg-orange-500 border-orange-500 text-white"
+                                      : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                                  }`}
+                                >
+                                  {(selectedLocalBodyIds.includes("all") || selectedLocalBodyIds.length === panchayats.length) && (
+                                    <Check className="w-3 h-3 text-white stroke-[3]" />
+                                  )}
+                                </div>
+                                <span>{lang === "ml" ? "എല്ലാ തദ്ദേശ സ്ഥാപനങ്ങളും" : "All Local Bodies"}</span>
+                              </label>
+
+                              <div className="h-px bg-slate-100 dark:bg-slate-700 my-1" />
+
                               {panchayats
-                                .filter((p) => (draftLBDistrict === "all" || p.districtId === draftLBDistrict) && (draftLBType === "all" || p.type === draftLBType))
-                                .map((p) => (
-                                  <option key={p.id} value={p.id}>
-                                    {p[lang]}
-                                  </option>
-                                ))}
-                            </select>
+                                .filter(
+                                  (p) =>
+                                    (selectedDistrictIds.includes("all") || selectedDistrictIds.includes(p.districtId)) &&
+                                    (selectedLocalBodyTypeIds.includes("all") || selectedLocalBodyTypeIds.includes(p.type)) &&
+                                    p[lang].toLowerCase().includes(localBodySearchQuery.toLowerCase())
+                                )
+                                .map((p) => {
+                                  const isExplicitAll = selectedLocalBodyIds.includes("all") || selectedLocalBodyIds.length === panchayats.length;
+                                  const isSelected = isExplicitAll || selectedLocalBodyIds.includes(p.id);
+                                  return (
+                                    <label
+                                      key={p.id}
+                                      className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        let updated: string[];
+                                        if (isExplicitAll) {
+                                          updated = panchayats.map((lb) => lb.id).filter((id) => id !== p.id);
+                                        } else if (selectedLocalBodyIds.includes(p.id)) {
+                                          updated = selectedLocalBodyIds.filter((id) => id !== p.id && id !== "all");
+                                        } else {
+                                          updated = [...selectedLocalBodyIds.filter((id) => id !== "all"), p.id];
+                                        }
+                                        if (updated.length === panchayats.length) updated = ["all", ...panchayats.map((lb) => lb.id)];
+                                        setSelectedLocalBodyIds(updated);
+                                        setDraftLocalBody(updated.length === 1 ? updated[0] : "all");
+                                      }}
+                                    >
+                                      <div
+                                        className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
+                                          isSelected ? "bg-orange-500 border-orange-500 text-white" : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                                        }`}
+                                      >
+                                        {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
+                                      </div>
+                                      <span>{p[lang]}</span>
+                                    </label>
+                                  );
+                                })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Ward - Multi-select */}
+                <div className="space-y-0.5 relative">
+                      <label className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 block">
+                        {lang === "ml" ? "വാർഡ്" : "Ward"}
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setIsWardDropdownOpen(!isWardDropdownOpen)}
+                        className="w-full h-8.5 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer flex items-center justify-between gap-2"
+                      >
+                        <span className="truncate">
+                          {selectedWardIds.length === 0 || selectedWardIds.includes("all") || selectedWardIds.length === wards.length
+                            ? (lang === "ml" ? "എല്ലാ വാർഡുകളും" : "All Wards")
+                            : `${selectedWardIds.length} ${lang === "ml" ? "വാർഡുകൾ" : "wards"}`}
+                        </span>
+                        <ChevronDown className={`h-3.5 w-3.5 text-slate-400 shrink-0 transition-transform ${isWardDropdownOpen ? "rotate-180" : ""}`} />
+                      </button>
+
+                      {isWardDropdownOpen && (
+                        <div className="absolute top-full left-0 right-0 mt-1 z-30 max-h-56 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg p-1.5 flex flex-col animate-in fade-in slide-in-from-top-1 duration-150">
+                          {/* Search Bar */}
+                          <div className="relative mb-1.5 shrink-0">
+                            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2" />
+                            <input
+                              type="text"
+                              value={wardSearchQuery}
+                              onChange={(e) => setWardSearchQuery(e.target.value)}
+                              placeholder={lang === "ml" ? "തിരയുക..." : "Search..."}
+                              className="w-full pl-7 pr-2 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs font-medium text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500"
+                            />
                           </div>
 
-                          {/* Ward */}
-                          <div className="flex flex-col gap-1 col-span-2 sm:col-span-1">
-                            <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                              {lang === "ml" ? "വാർഡ്" : "Ward"}
-                            </label>
-                            <select
-                              value={draftWard}
-                              disabled={draftLocalBody === "all"}
-                              onChange={(e) => setDraftWard(e.target.value)}
-                              className="rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer disabled:opacity-50"
+                          <div className="overflow-y-auto space-y-0.5 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none]">
+                            {/* All Wards Option */}
+                            <label
+                              className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (selectedWardIds.includes("all") || selectedWardIds.length === wards.length) {
+                                  setSelectedWardIds([]);
+                                } else {
+                                  setSelectedWardIds(["all", ...wards.map((w) => w.id)]);
+                                }
+                                setDraftWard("all");
+                              }}
                             >
-                              <option value="all">{lang === "ml" ? "എല്ലാ വാർഡുകളും" : "All Wards"}</option>
-                              {wards.map((w) => (
-                                <option key={w.id} value={w.id}>
-                                  {lang === "ml" ? `വാർഡ് ${w.label}` : `Ward ${w.label}`}
-                                </option>
-                              ))}
-                            </select>
+                              <div
+                                className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
+                                  selectedWardIds.includes("all") || selectedWardIds.length === wards.length
+                                    ? "bg-orange-500 border-orange-500 text-white"
+                                    : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                                }`}
+                              >
+                                {(selectedWardIds.includes("all") || selectedWardIds.length === wards.length) && (
+                                  <Check className="w-3 h-3 text-white stroke-[3]" />
+                                )}
+                              </div>
+                              <span>{lang === "ml" ? "എല്ലാ വാർഡുകളും" : "All Wards"}</span>
+                            </label>
+
+                            <div className="h-px bg-slate-100 dark:bg-slate-700 my-1" />
+
+                            {wards
+                              .filter((w) => w.label.toString().includes(wardSearchQuery.toLowerCase()))
+                              .map((w) => {
+                                const isExplicitAll = selectedWardIds.includes("all") || selectedWardIds.length === wards.length;
+                                const isSelected = isExplicitAll || selectedWardIds.includes(w.id);
+                                return (
+                                  <label
+                                    key={w.id}
+                                    className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      let updated: string[];
+                                      if (isExplicitAll) {
+                                        updated = wards.map((wd) => wd.id).filter((id) => id !== w.id);
+                                      } else if (selectedWardIds.includes(w.id)) {
+                                        updated = selectedWardIds.filter((id) => id !== w.id && id !== "all");
+                                      } else {
+                                        updated = [...selectedWardIds.filter((id) => id !== "all"), w.id];
+                                      }
+                                      if (updated.length === wards.length) updated = ["all", ...wards.map((wd) => wd.id)];
+                                      setSelectedWardIds(updated);
+                                      setDraftWard(updated.length === 1 ? updated[0] : "all");
+                                    }}
+                                  >
+                                    <div
+                                      className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
+                                        isSelected ? "bg-orange-500 border-orange-500 text-white" : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                                      }`}
+                                    >
+                                      {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
+                                    </div>
+                                    <span>{lang === "ml" ? `വാർഡ് ${w.label}` : `Ward ${w.label}`}</span>
+                                  </label>
+                                );
+                              })}
                           </div>
                         </div>
                       )}
                     </div>
 
-                    {/* Scheme Category Filter */}
-                    <div className="col-span-2 flex flex-col gap-1.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between">
-                        <span>{lang === "ml" ? "പദ്ധതി വിഭാഗം" : "Scheme Category"}</span>
-                        <span className="text-[10px] text-slate-500">Default: All Categories</span>
+                    {/* Category - Multi-select */}
+                    <div className="space-y-0.5 relative">
+                      <label className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 block">
+                        {lang === "ml" ? "വിഭാഗം" : "Category"}
                       </label>
-                      <select
-                        value={appSchemeCategoryFilter}
-                        onChange={(e) => setAppSchemeCategoryFilter(e.target.value)}
-                        className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+                      <button
+                        type="button"
+                        onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+                        className="w-full h-8.5 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer flex items-center justify-between gap-2"
                       >
-                        <option value="all">{lang === "ml" ? "എല്ലാ വിഭാഗങ്ങളും" : "All Categories"}</option>
-                        <option value="agriculture">{lang === "ml" ? "കൃഷി" : "Agriculture"}</option>
-                        <option value="education">{lang === "ml" ? "വിദ്യാഭ്യാസം" : "Education"}</option>
-                        <option value="health">{lang === "ml" ? "ആരോഗ്യം" : "Health"}</option>
-                        <option value="housing">{lang === "ml" ? "ഭവനം" : "Housing"}</option>
-                        <option value="pension_welfare">{lang === "ml" ? "പെൻഷൻ & ക്ഷേമം" : "Pension & Welfare"}</option>
-                        <option value="women_welfare">{lang === "ml" ? "വനിതാ ക്ഷേമം" : "Women Welfare"}</option>
-                        <option value="employment">{lang === "ml" ? "തൊഴിൽ" : "Employment"}</option>
-                        <option value="msme">{lang === "ml" ? "എം.എസ്.എം.ഇ & ബിസിനസ്" : "MSME & Business"}</option>
-                      </select>
-                    </div>
+                        <span className="truncate">
+                          {selectedCategoryIds.length === 0 || selectedCategoryIds.includes("all") || selectedCategoryIds.length === 8
+                            ? (lang === "ml" ? "എല്ലാ വിഭാഗങ്ങളും" : "All Categories")
+                            : `${selectedCategoryIds.length} ${lang === "ml" ? "വിഭാഗങ്ങൾ" : "categories"}`}
+                        </span>
+                        <ChevronDown className={`h-3.5 w-3.5 text-slate-400 shrink-0 transition-transform ${isCategoryDropdownOpen ? "rotate-180" : ""}`} />
+                      </button>
 
-                    {/* Application Date Filter */}
-                    <div className="col-span-2 flex flex-col gap-1.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between">
-                        <span>{lang === "ml" ? "അപേക്ഷാ തീയതി" : "Application Date"}</span>
-                        <span className="text-[10px] text-slate-500">Default: All Dates</span>
-                      </label>
-                      <select
-                        value={appDateFilter}
-                        onChange={(e) => setAppDateFilter(e.target.value)}
-                        className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
-                      >
-                        <option value="all">{lang === "ml" ? "എല്ലാ തീയതികളും" : "All Dates"}</option>
-                        <option value="today">{lang === "ml" ? "ഇന്ന്" : "Today"}</option>
-                        <option value="7days">{lang === "ml" ? "കഴിഞ്ഞ 7 ദിവസം" : "Last 7 Days"}</option>
-                        <option value="30days">{lang === "ml" ? "കഴിഞ്ഞ 30 ദിവസം" : "Last 30 Days"}</option>
-                        <option value="custom">{lang === "ml" ? "കസ്റ്റം പരിധി" : "Custom Range"}</option>
-                      </select>
-
-                      {appDateFilter === "custom" && (
-                        <div className="grid grid-cols-2 gap-2 pt-1.5">
-                          <div className="flex flex-col gap-1">
-                            <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400">From Date</span>
+                      {isCategoryDropdownOpen && (
+                        <div className="absolute top-full left-0 right-0 mt-1 z-30 max-h-56 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg p-1.5 flex flex-col animate-in fade-in slide-in-from-top-1 duration-150">
+                          {/* Search Bar */}
+                          <div className="relative mb-1.5 shrink-0">
+                            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2" />
                             <input
-                              type="date"
-                              value={appCustomStartDate}
-                              onChange={(e) => setAppCustomStartDate(e.target.value)}
-                              className="rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                              type="text"
+                              value={categorySearchQuery}
+                              onChange={(e) => setCategorySearchQuery(e.target.value)}
+                              placeholder={lang === "ml" ? "തിരയുക..." : "Search..."}
+                              className="w-full pl-7 pr-2 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs font-medium text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500"
                             />
                           </div>
-                          <div className="flex flex-col gap-1">
-                            <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400">To Date</span>
+
+                          <div className="overflow-y-auto space-y-0.5 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none]">
+                            {/* All Categories Option */}
+                            <label
+                              className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const cats = ["agriculture", "education", "health", "housing", "pension_welfare", "women_welfare", "employment", "msme"];
+                                if (selectedCategoryIds.includes("all") || selectedCategoryIds.length === cats.length) {
+                                  setSelectedCategoryIds([]);
+                                } else {
+                                  setSelectedCategoryIds(["all", ...cats]);
+                                }
+                                setAppSchemeCategoryFilter("all");
+                              }}
+                            >
+                              <div
+                                className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
+                                  selectedCategoryIds.includes("all") || selectedCategoryIds.length === 8
+                                    ? "bg-orange-500 border-orange-500 text-white"
+                                    : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                                }`}
+                              >
+                                {(selectedCategoryIds.includes("all") || selectedCategoryIds.length === 8) && (
+                                  <Check className="w-3 h-3 text-white stroke-[3]" />
+                                )}
+                              </div>
+                              <span>{lang === "ml" ? "എല്ലാ വിഭാഗങ്ങളും" : "All Categories"}</span>
+                            </label>
+
+                            <div className="h-px bg-slate-100 dark:bg-slate-700 my-1" />
+
+                            {[
+                              { id: "agriculture", en: "Agriculture", ml: "കൃഷി" },
+                              { id: "education", en: "Education", ml: "വിദ്യാഭ്യാസം" },
+                              { id: "health", en: "Health", ml: "ആരോഗ്യം" },
+                              { id: "housing", en: "Housing", ml: "ഭവനം" },
+                              { id: "pension_welfare", en: "Pension & Welfare", ml: "പെൻഷൻ & ക്ഷേമം" },
+                              { id: "women_welfare", en: "Women Welfare", ml: "വനിതാ ക്ഷേമം" },
+                              { id: "employment", en: "Employment", ml: "തൊഴിൽ" },
+                              { id: "msme", en: "MSME & Business", ml: "എം.എസ്.എം.ഇ & ബിസിനസ്" },
+                            ]
+                              .filter((cat) => cat[lang].toLowerCase().includes(categorySearchQuery.toLowerCase()))
+                              .map((cat) => {
+                                const allCats = ["agriculture", "education", "health", "housing", "pension_welfare", "women_welfare", "employment", "msme"];
+                                const isExplicitAll = selectedCategoryIds.includes("all") || selectedCategoryIds.length === allCats.length;
+                                const isSelected = isExplicitAll || selectedCategoryIds.includes(cat.id);
+                                return (
+                                  <label
+                                    key={cat.id}
+                                    className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      let updated: string[];
+                                      if (isExplicitAll) {
+                                        updated = allCats.filter((id) => id !== cat.id);
+                                      } else if (selectedCategoryIds.includes(cat.id)) {
+                                        updated = selectedCategoryIds.filter((id) => id !== cat.id && id !== "all");
+                                      } else {
+                                        updated = [...selectedCategoryIds.filter((id) => id !== "all"), cat.id];
+                                      }
+                                      if (updated.length === allCats.length) updated = ["all", ...allCats];
+                                      setSelectedCategoryIds(updated);
+                                      setAppSchemeCategoryFilter(updated.length === 1 ? updated[0] : "all");
+                                    }}
+                                  >
+                                    <div
+                                      className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
+                                        isSelected ? "bg-orange-500 border-orange-500 text-white" : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                                      }`}
+                                    >
+                                      {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
+                                    </div>
+                                    <span>{cat[lang]}</span>
+                                  </label>
+                                );
+                              })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Scheme - Multi-select */}
+                    <div className="space-y-0.5 relative">
+                      <label className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 block">
+                        {lang === "ml" ? "പദ്ധതി" : "Scheme"}
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setIsSchemeDropdownOpen(!isSchemeDropdownOpen)}
+                        className="w-full h-8.5 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer flex items-center justify-between gap-2"
+                      >
+                        <span className="truncate">
+                          {selectedSchemeIds.length === 0 || selectedSchemeIds.includes("all") || selectedSchemeIds.length === 3
+                            ? (lang === "ml" ? "എല്ലാ പദ്ധതികളും" : "All Schemes")
+                            : `${selectedSchemeIds.length} ${lang === "ml" ? "പദ്ധതികൾ" : "schemes"}`}
+                        </span>
+                        <ChevronDown className={`h-3.5 w-3.5 text-slate-400 shrink-0 transition-transform ${isSchemeDropdownOpen ? "rotate-180" : ""}`} />
+                      </button>
+
+                      {isSchemeDropdownOpen && (
+                        <div className="absolute top-full left-0 right-0 mt-1 z-30 max-h-56 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg p-1.5 flex flex-col animate-in fade-in slide-in-from-top-1 duration-150">
+                          {/* Search Bar */}
+                          <div className="relative mb-1.5 shrink-0">
+                            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2" />
                             <input
-                              type="date"
-                              value={appCustomEndDate}
-                              onChange={(e) => setAppCustomEndDate(e.target.value)}
-                              className="rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                              type="text"
+                              value={homeFilterSchemeSearchQuery}
+                              onChange={(e) => setHomeFilterSchemeSearchQuery(e.target.value)}
+                              placeholder={lang === "ml" ? "തിരയുക..." : "Search..."}
+                              className="w-full pl-7 pr-2 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs font-medium text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500"
                             />
+                          </div>
+
+                          <div className="overflow-y-auto space-y-0.5 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none]">
+                            {/* All Schemes Option */}
+                            <label
+                              className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const schs = ["ayushman", "pmkisan", "pmfby"];
+                                if (selectedSchemeIds.includes("all") || selectedSchemeIds.length === schs.length) {
+                                  setSelectedSchemeIdsState([]);
+                                } else {
+                                  setSelectedSchemeIdsState(["all", ...schs]);
+                                }
+                                setFilterScheme("all");
+                              }}
+                            >
+                              <div
+                                className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
+                                  selectedSchemeIds.includes("all") || selectedSchemeIds.length === 3
+                                    ? "bg-orange-500 border-orange-500 text-white"
+                                    : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                                }`}
+                              >
+                                {(selectedSchemeIds.includes("all") || selectedSchemeIds.length === 3) && (
+                                  <Check className="w-3 h-3 text-white stroke-[3]" />
+                                )}
+                              </div>
+                              <span>{lang === "ml" ? "എല്ലാ പദ്ധതികളും" : "All Schemes"}</span>
+                            </label>
+
+                            <div className="h-px bg-slate-100 dark:bg-slate-700 my-1" />
+
+                            {[
+                              { id: "ayushman", en: "Ayushman Bharat — PMJAY", ml: "ആയുഷ്മാൻ ഭാരത് - പിഎംജെഎവൈ" },
+                              { id: "pmkisan", en: "PM Kisan Samman Nidhi", ml: "പിഎം കിസാൻ സമ്മാൻ നിധി" },
+                              { id: "pmfby", en: "PM Fasal Bima Yojana", ml: "പിഎം ഫസൽ ഭീമ യോജന" },
+                            ]
+                              .filter((sch) => sch[lang].toLowerCase().includes(homeFilterSchemeSearchQuery.toLowerCase()))
+                              .map((sch) => {
+                                const allSchs = ["ayushman", "pmkisan", "pmfby"];
+                                const isExplicitAll = selectedSchemeIds.includes("all") || selectedSchemeIds.length === allSchs.length;
+                                const isSelected = isExplicitAll || selectedSchemeIds.includes(sch.id);
+                                return (
+                                  <label
+                                    key={sch.id}
+                                    className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      let updated: string[];
+                                      if (isExplicitAll) {
+                                        updated = allSchs.filter((id) => id !== sch.id);
+                                      } else if (selectedSchemeIds.includes(sch.id)) {
+                                        updated = selectedSchemeIds.filter((id) => id !== sch.id && id !== "all");
+                                      } else {
+                                        updated = [...selectedSchemeIds.filter((id) => id !== "all"), sch.id];
+                                      }
+                                      if (updated.length === allSchs.length) updated = ["all", ...allSchs];
+                                      setSelectedSchemeIdsState(updated);
+                                      setFilterScheme(updated.length === 1 ? updated[0] : "all");
+                                    }}
+                                  >
+                                    <div
+                                      className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
+                                        isSelected ? "bg-orange-500 border-orange-500 text-white" : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                                      }`}
+                                    >
+                                      {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
+                                    </div>
+                                    <span>{sch[lang]}</span>
+                                  </label>
+                                );
+                              })}
                           </div>
                         </div>
                       )}
                     </div>
                   </div>
                 </div>
+                )}
 
                 {/* Bottom Action Bar: Reset & Apply Filters */}
-                <div className="pt-2.5 mt-2 border-t border-amber-200/80 dark:border-amber-900/60 shrink-0 z-20 bg-white dark:bg-slate-900 flex items-center gap-2">
+                <div className="pt-3 mt-2 border-t border-slate-100 dark:border-slate-800 shrink-0 z-20 bg-white dark:bg-slate-900 flex items-center gap-3">
                   <button
                     type="button"
                     onClick={() => {
                       setFilterGeoScope("state");
+                      setSelectedDistrictIds(["all"]);
+                      setIsDistrictDropdownOpen(false);
+                      setDistrictSearchQuery("");
+                      setSelectedMandalamIds(["all"]);
+                      setIsMandalamDropdownOpen(false);
+                      setMandalamSearchQuery("");
+                      setSelectedLocalBodyTypeIds(["all"]);
+                      setIsLocalBodyTypeDropdownOpen(false);
+                      setLocalBodyTypeSearchQuery("");
+                      setSelectedLocalBodyIds(["all"]);
+                      setIsLocalBodyDropdownOpen(false);
+                      setLocalBodySearchQuery("");
+                      setSelectedWardIds(["all"]);
+                      setIsWardDropdownOpen(false);
+                      setWardSearchQuery("");
+                      setSelectedCategoryIds(["all"]);
+                      setIsCategoryDropdownOpen(false);
+                      setCategorySearchQuery("");
+                      setSelectedSchemeIdsState(["all"]);
+                      setIsSchemeDropdownOpen(false);
+                      setHomeFilterSchemeSearchQuery("");
+                      setDraftDistrict("all");
+                      setDraftMandalam("all");
+                      setDraftBooth("all");
+                      setDraftLBType("all");
+                      setDraftLBDistrict("all");
+                      setDraftLocalBody("all");
+                      setDraftWard("all");
                       setFilterScheme("all");
-                      setFilterSchemeCategory("all");
-                      setFilterSchemeType("all");
-                      setFilterDepartment("all");
-                      setFilterPerformance("all");
-                      setActiveDistrictFilter("all");
                       setAppSchemeCategoryFilter("all");
-                      setAppAssistanceStatusFilter("all");
-                      setAppDateFilter("all");
-                      setAppCustomStartDate("");
-                      setAppCustomEndDate("");
+                      setPartyWorkerTab("my_work");
                     }}
-                    className="w-1/3 rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 font-bold text-xs py-3 shadow-xs hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-all cursor-pointer active:scale-[0.98] flex items-center justify-center gap-1.5"
+                    className="w-1/3 rounded-lg border border-orange-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-orange-600 dark:text-orange-400 font-extrabold text-xs py-2.5 hover:bg-orange-50 transition-all cursor-pointer active:scale-[0.98] flex items-center justify-center gap-1.5"
                   >
-                    <RotateCcw className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+                    <RotateCcw className="w-3.5 h-3.5 text-orange-500" />
                     <span>{lang === "ml" ? "റീസെറ്റ്" : "Reset"}</span>
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => setShowFilterMenu(false)}
-                    className="flex-1 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-orange-600 text-white font-black text-xs sm:text-sm py-3 shadow-lg hover:from-amber-600 hover:to-orange-700 transition-all cursor-pointer active:scale-[0.98] flex items-center justify-center gap-2"
+                    onClick={() => {
+                      setAppliedGeoMode(geoMode);
+                      if (geoMode === "assembly") {
+                        setAppliedDistrict(draftDistrict);
+                        setAppliedMandalam(draftMandalam);
+                        setAppliedBooth(draftBooth);
+                      } else {
+                        setAppliedLBType(draftLBType);
+                        setAppliedLBDistrict(draftLBDistrict);
+                        setAppliedLocalBody(draftLocalBody);
+                        setAppliedWard(draftWard);
+                      }
+                      setShowFilterMenu(false);
+                    }}
+                    className="flex-1 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-extrabold text-xs py-2.5 transition-all cursor-pointer active:scale-[0.98] flex items-center justify-center gap-2"
                   >
-                    <Filter className="w-4 h-4" />
+                    <Filter className="w-3.5 h-3.5 stroke-[2.2]" />
                     <span>{lang === "ml" ? "ഫിൽട്ടറുകൾ പ്രയോഗിക്കുക" : "Apply Filters"}</span>
                   </button>
                 </div>

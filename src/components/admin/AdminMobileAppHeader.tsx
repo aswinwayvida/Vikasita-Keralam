@@ -173,19 +173,33 @@ export function AdminMobileAppHeader({
                           className="h-full w-full object-cover rounded-xl"
                         />
                       </div>
-                      <div>
-                        <h3 className="font-bold text-xs text-foreground">
-                          {userRole === "party_worker" ? "Dhyan M S" : "Jayasurya"}
-                        </h3>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium leading-tight">
-                          {userRole === "party_worker"
-                            ? lang === "ml"
-                              ? "ബൂത്ത് പ്രസിഡന്റ്, ബൂത്ത് 1, കഴക്കൂട്ടം തിരുവനന്തപുരം"
-                              : "Booth President, Booth 1, Kazhakoottam Trivandrum"
-                            : lang === "ml"
-                            ? "സംസ്ഥാന ഭരണം"
-                            : "State Administration"}
-                        </p>
+                      <div className="min-w-0 flex-1">
+                        {userRole === "party_worker" ? (
+                          <div className="space-y-0.5">
+                            {/* Line 1: Name + Role Badge */}
+                            <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                              <h3 className="text-[15px] font-semibold text-[#0a0f1d] dark:text-slate-100 leading-tight">
+                                Dhyan M S
+                              </h3>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 border border-orange-200/80 dark:border-orange-800/60 whitespace-nowrap">
+                                {lang === "ml" ? "ഏരിയ പ്രസിഡന്റ്" : "Area President"}
+                              </span>
+                            </div>
+                            {/* Line 2: Location */}
+                            <p className="text-[12px] font-medium text-slate-500 dark:text-slate-400 leading-tight truncate">
+                              {lang === "ml" ? "കഴക്കൂട്ടം, തിരുവനന്തപുരം" : "Kazhakkoottam, Trivandrum"}
+                            </p>
+                          </div>
+                        ) : (
+                          <div>
+                            <h3 className="font-bold text-xs text-foreground">
+                              Jayasurya
+                            </h3>
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium leading-tight">
+                              {lang === "ml" ? "സംസ്ഥാന ഭരണം" : "State Administration"}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -432,16 +446,36 @@ export function AdminMobileAppHeader({
                     className="h-full w-full object-cover rounded-full"
                   />
                 </div>
-                <div>
-                  <h3 className="font-bold text-sm text-slate-900 dark:text-white leading-tight">
-                    {userRole === "party_worker" ? "Dhyan M S" : "Jayasurya"}
-                  </h3>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                    {userRole === "party_worker" ? "Party Worker / Leader" : "State Administration"}
-                  </p>
-                  <span className="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-full text-[9.5px] font-bold bg-orange-100 dark:bg-orange-950/80 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
-                    <ShieldCheck className="h-2.5 w-2.5" /> {userRole === "party_worker" ? "Party Leader" : "State Admin"}
-                  </span>
+                <div className="min-w-0 flex-1">
+                  {userRole === "party_worker" ? (
+                    <div className="space-y-0.5">
+                      {/* Line 1: Name + Role Badge */}
+                      <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                        <h3 className="text-[15px] font-semibold text-[#0a0f1d] dark:text-slate-100 leading-tight">
+                          Dhyan M S
+                        </h3>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 border border-orange-200/80 dark:border-orange-800/60 whitespace-nowrap">
+                          {lang === "ml" ? "ഏരിയ പ്രസിഡന്റ്" : "Area President"}
+                        </span>
+                      </div>
+                      {/* Line 2: Location */}
+                      <p className="text-[12px] font-medium text-slate-500 dark:text-slate-400 leading-tight truncate">
+                        {lang === "ml" ? "കഴക്കൂട്ടം, തിരുവനന്തപുരം" : "Kazhakkoottam, Trivandrum"}
+                      </p>
+                    </div>
+                  ) : (
+                    <div>
+                      <h3 className="font-bold text-sm text-slate-900 dark:text-white leading-tight">
+                        Jayasurya
+                      </h3>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                        State Administration
+                      </p>
+                      <span className="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-full text-[9.5px] font-bold bg-orange-100 dark:bg-orange-950/80 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
+                        <ShieldCheck className="h-2.5 w-2.5" /> State Admin
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 

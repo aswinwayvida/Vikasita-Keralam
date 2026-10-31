@@ -1522,7 +1522,7 @@ export function MobileGuestEligibilityQuestionnaire({
           }`}
         >
           <HeartHandshake className="h-4 w-4 stroke-[2.5]" />
-          {t("Help Me", "സഹായം അഭ്യർത്ഥിക്കുക")}
+          {t("Continue", "തുടരുക")}
         </button>
       </div>
     );
@@ -1822,7 +1822,7 @@ export function MobileGuestEligibilityQuestionnaire({
                   ) : null}
                 </div>
 
-                <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/60 p-2.5">
+                <div className="space-y-2.5">
                   <SearchableSelect
                     label={t("District", "ജില്ല")}
                     valueLabel={
@@ -2106,23 +2106,12 @@ export function MobileGuestEligibilityQuestionnaire({
               ? t("Show Matching Schemes", "അനുയോജ്യ പദ്ധതികൾ കാണിക്കുക")
               : t("Continue", "തുടരുക")}
           </button>
-          {step < TOTAL_STEPS ? (
-            <>
-              <button
-                type="button"
-                onClick={skip}
-                className="mt-1.5 w-full rounded-lg py-1.5 text-[10px] font-extrabold text-orange-600 transition-colors hover:bg-orange-50"
-              >
-                {t("Skip for now", "ഇപ്പോൾ ഒഴിവാക്കുക")}
-              </button>
-              <p className="mt-0.5 text-center text-[8.5px] font-medium leading-snug text-slate-400">
-                {t(
-                  "Your details help us find suitable schemes.",
-                  "നിങ്ങളുടെ വിവരങ്ങൾ അനുയോജ്യമായ പദ്ധതികൾ കണ്ടെത്താൻ സഹായിക്കും.",
-                )}
-              </p>
-            </>
-          ) : null}
+          <p className="mt-1 text-center text-[8.5px] font-medium leading-snug text-slate-400">
+            {t(
+              "Your details help us find suitable schemes.",
+              "നിങ്ങളുടെ വിവരങ്ങൾ അനുയോജ്യമായ പദ്ധതികൾ കണ്ടെത്താൻ സഹായിക്കും.",
+            )}
+          </p>
         </div>
       ) : null}
       {renderAssistanceSheet()}
