@@ -24,7 +24,8 @@ import {
   Layers,
   ShieldAlert,
   Info,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Link as LinkIcon
 } from "lucide-react";
 
 export interface CreateSchemeFlowProps {
@@ -42,6 +43,8 @@ export interface EligibilityRule {
   grouping: "ALL" | "ANY";
   missingBehavior: "Request Answer" | "Manual Review";
   reasonShownToWorker: string;
+  sourceUrl?: string;
+  enabled?: boolean;
 }
 
 export interface CustomFieldOption {
@@ -147,6 +150,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
   // ---------------------------------------------------------------------------
   // Benefits
   const [selectedBenefitTypes, setSelectedBenefitTypes] = useState<string[]>(["Financial Assistance"]);
+  const [isBenefitDropdownOpen, setIsBenefitDropdownOpen] = useState(false);
   const [customBenefitType, setCustomBenefitType] = useState("");
   const [benefitSummary, setBenefitSummary] = useState("");
   const [benefitAmountType, setBenefitAmountType] = useState<"fixed" | "range" | "varies">("fixed");
@@ -157,15 +161,24 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
   const [customPaymentFrequency, setCustomPaymentFrequency] = useState("");
   const [benefitDuration, setBenefitDuration] = useState("");
   const [coverageLimit, setCoverageLimit] = useState("");
-  const [contributionType, setContributionType] = useState<"Amount" | "Percentage">("Percentage");
+  const [contributionType, setContributionType] = useState<"Amount" | "Percentage" | "None">("None");
   const [contributionValue, setContributionValue] = useState("");
 
   // Eligibility
   const [eligibilitySummary, setEligibilitySummary] = useState("");
   const [exclusionsText, setExclusionsText] = useState("");
   const [applicableLocationsType, setApplicableLocationsType] = useState<"all" | "selected">("all");
-  const [selectedDistricts, setSelectedSelectedDistricts] = useState<string[]>(["Thiruvananthapuram", "Ernakulam"]);
+  const [selectedDistricts, setSelectedDistricts] = useState<string[]>([
+    "Thiruvananthapuram", "Kollam", "Pathanamthitta", "Alappuzha", "Kottayam", 
+    "Idukki", "Ernakulam", "Thrissur", "Palakkad", "Malappuram", 
+    "Kozhikode", "Wayanad", "Kannur", "Kasaragod"
+  ]);
+  const [selectedLocalBodyTypes, setSelectedLocalBodyTypes] = useState<string[]>(["Grama Panchayat", "Municipality", "Municipal Corporation"]);
+  const [selectedBlockTaluk, setSelectedBlockTaluk] = useState("");
   const [manualReviewConditions, setManualReviewConditions] = useState("");
+
+  // Overall Rule Grouping
+  const [overallGrouping, setOverallGrouping] = useState<"ALL" | "ANY">("ALL");
 
   // Eligibility Rules
   const [eligibilityRules, setEligibilityRules] = useState<EligibilityRule[]>([
@@ -177,17 +190,21 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
       unit: "INR / Year",
       grouping: "ALL",
       missingBehavior: "Request Answer",
-      reasonShownToWorker: "Income must be within BPL limit of ₹1,00,000/yr",
+      reasonShownToWorker: "Income must be within BPL ceiling of ₹1,00,000/yr",
+      sourceUrl: "https://kerala.gov.in/schemes/bpl-income",
+      enabled: true,
     },
     {
       id: "rule-2",
-      attribute: "Age",
+      attribute: "Age, calculated from date of birth",
       condition: "Is greater than or equal to",
       value: "18",
       unit: "Years",
       grouping: "ALL",
       missingBehavior: "Request Answer",
       reasonShownToWorker: "Applicant must be an adult (18+ years)",
+      sourceUrl: "https://kerala.gov.in/schemes/age-rule",
+      enabled: true,
     },
   ]);
 
@@ -201,18 +218,25 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
   const [ruleGrouping, setRuleGrouping] = useState<"ALL" | "ANY">("ALL");
   const [ruleMissing, setRuleMissing] = useState<"Request Answer" | "Manual Review">("Request Answer");
   const [ruleReason, setRuleReason] = useState("");
+  const [ruleSourceUrl, setRuleSourceUrl] = useState("");
+  const [ruleEnabled, setRuleEnabled] = useState(true);
 
+  // 14 Shared Applicant Attributes used by applicant profile and questionnaire
   const applicantAttributes = [
-    "Annual Family Income",
-    "Age",
     "Gender",
-    "Category / Community",
-    "District of Residence",
-    "Panchayat / Municipality",
-    "Land Holding (Acres)",
+    "Age, calculated from date of birth",
+    "Social Category",
+    "Minority Status",
+    "Disability Status",
     "Disability Percentage",
+    "Student Status",
     "Employment Status",
-    "Ration Card Category (BPL/APL)",
+    "Occupation",
+    "Household BPL Status",
+    "Annual Family Income",
+    "Marital Status",
+    "Religion",
+    "Caste / Community",
   ];
 
   // ---------------------------------------------------------------------------
@@ -426,6 +450,8 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
     setRuleGrouping("ALL");
     setRuleMissing("Request Answer");
     setRuleReason("");
+    setRuleSourceUrl("");
+    setRuleEnabled(true);
     setShowRuleModal(true);
   };
 
@@ -438,6 +464,8 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
     setRuleGrouping(rule.grouping);
     setRuleMissing(rule.missingBehavior);
     setRuleReason(rule.reasonShownToWorker);
+    setRuleSourceUrl(rule.sourceUrl || "");
+    setRuleEnabled(rule.enabled ?? true);
     setShowRuleModal(true);
   };
 
@@ -456,6 +484,8 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                 grouping: ruleGrouping,
                 missingBehavior: ruleMissing,
                 reasonShownToWorker: ruleReason,
+                sourceUrl: ruleSourceUrl,
+                enabled: ruleEnabled,
               }
             : r
         )
@@ -470,10 +500,18 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
         grouping: ruleGrouping,
         missingBehavior: ruleMissing,
         reasonShownToWorker: ruleReason,
+        sourceUrl: ruleSourceUrl,
+        enabled: ruleEnabled,
       };
       setEligibilityRules((prev) => [...prev, newRule]);
     }
     setShowRuleModal(false);
+  };
+
+  const handleToggleRuleEnabled = (id: string) => {
+    setEligibilityRules((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, enabled: r.enabled === false ? true : false } : r))
+    );
   };
 
   const handleDeleteRule = (id: string) => {
@@ -1186,54 +1224,97 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
             {currentStep === 2 && (
               <div className="space-y-4">
                 {/* SECTION 1: BENEFITS */}
-                <div className="rounded-lg border border-orange-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 shadow-2xs space-y-3">
+                <div className="rounded-xl border border-orange-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 shadow-2xs space-y-3.5">
                   <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
                     <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#FF5500] text-white font-black text-[10px] shrink-0">
                       2
                     </span>
                     <h2 className="text-[12px] font-black text-[#1E293B] dark:text-slate-100 tracking-tight">
-                      {lang === "ml" ? "പദ്ധതി ആനുകൂല്യങ്ങൾ" : "Scheme Benefits"}
+                      {lang === "ml" ? "പദ്ധതി ആനുകൂല്യങ്ങൾ" : "Benefits"}
                     </h2>
                   </div>
 
-                  {/* Benefit Types Multi Select */}
-                  <div className="space-y-1.5">
+                  {/* Benefit Types Multi-Select Dropdown */}
+                  <div className="space-y-1.5 relative">
                     <label className="text-[11px] font-extrabold text-foreground block">
                       {lang === "ml" ? "ആനുകൂല്യ തരം *" : "Benefit Type *"}
                     </label>
-                    <div className="flex flex-wrap gap-1.5">
-                      {[
-                        "Financial Assistance",
-                        "Insurance",
-                        "Loan",
-                        "Subsidy",
-                        "Pension",
-                        "Service",
-                        "Other",
-                      ].map((type) => {
-                        const isSelected = selectedBenefitTypes.includes(type);
-                        return (
-                          <button
-                            key={type}
-                            type="button"
-                            onClick={() => {
-                              if (isSelected) {
-                                setSelectedBenefitTypes((prev) => prev.filter((t) => t !== type));
-                              } else {
-                                setSelectedBenefitTypes((prev) => [...prev, type]);
-                              }
-                            }}
-                            className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
-                              isSelected
-                                ? "bg-[#ff5500] border-[#ff5500] text-white shadow-2xs"
-                                : "bg-background border-border text-foreground hover:border-orange-300"
-                            }`}
-                          >
-                            {type}
-                          </button>
-                        );
-                      })}
+
+                    {/* Dropdown Input Box Trigger */}
+                    <div
+                      onClick={() => setIsBenefitDropdownOpen((prev) => !prev)}
+                      className="w-full min-h-[38px] px-2.5 py-1.5 rounded-lg border border-orange-200/80 dark:border-slate-700 bg-[#FFFDF7] dark:bg-slate-800/80 text-xs text-foreground cursor-pointer flex items-center justify-between gap-2 shadow-2xs hover:border-orange-400 transition-colors"
+                    >
+                      <div className="flex flex-wrap gap-1 items-center flex-1 min-w-0">
+                        {selectedBenefitTypes.length > 0 ? (
+                          selectedBenefitTypes.map((type) => (
+                            <span
+                              key={type}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#FF5500] text-white text-[11px] font-bold shadow-2xs"
+                            >
+                              <span>{type}</span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedBenefitTypes((prev) => prev.filter((t) => t !== type));
+                                }}
+                                className="hover:bg-orange-600 rounded p-0.5 transition-colors cursor-pointer"
+                              >
+                                <X className="h-3 w-3 stroke-[3]" />
+                              </button>
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-slate-400 text-xs font-medium">Select benefit types...</span>
+                        )}
+                      </div>
+                      <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0 ${isBenefitDropdownOpen ? "rotate-180" : ""}`} />
                     </div>
+
+                    {/* Multi-Select Options Menu */}
+                    {isBenefitDropdownOpen && (
+                      <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white dark:bg-slate-800 border border-orange-200/80 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden py-1 animate-in fade-in duration-150">
+                        {[
+                          "Financial Assistance",
+                          "Insurance",
+                          "Loan",
+                          "Subsidy",
+                          "Pension",
+                          "Service",
+                          "Other",
+                        ].map((type) => {
+                          const isSelected = selectedBenefitTypes.includes(type);
+                          return (
+                            <button
+                              key={type}
+                              type="button"
+                              onClick={() => {
+                                if (isSelected) {
+                                  setSelectedBenefitTypes((prev) => prev.filter((t) => t !== type));
+                                } else {
+                                  setSelectedBenefitTypes((prev) => [...prev, type]);
+                                }
+                              }}
+                              className={`w-full px-3 py-2 text-xs font-bold flex items-center justify-between cursor-pointer transition-colors text-left ${
+                                isSelected
+                                  ? "bg-orange-50 dark:bg-slate-700/80 text-[#FF5500]"
+                                  : "text-foreground hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                              }`}
+                            >
+                              <span>{type}</span>
+                              <div className={`h-4 w-4 rounded flex items-center justify-center border transition-colors ${
+                                isSelected ? "bg-[#FF5500] border-[#FF5500] text-white" : "border-slate-300 dark:border-slate-600"
+                              }`}>
+                                {isSelected && <Check className="h-3 w-3 stroke-[3]" />}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Custom Benefit Type input if 'Other' selected */}
                     {selectedBenefitTypes.includes("Other") && (
                       <input
                         type="text"
@@ -1242,6 +1323,11 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                         placeholder="Specify other benefit type..."
                         className="w-full mt-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
                       />
+                    )}
+                    {errors.benefitType && (
+                      <p className="text-[10px] text-red-500 font-bold flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" /> {errors.benefitType}
+                      </p>
                     )}
                   </div>
 
@@ -1254,82 +1340,88 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                       rows={2}
                       value={benefitSummary}
                       onChange={(e) => setBenefitSummary(e.target.value)}
-                      placeholder="e.g. ₹5,000 direct benefit transfer annually for eligible BPL households."
-                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none"
+                      placeholder="e.g. ₹6,000 direct benefit transfer annually for eligible BPL households."
+                      className={`w-full rounded-lg border px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none ${
+                        errors.benefitSummary ? "border-red-500 ring-1 ring-red-500" : "border-border bg-background"
+                      }`}
                     />
+                    {errors.benefitSummary && (
+                      <p className="text-[10px] text-red-500 font-bold flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" /> {errors.benefitSummary}
+                      </p>
+                    )}
                   </div>
 
-                  {/* Financial inputs (Only shown when Financial / Subsidy / Pension selected) */}
-                  {(selectedBenefitTypes.includes("Financial Assistance") ||
-                    selectedBenefitTypes.includes("Subsidy") ||
-                    selectedBenefitTypes.includes("Pension") ||
-                    selectedBenefitTypes.includes("Loan")) && (
-                    <div className="p-3 rounded-lg bg-orange-50/40 dark:bg-orange-950/20 border border-orange-200/60 space-y-2.5">
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-foreground block">Benefit Amount / Range</label>
-                        <div className="flex gap-2">
-                          {(["fixed", "range", "varies"] as const).map((mode) => (
-                            <button
-                              key={mode}
-                              type="button"
-                              onClick={() => setBenefitAmountType(mode)}
-                              className={`flex-1 py-1 text-xs font-bold rounded-lg border capitalize cursor-pointer ${
-                                benefitAmountType === mode
-                                  ? "bg-[#ff5500] border-[#ff5500] text-white"
-                                  : "bg-background border-border text-foreground"
-                              }`}
-                            >
-                              {mode}
-                            </button>
-                          ))}
-                        </div>
+                  {/* Benefit Amount (Show financial fields when applicable) */}
+                  <div className="p-3 rounded-xl bg-orange-50/40 dark:bg-orange-950/20 border border-orange-200/60 space-y-2.5">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-foreground block">Benefit Amount</label>
+                      <div className="flex gap-1.5">
+                        {[
+                          { mode: "fixed", label: "Fixed Amount" },
+                          { mode: "range", label: "Minimum–Maximum" },
+                          { mode: "varies", label: "Varies" },
+                        ].map((item) => (
+                          <button
+                            key={item.mode}
+                            type="button"
+                            onClick={() => setBenefitAmountType(item.mode as any)}
+                            className={`flex-1 py-1 px-1 text-[11px] font-bold rounded-lg border transition-colors cursor-pointer text-center ${
+                              benefitAmountType === item.mode
+                                ? "bg-[#ff5500] border-[#ff5500] text-white shadow-2xs"
+                                : "bg-background border-border text-foreground hover:bg-slate-50"
+                            }`}
+                          >
+                            {item.label}
+                          </button>
+                        ))}
                       </div>
+                    </div>
 
-                      {benefitAmountType === "fixed" && (
-                        <div>
-                          <label className="text-[10px] font-bold text-muted-foreground block">Fixed Amount (₹)</label>
+                    {benefitAmountType === "fixed" && (
+                      <div>
+                        <label className="text-[10px] font-bold text-muted-foreground block">Fixed Amount (₹)</label>
+                        <input
+                          type="number"
+                          value={fixedAmount}
+                          onChange={(e) => setFixedAmount(e.target.value)}
+                          placeholder="e.g. 6000"
+                          className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-mono text-foreground focus:ring-1 focus:ring-orange-500 outline-none"
+                        />
+                      </div>
+                    )}
+
+                    {benefitAmountType === "range" && (
+                      <div className="flex gap-2">
+                        <div className="flex-1">
+                          <label className="text-[10px] font-bold text-muted-foreground block">Min Amount (₹)</label>
                           <input
                             type="number"
-                            value={fixedAmount}
-                            onChange={(e) => setFixedAmount(e.target.value)}
-                            placeholder="e.g. 5000"
+                            value={minAmount}
+                            onChange={(e) => setMinAmount(e.target.value)}
+                            placeholder="e.g. 1000"
                             className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-mono text-foreground focus:ring-1 focus:ring-orange-500 outline-none"
                           />
                         </div>
-                      )}
-
-                      {benefitAmountType === "range" && (
-                        <div className="flex gap-2">
-                          <div className="flex-1">
-                            <label className="text-[10px] font-bold text-muted-foreground block">Min Amount (₹)</label>
-                            <input
-                              type="number"
-                              value={minAmount}
-                              onChange={(e) => setMinAmount(e.target.value)}
-                              placeholder="e.g. 1000"
-                              className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-mono text-foreground focus:ring-1 focus:ring-orange-500 outline-none"
-                            />
-                          </div>
-                          <div className="flex-1">
-                            <label className="text-[10px] font-bold text-muted-foreground block">Max Amount (₹)</label>
-                            <input
-                              type="number"
-                              value={maxAmount}
-                              onChange={(e) => setMaxAmount(e.target.value)}
-                              placeholder="e.g. 10000"
-                              className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-mono text-foreground focus:ring-1 focus:ring-orange-500 outline-none"
-                            />
-                          </div>
+                        <div className="flex-1">
+                          <label className="text-[10px] font-bold text-muted-foreground block">Max Amount (₹)</label>
+                          <input
+                            type="number"
+                            value={maxAmount}
+                            onChange={(e) => setMaxAmount(e.target.value)}
+                            placeholder="e.g. 10000"
+                            className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-mono text-foreground focus:ring-1 focus:ring-orange-500 outline-none"
+                          />
                         </div>
-                      )}
+                      </div>
+                    )}
 
-                      {benefitAmountType === "varies" && (
-                        <p className="text-[11px] text-muted-foreground italic">
-                          Amount varies based on applicant profile / verification rules. No fixed currency required.
-                        </p>
-                      )}
-                    </div>
-                  )}
+                    {benefitAmountType === "varies" && (
+                      <p className="text-[11px] text-muted-foreground italic">
+                        Amount varies based on applicant evaluation. No fixed currency amount configured.
+                      </p>
+                    )}
+                  </div>
 
                   {/* Payment Frequency & Duration */}
                   <div className="grid grid-cols-2 gap-2">
@@ -1338,7 +1430,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                       <select
                         value={paymentFrequency}
                         onChange={(e) => setPaymentFrequency(e.target.value)}
-                        className="w-full rounded-lg border border-border bg-background px-2.5 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
+                        className="w-full rounded-lg border border-border bg-background px-2 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
                       >
                         <option>One-time</option>
                         <option>Monthly</option>
@@ -1346,6 +1438,15 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                         <option>Annual</option>
                         <option>Other</option>
                       </select>
+                      {paymentFrequency === "Other" && (
+                        <input
+                          type="text"
+                          value={customPaymentFrequency}
+                          onChange={(e) => setCustomPaymentFrequency(e.target.value)}
+                          placeholder="Specify frequency..."
+                          className="w-full mt-1 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-foreground"
+                        />
+                      )}
                     </div>
 
                     <div>
@@ -1359,14 +1460,84 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                       />
                     </div>
                   </div>
+
+                  {/* Coverage / Maximum Limit & Beneficiary Contribution */}
+                  <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+                    <div>
+                      <label className="text-[11px] font-extrabold text-foreground block">Coverage / Maximum Limit</label>
+                      <input
+                        type="text"
+                        value={coverageLimit}
+                        onChange={(e) => setCoverageLimit(e.target.value)}
+                        placeholder="e.g. Maximum ₹5,00,000 per family per year"
+                        className="w-full rounded-lg border border-border bg-background px-2.5 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-extrabold text-foreground block">Beneficiary Contribution</label>
+                      <div className="flex gap-2 items-center">
+                        <div className="flex rounded-lg border border-border bg-muted/40 p-0.5 shrink-0">
+                          {(["None", "Amount", "Percentage"] as const).map((type) => (
+                            <button
+                              key={type}
+                              type="button"
+                              onClick={() => setContributionType(type)}
+                              className={`px-2 py-1 text-[10.5px] font-bold rounded-md transition-colors ${
+                                contributionType === type
+                                  ? "bg-[#ff5500] text-white"
+                                  : "text-muted-foreground hover:text-foreground"
+                              }`}
+                            >
+                              {type}
+                            </button>
+                          ))}
+                        </div>
+
+                        {contributionType !== "None" && (
+                          <input
+                            type="text"
+                            value={contributionValue}
+                            onChange={(e) => setContributionValue(e.target.value)}
+                            placeholder={contributionType === "Amount" ? "₹ Amount" : "% Percentage"}
+                            className="flex-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground focus:ring-1 focus:ring-orange-500 outline-none"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* SECTION 2: ELIGIBILITY & RULES */}
-                <div className="rounded-lg border border-border bg-card p-3.5 shadow-2xs space-y-3">
-                  <h2 className="text-xs font-black text-foreground uppercase tracking-wider text-[#ff5500] border-b border-border/60 pb-1.5 flex items-center gap-1.5">
-                    <ShieldAlert className="h-4 w-4" />
-                    {lang === "ml" ? "2B. യോഗ്യതയും നിബന്ധനകളും" : "2B. Eligibility & Rules"}
-                  </h2>
+                <div className="rounded-xl border border-border bg-card p-3.5 shadow-2xs space-y-3.5">
+                  <div className="flex items-center justify-between border-b border-border/60 pb-2">
+                    <h2 className="text-xs font-black text-foreground uppercase tracking-wider text-[#ff5500] flex items-center gap-1.5">
+                      <ShieldAlert className="h-4 w-4" />
+                      {lang === "ml" ? "യോഗ്യതാ മാനദണ്ഡങ്ങൾ" : "Eligibility"}
+                    </h2>
+
+                    {/* Grouping Mode Switch */}
+                    <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border text-[10px] font-black">
+                      <button
+                        type="button"
+                        onClick={() => setOverallGrouping("ALL")}
+                        className={`px-2 py-0.5 rounded transition-colors ${
+                          overallGrouping === "ALL" ? "bg-[#ff5500] text-white" : "text-muted-foreground"
+                        }`}
+                      >
+                        ALL Conditions (AND)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setOverallGrouping("ANY")}
+                        className={`px-2 py-0.5 rounded transition-colors ${
+                          overallGrouping === "ANY" ? "bg-[#ff5500] text-white" : "text-muted-foreground"
+                        }`}
+                      >
+                        ANY Condition (OR)
+                      </button>
+                    </div>
+                  </div>
 
                   {/* Eligibility Summary */}
                   <div className="space-y-1">
@@ -1377,9 +1548,16 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                       rows={2}
                       value={eligibilitySummary}
                       onChange={(e) => setEligibilitySummary(e.target.value)}
-                      placeholder="e.g. Resident of Kerala with annual family income below ₹1,00,000."
-                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none"
+                      placeholder="e.g. Resident of Kerala with landholding in their name and annual family income below ₹1,00,000."
+                      className={`w-full rounded-lg border px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none ${
+                        errors.eligibilitySummary ? "border-red-500 ring-1 ring-red-500" : "border-border bg-background"
+                      }`}
                     />
+                    {errors.eligibilitySummary && (
+                      <p className="text-[10px] text-red-500 font-bold flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" /> {errors.eligibilitySummary}
+                      </p>
+                    )}
                   </div>
 
                   {/* Who Cannot Apply / Exclusions */}
@@ -1391,22 +1569,22 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                       rows={2}
                       value={exclusionsText}
                       onChange={(e) => setExclusionsText(e.target.value)}
-                      placeholder="e.g. Government employees, income tax payers..."
+                      placeholder="e.g. Government employees, income tax payees, institutional landholders..."
                       className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none"
                     />
                   </div>
 
                   {/* Applicable Locations */}
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-extrabold text-foreground block">Applicable Locations</label>
+                  <div className="space-y-2 pt-1 border-t border-border/80">
+                    <label className="text-[11px] font-extrabold text-foreground block">Applicable Locations *</label>
                     <div className="flex gap-2">
                       <button
                         type="button"
                         onClick={() => setApplicableLocationsType("all")}
-                        className={`flex-1 py-1.5 text-xs font-bold rounded-lg border cursor-pointer ${
+                        className={`flex-1 py-1.5 text-xs font-bold rounded-lg border transition-colors cursor-pointer ${
                           applicableLocationsType === "all"
-                            ? "bg-[#ff5500] border-[#ff5500] text-white"
-                            : "bg-background border-border text-foreground"
+                            ? "bg-[#ff5500] border-[#ff5500] text-white shadow-2xs"
+                            : "bg-background border-border text-foreground hover:bg-slate-50"
                         }`}
                       >
                         All Kerala
@@ -1414,10 +1592,10 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                       <button
                         type="button"
                         onClick={() => setApplicableLocationsType("selected")}
-                        className={`flex-1 py-1.5 text-xs font-bold rounded-lg border cursor-pointer ${
+                        className={`flex-1 py-1.5 text-xs font-bold rounded-lg border transition-colors cursor-pointer ${
                           applicableLocationsType === "selected"
-                            ? "bg-[#ff5500] border-[#ff5500] text-white"
-                            : "bg-background border-border text-foreground"
+                            ? "bg-[#ff5500] border-[#ff5500] text-white shadow-2xs"
+                            : "bg-background border-border text-foreground hover:bg-slate-50"
                         }`}
                       >
                         Selected Locations
@@ -1425,67 +1603,208 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                     </div>
 
                     {applicableLocationsType === "selected" && (
-                      <div className="p-2.5 rounded-lg bg-muted/50 border border-border text-xs space-y-1">
-                        <span className="font-bold block">Selected Districts:</span>
-                        <p className="text-muted-foreground">{selectedDistricts.join(", ")}</p>
+                      <div className="p-3 rounded-xl bg-muted/40 border border-border space-y-2.5 text-xs">
+                        <div>
+                          <span className="font-extrabold block text-foreground mb-1">Target Districts (14):</span>
+                          <div className="flex flex-wrap gap-1">
+                            {[
+                              "Thiruvananthapuram", "Kollam", "Pathanamthitta", "Alappuzha", "Kottayam", 
+                              "Idukki", "Ernakulam", "Thrissur", "Palakkad", "Malappuram", 
+                              "Kozhikode", "Wayanad", "Kannur", "Kasaragod"
+                            ].map((d) => {
+                              const isSel = selectedDistricts.includes(d);
+                              return (
+                                <button
+                                  key={d}
+                                  type="button"
+                                  onClick={() => {
+                                    if (isSel) {
+                                      setSelectedDistricts((prev) => prev.filter((x) => x !== d));
+                                    } else {
+                                      setSelectedDistricts((prev) => [...prev, d]);
+                                    }
+                                  }}
+                                  className={`px-2 py-0.5 rounded-md text-[10.5px] font-bold border transition-colors ${
+                                    isSel
+                                      ? "bg-[#ff5500] border-[#ff5500] text-white"
+                                      : "bg-background border-border text-muted-foreground"
+                                  }`}
+                                >
+                                  {d}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        <div>
+                          <span className="font-extrabold block text-foreground mb-1">Local Body Type:</span>
+                          <div className="flex gap-2">
+                            {["Grama Panchayat", "Municipality", "Municipal Corporation"].map((lb) => {
+                              const isSel = selectedLocalBodyTypes.includes(lb);
+                              return (
+                                <button
+                                  key={lb}
+                                  type="button"
+                                  onClick={() => {
+                                    if (isSel) {
+                                      setSelectedLocalBodyTypes((prev) => prev.filter((x) => x !== lb));
+                                    } else {
+                                      setSelectedLocalBodyTypes((prev) => [...prev, lb]);
+                                    }
+                                  }}
+                                  className={`flex-1 py-1 text-[10px] font-bold rounded-lg border transition-colors ${
+                                    isSel
+                                      ? "bg-[#ff5500] border-[#ff5500] text-white"
+                                      : "bg-background border-border text-muted-foreground"
+                                  }`}
+                                >
+                                  {lb}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        <div>
+                          <span className="font-extrabold block text-foreground mb-1">Block / Taluk (Optional):</span>
+                          <input
+                            type="text"
+                            value={selectedBlockTaluk}
+                            onChange={(e) => setSelectedBlockTaluk(e.target.value)}
+                            placeholder="e.g. Parassala / Neyyattinkara Block"
+                            className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground"
+                          />
+                        </div>
                       </div>
                     )}
                   </div>
 
-                  {/* Repeatable Rule Builder */}
+                  {/* Manual Review Conditions */}
+                  <div className="space-y-1 pt-1 border-t border-border/80">
+                    <label className="text-[11px] font-extrabold text-foreground block">
+                      Manual Review Conditions
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={manualReviewConditions}
+                      onChange={(e) => setManualReviewConditions(e.target.value)}
+                      placeholder="e.g. Requires physical document inspection or revenue mutation check by Village Officer."
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none"
+                    />
+                  </div>
+
+                  {/* Configured Conditions List (Compact Summary Cards) */}
                   <div className="space-y-2 pt-2 border-t border-border/80">
                     <div className="flex items-center justify-between">
-                      <label className="text-[11px] font-black uppercase text-foreground">
-                        Eligibility Rules ({eligibilityRules.length})
-                      </label>
+                      <div>
+                        <label className="text-[11px] font-black uppercase text-foreground block">
+                          Eligibility Conditions ({eligibilityRules.length})
+                        </label>
+                        <span className="text-[10px] text-muted-foreground font-medium">
+                          Attributes without a condition have <strong>No Restriction</strong>.
+                        </span>
+                      </div>
                       <button
                         type="button"
                         onClick={handleOpenAddRule}
-                        className="inline-flex items-center gap-1 text-xs font-extrabold text-[#ff5500] hover:underline cursor-pointer"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#ff5500] text-white text-xs font-black shadow-2xs hover:bg-orange-600 transition-colors cursor-pointer"
                       >
-                        <Plus className="h-3.5 w-3.5" /> + Add Rule
+                        <Plus className="h-3.5 w-3.5" /> + Add Condition
                       </button>
                     </div>
 
                     <div className="space-y-2">
                       {eligibilityRules.map((rule) => (
-                        <div key={rule.id} className="p-3 rounded-lg bg-muted/40 border border-border flex items-start justify-between gap-2">
-                          <div className="space-y-0.5 flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <span className="px-1.5 py-0.2 rounded text-[9px] font-black bg-orange-100 dark:bg-orange-950/60 text-[#ff5500]">
+                        <div
+                          key={rule.id}
+                          className={`p-3 rounded-xl border transition-all ${
+                            rule.enabled !== false
+                              ? "bg-[#FFFDF7] dark:bg-slate-800/90 border-orange-200/80 dark:border-slate-700 shadow-2xs"
+                              : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 opacity-60"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2 border-b border-orange-100/60 dark:border-slate-700/60 pb-2 mb-2">
+                            <div className="flex items-center gap-2 flex-wrap min-w-0">
+                              <span
+                                className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
+                                  rule.grouping === "ALL"
+                                    ? "bg-orange-100 text-[#FF5500] dark:bg-orange-950/60"
+                                    : "bg-purple-100 text-purple-700 dark:bg-purple-950/60"
+                                }`}
+                              >
                                 {rule.grouping}
                               </span>
-                              <span className="text-xs font-extrabold text-foreground">{rule.attribute}</span>
+                              <span className="text-xs font-black text-[#0F172A] dark:text-white truncate">
+                                {rule.attribute}
+                              </span>
                             </div>
-                            <p className="text-[11px] text-muted-foreground font-mono">
-                              {rule.condition} <strong className="text-foreground">{rule.value} {rule.unit}</strong>
-                            </p>
-                            {rule.reasonShownToWorker && (
-                              <p className="text-[10px] text-muted-foreground italic">
-                                Worker note: "{rule.reasonShownToWorker}"
-                              </p>
-                            )}
+
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              {/* Enable / Disable Toggle */}
+                              <button
+                                type="button"
+                                onClick={() => handleToggleRuleEnabled(rule.id)}
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold transition-colors cursor-pointer ${
+                                  rule.enabled !== false
+                                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
+                                    : "bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                                }`}
+                              >
+                                {rule.enabled !== false ? "Active" : "Disabled"}
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditRule(rule)}
+                                className="p-1 rounded-lg text-slate-500 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                                title="Edit Condition"
+                              >
+                                <Edit2 className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteRule(rule.id)}
+                                className="p-1 rounded-lg text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer"
+                                title="Delete Condition"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
                           </div>
 
-                          <div className="flex items-center gap-1 shrink-0">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenEditRule(rule)}
-                              className="p-1 rounded text-muted-foreground hover:text-foreground cursor-pointer"
-                            >
-                              <Edit2 className="h-3.5 w-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteRule(rule.id)}
-                              className="p-1 rounded text-red-500 hover:text-red-700 cursor-pointer"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
+                          <div className="space-y-1 text-xs">
+                            <p className="font-extrabold text-[#1E293B] dark:text-slate-200">
+                              <span className="text-slate-500 font-semibold">{rule.condition}:</span>{" "}
+                              <span className="text-[#FF5500] font-black">{rule.value} {rule.unit}</span>
+                            </p>
+
+                            {rule.reasonShownToWorker && (
+                              <p className="text-[10.5px] text-slate-600 dark:text-slate-400 font-medium italic">
+                                💡 Worker note: "{rule.reasonShownToWorker}"
+                              </p>
+                            )}
+
+                            {rule.sourceUrl && (
+                              <div className="flex items-center gap-1 text-[10px] text-blue-600 dark:text-blue-400 font-bold truncate pt-0.5">
+                                <LinkIcon className="h-3 w-3 shrink-0" />
+                                <a href={rule.sourceUrl} target="_blank" rel="noopener noreferrer" className="hover:underline truncate">
+                                  {rule.sourceUrl}
+                                </a>
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))}
                     </div>
+                  </div>
+
+                  {/* Mandatory Eligibility Matching Preview Note */}
+                  <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-[11px] text-amber-900 dark:text-amber-200 flex items-start gap-2 mt-3">
+                    <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                    <p className="font-medium leading-tight">
+                      <strong>Note:</strong> Based on the information provided. Final eligibility is subject to official verification.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -1663,19 +1982,46 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
       {/* RULE MODAL */}
       {/* --------------------------------------------------------------------- */}
       {showRuleModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-2xl p-4 w-full max-w-sm space-y-3 shadow-xl">
-            <h3 className="text-xs font-black text-foreground border-b border-border/80 pb-2">
-              {editingRuleId ? "Edit Eligibility Rule" : "Add Eligibility Rule"}
-            </h3>
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-card border border-border rounded-2xl p-4 w-full max-w-sm space-y-3 shadow-xl max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-border/80 pb-2">
+              <h3 className="text-xs font-black text-foreground">
+                {editingRuleId ? "Edit Eligibility Condition" : "Add Eligibility Condition"}
+              </h3>
+              <div className="flex items-center gap-2">
+                <span className="text-[10.5px] font-bold text-muted-foreground">Enabled:</span>
+                <input
+                  type="checkbox"
+                  checked={ruleEnabled}
+                  onChange={(e) => setRuleEnabled(e.target.checked)}
+                  className="h-4 w-4 accent-[#ff5500] cursor-pointer"
+                />
+              </div>
+            </div>
 
-            <div className="space-y-2 text-xs">
+            <div className="space-y-2.5 text-xs">
               <div>
-                <label className="font-bold block mb-1">Applicant Attribute</label>
+                <label className="font-extrabold block mb-1 text-foreground">Shared Applicant Attribute *</label>
                 <select
                   value={ruleAttr}
-                  onChange={(e) => setRuleAttr(e.target.value)}
-                  className="w-full h-8 px-2 rounded-lg border border-border bg-background"
+                  onChange={(e) => {
+                    const selected = e.target.value;
+                    setRuleAttr(selected);
+                    if (selected.includes("Income")) {
+                      setRuleCond("Is less than or equal to");
+                      setRuleUnit("INR / Year");
+                    } else if (selected.includes("Age")) {
+                      setRuleCond("Is greater than or equal to");
+                      setRuleUnit("Years");
+                    } else if (selected.includes("Percentage")) {
+                      setRuleCond("Is greater than or equal to");
+                      setRuleUnit("%");
+                    } else {
+                      setRuleCond("Must be Yes / Must be No");
+                      setRuleUnit("");
+                    }
+                  }}
+                  className="w-full h-8 px-2.5 rounded-lg border border-border bg-background font-medium text-foreground focus:ring-1 focus:ring-orange-500 outline-none"
                 >
                   {applicantAttributes.map((attr) => (
                     <option key={attr} value={attr}>{attr}</option>
@@ -1684,50 +2030,91 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
               </div>
 
               <div>
-                <label className="font-bold block mb-1">Condition</label>
+                <label className="font-extrabold block mb-1 text-foreground">Condition Operator *</label>
                 <select
                   value={ruleCond}
                   onChange={(e) => setRuleCond(e.target.value)}
-                  className="w-full h-8 px-2 rounded-lg border border-border bg-background"
+                  className="w-full h-8 px-2.5 rounded-lg border border-border bg-background font-medium text-foreground focus:ring-1 focus:ring-orange-500 outline-none"
                 >
                   <option>Is less than or equal to</option>
                   <option>Is greater than or equal to</option>
+                  <option>Is between</option>
                   <option>Is exactly equal to</option>
-                  <option>Is member of</option>
+                  <option>Must be Yes / Must be No</option>
+                  <option>Select applicable options</option>
                 </select>
               </div>
 
               <div className="flex gap-2">
                 <div className="flex-1">
-                  <label className="font-bold block mb-1">Value</label>
+                  <label className="font-extrabold block mb-1 text-foreground">Required Value / Criteria *</label>
                   <input
                     type="text"
                     value={ruleVal}
                     onChange={(e) => setRuleVal(e.target.value)}
-                    placeholder="e.g. 100000"
-                    className="w-full h-8 px-2 rounded-lg border border-border bg-background"
+                    placeholder="e.g. 100000 or Must be Yes"
+                    className="w-full h-8 px-2.5 rounded-lg border border-border bg-background font-medium text-foreground focus:ring-1 focus:ring-orange-500 outline-none"
                   />
                 </div>
-                <div className="w-24">
-                  <label className="font-bold block mb-1">Unit</label>
-                  <input
-                    type="text"
-                    value={ruleUnit}
-                    onChange={(e) => setRuleUnit(e.target.value)}
-                    placeholder="e.g. INR"
-                    className="w-full h-8 px-2 rounded-lg border border-border bg-background"
-                  />
+                {ruleUnit && (
+                  <div className="w-24">
+                    <label className="font-extrabold block mb-1 text-foreground">Unit</label>
+                    <input
+                      type="text"
+                      value={ruleUnit}
+                      onChange={(e) => setRuleUnit(e.target.value)}
+                      placeholder="e.g. INR / Year"
+                      className="w-full h-8 px-2 rounded-lg border border-border bg-background text-foreground"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-2 items-center">
+                <div className="flex-1">
+                  <label className="font-extrabold block mb-1 text-foreground">Condition Grouping</label>
+                  <div className="flex gap-1 bg-muted p-0.5 rounded-lg border border-border">
+                    <button
+                      type="button"
+                      onClick={() => setRuleGrouping("ALL")}
+                      className={`flex-1 py-1 text-[10.5px] font-extrabold rounded ${
+                        ruleGrouping === "ALL" ? "bg-[#ff5500] text-white" : "text-muted-foreground"
+                      }`}
+                    >
+                      ALL (AND)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRuleGrouping("ANY")}
+                      className={`flex-1 py-1 text-[10.5px] font-extrabold rounded ${
+                        ruleGrouping === "ANY" ? "bg-[#ff5500] text-white" : "text-muted-foreground"
+                      }`}
+                    >
+                      ANY (OR)
+                    </button>
+                  </div>
                 </div>
               </div>
 
               <div>
-                <label className="font-bold block mb-1">Reason Shown to Worker</label>
+                <label className="font-extrabold block mb-1 text-foreground">Requirement Explanation (Shown to Worker)</label>
                 <input
                   type="text"
                   value={ruleReason}
                   onChange={(e) => setRuleReason(e.target.value)}
-                  placeholder="e.g. Must be within income ceiling"
-                  className="w-full h-8 px-2 rounded-lg border border-border bg-background"
+                  placeholder="e.g. Income must be within official BPL limit of ₹1,00,000/yr"
+                  className="w-full h-8 px-2.5 rounded-lg border border-border bg-background text-foreground"
+                />
+              </div>
+
+              <div>
+                <label className="font-extrabold block mb-1 text-foreground">Official Source URL or Reference</label>
+                <input
+                  type="url"
+                  value={ruleSourceUrl}
+                  onChange={(e) => setRuleSourceUrl(e.target.value)}
+                  placeholder="e.g. https://kerala.gov.in/schemes/guidelines"
+                  className="w-full h-8 px-2.5 rounded-lg border border-border bg-background text-foreground"
                 />
               </div>
             </div>
@@ -1736,16 +2123,16 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
               <button
                 type="button"
                 onClick={() => setShowRuleModal(false)}
-                className="px-3 py-1.5 text-xs font-bold text-muted-foreground hover:text-foreground"
+                className="px-3 py-1.5 text-xs font-bold text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleSaveRule}
-                className="px-4 py-1.5 bg-[#ff5500] text-white text-xs font-extrabold rounded-xl"
+                className="px-4 py-1.5 bg-[#ff5500] hover:bg-orange-600 text-white text-xs font-extrabold rounded-xl shadow-2xs transition-colors cursor-pointer"
               >
-                Save Rule
+                Save Condition
               </button>
             </div>
           </div>
