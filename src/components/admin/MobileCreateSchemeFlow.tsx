@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import {
   ArrowLeft,
   Upload,
+  UploadCloud,
   Plus,
   Trash2,
   Edit2,
@@ -618,6 +619,110 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
     setCustomFields(updated);
   };
 
+  const handlePrefillDemo = () => {
+    // Step 1: Basic Information (Central Government Scheme - PM-KISAN)
+    setSchemeNameEn("Pradhan Mantri Kisan Samman Nidhi (PM-KISAN)");
+    setSchemeNameMl("പ്രധാനമന്ത്രി കിസാൻ സമ്മാൻ നിധി (PM-KISAN)");
+    setLogoUrl("https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=150&auto=format&fit=crop&q=80");
+    setCategory("Agriculture & Farmers Welfare");
+    setDepartment("Ministry of Agriculture & Farmers Welfare (Central Government)");
+    setAboutScheme("A Central Sector Scheme of the Government of India providing income support of ₹6,000 per year to all landholding farmer families across the country in three equal installments of ₹2,000 every four months directly into their bank accounts.");
+    setShortCardDescription("Central financial benefit of ₹6,000/year directly to small and marginal farmer bank accounts.");
+
+    // Step 2: Benefits & Eligibility
+    setBenefitTypes(["Financial Assistance", "Subsidy"]);
+    setBenefitSummary("Direct Benefit Transfer (DBT) of ₹6,000 annually credited directly into verified Aadhaar-seeded bank accounts.");
+    setAmountType("Fixed Amount");
+    setFixedAmount("6000");
+    setPaymentFrequency("Quarterly");
+    setBenefitDuration("Ongoing Central Scheme");
+    setCoverageLimit("₹6,000 per year (3 installments of ₹2,000)");
+    setBeneficiaryContribType("Amount");
+    setBeneficiaryContribValue("0");
+
+    setEligibilitySummary("All landholding farmer families with cultivable landholding in their names across all States and UTs.");
+    setExclusions("Institutional landholders, serving or retired officers/employees of State/Central Government, income tax payees, and doctors/engineers/CA professionals.");
+    setApplicableLocationsType("All Kerala");
+    setManualReviewConditions("Land records pending revenue mutation or land details needing physical verification by Village Extension Officers (VEO).");
+    setEligibilityRules([
+      {
+        id: "rule-demo-1",
+        attribute: "Landholding Status",
+        condition: "Equals",
+        value: "Cultivable Land Owner",
+        logicGroup: "ALL",
+        missingBehavior: "Manual Review",
+        reasonShown: "Applicant family must hold valid cultivable land records in Revenue database.",
+      },
+      {
+        id: "rule-demo-2",
+        attribute: "Income Tax Payee Status",
+        condition: "Equals",
+        value: "No",
+        logicGroup: "ALL",
+        missingBehavior: "Request Answer",
+        reasonShown: "Members paying Income Tax in previous assessment year are ineligible.",
+      },
+      {
+        id: "rule-demo-3",
+        attribute: "Aadhaar e-KYC Verification",
+        condition: "Equals",
+        value: "Completed",
+        logicGroup: "ALL",
+        missingBehavior: "Request Answer",
+        reasonShown: "Aadhaar e-KYC mandatory for DBT transfer under Central Government rules.",
+      },
+    ]);
+
+    // Step 3: Details & Documents
+    setCustomFields([
+      {
+        id: "field-demo-1",
+        type: "file_upload",
+        labelEn: "Land Ownership Record (Pokkuvaravu / Tandaper Certificate)",
+        labelMl: "ഭൂമി ഉടമസ്ഥാവകാശ രേഖ / തണ്ടപ്പേര് സർട്ടിഫിക്കറ്റ്",
+        required: true,
+        docNameEn: "Land Record Document",
+        docInstructionsEn: "Upload latest Revenue Land Possession or Tandaper document.",
+        allowedFormats: [".pdf", ".jpg", ".png"],
+        maxFileSizeMb: 3,
+        maxFileCount: 1,
+        allowOfflineVerification: true,
+      },
+      {
+        id: "field-demo-2",
+        type: "file_upload",
+        labelEn: "Aadhaar Card Copy (e-KYC Verified)",
+        labelMl: "ആധാർ കാർഡ് കോപ്പി (e-KYC സ്ഥരീകരിച്ചത്)",
+        required: true,
+        docNameEn: "Aadhaar Card",
+        docInstructionsEn: "Upload copy of Aadhaar linked with mobile number for OTP e-KYC.",
+        allowedFormats: [".pdf", ".jpg"],
+        maxFileSizeMb: 2,
+        maxFileCount: 1,
+        allowOfflineVerification: true,
+      },
+      {
+        id: "field-demo-3",
+        type: "single_text",
+        labelEn: "Bank Account Passbook (Aadhaar Seeded NPCI)",
+        labelMl: "ബാങ്ക് അക്കൗണ്ട് പാസ്സ്ബുക്ക് (Aadhaar Seeded)",
+        required: true,
+        placeholderEn: "Enter Bank Account & IFSC Code",
+        charLimit: 30,
+      },
+      {
+        id: "field-demo-4",
+        type: "yes_no",
+        labelEn: "Are any family members institutional landholders or tax payees?",
+        labelMl: "കുടുംബാംഗങ്ങളിൽ ആരെങ്കിലും ആദായനികുതി അടയ്ക്കുന്നവരോ സ്ഥാപന ഉടമകളോ ആണോ?",
+        required: true,
+      },
+    ]);
+
+    setErrors({});
+  };
+
   // ---------------------------------------------------------------------------
   // RENDER MODAL VIEW
   // ---------------------------------------------------------------------------
@@ -645,15 +750,17 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
             <ArrowLeft className="h-4 w-4 stroke-[2.2]" />
           </button>
 
-          <h1 className="text-[13.5px] font-extrabold text-[#0F172A] dark:text-white tracking-tight">
-            {isPreviewMode
-              ? lang === "ml"
-                ? "പദ്ധതി പ്രിവ്യൂ"
-                : "Preview Scheme"
-              : lang === "ml"
-              ? "പുതിയ പദ്ധതി ചേർക്കുക"
-              : "Create New Scheme"}
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-[13.5px] font-extrabold text-[#0F172A] dark:text-white tracking-tight">
+              {isPreviewMode
+                ? lang === "ml"
+                  ? "പദ്ധതി പ്രിവ്യൂ"
+                  : "Preview Scheme"
+                : lang === "ml"
+                ? "പുതിയ പദ്ധതി ചേർക്കുക"
+                : "Create New Scheme"}
+            </h1>
+          </div>
 
           {!isPreviewMode ? (
             <span className="shrink-0 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-[#FFF2E6] dark:bg-orange-950/80 text-[#C2410C] dark:text-orange-300 border border-orange-200/80 dark:border-orange-800/80 shadow-2xs">
@@ -668,7 +775,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
       {/* --------------------------------------------------------------------- */}
       {/* SCROLLABLE FORM BODY */}
       {/* --------------------------------------------------------------------- */}
-      <div className="flex-1 overflow-y-auto px-4 py-3.5 space-y-4 pb-24">
+      <div className="flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden px-4 py-3.5 space-y-4 pb-24">
         {/* PREVIEW MODE VIEW */}
         {isPreviewMode ? (
           <div className="space-y-4 animate-in fade-in duration-200">
@@ -892,26 +999,37 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
             {/* =================================------------------------------ */}
             {currentStep === 1 && (
               <div className="rounded-2xl border border-orange-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 shadow-2xs space-y-3.5">
-                <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#FF5500] text-white font-black text-[10px] shrink-0">
-                    1
-                  </span>
-                  <h2 className="text-[12px] font-black text-[#1E293B] dark:text-slate-100 tracking-tight">
-                    {lang === "ml" ? "അടിസ്ഥാന വിവരങ്ങൾ" : "Basic Information"}
-                  </h2>
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#FF5500] text-white font-black text-[10px] shrink-0">
+                      1
+                    </span>
+                    <h2 className="text-[12px] font-black text-[#1E293B] dark:text-slate-100 tracking-tight">
+                      {lang === "ml" ? "അടിസ്ഥാന വിവരങ്ങൾ" : "Basic Information"}
+                    </h2>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handlePrefillDemo}
+                    className="px-2.5 py-0.5 rounded-lg bg-orange-100 text-[#FF5500] hover:bg-orange-200 text-[10px] font-black transition-colors cursor-pointer border border-orange-200 flex items-center gap-1 shadow-2xs"
+                    title="Fill all form fields with sample demo data"
+                  >
+                    ⚡ Prefill
+                  </button>
                 </div>
 
                 {/* Scheme Name English */}
                 <div className="space-y-1">
                   <label className="text-[11px] font-bold text-[#1E293B] dark:text-slate-200 block">
-                    {lang === "ml" ? "പദ്ധതിയുടെ പേര് (English) *" : "Scheme Name (English) *"}
+                    {lang === "ml" ? "പദ്ധതിയുടെ പേര് *" : "Scheme Name *"}
                   </label>
                   <input
                     type="text"
                     value={schemeNameEn}
                     onChange={(e) => setSchemeNameEn(e.target.value)}
                     placeholder="e.g. Karunya Health Scheme"
-                    className={`w-full rounded-2xl border px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 transition-colors ${
+                    className={`w-full rounded-lg border px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 transition-colors ${
                       errors.schemeNameEn
                         ? "border-red-500 bg-red-50/50 ring-1 ring-red-500"
                         : "border-orange-200/80 dark:border-slate-700 bg-[#FFFDF7] dark:bg-slate-800/80"
@@ -924,42 +1042,6 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                   )}
                 </div>
 
-                {/* Scheme Name Malayalam */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-[#1E293B] dark:text-slate-200 block">
-                    {lang === "ml" ? "പദ്ധതിയുടെ പേര് (മലയാളം) *" : "Scheme Name (Malayalam) *"}
-                  </label>
-                  <input
-                    type="text"
-                    value={schemeNameMl}
-                    onChange={(e) => setSchemeNameMl(e.target.value)}
-                    placeholder="ഉദാ. കാരുണ്യ ആരോഗ്യ സുരക്ഷ പദ്ധതി"
-                    className={`w-full rounded-2xl border px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 transition-colors ${
-                      errors.schemeNameMl
-                        ? "border-red-500 bg-red-50/50 ring-1 ring-red-500"
-                        : "border-orange-200/80 dark:border-slate-700 bg-[#FFFDF7] dark:bg-slate-800/80"
-                    }`}
-                  />
-                  {errors.schemeNameMl && (
-                    <p className="text-[10px] text-red-500 font-bold flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" /> {errors.schemeNameMl}
-                    </p>
-                  )}
-                </div>
-
-                {/* Short Name / Abbreviation */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-[#1E293B] dark:text-slate-200 block">
-                    {lang === "ml" ? "ലഘുനാമം / ചുരുക്കെഴുത്ത്" : "Short Name / Abbreviation"}
-                  </label>
-                  <input
-                    type="text"
-                    value={shortName}
-                    onChange={(e) => setShortName(e.target.value)}
-                    placeholder="e.g. KASP / PM-KISAN"
-                    className="w-full rounded-2xl border border-orange-200/80 dark:border-slate-700 bg-[#FFFDF7] dark:bg-slate-800/80 px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
-                  />
-                </div>
 
                 {/* Official Scheme Logo Upload */}
                 <div className="space-y-1.5">
@@ -967,27 +1049,50 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                     {lang === "ml" ? "ഔദ്യോഗിക സ്കീം ലോഗോ" : "Official Scheme Logo"}
                   </label>
                   {logoUrl ? (
-                    <div className="flex items-center gap-3 p-2 rounded-2xl border border-orange-200/80 dark:border-slate-700 bg-[#FFFDF7] dark:bg-slate-800/80">
-                      <img src={logoUrl} alt="Logo" className="h-12 w-12 rounded-xl object-contain bg-white dark:bg-slate-900 border border-orange-100 p-1" />
-                      <div className="flex items-center gap-2">
-                        <label className="px-3 py-1 rounded-xl bg-[#FFF2E6] text-[#FF5500] text-[11px] font-extrabold cursor-pointer hover:bg-orange-200 transition-colors">
-                          Replace
-                          <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
-                        </label>
-                        <button
-                          type="button"
-                          onClick={() => setLogoUrl(null)}
-                          className="px-3 py-1 rounded-xl bg-red-50 text-red-600 text-[11px] font-extrabold hover:bg-red-100 transition-colors cursor-pointer"
-                        >
-                          Remove
-                        </button>
+                    <div className="flex items-center justify-between p-3 rounded-2xl border border-orange-100 dark:border-slate-800 bg-[#FFFDF9] dark:bg-slate-800/80 shadow-2xs">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 dark:bg-slate-700 border border-orange-100 dark:border-slate-600">
+                          {logoUrl.startsWith("http") || logoUrl.startsWith("data:") ? (
+                            <img src={logoUrl} alt="Logo" className="h-8 w-8 object-contain rounded-lg" />
+                          ) : (
+                            <FileText className="h-5 w-5 text-orange-500" />
+                          )}
+                          <span className="absolute -bottom-1 -left-1 px-1 py-0.2 rounded-xs bg-emerald-600 text-white text-[8px] font-black uppercase tracking-tighter">
+                            PNG
+                          </span>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-black text-[#0F172A] dark:text-white truncate max-w-[180px]">
+                            {logoUrl.split('/').pop() || "scheme-logo.png"}
+                          </p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-400">
+                            PNG · Uploaded
+                          </p>
+                        </div>
                       </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setLogoUrl(null)}
+                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white dark:bg-slate-700 text-rose-500 hover:text-rose-700 hover:bg-rose-50 shadow-2xs border border-slate-100 dark:border-slate-600 transition-colors cursor-pointer"
+                        title="Remove Logo"
+                      >
+                        <X className="h-3.5 w-3.5 stroke-[2.5]" />
+                      </button>
                     </div>
                   ) : (
-                    <label className="flex flex-col items-center justify-center p-3.5 rounded-2xl border border-dashed border-orange-300 bg-[#FFFBF5] dark:bg-orange-950/20 text-[#FF5500] cursor-pointer hover:bg-orange-100/50 transition-colors">
-                      <Upload className="h-5 w-5 mb-1 stroke-[2.2]" />
-                      <span className="text-xs font-extrabold">Upload Scheme Logo</span>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">PNG, JPG or SVG (Max 2MB)</span>
+                    <label className="flex flex-col items-center justify-center py-2.5 px-3 rounded-xl border border-dashed border-orange-300 dark:border-orange-800 bg-[#FFFDF9] dark:bg-orange-950/10 hover:bg-orange-50/50 transition-colors cursor-pointer text-center space-y-1">
+                      <div className="flex h-7.5 w-7.5 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-orange-100 dark:border-slate-700 shadow-2xs">
+                        <UploadCloud className="h-4 w-4 text-[#FF5500]" />
+                      </div>
+                      <div className="space-y-0.2">
+                        <p className="text-[11.5px] font-black text-[#0F172A] dark:text-white leading-tight">
+                          {lang === "ml" ? "ഫയൽ തിരഞ്ഞെടുക്കുക അല്ലെങ്കിൽ ഇവിടെ ഡ്രാഗ് ചെയ്യുക" : "Choose a file or drag & drop it here"}
+                        </p>
+                        <p className="text-[9.5px] font-bold text-slate-400 dark:text-slate-400 leading-tight">
+                          PDF, JPG or PNG · Max 5MB
+                        </p>
+                      </div>
                       <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
                     </label>
                   )}
@@ -1001,7 +1106,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="w-full rounded-2xl border border-orange-200/80 dark:border-slate-700 bg-[#FFFDF7] dark:bg-slate-800/80 px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer"
+                    className="w-full rounded-lg border border-orange-200/80 dark:border-slate-700 bg-[#FFFDF7] dark:bg-slate-800/80 px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer"
                   >
                     {categoryOptions.map((cat) => (
                       <option key={cat.en} value={cat.en}>
@@ -1019,7 +1124,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                   <select
                     value={department}
                     onChange={(e) => setDepartment(e.target.value)}
-                    className="w-full rounded-2xl border border-orange-200/80 dark:border-slate-700 bg-[#FFFDF7] dark:bg-slate-800/80 px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer"
+                    className="w-full rounded-lg border border-orange-200/80 dark:border-slate-700 bg-[#FFFDF7] dark:bg-slate-800/80 px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer"
                   >
                     {departmentOptions.map((dept) => (
                       <option key={dept} value={dept}>{dept}</option>
@@ -1031,7 +1136,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                       value={customDepartment}
                       onChange={(e) => setDepartmentCustom(e.target.value)}
                       placeholder="Enter custom department name..."
-                      className="w-full mt-1.5 rounded-2xl border border-orange-200/80 dark:border-slate-700 bg-[#FFFDF7] dark:bg-slate-800/80 px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
+                      className="w-full mt-1.5 rounded-lg border border-orange-200/80 dark:border-slate-700 bg-[#FFFDF7] dark:bg-slate-800/80 px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
                     />
                   )}
                 </div>
@@ -1046,7 +1151,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                     value={aboutScheme}
                     onChange={(e) => setAboutScheme(e.target.value)}
                     placeholder="Enter detailed objective and background of the scheme..."
-                    className={`w-full rounded-2xl border px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none transition-colors ${
+                    className={`w-full rounded-lg border px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none transition-colors ${
                       errors.aboutScheme
                         ? "border-red-500 bg-red-50/50 ring-1 ring-red-500"
                         : "border-orange-200/80 dark:border-slate-700 bg-[#FFFDF7] dark:bg-slate-800/80"
@@ -1069,7 +1174,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                     value={shortCardDescription}
                     onChange={(e) => setShortCardDescription(e.target.value)}
                     placeholder="1-line quick summary shown on mobile cards..."
-                    className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
                   />
                 </div>
               </div>
@@ -1081,7 +1186,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
             {currentStep === 2 && (
               <div className="space-y-4">
                 {/* SECTION 1: BENEFITS */}
-                <div className="rounded-2xl border border-orange-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 shadow-2xs space-y-3">
+                <div className="rounded-lg border border-orange-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 shadow-2xs space-y-3">
                   <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
                     <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#FF5500] text-white font-black text-[10px] shrink-0">
                       2
@@ -1118,7 +1223,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                                 setSelectedBenefitTypes((prev) => [...prev, type]);
                               }
                             }}
-                            className={`px-2.5 py-1 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                            className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
                               isSelected
                                 ? "bg-[#ff5500] border-[#ff5500] text-white shadow-2xs"
                                 : "bg-background border-border text-foreground hover:border-orange-300"
@@ -1135,7 +1240,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                         value={customBenefitType}
                         onChange={(e) => setCustomBenefitType(e.target.value)}
                         placeholder="Specify other benefit type..."
-                        className="w-full mt-1.5 rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
+                        className="w-full mt-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
                       />
                     )}
                   </div>
@@ -1150,7 +1255,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                       value={benefitSummary}
                       onChange={(e) => setBenefitSummary(e.target.value)}
                       placeholder="e.g. ₹5,000 direct benefit transfer annually for eligible BPL households."
-                      className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none"
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none"
                     />
                   </div>
 
@@ -1159,7 +1264,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                     selectedBenefitTypes.includes("Subsidy") ||
                     selectedBenefitTypes.includes("Pension") ||
                     selectedBenefitTypes.includes("Loan")) && (
-                    <div className="p-3 rounded-xl bg-orange-50/40 dark:bg-orange-950/20 border border-orange-200/60 space-y-2.5">
+                    <div className="p-3 rounded-lg bg-orange-50/40 dark:bg-orange-950/20 border border-orange-200/60 space-y-2.5">
                       <div className="space-y-1">
                         <label className="text-[11px] font-bold text-foreground block">Benefit Amount / Range</label>
                         <div className="flex gap-2">
@@ -1233,7 +1338,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                       <select
                         value={paymentFrequency}
                         onChange={(e) => setPaymentFrequency(e.target.value)}
-                        className="w-full rounded-xl border border-border bg-background px-2.5 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
+                        className="w-full rounded-lg border border-border bg-background px-2.5 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
                       >
                         <option>One-time</option>
                         <option>Monthly</option>
@@ -1250,14 +1355,14 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                         value={benefitDuration}
                         onChange={(e) => setBenefitDuration(e.target.value)}
                         placeholder="e.g. 3 Years"
-                        className="w-full rounded-xl border border-border bg-background px-2.5 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
+                        className="w-full rounded-lg border border-border bg-background px-2.5 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
                       />
                     </div>
                   </div>
                 </div>
 
                 {/* SECTION 2: ELIGIBILITY & RULES */}
-                <div className="rounded-2xl border border-border bg-card p-3.5 shadow-2xs space-y-3">
+                <div className="rounded-lg border border-border bg-card p-3.5 shadow-2xs space-y-3">
                   <h2 className="text-xs font-black text-foreground uppercase tracking-wider text-[#ff5500] border-b border-border/60 pb-1.5 flex items-center gap-1.5">
                     <ShieldAlert className="h-4 w-4" />
                     {lang === "ml" ? "2B. യോഗ്യതയും നിബന്ധനകളും" : "2B. Eligibility & Rules"}
@@ -1273,7 +1378,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                       value={eligibilitySummary}
                       onChange={(e) => setEligibilitySummary(e.target.value)}
                       placeholder="e.g. Resident of Kerala with annual family income below ₹1,00,000."
-                      className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none"
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none"
                     />
                   </div>
 
@@ -1287,7 +1392,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                       value={exclusionsText}
                       onChange={(e) => setExclusionsText(e.target.value)}
                       placeholder="e.g. Government employees, income tax payers..."
-                      className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none"
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none"
                     />
                   </div>
 
@@ -1298,7 +1403,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                       <button
                         type="button"
                         onClick={() => setApplicableLocationsType("all")}
-                        className={`flex-1 py-1.5 text-xs font-bold rounded-xl border cursor-pointer ${
+                        className={`flex-1 py-1.5 text-xs font-bold rounded-lg border cursor-pointer ${
                           applicableLocationsType === "all"
                             ? "bg-[#ff5500] border-[#ff5500] text-white"
                             : "bg-background border-border text-foreground"
@@ -1309,7 +1414,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                       <button
                         type="button"
                         onClick={() => setApplicableLocationsType("selected")}
-                        className={`flex-1 py-1.5 text-xs font-bold rounded-xl border cursor-pointer ${
+                        className={`flex-1 py-1.5 text-xs font-bold rounded-lg border cursor-pointer ${
                           applicableLocationsType === "selected"
                             ? "bg-[#ff5500] border-[#ff5500] text-white"
                             : "bg-background border-border text-foreground"
@@ -1320,7 +1425,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                     </div>
 
                     {applicableLocationsType === "selected" && (
-                      <div className="p-2.5 rounded-xl bg-muted/50 border border-border text-xs space-y-1">
+                      <div className="p-2.5 rounded-lg bg-muted/50 border border-border text-xs space-y-1">
                         <span className="font-bold block">Selected Districts:</span>
                         <p className="text-muted-foreground">{selectedDistricts.join(", ")}</p>
                       </div>
@@ -1344,7 +1449,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
 
                     <div className="space-y-2">
                       {eligibilityRules.map((rule) => (
-                        <div key={rule.id} className="p-3 rounded-xl bg-muted/40 border border-border flex items-start justify-between gap-2">
+                        <div key={rule.id} className="p-3 rounded-lg bg-muted/40 border border-border flex items-start justify-between gap-2">
                           <div className="space-y-0.5 flex-1 min-w-0">
                             <div className="flex items-center gap-1.5">
                               <span className="px-1.5 py-0.2 rounded text-[9px] font-black bg-orange-100 dark:bg-orange-950/60 text-[#ff5500]">
@@ -1390,7 +1495,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
             {/* STEP 3 OF 3 — DETAILS & DOCUMENTS (CUSTOM FIELDS) */}
             {/* =================================------------------------------ */}
             {currentStep === 3 && (
-              <div className="rounded-2xl border border-orange-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 shadow-2xs space-y-3.5">
+              <div className="rounded-lg border border-orange-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 shadow-2xs space-y-3.5">
                 <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
                   <div className="flex items-center gap-2">
                     <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#FF5500] text-white font-black text-[10px] shrink-0">
@@ -1406,7 +1511,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                     <button
                       type="button"
                       onClick={() => handleOpenAddField("file_upload")}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#ff5500] text-white text-xs font-extrabold shadow-2xs hover:bg-orange-600 transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#ff5500] text-white text-xs font-extrabold shadow-2xs hover:bg-orange-600 transition-colors cursor-pointer"
                     >
                       <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
                       <span>+ Add Field</span>
@@ -1439,7 +1544,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                   {customFields.map((field, idx) => (
                     <div
                       key={field.id}
-                      className="p-3 rounded-xl bg-background border border-border shadow-2xs space-y-1.5"
+                      className="p-3 rounded-lg bg-background border border-border shadow-2xs space-y-1.5"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="space-y-0.5 flex-1 min-w-0">
@@ -1497,7 +1602,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                   ))}
 
                   {customFields.length === 0 && (
-                    <div className="p-6 text-center border border-dashed border-border rounded-xl">
+                    <div className="p-6 text-center border border-dashed border-border rounded-lg">
                       <p className="text-xs text-muted-foreground font-semibold">
                         No fields added yet. Click "+ Add Field" above to configure application form inputs.
                       </p>
@@ -1519,33 +1624,25 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
             <button
               type="button"
               onClick={() => setIsPreviewMode(false)}
-              className="flex-1 py-2.5 rounded-2xl border border-orange-200/80 bg-white hover:bg-orange-50/50 text-[#1E293B] font-extrabold text-xs transition-colors cursor-pointer dark:bg-slate-800 dark:text-white dark:border-slate-700"
+              className="flex-1 py-2.5 rounded-lg border border-orange-200/80 bg-white hover:bg-orange-50/50 text-[#1E293B] font-extrabold text-xs transition-colors cursor-pointer dark:bg-slate-800 dark:text-white dark:border-slate-700"
             >
               {lang === "ml" ? "എഡിറ്റ് ക്രമീകരണങ്ങളിലേക്ക് മടങ്ങുക" : "Back to Edit"}
             </button>
             <button
               type="button"
               onClick={handlePublishScheme}
-              className="flex-1 py-2.5 rounded-2xl bg-[#FF5500] hover:bg-[#E64D00] text-white font-extrabold text-xs shadow-xs transition-colors cursor-pointer"
+              className="flex-1 py-2.5 rounded-lg bg-[#FF5500] hover:bg-[#E64D00] text-white font-extrabold text-xs shadow-xs transition-colors cursor-pointer"
             >
               {lang === "ml" ? "പദ്ധതി പബ്ലിഷ് ചെയ്യുക" : "Publish Scheme"}
             </button>
           </>
         ) : (
           <>
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2.5 rounded-2xl border border-orange-200/80 bg-white hover:bg-orange-50/50 text-[#1E293B] font-extrabold text-xs transition-colors cursor-pointer dark:bg-slate-800 dark:text-white dark:border-slate-700"
-            >
-              {lang === "ml" ? "ഡ്രാഫ്റ്റ് സേവ് ചെയ്യുക" : "Save Draft"}
-            </button>
-
             {currentStep < 3 ? (
               <button
                 type="button"
                 onClick={currentStep === 1 ? handleContinueFromStep1 : handleContinueFromStep2}
-                className="flex-1 py-2.5 rounded-2xl bg-[#FF5500] hover:bg-[#E64D00] text-white font-extrabold text-xs shadow-xs transition-colors cursor-pointer"
+                className="w-full py-2.5 rounded-lg bg-[#FF5500] hover:bg-[#E64D00] text-white font-extrabold text-xs shadow-xs transition-colors cursor-pointer text-center"
               >
                 {lang === "ml" ? "തുടരുക →" : "Continue →"}
               </button>
@@ -1553,7 +1650,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
               <button
                 type="button"
                 onClick={handleOpenPreview}
-                className="flex-1 py-2.5 rounded-2xl bg-[#FF5500] hover:bg-[#E64D00] text-white font-extrabold text-xs shadow-xs transition-colors cursor-pointer"
+                className="w-full py-2.5 rounded-lg bg-[#FF5500] hover:bg-[#E64D00] text-white font-extrabold text-xs shadow-xs transition-colors cursor-pointer text-center"
               >
                 {lang === "ml" ? "സ്കീം പ്രിവ്യൂ കാണുക" : "Preview Scheme"}
               </button>
