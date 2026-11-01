@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   Upload,
@@ -6,8 +6,11 @@ import {
   Plus,
   Trash2,
   Edit2,
-  MoveUp,
-  MoveDown,
+  GripVertical,
+  MoreVertical,
+  Copy,
+  ArrowUp,
+  ArrowDown,
   Check,
   X,
   AlertCircle,
@@ -24,7 +27,6 @@ import {
   Layers,
   ShieldAlert,
   Info,
-  SlidersHorizontal,
   Link as LinkIcon
 } from "lucide-react";
 
@@ -75,12 +77,14 @@ export interface CustomField {
   maxFileSizeMb?: number;
   maxFileCount?: number;
   allowOfflineVerification?: boolean;
+  offlineVerificationLabelMl?: string;
 
   // 2. Yes / No
   questionTextEn?: string;
   questionTextMl?: string;
   yesFollowUpText?: string;
   noFollowUpText?: string;
+  followUpTrigger?: "Yes" | "No";
 
   // 3 & 5. Descriptive / Single Text
   placeholderEn?: string;
@@ -94,6 +98,307 @@ export interface CustomField {
   isMultiSelect?: boolean;
 }
 
+const FIELD_TYPE_META: Record<
+  CustomField["type"],
+  { label: string; description: string }
+> = {
+  file_upload: {
+    label: "File Upload",
+    description: "Collect a document or image.",
+  },
+  yes_no: {
+    label: "Yes / No",
+    description: "Ask a two-option question.",
+  },
+  descriptive_text: {
+    label: "Descriptive Text",
+    description: "Collect a detailed answer.",
+  },
+  dropdown: {
+    label: "Dropdown",
+    description: "Choose from a list of options.",
+  },
+  single_text: {
+    label: "Single-line Text",
+    description: "Collect a short answer.",
+  },
+};
+
+const UPLOAD_FORMAT_OPTIONS = ["pdf", "jpg", "jpeg", "png", "doc", "docx"];
+
+const APPLICANT_ATTRIBUTES = [
+  "Gender",
+  "Age, calculated from date of birth",
+  "Religion",
+  "Caste / Community",
+  "Disability Status",
+  "Disability Percentage",
+  "Minority Status",
+  "Student Status",
+  "Employment Status",
+  "Occupation",
+  "Annual Family Income",
+  "Marital Status",
+  "Household BPL Status",
+];
+
+type EligibilityConditionMode =
+  | ""
+  | "No Restriction"
+  | "Minimum"
+  | "Maximum"
+  | "Between"
+  | "Must be Yes"
+  | "Must be No"
+  | "Select values";
+
+interface EligibilityConditionConfig {
+  mode: EligibilityConditionMode;
+  values: string[];
+  min: string;
+  max: string;
+  referenceDate: string;
+}
+
+const YES_NO_ELIGIBILITY_ATTRIBUTES = [
+  "Minority Status",
+  "Disability Status",
+  "Student Status",
+  "Household BPL Status",
+];
+
+const NUMERIC_ELIGIBILITY_ATTRIBUTES = [
+  "Age, calculated from date of birth",
+  "Disability Percentage",
+  "Annual Family Income",
+];
+
+const SEARCHABLE_ELIGIBILITY_ATTRIBUTES = ["Occupation", "Caste / Community"];
+
+const ELIGIBILITY_ATTRIBUTE_UNITS: Record<string, string> = {
+  "Age, calculated from date of birth": "Years",
+  "Disability Percentage": "%",
+  "Annual Family Income": "INR / Year",
+};
+
+const ELIGIBILITY_VALUE_OPTIONS: Record<string, string[]> = {
+  Gender: ["Male", "Female", "Transgender / Other"],
+  "Employment Status": ["Employed", "Unemployed", "Self-employed / Entrepreneur"],
+  Occupation: [
+    "Farmer / Agriculture",
+    "Daily Wage Worker",
+    "Salaried",
+    "Self-Employed",
+    "Homemaker",
+    "Student",
+    "Unemployed",
+    "Retired",
+    "Other",
+  ],
+  "Marital Status": ["Single / Unmarried", "Married", "Widowed", "Divorcee", "Separated"],
+  Religion: ["Hindu", "Islam", "Christianity", "Sikhism", "Buddhism", "Jainism", "Other"],
+  "Caste / Community": ["General", "OBC", "SC", "ST", "OBC-NCL", "EWS"],
+};
+
+const ELIGIBILITY_VALUE_LABELS: Record<string, string> = {
+  Gender: "Select applicable genders",
+  "Employment Status": "Select applicable statuses",
+  Occupation: "Search and select occupations",
+  "Marital Status": "Select applicable statuses",
+  Religion: "Select applicable religions",
+  "Caste / Community": "Search and select castes",
+};
+
+const todayIso = () => {
+  const now = new Date();
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+};
+
+const createEmptyEligibilityConditions = () => {
+  const result: Record<string, EligibilityConditionConfig> = {};
+  APPLICANT_ATTRIBUTES.forEach((attribute) => {
+    result[attribute] = {
+      mode: "",
+      values: [],
+      min: "",
+      max: "",
+      referenceDate: attribute === "Age, calculated from date of birth" ? todayIso() : "",
+    };
+  });
+  return result;
+};
+
+const getEligibilityConditionError = (
+  attribute: string,
+  condition: EligibilityConditionConfig | undefined
+) => {
+  if (!condition || !condition.mode) return "Select a condition or No Restriction.";
+  if (condition.mode === "No Restriction") return null;
+
+  if (condition.mode === "Select values") {
+    return condition.values.length === 0 ? "Select at least one value." : null;
+  }
+
+  if (!NUMERIC_ELIGIBILITY_ATTRIBUTES.includes(attribute)) return null;
+
+  const needsMin = condition.mode === "Minimum" || condition.mode === "Between";
+  const needsMax = condition.mode === "Maximum" || condition.mode === "Between";
+
+  if (needsMin && !condition.min.trim()) return "Enter a minimum value.";
+  if (needsMax && !condition.max.trim()) return "Enter a maximum value.";
+
+  const min = needsMin ? Number(condition.min) : null;
+  const max = needsMax ? Number(condition.max) : null;
+  if ((min !== null && !Number.isFinite(min)) || (max !== null && !Number.isFinite(max))) {
+    return "Enter valid numeric values.";
+  }
+  if (
+    attribute === "Disability Percentage" &&
+    ((min !== null && (min < 0 || min > 100)) || (max !== null && (max < 0 || max > 100)))
+  ) {
+    return "Disability percentage must be between 0 and 100.";
+  }
+  if (
+    attribute === "Annual Family Income" &&
+    ((min !== null && min < 0) || (max !== null && max < 0))
+  ) {
+    return "Annual family income cannot be negative.";
+  }
+  if (
+    attribute === "Age, calculated from date of birth" &&
+    ((min !== null && (min < 0 || min > 120)) || (max !== null && (max < 0 || max > 120)))
+  ) {
+    return "Enter an age between 0 and 120 years.";
+  }
+  if (min !== null && max !== null && min > max) {
+    return "Minimum cannot be greater than maximum.";
+  }
+  if (attribute === "Age, calculated from date of birth" && !condition.referenceDate) {
+    return "Select the age reference date.";
+  }
+  if (
+    attribute === "Age, calculated from date of birth" &&
+    condition.referenceDate &&
+    Number.isNaN(new Date(condition.referenceDate).getTime())
+  ) {
+    return "Select a valid age reference date.";
+  }
+
+  return null;
+};
+
+const resolveEligibilityConflicts = (
+  conditions: Record<string, EligibilityConditionConfig>
+) => {
+  const disabilityStatus = conditions["Disability Status"];
+  const disabilityPercentage = conditions["Disability Percentage"];
+  if (
+    disabilityStatus?.mode === "Must be No" &&
+    disabilityPercentage?.mode &&
+    disabilityPercentage.mode !== "No Restriction"
+  ) {
+    conditions["Disability Percentage"] = {
+      ...disabilityPercentage,
+      mode: "No Restriction",
+      values: [],
+      min: "",
+      max: "",
+    };
+  }
+  return conditions;
+};
+
+const mapRuleToCondition = (
+  condition: EligibilityConditionConfig,
+  rule: EligibilityRule
+): EligibilityConditionConfig => {
+  const next = { ...condition, values: [...condition.values] };
+  const value = rule.value.trim();
+
+  if (rule.condition === "Is less than or equal to") {
+    next.mode = "Maximum";
+    next.max = value;
+  } else if (rule.condition === "Is greater than or equal to") {
+    next.mode = "Minimum";
+    next.min = value;
+  } else if (rule.condition === "Is between") {
+    next.mode = "Between";
+    const [min = "", max = ""] = value.split(/\s*(?:-|–|to)\s*/i);
+    next.min = min.trim();
+    next.max = max.trim();
+  } else if (rule.condition === "Must be Yes / Must be No") {
+    next.mode = /yes/i.test(value) ? "Must be Yes" : "Must be No";
+  } else if (rule.condition === "Select applicable options" || rule.condition === "Is exactly equal to") {
+    next.mode = "Select values";
+    next.values = value
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+  return next;
+};
+
+const conditionsFromRules = (rules: EligibilityRule[]) => {
+  const conditions = createEmptyEligibilityConditions();
+  rules.forEach((rule) => {
+    if (rule.enabled === false || !conditions[rule.attribute]) return;
+    conditions[rule.attribute] = mapRuleToCondition(conditions[rule.attribute], rule);
+  });
+  return resolveEligibilityConflicts(conditions);
+};
+
+const rulesFromConditions = (
+  conditions: Record<string, EligibilityConditionConfig>,
+  grouping: "ALL" | "ANY",
+  existingRules: EligibilityRule[]
+) => {
+  const existingByAttribute = new Map(existingRules.map((rule) => [rule.attribute, rule]));
+  const nextRules: EligibilityRule[] = [];
+
+  APPLICANT_ATTRIBUTES.forEach((attribute, index) => {
+    const condition = conditions[attribute];
+    if (!condition || !condition.mode || condition.mode === "No Restriction") return;
+
+    let ruleCondition = "";
+    let value = "";
+    if (condition.mode === "Minimum") {
+      ruleCondition = "Is greater than or equal to";
+      value = condition.min.trim();
+    } else if (condition.mode === "Maximum") {
+      ruleCondition = "Is less than or equal to";
+      value = condition.max.trim();
+    } else if (condition.mode === "Between") {
+      ruleCondition = "Is between";
+      value = `${condition.min.trim()} - ${condition.max.trim()}`;
+    } else if (condition.mode === "Must be Yes" || condition.mode === "Must be No") {
+      ruleCondition = "Must be Yes / Must be No";
+      value = condition.mode;
+    } else if (condition.mode === "Select values") {
+      ruleCondition = "Select applicable options";
+      value = condition.values.join(", ");
+    }
+
+    const existing = existingByAttribute.get(attribute);
+    nextRules.push({
+      id: existing?.id ?? `rule-${Date.now()}-${index}`,
+      attribute,
+      condition: ruleCondition,
+      value,
+      unit: ELIGIBILITY_ATTRIBUTE_UNITS[attribute] ?? existing?.unit ?? "",
+      grouping,
+      missingBehavior: existing?.missingBehavior ?? "Request Answer",
+      reasonShownToWorker: existing?.reasonShownToWorker ?? "",
+      sourceUrl: existing?.sourceUrl,
+      enabled: true,
+    });
+  });
+
+  existingRules.forEach((rule) => {
+    if (!APPLICANT_ATTRIBUTES.includes(rule.attribute)) nextRules.push(rule);
+  });
+  return nextRules;
+};
+
 export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
   lang,
   onClose,
@@ -103,6 +408,11 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [activePreviewTab, setActivePreviewTab] = useState<"public" | "worker">("public");
+  const formBodyRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    formBodyRef.current?.scrollTo({ top: 0 });
+  }, [currentStep, isPreviewMode]);
 
   // Inline Validation Errors state
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -119,6 +429,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
   const [customDepartment, setDepartmentCustom] = useState("");
   const [aboutScheme, setAboutScheme] = useState("");
   const [shortCardDescription, setShortCardDescription] = useState("");
+  const [officialWebsite, setOfficialWebsite] = useState("");
 
   // Categories list
   const categoryOptions = [
@@ -208,6 +519,13 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
     },
   ]);
 
+  // Eligibility conditions and the preview share the same saved rule data.
+  const [eligibilityConditions, setEligibilityConditions] = useState(() =>
+    conditionsFromRules(eligibilityRules)
+  );
+  const [conditionSearch, setConditionSearch] = useState<Record<string, string>>({});
+  const [step4DraftNotice, setStep4DraftNotice] = useState(false);
+
   // Rule Builder Form state
   const [showRuleModal, setShowRuleModal] = useState(false);
   const [editingRuleId, setEditingRuleId] = useState<string | null>(null);
@@ -221,23 +539,8 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
   const [ruleSourceUrl, setRuleSourceUrl] = useState("");
   const [ruleEnabled, setRuleEnabled] = useState(true);
 
-  // 14 Shared Applicant Attributes used by applicant profile and questionnaire
-  const applicantAttributes = [
-    "Gender",
-    "Age, calculated from date of birth",
-    "Social Category",
-    "Minority Status",
-    "Disability Status",
-    "Disability Percentage",
-    "Student Status",
-    "Employment Status",
-    "Occupation",
-    "Household BPL Status",
-    "Annual Family Income",
-    "Marital Status",
-    "Religion",
-    "Caste / Community",
-  ];
+  // Shared Applicant Attributes used by applicant profile and questionnaire
+  const applicantAttributes = APPLICANT_ATTRIBUTES;
 
   // ---------------------------------------------------------------------------
   // STEP 3 STATE: Details & Documents (Custom Dynamic Fields)
@@ -284,7 +587,11 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
 
   // Modal for Adding / Editing Custom Field
   const [showFieldModal, setShowFieldModal] = useState(false);
+  const [showFieldTypeSheet, setShowFieldTypeSheet] = useState(false);
   const [editingFieldId, setEditingFieldId] = useState<string | null>(null);
+  const [fieldMenuId, setFieldMenuId] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [showFieldAdvanced, setShowFieldAdvanced] = useState(false);
 
   // Form states for Field modal
   const [fieldType, setFieldType] = useState<CustomField["type"]>("file_upload");
@@ -298,17 +605,17 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
   const [fieldReuseApplicantAttr, setFieldReuseApplicantAttr] = useState("");
 
   // Type specific
-  const [fieldDocName, setFieldDocName] = useState("");
   const [fieldUploadInstructions, setFieldUploadInstructions] = useState("");
   const [fieldAcceptedFormats, setFieldAcceptedFormats] = useState<string[]>(["pdf", "jpg"]);
   const [fieldMaxFileSizeMb, setFieldMaxFileSizeMb] = useState<number>(5);
   const [fieldMaxFileCount, setFieldMaxFileCount] = useState<number>(1);
   const [fieldAllowOfflineVerif, setFieldAllowOfflineVerif] = useState(true);
+  const [fieldOfflineVerificationLabelMl, setFieldOfflineVerificationLabelMl] = useState("");
 
-  const [fieldQuestionEn, setFieldQuestionEn] = useState("");
-  const [fieldQuestionMl, setFieldQuestionMl] = useState("");
   const [fieldYesFollowUp, setFieldYesFollowUp] = useState("");
   const [fieldNoFollowUp, setFieldNoFollowUp] = useState("");
+  const [fieldFollowUpEnabled, setFieldFollowUpEnabled] = useState(false);
+  const [fieldFollowUpTrigger, setFieldFollowUpTrigger] = useState<"Yes" | "No">("Yes");
 
   const [fieldPlaceholderEn, setFieldPlaceholderEn] = useState("");
   const [fieldPlaceholderMl, setFieldPlaceholderMl] = useState("");
@@ -325,6 +632,8 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
   // Worker generated form mock state (for worker simulation in preview)
   const [simulatedUploadedFiles, setSimulatedUploadedFiles] = useState<Record<string, string>>({});
   const [simulatedVerifiedDocs, setSimulatedVerifiedDocs] = useState<Record<string, boolean>>({});
+  const [simulatedYesNoAnswers, setSimulatedYesNoAnswers] = useState<Record<string, string>>({});
+  const [simulatedDropdownAnswers, setSimulatedDropdownAnswers] = useState<Record<string, string>>({});
 
   // ---------------------------------------------------------------------------
   // HELPER FUNCTIONS & ACTIONS
@@ -343,42 +652,17 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
   const validateStep1 = () => {
     const errs: Record<string, string> = {};
     if (!schemeNameEn.trim()) errs.schemeNameEn = lang === "ml" ? "ഇംഗ്ലീഷ് പേര് നൽകുക" : "Scheme Name (English) is required";
-    if (!schemeNameMl.trim()) errs.schemeNameMl = lang === "ml" ? "മലയാളം പേര് നൽകുക" : "Scheme Name (Malayalam) is required";
     if (!category.trim()) errs.category = lang === "ml" ? "വിഭാഗം തിരഞ്ഞെടുക്കുക" : "Category is required";
     if (!department.trim()) errs.department = lang === "ml" ? "വകുപ്പ് തിരഞ്ഞെടുക്കുക" : "Department is required";
     if (department === "Custom / Other" && !customDepartment.trim()) {
       errs.customDepartment = lang === "ml" ? "വകുപ്പിന്റെ പേര് നൽകുക" : "Please enter custom department name";
     }
-    if (!aboutScheme.trim()) errs.aboutScheme = lang === "ml" ? "പദ്ധതിയെപ്പറ്റി വിവരിക്കുക" : "About the Scheme is required";
-
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  };
-
-  // Step 2 Validation
-  const validateStep2 = () => {
-    const errs: Record<string, string> = {};
+    if (!aboutScheme.trim()) errs.aboutScheme = lang === "ml" ? "പദ്ധതിയെപ്പറ്റി വിവരിക്കുക" : "About Us is required";
     if (selectedBenefitTypes.length === 0) {
       errs.benefitTypes = lang === "ml" ? "കുറഞ്ഞത് ഒരു ആനുകൂല്യ തരം തിരഞ്ഞെടുക്കുക" : "Select at least one Benefit Type";
     }
     if (selectedBenefitTypes.includes("Other") && !customBenefitType.trim()) {
       errs.customBenefitType = lang === "ml" ? "ആനുകൂല്യ തരം നൽകുക" : "Specify custom benefit type";
-    }
-    if (!benefitSummary.trim()) {
-      errs.benefitSummary = lang === "ml" ? "ആനുകൂല്യ സംഗ്രഹം നൽകുക" : "Benefit Summary is required";
-    }
-
-    if (selectedBenefitTypes.includes("Financial Assistance") || selectedBenefitTypes.includes("Subsidy") || selectedBenefitTypes.includes("Pension")) {
-      if (benefitAmountType === "fixed" && !fixedAmount.trim()) {
-        errs.fixedAmount = lang === "ml" ? "തുക നൽകുക" : "Fixed Amount is required";
-      } else if (benefitAmountType === "range") {
-        if (!minAmount.trim()) errs.minAmount = lang === "ml" ? "കുറഞ്ഞ തുക" : "Min Amount required";
-        if (!maxAmount.trim()) errs.maxAmount = lang === "ml" ? "കൂടിയ തുക" : "Max Amount required";
-      }
-    }
-
-    if (!eligibilitySummary.trim()) {
-      errs.eligibilitySummary = lang === "ml" ? "യോഗ്യതാ വിവരണം നൽകുക" : "Eligibility Summary is required";
     }
 
     setErrors(errs);
@@ -388,20 +672,54 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
   // Navigation handlers
   const handleContinueFromStep1 = () => {
     if (validateStep1()) {
+      setIsBenefitDropdownOpen(false);
       setCurrentStep(2);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
   const handleContinueFromStep2 = () => {
-    if (validateStep2()) {
-      setCurrentStep(3);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+    setCurrentStep(3);
+    setStep4DraftNotice(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const validateEligibility = () => {
+    const errs: Record<string, string> = {};
+
+    APPLICANT_ATTRIBUTES.forEach((attribute) => {
+      const key = `elig_${attribute}`;
+      const error = getEligibilityConditionError(attribute, eligibilityConditions[attribute]);
+      if (error) errs[key] = error;
+    });
+
+    if (eligibilityConditions["Disability Status"]?.mode === "Must be No") {
+      const percentage = eligibilityConditions["Disability Percentage"];
+      if (percentage?.mode && percentage.mode !== "No Restriction") {
+        errs["elig_Disability Percentage"] =
+          "Remove the disability percentage restriction when Disability Status is Must be No.";
+      }
     }
+
+    setErrors((prev) => {
+      const next = { ...prev };
+      APPLICANT_ATTRIBUTES.forEach((attribute) => delete next[`elig_${attribute}`]);
+      return { ...next, ...errs };
+    });
+    return Object.keys(errs).length === 0;
   };
 
   const handleOpenPreview = () => {
+    if (!validateEligibility()) {
+      setCurrentStep(2);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     setIsPreviewMode(true);
+  };
+
+  const handleSaveDraft = () => {
+    setStep4DraftNotice(true);
   };
 
   const handlePublishScheme = () => {
@@ -410,7 +728,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
       setIsPreviewMode(false);
       return;
     }
-    if (!validateStep2()) {
+    if (!validateEligibility()) {
       setCurrentStep(2);
       setIsPreviewMode(false);
       return;
@@ -419,17 +737,21 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
     // Success publish
     const schemePayload = {
       nameEn: schemeNameEn,
-      nameMl: schemeNameMl,
+      nameMl: schemeNameMl || schemeNameEn,
       shortName,
       logoUrl,
       category,
       department: department === "Custom / Other" ? customDepartment : department,
       aboutScheme,
       shortCardDescription,
+      officialWebsite,
       benefitTypes: selectedBenefitTypes,
       benefitSummary,
       eligibilitySummary,
+      eligibilityGrouping: overallGrouping,
+      eligibilityConditions,
       rulesCount: eligibilityRules.length,
+      customFields,
       customFieldsCount: customFields.length,
     };
 
@@ -471,27 +793,29 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
 
   const handleSaveRule = () => {
     if (!ruleAttr || !ruleCond || !ruleVal) return;
-    if (editingRuleId) {
-      setEligibilityRules((prev) =>
-        prev.map((r) =>
-          r.id === editingRuleId
-            ? {
-                ...r,
-                attribute: ruleAttr,
-                condition: ruleCond,
-                value: ruleVal,
-                unit: ruleUnit,
-                grouping: ruleGrouping,
-                missingBehavior: ruleMissing,
-                reasonShownToWorker: ruleReason,
-                sourceUrl: ruleSourceUrl,
-                enabled: ruleEnabled,
-              }
-            : r
-        )
-      );
-    } else {
-      const newRule: EligibilityRule = {
+
+    const nextRules = editingRuleId
+      ? eligibilityRules
+          .filter((rule) => rule.id === editingRuleId || rule.attribute !== ruleAttr || rule.enabled === false)
+          .map((rule) =>
+            rule.id === editingRuleId
+              ? {
+                  ...rule,
+                  attribute: ruleAttr,
+                  condition: ruleCond,
+                  value: ruleVal,
+                  unit: ruleUnit,
+                  grouping: ruleGrouping,
+                  missingBehavior: ruleMissing,
+                  reasonShownToWorker: ruleReason,
+                  sourceUrl: ruleSourceUrl,
+                  enabled: ruleEnabled,
+                }
+              : rule
+          )
+      : [
+          ...eligibilityRules.filter((rule) => rule.attribute !== ruleAttr || rule.enabled === false),
+          {
         id: `rule-${Date.now()}`,
         attribute: ruleAttr,
         condition: ruleCond,
@@ -502,24 +826,95 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
         reasonShownToWorker: ruleReason,
         sourceUrl: ruleSourceUrl,
         enabled: ruleEnabled,
-      };
-      setEligibilityRules((prev) => [...prev, newRule]);
-    }
+          },
+        ];
+
+    setEligibilityRules(nextRules);
+    setEligibilityConditions(conditionsFromRules(nextRules));
     setShowRuleModal(false);
   };
 
   const handleToggleRuleEnabled = (id: string) => {
-    setEligibilityRules((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, enabled: r.enabled === false ? true : false } : r))
+    const nextRules = eligibilityRules.map((rule) =>
+      rule.id === id ? { ...rule, enabled: rule.enabled === false ? true : false } : rule
     );
+    setEligibilityRules(nextRules);
+    setEligibilityConditions(conditionsFromRules(nextRules));
   };
 
   const handleDeleteRule = (id: string) => {
-    setEligibilityRules((prev) => prev.filter((r) => r.id !== id));
+    const nextRules = eligibilityRules.filter((rule) => rule.id !== id);
+    setEligibilityRules(nextRules);
+    setEligibilityConditions(conditionsFromRules(nextRules));
+  };
+
+  const updateEligibilityCondition = (
+    attribute: string,
+    patch: Partial<EligibilityConditionConfig>
+  ) => {
+    let nextConditions = {
+      ...eligibilityConditions,
+      [attribute]: { ...eligibilityConditions[attribute], ...patch },
+    };
+
+    if (attribute === "Disability Status" && patch.mode === "Must be No") {
+      nextConditions = {
+        ...nextConditions,
+        "Disability Percentage": {
+          ...nextConditions["Disability Percentage"],
+          mode: "No Restriction",
+          values: [],
+          min: "",
+          max: "",
+        },
+      };
+    }
+
+    nextConditions = resolveEligibilityConflicts(nextConditions);
+    setEligibilityConditions(nextConditions);
+    setEligibilityRules((prev) => rulesFromConditions(nextConditions, overallGrouping, prev));
+    setStep4DraftNotice(false);
+
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next[`elig_${attribute}`];
+      if (attribute === "Disability Status") delete next["elig_Disability Percentage"];
+      return next;
+    });
+  };
+
+  const handleConditionModeChange = (attribute: string, mode: EligibilityConditionMode) => {
+    const current = eligibilityConditions[attribute];
+    updateEligibilityCondition(attribute, {
+      mode,
+      referenceDate:
+        attribute === "Age, calculated from date of birth" && !current.referenceDate
+          ? todayIso()
+          : current.referenceDate,
+    });
+  };
+
+  const toggleConditionValue = (attribute: string, value: string) => {
+    const current = eligibilityConditions[attribute];
+    const values = current.values.includes(value)
+      ? current.values.filter((item) => item !== value)
+      : [...current.values, value];
+    updateEligibilityCondition(attribute, { values });
+  };
+
+  const handleEligibilityGroupingChange = (grouping: "ALL" | "ANY") => {
+    setOverallGrouping(grouping);
+    setEligibilityRules((prev) => prev.map((rule) => ({ ...rule, grouping })));
   };
 
   // Field operations
+  const handleOpenFieldTypePicker = () => {
+    setFieldMenuId(null);
+    setShowFieldTypeSheet(true);
+  };
+
   const handleOpenAddField = (type: CustomField["type"]) => {
+    setShowFieldTypeSheet(false);
     setEditingFieldId(null);
     setFieldType(type);
     setFieldLabelEn("");
@@ -529,17 +924,17 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
     setFieldShowOnlyWhenValue("Yes");
     setFieldReuseApplicantAttr("");
 
-    setFieldDocName("");
     setFieldUploadInstructions("");
     setFieldAcceptedFormats(["pdf", "jpg"]);
     setFieldMaxFileSizeMb(5);
     setFieldMaxFileCount(1);
     setFieldAllowOfflineVerif(true);
+    setFieldOfflineVerificationLabelMl("");
 
-    setFieldQuestionEn("");
-    setFieldQuestionMl("");
     setFieldYesFollowUp("");
     setFieldNoFollowUp("");
+    setFieldFollowUpEnabled(false);
+    setFieldFollowUpTrigger("Yes");
 
     setFieldPlaceholderEn("");
     setFieldPlaceholderMl("");
@@ -552,6 +947,9 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
       { id: "opt-2", labelEn: "Option 2", labelMl: "ഓപ്ഷൻ 2" },
     ]);
     setFieldIsMultiSelect(false);
+
+    setFieldErrors({});
+    setShowFieldAdvanced(false);
 
     setShowFieldModal(true);
   };
@@ -566,17 +964,19 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
     setFieldShowOnlyWhenValue(field.showOnlyWhenValue || "Yes");
     setFieldReuseApplicantAttr(field.reuseApplicantAttr || "");
 
-    setFieldDocName(field.documentName || "");
     setFieldUploadInstructions(field.uploadInstructions || "");
     setFieldAcceptedFormats(field.acceptedFormats || ["pdf", "jpg"]);
     setFieldMaxFileSizeMb(field.maxFileSizeMb || 5);
     setFieldMaxFileCount(field.maxFileCount || 1);
     setFieldAllowOfflineVerif(field.allowOfflineVerification ?? true);
+    setFieldOfflineVerificationLabelMl(field.offlineVerificationLabelMl || "");
 
-    setFieldQuestionEn(field.questionTextEn || "");
-    setFieldQuestionMl(field.questionTextMl || "");
     setFieldYesFollowUp(field.yesFollowUpText || "");
     setFieldNoFollowUp(field.noFollowUpText || "");
+    setFieldFollowUpEnabled(Boolean(field.yesFollowUpText || field.noFollowUpText));
+    setFieldFollowUpTrigger(
+      field.followUpTrigger || (field.noFollowUpText && !field.yesFollowUpText ? "No" : "Yes")
+    );
 
     setFieldPlaceholderEn(field.placeholderEn || "");
     setFieldPlaceholderMl(field.placeholderMl || "");
@@ -587,41 +987,130 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
     setFieldOptions(field.options || []);
     setFieldIsMultiSelect(field.isMultiSelect || false);
 
+    setFieldErrors({});
+    setShowFieldAdvanced(false);
+
     setShowFieldModal(true);
   };
 
   const handleSaveField = () => {
-    if (!fieldLabelEn.trim()) return;
+    const errs: Record<string, string> = {};
+    const nextFieldId = editingFieldId || `field-${Date.now()}`;
+    const cleanedOptions = fieldOptions
+      .map((option) => ({
+        ...option,
+        labelEn: option.labelEn.trim(),
+        labelMl: option.labelMl.trim(),
+      }))
+      .filter((option) => option.labelEn);
+
+    if (!fieldLabelEn.trim()) errs.labelEn = "Enter a field label in English.";
+
+    if (fieldType === "dropdown") {
+      if (cleanedOptions.length === 0) {
+        errs.options = "Add at least one answer option.";
+      } else if (
+        new Set(cleanedOptions.map((option) => option.labelEn.toLowerCase())).size !==
+        cleanedOptions.length
+      ) {
+        errs.options = "Answer options must have unique labels.";
+      }
+    }
+
+    if (fieldType === "descriptive_text" || fieldType === "single_text") {
+      const maxAllowed = fieldType === "descriptive_text" ? 10000 : 500;
+      if (
+        !Number.isFinite(fieldCharLimit) ||
+        fieldCharLimit < 1 ||
+        fieldCharLimit > maxAllowed
+      ) {
+        errs.charLimit = `Enter a character limit between 1 and ${maxAllowed}.`;
+      }
+    }
+
+    if (fieldType === "file_upload") {
+      if (fieldAcceptedFormats.length === 0) {
+        errs.uploadFormats = "Select at least one accepted format.";
+      }
+      if (
+        !Number.isFinite(fieldMaxFileSizeMb) ||
+        fieldMaxFileSizeMb < 1 ||
+        fieldMaxFileSizeMb > 100
+      ) {
+        errs.maxFileSize = "Enter a maximum file size between 1 and 100 MB.";
+      }
+      if (
+        !Number.isFinite(fieldMaxFileCount) ||
+        fieldMaxFileCount < 1 ||
+        fieldMaxFileCount > 20
+      ) {
+        errs.maxFileCount = "Enter a file count between 1 and 20.";
+      }
+    }
+
+    if (fieldType === "yes_no" && fieldFollowUpEnabled) {
+      const followUpText =
+        fieldFollowUpTrigger === "Yes" ? fieldYesFollowUp.trim() : fieldNoFollowUp.trim();
+      if (!followUpText) errs.followUp = "Enter a follow-up question or instruction.";
+    }
+
+    if (
+      ["uploadFormats", "maxFileSize", "maxFileCount"].some(
+        (key) => errs[key]
+      )
+    ) {
+      setShowFieldAdvanced(true);
+    }
+    setFieldErrors(errs);
+    if (Object.keys(errs).length > 0) return;
 
     const newField: CustomField = {
-      id: editingFieldId || `field-${Date.now()}`,
+      id: nextFieldId,
       type: fieldType,
-      labelEn: fieldLabelEn,
-      labelMl: fieldLabelMl || fieldLabelEn,
+      labelEn: fieldLabelEn.trim(),
+      labelMl: fieldLabelMl.trim() || fieldLabelEn.trim(),
       required: fieldRequired,
       showOnlyWhenFieldId: fieldShowOnlyWhenFieldId || undefined,
-      showOnlyWhenValue: fieldShowOnlyWhenValue || undefined,
-      reuseApplicantAttr: fieldReuseApplicantAttr || undefined,
+      showOnlyWhenValue: fieldShowOnlyWhenFieldId ? fieldShowOnlyWhenValue : undefined,
+      reuseApplicantAttr:
+        fieldType === "file_upload" ? undefined : fieldReuseApplicantAttr || undefined,
 
-      documentName: fieldType === "file_upload" ? (fieldDocName || fieldLabelEn) : undefined,
+      documentName: fieldType === "file_upload" ? fieldLabelEn.trim() : undefined,
       uploadInstructions: fieldType === "file_upload" ? fieldUploadInstructions : undefined,
       acceptedFormats: fieldType === "file_upload" ? fieldAcceptedFormats : undefined,
       maxFileSizeMb: fieldType === "file_upload" ? fieldMaxFileSizeMb : undefined,
       maxFileCount: fieldType === "file_upload" ? fieldMaxFileCount : undefined,
       allowOfflineVerification: fieldType === "file_upload" ? fieldAllowOfflineVerif : undefined,
+      offlineVerificationLabelMl:
+        fieldType === "file_upload" ? fieldOfflineVerificationLabelMl.trim() : undefined,
 
-      questionTextEn: fieldType === "yes_no" ? fieldQuestionEn : undefined,
-      questionTextMl: fieldType === "yes_no" ? fieldQuestionMl : undefined,
-      yesFollowUpText: fieldType === "yes_no" ? fieldYesFollowUp : undefined,
-      noFollowUpText: fieldType === "yes_no" ? fieldNoFollowUp : undefined,
+      questionTextEn: fieldType === "yes_no" ? fieldLabelEn.trim() : undefined,
+      questionTextMl:
+        fieldType === "yes_no" ? fieldLabelMl.trim() || fieldLabelEn.trim() : undefined,
+      yesFollowUpText:
+        fieldType === "yes_no" && fieldFollowUpEnabled && fieldFollowUpTrigger === "Yes"
+          ? fieldYesFollowUp.trim()
+          : undefined,
+      noFollowUpText:
+        fieldType === "yes_no" && fieldFollowUpEnabled && fieldFollowUpTrigger === "No"
+          ? fieldNoFollowUp.trim()
+          : undefined,
+      followUpTrigger:
+        fieldType === "yes_no" && fieldFollowUpEnabled ? fieldFollowUpTrigger : undefined,
 
       placeholderEn: fieldType === "descriptive_text" || fieldType === "single_text" ? fieldPlaceholderEn : undefined,
       placeholderMl: fieldType === "descriptive_text" || fieldType === "single_text" ? fieldPlaceholderMl : undefined,
-      helpTextEn: fieldType === "descriptive_text" || fieldType === "single_text" ? fieldHelpTextEn : undefined,
-      helpTextMl: fieldType === "descriptive_text" || fieldType === "single_text" ? fieldHelpTextMl : undefined,
+      helpTextEn:
+        fieldType === "yes_no" || fieldType === "descriptive_text" || fieldType === "single_text"
+          ? fieldHelpTextEn
+          : undefined,
+      helpTextMl:
+        fieldType === "yes_no" || fieldType === "descriptive_text" || fieldType === "single_text"
+          ? fieldHelpTextMl
+          : undefined,
       charLimit: fieldType === "descriptive_text" || fieldType === "single_text" ? fieldCharLimit : undefined,
 
-      options: fieldType === "dropdown" ? fieldOptions : undefined,
+      options: fieldType === "dropdown" ? cleanedOptions : undefined,
       isMultiSelect: fieldType === "dropdown" ? fieldIsMultiSelect : undefined,
     };
 
@@ -632,10 +1121,20 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
     }
 
     setShowFieldModal(false);
+    setFieldErrors({});
   };
 
   const handleDeleteField = (id: string) => {
-    setCustomFields((prev) => prev.filter((f) => f.id !== id));
+    setCustomFields((prev) =>
+      prev
+        .filter((f) => f.id !== id)
+        .map((f) =>
+          f.showOnlyWhenFieldId === id
+            ? { ...f, showOnlyWhenFieldId: undefined, showOnlyWhenValue: undefined }
+            : f
+        )
+    );
+    setFieldMenuId(null);
   };
 
   const handleDuplicateField = (field: CustomField) => {
@@ -645,7 +1144,13 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
       labelEn: `${field.labelEn} (Copy)`,
       labelMl: `${field.labelMl} (പകർപ്പ്)`,
     };
-    setCustomFields((prev) => [...prev, dup]);
+    setCustomFields((prev) => {
+      const sourceIndex = prev.findIndex((item) => item.id === field.id);
+      const next = [...prev];
+      next.splice(sourceIndex + 1, 0, dup);
+      return next;
+    });
+    setFieldMenuId(null);
   };
 
   const handleMoveField = (index: number, direction: "up" | "down") => {
@@ -655,6 +1160,21 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
     const [moved] = updated.splice(index, 1);
     updated.splice(targetIndex, 0, moved);
     setCustomFields(updated);
+    setFieldMenuId(null);
+  };
+
+  const handleCloseFieldEditor = () => {
+    setShowFieldModal(false);
+    setFieldErrors({});
+  };
+
+  const keepFieldInputVisible = (
+    event: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    const target = event.currentTarget;
+    window.setTimeout(() => {
+      target.scrollIntoView({ block: "center", behavior: "smooth" });
+    }, 150);
   };
 
   const handlePrefillDemo = () => {
@@ -764,6 +1284,23 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
   // ---------------------------------------------------------------------------
   // RENDER MODAL VIEW
   // ---------------------------------------------------------------------------
+  const configuredConditionCount = APPLICANT_ATTRIBUTES.filter(
+    (attribute) => !getEligibilityConditionError(attribute, eligibilityConditions[attribute])
+  ).length;
+
+  const isCustomFieldVisible = (field: CustomField) => {
+    if (!field.showOnlyWhenFieldId) return true;
+    const dependency = customFields.find((item) => item.id === field.showOnlyWhenFieldId);
+    if (!dependency) return false;
+    const answer =
+      dependency.type === "yes_no"
+        ? simulatedYesNoAnswers[dependency.id]
+        : dependency.type === "dropdown"
+        ? simulatedDropdownAnswers[dependency.id]
+        : "";
+    return answer === field.showOnlyWhenValue;
+  };
+
   return (
     <div className="absolute inset-0 flex flex-col h-full bg-[#FFFDF9] dark:bg-slate-900 text-foreground font-sans overflow-hidden z-10">
       {/* --------------------------------------------------------------------- */}
@@ -777,7 +1314,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
               if (isPreviewMode) {
                 setIsPreviewMode(false);
               } else if (currentStep > 1) {
-                setCurrentStep((prev) => (prev - 1) as 1 | 2);
+                setCurrentStep((prev) => (prev - 1) as 1 | 2 | 3);
               } else {
                 onClose();
               }
@@ -813,7 +1350,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
       {/* --------------------------------------------------------------------- */}
       {/* SCROLLABLE FORM BODY */}
       {/* --------------------------------------------------------------------- */}
-      <div className="flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden px-4 py-3.5 space-y-4 pb-24">
+      <div ref={formBodyRef} className="flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden px-4 py-3.5 space-y-4 pb-24">
         {/* PREVIEW MODE VIEW */}
         {isPreviewMode ? (
           <div className="space-y-4 animate-in fade-in duration-200">
@@ -887,7 +1424,12 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                       </span>
                     ))}
                   </div>
-                  <p className="text-xs text-foreground font-medium pt-1">{benefitSummary}</p>
+                  {benefitSummary && <p className="text-xs text-foreground font-medium pt-1">{benefitSummary}</p>}
+                  {benefitDuration && (
+                    <p className="text-[11px] text-muted-foreground font-semibold">
+                      Duration: <span className="text-foreground">{benefitDuration}</span>
+                    </p>
+                  )}
                 </div>
 
                 {/* Eligibility Rules Section */}
@@ -896,7 +1438,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                     <ShieldAlert className="h-4 w-4 text-[#ff5500]" />
                     {lang === "ml" ? "യോഗ്യതാ നിബന്ധനകൾ" : "Eligibility Criteria"}
                   </h3>
-                  <p className="text-xs text-foreground font-medium">{eligibilitySummary}</p>
+                  {eligibilitySummary && <p className="text-xs text-foreground font-medium">{eligibilitySummary}</p>}
                   <div className="space-y-1.5 pt-1">
                     {eligibilityRules.map((rule, idx) => (
                       <div key={rule.id} className="p-2 rounded-xl bg-muted/60 text-xs font-medium flex items-center justify-between gap-2">
@@ -930,7 +1472,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                     {lang === "ml" ? "ആവശ്യമായ വിവരങ്ങളും രേഖകളും" : "Required Details & Verification"}
                   </h3>
 
-                  {customFields.map((field) => (
+                  {customFields.filter(isCustomFieldVisible).map((field) => (
                     <div key={field.id} className="space-y-1.5 p-3 rounded-xl bg-muted/40 border border-border/80">
                       <div className="flex items-center justify-between">
                         <label className="text-xs font-extrabold text-foreground">
@@ -945,6 +1487,13 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                       {field.type === "file_upload" && (
                         <div className="space-y-2 pt-1">
                           <p className="text-[11px] text-muted-foreground">{field.uploadInstructions}</p>
+                          <p className="text-[9.5px] font-semibold text-muted-foreground">
+                            {(field.acceptedFormats ?? []).join(", ").toUpperCase()}
+                            {field.maxFileSizeMb ? ` · Max ${field.maxFileSizeMb} MB` : ""}
+                            {field.maxFileCount
+                              ? ` · Up to ${field.maxFileCount} file${field.maxFileCount > 1 ? "s" : ""}`
+                              : ""}
+                          </p>
                           <div className="flex items-center gap-2">
                             <label className="flex-1 cursor-pointer flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-dashed border-orange-300 bg-orange-50/50 dark:bg-orange-950/20 text-[#ff5500] text-xs font-bold hover:bg-orange-100 transition-colors">
                               <Upload className="h-3.5 w-3.5" />
@@ -952,10 +1501,20 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                               <input
                                 type="file"
                                 className="hidden"
+                                accept={(field.acceptedFormats ?? [])
+                                  .map((format) => `.${format}`)
+                                  .join(",")}
+                                multiple={(field.maxFileCount ?? 1) > 1}
                                 onChange={(e) => {
-                                  const f = e.target.files?.[0];
-                                  if (f) {
-                                    setSimulatedUploadedFiles((prev) => ({ ...prev, [field.id]: f.name }));
+                                  const files = Array.from(e.target.files ?? []).slice(
+                                    0,
+                                    field.maxFileCount ?? 1
+                                  );
+                                  if (files.length > 0) {
+                                    setSimulatedUploadedFiles((prev) => ({
+                                      ...prev,
+                                      [field.id]: files.map((file) => file.name).join(", "),
+                                    }));
                                   }
                                 }}
                               />
@@ -995,33 +1554,135 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
 
                       {/* Yes/No Field Render */}
                       {field.type === "yes_no" && (
-                        <div className="flex items-center gap-3 pt-1">
-                          <label className="flex items-center gap-1.5 text-xs font-bold text-foreground cursor-pointer">
-                            <input type="radio" name={`yn-${field.id}`} className="accent-[#ff5500]" /> Yes
-                          </label>
-                          <label className="flex items-center gap-1.5 text-xs font-bold text-foreground cursor-pointer">
-                            <input type="radio" name={`yn-${field.id}`} className="accent-[#ff5500]" /> No
-                          </label>
+                        <div className="space-y-2 pt-1">
+                          {field.helpTextEn && (
+                            <p className="text-[10.5px] font-medium text-muted-foreground">{field.helpTextEn}</p>
+                          )}
+                          <div className="flex items-center gap-3">
+                            {(["Yes", "No"] as const).map((answer) => (
+                              <label
+                                key={answer}
+                                className="flex items-center gap-1.5 text-xs font-bold text-foreground cursor-pointer"
+                              >
+                                <input
+                                  type="radio"
+                                  name={`yn-${field.id}`}
+                                  checked={simulatedYesNoAnswers[field.id] === answer}
+                                  onChange={() =>
+                                    setSimulatedYesNoAnswers((prev) => ({
+                                      ...prev,
+                                      [field.id]: answer,
+                                    }))
+                                  }
+                                  className="accent-[#ff5500]"
+                                />{" "}
+                                {answer}
+                              </label>
+                            ))}
+                          </div>
+                          {(() => {
+                            const followUp =
+                              field.followUpTrigger === "Yes"
+                                ? field.yesFollowUpText
+                                : field.followUpTrigger === "No"
+                                ? field.noFollowUpText
+                                : "";
+                            if (
+                              !followUp ||
+                              simulatedYesNoAnswers[field.id] !== field.followUpTrigger
+                            ) {
+                              return null;
+                            }
+                            return (
+                              <div className="ml-1 space-y-1 rounded-lg border border-orange-100 bg-orange-50/40 p-2 dark:border-slate-700 dark:bg-slate-800/60">
+                                <label className="text-[10px] font-extrabold text-foreground">{followUp}</label>
+                                <input
+                                  type="text"
+                                  className="h-8 w-full rounded-lg border border-orange-200/80 bg-white px-2.5 text-[10.5px] outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-900"
+                                  placeholder="Enter details"
+                                />
+                              </div>
+                            );
+                          })()}
                         </div>
                       )}
 
                       {/* Dropdown Field Render */}
                       {field.type === "dropdown" && (
-                        <select className="w-full text-xs h-9 px-3 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none">
-                          <option value="">-- Select --</option>
-                          {field.options?.map((opt) => (
-                            <option key={opt.id} value={opt.labelEn}>{opt.labelEn}</option>
-                          ))}
-                        </select>
+                        field.isMultiSelect ? (
+                          <div className="flex flex-wrap gap-1.5 pt-1">
+                            {(field.options ?? []).map((opt) => {
+                              const selectedValues = (simulatedDropdownAnswers[field.id] || "").split("|");
+                              const selected = selectedValues.includes(opt.labelEn);
+                              return (
+                                <button
+                                  key={opt.id}
+                                  type="button"
+                                  onClick={() =>
+                                    setSimulatedDropdownAnswers((prev) => {
+                                      const current = (prev[field.id] || "").split("|").filter(Boolean);
+                                      const next = current.includes(opt.labelEn)
+                                        ? current.filter((value) => value !== opt.labelEn)
+                                        : [...current, opt.labelEn];
+                                      return { ...prev, [field.id]: next.join("|") };
+                                    })
+                                  }
+                                  className={`rounded-lg border px-2 py-1 text-[10.5px] font-bold ${
+                                    selected
+                                      ? "border-[#FF5500] bg-orange-50 text-[#FF5500] dark:bg-orange-950/40"
+                                      : "border-border bg-background text-foreground"
+                                  }`}
+                                >
+                                  {opt.labelEn}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <select
+                            value={simulatedDropdownAnswers[field.id] || ""}
+                            onChange={(event) =>
+                              setSimulatedDropdownAnswers((prev) => ({
+                                ...prev,
+                                [field.id]: event.target.value,
+                              }))
+                            }
+                            className="w-full text-xs h-9 px-3 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none"
+                          >
+                            <option value="">{field.placeholderEn || "-- Select --"}</option>
+                            {field.options?.map((opt) => (
+                              <option key={opt.id} value={opt.labelEn}>{opt.labelEn}</option>
+                            ))}
+                          </select>
+                        )
                       )}
 
                       {/* Text Field Render */}
-                      {(field.type === "single_text" || field.type === "descriptive_text") && (
-                        <input
-                          type="text"
-                          placeholder={field.placeholderEn || "Enter details..."}
-                          className="w-full text-xs h-9 px-3 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none"
-                        />
+                      {field.type === "descriptive_text" && (
+                        <div className="space-y-1 pt-1">
+                          <textarea
+                            rows={3}
+                            maxLength={field.charLimit}
+                            placeholder={field.placeholderEn || "Enter details..."}
+                            className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 outline-none"
+                          />
+                          {field.helpTextEn && (
+                            <p className="text-[10px] font-medium text-muted-foreground">{field.helpTextEn}</p>
+                          )}
+                        </div>
+                      )}
+                      {field.type === "single_text" && (
+                        <div className="space-y-1 pt-1">
+                          <input
+                            type="text"
+                            maxLength={field.charLimit}
+                            placeholder={field.placeholderEn || "Enter details..."}
+                            className="w-full text-xs h-9 px-3 rounded-xl border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none"
+                          />
+                          {field.helpTextEn && (
+                            <p className="text-[10px] font-medium text-muted-foreground">{field.helpTextEn}</p>
+                          )}
+                        </div>
                       )}
                     </div>
                   ))}
@@ -1080,6 +1741,211 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                   )}
                 </div>
 
+                {/* Category Dropdown */}
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-[#1E293B] dark:text-slate-200 block">
+                    {lang === "ml" ? "വിഭാഗം *" : "Category *"}
+                  </label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full rounded-lg border border-orange-200/80 dark:border-slate-700 bg-[#FFFDF7] dark:bg-slate-800/80 px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer"
+                  >
+                    {categoryOptions.map((cat) => (
+                      <option key={cat.en} value={cat.en}>
+                        {lang === "ml" ? cat.ml : cat.en}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Department Dropdown */}
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-[#1E293B] dark:text-slate-200 block">
+                    {lang === "ml" ? "മന്ത്രാലയം / വകുപ്പ് *" : "Ministry / Department *"}
+                  </label>
+                  <select
+                    value={department}
+                    onChange={(e) => setDepartment(e.target.value)}
+                    className="w-full rounded-lg border border-orange-200/80 dark:border-slate-700 bg-[#FFFDF7] dark:bg-slate-800/80 px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer"
+                  >
+                    {departmentOptions.map((dept) => (
+                      <option key={dept} value={dept}>{dept}</option>
+                    ))}
+                  </select>
+                  {department === "Custom / Other" && (
+                    <input
+                      type="text"
+                      value={customDepartment}
+                      onChange={(e) => setDepartmentCustom(e.target.value)}
+                      placeholder="Enter custom department name..."
+                      className="w-full mt-1.5 rounded-lg border border-orange-200/80 dark:border-slate-700 bg-[#FFFDF7] dark:bg-slate-800/80 px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
+                    />
+                  )}
+                </div>
+
+                {/* Scheme Card Description */}
+                <div className="space-y-1">
+                  <label className="text-[11px] font-extrabold text-foreground block">
+                    {lang === "ml" ? "കാർഡിലെ ലഘു വിവരണം" : "Scheme Card Description"}
+                  </label>
+                  <input
+                    type="text"
+                    value={shortCardDescription}
+                    onChange={(e) => setShortCardDescription(e.target.value)}
+                    placeholder="1-line quick summary shown on mobile cards..."
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  {/* Benefit Type Multi-Select */}
+                  <div className="space-y-1.5 relative">
+                    <label className="text-[11px] font-extrabold text-foreground block">
+                      {lang === "ml" ? "ആനുകൂല്യ തരം *" : "Benefit Type *"}
+                    </label>
+                    <div
+                      onClick={() => setIsBenefitDropdownOpen((prev) => !prev)}
+                      className={`w-full min-h-[38px] px-2.5 py-1.5 rounded-lg border bg-[#FFFDF7] dark:bg-slate-800/80 text-xs text-foreground cursor-pointer flex items-center justify-between gap-2 shadow-2xs transition-colors ${
+                        errors.benefitTypes
+                          ? "border-red-500 ring-1 ring-red-500"
+                          : "border-orange-200/80 dark:border-slate-700 hover:border-orange-400"
+                      }`}
+                    >
+                      <div className="flex flex-wrap gap-1 items-center flex-1 min-w-0">
+                        {selectedBenefitTypes.length > 0 ? (
+                          selectedBenefitTypes.map((type) => (
+                            <span
+                              key={type}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#FF5500] text-white text-[11px] font-bold shadow-2xs"
+                            >
+                              <span>{type}</span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedBenefitTypes((prev) => prev.filter((t) => t !== type));
+                                }}
+                                className="hover:bg-orange-600 rounded p-0.5 transition-colors cursor-pointer"
+                              >
+                                <X className="h-3 w-3 stroke-[3]" />
+                              </button>
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-slate-400 text-xs font-medium">Select benefit types...</span>
+                        )}
+                      </div>
+                      <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0 ${isBenefitDropdownOpen ? "rotate-180" : ""}`} />
+                    </div>
+
+                    {isBenefitDropdownOpen && (
+                      <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white dark:bg-slate-800 border border-orange-200/80 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden py-1 animate-in fade-in duration-150">
+                        {["Financial Assistance", "Insurance", "Loan", "Subsidy", "Pension", "Service", "Other"].map((type) => {
+                          const isSelected = selectedBenefitTypes.includes(type);
+                          return (
+                            <button
+                              key={type}
+                              type="button"
+                              onClick={() => {
+                                if (isSelected) {
+                                  setSelectedBenefitTypes((prev) => prev.filter((t) => t !== type));
+                                } else {
+                                  setSelectedBenefitTypes((prev) => [...prev, type]);
+                                }
+                              }}
+                              className={`w-full px-3 py-2 text-xs font-bold flex items-center justify-between cursor-pointer transition-colors text-left ${
+                                isSelected
+                                  ? "bg-orange-50 dark:bg-slate-700/80 text-[#FF5500]"
+                                  : "text-foreground hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                              }`}
+                            >
+                              <span>{type}</span>
+                              <div className={`h-4 w-4 rounded flex items-center justify-center border transition-colors ${
+                                isSelected ? "bg-[#FF5500] border-[#FF5500] text-white" : "border-slate-300 dark:border-slate-600"
+                              }`}>
+                                {isSelected && <Check className="h-3 w-3 stroke-[3]" />}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {selectedBenefitTypes.includes("Other") && (
+                      <input
+                        type="text"
+                        value={customBenefitType}
+                        onChange={(e) => setCustomBenefitType(e.target.value)}
+                        placeholder="Specify other benefit type..."
+                        className={`w-full mt-1.5 rounded-lg border px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 ${
+                          errors.customBenefitType ? "border-red-500 ring-1 ring-red-500" : "border-border bg-background"
+                        }`}
+                      />
+                    )}
+                    {errors.benefitTypes && (
+                      <p className="text-[10px] text-red-500 font-bold flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" /> {errors.benefitTypes}
+                      </p>
+                    )}
+                    {errors.customBenefitType && (
+                      <p className="text-[10px] text-red-500 font-bold flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" /> {errors.customBenefitType}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Benefit Duration */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-extrabold text-foreground block">
+                      {lang === "ml" ? "ആനുകൂല്യ കാലയളവ്" : "Benefit Duration"}
+                    </label>
+                    <input
+                      type="text"
+                      value={benefitDuration}
+                      onChange={(e) => setBenefitDuration(e.target.value)}
+                      placeholder="e.g. 3 Years / Ongoing"
+                      className="w-full rounded-lg border border-orange-200/80 dark:border-slate-700 bg-[#FFFDF7] dark:bg-slate-800/80 px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
+                    />
+                  </div>
+                </div>
+
+                {/* About Us */}
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-[#1E293B] dark:text-slate-200 block">
+                    {lang === "ml" ? "ഞങ്ങളെക്കുറിച്ച് *" : "About Us *"}
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={aboutScheme}
+                    onChange={(e) => setAboutScheme(e.target.value)}
+                    placeholder="Enter detailed objective and background of the scheme..."
+                    className={`w-full rounded-lg border px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none transition-colors ${
+                      errors.aboutScheme
+                        ? "border-red-500 bg-red-50/50 ring-1 ring-red-500"
+                        : "border-orange-200/80 dark:border-slate-700 bg-[#FFFDF7] dark:bg-slate-800/80"
+                    }`}
+                  />
+                  {errors.aboutScheme && (
+                    <p className="text-[10px] text-red-500 font-bold flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" /> {errors.aboutScheme}
+                    </p>
+                  )}
+                </div>
+
+                {/* Official Scheme Website */}
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-[#1E293B] dark:text-slate-200 block">
+                    {lang === "ml" ? "ഔദ്യോഗിക സ്കീം വെബ്സൈറ്റ്" : "Official Scheme Website"}
+                  </label>
+                  <input
+                    type="url"
+                    value={officialWebsite}
+                    onChange={(e) => setOfficialWebsite(e.target.value)}
+                    placeholder="https://kerala.gov.in/schemes"
+                    className="w-full rounded-lg border border-orange-200/80 dark:border-slate-700 bg-[#FFFDF7] dark:bg-slate-800/80 px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  />
+                </div>
 
                 {/* Official Scheme Logo Upload */}
                 <div className="space-y-1.5">
@@ -1135,678 +2001,6 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                     </label>
                   )}
                 </div>
-
-                {/* Category Dropdown */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-[#1E293B] dark:text-slate-200 block">
-                    {lang === "ml" ? "വിഭാഗം *" : "Category *"}
-                  </label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full rounded-lg border border-orange-200/80 dark:border-slate-700 bg-[#FFFDF7] dark:bg-slate-800/80 px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer"
-                  >
-                    {categoryOptions.map((cat) => (
-                      <option key={cat.en} value={cat.en}>
-                        {lang === "ml" ? cat.ml : cat.en}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Department Dropdown */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-[#1E293B] dark:text-slate-200 block">
-                    {lang === "ml" ? "മന്ത്രാലയം / വകുപ്പ് *" : "Ministry / Department *"}
-                  </label>
-                  <select
-                    value={department}
-                    onChange={(e) => setDepartment(e.target.value)}
-                    className="w-full rounded-lg border border-orange-200/80 dark:border-slate-700 bg-[#FFFDF7] dark:bg-slate-800/80 px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer"
-                  >
-                    {departmentOptions.map((dept) => (
-                      <option key={dept} value={dept}>{dept}</option>
-                    ))}
-                  </select>
-                  {department === "Custom / Other" && (
-                    <input
-                      type="text"
-                      value={customDepartment}
-                      onChange={(e) => setDepartmentCustom(e.target.value)}
-                      placeholder="Enter custom department name..."
-                      className="w-full mt-1.5 rounded-lg border border-orange-200/80 dark:border-slate-700 bg-[#FFFDF7] dark:bg-slate-800/80 px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
-                    />
-                  )}
-                </div>
-
-                {/* About the Scheme */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-[#1E293B] dark:text-slate-200 block">
-                    {lang === "ml" ? "പദ്ധതിയെക്കുറിച്ച് *" : "About the Scheme *"}
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={aboutScheme}
-                    onChange={(e) => setAboutScheme(e.target.value)}
-                    placeholder="Enter detailed objective and background of the scheme..."
-                    className={`w-full rounded-lg border px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none transition-colors ${
-                      errors.aboutScheme
-                        ? "border-red-500 bg-red-50/50 ring-1 ring-red-500"
-                        : "border-orange-200/80 dark:border-slate-700 bg-[#FFFDF7] dark:bg-slate-800/80"
-                    }`}
-                  />
-                  {errors.aboutScheme && (
-                    <p className="text-[10px] text-red-500 font-bold flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" /> {errors.aboutScheme}
-                    </p>
-                  )}
-                </div>
-
-                {/* Short Card Description */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-extrabold text-foreground block">
-                    {lang === "ml" ? "കാർഡിലെ ലഘു വിവരണം" : "Short Card Description"}
-                  </label>
-                  <input
-                    type="text"
-                    value={shortCardDescription}
-                    onChange={(e) => setShortCardDescription(e.target.value)}
-                    placeholder="1-line quick summary shown on mobile cards..."
-                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* =================================------------------------------ */}
-            {/* STEP 2 OF 3 — BENEFITS & ELIGIBILITY */}
-            {/* =================================------------------------------ */}
-            {currentStep === 2 && (
-              <div className="space-y-4">
-                {/* SECTION 1: BENEFITS */}
-                <div className="rounded-xl border border-orange-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 shadow-2xs space-y-3.5">
-                  <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#FF5500] text-white font-black text-[10px] shrink-0">
-                      2
-                    </span>
-                    <h2 className="text-[12px] font-black text-[#1E293B] dark:text-slate-100 tracking-tight">
-                      {lang === "ml" ? "പദ്ധതി ആനുകൂല്യങ്ങൾ" : "Benefits"}
-                    </h2>
-                  </div>
-
-                  {/* Benefit Types Multi-Select Dropdown */}
-                  <div className="space-y-1.5 relative">
-                    <label className="text-[11px] font-extrabold text-foreground block">
-                      {lang === "ml" ? "ആനുകൂല്യ തരം *" : "Benefit Type *"}
-                    </label>
-
-                    {/* Dropdown Input Box Trigger */}
-                    <div
-                      onClick={() => setIsBenefitDropdownOpen((prev) => !prev)}
-                      className="w-full min-h-[38px] px-2.5 py-1.5 rounded-lg border border-orange-200/80 dark:border-slate-700 bg-[#FFFDF7] dark:bg-slate-800/80 text-xs text-foreground cursor-pointer flex items-center justify-between gap-2 shadow-2xs hover:border-orange-400 transition-colors"
-                    >
-                      <div className="flex flex-wrap gap-1 items-center flex-1 min-w-0">
-                        {selectedBenefitTypes.length > 0 ? (
-                          selectedBenefitTypes.map((type) => (
-                            <span
-                              key={type}
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#FF5500] text-white text-[11px] font-bold shadow-2xs"
-                            >
-                              <span>{type}</span>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedBenefitTypes((prev) => prev.filter((t) => t !== type));
-                                }}
-                                className="hover:bg-orange-600 rounded p-0.5 transition-colors cursor-pointer"
-                              >
-                                <X className="h-3 w-3 stroke-[3]" />
-                              </button>
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-slate-400 text-xs font-medium">Select benefit types...</span>
-                        )}
-                      </div>
-                      <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0 ${isBenefitDropdownOpen ? "rotate-180" : ""}`} />
-                    </div>
-
-                    {/* Multi-Select Options Menu */}
-                    {isBenefitDropdownOpen && (
-                      <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white dark:bg-slate-800 border border-orange-200/80 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden py-1 animate-in fade-in duration-150">
-                        {[
-                          "Financial Assistance",
-                          "Insurance",
-                          "Loan",
-                          "Subsidy",
-                          "Pension",
-                          "Service",
-                          "Other",
-                        ].map((type) => {
-                          const isSelected = selectedBenefitTypes.includes(type);
-                          return (
-                            <button
-                              key={type}
-                              type="button"
-                              onClick={() => {
-                                if (isSelected) {
-                                  setSelectedBenefitTypes((prev) => prev.filter((t) => t !== type));
-                                } else {
-                                  setSelectedBenefitTypes((prev) => [...prev, type]);
-                                }
-                              }}
-                              className={`w-full px-3 py-2 text-xs font-bold flex items-center justify-between cursor-pointer transition-colors text-left ${
-                                isSelected
-                                  ? "bg-orange-50 dark:bg-slate-700/80 text-[#FF5500]"
-                                  : "text-foreground hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                              }`}
-                            >
-                              <span>{type}</span>
-                              <div className={`h-4 w-4 rounded flex items-center justify-center border transition-colors ${
-                                isSelected ? "bg-[#FF5500] border-[#FF5500] text-white" : "border-slate-300 dark:border-slate-600"
-                              }`}>
-                                {isSelected && <Check className="h-3 w-3 stroke-[3]" />}
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {/* Custom Benefit Type input if 'Other' selected */}
-                    {selectedBenefitTypes.includes("Other") && (
-                      <input
-                        type="text"
-                        value={customBenefitType}
-                        onChange={(e) => setCustomBenefitType(e.target.value)}
-                        placeholder="Specify other benefit type..."
-                        className="w-full mt-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
-                      />
-                    )}
-                    {errors.benefitType && (
-                      <p className="text-[10px] text-red-500 font-bold flex items-center gap-1">
-                        <AlertCircle className="h-3 w-3" /> {errors.benefitType}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Benefit Summary */}
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-extrabold text-foreground block">
-                      {lang === "ml" ? "ആനുകൂല്യ സംഗ്രഹം *" : "Benefit Summary *"}
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={benefitSummary}
-                      onChange={(e) => setBenefitSummary(e.target.value)}
-                      placeholder="e.g. ₹6,000 direct benefit transfer annually for eligible BPL households."
-                      className={`w-full rounded-lg border px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none ${
-                        errors.benefitSummary ? "border-red-500 ring-1 ring-red-500" : "border-border bg-background"
-                      }`}
-                    />
-                    {errors.benefitSummary && (
-                      <p className="text-[10px] text-red-500 font-bold flex items-center gap-1">
-                        <AlertCircle className="h-3 w-3" /> {errors.benefitSummary}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Benefit Amount (Show financial fields when applicable) */}
-                  <div className="p-3 rounded-xl bg-orange-50/40 dark:bg-orange-950/20 border border-orange-200/60 space-y-2.5">
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-foreground block">Benefit Amount</label>
-                      <div className="flex gap-1.5">
-                        {[
-                          { mode: "fixed", label: "Fixed Amount" },
-                          { mode: "range", label: "Minimum–Maximum" },
-                          { mode: "varies", label: "Varies" },
-                        ].map((item) => (
-                          <button
-                            key={item.mode}
-                            type="button"
-                            onClick={() => setBenefitAmountType(item.mode as any)}
-                            className={`flex-1 py-1 px-1 text-[11px] font-bold rounded-lg border transition-colors cursor-pointer text-center ${
-                              benefitAmountType === item.mode
-                                ? "bg-[#ff5500] border-[#ff5500] text-white shadow-2xs"
-                                : "bg-background border-border text-foreground hover:bg-slate-50"
-                            }`}
-                          >
-                            {item.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {benefitAmountType === "fixed" && (
-                      <div>
-                        <label className="text-[10px] font-bold text-muted-foreground block">Fixed Amount (₹)</label>
-                        <input
-                          type="number"
-                          value={fixedAmount}
-                          onChange={(e) => setFixedAmount(e.target.value)}
-                          placeholder="e.g. 6000"
-                          className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-mono text-foreground focus:ring-1 focus:ring-orange-500 outline-none"
-                        />
-                      </div>
-                    )}
-
-                    {benefitAmountType === "range" && (
-                      <div className="flex gap-2">
-                        <div className="flex-1">
-                          <label className="text-[10px] font-bold text-muted-foreground block">Min Amount (₹)</label>
-                          <input
-                            type="number"
-                            value={minAmount}
-                            onChange={(e) => setMinAmount(e.target.value)}
-                            placeholder="e.g. 1000"
-                            className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-mono text-foreground focus:ring-1 focus:ring-orange-500 outline-none"
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <label className="text-[10px] font-bold text-muted-foreground block">Max Amount (₹)</label>
-                          <input
-                            type="number"
-                            value={maxAmount}
-                            onChange={(e) => setMaxAmount(e.target.value)}
-                            placeholder="e.g. 10000"
-                            className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-mono text-foreground focus:ring-1 focus:ring-orange-500 outline-none"
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {benefitAmountType === "varies" && (
-                      <p className="text-[11px] text-muted-foreground italic">
-                        Amount varies based on applicant evaluation. No fixed currency amount configured.
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Payment Frequency & Duration */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-[11px] font-extrabold text-foreground block">Payment Frequency</label>
-                      <select
-                        value={paymentFrequency}
-                        onChange={(e) => setPaymentFrequency(e.target.value)}
-                        className="w-full rounded-lg border border-border bg-background px-2 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
-                      >
-                        <option>One-time</option>
-                        <option>Monthly</option>
-                        <option>Quarterly</option>
-                        <option>Annual</option>
-                        <option>Other</option>
-                      </select>
-                      {paymentFrequency === "Other" && (
-                        <input
-                          type="text"
-                          value={customPaymentFrequency}
-                          onChange={(e) => setCustomPaymentFrequency(e.target.value)}
-                          placeholder="Specify frequency..."
-                          className="w-full mt-1 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-foreground"
-                        />
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] font-extrabold text-foreground block">Benefit Duration</label>
-                      <input
-                        type="text"
-                        value={benefitDuration}
-                        onChange={(e) => setBenefitDuration(e.target.value)}
-                        placeholder="e.g. 3 Years"
-                        className="w-full rounded-lg border border-border bg-background px-2.5 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Coverage / Maximum Limit & Beneficiary Contribution */}
-                  <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800">
-                    <div>
-                      <label className="text-[11px] font-extrabold text-foreground block">Coverage / Maximum Limit</label>
-                      <input
-                        type="text"
-                        value={coverageLimit}
-                        onChange={(e) => setCoverageLimit(e.target.value)}
-                        placeholder="e.g. Maximum ₹5,00,000 per family per year"
-                        className="w-full rounded-lg border border-border bg-background px-2.5 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-extrabold text-foreground block">Beneficiary Contribution</label>
-                      <div className="flex gap-2 items-center">
-                        <div className="flex rounded-lg border border-border bg-muted/40 p-0.5 shrink-0">
-                          {(["None", "Amount", "Percentage"] as const).map((type) => (
-                            <button
-                              key={type}
-                              type="button"
-                              onClick={() => setContributionType(type)}
-                              className={`px-2 py-1 text-[10.5px] font-bold rounded-md transition-colors ${
-                                contributionType === type
-                                  ? "bg-[#ff5500] text-white"
-                                  : "text-muted-foreground hover:text-foreground"
-                              }`}
-                            >
-                              {type}
-                            </button>
-                          ))}
-                        </div>
-
-                        {contributionType !== "None" && (
-                          <input
-                            type="text"
-                            value={contributionValue}
-                            onChange={(e) => setContributionValue(e.target.value)}
-                            placeholder={contributionType === "Amount" ? "₹ Amount" : "% Percentage"}
-                            className="flex-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground focus:ring-1 focus:ring-orange-500 outline-none"
-                          />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* SECTION 2: ELIGIBILITY & RULES */}
-                <div className="rounded-xl border border-border bg-card p-3.5 shadow-2xs space-y-3.5">
-                  <div className="flex items-center justify-between border-b border-border/60 pb-2">
-                    <h2 className="text-xs font-black text-foreground uppercase tracking-wider text-[#ff5500] flex items-center gap-1.5">
-                      <ShieldAlert className="h-4 w-4" />
-                      {lang === "ml" ? "യോഗ്യതാ മാനദണ്ഡങ്ങൾ" : "Eligibility"}
-                    </h2>
-
-                    {/* Grouping Mode Switch */}
-                    <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border text-[10px] font-black">
-                      <button
-                        type="button"
-                        onClick={() => setOverallGrouping("ALL")}
-                        className={`px-2 py-0.5 rounded transition-colors ${
-                          overallGrouping === "ALL" ? "bg-[#ff5500] text-white" : "text-muted-foreground"
-                        }`}
-                      >
-                        ALL Conditions (AND)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setOverallGrouping("ANY")}
-                        className={`px-2 py-0.5 rounded transition-colors ${
-                          overallGrouping === "ANY" ? "bg-[#ff5500] text-white" : "text-muted-foreground"
-                        }`}
-                      >
-                        ANY Condition (OR)
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Eligibility Summary */}
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-extrabold text-foreground block">
-                      {lang === "ml" ? "യോഗ്യതാ വിവരണം *" : "Eligibility Summary *"}
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={eligibilitySummary}
-                      onChange={(e) => setEligibilitySummary(e.target.value)}
-                      placeholder="e.g. Resident of Kerala with landholding in their name and annual family income below ₹1,00,000."
-                      className={`w-full rounded-lg border px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none ${
-                        errors.eligibilitySummary ? "border-red-500 ring-1 ring-red-500" : "border-border bg-background"
-                      }`}
-                    />
-                    {errors.eligibilitySummary && (
-                      <p className="text-[10px] text-red-500 font-bold flex items-center gap-1">
-                        <AlertCircle className="h-3 w-3" /> {errors.eligibilitySummary}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Who Cannot Apply / Exclusions */}
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-extrabold text-foreground block">
-                      {lang === "ml" ? "അർഹരല്ലാത്തവർ / ഒഴിവാക്കലുകൾ" : "Who Cannot Apply / Exclusions"}
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={exclusionsText}
-                      onChange={(e) => setExclusionsText(e.target.value)}
-                      placeholder="e.g. Government employees, income tax payees, institutional landholders..."
-                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none"
-                    />
-                  </div>
-
-                  {/* Applicable Locations */}
-                  <div className="space-y-2 pt-1 border-t border-border/80">
-                    <label className="text-[11px] font-extrabold text-foreground block">Applicable Locations *</label>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setApplicableLocationsType("all")}
-                        className={`flex-1 py-1.5 text-xs font-bold rounded-lg border transition-colors cursor-pointer ${
-                          applicableLocationsType === "all"
-                            ? "bg-[#ff5500] border-[#ff5500] text-white shadow-2xs"
-                            : "bg-background border-border text-foreground hover:bg-slate-50"
-                        }`}
-                      >
-                        All Kerala
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setApplicableLocationsType("selected")}
-                        className={`flex-1 py-1.5 text-xs font-bold rounded-lg border transition-colors cursor-pointer ${
-                          applicableLocationsType === "selected"
-                            ? "bg-[#ff5500] border-[#ff5500] text-white shadow-2xs"
-                            : "bg-background border-border text-foreground hover:bg-slate-50"
-                        }`}
-                      >
-                        Selected Locations
-                      </button>
-                    </div>
-
-                    {applicableLocationsType === "selected" && (
-                      <div className="p-3 rounded-xl bg-muted/40 border border-border space-y-2.5 text-xs">
-                        <div>
-                          <span className="font-extrabold block text-foreground mb-1">Target Districts (14):</span>
-                          <div className="flex flex-wrap gap-1">
-                            {[
-                              "Thiruvananthapuram", "Kollam", "Pathanamthitta", "Alappuzha", "Kottayam", 
-                              "Idukki", "Ernakulam", "Thrissur", "Palakkad", "Malappuram", 
-                              "Kozhikode", "Wayanad", "Kannur", "Kasaragod"
-                            ].map((d) => {
-                              const isSel = selectedDistricts.includes(d);
-                              return (
-                                <button
-                                  key={d}
-                                  type="button"
-                                  onClick={() => {
-                                    if (isSel) {
-                                      setSelectedDistricts((prev) => prev.filter((x) => x !== d));
-                                    } else {
-                                      setSelectedDistricts((prev) => [...prev, d]);
-                                    }
-                                  }}
-                                  className={`px-2 py-0.5 rounded-md text-[10.5px] font-bold border transition-colors ${
-                                    isSel
-                                      ? "bg-[#ff5500] border-[#ff5500] text-white"
-                                      : "bg-background border-border text-muted-foreground"
-                                  }`}
-                                >
-                                  {d}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        <div>
-                          <span className="font-extrabold block text-foreground mb-1">Local Body Type:</span>
-                          <div className="flex gap-2">
-                            {["Grama Panchayat", "Municipality", "Municipal Corporation"].map((lb) => {
-                              const isSel = selectedLocalBodyTypes.includes(lb);
-                              return (
-                                <button
-                                  key={lb}
-                                  type="button"
-                                  onClick={() => {
-                                    if (isSel) {
-                                      setSelectedLocalBodyTypes((prev) => prev.filter((x) => x !== lb));
-                                    } else {
-                                      setSelectedLocalBodyTypes((prev) => [...prev, lb]);
-                                    }
-                                  }}
-                                  className={`flex-1 py-1 text-[10px] font-bold rounded-lg border transition-colors ${
-                                    isSel
-                                      ? "bg-[#ff5500] border-[#ff5500] text-white"
-                                      : "bg-background border-border text-muted-foreground"
-                                  }`}
-                                >
-                                  {lb}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        <div>
-                          <span className="font-extrabold block text-foreground mb-1">Block / Taluk (Optional):</span>
-                          <input
-                            type="text"
-                            value={selectedBlockTaluk}
-                            onChange={(e) => setSelectedBlockTaluk(e.target.value)}
-                            placeholder="e.g. Parassala / Neyyattinkara Block"
-                            className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground"
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Manual Review Conditions */}
-                  <div className="space-y-1 pt-1 border-t border-border/80">
-                    <label className="text-[11px] font-extrabold text-foreground block">
-                      Manual Review Conditions
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={manualReviewConditions}
-                      onChange={(e) => setManualReviewConditions(e.target.value)}
-                      placeholder="e.g. Requires physical document inspection or revenue mutation check by Village Officer."
-                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none"
-                    />
-                  </div>
-
-                  {/* Configured Conditions List (Compact Summary Cards) */}
-                  <div className="space-y-2 pt-2 border-t border-border/80">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <label className="text-[11px] font-black uppercase text-foreground block">
-                          Eligibility Conditions ({eligibilityRules.length})
-                        </label>
-                        <span className="text-[10px] text-muted-foreground font-medium">
-                          Attributes without a condition have <strong>No Restriction</strong>.
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleOpenAddRule}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#ff5500] text-white text-xs font-black shadow-2xs hover:bg-orange-600 transition-colors cursor-pointer"
-                      >
-                        <Plus className="h-3.5 w-3.5" /> + Add Condition
-                      </button>
-                    </div>
-
-                    <div className="space-y-2">
-                      {eligibilityRules.map((rule) => (
-                        <div
-                          key={rule.id}
-                          className={`p-3 rounded-xl border transition-all ${
-                            rule.enabled !== false
-                              ? "bg-[#FFFDF7] dark:bg-slate-800/90 border-orange-200/80 dark:border-slate-700 shadow-2xs"
-                              : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 opacity-60"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between gap-2 border-b border-orange-100/60 dark:border-slate-700/60 pb-2 mb-2">
-                            <div className="flex items-center gap-2 flex-wrap min-w-0">
-                              <span
-                                className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
-                                  rule.grouping === "ALL"
-                                    ? "bg-orange-100 text-[#FF5500] dark:bg-orange-950/60"
-                                    : "bg-purple-100 text-purple-700 dark:bg-purple-950/60"
-                                }`}
-                              >
-                                {rule.grouping}
-                              </span>
-                              <span className="text-xs font-black text-[#0F172A] dark:text-white truncate">
-                                {rule.attribute}
-                              </span>
-                            </div>
-
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              {/* Enable / Disable Toggle */}
-                              <button
-                                type="button"
-                                onClick={() => handleToggleRuleEnabled(rule.id)}
-                                className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold transition-colors cursor-pointer ${
-                                  rule.enabled !== false
-                                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
-                                    : "bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-                                }`}
-                              >
-                                {rule.enabled !== false ? "Active" : "Disabled"}
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => handleOpenEditRule(rule)}
-                                className="p-1 rounded-lg text-slate-500 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-                                title="Edit Condition"
-                              >
-                                <Edit2 className="h-3.5 w-3.5" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteRule(rule.id)}
-                                className="p-1 rounded-lg text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer"
-                                title="Delete Condition"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </button>
-                            </div>
-                          </div>
-
-                          <div className="space-y-1 text-xs">
-                            <p className="font-extrabold text-[#1E293B] dark:text-slate-200">
-                              <span className="text-slate-500 font-semibold">{rule.condition}:</span>{" "}
-                              <span className="text-[#FF5500] font-black">{rule.value} {rule.unit}</span>
-                            </p>
-
-                            {rule.reasonShownToWorker && (
-                              <p className="text-[10.5px] text-slate-600 dark:text-slate-400 font-medium italic">
-                                💡 Worker note: "{rule.reasonShownToWorker}"
-                              </p>
-                            )}
-
-                            {rule.sourceUrl && (
-                              <div className="flex items-center gap-1 text-[10px] text-blue-600 dark:text-blue-400 font-bold truncate pt-0.5">
-                                <LinkIcon className="h-3 w-3 shrink-0" />
-                                <a href={rule.sourceUrl} target="_blank" rel="noopener noreferrer" className="hover:underline truncate">
-                                  {rule.sourceUrl}
-                                </a>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Mandatory Eligibility Matching Preview Note */}
-                  <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-[11px] text-amber-900 dark:text-amber-200 flex items-start gap-2 mt-3">
-                    <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-                    <p className="font-medium leading-tight">
-                      <strong>Note:</strong> Based on the information provided. Final eligibility is subject to official verification.
-                    </p>
-                  </div>
-                </div>
               </div>
             )}
 
@@ -1814,120 +2008,405 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
             {/* STEP 3 OF 3 — DETAILS & DOCUMENTS (CUSTOM FIELDS) */}
             {/* =================================------------------------------ */}
             {currentStep === 3 && (
-              <div className="rounded-lg border border-orange-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 shadow-2xs space-y-3.5">
-                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#FF5500] text-white font-black text-[10px] shrink-0">
+              <div className="rounded-xl border border-orange-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 shadow-2xs space-y-3">
+                <div className="flex items-start justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                  <div className="flex items-start gap-2 min-w-0">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#FF5500] text-white font-black text-[10px] shrink-0 mt-0.5">
                       3
                     </span>
-                    <h2 className="text-[12px] font-black text-[#1E293B] dark:text-slate-100 tracking-tight">
-                      {lang === "ml" ? "ഫീൽഡുകളും രേഖകളും" : "Custom Fields & Documents"}
-                    </h2>
+                    <div className="min-w-0">
+                      <h2 className="text-[12px] font-black text-[#1E293B] dark:text-slate-100 tracking-tight">
+                        {lang === "ml" ? "വിവരങ്ങളും രേഖകളും" : "Details & Documents"}
+                      </h2>
+                      <p className="mt-0.5 text-[10px] font-medium leading-snug text-muted-foreground">
+                        {lang === "ml"
+                          ? "ജീവനക്കാർ പൂരിപ്പിക്കേണ്ട ഫീൽഡുകൾ സൃഷ്ടിക്കുക."
+                          : "Create the fields workers need to complete."}
+                      </p>
+                    </div>
                   </div>
 
-                  {/* Add Field Button */}
-                  <div className="relative group">
-                    <button
-                      type="button"
-                      onClick={() => handleOpenAddField("file_upload")}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#ff5500] text-white text-xs font-extrabold shadow-2xs hover:bg-orange-600 transition-colors cursor-pointer"
-                    >
-                      <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
-                      <span>+ Add Field</span>
-                    </button>
+                  <button
+                    type="button"
+                    onClick={handleOpenFieldTypePicker}
+                    className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-[#FF5500] px-2.5 py-1.5 text-[10.5px] font-extrabold text-white shadow-2xs transition-colors hover:bg-[#E64D00] cursor-pointer"
+                  >
+                    <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
+                    <span>{lang === "ml" ? "ഫീൽഡ് ചേർക്കുക" : "Add Field"}</span>
+                  </button>
+                </div>
+
+                {step4DraftNotice && (
+                  <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-2 text-[10.5px] text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">
+                    <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span className="font-semibold">
+                      {lang === "ml"
+                        ? "ഡ്രാഫ്റ്റ് സേവ് ചെയ്തു. നിലവിലെ പദ്ധതി വിവരങ്ങൾ സൂക്ഷിച്ചിരിക്കുന്നു."
+                        : "Draft saved with the current scheme details."}
+                    </span>
                   </div>
-                </div>
+                )}
 
-                {/* Quick Type Selector Bar */}
-                <div className="flex gap-1 overflow-x-auto pb-1 text-[10.5px] font-bold">
-                  {[
-                    { type: "file_upload", label: "File Upload" },
-                    { type: "yes_no", label: "Yes / No" },
-                    { type: "descriptive_text", label: "Descriptive Text" },
-                    { type: "dropdown", label: "Dropdown" },
-                    { type: "single_text", label: "Single Text" },
-                  ].map((item) => (
-                    <button
-                      key={item.type}
-                      type="button"
-                      onClick={() => handleOpenAddField(item.type as any)}
-                      className="px-2.5 py-1 rounded-lg bg-muted hover:bg-orange-100 hover:text-[#ff5500] border border-border whitespace-nowrap transition-colors cursor-pointer"
-                    >
-                      + {item.label}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Custom Fields Compact List */}
                 <div className="space-y-2">
-                  {customFields.map((field, idx) => (
-                    <div
-                      key={field.id}
-                      className="p-3 rounded-lg bg-background border border-border shadow-2xs space-y-1.5"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="space-y-0.5 flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider bg-orange-100 dark:bg-orange-950/60 text-[#ff5500]">
-                              {field.type.replace("_", " ")}
-                            </span>
-                            {field.required && (
-                              <span className="text-[9.5px] font-extrabold text-red-500">Required</span>
+                  {customFields.map((field, idx) => {
+                    const menuOpen = fieldMenuId === field.id;
+                    return (
+                      <div key={field.id} className="relative">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditField(field)}
+                          className="flex w-full items-start gap-2 rounded-xl border border-orange-100/90 bg-[#FFFDF7] px-2.5 py-2.5 text-left transition-colors hover:border-orange-200 hover:bg-orange-50/50 dark:border-slate-700 dark:bg-slate-800/70 dark:hover:bg-slate-800 cursor-pointer"
+                        >
+                          <GripVertical className="mt-0.5 h-4 w-4 shrink-0 text-slate-300" />
+                          <div className="min-w-0 flex-1 pr-7">
+                            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                              <span className="text-[9px] font-black uppercase tracking-[0.08em] text-[#FF5500]">
+                                {FIELD_TYPE_META[field.type].label}
+                              </span>
+                              <span className="text-[9px] font-bold text-slate-300">·</span>
+                              <span
+                                className={`text-[9.5px] font-extrabold ${
+                                  field.required ? "text-red-500" : "text-slate-400"
+                                }`}
+                              >
+                                {field.required ? "Required" : "Optional"}
+                              </span>
+                            </div>
+                            <h4 className="mt-0.5 line-clamp-2 break-words text-[11.5px] font-extrabold leading-snug text-[#1E293B] dark:text-slate-100">
+                              {field.labelEn}
+                            </h4>
+                            {field.labelMl && field.labelMl !== field.labelEn && (
+                              <p className="mt-0.5 line-clamp-2 break-words text-[10px] font-medium leading-snug text-slate-500 dark:text-slate-400">
+                                {field.labelMl}
+                              </p>
                             )}
                           </div>
-                          <h4 className="text-xs font-extrabold text-foreground truncate">{field.labelEn}</h4>
-                          <p className="text-[10.5px] text-muted-foreground truncate">{field.labelMl}</p>
-                        </div>
+                        </button>
 
-                        {/* Actions: Reorder, Edit, Duplicate, Delete */}
-                        <div className="flex items-center gap-1 shrink-0 pt-0.5">
-                          <button
-                            type="button"
-                            disabled={idx === 0}
-                            onClick={() => handleMoveField(idx, "up")}
-                            className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer"
-                            title="Move Up"
-                          >
-                            <MoveUp className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            disabled={idx === customFields.length - 1}
-                            onClick={() => handleMoveField(idx, "down")}
-                            className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer"
-                            title="Move Down"
-                          >
-                            <MoveDown className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEditField(field)}
-                            className="p-1 text-muted-foreground hover:text-foreground cursor-pointer"
-                            title="Edit"
-                          >
-                            <Edit2 className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteField(field.id)}
-                            className="p-1 text-red-500 hover:text-red-700 cursor-pointer"
-                            title="Delete"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setFieldMenuId(menuOpen ? null : field.id);
+                          }}
+                          className="absolute right-1.5 top-2.5 flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-orange-100 hover:text-[#FF5500] dark:hover:bg-slate-700 cursor-pointer"
+                          aria-label={`Field actions for ${field.labelEn}`}
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </button>
+
+                        {menuOpen && (
+                          <div className="absolute right-1 top-10 z-40 w-40 overflow-hidden rounded-xl border border-orange-100 bg-white py-1 shadow-xl dark:border-slate-700 dark:bg-slate-900">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFieldMenuId(null);
+                                handleOpenEditField(field);
+                              }}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-slate-700 hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer"
+                            >
+                              <Edit2 className="h-3.5 w-3.5" /> Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDuplicateField(field)}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-slate-700 hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer"
+                            >
+                              <Copy className="h-3.5 w-3.5" /> Duplicate
+                            </button>
+                            <button
+                              type="button"
+                              disabled={idx === 0}
+                              onClick={() => handleMoveField(idx, "up")}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-slate-700 hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-40 dark:text-slate-200 dark:hover:bg-slate-800"
+                            >
+                              <ArrowUp className="h-3.5 w-3.5" /> Move Up
+                            </button>
+                            <button
+                              type="button"
+                              disabled={idx === customFields.length - 1}
+                              onClick={() => handleMoveField(idx, "down")}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-slate-700 hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-40 dark:text-slate-200 dark:hover:bg-slate-800"
+                            >
+                              <ArrowDown className="h-3.5 w-3.5" /> Move Down
+                            </button>
+                            <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteField(field.id)}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 cursor-pointer"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" /> Delete
+                            </button>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
 
                   {customFields.length === 0 && (
-                    <div className="p-6 text-center border border-dashed border-border rounded-lg">
-                      <p className="text-xs text-muted-foreground font-semibold">
-                        No fields added yet. Click "+ Add Field" above to configure application form inputs.
+                    <div className="rounded-xl border border-dashed border-orange-200 bg-orange-50/30 px-5 py-7 text-center dark:border-slate-700 dark:bg-slate-800/40">
+                      <FileText className="mx-auto h-6 w-6 text-orange-300" />
+                      <p className="mt-2 text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                        {lang === "ml" ? "ഇതുവരെ ഫീൽഡുകളില്ല." : "No fields added yet."}
+                      </p>
+                      <p className="mt-0.5 text-[10px] font-medium text-muted-foreground">
+                        {lang === "ml"
+                          ? "ജീവനക്കാർക്ക് ആവശ്യമായ ഫീൽഡ് ചേർക്കുക."
+                          : "Add a field workers need to complete."}
                       </p>
                     </div>
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* =================================------------------------------ */}
+            {/* STEP 2 OF 3 — ELIGIBILITY CONDITIONS */}
+            {/* =================================------------------------------ */}
+            {currentStep === 2 && (
+              <div className="rounded-xl border border-orange-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 shadow-2xs space-y-3">
+                <div className="flex items-start justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
+                  <div className="flex items-start gap-2 min-w-0">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#FF5500] text-white font-black text-[10px] shrink-0 mt-0.5">
+                      2
+                    </span>
+                    <div className="min-w-0">
+                      <h2 className="text-[12px] font-black text-[#1E293B] dark:text-slate-100 tracking-tight">
+                        {lang === "ml" ? "യോഗ്യതാ നിബന്ധനകൾ" : "Eligibility Conditions"}
+                      </h2>
+                    </div>
+                  </div>
+                  <span className="shrink-0 rounded-full border border-orange-200/80 bg-[#FFF2E6] px-2 py-0.5 text-[10px] font-extrabold text-[#C2410C]">
+                    {configuredConditionCount} / {APPLICANT_ATTRIBUTES.length}
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  {APPLICANT_ATTRIBUTES.map((attribute, index) => {
+                    const condition = eligibilityConditions[attribute];
+                    const isYesNo = YES_NO_ELIGIBILITY_ATTRIBUTES.includes(attribute);
+                    const isNumeric = NUMERIC_ELIGIBILITY_ATTRIBUTES.includes(attribute);
+                    const isSearchable = SEARCHABLE_ELIGIBILITY_ATTRIBUTES.includes(attribute);
+                    const valueOptions = ELIGIBILITY_VALUE_OPTIONS[attribute] ?? [];
+                    const searchTerm = (conditionSearch[attribute] ?? "").trim().toLowerCase();
+                    const visibleValueOptions = isSearchable
+                      ? valueOptions.filter((value) => value.toLowerCase().includes(searchTerm))
+                      : valueOptions;
+                    const error = errors[`elig_${attribute}`];
+                    const isRestricted = Boolean(condition.mode) && condition.mode !== "No Restriction";
+                    const isDisabilityPercentageLocked =
+                      attribute === "Disability Percentage" &&
+                      eligibilityConditions["Disability Status"]?.mode === "Must be No";
+
+                    return (
+                      <div
+                        key={attribute}
+                        className={`rounded-lg border p-2.5 space-y-1.5 ${
+                          error
+                            ? "border-red-300 bg-red-50/40 dark:border-red-900/70 dark:bg-red-950/20"
+                            : "border-border bg-background"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <label className="flex min-w-0 items-center gap-1.5 text-[11px] font-extrabold text-foreground">
+                            <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[8.5px] font-black text-[#ff5500]">
+                              {index + 1}
+                            </span>
+                            <span className="truncate">{attribute}</span>
+                          </label>
+                          {isRestricted ? (
+                            <span className="shrink-0 rounded-full bg-orange-100 px-1.5 py-0.5 text-[8.5px] font-black uppercase tracking-wide text-[#C2410C]">
+                              Restricted
+                            </span>
+                          ) : condition.mode === "No Restriction" ? (
+                            <span className="shrink-0 rounded-full bg-slate-100 px-1.5 py-0.5 text-[8.5px] font-black uppercase tracking-wide text-slate-500">
+                              Open
+                            </span>
+                          ) : null}
+                        </div>
+
+                        <select
+                          value={condition.mode}
+                          disabled={isDisabilityPercentageLocked}
+                          onChange={(e) =>
+                            handleConditionModeChange(
+                              attribute,
+                              e.target.value as EligibilityConditionMode
+                            )
+                          }
+                          className={`h-8 w-full rounded-lg border bg-[#FFFDF7] px-2.5 text-[11px] font-semibold text-foreground outline-none focus:ring-1 focus:ring-orange-500 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-800 ${
+                            error ? "border-red-400" : "border-orange-200/80 dark:border-slate-700"
+                          }`}
+                        >
+                          <option value="">Select condition</option>
+                          <option value="No Restriction">No Restriction</option>
+                          {isYesNo && (
+                            <>
+                              <option value="Must be Yes">Must be Yes</option>
+                              <option value="Must be No">Must be No</option>
+                            </>
+                          )}
+                          {isNumeric && (
+                            <>
+                              <option value="Minimum">Minimum</option>
+                              <option value="Maximum">Maximum</option>
+                              <option value="Between">Between</option>
+                            </>
+                          )}
+                          {!isYesNo && !isNumeric && (
+                            <option value="Select values">{ELIGIBILITY_VALUE_LABELS[attribute]}</option>
+                          )}
+                        </select>
+
+                        {isDisabilityPercentageLocked && (
+                          <p className="text-[9.5px] font-medium leading-tight text-muted-foreground">
+                            Disability percentage is not applicable when Disability Status is Must be No.
+                          </p>
+                        )}
+
+                        {attribute === "Religion" && isRestricted && (
+                          <p className="text-[9.5px] font-medium leading-tight text-muted-foreground">
+                            Restrict only if required by official scheme rules.
+                          </p>
+                        )}
+
+                        {!isYesNo && !isNumeric && condition.mode === "Select values" && (
+                          <div className="space-y-1.5 pt-0.5">
+                            {isSearchable && (
+                              <input
+                                type="search"
+                                value={conditionSearch[attribute] ?? ""}
+                                onChange={(e) =>
+                                  setConditionSearch((prev) => ({
+                                    ...prev,
+                                    [attribute]: e.target.value,
+                                  }))
+                                }
+                                placeholder={
+                                  attribute === "Occupation"
+                                    ? "Search occupations..."
+                                    : "Search castes / communities..."
+                                }
+                                className="h-7 w-full rounded-lg border border-border bg-background px-2.5 text-[10.5px] text-foreground outline-none focus:ring-1 focus:ring-orange-500"
+                              />
+                            )}
+                            <div className="flex flex-wrap gap-1.5">
+                              {visibleValueOptions.map((value) => {
+                                const selected = condition.values.includes(value);
+                                return (
+                                  <button
+                                    key={value}
+                                    type="button"
+                                    onClick={() => toggleConditionValue(attribute, value)}
+                                    className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-bold transition-colors ${
+                                      selected
+                                        ? "border-[#ff5500] bg-[#ff5500] text-white"
+                                        : "border-border bg-background text-muted-foreground hover:border-orange-300 hover:text-[#ff5500]"
+                                    }`}
+                                  >
+                                    {selected && <Check className="h-2.5 w-2.5 stroke-[3]" />}
+                                    {value}
+                                  </button>
+                                );
+                              })}
+                              {visibleValueOptions.length === 0 && (
+                                <span className="text-[10px] font-medium text-muted-foreground">
+                                  No matching options.
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {isNumeric && condition.mode && condition.mode !== "No Restriction" && (
+                          <div className="space-y-1.5 pt-0.5">
+                            {attribute === "Age, calculated from date of birth" && (
+                              <div className="space-y-0.5">
+                                <span className="block text-[9.5px] font-bold text-muted-foreground">
+                                  Age calculated as on
+                                </span>
+                                <input
+                                  type="date"
+                                  value={condition.referenceDate}
+                                  onChange={(e) =>
+                                    updateEligibilityCondition(attribute, {
+                                      referenceDate: e.target.value,
+                                    })
+                                  }
+                                  className="h-7 w-full rounded-lg border border-border bg-background px-2 text-[10.5px] text-foreground outline-none focus:ring-1 focus:ring-orange-500"
+                                />
+                              </div>
+                            )}
+
+                            <div className="grid grid-cols-2 gap-1.5">
+                              {(condition.mode === "Minimum" || condition.mode === "Between") && (
+                                <div className="space-y-0.5">
+                                  <span className="block text-[9.5px] font-bold text-muted-foreground">
+                                    Minimum
+                                    {attribute === "Annual Family Income"
+                                      ? " (₹ / year)"
+                                      : attribute === "Disability Percentage"
+                                      ? " (%)"
+                                      : " (years)"}
+                                  </span>
+                                  <input
+                                    type="number"
+                                    inputMode="numeric"
+                                    value={condition.min}
+                                    onChange={(e) =>
+                                      updateEligibilityCondition(attribute, { min: e.target.value })
+                                    }
+                                    placeholder="0"
+                                    className="h-7 w-full rounded-lg border border-border bg-background px-2 text-[10.5px] text-foreground outline-none focus:ring-1 focus:ring-orange-500"
+                                  />
+                                </div>
+                              )}
+                              {(condition.mode === "Maximum" || condition.mode === "Between") && (
+                                <div className="space-y-0.5">
+                                  <span className="block text-[9.5px] font-bold text-muted-foreground">
+                                    Maximum
+                                    {attribute === "Annual Family Income"
+                                      ? " (₹ / year)"
+                                      : attribute === "Disability Percentage"
+                                      ? " (%)"
+                                      : " (years)"}
+                                  </span>
+                                  <input
+                                    type="number"
+                                    inputMode="numeric"
+                                    value={condition.max}
+                                    onChange={(e) =>
+                                      updateEligibilityCondition(attribute, { max: e.target.value })
+                                    }
+                                    placeholder="0"
+                                    className="h-7 w-full rounded-lg border border-border bg-background px-2 text-[10.5px] text-foreground outline-none focus:ring-1 focus:ring-orange-500"
+                                  />
+                                </div>
+                              )}
+                            </div>
+
+                            <p className="text-[9px] font-medium leading-tight text-muted-foreground">
+                              {attribute === "Annual Family Income"
+                                ? "Enter rupees per year. Both minimum and maximum boundaries are inclusive."
+                                : attribute === "Disability Percentage"
+                                ? "Enter a percentage from 0 to 100. Boundaries are inclusive."
+                                : "Enter completed years. Boundaries are inclusive."}
+                            </p>
+                          </div>
+                        )}
+
+                        {error && (
+                          <p className="flex items-center gap-1 text-[9.5px] font-bold text-red-500">
+                            <AlertCircle className="h-3 w-3 shrink-0" />
+                            {error}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
               </div>
             )}
           </div>
@@ -1960,19 +2439,30 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
             {currentStep < 3 ? (
               <button
                 type="button"
-                onClick={currentStep === 1 ? handleContinueFromStep1 : handleContinueFromStep2}
+                onClick={
+                  currentStep === 1 ? handleContinueFromStep1 : handleContinueFromStep2
+                }
                 className="w-full py-2.5 rounded-lg bg-[#FF5500] hover:bg-[#E64D00] text-white font-extrabold text-xs shadow-xs transition-colors cursor-pointer text-center"
               >
                 {lang === "ml" ? "തുടരുക →" : "Continue →"}
               </button>
             ) : (
-              <button
-                type="button"
-                onClick={handleOpenPreview}
-                className="w-full py-2.5 rounded-lg bg-[#FF5500] hover:bg-[#E64D00] text-white font-extrabold text-xs shadow-xs transition-colors cursor-pointer text-center"
-              >
-                {lang === "ml" ? "സ്കീം പ്രിവ്യൂ കാണുക" : "Preview Scheme"}
-              </button>
+              <div className="flex w-full items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleSaveDraft}
+                  className="flex-1 py-2.5 rounded-lg border border-orange-200/80 bg-white hover:bg-orange-50/50 text-[#1E293B] font-extrabold text-xs transition-colors cursor-pointer dark:bg-slate-800 dark:text-white dark:border-slate-700"
+                >
+                  {lang === "ml" ? "ഡ്രാഫ്റ്റ് സേവ് ചെയ്യുക" : "Save Draft"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleOpenPreview}
+                  className="flex-1 py-2.5 rounded-lg bg-[#FF5500] hover:bg-[#E64D00] text-white font-extrabold text-xs shadow-xs transition-colors cursor-pointer text-center"
+                >
+                  {lang === "ml" ? "സ്കീം പ്രിവ്യൂ കാണുക" : "Preview Scheme"}
+                </button>
+              </div>
             )}
           </>
         )}
@@ -2139,91 +2629,733 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
         </div>
       )}
 
+      {/* FIELD ACTION MENU BACKDROP */}
+      {fieldMenuId && (
+        <button
+          type="button"
+          aria-label="Close field actions"
+          onClick={() => setFieldMenuId(null)}
+          className="absolute inset-0 z-30 cursor-default bg-transparent"
+        />
+      )}
+
       {/* --------------------------------------------------------------------- */}
-      {/* FIELD MODAL */}
+      {/* CHOOSE FIELD TYPE BOTTOM SHEET */}
+      {/* --------------------------------------------------------------------- */}
+      {showFieldTypeSheet && (
+        <div className="absolute inset-0 z-[70] flex items-end bg-black/50 backdrop-blur-[1px]">
+          <button
+            type="button"
+            aria-label="Close field type picker"
+            onClick={() => setShowFieldTypeSheet(false)}
+            className="absolute inset-0 cursor-default"
+          />
+          <div className="relative z-10 flex max-h-[86dvh] w-full flex-col rounded-t-2xl border-t border-orange-100 bg-white shadow-2xl animate-in slide-in-from-bottom-4 duration-200 dark:border-slate-700 dark:bg-slate-900">
+            <div className="flex shrink-0 items-start justify-between border-b border-orange-100 px-4 pb-3 pt-4 dark:border-slate-800">
+              <div>
+                <h3 className="text-[13px] font-black text-[#1E293B] dark:text-slate-100">
+                  Choose Field Type
+                </h3>
+                <p className="mt-0.5 text-[10px] font-medium text-muted-foreground">
+                  Select what workers need to provide.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowFieldTypeSheet(false)}
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-orange-50 text-slate-500 transition-colors hover:bg-orange-100 hover:text-[#FF5500] dark:bg-slate-800 dark:text-slate-300 cursor-pointer"
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto px-3 py-2 pb-[calc(0.75rem_+_env(safe-area-inset-bottom))]">
+              {(Object.keys(FIELD_TYPE_META) as Array<CustomField["type"]>).map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => handleOpenAddField(type)}
+                  className="flex w-full items-center gap-3 rounded-xl px-2.5 py-2.5 text-left transition-colors hover:bg-orange-50 dark:hover:bg-slate-800 cursor-pointer"
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#FFF2E6] text-[#FF5500] dark:bg-orange-950/40">
+                    {type === "file_upload" ? (
+                      <UploadCloud className="h-4 w-4" />
+                    ) : type === "yes_no" ? (
+                      <HelpCircle className="h-4 w-4" />
+                    ) : type === "descriptive_text" ? (
+                      <FileText className="h-4 w-4" />
+                    ) : type === "dropdown" ? (
+                      <Layers className="h-4 w-4" />
+                    ) : (
+                      <Edit2 className="h-4 w-4" />
+                    )}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[11.5px] font-extrabold text-[#1E293B] dark:text-slate-100">
+                      {FIELD_TYPE_META[type].label}
+                    </span>
+                    <span className="mt-0.5 block text-[10px] font-medium leading-snug text-muted-foreground">
+                      {FIELD_TYPE_META[type].description}
+                    </span>
+                  </span>
+                  <ChevronDown className="h-3.5 w-3.5 -rotate-90 text-slate-300" />
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --------------------------------------------------------------------- */}
+      {/* FIELD EDITOR BOTTOM SHEET */}
       {/* --------------------------------------------------------------------- */}
       {showFieldModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-card border border-border rounded-2xl p-4 w-full max-w-sm space-y-3 shadow-xl max-h-[85vh] overflow-y-auto">
-            <h3 className="text-xs font-black text-foreground border-b border-border/80 pb-2 capitalize">
-              {editingFieldId ? "Edit Field" : `Add ${fieldType.replace("_", " ")}`}
-            </h3>
+        <div className="absolute inset-0 z-[80] flex items-end bg-black/60 backdrop-blur-[1px]">
+          <button
+            type="button"
+            aria-label="Close field editor"
+            onClick={handleCloseFieldEditor}
+            className="absolute inset-0 cursor-default"
+          />
+          <div className="relative z-10 flex max-h-[92dvh] w-full flex-col rounded-t-2xl border-t border-orange-100 bg-white shadow-2xl animate-in slide-in-from-bottom-4 duration-200 dark:border-slate-700 dark:bg-slate-900">
+            <div className="flex shrink-0 items-start justify-between border-b border-orange-100 px-4 pb-3 pt-4 dark:border-slate-800">
+              <div className="min-w-0">
+                <span className="text-[9px] font-black uppercase tracking-[0.1em] text-[#FF5500]">
+                  {FIELD_TYPE_META[fieldType].label}
+                </span>
+                <h3 className="mt-0.5 text-[13px] font-black text-[#1E293B] dark:text-slate-100">
+                  {editingFieldId ? "Edit Field" : "Add Field"}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={handleCloseFieldEditor}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-orange-50 text-slate-500 transition-colors hover:bg-orange-100 hover:text-[#FF5500] dark:bg-slate-800 dark:text-slate-300 cursor-pointer"
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
 
-            <div className="space-y-2.5 text-xs">
-              <div>
-                <label className="font-bold block mb-0.5">Label (English) *</label>
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-3">
+              <div className="space-y-1">
+                <label className="block text-[10.5px] font-extrabold text-[#1E293B] dark:text-slate-200">
+                  Label — English <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   value={fieldLabelEn}
-                  onChange={(e) => setFieldLabelEn(e.target.value)}
-                  placeholder="e.g. Aadhaar Card Copy"
-                  className="w-full h-8 px-2 rounded-lg border border-border bg-background"
+                  onChange={(event) => setFieldLabelEn(event.target.value)}
+                  onFocus={keepFieldInputVisible}
+                  placeholder={fieldType === "file_upload" ? "e.g. Aadhaar Card Copy" : "e.g. Field label"}
+                  className={`w-full rounded-lg border bg-[#FFFDF7] px-3 py-2 text-[11.5px] text-foreground outline-none transition-colors focus:ring-1 focus:ring-orange-500 dark:bg-slate-800 ${
+                    fieldErrors.labelEn ? "border-red-400" : "border-orange-200/80 dark:border-slate-700"
+                  }`}
                 />
+                {fieldErrors.labelEn && (
+                  <p className="flex items-center gap-1 text-[9.5px] font-bold text-red-500">
+                    <AlertCircle className="h-3 w-3" /> {fieldErrors.labelEn}
+                  </p>
+                )}
+                {fieldType === "file_upload" && (
+                  <p className="text-[9px] font-medium text-muted-foreground">
+                    Used as the document name in the worker form.
+                  </p>
+                )}
               </div>
 
-              <div>
-                <label className="font-bold block mb-0.5">Label (Malayalam)</label>
+              <div className="space-y-1">
+                <label className="block text-[10.5px] font-extrabold text-[#1E293B] dark:text-slate-200">
+                  Label — Malayalam
+                </label>
                 <input
                   type="text"
                   value={fieldLabelMl}
-                  onChange={(e) => setFieldLabelMl(e.target.value)}
+                  onChange={(event) => setFieldLabelMl(event.target.value)}
+                  onFocus={keepFieldInputVisible}
                   placeholder="ഉദാ. ആധാർ കാർഡിന്റെ പകർപ്പ്"
-                  className="w-full h-8 px-2 rounded-lg border border-border bg-background"
+                  className="w-full rounded-lg border border-orange-200/80 bg-[#FFFDF7] px-3 py-2 text-[11.5px] text-foreground outline-none transition-colors focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-800"
                 />
               </div>
 
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="f-req"
-                  checked={fieldRequired}
-                  onChange={(e) => setFieldRequired(e.target.checked)}
-                  className="accent-[#ff5500]"
-                />
-                <label htmlFor="f-req" className="font-bold cursor-pointer">Required Field</label>
-              </div>
-
-              {/* Type specific options */}
+              <button
+                type="button"
+                onClick={() => setFieldRequired((value) => !value)}
+                className="flex w-full items-center justify-between rounded-xl border border-orange-100 bg-orange-50/40 px-3 py-2.5 text-left dark:border-slate-700 dark:bg-slate-800/70 cursor-pointer"
+              >
+                <span>
+                  <span className="block text-[10.5px] font-extrabold text-[#1E293B] dark:text-slate-100">
+                    Required
+                  </span>
+                  <span className="mt-0.5 block text-[9px] font-medium text-muted-foreground">
+                    Workers must complete this field.
+                  </span>
+                </span>
+                <span
+                  className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
+                    fieldRequired ? "bg-[#FF5500]" : "bg-slate-300 dark:bg-slate-600"
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${
+                      fieldRequired ? "left-[18px]" : "left-0.5"
+                    }`}
+                  />
+                </span>
+              </button>
               {fieldType === "file_upload" && (
-                <div className="p-2.5 rounded-xl bg-muted/40 space-y-2">
-                  <div>
-                    <label className="font-bold block mb-0.5">Upload Instructions</label>
-                    <input
-                      type="text"
+                <div className="space-y-2.5 border-t border-orange-100 pt-3 dark:border-slate-800">
+                  <div className="space-y-1">
+                    <label className="block text-[10.5px] font-extrabold text-[#1E293B] dark:text-slate-200">
+                      Upload instructions
+                    </label>
+                    <textarea
+                      rows={2}
                       value={fieldUploadInstructions}
-                      onChange={(e) => setFieldUploadInstructions(e.target.value)}
-                      placeholder="e.g. Upload clear PDF or image"
-                      className="w-full h-8 px-2 rounded-lg border border-border bg-background"
+                      onChange={(event) => setFieldUploadInstructions(event.target.value)}
+                      onFocus={keepFieldInputVisible}
+                      placeholder="e.g. Upload a clear copy of the original document."
+                      className="w-full resize-none rounded-lg border border-orange-200/80 bg-[#FFFDF7] px-3 py-2 text-[11px] text-foreground outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-800"
                     />
                   </div>
-                  <div className="flex items-center gap-2 pt-1">
+                  <div className="flex items-start justify-between gap-3 rounded-xl border border-orange-100 bg-orange-50/40 px-3 py-2.5 dark:border-slate-700 dark:bg-slate-800/70">
+                    <div className="min-w-0">
+                      <p className="text-[10.5px] font-extrabold text-[#1E293B] dark:text-slate-100">
+                        Allow verification without upload
+                      </p>
+                      <p className="mt-0.5 text-[9px] font-medium leading-snug text-muted-foreground">
+                        Workers can verify the original document in person instead of uploading a copy.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setFieldAllowOfflineVerif((value) => !value)}
+                      className={`relative mt-0.5 h-5 w-9 shrink-0 rounded-full transition-colors ${
+                        fieldAllowOfflineVerif ? "bg-[#FF5500]" : "bg-slate-300 dark:bg-slate-600"
+                      }`}
+                      aria-label="Allow verification without upload"
+                    >
+                      <span
+                        className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${
+                          fieldAllowOfflineVerif ? "left-[18px]" : "left-0.5"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-[10.5px] font-extrabold text-[#1E293B] dark:text-slate-200">
+                      Allow verification without upload — Malayalam
+                    </label>
                     <input
-                      type="checkbox"
-                      id="f-off"
-                      checked={fieldAllowOfflineVerif}
-                      onChange={(e) => setFieldAllowOfflineVerif(e.target.checked)}
-                      className="accent-[#ff5500]"
+                      type="text"
+                      value={fieldOfflineVerificationLabelMl}
+                      onChange={(event) =>
+                        setFieldOfflineVerificationLabelMl(event.target.value)
+                      }
+                      onFocus={keepFieldInputVisible}
+                      placeholder="അപ്ലോഡ് ഇല്ലാതെ രേഖ പരിശോധിക്കാൻ അനുവദിക്കുക"
+                      className="w-full rounded-lg border border-orange-200/80 bg-[#FFFDF7] px-3 py-2 text-[11.5px] text-foreground outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-800"
                     />
-                    <label htmlFor="f-off" className="font-bold cursor-pointer">Allow Offline Physical Verification</label>
+                    <p className="text-[9px] font-medium leading-snug text-muted-foreground">
+                      Shown to workers when offline verification is available.
+                    </p>
                   </div>
                 </div>
               )}
+
+              {fieldType === "yes_no" && (
+                <div className="space-y-2.5 border-t border-orange-100 pt-3 dark:border-slate-800">
+                  <div className="space-y-1">
+                    <label className="block text-[10.5px] font-extrabold text-[#1E293B] dark:text-slate-200">
+                      Help text — English
+                    </label>
+                    <input
+                      type="text"
+                      value={fieldHelpTextEn}
+                      onChange={(event) => setFieldHelpTextEn(event.target.value)}
+                      onFocus={keepFieldInputVisible}
+                      placeholder="Optional guidance for the worker"
+                      className="w-full rounded-lg border border-orange-200/80 bg-[#FFFDF7] px-3 py-2 text-[11.5px] text-foreground outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-800"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-[10.5px] font-extrabold text-[#1E293B] dark:text-slate-200">
+                      Help text — Malayalam
+                    </label>
+                    <input
+                      type="text"
+                      value={fieldHelpTextMl}
+                      onChange={(event) => setFieldHelpTextMl(event.target.value)}
+                      onFocus={keepFieldInputVisible}
+                      placeholder="ഐച്ഛിക സഹായ വിവരം"
+                      className="w-full rounded-lg border border-orange-200/80 bg-[#FFFDF7] px-3 py-2 text-[11.5px] text-foreground outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-800"
+                    />
+                  </div>
+
+                  <div className="rounded-xl border border-orange-100 bg-orange-50/40 px-3 py-2.5 dark:border-slate-700 dark:bg-slate-800/70">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-[10.5px] font-extrabold text-[#1E293B] dark:text-slate-100">
+                          Conditional follow-up
+                        </p>
+                        <p className="mt-0.5 text-[9px] font-medium text-muted-foreground">
+                          Ask for more information after a Yes or No answer.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setFieldFollowUpEnabled((value) => !value)}
+                        className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
+                          fieldFollowUpEnabled ? "bg-[#FF5500]" : "bg-slate-300 dark:bg-slate-600"
+                        }`}
+                        aria-label="Enable conditional follow-up"
+                      >
+                        <span
+                          className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${
+                            fieldFollowUpEnabled ? "left-[18px]" : "left-0.5"
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {fieldFollowUpEnabled && (
+                      <div className="mt-2.5 space-y-2">
+                        <div className="grid grid-cols-2 gap-1 rounded-lg bg-white p-1 dark:bg-slate-900">
+                          {(["Yes", "No"] as const).map((answer) => (
+                            <button
+                              key={answer}
+                              type="button"
+                              onClick={() => setFieldFollowUpTrigger(answer)}
+                              className={`rounded-md py-1.5 text-[10.5px] font-extrabold transition-colors ${
+                                fieldFollowUpTrigger === answer
+                                  ? "bg-[#FF5500] text-white"
+                                  : "text-slate-500 hover:bg-orange-50 dark:hover:bg-slate-800"
+                              }`}
+                            >
+                              {answer}
+                            </button>
+                          ))}
+                        </div>
+                        <input
+                          type="text"
+                          value={
+                            fieldFollowUpTrigger === "Yes" ? fieldYesFollowUp : fieldNoFollowUp
+                          }
+                          onChange={(event) =>
+                            fieldFollowUpTrigger === "Yes"
+                              ? setFieldYesFollowUp(event.target.value)
+                              : setFieldNoFollowUp(event.target.value)
+                          }
+                          onFocus={keepFieldInputVisible}
+                          placeholder="Follow-up question or instruction"
+                          className={`w-full rounded-lg border bg-white px-3 py-2 text-[11px] text-foreground outline-none focus:ring-1 focus:ring-orange-500 dark:bg-slate-900 ${
+                            fieldErrors.followUp
+                              ? "border-red-400"
+                              : "border-orange-200/80 dark:border-slate-700"
+                          }`}
+                        />
+                        {fieldErrors.followUp && (
+                          <p className="flex items-center gap-1 text-[9.5px] font-bold text-red-500">
+                            <AlertCircle className="h-3 w-3" /> {fieldErrors.followUp}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {(fieldType === "descriptive_text" || fieldType === "single_text") && (
+                <div className="space-y-2.5 border-t border-orange-100 pt-3 dark:border-slate-800">
+                  <div className="space-y-1">
+                    <label className="block text-[10.5px] font-extrabold text-[#1E293B] dark:text-slate-200">
+                      Placeholder — English
+                    </label>
+                    <input
+                      type="text"
+                      value={fieldPlaceholderEn}
+                      onChange={(event) => setFieldPlaceholderEn(event.target.value)}
+                      onFocus={keepFieldInputVisible}
+                      placeholder="Placeholder shown inside the field"
+                      className="w-full rounded-lg border border-orange-200/80 bg-[#FFFDF7] px-3 py-2 text-[11.5px] text-foreground outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-800"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-[10.5px] font-extrabold text-[#1E293B] dark:text-slate-200">
+                      Placeholder — Malayalam
+                    </label>
+                    <input
+                      type="text"
+                      value={fieldPlaceholderMl}
+                      onChange={(event) => setFieldPlaceholderMl(event.target.value)}
+                      onFocus={keepFieldInputVisible}
+                      placeholder="ഉദാ. വിവരങ്ങൾ നൽകുക"
+                      className="w-full rounded-lg border border-orange-200/80 bg-[#FFFDF7] px-3 py-2 text-[11.5px] text-foreground outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-800"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-[10.5px] font-extrabold text-[#1E293B] dark:text-slate-200">
+                      Help text — English
+                    </label>
+                    <input
+                      type="text"
+                      value={fieldHelpTextEn}
+                      onChange={(event) => setFieldHelpTextEn(event.target.value)}
+                      onFocus={keepFieldInputVisible}
+                      placeholder="Optional guidance for the worker"
+                      className="w-full rounded-lg border border-orange-200/80 bg-[#FFFDF7] px-3 py-2 text-[11.5px] text-foreground outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-800"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-[10.5px] font-extrabold text-[#1E293B] dark:text-slate-200">
+                      Help text — Malayalam
+                    </label>
+                    <input
+                      type="text"
+                      value={fieldHelpTextMl}
+                      onChange={(event) => setFieldHelpTextMl(event.target.value)}
+                      onFocus={keepFieldInputVisible}
+                      placeholder="ഐച്ഛിക സഹായ വിവരം"
+                      className="w-full rounded-lg border border-orange-200/80 bg-[#FFFDF7] px-3 py-2 text-[11.5px] text-foreground outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-800"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-[10.5px] font-extrabold text-[#1E293B] dark:text-slate-200">
+                      Character limit
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={fieldType === "descriptive_text" ? 10000 : 500}
+                      value={fieldCharLimit}
+                      onChange={(event) => setFieldCharLimit(Number(event.target.value))}
+                      onFocus={keepFieldInputVisible}
+                      className={`w-full rounded-lg border bg-[#FFFDF7] px-3 py-2 text-[11.5px] text-foreground outline-none focus:ring-1 focus:ring-orange-500 dark:bg-slate-800 ${
+                        fieldErrors.charLimit
+                          ? "border-red-400"
+                          : "border-orange-200/80 dark:border-slate-700"
+                      }`}
+                    />
+                    {fieldErrors.charLimit && (
+                      <p className="flex items-center gap-1 text-[9.5px] font-bold text-red-500">
+                        <AlertCircle className="h-3 w-3" /> {fieldErrors.charLimit}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {fieldType === "dropdown" && (
+                <div className="space-y-2.5 border-t border-orange-100 pt-3 dark:border-slate-800">
+                  <div className="space-y-1">
+                    <label className="block text-[10.5px] font-extrabold text-[#1E293B] dark:text-slate-200">
+                      Placeholder — English
+                    </label>
+                    <input
+                      type="text"
+                      value={fieldPlaceholderEn}
+                      onChange={(event) => setFieldPlaceholderEn(event.target.value)}
+                      onFocus={keepFieldInputVisible}
+                      placeholder="e.g. Select an option"
+                      className="w-full rounded-lg border border-orange-200/80 bg-[#FFFDF7] px-3 py-2 text-[11.5px] text-foreground outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-800"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-[10.5px] font-extrabold text-[#1E293B] dark:text-slate-200">
+                      Selection
+                    </label>
+                    <div className="grid grid-cols-2 gap-1 rounded-lg bg-orange-50/70 p-1 dark:bg-slate-800">
+                      {[
+                        { value: false, label: "Single" },
+                        { value: true, label: "Multiple" },
+                      ].map((item) => (
+                        <button
+                          key={item.label}
+                          type="button"
+                          onClick={() => setFieldIsMultiSelect(item.value)}
+                          className={`rounded-md py-1.5 text-[10.5px] font-extrabold transition-colors ${
+                            fieldIsMultiSelect === item.value
+                              ? "bg-white text-[#FF5500] shadow-2xs dark:bg-slate-900"
+                              : "text-slate-500"
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <label className="text-[10.5px] font-extrabold text-[#1E293B] dark:text-slate-200">
+                        Answer options
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFieldOptions((options) => [
+                            ...options,
+                            {
+                              id: `opt-${Date.now()}`,
+                              labelEn: `Option ${options.length + 1}`,
+                              labelMl: "",
+                            },
+                          ])
+                        }
+                        className="inline-flex items-center gap-1 rounded-md bg-orange-50 px-2 py-1 text-[9.5px] font-extrabold text-[#FF5500] hover:bg-orange-100 dark:bg-orange-950/40 cursor-pointer"
+                      >
+                        <Plus className="h-3 w-3" /> Add Option
+                      </button>
+                    </div>
+                    {fieldErrors.options && (
+                      <p className="flex items-center gap-1 text-[9.5px] font-bold text-red-500">
+                        <AlertCircle className="h-3 w-3" /> {fieldErrors.options}
+                      </p>
+                    )}
+                    <div className="space-y-1.5">
+                      {fieldOptions.map((option, optionIndex) => (
+                        <div
+                          key={option.id}
+                          className="flex items-center gap-1.5 rounded-lg border border-orange-100 bg-[#FFFDF7] p-1.5 dark:border-slate-700 dark:bg-slate-800/70"
+                        >
+                          <div className="min-w-0 flex-1 space-y-1">
+                            <input
+                              type="text"
+                              value={option.labelEn}
+                              onChange={(event) =>
+                                setFieldOptions((options) =>
+                                  options.map((item) =>
+                                    item.id === option.id
+                                      ? { ...item, labelEn: event.target.value }
+                                      : item
+                                  )
+                                )
+                              }
+                              onFocus={keepFieldInputVisible}
+                              placeholder="Option label"
+                              className="w-full rounded-md border border-orange-100 bg-white px-2 py-1.5 text-[10.5px] font-semibold text-foreground outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-900"
+                            />
+                            <input
+                              type="text"
+                              value={option.labelMl}
+                              onChange={(event) =>
+                                setFieldOptions((options) =>
+                                  options.map((item) =>
+                                    item.id === option.id
+                                      ? { ...item, labelMl: event.target.value }
+                                      : item
+                                  )
+                                )
+                              }
+                              onFocus={keepFieldInputVisible}
+                              placeholder="Malayalam (optional)"
+                              className="w-full rounded-md border border-orange-100 bg-white px-2 py-1.5 text-[10px] font-medium text-foreground outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-900"
+                            />
+                          </div>
+                          <div className="flex shrink-0 flex-col items-center gap-0.5">
+                            <button
+                              type="button"
+                              disabled={optionIndex === 0}
+                              onClick={() =>
+                                setFieldOptions((options) => {
+                                  const next = [...options];
+                                  const [moved] = next.splice(optionIndex, 1);
+                                  next.splice(optionIndex - 1, 0, moved);
+                                  return next;
+                                })
+                              }
+                              className="rounded p-0.5 text-slate-400 hover:text-[#FF5500] disabled:opacity-25"
+                              aria-label="Move option up"
+                            >
+                              <ArrowUp className="h-3 w-3" />
+                            </button>
+                            <button
+                              type="button"
+                              disabled={optionIndex === fieldOptions.length - 1}
+                              onClick={() =>
+                                setFieldOptions((options) => {
+                                  const next = [...options];
+                                  const [moved] = next.splice(optionIndex, 1);
+                                  next.splice(optionIndex + 1, 0, moved);
+                                  return next;
+                                })
+                              }
+                              className="rounded p-0.5 text-slate-400 hover:text-[#FF5500] disabled:opacity-25"
+                              aria-label="Move option down"
+                            >
+                              <ArrowDown className="h-3 w-3" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setFieldOptions((options) =>
+                                  options.filter((item) => item.id !== option.id)
+                                )
+                              }
+                              className="rounded p-0.5 text-red-400 hover:text-red-600"
+                              aria-label="Remove option"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="overflow-hidden rounded-xl border border-orange-100 dark:border-slate-700">
+                <button
+                  type="button"
+                  onClick={() => setShowFieldAdvanced((value) => !value)}
+                  className="flex w-full items-center justify-between gap-2 bg-orange-50/40 px-3 py-2.5 text-left dark:bg-slate-800/70"
+                >
+                  <span>
+                    <span className="block text-[10.5px] font-extrabold text-[#1E293B] dark:text-slate-100">
+                      Advanced Settings
+                    </span>
+                    <span className="mt-0.5 block text-[9px] font-medium text-muted-foreground">
+                      {fieldReuseApplicantAttr
+                        ? "Applicant data reuse is configured."
+                        : "Limits and applicant data reuse."}
+                    </span>
+                  </span>
+                  {showFieldAdvanced ? (
+                    <ChevronUp className="h-4 w-4 shrink-0 text-slate-400" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" />
+                  )}
+                </button>
+
+                {showFieldAdvanced && (
+                  <div className="space-y-2.5 border-t border-orange-100 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+                    {fieldType === "file_upload" && (
+                      <>
+                        <div className="space-y-1.5">
+                          <label className="block text-[10px] font-extrabold text-[#1E293B] dark:text-slate-200">
+                            Accepted formats
+                          </label>
+                          <div className="flex flex-wrap gap-1">
+                            {UPLOAD_FORMAT_OPTIONS.map((format) => {
+                              const selected = fieldAcceptedFormats.includes(format);
+                              return (
+                                <button
+                                  key={format}
+                                  type="button"
+                                  onClick={() =>
+                                    setFieldAcceptedFormats((formats) =>
+                                      selected
+                                        ? formats.filter((item) => item !== format)
+                                        : [...formats, format]
+                                    )
+                                  }
+                                  className={`rounded-md border px-2 py-1 text-[9px] font-extrabold uppercase transition-colors ${
+                                    selected
+                                      ? "border-[#FF5500] bg-orange-50 text-[#FF5500] dark:bg-orange-950/40"
+                                      : "border-orange-100 bg-white text-slate-500 dark:border-slate-700 dark:bg-slate-800"
+                                  }`}
+                                >
+                                  {format}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          {fieldErrors.uploadFormats && (
+                            <p className="flex items-center gap-1 text-[9px] font-bold text-red-500">
+                              <AlertCircle className="h-3 w-3" /> {fieldErrors.uploadFormats}
+                            </p>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <label className="block text-[10px] font-extrabold text-[#1E293B] dark:text-slate-200">
+                              Max file size (MB)
+                            </label>
+                            <input
+                              type="number"
+                              min={1}
+                              max={100}
+                              value={fieldMaxFileSizeMb}
+                              onChange={(event) => setFieldMaxFileSizeMb(Number(event.target.value))}
+                              onFocus={keepFieldInputVisible}
+                              className={`w-full rounded-lg border bg-[#FFFDF7] px-2.5 py-2 text-[11px] outline-none focus:ring-1 focus:ring-orange-500 dark:bg-slate-800 ${
+                                fieldErrors.maxFileSize
+                                  ? "border-red-400"
+                                  : "border-orange-200/80 dark:border-slate-700"
+                              }`}
+                            />
+                            {fieldErrors.maxFileSize && (
+                              <p className="text-[8.5px] font-bold leading-tight text-red-500">
+                                {fieldErrors.maxFileSize}
+                              </p>
+                            )}
+                          </div>
+                          <div className="space-y-1">
+                            <label className="block text-[10px] font-extrabold text-[#1E293B] dark:text-slate-200">
+                              Max files
+                            </label>
+                            <input
+                              type="number"
+                              min={1}
+                              max={20}
+                              value={fieldMaxFileCount}
+                              onChange={(event) => setFieldMaxFileCount(Number(event.target.value))}
+                              onFocus={keepFieldInputVisible}
+                              className={`w-full rounded-lg border bg-[#FFFDF7] px-2.5 py-2 text-[11px] outline-none focus:ring-1 focus:ring-orange-500 dark:bg-slate-800 ${
+                                fieldErrors.maxFileCount
+                                  ? "border-red-400"
+                                  : "border-orange-200/80 dark:border-slate-700"
+                              }`}
+                            />
+                            {fieldErrors.maxFileCount && (
+                              <p className="text-[8.5px] font-bold leading-tight text-red-500">
+                                {fieldErrors.maxFileCount}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {fieldType !== "file_upload" && (
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-extrabold text-[#1E293B] dark:text-slate-200">
+                          Reuse applicant information
+                        </label>
+                        <select
+                          value={fieldReuseApplicantAttr}
+                          onChange={(event) => setFieldReuseApplicantAttr(event.target.value)}
+                          onFocus={keepFieldInputVisible}
+                          className="w-full rounded-lg border border-orange-200/80 bg-[#FFFDF7] px-2.5 py-2 text-[10.5px] text-foreground outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-800"
+                        >
+                          <option value="">Do not reuse</option>
+                          {applicantAttributes.map((attribute) => (
+                            <option key={attribute} value={attribute}>
+                              {attribute}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
-              <button
-                type="button"
-                onClick={() => setShowFieldModal(false)}
-                className="px-3 py-1.5 text-xs font-bold text-muted-foreground hover:text-foreground"
-              >
-                Cancel
-              </button>
+            <div className="shrink-0 border-t border-orange-100 bg-white px-4 py-3 pb-[calc(0.75rem_+_env(safe-area-inset-bottom))] dark:border-slate-800 dark:bg-slate-900">
+              {Object.keys(fieldErrors).length > 0 && (
+                <p className="mb-2 flex items-center gap-1 text-[9.5px] font-bold text-red-500">
+                  <AlertCircle className="h-3 w-3" /> Check the highlighted settings before saving.
+                </p>
+              )}
               <button
                 type="button"
                 onClick={handleSaveField}
-                className="px-4 py-1.5 bg-[#ff5500] text-white text-xs font-extrabold rounded-xl"
+                className="w-full rounded-lg bg-[#FF5500] py-2.5 text-[11.5px] font-extrabold text-white shadow-xs transition-colors hover:bg-[#E64D00] cursor-pointer"
               >
-                Save Field
+                {editingFieldId ? "Save Changes" : "Add Field"}
               </button>
             </div>
           </div>

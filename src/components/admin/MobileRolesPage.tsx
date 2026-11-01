@@ -305,32 +305,39 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
               <article
                 key={role.id}
                 className={cn(
-                  "rounded-2xl border border-orange-100 bg-card px-3 py-2.5 shadow-2xs dark:border-slate-800",
+                  "rounded-2xl border border-orange-100 bg-card px-3 py-2.5 shadow-2xs transition-colors hover:border-orange-200 dark:border-slate-800 dark:hover:border-slate-700",
                   role.status === "Inactive" && "opacity-60",
                 )}
               >
                 <div className="flex items-center gap-2">
-                  <img
-                    src="/images/settings/role-card.png"
-                    alt=""
-                    aria-hidden="true"
-                    className="h-8 w-8 shrink-0 object-contain"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <h3 className="truncate text-[11.5px] font-extrabold leading-tight text-foreground">
-                      {role.name}
-                    </h3>
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      {role.assignmentLevels.slice(0, 1).map((level) => (
-                        <span
-                          key={level}
-                          className="rounded-md border border-orange-100 bg-orange-50/70 px-1.5 py-px text-[8.5px] font-bold text-orange-800 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-200"
-                        >
-                          {levelLabel(level)}
-                        </span>
-                      ))}
+                  <button
+                    type="button"
+                    onClick={() => openEdit(role)}
+                    className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300"
+                    aria-label={tr(`Edit ${role.name}`, `${role.name} തിരുത്തുക`)}
+                  >
+                    <img
+                      src="/images/settings/role-card.png"
+                      alt=""
+                      aria-hidden="true"
+                      className="h-8 w-8 shrink-0 object-contain"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate text-[11.5px] font-extrabold leading-tight text-foreground">
+                        {role.name}
+                      </h3>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {role.assignmentLevels.slice(0, 1).map((level) => (
+                          <span
+                            key={level}
+                            className="rounded-md border border-orange-100 bg-orange-50/70 px-1.5 py-px text-[8.5px] font-bold text-orange-800 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-200"
+                          >
+                            {levelLabel(level)}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  </button>
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -396,7 +403,7 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
             <button
               type="button"
               onClick={() => (createStep === 2 ? setCreateStep(1) : closeRoleDialog())}
-              className="absolute left-0 flex h-7 w-7 items-center justify-center rounded-full bg-muted/60 text-foreground transition-colors hover:bg-muted dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 cursor-pointer"
+              className="absolute left-3 flex h-7 w-7 items-center justify-center rounded-full bg-muted/60 text-foreground transition-colors hover:bg-muted dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 cursor-pointer"
               aria-label={tr("Go back", "തിരികെ പോവുക")}
             >
               <ArrowLeft className="h-3.5 w-3.5 stroke-[2.2]" />
@@ -406,7 +413,7 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
                 ? tr("Create New Role", "പുതിയ റോൾ സൃഷ്ടിക്കുക")
                 : tr("Edit Role", "റോൾ തിരുത്തുക")}
             </h1>
-            <span className="absolute right-0 rounded-full border border-orange-100 bg-orange-50 px-2 py-1 text-[8.5px] font-bold text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/50 dark:text-orange-300">
+            <span className="absolute right-3 rounded-full border border-orange-100 bg-orange-50 px-2 py-1 text-[8.5px] font-bold text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/50 dark:text-orange-300">
               {tr(`Step ${createStep} of 2`, `ഘട്ടം ${createStep}/2`)}
             </span>
           </header>
