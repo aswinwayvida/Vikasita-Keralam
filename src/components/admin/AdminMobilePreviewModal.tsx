@@ -38,6 +38,7 @@ import { DatePickerModal } from "./DatePickerModal";
 import { MobileUsersListTab } from "./MobileUsersListTab";
 import { MobileCreateSchemeFlow } from "./MobileCreateSchemeFlow";
 import { MobileCreatePartyWorkerFlow } from "./MobileCreatePartyWorkerFlow";
+import { MobileSettingsPage } from "./MobileSettingsPage";
 import { MobileAppliedFiltersScope, FilterChip } from "./MobileAppliedFiltersScope";
 import { PartyFlagIcon } from "@/components/common/PartyFlagIcon";
 import { districts, constituencies, panchayats, wards, getDistrictName, getConstituencyName, getWardsForLocalBody, getMappedConstituencyForWard, LocalBodyType, WardItem } from "@/data/geo";
@@ -2623,6 +2624,14 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     setIsMobileAuthOpen(true);
   };
 
+  const openMobileSettings = () => {
+    setActiveTab("overview");
+    setMobileSubPage("settings");
+    setIsMobileSettingsFormOpen(false);
+    setShowFilterMenu(false);
+    setShowMoreMenu(false);
+  };
+
   const closeMobileAuthToGuest = () => {
     setIsMobileAuthOpen(false);
     setIsGuest(true);
@@ -5085,7 +5094,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     setCreateFlowStep("form");
   };
 
-    const [mobileSubPage, setMobileSubPage] = useState<"none" | "leaderboard" | "needs_attention" | "recent_activity" | "beneficiaries" | "users" | "applicants" | "user_detail" | "notifications" | "applications" | "events_announcements" | "app_detail" | "category_schemes" | "scheme_details" | "guest_popular_schemes" | "guest_schemes" | "create_scheme">("none");
+    const [mobileSubPage, setMobileSubPage] = useState<"none" | "leaderboard" | "needs_attention" | "recent_activity" | "beneficiaries" | "users" | "applicants" | "user_detail" | "notifications" | "applications" | "events_announcements" | "app_detail" | "category_schemes" | "scheme_details" | "guest_popular_schemes" | "guest_schemes" | "create_scheme" | "settings">("none");
+  const [isMobileSettingsFormOpen, setIsMobileSettingsFormOpen] = useState(false);
   const [showSupportModal, setShowSupportModal] = useState(false);
   const [supportModalSubmitted, setSupportModalSubmitted] = useState(false);
   const [supportForm, setSupportForm] = useState({
@@ -8041,7 +8051,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         {/* Mobile App Standard Header or Application Details / Document Verification Back Header */}
 
           {/* Mobile App Standard Header or Application Details / Document Verification Back Header */}
-          {!isLogoutSplashScreen && !isGuestEligibilityOpen && !isMobileAuthOpen && mobileSubPage !== "category_schemes" && mobileSubPage !== "create_scheme" && mobileSubPage !== "users" && mobileSubPage !== "applicants" && mobileSubPage !== "user_detail" && (
+          {!isLogoutSplashScreen && !isGuestEligibilityOpen && !isMobileAuthOpen && mobileSubPage !== "category_schemes" && mobileSubPage !== "create_scheme" && mobileSubPage !== "users" && mobileSubPage !== "applicants" && mobileSubPage !== "user_detail" && mobileSubPage !== "settings" && (
             mobileSubPage === "guest_popular_schemes" || mobileSubPage === "guest_schemes" || mobileSubPage === "app_detail" || mobileSubPage === "needs_attention" || mobileSubPage === "notifications" || mobileSubPage === "scheme_details" || (activeTab === "create" && (createFlowStep === "scheme_details" || createFlowStep === "eligible_schemes" || createFlowStep === "form")) ? (
               <header className="relative z-40 w-full bg-[#FFFDF9] dark:bg-slate-900 border-b border-slate-200/60 dark:border-slate-800/60 shadow-2xs">
                 {mobileSubPage === "guest_popular_schemes" || mobileSubPage === "guest_schemes" ? (
@@ -8325,7 +8335,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   setPartyWorkerStartPhase("list");
                   setIsCreatePartyWorkerModalOpen(true);
                 }}
-                onOpenSettings={() => setShowFilterMenu(true)}
+                onOpenSettings={openMobileSettings}
                 onNavigateTab={(tab) => {
                   setEditingApplicationRef("");
                   setActiveTab(tab);
@@ -8343,8 +8353,11 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           {/* Scrollable Main Content Area based on Selected Bottom Tab */}
           <div
             ref={mobileContentRef}
-            className={`flex-1 ${mobileSubPage === "create_scheme" ? "overflow-hidden" : "overflow-y-auto"} [ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden relative bg-muted/20 ${
-              isGuestEligibilityOpen || isMobileAuthOpen || mobileSubPage === "create_scheme"
+            className={`flex-1 ${mobileSubPage === "create_scheme" || (mobileSubPage === "settings" && isMobileSettingsFormOpen) ? "overflow-hidden" : "overflow-y-auto"} [ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden relative bg-muted/20 ${
+              isGuestEligibilityOpen ||
+              isMobileAuthOpen ||
+              mobileSubPage === "create_scheme" ||
+              (mobileSubPage === "settings" && isMobileSettingsFormOpen)
                 ? "p-0"
                 : `${
                     (activeTab === "create" && createFlowStep !== "applicant_applications") || mobileSubPage === "app_detail"
@@ -8400,7 +8413,19 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               renderGuestScreen()
             ) : (
               <>
-            {activeTab === "overview" && (
+            {mobileSubPage === "settings" && (
+              <MobileSettingsPage
+                userRole={userRole}
+                onBack={() => {
+                  setIsMobileSettingsFormOpen(false);
+                  setMobileSubPage("none");
+                }}
+                onLogout={handleLogout}
+                onImmersiveChange={setIsMobileSettingsFormOpen}
+              />
+            )}
+
+            {activeTab === "overview" && mobileSubPage !== "settings" && (
               <>
                 {mobileSubPage === "none" ? (
                   userRole === "party_worker" ? (
@@ -15676,7 +15701,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   {/* 5. Settings */}
                   <button
                     type="button"
-                    onClick={() => setShowFilterMenu(true)}
+                    onClick={openMobileSettings}
                     className="flex items-center justify-between p-3 rounded-xl bg-card border border-border/80 hover:border-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30 transition-all cursor-pointer shadow-2xs group text-left"
                   >
                     <div className="flex items-center gap-3">
@@ -16769,7 +16794,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     type="button"
                     onClick={() => {
                       setShowMoreMenu(false);
-                      setShowFilterMenu(true);
+                      openMobileSettings();
                     }}
                     className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:border-emerald-300 transition-all cursor-pointer group text-left"
                   >
