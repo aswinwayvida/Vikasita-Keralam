@@ -13,19 +13,10 @@ import {
   RotateCcw,
   Trash2,
   Users,
-  UserRoundCog,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -270,7 +261,7 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
   };
 
   const removeRole = () => {
-    if (!deleteTarget || deleteTarget.system) return;
+    if (!deleteTarget) return;
     commitRoles(roles.filter((role) => role.id !== deleteTarget.id));
     toast.success(tr("Role deleted.", "റോൾ ഇല്ലാതാക്കി."));
     setDeleteTarget(null);
@@ -280,12 +271,14 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
     <div
       className={cn(
         "animate-in fade-in duration-200",
-        activeView === "form" ? "flex h-full min-h-0 w-full flex-col bg-muted/20" : "pb-2",
+        activeView === "form"
+          ? "flex h-full min-h-0 w-full flex-col bg-muted/20"
+          : "relative flex h-full min-h-0 w-full flex-col",
       )}
     >
       {activeView === "list" && (
         <>
-          <header className="relative flex h-10 items-center justify-center border-b border-border/70 px-3">
+          <header className="relative flex h-10 shrink-0 items-center justify-center border-b border-border/70 px-3">
             <button
               type="button"
               onClick={onBack}
@@ -307,7 +300,7 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
             </button>
           </header>
 
-          <div className="mt-2 space-y-2">
+          <div className="mt-2 min-h-0 flex-1 space-y-2 overflow-y-auto pb-2 [scrollbar-width:thin]">
             {roles.map((role) => (
               <article
                 key={role.id}
@@ -317,16 +310,18 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
                 )}
               >
                 <div className="flex items-center gap-2">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-600 dark:bg-orange-950/50 dark:text-orange-300">
-                    <UserRoundCog className="h-[18px] w-[18px] stroke-[1.9]" />
-                  </span>
-
+                  <img
+                    src="/images/settings/role-card.png"
+                    alt=""
+                    aria-hidden="true"
+                    className="h-8 w-8 shrink-0 object-contain"
+                  />
                   <div className="min-w-0 flex-1">
                     <h3 className="truncate text-[11.5px] font-extrabold leading-tight text-foreground">
                       {role.name}
                     </h3>
                     <div className="mt-1 flex flex-wrap gap-1">
-                      {role.assignmentLevels.map((level) => (
+                      {role.assignmentLevels.slice(0, 1).map((level) => (
                         <span
                           key={level}
                           className="rounded-md border border-orange-100 bg-orange-50/70 px-1.5 py-px text-[8.5px] font-bold text-orange-800 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-200"
@@ -380,7 +375,6 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
                       </DropdownMenuItem>
                       <DropdownMenuSeparator className="bg-orange-100 dark:bg-slate-800" />
                       <DropdownMenuItem
-                        disabled={role.system}
                         onSelect={() => setDeleteTarget(role)}
                         className="gap-2 rounded-lg px-2 py-2 text-[11px] font-semibold text-rose-600 focus:bg-rose-50 focus:text-rose-700 dark:focus:bg-rose-950/30 dark:focus:text-rose-300"
                       >
@@ -398,11 +392,11 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
 
       {activeView === "form" && (
         <div className="flex min-h-0 flex-1 flex-col bg-muted/20">
-          <header className="relative flex h-10 shrink-0 items-center justify-center border-b border-border/70 bg-muted/20 px-3">
+          <header className="relative flex h-10 shrink-0 items-center justify-center border-b border-border/70 bg-card px-3 dark:bg-slate-900">
             <button
               type="button"
               onClick={() => (createStep === 2 ? setCreateStep(1) : closeRoleDialog())}
-              className="absolute left-0 flex h-7 w-7 items-center justify-center rounded-full bg-[#fff7ec] text-[#1b255a] transition-colors hover:bg-orange-100 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 cursor-pointer"
+              className="absolute left-0 flex h-7 w-7 items-center justify-center rounded-full bg-muted/60 text-foreground transition-colors hover:bg-muted dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 cursor-pointer"
               aria-label={tr("Go back", "തിരികെ പോവുക")}
             >
               <ArrowLeft className="h-3.5 w-3.5 stroke-[2.2]" />
@@ -730,106 +724,179 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
         </div>
       )}
 
-      <Dialog open={Boolean(statusTarget)} onOpenChange={(open) => !open && setStatusTarget(null)}>
-        <DialogContent className="w-[calc(100%-2rem)] max-w-sm gap-3 rounded-2xl p-4">
-          <DialogHeader className="space-y-1 text-left">
-            <DialogTitle className="text-[15px]">
-              {statusTarget?.status === "Active"
-                ? tr("Deactivate role?", "റോൾ നിർജ്ജീവമാക്കണോ?")
-                : tr("Reactivate role?", "റോൾ വീണ്ടും സജീവമാക്കണോ?")}
-            </DialogTitle>
-            <DialogDescription className="text-[10.5px] leading-relaxed">
-              {statusTarget
-                ? statusTarget.status === "Active"
-                  ? tr(
-                      `${statusTarget.name} will stop being available for new assignments. ${statusTarget.assignedUsers} users currently use this role.`,
-                      `${statusTarget.name} പുതിയ അസൈൻമെന്റുകൾക്ക് ലഭ്യമാകില്ല. ഈ റോൾ ഇപ്പോൾ ${statusTarget.assignedUsers} ഉപയോക്താക്കൾ ഉപയോഗിക്കുന്നു.`,
-                    )
-                  : tr(
-                      `${statusTarget.name} will be available for new assignments again.`,
-                      `${statusTarget.name} വീണ്ടും പുതിയ അസൈൻമെന്റുകൾക്ക് ലഭ്യമാകും.`,
-                    )
-                : ""}
-            </DialogDescription>
-          </DialogHeader>
+      {statusTarget ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={tr("Role status confirmation", "റോൾ നില സ്ഥിരീകരണം")}
+          className="absolute inset-0 z-[130] flex items-end bg-black/55 backdrop-blur-[1px] animate-in fade-in duration-150"
+          onClick={() => setStatusTarget(null)}
+        >
+          <div
+            className="w-full rounded-t-2xl border-t border-orange-100 bg-white px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2.5 shadow-2xl animate-in slide-in-from-bottom duration-200 dark:border-slate-800 dark:bg-slate-900"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mx-auto mb-2.5 h-1 w-9 rounded-full bg-slate-200 dark:bg-slate-700" />
 
-          {statusTarget?.status === "Active" && statusTarget.assignedUsers > 0 ? (
-            <button
-              type="button"
-              role="checkbox"
-              aria-checked={statusAcknowledged}
-              onClick={() => setStatusAcknowledged((current) => !current)}
-              className="flex w-full items-start gap-2 rounded-xl border border-orange-100 bg-orange-50/60 p-2.5 text-left transition-colors hover:bg-orange-50 dark:border-orange-900/60 dark:bg-orange-950/30 dark:hover:bg-orange-950/50 cursor-pointer"
-            >
+            <div className="flex items-start gap-2.5">
               <span
                 className={cn(
-                  "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] border",
-                  statusAcknowledged
-                    ? "border-orange-500 bg-orange-500 text-white"
-                    : "border-slate-300 bg-background dark:border-slate-600",
+                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
+                  statusTarget.status === "Active"
+                    ? "bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-300"
+                    : "bg-orange-50 text-orange-600 dark:bg-orange-950/50 dark:text-orange-300",
                 )}
               >
-                {statusAcknowledged ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : null}
-              </span>
-              <span className="text-[9.5px] font-semibold leading-relaxed text-slate-600 dark:text-slate-300">
-                {tr(
-                  `I will review the ${statusTarget.assignedUsers} affected users and reassign them where required.`,
-                  `ബാധകമായ ${statusTarget.assignedUsers} ഉപയോക്താക്കളെ അവലോകനം ചെയ്ത് ആവശ്യമെങ്കിൽ പുനഃഅസൈൻ ചെയ്യും.`,
+                {statusTarget.status === "Active" ? (
+                  <Power className="h-4 w-4" />
+                ) : (
+                  <RotateCcw className="h-4 w-4" />
                 )}
               </span>
-            </button>
-          ) : null}
+              <div className="min-w-0 flex-1">
+                <h2 className="text-[13px] font-extrabold text-foreground">
+                  {statusTarget.status === "Active"
+                    ? tr("Deactivate role?", "റോൾ നിർജ്ജീവമാക്കണോ?")
+                    : tr("Reactivate role?", "റോൾ വീണ്ടും സജീവമാക്കണോ?")}
+                </h2>
+                <p className="mt-0.5 text-[10.5px] font-medium leading-relaxed text-muted-foreground">
+                  {statusTarget.status === "Active"
+                    ? tr(
+                        `${statusTarget.name} will stop being available for new assignments. ${statusTarget.assignedUsers} users currently use this role.`,
+                        `${statusTarget.name} പുതിയ അസൈൻമെന്റുകൾക്ക് ലഭ്യമാകില്ല. ഈ റോൾ ഇപ്പോൾ ${statusTarget.assignedUsers} ഉപയോക്താക്കൾ ഉപയോഗിക്കുന്നു.`,
+                      )
+                    : tr(
+                        `${statusTarget.name} will be available for new assignments again.`,
+                        `${statusTarget.name} വീണ്ടും പുതിയ അസൈൻമെന്റുകൾക്ക് ലഭ്യമാകും.`,
+                      )}
+                </p>
+              </div>
+            </div>
 
-          <DialogFooter className="flex-row justify-end gap-2 sm:justify-end">
-            <Button type="button" variant="outline" size="sm" onClick={() => setStatusTarget(null)}>
-              {tr("Cancel", "റദ്ദാക്കുക")}
-            </Button>
-            <Button
-              type="button"
-              variant={statusTarget?.status === "Active" ? "destructive" : "default"}
-              size="sm"
-              disabled={
-                Boolean(
-                  statusTarget &&
+            {statusTarget.status === "Active" && statusTarget.assignedUsers > 0 ? (
+              <button
+                type="button"
+                role="checkbox"
+                aria-checked={statusAcknowledged}
+                onClick={() => setStatusAcknowledged((current) => !current)}
+                className="mt-3 flex w-full items-start gap-2 rounded-xl border border-orange-100 bg-orange-50/60 p-2.5 text-left transition-colors hover:bg-orange-50 dark:border-orange-900/60 dark:bg-orange-950/30 dark:hover:bg-orange-950/50 cursor-pointer"
+              >
+                <span
+                  className={cn(
+                    "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] border",
+                    statusAcknowledged
+                      ? "border-orange-500 bg-orange-500 text-white"
+                      : "border-slate-300 bg-background dark:border-slate-600",
+                  )}
+                >
+                  {statusAcknowledged ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : null}
+                </span>
+                <span className="text-[9.5px] font-semibold leading-relaxed text-slate-600 dark:text-slate-300">
+                  {tr(
+                    `I will review the ${statusTarget.assignedUsers} affected users and reassign them where required.`,
+                    `ബാധകമായ ${statusTarget.assignedUsers} ഉപയോക്താക്കളെ അവലോകനം ചെയ്ത് ആവശ്യമെങ്കിൽ പുനഃഅസൈൻ ചെയ്യും.`,
+                  )}
+                </span>
+              </button>
+            ) : null}
+
+            <div className="mt-3 flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 flex-1 rounded-xl text-[11.5px] font-extrabold"
+                onClick={() => setStatusTarget(null)}
+              >
+                {tr("Cancel", "റദ്ദാക്കുക")}
+              </Button>
+              <Button
+                type="button"
+                variant={statusTarget.status === "Active" ? "destructive" : "default"}
+                className="h-10 flex-1 rounded-xl text-[11.5px] font-extrabold"
+                disabled={
                   statusTarget.status === "Active" &&
-                  statusTarget.assignedUsers > 0,
-                ) && !statusAcknowledged
-              }
-              onClick={confirmRoleStatus}
-            >
-              {statusTarget?.status === "Active"
-                ? tr("Deactivate", "നിർജ്ജീവമാക്കുക")
-                : tr("Reactivate", "സജീവമാക്കുക")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                  statusTarget.assignedUsers > 0 &&
+                  !statusAcknowledged
+                }
+                onClick={confirmRoleStatus}
+              >
+                {statusTarget.status === "Active"
+                  ? tr("Deactivate", "നിർജ്ജീവമാക്കുക")
+                  : tr("Reactivate", "സജീവമാക്കുക")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
-      <Dialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <DialogContent className="w-[calc(100%-2rem)] max-w-sm gap-3 rounded-2xl p-4">
-          <DialogHeader className="space-y-1 text-left">
-            <DialogTitle className="text-[15px]">
-              {tr("Delete Role?", "റോൾ ഇല്ലാതാക്കണോ?")}
-            </DialogTitle>
-            <DialogDescription className="text-[10.5px] leading-relaxed">
-              {deleteTarget
-                ? tr(
-                    `${deleteTarget.name} will be removed. ${deleteTarget.assignedUsers} assigned users will need a new role.`,
-                    `${deleteTarget.name} നീക്കം ചെയ്യും. അസൈൻ ചെയ്ത ${deleteTarget.assignedUsers} ഉപയോക്താക്കൾക്ക് പുതിയ റോൾ ആവശ്യമാകും.`,
-                  )
-                : ""}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex-row justify-end gap-2 sm:justify-end">
-            <Button type="button" variant="outline" size="sm" onClick={() => setDeleteTarget(null)}>
-              {tr("Cancel", "റദ്ദാക്കുക")}
-            </Button>
-            <Button type="button" variant="destructive" size="sm" onClick={removeRole}>
-              {tr("Delete", "ഇല്ലാതാക്കുക")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {deleteTarget ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={tr("Delete role confirmation", "റോൾ ഇല്ലാതാക്കാനുള്ള സ്ഥിരീകരണം")}
+          className="absolute inset-0 z-[130] flex items-end bg-black/55 backdrop-blur-[1px] animate-in fade-in duration-150"
+          onClick={() => setDeleteTarget(null)}
+        >
+          <div
+            className="w-full rounded-t-2xl border-t border-orange-100 bg-white px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2.5 shadow-2xl animate-in slide-in-from-bottom duration-200 dark:border-slate-800 dark:bg-slate-900"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mx-auto mb-2.5 h-1 w-9 rounded-full bg-slate-200 dark:bg-slate-700" />
+
+            <div className="flex items-start gap-2.5">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-300">
+                <Trash2 className="h-4 w-4" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-[13px] font-extrabold text-foreground">
+                  {tr("Delete role?", "റോൾ ഇല്ലാതാക്കണോ?")}
+                </h2>
+                <p className="mt-0.5 text-[10.5px] font-medium leading-relaxed text-muted-foreground">
+                  {tr(
+                    `${deleteTarget.name} will be permanently removed from the role list.`,
+                    `${deleteTarget.name} റോൾ ലിസ്റ്റിൽ നിന്ന് സ്ഥിരമായി നീക്കം ചെയ്യും.`,
+                  )}
+                </p>
+              </div>
+            </div>
+
+            {deleteTarget.system ? (
+              <p className="mt-2.5 rounded-xl border border-amber-200 bg-amber-50 px-2.5 py-2 text-[9.5px] font-semibold leading-relaxed text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
+                {tr(
+                  `Built-in role with ${deleteTarget.assignedUsers} assigned workers. Deleting it removes the role for all of them.`,
+                  `ബിൽട്ട്-ഇൻ റോൾ. ${deleteTarget.assignedUsers} പ്രവർത്തകർ ഈ റോൾ ഉപയോഗിക്കുന്നു; ഇല്ലാതാക്കിയാൽ അവർക്കെല്ലാം ഇത് നഷ്ടമാകും.`,
+                )}
+              </p>
+            ) : deleteTarget.assignedUsers > 0 ? (
+              <p className="mt-2.5 rounded-xl border border-amber-200 bg-amber-50 px-2.5 py-2 text-[9.5px] font-semibold leading-relaxed text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
+                {tr(
+                  `${deleteTarget.assignedUsers} party workers are assigned to this role and will need a new one.`,
+                  `ഈ റോളിൽ ${deleteTarget.assignedUsers} പാർട്ടി പ്രവർത്തകരെ അസൈൻ ചെയ്തിട്ടുണ്ട്; അവർക്ക് പുതിയ റോൾ ആവശ്യമാകും.`,
+                )}
+              </p>
+            ) : null}
+
+            <div className="mt-3 flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 flex-1 rounded-xl text-[11.5px] font-extrabold"
+                onClick={() => setDeleteTarget(null)}
+              >
+                {tr("Cancel", "റദ്ദാക്കുക")}
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                className="h-10 flex-1 rounded-xl text-[11.5px] font-extrabold"
+                onClick={removeRole}
+              >
+                {tr("Delete", "ഇല്ലാതാക്കുക")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

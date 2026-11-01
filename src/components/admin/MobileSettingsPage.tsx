@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Bell, ChevronRight, Globe2, LogOut, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ChevronRight, LogOut } from "lucide-react";
 
 import { Switch } from "@/components/ui/switch";
 import { MobileRolesPage } from "@/components/admin/MobileRolesPage";
@@ -31,6 +31,7 @@ export function MobileSettingsPage({
     : isMalayalam
       ? "സംസ്ഥാന ഭരണം"
       : "State Administration";
+  const placeLabel = isMalayalam ? "കഴക്കൂട്ടം, തിരുവനന്തപുരം" : "Kazhakkoottam, Trivandrum";
   const avatarUrl = isPartyWorker
     ? "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80"
     : "https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150&auto=format&fit=crop&q=80";
@@ -71,9 +72,20 @@ export function MobileSettingsPage({
             <h2 className="truncate text-[16px] font-extrabold tracking-tight text-[#152153] dark:text-white">
               {displayName}
             </h2>
-            <p className="mt-0.5 truncate text-[11.5px] font-medium text-slate-500 dark:text-slate-400">
-              {roleLabel}
-            </p>
+            {isPartyWorker ? (
+              <div className="mt-1 min-w-0 space-y-1">
+                <span className="inline-flex max-w-full items-center rounded-full border border-orange-200/90 bg-orange-50 px-2.5 py-0.5 text-[10px] font-extrabold text-orange-700 dark:border-orange-800/70 dark:bg-orange-950/50 dark:text-orange-300">
+                  <span className="truncate">{roleLabel}</span>
+                </span>
+                <p className="truncate text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
+                  {placeLabel}
+                </p>
+              </div>
+            ) : (
+              <p className="mt-0.5 truncate text-[11.5px] font-medium text-slate-500 dark:text-slate-400">
+                {roleLabel}
+              </p>
+            )}
           </div>
         </div>
 
@@ -85,8 +97,13 @@ export function MobileSettingsPage({
           className="flex w-full items-center justify-between gap-3 border-b border-border/70 px-4 py-3 text-left transition-colors hover:bg-orange-50/60 dark:hover:bg-slate-800/70 cursor-pointer"
         >
           <span className="flex min-w-0 items-center gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-orange-600 dark:bg-orange-950/60 dark:text-orange-300">
-              <Globe2 className="h-4 w-4" />
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-100 dark:bg-orange-950/60">
+              <img
+                src="/images/settings/language.png"
+                alt=""
+                aria-hidden="true"
+                className="h-6 w-6 object-contain"
+              />
             </span>
             <span className="min-w-0">
               <span className="block text-[11.5px] font-extrabold text-foreground">
@@ -105,8 +122,13 @@ export function MobileSettingsPage({
 
         <label className="flex w-full cursor-pointer items-center justify-between gap-3 border-b border-border/70 px-4 py-3">
           <span className="flex min-w-0 items-center gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-600 dark:bg-sky-950/60 dark:text-sky-300">
-              <Bell className="h-4 w-4" />
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-100 dark:bg-orange-950/60">
+              <img
+                src="/images/settings/notifications.png"
+                alt=""
+                aria-hidden="true"
+                className="h-6 w-6 object-contain"
+              />
             </span>
             <span className="min-w-0">
               <span className="block text-[11.5px] font-extrabold text-foreground">
@@ -132,8 +154,13 @@ export function MobileSettingsPage({
           className="flex w-full items-center justify-between gap-3 border-b border-border/70 px-4 py-3 text-left transition-colors hover:bg-orange-50/60 dark:hover:bg-slate-800/70 cursor-pointer"
         >
           <span className="flex min-w-0 items-center gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-950/60 dark:text-amber-300">
-              <ShieldCheck className="h-4 w-4" />
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-100 dark:bg-orange-950/60">
+              <img
+                src="/images/settings/roles-access.png"
+                alt=""
+                aria-hidden="true"
+                className="h-6 w-6 object-contain"
+              />
             </span>
             <span className="min-w-0">
               <span className="block text-[11.5px] font-extrabold text-foreground">
