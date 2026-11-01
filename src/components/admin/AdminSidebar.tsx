@@ -26,6 +26,7 @@ import {
 
 export function AdminSidebar() {
   const path = useRouterState({ select: (state) => state.location.pathname });
+  const search = useRouterState({ select: (state) => state.location.search as { tab?: string } });
   const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
 
@@ -49,15 +50,18 @@ export function AdminSidebar() {
     },
     {
       label: "Operations",
-      items: [
-        { to: "/admin/whatsapp", icon: MessageCircle, label: "Citizen messages" },
-      ],
+      items: [{ to: "/admin/whatsapp", icon: MessageCircle, label: "Citizen messages" }],
     },
     {
       label: "Settings",
       items: [
-        { to: "/admin/settings", icon: Settings, label: "General settings" },
-        { to: "/admin/settings", icon: ShieldCheck, label: "Roles and Control" },
+        { to: "/admin/settings", icon: Settings, label: "General settings", search: undefined },
+        {
+          to: "/admin/settings",
+          icon: ShieldCheck,
+          label: "Roles and Control",
+          search: { tab: "roles" },
+        },
       ],
     },
   ] as const;
@@ -65,12 +69,24 @@ export function AdminSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <SidebarHeader className="border-b border-sidebar-border px-2 py-3">
-        <Link to="/admin" onClick={handleLinkClick} className="flex min-h-10 items-center gap-3 rounded-lg px-1.5">
-          <img src={officialLotus} alt="BJP official lotus" className="h-9 w-9 shrink-0 object-contain object-left" />
+        <Link
+          to="/admin"
+          onClick={handleLinkClick}
+          className="flex min-h-10 items-center gap-3 rounded-lg px-1.5"
+        >
+          <img
+            src={officialLotus}
+            alt="BJP official lotus"
+            className="h-9 w-9 shrink-0 object-contain object-left"
+          />
           {(!collapsed || isMobile) && (
             <span className="min-w-0 leading-tight">
-              <span className="block truncate text-sm font-bold text-sidebar-foreground">Vikasita Keralam</span>
-              <span className="mt-0.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-primary">Admin panel</span>
+              <span className="block truncate text-sm font-bold text-sidebar-foreground">
+                Vikasita Keralam
+              </span>
+              <span className="mt-0.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-primary">
+                Admin panel
+              </span>
             </span>
           )}
         </Link>
@@ -79,18 +95,41 @@ export function AdminSidebar() {
       <SidebarContent className="py-2">
         {groups.map((group) => (
           <SidebarGroup key={group.label}>
-            <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-[0.14em]">{group.label}</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-[0.14em]">
+              {group.label}
+            </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {group.items.map((item) => {
                   const exact = "exact" in item && item.exact;
-                  const active = exact ? path === item.to : path === item.to || path.startsWith(`${item.to}/`);
+                  const isRolesLink = item.label === "Roles and Control";
+                  const isGeneralSettings = item.label === "General settings";
+                  const active = isRolesLink
+                    ? path === item.to && search?.tab === "roles"
+                    : isGeneralSettings
+                      ? path === item.to && search?.tab !== "roles"
+                      : exact
+                        ? path === item.to
+                        : path === item.to || path.startsWith(`${item.to}/`);
+                  const itemSearch = "search" in item ? item.search : undefined;
                   return (
                     <SidebarMenuItem key={`${item.to}-${item.label}`}>
-                      <SidebarMenuButton asChild isActive={active} tooltip={item.label} className="h-10 rounded-lg">
-                        <Link to={item.to} onClick={handleLinkClick} className="flex items-center gap-3">
+                      <SidebarMenuButton
+                        asChild
+                        isActive={active}
+                        tooltip={item.label}
+                        className="h-10 rounded-lg"
+                      >
+                        <Link
+                          to={item.to}
+                          search={itemSearch}
+                          onClick={handleLinkClick}
+                          className="flex items-center gap-3"
+                        >
                           <item.icon className="h-4 w-4" />
-                          {(!collapsed || isMobile) && <span className="truncate text-sm">{item.label}</span>}
+                          {(!collapsed || isMobile) && (
+                            <span className="truncate text-sm">{item.label}</span>
+                          )}
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
