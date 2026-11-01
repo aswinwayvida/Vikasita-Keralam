@@ -2463,10 +2463,10 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                 </button>
                 <button
                   type="button"
-                  onClick={handleOpenPreview}
+                  onClick={handlePublishScheme}
                   className="flex-1 py-2.5 rounded-lg bg-[#FF5500] hover:bg-[#E64D00] text-white font-extrabold text-xs shadow-xs transition-colors cursor-pointer text-center"
                 >
-                  {lang === "ml" ? "സ്കീം പ്രിവ്യൂ കാണുക" : "Preview Scheme"}
+                  {lang === "ml" ? "സേവ് ചെയ്ത് സ്കീം സൃഷ്ടിക്കുക" : "Save & Create Scheme"}
                 </button>
               </div>
             )}

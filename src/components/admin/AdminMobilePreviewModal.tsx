@@ -11934,9 +11934,10 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         onPublishSuccess={(schemeData) => {
                           toast.success(
                             lang === "ml"
-                              ? `പദ്ധതി '${schemeData.nameMl || schemeData.nameEn}' വിജയകരമായി പബ്ലിഷ് ചെയ്തു!`
-                              : `Scheme '${schemeData.nameEn}' successfully published!`
+                              ? `പദ്ധതി '${schemeData.nameMl || schemeData.nameEn}' വിജയകരമായി സൃഷ്ടിച്ചു!`
+                              : `Scheme '${schemeData.nameEn}' successfully created!`
                           );
+                          setActiveTab("schemes");
                           setMobileSubPage("none");
                         }}
                       />
