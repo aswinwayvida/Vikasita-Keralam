@@ -3,6 +3,7 @@ import partyWorkerAvatar from "@/assets/create-partyworker-3d-avatar.jpg";
 import {
   AlertCircle,
   ArrowLeft,
+  Camera,
   Check,
   ChevronDown,
   ChevronRight,
@@ -81,6 +82,7 @@ interface MobileCreatePartyWorkerFlowProps {
 interface WorkerProfile {
   id: string;
   name: string;
+  photoUrl?: string;
   nameMl?: string;
   designationEn: string;
   designationMl: string;
@@ -173,6 +175,40 @@ function persistWorker(worker: WorkerProfile) {
   } catch {
     // Persistence is best-effort in this prototype.
   }
+}
+
+const profilePhotoMaxSide = 360;
+const profilePhotoMaxUploadBytes = 8 * 1024 * 1024;
+
+function readProfilePhoto(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("read_failed"));
+    reader.onload = () => {
+      const image = new Image();
+      image.onerror = () => reject(new Error("decode_failed"));
+      image.onload = () => {
+        const scale = Math.min(
+          1,
+          profilePhotoMaxSide / Math.max(image.width || 1, image.height || 1),
+        );
+        const width = Math.max(1, Math.round((image.width || 1) * scale));
+        const height = Math.max(1, Math.round((image.height || 1) * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext("2d");
+        if (!context) {
+          resolve(String(reader.result || ""));
+          return;
+        }
+        context.drawImage(image, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", 0.86));
+      };
+      image.src = String(reader.result || "");
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 const moduleIcons: Record<PermissionModuleId, React.ElementType> = {
@@ -457,6 +493,8 @@ export function MobileCreatePartyWorkerFlow({
   const [profile, setProfile] = useState<WorkerProfile | null>(null);
   const [editingWorkerId, setEditingWorkerId] = useState<string | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [profilePhotoBusy, setProfilePhotoBusy] = useState(false);
+  const [profilePhotoError, setProfilePhotoError] = useState("");
   const [focusAccessAreas, setFocusAccessAreas] = useState(false);
   const [workerSearch, setWorkerSearch] = useState("");
   const [workerSearchOpen, setWorkerSearchOpen] = useState(false);
@@ -470,6 +508,7 @@ export function MobileCreatePartyWorkerFlow({
   });
   const bodyRef = useRef<HTMLDivElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
+  const profilePhotoInputRef = useRef<HTMLInputElement>(null);
   const accessAreasRef = useRef<HTMLElement>(null);
 
   const [name, setName] = useState("");
@@ -991,7 +1030,51 @@ export function MobileCreatePartyWorkerFlow({
     setProfile(worker);
     setWorkerFiltersOpen(false);
     setProfileMenuOpen(false);
+    setProfilePhotoError("");
     setPhase("profile");
+  };
+
+  const triggerProfilePhotoUpload = () => {
+    if (profilePhotoBusy) return;
+    setProfileMenuOpen(false);
+    profilePhotoInputRef.current?.click();
+  };
+
+  const handleProfilePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || !profile) return;
+    if (!file.type.startsWith("image/")) {
+      setProfilePhotoError(
+        tr("Choose an image file (JPG, PNG or WebP).", "ഒരു ഇമേജ് ഫയൽ തിരഞ്ഞെടുക്കുക."),
+      );
+      return;
+    }
+    if (file.size > profilePhotoMaxUploadBytes) {
+      setProfilePhotoError(tr("Image must be smaller than 8 MB.", "ഇമേജ് 8 MB-ൽ ചെറുതായിരിക്കണം."));
+      return;
+    }
+    setProfilePhotoBusy(true);
+    setProfilePhotoError("");
+    try {
+      const photoUrl = await readProfilePhoto(file);
+      const updatedWorker: WorkerProfile = { ...profile, photoUrl };
+      const existingIndex = sessionCreatedWorkers.findIndex((item) => item.id === updatedWorker.id);
+      if (existingIndex >= 0) sessionCreatedWorkers[existingIndex] = updatedWorker;
+      else sessionCreatedWorkers.unshift(updatedWorker);
+      persistWorker(updatedWorker);
+      recordActivity(updatedWorker, "party_worker_updated");
+      setProfile(updatedWorker);
+    } catch {
+      setProfilePhotoError(
+        tr(
+          "Could not load that image. Try a different photo.",
+          "ഈ ഇമേജ് ലോഡ് ചെയ്യാനായില്ല. മറ്റൊരു ഫോട്ടോ ശ്രമിക്കുക.",
+        ),
+      );
+    } finally {
+      setProfilePhotoBusy(false);
+    }
   };
 
   const openWorkerFilters = () => {
@@ -2365,9 +2448,11 @@ export function MobileCreatePartyWorkerFlow({
               >
                 <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full bg-orange-50 shadow-sm ring-2 ring-white dark:bg-slate-800 dark:ring-slate-900">
                   <img
-                    src={partyWorkerAvatar}
+                    src={worker.photoUrl || partyWorkerAvatar}
                     alt=""
-                    className="h-full w-full scale-[1.22] rounded-full object-cover"
+                    className={`h-full w-full rounded-full object-cover ${
+                      worker.photoUrl ? "" : "scale-[1.22]"
+                    }`}
                   />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -2805,13 +2890,34 @@ export function MobileCreatePartyWorkerFlow({
     return (
       <section className="divide-y divide-orange-100/80 overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-2xs dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
         <div className="p-3">
+          <input
+            ref={profilePhotoInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/*"
+            className="hidden"
+            onChange={handleProfilePhotoChange}
+          />
           <div className="flex items-start gap-3">
-            <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-orange-50 shadow-sm ring-2 ring-white dark:bg-slate-800 dark:ring-slate-900">
-              <img
-                src={partyWorkerAvatar}
-                alt={profile.name}
-                className="h-full w-full rounded-full object-cover scale-[1.22]"
-              />
+            <div className="relative shrink-0">
+              <div className="h-12 w-12 overflow-hidden rounded-full bg-orange-50 shadow-sm ring-2 ring-white dark:bg-slate-800 dark:ring-slate-900">
+                <img
+                  src={profile.photoUrl || partyWorkerAvatar}
+                  alt={profile.name}
+                  className={`h-full w-full rounded-full object-cover ${
+                    profile.photoUrl ? "" : "scale-[1.22]"
+                  }`}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={triggerProfilePhotoUpload}
+                disabled={profilePhotoBusy}
+                className="absolute -bottom-0.5 -right-0.5 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-[#ff5500] text-white shadow-md ring-2 ring-white transition active:scale-95 disabled:opacity-60 dark:ring-slate-900"
+                aria-label={tr("Upload profile picture", "പ്രൊഫൈൽ ചിത്രം അപ്‌ലോഡ് ചെയ്യുക")}
+                title={tr("Upload profile picture", "പ്രൊഫൈൽ ചിത്രം അപ്‌ലോഡ് ചെയ്യുക")}
+              >
+                <Camera className="h-2.5 w-2.5 stroke-[2.5]" />
+              </button>
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-start justify-between gap-2">
@@ -2838,6 +2944,12 @@ export function MobileCreatePartyWorkerFlow({
               ) : null}
             </div>
           </div>
+          {profilePhotoError ? (
+            <p className="mt-2 flex items-start gap-1 rounded-lg bg-rose-50 px-2 py-1.5 text-[9px] font-bold text-rose-600 dark:bg-rose-950/30 dark:text-rose-300">
+              <AlertCircle className="mt-px h-3 w-3 shrink-0" />
+              {profilePhotoError}
+            </p>
+          ) : null}
           <div className="mt-3 space-y-1.5 rounded-xl border border-slate-200 bg-slate-50/70 p-2.5 dark:border-slate-700 dark:bg-slate-800/40">
             <SummaryRow
               label={tr("Level", "ലെവൽ")}
@@ -3369,6 +3481,17 @@ export function MobileCreatePartyWorkerFlow({
               </button>
               {profileMenuOpen ? (
                 <div className="absolute right-0 top-9 w-56 overflow-hidden rounded-xl border border-orange-100 bg-white p-1 shadow-xl animate-in fade-in zoom-in-95 duration-150 dark:border-slate-700 dark:bg-slate-900">
+                  <button
+                    type="button"
+                    onClick={triggerProfilePhotoUpload}
+                    disabled={profilePhotoBusy}
+                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[10.5px] font-bold text-slate-700 transition hover:bg-orange-50 disabled:opacity-60 dark:text-slate-200 dark:hover:bg-slate-800"
+                  >
+                    <Camera className="h-3.5 w-3.5 shrink-0 text-[#C2410C] dark:text-orange-300" />
+                    {profilePhotoBusy
+                      ? tr("Updating photo...", "ഫോട്ടോ അപ്‌ഡേറ്റ് ചെയ്യുന്നു...")
+                      : tr("Upload Profile picture", "പ്രൊഫൈൽ ചിത്രം അപ്‌ലോഡ് ചെയ്യുക")}
+                  </button>
                   <button
                     type="button"
                     onClick={beginWorkerEdit}
