@@ -1494,6 +1494,11 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                               ? ` · Up to ${field.maxFileCount} file${field.maxFileCount > 1 ? "s" : ""}`
                               : ""}
                           </p>
+                          {field.allowOfflineVerification && field.offlineVerificationLabelMl && (
+                            <p className="text-[10px] font-medium text-muted-foreground">
+                              {field.offlineVerificationLabelMl}
+                            </p>
+                          )}
                           <div className="flex items-center gap-2">
                             <label className="flex-1 cursor-pointer flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-dashed border-orange-300 bg-orange-50/50 dark:bg-orange-950/20 text-[#ff5500] text-xs font-bold hover:bg-orange-100 transition-colors">
                               <Upload className="h-3.5 w-3.5" />
@@ -1524,6 +1529,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                             {field.allowOfflineVerification && (
                               <button
                                 type="button"
+                                title={field.offlineVerificationLabelMl || "Allow verification without upload"}
                                 onClick={() => {
                                   setSimulatedVerifiedDocs((prev) => ({
                                     ...prev,
