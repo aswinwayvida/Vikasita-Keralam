@@ -2,7 +2,7 @@ import React from "react";
 import { Home, Layers, FileText, Headphones, Plus } from "lucide-react";
 import { useLang } from "@/i18n/LanguageProvider";
 
-export type AdminMobileTab = "overview" | "applications" | "create" | "schemes" | "helpdesk";
+export type AdminMobileTab = "overview" | "users" | "applications" | "create" | "schemes" | "helpdesk";
 
 interface AdminMobileAppBottomNavProps {
   activeTab: AdminMobileTab;

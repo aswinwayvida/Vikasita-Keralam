@@ -14,7 +14,7 @@ import {
   ListTodo,
   BarChart2,
   Users2,
-  Megaphone,
+  Headphones,
   User,
   HelpCircle,
   LogOut,
@@ -31,7 +31,9 @@ import { AdminMobileTab } from "./AdminMobileAppBottomNav";
 
 interface AdminMobileAppHeaderProps {
   onNavigateTab?: (tab: AdminMobileTab) => void;
-  onOpenUsers?: () => void;
+  onOpenApplicants?: () => void;
+  onOpenPartyWorkers?: () => void;
+  onOpenSettings?: () => void;
   onOpenNotifications?: () => void;
   userRole?: "state_admin" | "party_worker";
   onSwitchRole?: (role: "state_admin" | "party_worker") => void;
@@ -43,7 +45,9 @@ interface AdminMobileAppHeaderProps {
 
 export function AdminMobileAppHeader({
   onNavigateTab,
-  onOpenUsers,
+  onOpenApplicants,
+  onOpenPartyWorkers,
+  onOpenSettings,
   onOpenNotifications,
   userRole = "state_admin",
   onSwitchRole,
@@ -504,7 +508,7 @@ export function AdminMobileAppHeader({
                   className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-orange-50 dark:hover:bg-slate-800 font-bold transition-all cursor-pointer"
                 >
                   <span className="flex items-center gap-3">
-                    <Users className="h-4 w-4 text-orange-500" /> {lang === "ml" ? "ഗുണഭോക്താക്കൾ" : "Beneficiaries"}
+                    <Users2 className="h-4 w-4 text-orange-500" /> {lang === "ml" ? "ഉപയോക്താക്കൾ" : "Users"}
                   </span>
                   <ChevronRight className="h-4 w-4 text-slate-400" />
                 </button>
@@ -513,12 +517,26 @@ export function AdminMobileAppHeader({
                   type="button"
                   onClick={() => {
                     setMenuOpen(false);
-                    if (onOpenUsers) onOpenUsers();
+                    if (onOpenApplicants) onOpenApplicants();
                   }}
                   className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-orange-50 dark:hover:bg-slate-800 font-bold transition-all cursor-pointer"
                 >
                   <span className="flex items-center gap-3">
-                    <Users2 className="h-4 w-4 text-orange-500" /> {lang === "ml" ? "ഉപയോക്താക്കൾ" : "Users"}
+                    <Users className="h-4 w-4 text-orange-500" /> {lang === "ml" ? "അപേക്ഷകർ" : "Applicants"}
+                  </span>
+                  <ChevronRight className="h-4 w-4 text-slate-400" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    if (onOpenPartyWorkers) onOpenPartyWorkers();
+                  }}
+                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-orange-50 dark:hover:bg-slate-800 font-bold transition-all cursor-pointer"
+                >
+                  <span className="flex items-center gap-3">
+                    <Users2 className="h-4 w-4 text-orange-500" /> {lang === "ml" ? "പാർട്ടി പ്രവർത്തകർ" : "Party Workers"}
                   </span>
                   <ChevronRight className="h-4 w-4 text-slate-400" />
                 </button>
@@ -555,12 +573,26 @@ export function AdminMobileAppHeader({
                   type="button"
                   onClick={() => {
                     setMenuOpen(false);
-                    if (onNavigateTab) onNavigateTab("janashabdam");
+                    if (onNavigateTab) onNavigateTab("helpdesk");
                   }}
                   className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-orange-50 dark:hover:bg-slate-800 font-bold transition-all cursor-pointer"
                 >
                   <span className="flex items-center gap-3">
-                    <Megaphone className="h-4 w-4 text-orange-500" /> {lang === "ml" ? "ജനശബ്ദം" : "Janashabdam"}
+                    <Headphones className="h-4 w-4 text-orange-500" /> {lang === "ml" ? "ഹെൽപ്പ്ഡെസ്ക്" : "Help Desk"}
+                  </span>
+                  <ChevronRight className="h-4 w-4 text-slate-400" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    if (onOpenSettings) onOpenSettings();
+                  }}
+                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-orange-50 dark:hover:bg-slate-800 font-bold transition-all cursor-pointer"
+                >
+                  <span className="flex items-center gap-3">
+                    <Settings className="h-4 w-4 text-orange-500" /> {lang === "ml" ? "ക്രമീകരണങ്ങൾ" : "Settings"}
                   </span>
                   <ChevronRight className="h-4 w-4 text-slate-400" />
                 </button>
