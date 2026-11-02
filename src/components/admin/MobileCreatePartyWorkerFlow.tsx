@@ -43,7 +43,6 @@ import {
   canDelegateAction,
   canDelegateStatewide,
   describeAccessGrant,
-  designationsForLevel,
   getAreaOptions,
   getFilteredLocalBodies,
   getLocalBodies,
@@ -54,6 +53,7 @@ import {
   localBodyTypeOptions,
   partyDesignations,
   permissionKey,
+  type PartyDesignation,
   roleOrganisationLevels,
   permissionModules,
   rolePresets,
@@ -72,6 +72,7 @@ import {
 } from "@/data/party-workers";
 import {
   administrativePermissionOptions,
+  isRetiredCustomRole,
   isRetiredOrganisationLevelName,
   loadCustomOrganisationLevels,
   loadManagedRoles,
@@ -364,6 +365,15 @@ type WorkerListFilters = {
   appRole: RolePresetId | "all";
 };
 
+function managedRoleDesignation(role: ManagedRole, level?: AssignmentLevel | ""): PartyDesignation {
+  return {
+    id: role.id,
+    en: role.name,
+    ml: role.name,
+    level: (level || role.assignmentLevels[0] || "state") as AssignmentLevel,
+  };
+}
+
 const defaultWorkerListFilters: WorkerListFilters = {
   status: "all",
   level: "all",
@@ -570,6 +580,29 @@ export function MobileCreatePartyWorkerFlow({
   const [permissionError, setPermissionError] = useState("");
   const managedRoles = useMemo<ManagedRole[]>(() => loadManagedRoles(), []);
 
+  const allDesignationChoices = useMemo<PartyDesignation[]>(() => {
+    const customRoles = managedRoles
+      .filter((role) => !role.system && role.status === "Active" && !isRetiredCustomRole(role))
+      .map((role) => managedRoleDesignation(role));
+    return [...partyDesignations, ...customRoles];
+  }, [managedRoles]);
+
+  const designationOptions = useMemo<PartyDesignation[]>(() => {
+    if (!level) return allDesignationChoices;
+    const standard = partyDesignations.filter((item) => item.level === level);
+    const custom = managedRoles
+      .filter(
+        (role) =>
+          !role.system &&
+          role.status === "Active" &&
+          !isRetiredCustomRole(role) &&
+          role.assignmentLevels.includes(level),
+      )
+      .map((role) => managedRoleDesignation(role, level));
+    const base = standard.length > 0 ? standard : partyDesignations;
+    return [...base, ...custom];
+  }, [allDesignationChoices, level, managedRoles]);
+
   const [picker, setPicker] = useState<PickerKey | null>(null);
   const [pickerSearch, setPickerSearch] = useState("");
 
@@ -609,13 +642,21 @@ export function MobileCreatePartyWorkerFlow({
   }, [focusAccessAreas, phase, step]);
 
   const duplicateWorker = useMemo(() => findExistingWorker(mobile), [mobile]);
-  const designation = partyDesignations.find((item) => item.id === designationId) || null;
+  const designation = allDesignationChoices.find((item) => item.id === designationId) || null;
+  const designationManagedRole = designation
+    ? managedRoles.find((role) => role.id === designation.id)
+    : undefined;
   const rolePresetIdForDesignation =
     rolePresetForLevel[designation?.level ?? (level || "ward")] ?? "party_worker";
   const presetForDesignation = getRolePreset(rolePresetIdForDesignation);
-  const managedRoleForDesignation = managedRoles.find(
-    (role) => role.presetId === rolePresetIdForDesignation && role.status === "Active",
-  );
+  const managedRoleForDesignation =
+    designationManagedRole ??
+    managedRoles.find(
+      (role) => role.presetId === rolePresetIdForDesignation && role.status === "Active",
+    );
+  const presetIdForDesignation: RolePresetId = designationManagedRole
+    ? (designationManagedRole.presetId ?? "custom")
+    : rolePresetIdForDesignation;
   const rolePermissions =
     managedRoleForDesignation?.permissions ?? presetForDesignation.permissions;
   const roleAdministrativePermissions = managedRoleForDesignation?.administrativePermissions ?? [];
@@ -672,16 +713,13 @@ export function MobileCreatePartyWorkerFlow({
   useEffect(() => {
     if (!designation) return;
     setPermissions([...rolePermissions]);
-    setPresetId(rolePresetIdForDesignation);
+    setPresetId(presetIdForDesignation);
     setAccessManagement(roleAccessManagement);
     setPermissionError("");
-  }, [designation, rolePermissions, rolePresetIdForDesignation, roleAccessManagement]);
+  }, [designation, rolePermissions, presetIdForDesignation, roleAccessManagement]);
 
   const localBodyTypeLabel = localBodyTypeOptions.find((item) => item.id === localBodyType);
 
-  const designationsForSelectedLevel = designationsForLevel(level);
-  const designationOptions =
-    designationsForSelectedLevel.length > 0 ? designationsForSelectedLevel : partyDesignations;
   const localBodyOptions = getLocalBodies(districtId, localBodyType);
   const wardOptions = localBodyId ? getWardsForLocalBody(localBodyId) : [];
   const boothOptions = constituencyId
@@ -691,7 +729,7 @@ export function MobileCreatePartyWorkerFlow({
     ? constituencies.filter((item) => item.districtId === districtId)
     : [];
 
-  const workerFilterDesignation = partyDesignations.find(
+  const workerFilterDesignation = allDesignationChoices.find(
     (item) => item.id === draftWorkerFilters.designationId,
   );
   const workerFilterDistrict = districts.find((item) => item.id === draftWorkerFilters.districtId);
@@ -714,9 +752,20 @@ export function MobileCreatePartyWorkerFlow({
     (item) => item.id === draftWorkerFilters.orgUnitId,
   );
   const workerFilterAppRole = rolePresets.find((item) => item.id === draftWorkerFilters.appRole);
-  const workerFilterDesignationOptions = designationsForLevel(
-    draftWorkerFilters.level === "all" ? "" : draftWorkerFilters.level,
-  );
+  const workerFilterDesignationOptions = useMemo<PartyDesignation[]>(() => {
+    const filterLevel = draftWorkerFilters.level === "all" ? "" : draftWorkerFilters.level;
+    const standard = partyDesignations.filter((item) => !filterLevel || item.level === filterLevel);
+    const custom = managedRoles
+      .filter(
+        (role) =>
+          !role.system &&
+          role.status === "Active" &&
+          !isRetiredCustomRole(role) &&
+          (!filterLevel || role.assignmentLevels.includes(filterLevel)),
+      )
+      .map((role) => managedRoleDesignation(role, filterLevel));
+    return [...standard, ...custom];
+  }, [draftWorkerFilters.level, managedRoles]);
   const workerFilterConstituencyOptions = draftWorkerFilters.districtId
     ? constituencies.filter((item) => item.districtId === draftWorkerFilters.districtId)
     : [];
@@ -803,7 +852,7 @@ export function MobileCreatePartyWorkerFlow({
   };
 
   const handleDesignationChange = (nextId: string) => {
-    const next = partyDesignations.find((item) => item.id === nextId);
+    const next = allDesignationChoices.find((item) => item.id === nextId);
     if (!next) return;
     const isOrganisationOnlyLevel =
       level === "region" ||
@@ -870,7 +919,10 @@ export function MobileCreatePartyWorkerFlow({
       );
     }
     if (!designationId) {
-      nextErrors.designation = tr("Select a party designation.", "പാർട്ടി പദവി തിരഞ്ഞെടുക്കുക.");
+      nextErrors.designation = tr(
+        "Select a party designation or role.",
+        "പാർട്ടി പദവി അല്ലെങ്കിൽ റോൾ തിരഞ്ഞെടുക്കുക.",
+      );
     }
     if (!level) {
       nextErrors.level = tr("Select an organisation level.", "ഓർഗനൈസേഷൻ ലെവൽ തിരഞ്ഞെടുക്കുക.");
@@ -1069,7 +1121,7 @@ export function MobileCreatePartyWorkerFlow({
   };
 
   const loadWorkerIntoForm = (worker: WorkerProfile) => {
-    const workerDesignation = partyDesignations.find(
+    const workerDesignation = allDesignationChoices.find(
       (item) =>
         item.id === worker.designationId ||
         item.en === worker.designationEn ||
@@ -1231,7 +1283,9 @@ export function MobileCreatePartyWorkerFlow({
   const handleWorkerFilterLevelChange = (nextLevel: AssignmentLevel | "all") => {
     setDraftWorkerFilters((prev) => {
       if (prev.level === nextLevel) return prev;
-      const previousDesignation = partyDesignations.find((item) => item.id === prev.designationId);
+      const previousDesignation = allDesignationChoices.find(
+        (item) => item.id === prev.designationId,
+      );
       const designationId =
         nextLevel === "all" || previousDesignation?.level === nextLevel
           ? prev.designationId
@@ -1248,7 +1302,7 @@ export function MobileCreatePartyWorkerFlow({
   const handleWorkerFilterDesignationChange = (nextId: string) => {
     setDraftWorkerFilters((prev) => {
       if (nextId === "all") return { ...prev, designationId: "all" };
-      const nextDesignation = partyDesignations.find((item) => item.id === nextId);
+      const nextDesignation = allDesignationChoices.find((item) => item.id === nextId);
       if (!nextDesignation) return prev;
       const levelChanged = prev.level !== nextDesignation.level;
       return {
@@ -1486,7 +1540,7 @@ export function MobileCreatePartyWorkerFlow({
     let onClear: (() => void) | null = null;
 
     if (picker === "designation") {
-      title = tr("Party Designation", "പാർട്ടി പദവി");
+      title = tr("Party Designation/Role", "പാർട്ടി പദവി/റോൾ");
       options = designationOptions.map((item) => ({
         id: item.id,
         label: lang === "ml" ? item.ml : item.en,
@@ -2037,19 +2091,22 @@ export function MobileCreatePartyWorkerFlow({
           />
 
           <PickerButton
-            label={tr("Party Designation", "പാർട്ടി പദവി")}
+            label={tr("Party Designation/Role", "പാർട്ടി പദവി/റോൾ")}
             required
             value={designation ? (lang === "ml" ? designation.ml : designation.en) : ""}
-            placeholder={tr("Select designation", "പദവി തിരഞ്ഞെടുക്കുക")}
+            placeholder={tr("Select designation or role", "പദവി അല്ലെങ്കിൽ റോൾ തിരഞ്ഞെടുക്കുക")}
             hint={
               designation
                 ? assignmentLevels.find((item) => item.id === designation.level)?.[lang]
                 : level
                   ? tr(
-                      `Showing designations for ${levelOption?.en}`,
-                      `${levelOption?.ml} പദവികൾ കാണിക്കുന്നു`,
+                      `Showing designations and roles for ${levelOption?.en}`,
+                      `${levelOption?.ml} പദവികളും റോളുകളും കാണിക്കുന്നു`,
                     )
-                  : tr("All configured designations", "ക്രമീകരിച്ച എല്ലാ പദവികളും")
+                  : tr(
+                      "All configured designations and roles",
+                      "ക്രമീകരിച്ച എല്ലാ പദവികളും റോളുകളും",
+                    )
             }
             error={errors.designation}
             onClick={() => openPicker("designation")}
