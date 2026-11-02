@@ -191,14 +191,14 @@ export function AdminMobileAppHeader({
                             </div>
                             {/* Line 2: Location */}
                             <p className="text-[12px] font-medium text-slate-500 dark:text-slate-400 leading-tight truncate">
-                              {lang === "ml" ? "കഴക്കൂട്ടം, തിരുവനന്തപുരം" : "Kazhakkoottam, Trivandrum"}
+                              {lang === "ml"
+                                ? "കഴക്കൂട്ടം, തിരുവനന്തപുരം"
+                                : "Kazhakkoottam, Trivandrum"}
                             </p>
                           </div>
                         ) : (
                           <div>
-                            <h3 className="font-bold text-xs text-foreground">
-                              Jayasurya
-                            </h3>
+                            <h3 className="font-bold text-xs text-foreground">Jayasurya</h3>
                             <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium leading-tight">
                               {lang === "ml" ? "സംസ്ഥാന ഭരണം" : "State Administration"}
                             </p>
@@ -213,7 +213,9 @@ export function AdminMobileAppHeader({
                         type="button"
                         onClick={() => {
                           if (onSwitchRole) {
-                            onSwitchRole(userRole === "state_admin" ? "party_worker" : "state_admin");
+                            onSwitchRole(
+                              userRole === "state_admin" ? "party_worker" : "state_admin",
+                            );
                           }
                           setIsProfileOpen(false);
                         }}
@@ -224,7 +226,13 @@ export function AdminMobileAppHeader({
                           <span>{lang === "ml" ? "റോൾ മാറ്റുക" : "Switch View"}</span>
                         </span>
                         <span className="text-[9.5px] font-bold uppercase bg-orange-100 dark:bg-orange-950/60 text-[#F97316] px-2 py-0.5 rounded-md border border-orange-200 dark:border-orange-800">
-                          {userRole === "state_admin" ? (lang === "ml" ? "പാർട്ടി പ്രവർത്തകൻ" : "Party Worker") : (lang === "ml" ? "അഡ്മിൻ" : "ADMIN")}
+                          {userRole === "state_admin"
+                            ? lang === "ml"
+                              ? "ഉപയോക്താവ്"
+                              : "User"
+                            : lang === "ml"
+                              ? "അഡ്മിൻ"
+                              : "ADMIN"}
                         </span>
                       </button>
 
@@ -233,7 +241,8 @@ export function AdminMobileAppHeader({
                         className="flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-foreground hover:bg-amber-50 dark:hover:bg-slate-800 font-medium transition-all cursor-pointer"
                       >
                         <span className="flex items-center gap-2">
-                          <Globe className="h-4 w-4 text-muted-foreground" /> {lang === "ml" ? "ഭാഷ" : "Language"}
+                          <Globe className="h-4 w-4 text-muted-foreground" />{" "}
+                          {lang === "ml" ? "ഭാഷ" : "Language"}
                         </span>
                         <span className="text-[10px] font-bold uppercase bg-[#FFEDD5] text-[#F97316] px-2 py-0.5 rounded-md">
                           {lang === "ml" ? "മലയാളം" : "English"}
@@ -246,7 +255,8 @@ export function AdminMobileAppHeader({
                         className="flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-foreground hover:bg-amber-50 dark:hover:bg-slate-800 font-medium transition-all"
                       >
                         <span className="flex items-center gap-2">
-                          <Settings className="h-4 w-4 text-muted-foreground" /> {lang === "ml" ? "ക്രമീകരണങ്ങൾ" : "Settings"}
+                          <Settings className="h-4 w-4 text-muted-foreground" />{" "}
+                          {lang === "ml" ? "ക്രമീകരണങ്ങൾ" : "Settings"}
                         </span>
                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       </Link>
@@ -270,7 +280,8 @@ export function AdminMobileAppHeader({
                         className="flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 font-medium transition-all cursor-pointer"
                       >
                         <span className="flex items-center gap-2">
-                          <LogOut className="h-4 w-4 text-red-500" /> {lang === "ml" ? "ലോഗ് ഔട്ട്" : "Log out"}
+                          <LogOut className="h-4 w-4 text-red-500" />{" "}
+                          {lang === "ml" ? "ലോഗ് ഔട്ട്" : "Log out"}
                         </span>
                       </button>
                     </div>
@@ -409,7 +420,9 @@ export function AdminMobileAppHeader({
                 className="text-[10px] text-slate-400 hover:text-slate-800 dark:text-slate-500 dark:hover:text-slate-200 transition-colors inline-flex items-center justify-center gap-1 cursor-pointer"
               >
                 <span>Powered by</span>
-                <strong className="font-bold text-slate-600 dark:text-slate-300 hover:text-orange-600">Wayvida</strong>
+                <strong className="font-bold text-slate-600 dark:text-slate-300 hover:text-orange-600">
+                  Wayvida
+                </strong>
               </a>
             </div>
           </div>
@@ -494,21 +507,8 @@ export function AdminMobileAppHeader({
                   className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-orange-50 dark:hover:bg-slate-800 font-bold transition-all cursor-pointer"
                 >
                   <span className="flex items-center gap-3">
-                    <Home className="h-4 w-4 text-orange-500" /> {lang === "ml" ? "ഡാഷ്‌ബോർഡ്" : "Dashboard"}
-                  </span>
-                  <ChevronRight className="h-4 w-4 text-slate-400" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    if (onNavigateTab) onNavigateTab("users");
-                  }}
-                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-orange-50 dark:hover:bg-slate-800 font-bold transition-all cursor-pointer"
-                >
-                  <span className="flex items-center gap-3">
-                    <Users2 className="h-4 w-4 text-orange-500" /> {lang === "ml" ? "ഉപയോക്താക്കൾ" : "Users"}
+                    <Home className="h-4 w-4 text-orange-500" />{" "}
+                    {lang === "ml" ? "ഡാഷ്‌ബോർഡ്" : "Dashboard"}
                   </span>
                   <ChevronRight className="h-4 w-4 text-slate-400" />
                 </button>
@@ -522,7 +522,8 @@ export function AdminMobileAppHeader({
                   className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-orange-50 dark:hover:bg-slate-800 font-bold transition-all cursor-pointer"
                 >
                   <span className="flex items-center gap-3">
-                    <Users className="h-4 w-4 text-orange-500" /> {lang === "ml" ? "അപേക്ഷകർ" : "Applicants"}
+                    <Users className="h-4 w-4 text-orange-500" />{" "}
+                    {lang === "ml" ? "അപേക്ഷകർ" : "Applicants"}
                   </span>
                   <ChevronRight className="h-4 w-4 text-slate-400" />
                 </button>
@@ -536,7 +537,8 @@ export function AdminMobileAppHeader({
                   className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-orange-50 dark:hover:bg-slate-800 font-bold transition-all cursor-pointer"
                 >
                   <span className="flex items-center gap-3">
-                    <Users2 className="h-4 w-4 text-orange-500" /> {lang === "ml" ? "പാർട്ടി പ്രവർത്തകർ" : "Party Workers"}
+                    <Users2 className="h-4 w-4 text-orange-500" />{" "}
+                    {lang === "ml" ? "ഉപയോക്താക്കൾ" : "Users"}
                   </span>
                   <ChevronRight className="h-4 w-4 text-slate-400" />
                 </button>
@@ -550,7 +552,8 @@ export function AdminMobileAppHeader({
                   className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-orange-50 dark:hover:bg-slate-800 font-bold transition-all cursor-pointer"
                 >
                   <span className="flex items-center gap-3">
-                    <Layers className="h-4 w-4 text-orange-500" /> {lang === "ml" ? "പദ്ധതികൾ" : "Schemes"}
+                    <Layers className="h-4 w-4 text-orange-500" />{" "}
+                    {lang === "ml" ? "പദ്ധതികൾ" : "Schemes"}
                   </span>
                   <ChevronRight className="h-4 w-4 text-slate-400" />
                 </button>
@@ -564,7 +567,8 @@ export function AdminMobileAppHeader({
                   className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-orange-50 dark:hover:bg-slate-800 font-bold transition-all cursor-pointer"
                 >
                   <span className="flex items-center gap-3">
-                    <FileText className="h-4 w-4 text-orange-500" /> {lang === "ml" ? "അപേക്ഷകൾ" : "Applications"}
+                    <FileText className="h-4 w-4 text-orange-500" />{" "}
+                    {lang === "ml" ? "അപേക്ഷകൾ" : "Applications"}
                   </span>
                   <ChevronRight className="h-4 w-4 text-slate-400" />
                 </button>
@@ -578,7 +582,8 @@ export function AdminMobileAppHeader({
                   className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-orange-50 dark:hover:bg-slate-800 font-bold transition-all cursor-pointer"
                 >
                   <span className="flex items-center gap-3">
-                    <Headphones className="h-4 w-4 text-orange-500" /> {lang === "ml" ? "ഹെൽപ്പ്ഡെസ്ക്" : "Help Desk"}
+                    <Headphones className="h-4 w-4 text-orange-500" />{" "}
+                    {lang === "ml" ? "ഹെൽപ്പ്ഡെസ്ക്" : "Help Desk"}
                   </span>
                   <ChevronRight className="h-4 w-4 text-slate-400" />
                 </button>
@@ -592,7 +597,8 @@ export function AdminMobileAppHeader({
                   className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-orange-50 dark:hover:bg-slate-800 font-bold transition-all cursor-pointer"
                 >
                   <span className="flex items-center gap-3">
-                    <Settings className="h-4 w-4 text-orange-500" /> {lang === "ml" ? "ക്രമീകരണങ്ങൾ" : "Settings"}
+                    <Settings className="h-4 w-4 text-orange-500" />{" "}
+                    {lang === "ml" ? "ക്രമീകരണങ്ങൾ" : "Settings"}
                   </span>
                   <ChevronRight className="h-4 w-4 text-slate-400" />
                 </button>

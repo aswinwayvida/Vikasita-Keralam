@@ -8,7 +8,6 @@ import {
   Headset,
   UserRound,
   Users,
-  UsersRound,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -44,7 +43,6 @@ const moduleIcons: Record<PermissionModuleId, LucideIcon> = {
   applications: ClipboardList,
   help_desk: Headset,
   applicant_profile: UserRound,
-  users: UsersRound,
 };
 
 export function RoleEditorDialog({
@@ -330,8 +328,8 @@ export function RoleEditorDialog({
               </label>
               <p className="text-[9.5px] text-muted-foreground">
                 {tr(
-                  "Separate elevated controls. These are not included in Create or Edit Party Worker.",
-                  "വേറിട്ട ഉയർന്ന അധികാരങ്ങൾ. ഇവ Party Worker സൃഷ്ടിക്കുക/തിരുത്തുക എന്നതിൽ ഉൾപ്പെടുന്നില്ല.",
+                  "Separate elevated controls. These are not included in Create or Edit User.",
+                  "വേറിട്ട ഉയർന്ന അധികാരങ്ങൾ. ഇവ ഉപയോക്താവിനെ സൃഷ്ടിക്കുക/തിരുത്തുക എന്നതിൽ ഉൾപ്പെടുന്നില്ല.",
                 )}
               </p>
             </div>

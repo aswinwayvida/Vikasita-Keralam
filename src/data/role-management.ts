@@ -29,8 +29,8 @@ export const administrativePermissionOptions: AdministrativePermissionOption[] =
     id: "assign_access",
     en: "Access assignment",
     ml: "ആക്സസ് അസൈൻമെന്റ്",
-    descriptionEn: "Assign roles and access areas to party workers.",
-    descriptionMl: "പാർട്ടി പ്രവർത്തകർക്ക് റോളുകളും ആക്സസ് പ്രദേശങ്ങളും നൽകാം.",
+    descriptionEn: "Assign roles and access areas to users.",
+    descriptionMl: "ഉപയോക്താക്കൾക്ക് റോളുകളും ആക്സസ് പ്രദേശങ്ങളും നൽകാം.",
   },
   {
     id: "delegate_access",

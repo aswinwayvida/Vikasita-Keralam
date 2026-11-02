@@ -64,7 +64,6 @@ export function RoleAccessSettings() {
     applications: true,
     help_desk: true,
     applicant_profile: true,
-    users: true,
   });
   const [viewRole, setViewRole] = useState<ManagedRole | null>(null);
   const [statusTarget, setStatusTarget] = useState<ManagedRole | null>(null);
@@ -100,7 +99,6 @@ export function RoleAccessSettings() {
       applications: true,
       help_desk: true,
       applicant_profile: true,
-      users: true,
     });
     setEditorOpen(true);
   };
@@ -117,7 +115,6 @@ export function RoleAccessSettings() {
       applications: true,
       help_desk: true,
       applicant_profile: true,
-      users: true,
     });
     setEditorOpen(true);
   };
@@ -133,7 +130,6 @@ export function RoleAccessSettings() {
       applications: true,
       help_desk: true,
       applicant_profile: true,
-      users: true,
     });
     setEditorOpen(true);
   };

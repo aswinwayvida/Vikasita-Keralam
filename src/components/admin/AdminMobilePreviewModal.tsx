@@ -9604,7 +9604,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                               <span className="text-slate-300 dark:text-slate-600">•</span>
                               <span className="flex items-center gap-1">
                                 <span className="rounded-md bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 px-1.5 py-0.2 text-[8.5px] font-black border border-blue-200">PW</span>
-                                <span>{lang === "ml" ? "PW: പാർട്ടി പ്രവർത്തകൻ (Party Worker)" : "PW: Party Worker"}</span>
+                                <span>{lang === "ml" ? "PW: ഉപയോക്താവ് (User)" : "PW: User"}</span>
                               </span>
                             </div>
                           )}
@@ -16015,16 +16015,16 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     className="flex w-full items-center gap-3 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-left shadow-2xs group cursor-pointer"
                   >
                     <div className="relative h-12 w-12 rounded-full overflow-hidden shrink-0 group-hover:scale-105 transition-transform bg-indigo-50">
-                      <img src={createPartyWorkerAvatar} alt="Party Worker" className="h-full w-full object-cover scale-[1.22]" />
+                      <img src={createPartyWorkerAvatar} alt="User" className="h-full w-full object-cover scale-[1.22]" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <h4 className="font-extrabold text-xs sm:text-[13px] text-slate-900 dark:text-white">
-                        {lang === "ml" ? "പാർട്ടി പ്രവർത്തകൻ (Party Worker)" : "Party Worker"}
+                        {lang === "ml" ? "ഉപയോക്താവ് (User)" : "User"}
                       </h4>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-tight mt-0.5">
                         {lang === "ml"
-                          ? "പുതിയ പാർട്ടി പ്രവർത്തകനെയോ ബൂത്ത് ലീഡറെയോ ചേർക്കുക"
-                          : "Add new party worker, booth leader or executive"}
+                          ? "പുതിയ ഉപയോക്താവിനെയോ ബൂത്ത് ലീഡറെയോ ചേർക്കുക"
+                          : "Add new user, booth leader or executive"}
                       </p>
                     </div>
                     <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0 group-hover:translate-x-0.5 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-all" />
@@ -16074,8 +16074,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               onCreated={() => {
                 toast.success(
                   lang === "ml"
-                    ? "പാർട്ടി പ്രവർത്തകനെ വിജയകരമായി ചേർത്തു!"
-                    : "Party worker created successfully!",
+                    ? "ഉപയോക്താവിനെ വിജയകരമായി ചേർത്തു!"
+                    : "User created successfully!",
                 );
               }}
             />
@@ -18497,8 +18497,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     </h4>
                     <p className="text-xs text-slate-600 dark:text-slate-300 max-w-xs leading-relaxed px-2">
                       {lang === "ml"
-                        ? "നിങ്ങളുടെ അഭ്യർത്ഥന നിങ്ങളുടെ പ്രദേശത്തെ പാർട്ടി പ്രവർത്തകരുമായി പങ്കുവെച്ചിട്ടുണ്ട്. കൂടുതൽ വിവരങ്ങൾക്ക് അവർ നിങ്ങളെ ബന്ധപ്പെട്ടേക്കാം."
-                        : "“Your request has been shared with party workers in your area. They may contact you for more details.”"}
+                        ? "നിങ്ങളുടെ അഭ്യർത്ഥന നിങ്ങളുടെ പ്രദേശത്തെ ഉപയോക്താക്കളുമായി പങ്കുവെച്ചിട്ടുണ്ട്. കൂടുതൽ വിവരങ്ങൾക്ക് അവർ നിങ്ങളെ ബന്ധപ്പെട്ടേക്കാം."
+                        : "“Your request has been shared with users in your area. They may contact you for more details.”"}
                     </p>
                   </div>
                 </div>

@@ -16,7 +16,6 @@ import {
   UserRound,
   UserPlus,
   Users,
-  UsersRound,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -69,7 +68,6 @@ const moduleIcons = {
   applications: ClipboardList,
   help_desk: Headset,
   applicant_profile: UserRound,
-  users: UsersRound,
 } as const;
 
 const freshDraft = (): RoleDraft => ({
@@ -85,7 +83,6 @@ const defaultExpandedModules: Record<PermissionModuleId, boolean> = {
   applications: false,
   help_desk: false,
   applicant_profile: false,
-  users: false,
 };
 
 const permissionModuleOrder: PermissionModuleId[] = [
@@ -94,7 +91,6 @@ const permissionModuleOrder: PermissionModuleId[] = [
   "help_desk",
   "schemes",
   "party_workers",
-  "users",
 ];
 
 const orderedPermissionModules = [...permissionModules].sort(
@@ -273,10 +269,7 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
       setAssignmentDistrict("");
       setActiveView("assign");
       toast.success(
-        tr(
-          "Role created. Assign party workers next.",
-          "റോൾ സൃഷ്ടിച്ചു. അടുത്ത് പാർട്ടി പ്രവർത്തകരെ നൽകുക.",
-        ),
+        tr("Role created. Assign users next.", "റോൾ സൃഷ്ടിച്ചു. അടുത്ത് ഉപയോക്താക്കളെ നൽകുക."),
       );
       return;
     } else if (editTarget) {
@@ -315,8 +308,8 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
     commitRoles(roles.map((role) => (role.id === updated.id ? updated : role)));
     toast.success(
       tr(
-        `${assignmentWorkerIds.length} party worker${assignmentWorkerIds.length === 1 ? "" : "s"} assigned to ${updated.name}.`,
-        `${assignmentWorkerIds.length} പാർട്ടി പ്രവർത്തകരെ ${updated.name} റോളിലേക്ക് നൽകി.`,
+        `${assignmentWorkerIds.length} user${assignmentWorkerIds.length === 1 ? "" : "s"} assigned to ${updated.name}.`,
+        `${assignmentWorkerIds.length} ഉപയോക്താക്കളെ ${updated.name} റോളിലേക്ക് നൽകി.`,
       ),
     );
     closeRoleDialog();
@@ -562,7 +555,7 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
               <ArrowLeft className="h-3.5 w-3.5 stroke-[2.2]" />
             </button>
             <h1 className="text-[13px] font-extrabold tracking-tight text-[#152153] dark:text-white">
-              {tr("Assign Party Workers", "പാർട്ടി പ്രവർത്തകരെ നൽകുക")}
+              {tr("Assign Users", "ഉപയോക്താക്കളെ നൽകുക")}
             </h1>
             <span className="absolute right-3 rounded-full border border-orange-100 bg-orange-50 px-2 py-1 text-[8.5px] font-bold text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/50 dark:text-orange-300">
               {isCreating ? tr("Step 3 of 3", "ഘട്ടം 3/3") : tr("Assign Role", "റോൾ അസൈൻ")}
@@ -582,7 +575,7 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
                       "Search name, location, phone...",
                       "പേര്, സ്ഥലം, ഫോൺ തിരയുക...",
                     )}
-                    aria-label={tr("Search party workers", "പാർട്ടി പ്രവർത്തകരെ തിരയുക")}
+                    aria-label={tr("Search users", "ഉപയോക്താക്കളെ തിരയുക")}
                     className="w-full rounded-xl border border-border bg-muted/30 py-1.5 pl-8 pr-7 text-[10.5px] font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
                   />
                   {assignmentSearch ? (
@@ -665,7 +658,7 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
                       )}
                       <p className="mt-2 text-[10.5px] font-bold text-foreground">
                         {assignmentWorkers.length === 0
-                          ? tr("No party workers found", "പാർട്ടി പ്രവർത്തകരെ കണ്ടെത്തിയില്ല")
+                          ? tr("No users found", "ഉപയോക്താക്കളെ കണ്ടെത്തിയില്ല")
                           : tr(
                               "No workers match your filters",
                               "ഫിൽട്ടറുകളുമായി പൊരുത്തപ്പെടുന്ന പ്രവർത്തകരില്ല",
@@ -747,10 +740,10 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
                 disabled={assignmentWorkerIds.length === 0}
               >
                 {assignmentWorkerIds.length === 0
-                  ? tr("Select at least one worker", "കുറഞ്ഞത് ഒരു പ്രവർത്തകനെ തിരഞ്ഞെടുക്കുക")
+                  ? tr("Select at least one user", "കുറഞ്ഞത് ഒരു ഉപയോക്താവിനെ തിരഞ്ഞെടുക്കുക")
                   : tr(
-                      `Assign ${assignmentWorkerIds.length} party worker${assignmentWorkerIds.length === 1 ? "" : "s"}`,
-                      `${assignmentWorkerIds.length} പാർട്ടി പ്രവർത്തകരെ നൽകുക`,
+                      `Assign ${assignmentWorkerIds.length} user${assignmentWorkerIds.length === 1 ? "" : "s"}`,
+                      `${assignmentWorkerIds.length} ഉപയോക്താക്കളെ നൽകുക`,
                     )}
               </Button>
             </div>

@@ -275,7 +275,7 @@ export function getPartyOrgPath(unitId: string, lang: "en" | "ml") {
 /* -------------------------------------------------------------------------- */
 
 export type PermissionModuleId =
-  "schemes" | "party_workers" | "applications" | "help_desk" | "applicant_profile" | "users";
+  "schemes" | "party_workers" | "applications" | "help_desk" | "applicant_profile";
 
 export interface PermissionActionOption {
   id: string;
@@ -344,8 +344,8 @@ export const permissionModules: PermissionModule[] = [
   },
   {
     id: "party_workers",
-    en: "Party Workers",
-    ml: "പാർട്ടി പ്രവർത്തകർ",
+    en: "Users",
+    ml: "ഉപയോക്താക്കൾ",
     descriptionEn: "Worker records, teams and account status",
     descriptionMl: "പ്രവർത്തക റെക്കോർഡുകൾ, ടീമുകൾ, അക്കൗണ്ട് നില",
     actions: [
@@ -355,8 +355,8 @@ export const permissionModules: PermissionModule[] = [
         ml: "കാണുക",
         helpEn: "Open worker profiles",
         helpMl: "പ്രവർത്തക പ്രൊഫൈൽ കാണാം",
-        verbEn: "view party workers",
-        verbMl: "പാർട്ടി പ്രവർത്തകരെ കാണാൻ",
+        verbEn: "view users",
+        verbMl: "ഉപയോക്താക്കളെ കാണാൻ",
       },
       {
         id: "create",
@@ -364,8 +364,8 @@ export const permissionModules: PermissionModule[] = [
         ml: "സൃഷ്ടിക്കുക",
         helpEn: "Register new workers",
         helpMl: "പുതിയ പ്രവർത്തകരെ ചേർക്കാം",
-        verbEn: "create party workers",
-        verbMl: "പാർട്ടി പ്രവർത്തകരെ സൃഷ്ടിക്കാൻ",
+        verbEn: "create users",
+        verbMl: "ഉപയോക്താക്കളെ സൃഷ്ടിക്കാൻ",
       },
       {
         id: "edit",
@@ -373,8 +373,8 @@ export const permissionModules: PermissionModule[] = [
         ml: "തിരുത്തുക",
         helpEn: "Edit worker details",
         helpMl: "പ്രവർത്തക വിവരങ്ങൾ തിരുത്താം",
-        verbEn: "edit party workers",
-        verbMl: "പാർട്ടി പ്രവർത്തകരെ തിരുത്താൻ",
+        verbEn: "edit users",
+        verbMl: "ഉപയോക്താക്കളെ തിരുത്താൻ",
       },
       {
         id: "view_teams",
@@ -483,24 +483,6 @@ export const permissionModules: PermissionModule[] = [
         helpMl: "അപേക്ഷക പ്രൊഫൈലുകൾ കാണാം",
         verbEn: "view applicant profiles",
         verbMl: "അപേക്ഷക പ്രൊഫൈലുകൾ കാണാൻ",
-      },
-    ],
-  },
-  {
-    id: "users",
-    en: "Users",
-    ml: "ഉപയോക്താക്കൾ",
-    descriptionEn: "User directory and account visibility",
-    descriptionMl: "ഉപയോക്തൃ ഡയറക്ടറിയും അക്കൗണ്ട് കാഴ്ചയും",
-    actions: [
-      {
-        id: "view",
-        en: "View",
-        ml: "കാണുക",
-        helpEn: "Open the user directory",
-        helpMl: "ഉപയോക്തൃ ഡയറക്ടറി കാണാം",
-        verbEn: "view users",
-        verbMl: "ഉപയോക്താക്കളെ കാണാൻ",
       },
     ],
   },
@@ -650,8 +632,8 @@ export const rolePresets: RolePreset[] = [
   },
   {
     id: "party_worker",
-    en: "Party Worker",
-    ml: "പാർട്ടി പ്രവർത്തകൻ",
+    en: "User",
+    ml: "ഉപയോക്താവ്",
     descriptionEn: "Everyday worker access: view schemes and assist applications",
     descriptionMl: "പ്രവർത്തക ആക്സസ്: പദ്ധതികൾ കാണാം, അപേക്ഷകൾ സഹായിക്കാം",
     permissions: [

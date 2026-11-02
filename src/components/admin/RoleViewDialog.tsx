@@ -7,7 +7,6 @@ import {
   Pencil,
   UserRound,
   Users,
-  UsersRound,
   type LucideIcon,
 } from "lucide-react";
 
@@ -35,7 +34,6 @@ const moduleIcons: Record<PermissionModuleId, LucideIcon> = {
   applications: ClipboardList,
   help_desk: Headset,
   applicant_profile: UserRound,
-  users: UsersRound,
 };
 
 export function RoleViewDialog({

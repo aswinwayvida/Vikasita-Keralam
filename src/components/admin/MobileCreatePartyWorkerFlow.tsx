@@ -24,7 +24,6 @@ import {
   UserRound,
   UserX,
   Users2,
-  UsersRound,
   X,
 } from "lucide-react";
 import { mockUsers, type AppUser } from "@/data/users";
@@ -50,7 +49,6 @@ import {
   getLocalBodies,
   getOrgLevelLabel,
   getPartyOrgPath,
-  getPermissionModule,
   getRolePreset,
   grantScopeLabel,
   localBodyTypeOptions,
@@ -71,6 +69,11 @@ import {
   type ScopeType,
   type ScopeTypeOption,
 } from "@/data/party-workers";
+import {
+  administrativePermissionOptions,
+  loadManagedRoles,
+  type ManagedRole,
+} from "@/data/role-management";
 
 type Lang = "en" | "ml";
 
@@ -221,8 +224,29 @@ const moduleIcons: Record<PermissionModuleId, React.ElementType> = {
   applications: ClipboardList,
   help_desk: Headset,
   applicant_profile: UserRound,
-  users: UsersRound,
 };
+
+const rolePresetForLevel: Record<AssignmentLevel, Exclude<RolePresetId, "custom">> = {
+  state: "state_admin",
+  district: "district_admin",
+  assembly_constituency: "constituency_admin",
+  local_body: "local_body_admin",
+  ward: "party_worker",
+  booth: "booth_admin",
+  org_unit: "party_worker",
+};
+
+const partyWorkerPermissionOrder: PermissionModuleId[] = [
+  "applicant_profile",
+  "applications",
+  "help_desk",
+  "schemes",
+  "party_workers",
+];
+
+const orderedPartyWorkerPermissions = [...permissionModules].sort(
+  (a, b) => partyWorkerPermissionOrder.indexOf(a.id) - partyWorkerPermissionOrder.indexOf(b.id),
+);
 
 function profileFromAppUser(user: AppUser): WorkerProfile {
   return {
@@ -535,17 +559,10 @@ export function MobileCreatePartyWorkerFlow({
   const [permissions, setPermissions] = useState<string[]>(
     getRolePreset("party_worker").permissions,
   );
-  const [expandedModules, setExpandedModules] = useState<Record<PermissionModuleId, boolean>>({
-    schemes: false,
-    party_workers: false,
-    applications: true,
-    help_desk: false,
-    applicant_profile: false,
-    users: false,
-  });
   const [accessManagement, setAccessManagement] = useState(false);
   const [grants, setGrants] = useState<AccessGrant[]>([]);
   const [permissionError, setPermissionError] = useState("");
+  const managedRoles = useMemo<ManagedRole[]>(() => loadManagedRoles(), []);
 
   const [picker, setPicker] = useState<PickerKey | null>(null);
   const [pickerSearch, setPickerSearch] = useState("");
@@ -587,6 +604,15 @@ export function MobileCreatePartyWorkerFlow({
 
   const duplicateWorker = useMemo(() => findExistingWorker(mobile), [mobile]);
   const designation = partyDesignations.find((item) => item.id === designationId) || null;
+  const rolePresetIdForDesignation = rolePresetForLevel[designation?.level ?? (level || "ward")];
+  const presetForDesignation = getRolePreset(rolePresetIdForDesignation);
+  const managedRoleForDesignation = managedRoles.find(
+    (role) => role.presetId === rolePresetIdForDesignation && role.status === "Active",
+  );
+  const rolePermissions =
+    managedRoleForDesignation?.permissions ?? presetForDesignation.permissions;
+  const roleAdministrativePermissions = managedRoleForDesignation?.administrativePermissions ?? [];
+  const roleAccessManagement = roleAdministrativePermissions.length > 0;
   const levelOption = assignmentLevels.find((item) => item.id === level) || null;
   const district = districts.find((item) => item.id === districtId) || null;
   const constituency = constituencies.find((item) => item.id === constituencyId) || null;
@@ -595,6 +621,14 @@ export function MobileCreatePartyWorkerFlow({
     ? getWardsForLocalBody(localBodyId).find((item) => item.id === wardId)
     : undefined;
   const booth = boothDirectory.find((item) => item.id === boothId) || null;
+
+  useEffect(() => {
+    if (!designation) return;
+    setPermissions([...rolePermissions]);
+    setPresetId(rolePresetIdForDesignation);
+    setAccessManagement(roleAccessManagement);
+    setPermissionError("");
+  }, [designation, rolePermissions, rolePresetIdForDesignation, roleAccessManagement]);
 
   const localBodyTypeLabel = localBodyTypeOptions.find((item) => item.id === localBodyType);
 
@@ -845,7 +879,7 @@ export function MobileCreatePartyWorkerFlow({
       presetId,
       status: "Active",
       createdAt,
-      createdBy: actorRole === "state_admin" ? "State Admin" : "Party Worker",
+      createdBy: actorRole === "state_admin" ? "State Admin" : "User",
     };
   };
 
@@ -1251,24 +1285,6 @@ export function MobileCreatePartyWorkerFlow({
     setProfileMenuOpen(false);
   };
 
-  const moduleSelectedActions = (moduleId: PermissionModuleId) =>
-    permissions.filter((key) => key.startsWith(`${moduleId}.`)).map((key) => key.split(".")[1]);
-
-  const toggleModulePermission = (
-    moduleId: PermissionModuleId,
-    actionId: string,
-    enabled: boolean,
-  ) => {
-    const key = permissionKey(moduleId, actionId);
-    setPermissions((prev) => togglePermission(prev, key, enabled));
-    setPresetId("custom");
-  };
-
-  const handlePresetChange = (nextPreset: RolePresetId) => {
-    setPresetId(nextPreset);
-    if (nextPreset !== "custom") setPermissions(getRolePreset(nextPreset).permissions);
-  };
-
   const openAccessSheet = (grant?: AccessGrant) => {
     if (grant) {
       setEditingGrantId(grant.id);
@@ -1391,7 +1407,6 @@ export function MobileCreatePartyWorkerFlow({
       options = designationOptions.map((item) => ({
         id: item.id,
         label: lang === "ml" ? item.ml : item.en,
-        hint: assignmentLevels.find((levelItem) => levelItem.id === item.level)?.[lang],
         search: `${item.en} ${item.ml}`,
       }));
       selectedId = designationId;
@@ -1483,16 +1498,6 @@ export function MobileCreatePartyWorkerFlow({
         setOrgUnitId(id);
         setErrors((prev) => ({ ...prev, org_unit: "" }));
       };
-    } else if (picker === "preset") {
-      title = tr("Role Preset", "റോൾ പ്രീസെറ്റ്");
-      options = rolePresets.map((item) => ({
-        id: item.id,
-        label: lang === "ml" ? item.ml : item.en,
-        hint: lang === "ml" ? item.descriptionMl : item.descriptionEn,
-        search: `${item.en} ${item.ml} ${item.descriptionEn} ${item.descriptionMl}`,
-      }));
-      selectedId = presetId;
-      onPick = (id) => handlePresetChange(id as RolePresetId);
     } else if (picker === "worker_filter_level") {
       title = tr("Assignment Level", "അസൈൻമെന്റ് ലെവൽ");
       options = [
@@ -2136,164 +2141,104 @@ export function MobileCreatePartyWorkerFlow({
     </div>
   );
 
-  const moduleSummary = (moduleId: PermissionModuleId) => {
-    const module = getPermissionModule(moduleId);
-    const actions = moduleSelectedActions(moduleId);
-    if (actions.length === 0) {
-      return tr("No permissions selected", "അനുമതികൾ തിരഞ്ഞെടുത്തിട്ടില്ല");
-    }
-    const labels = actions
-      .slice(0, 3)
-      .map((actionId) => {
-        const action = module.actions.find((item) => item.id === actionId);
-        return action ? (lang === "ml" ? action.ml : action.en) : actionId;
-      })
-      .join(", ");
-    return `${actions.length}/${module.actions.length} · ${labels}${
-      actions.length > 3 ? ` +${actions.length - 3}` : ""
-    }`;
-  };
-
   const renderStep2 = () => {
-    const activePreset = getRolePreset(presetId);
+    const roleTitle =
+      managedRoleForDesignation?.name ??
+      (lang === "ml" ? presetForDesignation.ml : presetForDesignation.en);
+    const designationLabel = designation
+      ? lang === "ml"
+        ? designation.ml
+        : designation.en
+      : tr("selected designation", "തിരഞ്ഞെടുത്ത പദവി");
+    const roleDescription = tr(
+      `Permissions inherited from the ${designationLabel} designation.`,
+      `${designationLabel} പദവിയിൽ നിന്ന് ലഭിക്കുന്ന അനുമതികൾ.`,
+    );
+    const administrativeLabels = roleAdministrativePermissions
+      .map((id) => administrativePermissionOptions.find((option) => option.id === id))
+      .filter((option): option is (typeof administrativePermissionOptions)[number] =>
+        Boolean(option),
+      )
+      .map((option) => (lang === "ml" ? option.ml : option.en));
+
     return (
       <div className="space-y-3.5">
         <section className="overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-2xs dark:border-slate-800 dark:bg-slate-900">
-          <div className="p-3">
-            <PickerButton
-              label={tr("Role Preset", "റോൾ പ്രീസെറ്റ്")}
-              hideLabel
-              value={lang === "ml" ? activePreset.ml : activePreset.en}
-              placeholder={tr("Select preset", "പ്രീസെറ്റ് തിരഞ്ഞെടുക്കുക")}
-              hint={lang === "ml" ? activePreset.descriptionMl : activePreset.descriptionEn}
-              onClick={() => openPicker("preset")}
-            />
-            <p className="mt-2 text-[9.5px] font-semibold text-slate-500 dark:text-slate-400">
-              {tr(
-                "The party designation stays unchanged when you adjust permissions.",
-                "അനുമതികൾ ക്രമീകരിക്കുമ്പോൾ പാർട്ടി പദവി മാറില്ല.",
-              )}
-            </p>
+          <div className="flex items-start gap-3 border-b border-orange-100 p-3 dark:border-slate-800">
+            <div className="flex min-w-0 gap-2">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#ff5500] text-white">
+                <ShieldCheck className="h-3.5 w-3.5 stroke-[2.2]" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-[11px] font-extrabold text-slate-900 dark:text-white">
+                  {roleTitle}
+                </p>
+                <p className="mt-0.5 text-[9px] font-medium leading-snug text-slate-500 dark:text-slate-400">
+                  {roleDescription}
+                </p>
+              </div>
+            </div>
           </div>
 
-          <div className="divide-y divide-slate-100 border-t border-orange-100 dark:divide-slate-800 dark:border-slate-800">
-            {permissionModules.map((module) => {
-              const Icon = moduleIcons[module.id];
-              const expanded = expandedModules[module.id];
-              const actions = moduleSelectedActions(module.id);
-              return (
-                <div key={module.id}>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setExpandedModules((prev) => ({ ...prev, [module.id]: !prev[module.id] }))
-                    }
-                    className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left"
-                  >
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-[#ff5500] dark:bg-orange-950/50 dark:text-orange-300">
-                      <Icon className="h-3.5 w-3.5 stroke-[2.2]" />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[11px] font-extrabold text-slate-900 dark:text-white">
+          <div className="p-3">
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+              {orderedPartyWorkerPermissions.map((module) => {
+                const Icon = moduleIcons[module.id];
+                const grantedActions = module.actions.filter((action) =>
+                  rolePermissions.includes(permissionKey(module.id, action.id)),
+                );
+                return (
+                  <div key={module.id} className="py-2 first:pt-0 last:pb-0">
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-orange-50 text-[#ff5500] dark:bg-orange-950/50 dark:text-orange-300">
+                        <Icon className="h-3.5 w-3.5 stroke-[2.2]" />
+                      </span>
+                      <span className="min-w-0 flex-1 text-[10px] font-extrabold text-slate-900 dark:text-white">
                         {lang === "ml" ? module.ml : module.en}
                       </span>
-                      <span className="mt-0.5 block truncate text-[9.5px] font-semibold text-slate-500 dark:text-slate-400">
-                        {moduleSummary(module.id)}
+                      <span className="shrink-0 rounded-full bg-slate-100 px-1.5 py-0.5 text-[8.5px] font-black text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                        {grantedActions.length}/{module.actions.length}
                       </span>
-                    </span>
-                    <span
-                      className={`rounded-full px-1.5 py-0.5 text-[8.5px] font-black ${
-                        actions.length
-                          ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
-                          : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
-                      }`}
-                    >
-                      {actions.length}
-                    </span>
-                    <ChevronDown
-                      className={`h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform ${
-                        expanded ? "rotate-180" : ""
-                      }`}
-                    />
-                  </button>
-
-                  {expanded ? (
-                    <div className="space-y-1 border-t border-slate-100 px-3.5 pb-3 pt-1.5 dark:border-slate-800">
-                      {module.actions.map((action) => {
-                        const checked = permissions.includes(permissionKey(module.id, action.id));
-                        const allowed = canDelegateAction(actorRole, module.id, action.id);
-                        return (
-                          <label
-                            key={action.id}
-                            className={`flex items-start gap-2 rounded-lg px-1 py-1.5 ${
-                              allowed ? "cursor-pointer" : "opacity-45"
-                            }`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              disabled={!allowed}
-                              onChange={(event) =>
-                                toggleModulePermission(module.id, action.id, event.target.checked)
-                              }
-                              className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded-[3px] accent-[#ff5500]"
-                            />
-                            <span className="min-w-0">
-                              <span className="block text-[10.5px] font-bold text-slate-800 dark:text-slate-100">
-                                {lang === "ml" ? action.ml : action.en}
-                              </span>
-                              <span className="block text-[9px] font-medium leading-snug text-slate-500 dark:text-slate-400">
-                                {lang === "ml" ? action.helpMl : action.helpEn}
-                              </span>
-                            </span>
-                          </label>
-                        );
-                      })}
                     </div>
-                  ) : null}
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        <section className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
-          <label className="flex items-start justify-between gap-3">
-            <div className="flex min-w-0 gap-2">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                <Lock className="h-3.5 w-3.5" />
-              </span>
-              <span className="min-w-0">
-                <span className="block text-[10.5px] font-extrabold text-slate-900 dark:text-white">
-                  {tr("Access management authority", "ആക്സസ് മാനേജ്മെന്റ് അധികാരം")}
-                </span>
-                <span className="mt-0.5 block text-[9px] font-medium leading-snug text-slate-500 dark:text-slate-400">
-                  {tr(
-                    "Privileged permission to grant or change access for others. It is never included automatically in Create or Edit Party Worker.",
-                    "മറ്റുള്ളവർക്ക് ആക്സസ് നൽകാനുള്ള പ്രത്യേക അനുമതി. ഇത് സ്വയമേവ ഉൾപ്പെടുത്തില്ല.",
-                  )}
-                </span>
-              </span>
+                    <div className="mt-1 flex flex-wrap gap-1 pl-7">
+                      {grantedActions.length > 0 ? (
+                        grantedActions.map((action) => (
+                          <span
+                            key={action.id}
+                            className="rounded-md bg-orange-50 px-1.5 py-0.5 text-[8.5px] font-bold text-orange-800 dark:bg-orange-950/40 dark:text-orange-200"
+                          >
+                            {lang === "ml" ? action.ml : action.en}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-[8.5px] font-semibold italic text-slate-400 dark:text-slate-500">
+                          {tr("No access", "ആക്സസ് ഇല്ല")}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            <input
-              type="checkbox"
-              checked={accessManagement}
-              disabled={!canDelegateAccessManagement(actorRole)}
-              onChange={(event) => {
-                setAccessManagement(event.target.checked);
-                setPermissionError("");
-              }}
-              className="mt-1 h-4 w-4 shrink-0 rounded-[3px] accent-[#ff5500]"
-            />
-          </label>
-          {!canDelegateAccessManagement(actorRole) ? (
-            <p className="mt-1.5 text-[8.5px] font-bold text-amber-600 dark:text-amber-400">
-              {tr(
-                "Only an authorised administrator can grant this authority.",
-                "അധികാരമുള്ള അഡ്മിൻ മാത്രമേ ഇത് നൽകാം.",
-              )}
-            </p>
-          ) : null}
+            {administrativeLabels.length > 0 ? (
+              <div className="mt-3 border-t border-slate-100 pt-2 dark:border-slate-800">
+                <div className="flex items-center gap-1.5 text-[9px] font-extrabold text-slate-700 dark:text-slate-200">
+                  <Lock className="h-3 w-3 text-slate-500" />
+                  {tr("Administrative access", "അഡ്മിനിസ്ട്രേറ്റീവ് ആക്സസ്")}
+                </div>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {administrativeLabels.map((label) => (
+                    <span
+                      key={label}
+                      className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[8.5px] font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                    >
+                      {label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
         </section>
 
         <section
@@ -2420,7 +2365,7 @@ export function MobileCreatePartyWorkerFlow({
               <Users2 className="h-5 w-5" />
             </div>
             <p className="mt-2 text-[12px] font-extrabold text-slate-800 dark:text-slate-100">
-              {tr("No party workers found", "പാർട്ടി പ്രവർത്തകരെ കണ്ടെത്തിയില്ല")}
+              {tr("No users found", "ഉപയോക്താക്കളെ കണ്ടെത്തിയില്ല")}
             </p>
             <p className="mt-1 text-[9.5px] font-medium text-slate-500 dark:text-slate-400">
               {tr(
@@ -2477,7 +2422,7 @@ export function MobileCreatePartyWorkerFlow({
                     </span>
                   </div>
                   <p className="mt-0.5 truncate text-[9.5px] font-bold text-[#C2410C] dark:text-orange-300">
-                    {designation || tr("Party Worker", "പാർട്ടി പ്രവർത്തകൻ")}
+                    {designation || tr("User", "ഉപയോക്താവ്")}
                   </p>
                   <p className="mt-0.5 flex min-w-0 items-center gap-1 text-[8.5px] font-semibold text-slate-500 dark:text-slate-400">
                     <MapPin className="h-2.5 w-2.5 shrink-0 text-[#ff5500]" />
@@ -2527,7 +2472,7 @@ export function MobileCreatePartyWorkerFlow({
             <div className="flex items-start justify-between gap-2">
               <div>
                 <h3 className="flex items-center gap-1.5 text-[13px] font-extrabold text-slate-900 dark:text-white">
-                  {tr("Filter party workers", "പാർട്ടി പ്രവർത്തകരെ ഫിൽട്ടർ ചെയ്യുക")}
+                  {tr("Filter users", "ഉപയോക്താക്കളെ ഫിൽട്ടർ ചെയ്യുക")}
                   {draftFilterCount > 0 ? (
                     <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-[#ff5500] px-1 text-[8.5px] font-black text-white">
                       {draftFilterCount}
@@ -3424,15 +3369,15 @@ export function MobileCreatePartyWorkerFlow({
           <div className="pointer-events-none absolute inset-x-10 top-1/2 -translate-y-1/2 text-center">
             <h1 className="truncate text-[13.5px] font-extrabold text-[#0F172A] dark:text-white">
               {phase === "profile"
-                ? tr("Party Worker Profile", "പാർട്ടി പ്രവർത്തക പ്രൊഫൈൽ")
+                ? tr("User Profile", "ഉപയോക്തൃ പ്രൊഫൈൽ")
                 : phase === "list"
                   ? tr(
-                      `Party Worker list (${getVisibleWorkers().length})`,
-                      `പാർട്ടി പ്രവർത്തക ലിസ്റ്റ് (${getVisibleWorkers().length})`,
+                      `User list (${getVisibleWorkers().length})`,
+                      `ഉപയോക്തൃ ലിസ്റ്റ് (${getVisibleWorkers().length})`,
                     )
                   : editingWorkerId
-                    ? tr("Edit Party Worker", "പാർട്ടി പ്രവർത്തകനെ തിരുത്തുക")
-                    : tr("Create Party Worker", "പാർട്ടി പ്രവർത്തകനെ ചേർക്കുക")}
+                    ? tr("Edit User", "ഉപയോക്താവിനെ തിരുത്തുക")
+                    : tr("Create User", "ഉപയോക്താവിനെ ചേർക്കുക")}
             </h1>
           </div>
           {phase === "list" ? (
@@ -3448,7 +3393,7 @@ export function MobileCreatePartyWorkerFlow({
                     ? "bg-[#FFF2E6] text-[#C2410C] dark:bg-orange-950/40 dark:text-orange-300"
                     : "text-[#1B255A] hover:bg-orange-50 dark:text-white dark:hover:bg-slate-800"
                 }`}
-                aria-label={tr("Search party workers", "പാർട്ടി പ്രവർത്തകരെ തിരയുക")}
+                aria-label={tr("Search users", "ഉപയോക്താക്കളെ തിരയുക")}
                 aria-expanded={workerSearchOpen}
               >
                 <Search className="h-4 w-4 stroke-[2.2]" />
@@ -3464,10 +3409,10 @@ export function MobileCreatePartyWorkerFlow({
                 aria-label={
                   appliedWorkerFilterCount > 0
                     ? tr(
-                        `Filter party workers, ${appliedWorkerFilterCount} applied`,
-                        `പാർട്ടി പ്രവർത്തകരെ ഫിൽട്ടർ ചെയ്യുക, ${appliedWorkerFilterCount} പ്രയോഗിച്ചു`,
+                        `Filter users, ${appliedWorkerFilterCount} applied`,
+                        `ഉപയോക്താക്കളെ ഫിൽട്ടർ ചെയ്യുക, ${appliedWorkerFilterCount} പ്രയോഗിച്ചു`,
                       )
-                    : tr("Filter party workers", "പാർട്ടി പ്രവർത്തകരെ ഫിൽട്ടർ ചെയ്യുക")
+                    : tr("Filter users", "ഉപയോക്താക്കളെ ഫിൽട്ടർ ചെയ്യുക")
                 }
               >
                 <Filter className="h-4 w-4 stroke-[2.2]" />
@@ -3484,7 +3429,7 @@ export function MobileCreatePartyWorkerFlow({
                 type="button"
                 onClick={() => setProfileMenuOpen((prev) => !prev)}
                 className="flex h-7 w-7 items-center justify-center rounded-full text-[#1B255A] transition-colors hover:bg-orange-50 active:scale-95 dark:text-white dark:hover:bg-slate-800"
-                aria-label={tr("Party worker actions", "പാർട്ടി പ്രവർത്തക ആക്ഷനുകൾ")}
+                aria-label={tr("User actions", "ഉപയോക്തൃ ആക്ഷനുകൾ")}
                 aria-expanded={profileMenuOpen}
               >
                 <MoreVertical className="h-4 w-4 stroke-[2.3]" />
@@ -3534,8 +3479,8 @@ export function MobileCreatePartyWorkerFlow({
                       <UserX className="h-3.5 w-3.5 shrink-0" />
                     )}
                     {profile?.status === "Deactivated"
-                      ? tr("Reactivate party worker", "പ്രവർത്തകനെ വീണ്ടും സജീവമാക്കുക")
-                      : tr("Deactivate party worker", "പ്രവർത്തകനെ നിർജ്ജീവമാക്കുക")}
+                      ? tr("Reactivate user", "ഉപയോക്താവിനെ വീണ്ടും സജീവമാക്കുക")
+                      : tr("Deactivate user", "ഉപയോക്താവിനെ നിർജ്ജീവമാക്കുക")}
                   </button>
                 </div>
               ) : null}
@@ -3613,8 +3558,8 @@ export function MobileCreatePartyWorkerFlow({
                 className="h-10 flex-[1.4] rounded-lg bg-gradient-to-r from-[#ff5500] to-[#e64a00] text-[11.5px] font-extrabold text-white shadow-md active:scale-[0.99]"
               >
                 {editingWorkerId
-                  ? tr("Update Party Worker", "പ്രവർത്തക വിവരങ്ങൾ അപ്ഡേറ്റ് ചെയ്യുക")
-                  : tr("Create Party Worker", "പ്രവർത്തകനെ ചേർക്കുക")}
+                  ? tr("Update User", "ഉപയോക്തൃ വിവരങ്ങൾ അപ്ഡേറ്റ് ചെയ്യുക")
+                  : tr("Create User", "ഉപയോക്താവിനെ ചേർക്കുക")}
               </button>
             </div>
           )}
