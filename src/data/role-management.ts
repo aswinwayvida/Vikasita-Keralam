@@ -15,6 +15,14 @@ export interface CustomOrganisationLevel {
 
 export const customOrganisationLevelStorageKey = "vk-custom-organisation-levels";
 
+const retiredOrganisationLevelNames = new Set(["dbjmn", "it cell"]);
+
+export function isRetiredOrganisationLevelName(name: string) {
+  return retiredOrganisationLevelNames.has(
+    name.trim().toLowerCase().replace(/\s+/g, " "),
+  );
+}
+
 export function loadCustomOrganisationLevels(): CustomOrganisationLevel[] {
   if (typeof window === "undefined") return [];
   try {
@@ -22,7 +30,7 @@ export function loadCustomOrganisationLevels(): CustomOrganisationLevel[] {
       window.localStorage.getItem(customOrganisationLevelStorageKey) || "[]",
     ) as unknown;
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
+    const levels = parsed.filter(
       (item): item is CustomOrganisationLevel =>
         Boolean(item) &&
         typeof item === "object" &&
@@ -31,6 +39,13 @@ export function loadCustomOrganisationLevels(): CustomOrganisationLevel[] {
         Boolean((item as CustomOrganisationLevel).name.trim()) &&
         typeof (item as CustomOrganisationLevel).under === "string",
     );
+    const cleaned = levels.filter(
+      (level) => !isRetiredOrganisationLevelName(level.name),
+    );
+    if (cleaned.length !== levels.length) {
+      saveCustomOrganisationLevels(cleaned);
+    }
+    return cleaned;
   } catch {
     return [];
   }

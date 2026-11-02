@@ -48,6 +48,7 @@ import {
   createCustomOrganisationLevelId,
   draftFromRole,
   emptyRoleDraft,
+  isRetiredOrganisationLevelName,
   loadCustomOrganisationLevels,
   loadManagedRoles,
   nextRoleCopyName,
@@ -160,11 +161,13 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
 
   const organisationLevelOptions = [
     ...roleOrganisationLevels,
-    ...customOrganisationLevels.map((level) => ({
-      id: level.id,
-      en: level.name,
-      ml: level.name,
-    })),
+    ...customOrganisationLevels
+      .filter((level) => !isRetiredOrganisationLevelName(level.name))
+      .map((level) => ({
+        id: level.id,
+        en: level.name,
+        ml: level.name,
+      })),
   ];
 
   const levelLabel = (level: AssignmentLevel) =>
@@ -1202,7 +1205,7 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
 
               <div>
                 <label className="mb-1 block text-[10.5px] font-bold text-foreground">
-                  {tr("Organisation Level under", "ഓർഗനൈസേഷൻ ലെവൽ ഇതിന് കീഴിൽ")}{" "}
+                  {tr("Parent Level", "മാതൃ ലെവൽ")}{" "}
                   <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">

@@ -92,7 +92,7 @@ export interface OrganisationLevelOption {
 export const roleOrganisationLevels: OrganisationLevelOption[] = [
   { id: "state", en: "State", ml: "സംസ്ഥാനം" },
   { id: "region", en: "Region", ml: "റീജിയൺ" },
-  { id: "district", en: "Org District", ml: "ഓർഗനൈസേഷൻ ജില്ല" },
+  { id: "district", en: "Organisational District", ml: "ഓർഗനൈസേഷണൽ ജില്ല" },
   { id: "mandalam", en: "Mandalam", ml: "മണ്ഡലം" },
   { id: "area", en: "Area", ml: "ഏരിയ" },
   { id: "booth", en: "Booth", ml: "ബൂത്ത്" },

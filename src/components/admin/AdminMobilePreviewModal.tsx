@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
-import { X, Smartphone, Wifi, Battery, Signal, ChevronRight, ChevronLeft, ArrowLeft, ArrowRight, Users, Users2, HeartHandshake, Database, Layers, Sparkles, MessageSquare, Clock3, Clock, UserCheck, LayoutDashboard, Sliders, Calendar, FileText, XCircle, CheckCircle2, Hourglass, MapPin, Trophy, AlertTriangle, Activity, Globe, Map as MapIcon, Network, Store, ShieldCheck, ChevronDown, Filter, Search, SearchCheck, Megaphone, CalendarDays, BellRing, Phone, RotateCcw, GraduationCap, Sprout, LayoutGrid, MoreVertical, AlertCircle, Star, Zap, Headphones, Edit, Upload, FileCheck, Loader2, SearchX, RefreshCw, Check, Lock, User, Eye, Send, Info, Plus, Inbox, FileSearch, HandCoins, UserRound, Paperclip, ClipboardList, Headset, Copy, Pencil, Download, FileImage, ExternalLink, CloudUpload, Home, Building2, Flame, HelpCircle, UserPlus, Trash2 } from "lucide-react";
+import { X, Smartphone, Wifi, Battery, Signal, ChevronRight, ChevronLeft, ArrowLeft, ArrowRight, Users, Users2, HeartHandshake, Database, Layers, Sparkles, MessageSquare, Clock3, Clock, UserCheck, LayoutDashboard, Sliders, Calendar, FileText, XCircle, CheckCircle2, Hourglass, MapPin, Trophy, AlertTriangle, Activity, Globe, Map as MapIcon, Network, Store, ShieldCheck, ChevronDown, Filter, Search, SearchCheck, Megaphone, CalendarDays, BellRing, Phone, RotateCcw, GraduationCap, Sprout, LayoutGrid, MoreVertical, AlertCircle, Star, Zap, Headphones, Edit, Upload, FileCheck, Loader2, SearchX, RefreshCw, Check, Lock, User, Eye, Send, Info, Plus, Inbox, FileSearch, HandCoins, UserRound, Paperclip, ClipboardList, Headset, Copy, Pencil, Download, FileImage, ExternalLink, CloudUpload, Home, Building2, Flame, HelpCircle, UserPlus, Trash2, Accessibility, Briefcase, Percent, BookOpen } from "lucide-react";
 import { useLang } from "@/i18n/LanguageProvider";
 import officialLotus from "@/assets/bjp-official-lotus.png";
 import vikasitaMlLogo from "@/assets/logo-vikasita-ml-official.png";
@@ -33,10 +33,13 @@ import {
   MobileGuestEligibilityQuestionnaire,
   type GuestEligibilityAnswers,
 } from "./MobileGuestEligibilityQuestionnaire";
-import { schemes } from "@/data/schemes";
+import { schemes, type Scheme } from "@/data/schemes";
 import { DatePickerModal } from "./DatePickerModal";
 import { MobileUsersListTab } from "./MobileUsersListTab";
-import { MobileCreateSchemeFlow } from "./MobileCreateSchemeFlow";
+import {
+  MobileCreateSchemeFlow,
+  type CreatedSchemePayload,
+} from "./MobileCreateSchemeFlow";
 import { MobileCreatePartyWorkerFlow } from "./MobileCreatePartyWorkerFlow";
 import { MobileSettingsPage } from "./MobileSettingsPage";
 import { MobileAppliedFiltersScope, FilterChip } from "./MobileAppliedFiltersScope";
@@ -5174,13 +5177,47 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [deviceModel, setDeviceModel] = useState<"iphone" | "android">("iphone");
   const [activeNotificationFilter, setActiveNotificationFilter] = useState<"all" | "unread" | "applications" | "schemes" | "support">("all");
   const [selectedScheme, setSelectedScheme] = useState<Scheme | null>(null);
-  const [isExclusionsOpen, setIsExclusionsOpen] = useState<boolean>(false);
+  const [createdSchemes, setCreatedSchemes] = useState<CreatedSchemePayload[]>([]);
+  const [selectedCreatedScheme, setSelectedCreatedScheme] = useState<CreatedSchemePayload | null>(null);
   const [schemeDetailsReturnSubPage, setSchemeDetailsReturnSubPage] = useState<string>("none");
 
-  const openMobileSchemeDetailsView = (schemeOrTitle: Scheme | string, returnSubPage?: string) => {
+  const toSchemeFromCreated = (created: CreatedSchemePayload): Scheme => ({
+    id: created.id,
+    ml: created.nameMl,
+    en: created.nameEn,
+    ministry: { ml: created.department, en: created.department },
+    category: "welfare",
+    benefit: {
+      ml: created.benefitSummary || created.coverageLimit || created.benefitTypes.join(", "),
+      en: created.benefitSummary || created.coverageLimit || created.benefitTypes.join(", "),
+    },
+    eligibility: {
+      ml: created.eligibilitySummary || created.manualReviewConditions || "",
+      en: created.eligibilitySummary || created.manualReviewConditions || "",
+    },
+  });
+
+  const openMobileSchemeDetailsView = (
+    schemeOrTitle: Scheme | string,
+    returnSubPage?: string,
+    createdSchemeOverride?: CreatedSchemePayload
+  ) => {
     setSchemeDetailsReturnSubPage(returnSubPage || mobileSubPage || "none");
+    const searchValue = typeof schemeOrTitle === "string" ? schemeOrTitle : schemeOrTitle.id;
+    const matchedCreatedScheme =
+      createdSchemeOverride ||
+      createdSchemes.find(
+        (created) =>
+          created.id.toLowerCase() === searchValue.toLowerCase() ||
+          created.nameEn.toLowerCase() === searchValue.toLowerCase() ||
+          created.nameMl === searchValue
+      );
+    setSelectedCreatedScheme(matchedCreatedScheme || null);
+
     let matched: Scheme | undefined;
-    if (typeof schemeOrTitle === "string") {
+    if (matchedCreatedScheme) {
+      matched = toSchemeFromCreated(matchedCreatedScheme);
+    } else if (typeof schemeOrTitle === "string") {
       matched = schemes.find(
         (s) =>
           s.en.toLowerCase() === schemeOrTitle.toLowerCase() ||
@@ -5205,7 +5242,198 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     setMobileSubPage("scheme_details");
   };
 
+  const getCreatedSchemeDetails = (created: CreatedSchemePayload) => {
+    const enabledRules = created.eligibilityRules.filter((rule) => rule.enabled !== false);
+    const ruleLabels = enabledRules.map((rule) => {
+      if (rule.reasonShownToWorker.trim()) return rule.reasonShownToWorker.trim();
+      return [rule.attribute, rule.condition, rule.value, rule.unit].filter(Boolean).join(" ");
+    });
+    const eligibilityConditions = [
+      created.eligibilitySummary.trim(),
+      ...ruleLabels,
+      created.manualReviewConditions.trim()
+        ? `Manual review: ${created.manualReviewConditions.trim()}`
+        : "",
+    ].filter((item, index, items) => Boolean(item) && items.indexOf(item) === index);
+
+    const fileFields = created.customFields.filter((field) => field.type === "file_upload");
+    const mandatoryDocs = fileFields
+      .filter((field) => field.required && !field.showOnlyWhenFieldId)
+      .map((field) => ({ name: field.documentName || field.labelEn, code: field.id }));
+    const conditionalDocs = fileFields
+      .filter((field) => !field.required || Boolean(field.showOnlyWhenFieldId))
+      .map((field) => ({ name: field.documentName || field.labelEn, code: field.id }));
+    const mandatoryDocsMl = fileFields
+      .filter((field) => field.required && !field.showOnlyWhenFieldId)
+      .map((field) => ({ name: field.labelMl || field.documentName || field.labelEn, code: field.id }));
+    const conditionalDocsMl = fileFields
+      .filter((field) => !field.required || Boolean(field.showOnlyWhenFieldId))
+      .map((field) => ({ name: field.labelMl || field.documentName || field.labelEn, code: field.id }));
+
+    const rawWebsite = created.officialWebsite.trim();
+    const officialPortalUrl = rawWebsite
+      ? /^https?:\/\//i.test(rawWebsite)
+        ? rawWebsite
+        : `https://${rawWebsite}`
+      : "";
+    const officialPortalLabel = rawWebsite
+      .replace(/^https?:\/\//i, "")
+      .replace(/\/$/, "");
+
+    const benefitAmount = [
+      created.coverageLimit.trim() || created.benefitAmount.trim(),
+      created.benefitSummary.trim(),
+    ]
+      .filter(Boolean)
+      .join(" · ");
+    const benefitTypes = created.benefitTypes.join(", ");
+    const contribution =
+      created.contributionType !== "None" && created.contributionValue.trim()
+        ? `${created.contributionType}: ${created.contributionValue.trim()}`
+        : "";
+    const applicableLimits = [
+      created.applicableLocations ? `Location: ${created.applicableLocations}` : "",
+      created.localBodyTypes.length
+        ? `Local bodies: ${created.localBodyTypes.join(", ")}`
+        : "",
+      created.blockTaluk.trim() ? `Block / Taluk: ${created.blockTaluk.trim()}` : "",
+      created.benefitDuration.trim() ? `Duration: ${created.benefitDuration.trim()}` : "",
+      contribution,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+
+    const createdDate = new Date(created.createdAt);
+    const lastVerifiedDateEn = Number.isNaN(createdDate.getTime())
+      ? "Scheme created"
+      : new Intl.DateTimeFormat("en-IN", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }).format(createdDate);
+    const lastVerifiedDateMl = Number.isNaN(createdDate.getTime())
+      ? "പദ്ധതി സൃഷ്ടിച്ചത്"
+      : new Intl.DateTimeFormat("ml-IN", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }).format(createdDate);
+
+    return {
+      id: created.id,
+      fullSchemeNameEn: created.nameEn,
+      fullSchemeNameMl: created.nameMl || created.nameEn,
+      schemeTypeEn: "Government Scheme",
+      schemeTypeMl: "സർക്കാർ പദ്ധതി",
+      isCentral: false,
+      categoryEn: created.category,
+      categoryMl: created.categoryMl || created.category,
+      ministryEn: created.department,
+      ministryMl: created.department,
+      logo: created.logoUrl || officialLotus,
+
+      benefitAmountEn:
+        benefitAmount || benefitTypes || "Benefit details not specified during scheme creation.",
+      benefitAmountMl:
+        benefitAmount || benefitTypes || "പദ്ധതി സൃഷ്ടിക്കുമ്പോൾ ആനുകൂല്യ വിവരങ്ങൾ നൽകിയിട്ടില്ല.",
+      benefitTypeEn: benefitTypes || "Not specified",
+      benefitTypeMl: benefitTypes || "നിർദ്ദേശിച്ചിട്ടില്ല",
+      benefitDurationEn: created.benefitDuration.trim() || "Not specified",
+      benefitDurationMl: created.benefitDuration.trim() || "നിർദ്ദേശിച്ചിട്ടില്ല",
+      paymentFrequencyEn: created.paymentFrequency || "Not specified",
+      paymentFrequencyMl: created.paymentFrequency || "നിർദ്ദേശിച്ചിട്ടില്ല",
+      applicableLimitsEn: applicableLimits || "As per the scheme guidelines.",
+      applicableLimitsMl: applicableLimits || "പദ്ധതി മാർഗ്ഗനിർദ്ദേശങ്ങൾ അനുസരിച്ച്.",
+
+      aboutEn:
+        created.aboutScheme.trim() ||
+        created.shortCardDescription.trim() ||
+        "No description was provided during scheme creation.",
+      aboutMl:
+        created.aboutScheme.trim() ||
+        created.shortCardDescription.trim() ||
+        "പദ്ധതി സൃഷ്ടിക്കുമ്പോൾ വിവരണം നൽകിയിട്ടില്ല.",
+
+      eligibilityConditionsEn:
+        eligibilityConditions.length > 0
+          ? eligibilityConditions
+          : ["Eligibility criteria will be published by the department."],
+      eligibilityConditionsMl:
+        eligibilityConditions.length > 0
+          ? eligibilityConditions
+          : ["യോഗ്യതാ മാനദണ്ഡങ്ങൾ വകുപ്പ് പ്രസിദ്ധീകരിക്കും."],
+      exclusionsEn:
+        created.exclusions.length > 0
+          ? created.exclusions
+          : ["No exclusions were specified during scheme creation."],
+      exclusionsMl:
+        created.exclusions.length > 0
+          ? created.exclusions
+          : ["പദ്ധതി സൃഷ്ടിക്കുമ്പോൾ ഒഴിവുകൾ നിർദ്ദേശിച്ചിട്ടില്ല."],
+
+      mandatoryDocsEn:
+        mandatoryDocs.length > 0
+          ? mandatoryDocs
+          : [{ name: "No mandatory documents specified.", code: "none" }],
+      mandatoryDocsMl:
+        mandatoryDocsMl.length > 0
+          ? mandatoryDocsMl
+          : [{ name: "നിർബന്ധിത രേഖകൾ നിർദ്ദേശിച്ചിട്ടില്ല.", code: "none" }],
+      conditionalDocsEn:
+        conditionalDocs.length > 0
+          ? conditionalDocs
+          : [{ name: "No conditional documents specified.", code: "none" }],
+      conditionalDocsMl:
+        conditionalDocsMl.length > 0
+          ? conditionalDocsMl
+          : [{ name: "സാഹചര്യാനുസൃത രേഖകൾ നിർദ്ദേശിച്ചിട്ടില്ല.", code: "none" }],
+
+      howToApplyStepsEn: [
+        officialPortalUrl
+          ? `Visit the official scheme portal: ${officialPortalLabel}`
+          : "Contact the responsible department for application guidance.",
+        "Complete the required application fields and upload the requested documents.",
+        "Submit the application for department verification.",
+      ],
+      howToApplyStepsMl: [
+        officialPortalUrl
+          ? `ഔദ്യോഗിക പദ്ധതി പോർട്ടൽ സന്ദർശിക്കുക: ${officialPortalLabel}`
+          : "അപേക്ഷാ മാർഗ്ഗനിർദ്ദേശത്തിനായി ബന്ധപ്പെട്ട വകുപ്പിനെ സമീപിക്കുക.",
+        "ആവശ്യമായ അപേക്ഷാ വിവരങ്ങൾ പൂരിപ്പിച്ച് രേഖകൾ അപ്‌ലോഡ് ചെയ്യുക.",
+        "വകുപ്പുതല പരിശോധനയ്ക്കായി അപേക്ഷ സമർപ്പിക്കുക.",
+      ],
+      submissionMethodEn: officialPortalUrl
+        ? "Online through the official scheme portal"
+        : "Through the responsible department",
+      submissionMethodMl: officialPortalUrl
+        ? "ഔദ്യോഗിക പദ്ധതി പോർട്ടൽ വഴി ഓൺലൈനായി"
+        : "ബന്ധപ്പെട്ട വകുപ്പ് വഴി",
+      officialPortalUrl: officialPortalUrl || "#",
+      officialPortalLabel: officialPortalLabel || "Not provided",
+
+      applicationPeriodEn: "As notified by the department",
+      applicationPeriodMl: "വകുപ്പ് അറിയിക്കുന്നത് പ്രകാരം",
+      deadlineEn: "As notified by the department",
+      deadlineMl: "വകുപ്പ് അറിയിക്കുന്നത് പ്രകാരം",
+      feesEn: "As specified by the department",
+      feesMl: "വകുപ്പ് നിർദ്ദേശിക്കുന്നത് പ്രകാരം",
+
+      deptSupportEn: created.department,
+      deptSupportMl: created.department,
+      helplineEn: "",
+      helplineMl: "",
+      guidelinesUrl: officialPortalUrl || "#",
+
+      lastVerifiedDateEn,
+      lastVerifiedDateMl,
+    };
+  };
+
   const getDetailedSchemeData = (s: Scheme | null) => {
+    if (selectedCreatedScheme && (!s || s.id === selectedCreatedScheme.id)) {
+      return getCreatedSchemeDetails(selectedCreatedScheme);
+    }
+
     const nameEn = s?.en || selectedSchemeName || "PM Kisan Samman Nidhi";
     const isPmKisan = nameEn.toLowerCase().includes("kisan") || nameEn.toLowerCase().includes("pmkisan");
 
@@ -5225,6 +5453,10 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         
         benefitAmountEn: "₹6,000 / year financial support",
         benefitAmountMl: "പ്രതിവർഷം ₹6,000 സാമ്പത്തിക സഹായം",
+        benefitTypeEn: "Financial Assistance",
+        benefitTypeMl: "സാമ്പത്തിക സഹായം",
+        benefitDurationEn: "Ongoing annual income support",
+        benefitDurationMl: "തുടർച്ചയായ വാർഷിക വരുമാന പിന്തുണ",
         paymentFrequencyEn: "3 equal installments of ₹2,000 every 4 months (Direct Benefit Transfer to Bank Account)",
         paymentFrequencyMl: "4 മാസത്തിൽ ഒരിക്കൽ ₹2,000 വീതം 3 തുല്യ ഗഡുക്കളായി നേരിട്ട് ബാങ്ക് അക്കൗണ്ടിലേക്ക് (DBT)",
         applicableLimitsEn: "Applicable to small & marginal farmer families owning cultivable land up to 2 hectares",
@@ -5335,6 +5567,10 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
       benefitAmountEn: s?.benefit?.en || "Financial assistance and welfare support provided directly.",
       benefitAmountMl: s?.benefit?.ml || "നേരിട്ടുള്ള സാമ്പത്തിക ആനുകൂല്യവും ക്ഷേമ പിന്തുണയും.",
+      benefitTypeEn: "Financial / Welfare Assistance",
+      benefitTypeMl: "സാമ്പത്തിക / ക്ഷേമ സഹായം",
+      benefitDurationEn: "As per scheme guidelines",
+      benefitDurationMl: "പദ്ധതി മാർഗ്ഗനിർദ്ദേശങ്ങൾ അനുസരിച്ച്",
       paymentFrequencyEn: "Direct Benefit Transfer (DBT) into verified bank account",
       paymentFrequencyMl: "സ്ഥിരീകരിച്ച ബാങ്ക് അക്കൗണ്ടിലേക്ക് നേരിട്ട് (DBT)",
       applicableLimitsEn: "Subject to government ceiling limits and scheme guidelines.",
@@ -6898,6 +7134,154 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const renderSchemeDetailsSubpage = () => {
     const detail = getDetailedSchemeData(selectedScheme);
 
+    const requiredAttributes = [
+      {
+        icon: UserRound, labelEn: "Gender",
+        labelMl: "ലിംഗം",
+        valueEn: "No Restriction",
+        valueMl: "നിയന്ത്രണമില്ല",
+        restricted: false,
+      },
+      {
+        icon: CalendarDays, labelEn: "Age",
+        labelMl: "പ്രായം",
+        valueEn: "Between 18 and 25 years, inclusive; age on application date",
+        valueMl: "18 മുതൽ 25 വയസ്സ് വരെ (ഉൾപ്പെടെ); അപേക്ഷാ തീയതിയിലെ പ്രായം",
+        restricted: true,
+      },
+      {
+        icon: Users, labelEn: "Social Category",
+        labelMl: "സാമൂഹിക വിഭാഗം",
+        valueEn: "No Restriction",
+        valueMl: "നിയന്ത്രണമില്ല",
+        restricted: false,
+      },
+      {
+        icon: Users2, labelEn: "Minority Status",
+        labelMl: "ന്യൂനപക്ഷ പദവി",
+        valueEn: "No Restriction",
+        valueMl: "നിയന്ത്രണമില്ല",
+        restricted: false,
+      },
+      {
+        icon: Accessibility, labelEn: "Disability Status",
+        labelMl: "ഭിന്നശേഷി പദവി",
+        valueEn: "No Restriction",
+        valueMl: "നിയന്ത്രണമില്ല",
+        restricted: false,
+      },
+      {
+        icon: Percent, labelEn: "Disability Percentage",
+        labelMl: "ഭിന്നശേഷി ശതമാനം",
+        valueEn: "No Restriction",
+        valueMl: "നിയന്ത്രണമില്ല",
+        restricted: false,
+      },
+      {
+        icon: GraduationCap, labelEn: "Student Status",
+        labelMl: "വിദ്യാർത്ഥി പദവി",
+        valueEn: "Must be Yes",
+        valueMl: "\"അതെ\" ആയിരിക്കണം",
+        restricted: true,
+      },
+      {
+        icon: Briefcase, labelEn: "Employment Status",
+        labelMl: "തൊഴിൽ പദവി",
+        valueEn: "No Restriction",
+        valueMl: "നിയന്ത്രണമില്ല",
+        restricted: false,
+      },
+      {
+        icon: Store, labelEn: "Occupation",
+        labelMl: "തൊഴിൽ",
+        valueEn: "No Restriction",
+        valueMl: "നിയന്ത്രണമില്ല",
+        restricted: false,
+      },
+      {
+        icon: Home, labelEn: "Household BPL Status",
+        labelMl: "കുടുംബ BPL പദവി",
+        valueEn: "No Restriction",
+        valueMl: "നിയന്ത്രണമില്ല",
+        restricted: false,
+      },
+      {
+        icon: HandCoins, labelEn: "Annual Family Income",
+        labelMl: "വാർഷിക കുടുംബ വരുമാനം",
+        valueEn: "Maximum ₹2,00,000 per year, inclusive",
+        valueMl: "പ്രതിവർഷം പരമാവധി ₹2,00,000 (ഉൾപ്പെടെ)",
+        restricted: true,
+      },
+      {
+        icon: HeartHandshake, labelEn: "Marital Status",
+        labelMl: "വൈവാഹിക പദവി",
+        valueEn: "No Restriction",
+        valueMl: "നിയന്ത്രണമില്ല",
+        restricted: false,
+      },
+      {
+        icon: BookOpen, labelEn: "Religion",
+        labelMl: "മതം",
+        valueEn: "No Restriction",
+        valueMl: "നിയന്ത്രണമില്ല",
+        restricted: false,
+      },
+      {
+        icon: Network, labelEn: "Caste / Community",
+        labelMl: "ജാതി / സമുദായം",
+        valueEn: "No Restriction",
+        valueMl: "നിയന്ത്രണമില്ല",
+        restricted: false,
+      },
+    ].map((attribute) => ({
+      icon: attribute.icon,
+      label: lang === "ml" ? attribute.labelMl : attribute.labelEn,
+      value: lang === "ml" ? attribute.valueMl : attribute.valueEn,
+      restricted: attribute.restricted,
+    }));
+
+    const requiredDetails = [
+      {
+        icon: FileCheck,
+        labelEn: "Aadhaar Card Copy",
+        labelMl: "ആധാർ കാർഡ് പകർപ്പ്",
+      },
+      {
+        icon: FileCheck,
+        labelEn: "PAN Card Copy",
+        labelMl: "പാൻ കാർഡ് പകർപ്പ്",
+      },
+      {
+        icon: FileCheck,
+        labelEn: "Income Certificate",
+        labelMl: "വരുമാന സർട്ടിഫിക്കറ്റ്",
+      },
+      {
+        icon: HelpCircle,
+        labelEn: "Have you applied for this scheme before? Document Reference Number",
+        labelMl: "ഈ പദ്ധതിക്ക് മുമ്പ് അപേക്ഷിച്ചിട്ടുണ്ടോ? രേഖാ റഫറൻസ് നമ്പർ",
+      },
+      {
+        icon: FileCheck,
+        labelEn: "Document Provided as Address Proof",
+        labelMl: "വിലാസ തെളിവായി നൽകിയ രേഖ",
+      },
+      {
+        icon: Phone,
+        labelEn: "Preferred Contact Method",
+        labelMl: "ഇഷ്ടപ്പെട്ട ബന്ധപ്പെടാനുള്ള മാർഗം",
+      },
+      {
+        icon: HelpCircle,
+        labelEn: "Are you currently receiving benefits under this scheme?",
+        labelMl: "ഈ പദ്ധതിയിൽ നിന്ന് നിലവിൽ ആനുകൂല്യങ്ങൾ ലഭിക്കുന്നുണ്ടോ?",
+      },
+    ].map((detail) => ({
+      icon: detail.icon,
+      key: detail.labelEn,
+      label: lang === "ml" ? detail.labelMl : detail.labelEn,
+    }));
+
     const isSelectedInFlow =
       selectedEligibleSchemeIds.includes(detail.id) ||
       (Boolean(selectedSchemeName) && Boolean(detail.fullSchemeNameEn) && selectedSchemeName.toLowerCase() === detail.fullSchemeNameEn.toLowerCase()) ||
@@ -6929,8 +7313,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-2.5">
           <div className="flex items-start gap-3">
             <img
-              src="/pm-yasasvi-logo.png"
-              alt="PM YASASVI"
+              src={detail.logo}
+              alt={lang === "ml" ? detail.fullSchemeNameMl : detail.fullSchemeNameEn}
               className="h-12 w-12 shrink-0 object-contain p-1 rounded-xl bg-orange-50 dark:bg-slate-800 border border-orange-100 dark:border-slate-700"
             />
             <div className="min-w-0 flex-1">
@@ -6942,50 +7326,21 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               <h2 className="font-extrabold text-xs sm:text-xs text-[#0a0f1d] dark:text-white leading-snug">
                 {lang === "ml" ? detail.fullSchemeNameMl : detail.fullSchemeNameEn}
               </h2>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium flex items-center gap-1">
-                <Building2 className="h-3 w-3 shrink-0 text-slate-400" />
-                <span>{lang === "ml" ? detail.ministryMl : detail.ministryEn}</span>
-              </p>
+              {selectedCreatedScheme?.shortCardDescription && (
+                <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-1 font-medium leading-snug">
+                  {selectedCreatedScheme.shortCardDescription}
+                </p>
+              )}
             </div>
           </div>
+          <p className="w-full text-[11px] text-slate-500 dark:text-slate-400 font-medium flex items-start gap-1 leading-snug">
+            <Building2 className="h-3 w-3 shrink-0 text-slate-400 mt-0.5" />
+            <span className="min-w-0">{lang === "ml" ? detail.ministryMl : detail.ministryEn}</span>
+          </p>
         </div>
 
-        {/* 2. Benefits */}
-        <div className="p-3.5 rounded-2xl bg-gradient-to-br from-orange-50/80 via-amber-50/30 to-orange-50/50 dark:from-slate-900 dark:to-slate-900 border border-orange-200/70 dark:border-orange-900/50 shadow-2xs space-y-2">
-          <div className="flex items-center gap-1.5 text-xs font-extrabold text-orange-800 dark:text-orange-300">
-            <HandCoins className="h-4 w-4 text-orange-600 shrink-0" />
-            <span>{lang === "ml" ? "സാമ്പത്തിക & സേവന ആനുകൂല്യങ്ങൾ" : "Benefits Offered"}</span>
-          </div>
-          <div className="space-y-1.5 pt-1 text-[11px]">
-            <div className="p-2 rounded-xl bg-white/80 dark:bg-slate-800/80 border border-orange-100 dark:border-slate-700">
-              <span className="font-bold text-slate-500 dark:text-slate-400 block text-[10px]">
-                {lang === "ml" ? "ആനുകൂല്യ തുക / സഹായം:" : "Assistance Offered:"}
-              </span>
-              <span className="font-extrabold text-slate-900 dark:text-white text-xs">
-                {lang === "ml" ? detail.benefitAmountMl : detail.benefitAmountEn}
-              </span>
-            </div>
-            <div className="p-2 rounded-xl bg-white/80 dark:bg-slate-800/80 border border-orange-100 dark:border-slate-700">
-              <span className="font-bold text-slate-500 dark:text-slate-400 block text-[10px]">
-                {lang === "ml" ? "പണമടയ്ക്കുന്ന രീതി / ആവൃത്തി:" : "Payment Frequency:"}
-              </span>
-              <span className="font-bold text-slate-800 dark:text-slate-200">
-                {lang === "ml" ? detail.paymentFrequencyMl : detail.paymentFrequencyEn}
-              </span>
-            </div>
-            <div className="p-2 rounded-xl bg-white/80 dark:bg-slate-800/80 border border-orange-100 dark:border-slate-700">
-              <span className="font-bold text-slate-500 dark:text-slate-400 block text-[10px]">
-                {lang === "ml" ? "ബാധകമായ പരിധികൾ:" : "Applicable Limits:"}
-              </span>
-              <span className="font-bold text-slate-800 dark:text-slate-200">
-                {lang === "ml" ? detail.applicableLimitsMl : detail.applicableLimitsEn}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* 3. About the Scheme */}
-        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-1.5">
+        {/* 2. About the Scheme */}
+        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-2.5">
           <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-900 dark:text-white">
             <Info className="h-4 w-4 text-orange-500 shrink-0" />
             <span>{lang === "ml" ? "പദ്ധതിയെക്കുറിച്ച്" : "About the Scheme"}</span>
@@ -6993,10 +7348,26 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           <p className="text-[11.5px] text-slate-600 dark:text-slate-300 leading-relaxed pt-0.5 font-medium">
             {lang === "ml" ? detail.aboutMl : detail.aboutEn}
           </p>
-        </div>
 
-        {/* 4. Eligibility & Exclusions */}
-        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-2.5">
+          <div className="space-y-1.5 rounded-xl border border-orange-100 bg-orange-50/50 p-2.5 dark:border-orange-900/40 dark:bg-orange-950/10">
+            <div className="flex items-center gap-1.5 text-[11px] font-extrabold text-orange-800 dark:text-orange-300">
+              <HandCoins className="h-3.5 w-3.5 text-orange-600 shrink-0" />
+              <span>{lang === "ml" ? "ലഭ്യമാകുന്ന ആനുകൂല്യങ്ങൾ" : "Benefits Offered"}</span>
+            </div>
+            <div className="space-y-1">
+              <p className="text-[11.5px] leading-snug text-slate-700 dark:text-slate-300">
+                <span className="font-semibold text-slate-500 dark:text-slate-400">{lang === "ml" ? "തരം :" : "Type :"}</span>{" "}
+                <span className="font-bold text-slate-800 dark:text-slate-100">{lang === "ml" ? detail.benefitTypeMl : detail.benefitTypeEn}</span>
+              </p>
+              <p className="text-[11.5px] leading-snug text-slate-700 dark:text-slate-300">
+                <span className="font-semibold text-slate-500 dark:text-slate-400">{lang === "ml" ? "കാലയളവ് :" : "Duration :"}</span>{" "}
+                <span className="font-bold text-slate-800 dark:text-slate-100">{lang === "ml" ? detail.benefitDurationMl : detail.benefitDurationEn}</span>
+              </p>
+            </div>
+          </div>
+
+          {/* Eligibility & Exclusions */}
+          <div className="border-t border-slate-100 pt-2.5 dark:border-slate-800" />
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-900 dark:text-white">
               <UserCheck className="h-4 w-4 text-emerald-600 shrink-0" />
@@ -7004,146 +7375,92 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             </div>
           </div>
 
-          <ul className="space-y-1.5 text-[11px] pt-0.5">
-            {(lang === "ml" ? detail.eligibilityConditionsMl : detail.eligibilityConditionsEn).map((cond, idx) => (
-              <li key={idx} className="flex items-start gap-2 text-slate-700 dark:text-slate-200 font-medium">
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0 mt-0.5" />
-                <span>{cond}</span>
-              </li>
-            ))}
-          </ul>
-
-          {/* Expandable Exclusions Accordion */}
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-            <button
-              type="button"
-              onClick={() => setIsExclusionsOpen(!isExclusionsOpen)}
-              className="w-full flex items-center justify-between p-2 rounded-xl bg-rose-50/60 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/40 text-[11px] font-extrabold text-rose-800 dark:text-rose-300 cursor-pointer hover:bg-rose-100/60 transition-colors"
-            >
-              <div className="flex items-center gap-1.5">
-                <AlertCircle className="h-3.5 w-3.5 text-rose-600 shrink-0" />
-                <span>{lang === "ml" ? "ഒഴിവുള്ളവർ / അർഹതയില്ലാത്തവർ (Exclusions)" : "Exclusions & Ineligibility Conditions"}</span>
-              </div>
-              <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isExclusionsOpen ? "rotate-180" : ""}`} />
-            </button>
-
-            {isExclusionsOpen && (
-              <ul className="mt-2 space-y-1.5 text-[10.5px] p-2.5 rounded-xl bg-rose-50/40 dark:bg-rose-950/20 border border-rose-100/60 dark:border-rose-900/30 animate-in fade-in duration-200">
-                {(lang === "ml" ? detail.exclusionsMl : detail.exclusionsEn).map((ex, idx) => (
-                  <li key={idx} className="flex items-start gap-1.5 text-rose-900 dark:text-rose-200 font-medium">
-                    <XCircle className="h-3.5 w-3.5 text-rose-500 shrink-0 mt-0.5" />
-                    <span>{ex}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
+          <div className="rounded-xl bg-slate-50 p-2.5 dark:bg-slate-800/50">
+            <ul className="text-[11px]">
+            {requiredAttributes.map((attribute) => {
+              const AttributeIcon = attribute.icon;
+              return (
+                <li
+                  key={attribute.label}
+                  className="flex items-start gap-2 border-b-[0.5px] border-slate-300/80 dark:border-slate-700/70 py-1.5 first:pt-0 last:border-b-0 last:pb-0"
+                >
+                  <AttributeIcon className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" strokeWidth={2} />
+                  <span className="min-w-0 leading-snug">
+                    <span className="font-normal text-slate-500 dark:text-slate-400">{attribute.label}</span>
+                    <span className="px-1 text-slate-400 dark:text-slate-500">:</span>
+                    <span className={attribute.restricted ? "font-bold text-slate-900 dark:text-white" : "font-semibold text-slate-800 dark:text-slate-200"}>
+                      {attribute.value}
+                    </span>
+                  </span>
+                </li>
+              );
+            })}
+            </ul>
           </div>
         </div>
 
-        {/* 5. Required Documents */}
+        {/* 4. Required Details */}
         <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-2.5">
           <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-900 dark:text-white">
             <FileText className="h-4 w-4 text-blue-600 shrink-0" />
-            <span>{lang === "ml" ? "ആവശ്യമായ രേഖകൾ" : "Required Documents"}</span>
+            <span>{lang === "ml" ? "ആവശ്യമായ വിവരങ്ങൾ" : "Required Details"}</span>
           </div>
 
-          {/* Mandatory Checklist */}
-          <div className="space-y-1.5">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-900/40 px-2 py-0.5 rounded-md inline-block">
-              {lang === "ml" ? "നിർബന്ധിത രേഖകൾ (Mandatory)" : "Mandatory Documents"}
-            </span>
-            <div className="grid grid-cols-1 gap-1.5 pt-0.5">
-              {(lang === "ml" ? detail.mandatoryDocsMl : detail.mandatoryDocsEn).map((doc, idx) => (
-                <div key={idx} className="flex items-center gap-2 p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 text-[11px]">
-                  <FileCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">{doc.name}</span>
+          <div className="grid grid-cols-1 gap-1.5 pt-0.5">
+            {requiredDetails.map((detailItem) => {
+              const DetailIcon = detailItem.icon;
+              return (
+                <div
+                  key={detailItem.key}
+                  className="flex items-center gap-2 p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 text-[11px]"
+                >
+                  <DetailIcon className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{detailItem.label}</span>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Conditional Checklist */}
-          <div className="space-y-1.5 pt-1">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-900/40 px-2 py-0.5 rounded-md inline-block">
-              {lang === "ml" ? "സാഹചര്യാനുസൃത രേഖകൾ (Conditional)" : "Conditional Documents"}
-            </span>
-            <div className="grid grid-cols-1 gap-1.5 pt-0.5">
-              {(lang === "ml" ? detail.conditionalDocsMl : detail.conditionalDocsEn).map((doc, idx) => (
-                <div key={idx} className="flex items-center gap-2 p-2 rounded-xl bg-amber-50/40 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/30 text-[11px]">
-                  <Paperclip className="h-3.5 w-3.5 text-amber-600 shrink-0" />
-                  <span className="font-medium text-slate-700 dark:text-slate-300">{doc.name}</span>
-                </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* 6. How to Apply */}
-        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-2.5">
-          <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-900 dark:text-white">
-            <ClipboardList className="h-4 w-4 text-purple-600 shrink-0" />
-            <span>{lang === "ml" ? "അപേക്ഷിക്കേണ്ട വിധം" : "How to Apply"}</span>
-          </div>
-
-          <div className="space-y-2 text-[11px] pt-0.5">
-            {(lang === "ml" ? detail.howToApplyStepsMl : detail.howToApplyStepsEn).map((step, idx) => (
-              <div key={idx} className="p-2 rounded-xl bg-purple-50/50 dark:bg-purple-950/20 border border-purple-100 dark:border-purple-900/30 font-medium text-slate-800 dark:text-slate-200">
-                {step}
+        {/* Created Scheme Application Fields */}
+        {selectedCreatedScheme && selectedCreatedScheme.customFields.length > 0 && (
+          <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-900 dark:text-white">
+                <ClipboardList className="h-4 w-4 text-blue-600 shrink-0" />
+                <span>{lang === "ml" ? "അപേക്ഷാ ഫോം വിവരങ്ങൾ" : "Application Form Fields"}</span>
               </div>
-            ))}
-          </div>
-
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1.5 text-[11px]">
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-slate-500 dark:text-slate-400">
-                {lang === "ml" ? "സമർപ്പണ രീതി:" : "Submission Method:"}
-              </span>
-              <span className="font-extrabold text-slate-800 dark:text-slate-200">
-                {lang === "ml" ? detail.submissionMethodMl : detail.submissionMethodEn}
+              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-50 px-1.5 text-[9.5px] font-extrabold text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
+                {selectedCreatedScheme.customFields.length}
               </span>
             </div>
-
-            <div className="flex items-center justify-between pt-1">
-              <span className="font-bold text-slate-500 dark:text-slate-400">
-                {lang === "ml" ? "ഔദ്യോഗിക പോർട്ടൽ:" : "Official Portal:"}
-              </span>
-              <a
-                href={detail.officialPortalUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 text-xs font-extrabold text-blue-600 dark:text-blue-400 hover:underline"
-              >
-                <span>{detail.officialPortalLabel}</span>
-                <ExternalLink className="h-3 w-3" />
-              </a>
+            <div className="space-y-1.5">
+              {selectedCreatedScheme.customFields.map((field) => (
+                <div
+                  key={field.id}
+                  className="flex items-start justify-between gap-2 rounded-xl border border-slate-200/80 bg-slate-50 p-2 text-[11px] dark:border-slate-700/80 dark:bg-slate-800/60"
+                >
+                  <div className="min-w-0">
+                    <p className="font-bold text-slate-800 dark:text-slate-200">
+                      {lang === "ml" ? field.labelMl || field.labelEn : field.labelEn}
+                      {field.required && <span className="ml-1 text-rose-500">*</span>}
+                    </p>
+                    {field.uploadInstructions && (
+                      <p className="mt-0.5 text-[10px] font-medium leading-snug text-slate-500 dark:text-slate-400">
+                        {field.uploadInstructions}
+                      </p>
+                    )}
+                  </div>
+                  <span className="shrink-0 rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+                    {field.type.replace("_", " ")}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
+        )}
 
-        {/* 7. Dates & Fees */}
-        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-2">
-          <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-900 dark:text-white">
-            <Calendar className="h-4 w-4 text-amber-500 shrink-0" />
-            <span>{lang === "ml" ? "തീയതികളും ഫീസും" : "Dates & Fees"}</span>
-          </div>
-
-          <div className="grid grid-cols-1 gap-1.5 text-[11px] pt-1">
-            <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 flex justify-between items-center">
-              <span className="text-slate-500 dark:text-slate-400 font-medium">{lang === "ml" ? "അപേക്ഷാ കാലയളവ്:" : "Application Period:"}</span>
-              <span className="font-extrabold text-slate-900 dark:text-white">{lang === "ml" ? detail.applicationPeriodMl : detail.applicationPeriodEn}</span>
-            </div>
-            <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 flex justify-between items-center">
-              <span className="text-slate-500 dark:text-slate-400 font-medium">{lang === "ml" ? "അവസാന തീയതി:" : "Deadline:"}</span>
-              <span className="font-extrabold text-emerald-600 dark:text-emerald-400">{lang === "ml" ? detail.deadlineMl : detail.deadlineEn}</span>
-            </div>
-            <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 flex justify-between items-center">
-              <span className="text-slate-500 dark:text-slate-400 font-medium">{lang === "ml" ? "അപേക്ഷാ ഫീസ്:" : "Application Fee:"}</span>
-              <span className="font-extrabold text-emerald-700 dark:text-emerald-300">{lang === "ml" ? detail.feesMl : detail.feesEn}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* 8. Department & Support */}
+        {/* 5. Department & Support */}
         <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-2">
           <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-900 dark:text-white">
             <Headphones className="h-4 w-4 text-blue-600 shrink-0" />
@@ -7155,54 +7472,71 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               <span className="font-bold text-slate-900 dark:text-white block">{lang === "ml" ? "ചുമതലയുള്ള വകുപ്പ്:" : "Responsible Department:"}</span>
               {lang === "ml" ? detail.deptSupportMl : detail.deptSupportEn}
             </p>
-            <div className="p-2 rounded-xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <Phone className="h-3.5 w-3.5 text-blue-600 shrink-0" />
-                <span className="font-extrabold text-blue-900 dark:text-blue-300">{lang === "ml" ? detail.helplineMl : detail.helplineEn}</span>
+            {detail.helplineEn && (
+              <div className="p-2 rounded-xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Phone className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                  <span className="font-extrabold text-blue-900 dark:text-blue-300">{lang === "ml" ? detail.helplineMl : detail.helplineEn}</span>
+                </div>
+                <a
+                  href={`tel:${detail.helplineEn.split('/')[0].trim()}`}
+                  className="px-2 py-1 rounded-md bg-blue-600 text-white font-bold text-[10px] hover:bg-blue-700 transition-colors"
+                >
+                  {lang === "ml" ? "വിളിക്കുക" : "Call"}
+                </a>
               </div>
-              <a
-                href={`tel:${detail.helplineEn.split('/')[0].trim()}`}
-                className="px-2 py-1 rounded-md bg-blue-600 text-white font-bold text-[10px] hover:bg-blue-700 transition-colors"
-              >
-                {lang === "ml" ? "വിളിക്കുക" : "Call"}
-              </a>
-            </div>
+            )}
           </div>
         </div>
 
-        {/* 9. Last Verified */}
+        {/* 6. Last Verified */}
         <div className="p-2.5 rounded-xl bg-slate-100/70 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-center gap-1.5 text-[10px] font-extrabold text-slate-500 dark:text-slate-400">
           <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
           <span>
-            {lang === "ml"
-              ? `വിവരങ്ങൾ പരിശോധിച്ചത്: ${detail.lastVerifiedDateMl}`
-              : `Information Last Verified: ${detail.lastVerifiedDateEn}`}
+            {selectedCreatedScheme
+              ? lang === "ml"
+                ? `പദ്ധതി സൃഷ്ടിച്ചത്: ${detail.lastVerifiedDateMl}`
+                : `Scheme Created On: ${detail.lastVerifiedDateEn}`
+              : lang === "ml"
+                ? `വിവരങ്ങൾ പരിശോധിച്ചത്: ${detail.lastVerifiedDateMl}`
+                : `Information Last Verified: ${detail.lastVerifiedDateEn}`}
           </span>
         </div>
 
         {/* Fixed Primary Action Bottom Bar */}
         <div className="sticky -bottom-3.5 left-0 right-0 p-2.5 bg-white dark:bg-slate-900 border-t border-slate-200/80 dark:border-slate-800 z-50 -mx-3.5 -mb-3.5 shadow-lg rounded-b-[2.3rem]">
-          <button
-            type="button"
-            onClick={handlePrimaryAction}
-            className={`w-full h-10 rounded-xl font-extrabold text-xs text-white shadow-md flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer ${
-              isSelectedInFlow
-                ? "bg-emerald-600 hover:bg-emerald-700"
-                : "bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600"
-            }`}
-          >
-            {isSelectedInFlow ? (
-              <>
-                <CheckCircle2 className="h-3.5 w-3.5 stroke-[2.5]" />
-                <span>{lang === "ml" ? "പദ്ധതി തിരിഞ്ഞെടുത്തു" : "Scheme Selected"}</span>
-              </>
-            ) : (
-              <>
-                <span>{lang === "ml" ? "യോഗ്യത പരിശോധിക്കുക" : "Check Eligibility"}</span>
-                <ChevronRight className="h-3.5 w-3.5 stroke-[2.5]" />
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-2">
+            <a
+              href={detail.officialPortalUrl && detail.officialPortalUrl !== "#" ? detail.officialPortalUrl : "https://india.gov.in"}
+              target="_blank"
+              rel="noreferrer"
+              className="flex-[35] min-w-0 h-10 rounded-lg font-extrabold text-[11px] text-orange-700 dark:text-orange-300 bg-white dark:bg-slate-800 border border-orange-300 dark:border-orange-800 flex items-center justify-center gap-1.5 transition-colors hover:bg-orange-50 dark:hover:bg-slate-700 active:scale-[0.98]"
+            >
+              <ExternalLink className="h-3.5 w-3.5 shrink-0 stroke-[2.4]" />
+              <span className="truncate">{lang === "ml" ? "വെബ്സൈറ്റ്" : "Visit Website"}</span>
+            </a>
+            <button
+              type="button"
+              onClick={handlePrimaryAction}
+              className={`flex-[65] min-w-0 h-10 rounded-lg font-extrabold text-[11px] text-primary-foreground flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer ${
+                isSelectedInFlow
+                  ? "bg-emerald-600 hover:bg-emerald-700"
+                  : "bg-primary hover:bg-primary/90"
+              }`}
+            >
+              {isSelectedInFlow ? (
+                <>
+                  <CheckCircle2 className="h-3.5 w-3.5 stroke-[2.5]" />
+                  <span>{lang === "ml" ? "പദ്ധതി തിരിഞ്ഞെടുത്തു" : "Scheme Selected"}</span>
+                </>
+              ) : (
+                <>
+                  <span>{lang === "ml" ? "യോഗ്യത പരിശോധിക്കുക" : "Check Eligibility"}</span>
+                  <ChevronRight className="h-3.5 w-3.5 stroke-[2.5]" />
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -11932,13 +12266,22 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         lang={lang}
                         onClose={() => setMobileSubPage("none")}
                         onPublishSuccess={(schemeData) => {
+                          setCreatedSchemes((previous) => [
+                            schemeData,
+                            ...previous.filter((created) => created.id !== schemeData.id),
+                          ]);
                           toast.success(
                             lang === "ml"
                               ? `പദ്ധതി '${schemeData.nameMl || schemeData.nameEn}' വിജയകരമായി സൃഷ്ടിച്ചു!`
                               : `Scheme '${schemeData.nameEn}' successfully created!`
                           );
                           setActiveTab("schemes");
-                          setMobileSubPage("none");
+                          setIsCreateSchemeModalOpen(false);
+                          openMobileSchemeDetailsView(
+                            toSchemeFromCreated(schemeData),
+                            "none",
+                            schemeData
+                          );
                         }}
                       />
                     )}
@@ -12347,6 +12690,51 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         )}
                       </div>
                     </div>
+
+                    {createdSchemes.length > 0 && (
+                      <div className="space-y-1.5 rounded-2xl border border-emerald-200/70 bg-emerald-50/30 p-2.5 dark:border-emerald-900/50 dark:bg-emerald-950/10">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5">
+                            <span className="flex h-5 w-5 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400">
+                              <CheckCircle2 className="h-3.5 w-3.5 stroke-[2.4]" />
+                            </span>
+                            <h4 className="text-[13px] font-extrabold text-[#0a0f1d] dark:text-slate-100">
+                              {lang === "ml" ? "സൃഷ്ടിച്ച പദ്ധതികൾ" : "Created Schemes"}
+                            </h4>
+                          </div>
+                          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-100 px-1.5 text-[9.5px] font-extrabold text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300">
+                            {createdSchemes.length}
+                          </span>
+                        </div>
+                        <div className="space-y-1.5">
+                          {createdSchemes.map((created) => (
+                            <button
+                              key={created.id}
+                              type="button"
+                              onClick={() => openMobileSchemeDetailsView(toSchemeFromCreated(created), "none", created)}
+                              className="flex w-full items-center gap-2.5 rounded-xl border border-emerald-100 bg-white px-2.5 py-2 text-left transition-colors hover:border-emerald-300 hover:bg-emerald-50/40 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/20"
+                            >
+                              <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-emerald-100 bg-emerald-50/60 p-0.5 dark:border-slate-700 dark:bg-slate-800">
+                                <img
+                                  src={created.logoUrl || officialLotus}
+                                  alt={created.nameEn}
+                                  className="h-full w-full object-contain"
+                                />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-[11.5px] font-extrabold leading-tight text-slate-900 dark:text-white">
+                                  {lang === "ml" ? created.nameMl || created.nameEn : created.nameEn}
+                                </p>
+                                <p className="mt-0.5 truncate text-[10px] font-medium text-slate-500 dark:text-slate-400">
+                                  {created.shortCardDescription || created.department}
+                                </p>
+                              </div>
+                              <ChevronRight className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Popular Schemes - Single Row with Horizontal Scrolling */}
                     <div className="pt-1 pb-0.5">

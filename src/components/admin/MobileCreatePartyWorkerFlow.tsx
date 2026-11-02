@@ -54,6 +54,7 @@ import {
   localBodyTypeOptions,
   partyDesignations,
   permissionKey,
+  roleOrganisationLevels,
   permissionModules,
   rolePresets,
   scopeTypeOptions,
@@ -71,6 +72,8 @@ import {
 } from "@/data/party-workers";
 import {
   administrativePermissionOptions,
+  isRetiredOrganisationLevelName,
+  loadCustomOrganisationLevels,
   loadManagedRoles,
   type ManagedRole,
 } from "@/data/role-management";
@@ -607,7 +610,8 @@ export function MobileCreatePartyWorkerFlow({
 
   const duplicateWorker = useMemo(() => findExistingWorker(mobile), [mobile]);
   const designation = partyDesignations.find((item) => item.id === designationId) || null;
-  const rolePresetIdForDesignation = rolePresetForLevel[designation?.level ?? (level || "ward")];
+  const rolePresetIdForDesignation =
+    rolePresetForLevel[designation?.level ?? (level || "ward")] ?? "party_worker";
   const presetForDesignation = getRolePreset(rolePresetIdForDesignation);
   const managedRoleForDesignation = managedRoles.find(
     (role) => role.presetId === rolePresetIdForDesignation && role.status === "Active",
@@ -616,7 +620,47 @@ export function MobileCreatePartyWorkerFlow({
     managedRoleForDesignation?.permissions ?? presetForDesignation.permissions;
   const roleAdministrativePermissions = managedRoleForDesignation?.administrativePermissions ?? [];
   const roleAccessManagement = roleAdministrativePermissions.length > 0;
-  const levelOption = assignmentLevels.find((item) => item.id === level) || null;
+  const organisationLevelOptions = useMemo(() => {
+    const customLevels = loadCustomOrganisationLevels().filter(
+      (customLevel) => !isRetiredOrganisationLevelName(customLevel.name),
+    );
+    const hints: Record<string, { en: string; ml: string }> = {
+      state: { en: "Kerala, statewide", ml: "കേരളം, സംസ്ഥാന വ്യാപകം" },
+      region: { en: "State → Region", ml: "സംസ്ഥാനം → റീജിയൺ" },
+      district: { en: "Region → Organisational District", ml: "റീജിയൺ → ഓർഗനൈസേഷണൽ ജില്ല" },
+      mandalam: { en: "Organisational District → Mandalam", ml: "ഓർഗനൈസേഷണൽ ജില്ല → മണ്ഡലം" },
+      area: { en: "Mandalam → Area", ml: "മണ്ഡലം → ഏരിയ" },
+      booth: { en: "Area → Booth", ml: "ഏരിയ → ബൂത്ത്" },
+    };
+    return [
+      ...roleOrganisationLevels.map((roleLevel) => ({
+        id: roleLevel.id,
+        en: roleLevel.en,
+        ml: roleLevel.ml,
+        hintEn: hints[roleLevel.id]?.en ?? "",
+        hintMl: hints[roleLevel.id]?.ml ?? "",
+      })),
+      ...customLevels.map((customLevel) => ({
+        id: customLevel.id,
+        en: customLevel.name,
+        ml: customLevel.name,
+        hintEn: "Administrator-configured organisation level",
+        hintMl: "അഡ്മിനിസ്ട്രേറ്റർ ക്രമീകരിച്ച ഓർഗനൈസേഷൻ ലെവൽ",
+      })),
+    ];
+  }, []);
+
+  const allLevelOptions = useMemo(() => {
+    const combined = [...organisationLevelOptions];
+    assignmentLevels.forEach((assignmentLevel) => {
+      if (!combined.some((item) => item.id === assignmentLevel.id)) {
+        combined.push(assignmentLevel);
+      }
+    });
+    return combined;
+  }, [organisationLevelOptions]);
+
+  const levelOption = allLevelOptions.find((item) => item.id === level) || null;
   const district = districts.find((item) => item.id === districtId) || null;
   const constituency = constituencies.find((item) => item.id === constituencyId) || null;
   const localBody = panchayats.find((item) => item.id === localBodyId) || null;
@@ -635,7 +679,9 @@ export function MobileCreatePartyWorkerFlow({
 
   const localBodyTypeLabel = localBodyTypeOptions.find((item) => item.id === localBodyType);
 
-  const designationOptions = designationsForLevel(level);
+  const designationsForSelectedLevel = designationsForLevel(level);
+  const designationOptions =
+    designationsForSelectedLevel.length > 0 ? designationsForSelectedLevel : partyDesignations;
   const localBodyOptions = getLocalBodies(districtId, localBodyType);
   const wardOptions = localBodyId ? getWardsForLocalBody(localBodyId) : [];
   const boothOptions = constituencyId
@@ -694,6 +740,20 @@ export function MobileCreatePartyWorkerFlow({
     if (level === "district") {
       return district ? (language === "ml" ? district.ml : district.en) : "";
     }
+    if (level === "region" || level === "area" || level.startsWith("custom_org_")) {
+      return district ? (language === "ml" ? district.ml : district.en) : "";
+    }
+    if (level === "mandalam") {
+      return district && constituency
+        ? `${language === "ml" ? district.ml : district.en} → ${
+            language === "ml" ? constituency.ml : constituency.en
+          }`
+        : district
+          ? language === "ml"
+            ? district.ml
+            : district.en
+          : "";
+    }
     if (level === "assembly_constituency") {
       return district && constituency
         ? `${language === "ml" ? district.ml : district.en} → ${
@@ -745,7 +805,12 @@ export function MobileCreatePartyWorkerFlow({
   const handleDesignationChange = (nextId: string) => {
     const next = partyDesignations.find((item) => item.id === nextId);
     if (!next) return;
-    if (next.level !== level) {
+    const isOrganisationOnlyLevel =
+      level === "region" ||
+      level === "mandalam" ||
+      level === "area" ||
+      level.startsWith("custom_org_");
+    if (next.level !== level && !isOrganisationOnlyLevel) {
       resetLocations();
       setLevel(next.level);
     }
@@ -808,12 +873,12 @@ export function MobileCreatePartyWorkerFlow({
       nextErrors.designation = tr("Select a party designation.", "പാർട്ടി പദവി തിരഞ്ഞെടുക്കുക.");
     }
     if (!level) {
-      nextErrors.level = tr("Select an assignment level.", "അസൈൻമെന്റ് ലെവൽ തിരഞ്ഞെടുക്കുക.");
+      nextErrors.level = tr("Select an organisation level.", "ഓർഗനൈസേഷൻ ലെവൽ തിരഞ്ഞെടുക്കുക.");
     }
     if (level && level !== "state" && !districtId) {
       nextErrors.district = tr("Select a district.", "ജില്ല തിരഞ്ഞെടുക്കുക.");
     }
-    if (level === "assembly_constituency" && !constituencyId) {
+    if ((level === "assembly_constituency" || level === "mandalam") && !constituencyId) {
       nextErrors.constituency = tr(
         "Select an assembly constituency.",
         "നിയോജകമണ്ഡലം തിരഞ്ഞെടുക്കുക.",
@@ -1010,7 +1075,7 @@ export function MobileCreatePartyWorkerFlow({
         item.en === worker.designationEn ||
         item.ml === worker.designationMl,
     );
-    const workerLevel = assignmentLevels.find(
+    const workerLevel = allLevelOptions.find(
       (item) =>
         item.id === worker.level ||
         item.en === worker.levelLabelEn ||
@@ -1415,8 +1480,8 @@ export function MobileCreatePartyWorkerFlow({
       selectedId = designationId;
       onPick = handleDesignationChange;
     } else if (picker === "level") {
-      title = tr("Assignment Level", "അസൈൻമെന്റ് ലെവൽ");
-      options = assignmentLevels.map((item) => ({
+      title = tr("Organisation Level", "ഓർഗനൈസേഷൻ ലെവൽ");
+      options = organisationLevelOptions.map((item) => ({
         id: item.id,
         label: lang === "ml" ? item.ml : item.en,
         hint: lang === "ml" ? item.hintMl : item.hintEn,
@@ -1935,10 +2000,13 @@ export function MobileCreatePartyWorkerFlow({
           </Field>
 
           <PickerButton
-            label={tr("Assignment Level", "അസൈൻമെന്റ് ലെവൽ")}
+            label={tr("Organisation Level", "ഓർഗനൈസേഷൻ ലെവൽ")}
             required
             value={levelOption ? (lang === "ml" ? levelOption.ml : levelOption.en) : ""}
-            placeholder={tr("Select assignment level", "അസൈൻമെന്റ് ലെവൽ തിരഞ്ഞെടുക്കുക")}
+            placeholder={tr(
+              "Select organisation level",
+              "ഓർഗനൈസേഷൻ ലെവൽ തിരഞ്ഞെടുക്കുക",
+            )}
             hint={
               levelOption
                 ? lang === "ml"
@@ -1983,11 +2051,7 @@ export function MobileCreatePartyWorkerFlow({
             </Field>
           ) : null}
 
-          {level === "district" ||
-          level === "assembly_constituency" ||
-          level === "local_body" ||
-          level === "ward" ||
-          level === "booth" ? (
+          {level && level !== "state" ? (
             <PickerButton
               label={tr("District", "ജില്ല")}
               required
@@ -1998,7 +2062,7 @@ export function MobileCreatePartyWorkerFlow({
             />
           ) : null}
 
-          {level === "assembly_constituency" || level === "booth" ? (
+          {level === "assembly_constituency" || level === "mandalam" || level === "booth" ? (
             <PickerButton
               label={tr("Assembly Constituency", "നിയോജകമണ്ഡലം")}
               required

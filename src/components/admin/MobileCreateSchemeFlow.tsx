@@ -33,7 +33,7 @@ import {
 export interface CreateSchemeFlowProps {
   lang: "en" | "ml";
   onClose: () => void;
-  onPublishSuccess?: (schemeData: any) => void;
+  onPublishSuccess?: (schemeData: CreatedSchemePayload) => void;
 }
 
 export interface EligibilityRule {
@@ -96,6 +96,39 @@ export interface CustomField {
   // 4. Dropdown
   options?: CustomFieldOption[];
   isMultiSelect?: boolean;
+}
+
+export interface CreatedSchemePayload {
+  id: string;
+  createdAt: string;
+  nameEn: string;
+  nameMl: string;
+  shortName: string;
+  logoUrl: string | null;
+  category: string;
+  categoryMl: string;
+  department: string;
+  aboutScheme: string;
+  shortCardDescription: string;
+  officialWebsite: string;
+  benefitTypes: string[];
+  benefitSummary: string;
+  benefitAmountType: "fixed" | "range" | "varies";
+  benefitAmount: string;
+  paymentFrequency: string;
+  benefitDuration: string;
+  coverageLimit: string;
+  contributionType: "Amount" | "Percentage" | "None";
+  contributionValue: string;
+  eligibilitySummary: string;
+  eligibilityGrouping: "ALL" | "ANY";
+  eligibilityRules: EligibilityRule[];
+  exclusions: string[];
+  applicableLocations: string;
+  localBodyTypes: string[];
+  blockTaluk: string;
+  manualReviewConditions: string;
+  customFields: CustomField[];
 }
 
 const FIELD_TYPE_META: Record<
@@ -735,24 +768,64 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
     }
 
     // Success publish
-    const schemePayload = {
+    const formatAmount = (value: string) => {
+      const trimmed = value.trim();
+      if (!trimmed) return "";
+      return /^[₹$]/.test(trimmed) ? trimmed : `₹${trimmed}`;
+    };
+    const fixedAmountLabel = formatAmount(fixedAmount);
+    const rangeAmountLabel =
+      minAmount.trim() || maxAmount.trim()
+        ? `${formatAmount(minAmount) || "—"} – ${formatAmount(maxAmount) || "—"}`
+        : "";
+    const resolvedBenefitTypes = selectedBenefitTypes.map((type) =>
+      type === "Other" ? customBenefitType.trim() || "Other" : type
+    );
+    const exclusions = exclusionsText
+      .split(/\r?\n|;/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+    const categoryLabelMl = categoryOptions.find((option) => option.en === category)?.ml || category;
+
+    const schemePayload: CreatedSchemePayload = {
+      id: `created-${Date.now()}`,
+      createdAt: new Date().toISOString(),
       nameEn: schemeNameEn,
       nameMl: schemeNameMl || schemeNameEn,
       shortName,
       logoUrl,
       category,
+      categoryMl: categoryLabelMl,
       department: department === "Custom / Other" ? customDepartment : department,
       aboutScheme,
       shortCardDescription,
       officialWebsite,
-      benefitTypes: selectedBenefitTypes,
+      benefitTypes: resolvedBenefitTypes,
       benefitSummary,
+      benefitAmountType,
+      benefitAmount:
+        benefitAmountType === "range"
+          ? rangeAmountLabel
+          : benefitAmountType === "fixed"
+            ? fixedAmountLabel
+            : "",
+      paymentFrequency: customPaymentFrequency.trim() || paymentFrequency,
+      benefitDuration,
+      coverageLimit,
+      contributionType,
+      contributionValue,
       eligibilitySummary,
       eligibilityGrouping: overallGrouping,
-      eligibilityConditions,
-      rulesCount: eligibilityRules.length,
+      eligibilityRules,
+      exclusions,
+      applicableLocations:
+        applicableLocationsType === "selected" && selectedDistricts.length > 0
+          ? selectedDistricts.join(", ")
+          : "All Kerala",
+      localBodyTypes: selectedLocalBodyTypes,
+      blockTaluk: selectedBlockTaluk,
+      manualReviewConditions,
       customFields,
-      customFieldsCount: customFields.length,
     };
 
     if (onPublishSuccess) {
