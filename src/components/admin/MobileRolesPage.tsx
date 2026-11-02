@@ -119,6 +119,8 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
   const tr = (en: string, ml: string) => (isMalayalam ? ml : en);
   const [roles, setRoles] = useState<ManagedRole[]>(() => loadManagedRoles());
   const [activeView, setActiveView] = useState<"list" | "form" | "assign">("list");
+  const [showRoleSearch, setShowRoleSearch] = useState(false);
+  const [roleSearch, setRoleSearch] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [editTarget, setEditTarget] = useState<ManagedRole | null>(null);
   const [draft, setDraft] = useState<RoleDraft>(freshDraft);
@@ -147,6 +149,15 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
     const option = assignmentLevels.find((item) => item.id === level);
     return option ? (isMalayalam ? option.ml : option.en) : level;
   };
+
+  const normalizedRoleSearch = roleSearch.trim().toLowerCase();
+  const filteredRoles = normalizedRoleSearch
+    ? roles.filter((role) =>
+        [role.name, role.description, role.status, ...role.assignmentLevels.map(levelLabel)].some(
+          (value) => value?.toLowerCase().includes(normalizedRoleSearch),
+        ),
+      )
+    : roles;
 
   const openEdit = (role: ManagedRole) => {
     setIsCreating(false);
@@ -381,29 +392,72 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
       {activeView === "list" && (
         <>
           <header className="relative flex h-10 shrink-0 items-center justify-center border-b border-border/70 px-3">
-            <button
-              type="button"
-              onClick={onBack}
-              className="absolute left-0 flex h-7 w-7 items-center justify-center rounded-full bg-muted/60 text-foreground transition-colors hover:bg-muted dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 cursor-pointer"
-              aria-label={tr("Go back", "തിരികെ പോവുക")}
-            >
-              <ArrowLeft className="h-3.5 w-3.5 stroke-[2.2]" />
-            </button>
-            <h1 className="text-[13px] font-extrabold tracking-tight text-[#152153] dark:text-white">
-              {tr("Roles and Control", "റോളുകളും നിയന്ത്രണവും")} ({roles.length})
-            </h1>
-            <button
-              type="button"
-              onClick={openCreate}
-              className="absolute right-0 flex h-7 w-7 items-center justify-center rounded-full bg-orange-100 text-orange-600 transition-colors hover:bg-orange-200 dark:bg-orange-950/60 dark:text-orange-300 dark:hover:bg-orange-900/60 cursor-pointer"
-              aria-label={tr("Create role", "റോൾ സൃഷ്ടിക്കുക")}
-            >
-              <Plus className="h-4 w-4 stroke-[2.6]" />
-            </button>
+            {showRoleSearch ? (
+              <div className="flex w-full items-center gap-2">
+                <div className="relative flex min-w-0 flex-1 items-center">
+                  <Search className="pointer-events-none absolute left-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                  <input
+                    type="text"
+                    value={roleSearch}
+                    onChange={(event) => setRoleSearch(event.target.value)}
+                    placeholder={tr("Search roles...", "റോളുകൾ തിരയുക...")}
+                    aria-label={tr("Search roles", "റോളുകൾ തിരയുക")}
+                    autoFocus
+                    className="h-7 w-full rounded-full border border-border bg-muted/30 pl-8 pr-2 text-[10.5px] font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowRoleSearch(false);
+                    setRoleSearch("");
+                  }}
+                  aria-label={tr("Cancel search", "തിരയൽ റദ്ദാക്കുക")}
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted/60 text-foreground transition-colors hover:bg-muted dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 cursor-pointer"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={onBack}
+                  className="absolute left-0 flex h-7 w-7 items-center justify-center rounded-full bg-muted/60 text-foreground transition-colors hover:bg-muted dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 cursor-pointer"
+                  aria-label={tr("Go back", "തിരികെ പോവുക")}
+                >
+                  <ArrowLeft className="h-3.5 w-3.5 stroke-[2.2]" />
+                </button>
+                <h1 className="text-[13px] font-extrabold tracking-tight text-[#152153] dark:text-white">
+                  {tr("Roles and Control", "റോളുകളും നിയന്ത്രണവും")} ({roles.length})
+                </h1>
+                <div className="absolute right-0 flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowRoleSearch(true);
+                      setRoleSearch("");
+                    }}
+                    className="flex h-7 w-7 items-center justify-center rounded-full bg-muted/60 text-foreground transition-colors hover:bg-muted dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 cursor-pointer"
+                    aria-label={tr("Search roles", "റോളുകൾ തിരയുക")}
+                  >
+                    <Search className="h-3.5 w-3.5 stroke-[2.4]" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={openCreate}
+                    className="flex h-7 w-7 items-center justify-center rounded-full bg-orange-100 text-orange-600 transition-colors hover:bg-orange-200 dark:bg-orange-950/60 dark:text-orange-300 dark:hover:bg-orange-900/60 cursor-pointer"
+                    aria-label={tr("Create role", "റോൾ സൃഷ്ടിക്കുക")}
+                  >
+                    <Plus className="h-4 w-4 stroke-[2.6]" />
+                  </button>
+                </div>
+              </>
+            )}
           </header>
 
           <div className="mt-2 min-h-0 flex-1 space-y-2 overflow-y-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {roles.map((role) => (
+            {filteredRoles.map((role) => (
               <article
                 key={role.id}
                 className={cn(
@@ -481,6 +535,17 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
                 </div>
               </article>
             ))}
+            {filteredRoles.length === 0 ? (
+              <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border bg-card px-4 py-8 text-center">
+                <Search className="h-5 w-5 text-muted-foreground" />
+                <p className="text-[10.5px] font-bold text-foreground">
+                  {tr("No roles found", "റോളുകളൊന്നും കണ്ടെത്തിയില്ല")}
+                </p>
+                <p className="text-[9px] text-muted-foreground">
+                  {tr("Try a different search term.", "മറ്റൊരു തിരയൽ പദം പരീക്ഷിക്കുക.")}
+                </p>
+              </div>
+            ) : null}
           </div>
         </>
       )}
