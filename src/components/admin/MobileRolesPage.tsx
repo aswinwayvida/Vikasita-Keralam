@@ -22,6 +22,7 @@ import {
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -87,6 +88,19 @@ const defaultExpandedModules: Record<PermissionModuleId, boolean> = {
   users: false,
 };
 
+const permissionModuleOrder: PermissionModuleId[] = [
+  "applicant_profile",
+  "applications",
+  "help_desk",
+  "schemes",
+  "party_workers",
+  "users",
+];
+
+const orderedPermissionModules = [...permissionModules].sort(
+  (a, b) => permissionModuleOrder.indexOf(a.id) - permissionModuleOrder.indexOf(b.id),
+);
+
 const allPermissionKeys = permissionModules.flatMap((module) =>
   module.actions.map((action) => permissionKey(module.id, action.id)),
 );
@@ -105,7 +119,6 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
   const tr = (en: string, ml: string) => (isMalayalam ? ml : en);
   const [roles, setRoles] = useState<ManagedRole[]>(() => loadManagedRoles());
   const [activeView, setActiveView] = useState<"list" | "form" | "assign">("list");
-  const [createStep, setCreateStep] = useState<1 | 2>(1);
   const [isCreating, setIsCreating] = useState(false);
   const [editTarget, setEditTarget] = useState<ManagedRole | null>(null);
   const [draft, setDraft] = useState<RoleDraft>(freshDraft);
@@ -117,12 +130,6 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [expandedModules, setExpandedModules] =
     useState<Record<PermissionModuleId, boolean>>(defaultExpandedModules);
-  const roleAccessChecked = draft.administrativePermissions.some((id) =>
-    roleAccessPermissionIds.includes(id),
-  );
-  const delegateAccessChecked = draft.administrativePermissions.includes(
-    delegateAccessPermissionId,
-  );
   const allPermissionsSelected =
     allPermissionKeys.length > 0 &&
     allPermissionKeys.every((key) => draft.permissions.includes(key));
@@ -148,7 +155,6 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
     setErrors({});
     setExpandedModules(defaultExpandedModules);
     setActiveView("form");
-    setCreateStep(1);
     onFormOpenChange?.(true);
   };
 
@@ -171,7 +177,6 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
     setErrors({});
     setExpandedModules(defaultExpandedModules);
     setActiveView("form");
-    setCreateStep(1);
     onFormOpenChange?.(true);
   };
 
@@ -184,7 +189,6 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
     setAssignmentSearch("");
     setAssignmentDistrict("");
     setActiveView("list");
-    setCreateStep(1);
     onFormOpenChange?.(false);
   };
 
@@ -219,17 +223,9 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
     return true;
   };
 
-  const goToModuleStep = () => {
-    if (!validateRoleBasics()) return;
-    setCreateStep(2);
-  };
-
   const saveRole = () => {
     if (!isCreating && !editTarget) return;
-    if (!validateRoleBasics()) {
-      setCreateStep(1);
-      return;
-    }
+    if (!validateRoleBasics()) return;
     if (draft.permissions.length === 0) {
       setErrors({
         permissions: tr(
@@ -406,7 +402,7 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
             </button>
           </header>
 
-          <div className="mt-2 min-h-0 flex-1 space-y-2 overflow-y-auto pb-2 [scrollbar-width:thin]">
+          <div className="mt-2 min-h-0 flex-1 space-y-2 overflow-y-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {roles.map((role) => (
               <article
                 key={role.id}
@@ -675,14 +671,13 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
               <button
                 type="button"
                 onClick={closeRoleDialog}
-                aria-label={tr("Back to roles", "റോളുകളിലേക്ക് മടങ്ങുക")}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-background text-foreground transition-colors hover:bg-muted/40 cursor-pointer"
+                className="h-10 w-[30%] shrink-0 rounded-lg border border-orange-200 bg-white px-3 text-[10.5px] font-extrabold text-orange-700 shadow-none transition-colors hover:bg-orange-50 dark:border-orange-900/60 dark:bg-slate-900 dark:text-orange-300 dark:hover:bg-orange-950/40 cursor-pointer"
               >
-                <ArrowLeft className="h-4 w-4 stroke-[2.2]" />
+                {tr("Skip", "ഒഴിവാക്കുക")}
               </button>
               <Button
                 type="button"
-                className="h-10 flex-1 rounded-xl text-[11.5px] font-extrabold"
+                className="h-10 flex-1 rounded-lg text-[11.5px] font-extrabold shadow-none"
                 onClick={finishWorkerAssignment}
                 disabled={assignmentWorkerIds.length === 0}
               >
@@ -703,7 +698,7 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
           <header className="relative flex h-10 shrink-0 items-center justify-center border-b border-border/70 bg-card px-3 dark:bg-slate-900">
             <button
               type="button"
-              onClick={() => (createStep === 2 ? setCreateStep(1) : closeRoleDialog())}
+              onClick={closeRoleDialog}
               className="absolute left-3 flex h-7 w-7 items-center justify-center rounded-full bg-muted/60 text-foreground transition-colors hover:bg-muted dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 cursor-pointer"
               aria-label={tr("Go back", "തിരികെ പോവുക")}
             >
@@ -714,14 +709,11 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
                 ? tr("Create New Role", "പുതിയ റോൾ സൃഷ്ടിക്കുക")
                 : tr("Edit Role", "റോൾ തിരുത്തുക")}
             </h1>
-            <span className="absolute right-3 rounded-full border border-orange-100 bg-orange-50 px-2 py-1 text-[8.5px] font-bold text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/50 dark:text-orange-300">
-              {tr(`Step ${createStep} of 2`, `ഘട്ടം ${createStep}/2`)}
-            </span>
           </header>
 
-          <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-3 py-3 [scrollbar-width:thin]">
-            {createStep === 1 && (
-              <section className="space-y-3 rounded-2xl border border-border bg-card p-3 shadow-2xs">
+          <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-3 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <section className="rounded-2xl border border-border bg-card p-3 shadow-2xs">
+              <div className="space-y-3">
                 <div className="flex items-center gap-1.5 border-b border-border/60 pb-2">
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-[10px] font-extrabold text-white">
                     1
@@ -742,7 +734,10 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
                       setErrors((current) => ({ ...current, name: "" }));
                     }}
                     placeholder={tr("e.g. Local Body Admin", "ഉദാ: തദ്ദേശ സ്ഥാപന അഡ്മിൻ")}
-                    className={cn("h-9 rounded-lg text-[11.5px]", errors.name && "border-rose-400")}
+                    className={cn(
+                      "h-9 rounded-lg border-border bg-background px-2.5 text-[11.5px] font-medium text-foreground shadow-none transition-colors focus:border-orange-400 focus:ring-1 focus:ring-orange-500 md:text-[11.5px]",
+                      errors.name && "border-rose-400",
+                    )}
                     aria-invalid={Boolean(errors.name)}
                   />
                   {errors.name ? (
@@ -790,11 +785,9 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
                     <p className="mt-1 text-[9.5px] font-semibold text-rose-600">{errors.levels}</p>
                   ) : null}
                 </div>
-              </section>
-            )}
+              </div>
 
-            {createStep === 2 && (
-              <section className="space-y-2.5 rounded-2xl border border-border bg-card p-3 shadow-2xs">
+              <section className="mt-3 space-y-2.5 border-t border-border/60 pt-3">
                 <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-2">
                   <div className="flex items-center gap-1.5">
                     <span className="flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-[10px] font-extrabold text-white">
@@ -805,53 +798,46 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
                       <span className="text-rose-500">*</span>
                     </h4>
                   </div>
-                  <span className="rounded-full bg-orange-50 px-2 py-0.5 text-[9px] font-bold text-orange-700 dark:bg-orange-950/50 dark:text-orange-300">
-                    {draft.permissions.length} {tr("selected", "തിരഞ്ഞെടുത്തു")}
-                  </span>
-                </div>
-                <p className="text-[8.5px] leading-snug text-muted-foreground">
-                  {tr(
-                    "Viewing permissions are added automatically as prerequisites.",
-                    "ആവശ്യമായ കാഴ്ച അനുമതികൾ സ്വയം ചേർക്കും.",
-                  )}
-                </p>
-                <button
-                  type="button"
-                  role="checkbox"
-                  aria-checked={allPermissionsSelected}
-                  onClick={() => {
-                    setDraft((current) => ({
-                      ...current,
-                      permissions: allPermissionsSelected ? [] : [...allPermissionKeys],
-                    }));
-                    setErrors((current) => ({ ...current, permissions: "" }));
-                  }}
-                  className={cn(
-                    "flex w-full items-center gap-2 rounded-xl border px-2.5 py-2 text-left transition-colors cursor-pointer",
-                    allPermissionsSelected
-                      ? "border-orange-300 bg-orange-50/70 dark:border-orange-900/60 dark:bg-orange-950/20"
-                      : "border-border hover:bg-muted/30",
-                  )}
-                >
-                  <span
+                  <button
+                    type="button"
+                    role="checkbox"
+                    aria-checked={allPermissionsSelected}
+                    aria-label={tr(
+                      "Select all module permissions",
+                      "എല്ലാ മൊഡ്യൂൾ അനുമതികളും തിരഞ്ഞെടുക്കുക",
+                    )}
+                    onClick={() => {
+                      setDraft((current) => ({
+                        ...current,
+                        permissions: allPermissionsSelected ? [] : [...allPermissionKeys],
+                      }));
+                      setErrors((current) => ({ ...current, permissions: "" }));
+                    }}
                     className={cn(
-                      "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[3px] border",
+                      "flex shrink-0 items-center gap-1.5 rounded-full px-2 py-1 text-[8.5px] font-bold text-orange-700 transition-colors hover:bg-orange-100 dark:text-orange-300 dark:hover:bg-orange-950/70 cursor-pointer",
                       allPermissionsSelected
-                        ? "border-orange-500 bg-orange-500 text-white"
-                        : "border-slate-300 dark:border-slate-600",
+                        ? "bg-orange-100 dark:bg-orange-950/60"
+                        : "bg-orange-50 dark:bg-orange-950/40",
                     )}
                   >
-                    {allPermissionsSelected ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : null}
-                  </span>
-                  <span className="min-w-0 flex-1 text-[10px] font-extrabold text-foreground">
-                    {tr("Select all module permissions", "എല്ലാ മൊഡ്യൂൾ അനുമതികളും തിരഞ്ഞെടുക്കുക")}
-                  </span>
-                  <span className="shrink-0 text-[8.5px] font-bold text-muted-foreground">
-                    {draft.permissions.length}/{allPermissionKeys.length}
-                  </span>
-                </button>
+                    <span
+                      className={cn(
+                        "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[3px] border",
+                        allPermissionsSelected
+                          ? "border-orange-500 bg-orange-500 text-white"
+                          : "border-orange-300 bg-white dark:border-orange-800 dark:bg-slate-900",
+                      )}
+                    >
+                      {allPermissionsSelected ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : null}
+                    </span>
+                    <span>{tr("All", "എല്ലാം")}</span>
+                    <span>
+                      ({draft.permissions.length}/{allPermissionKeys.length})
+                    </span>
+                  </button>
+                </div>
                 <div className="space-y-1.5">
-                  {permissionModules.map((module) => {
+                  {orderedPermissionModules.map((module) => {
                     const Icon = moduleIcons[module.id];
                     const expanded = expandedModules[module.id];
                     const moduleKeys = module.actions.map((action) =>
@@ -868,6 +854,20 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
                         className="overflow-hidden rounded-xl border border-border"
                       >
                         <div className="flex w-full items-center gap-2 bg-orange-50/40 px-2.5 py-2 transition-colors hover:bg-orange-50 dark:bg-slate-800/40 dark:hover:bg-slate-800/70">
+                          <Checkbox
+                            checked={allModuleSelected}
+                            onCheckedChange={() => {
+                              setDraft((current) => ({
+                                ...current,
+                                permissions: allModuleSelected
+                                  ? current.permissions.filter((key) => !moduleKeys.includes(key))
+                                  : Array.from(new Set([...current.permissions, ...moduleKeys])),
+                              }));
+                              setErrors((current) => ({ ...current, permissions: "" }));
+                            }}
+                            aria-label={`${tr("Select all", "എല്ലാം തിരഞ്ഞെടുക്കുക")} ${isMalayalam ? module.ml : module.en}`}
+                            className="h-3.5 w-3.5 shrink-0 rounded-[3px] border-slate-300 [&_svg]:h-2.5 [&_svg]:w-2.5 data-[state=checked]:border-orange-500 data-[state=checked]:bg-orange-500 dark:border-slate-600"
+                          />
                           <button
                             type="button"
                             onClick={() =>
@@ -908,39 +908,6 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
                                 expanded && "rotate-180",
                               )}
                             />
-                          </button>
-                          <button
-                            type="button"
-                            role="checkbox"
-                            aria-checked={allModuleSelected}
-                            aria-label={`${tr("Select all", "എല്ലാം തിരഞ്ഞെടുക്കുക")} ${isMalayalam ? module.ml : module.en}`}
-                            onClick={() => {
-                              setDraft((current) => ({
-                                ...current,
-                                permissions: allModuleSelected
-                                  ? current.permissions.filter((key) => !moduleKeys.includes(key))
-                                  : Array.from(new Set([...current.permissions, ...moduleKeys])),
-                              }));
-                              setErrors((current) => ({ ...current, permissions: "" }));
-                            }}
-                            className={cn(
-                              "flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-1 text-[8px] font-bold transition-colors cursor-pointer",
-                              allModuleSelected
-                                ? "border-orange-300 bg-orange-100/70 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300"
-                                : "border-border bg-background/70 text-muted-foreground hover:bg-muted/40",
-                            )}
-                          >
-                            <span
-                              className={cn(
-                                "flex h-3 w-3 items-center justify-center rounded-[2px] border",
-                                allModuleSelected
-                                  ? "border-orange-500 bg-orange-500 text-white"
-                                  : "border-slate-300 dark:border-slate-600",
-                              )}
-                            >
-                              {allModuleSelected ? <Check className="h-2 w-2 stroke-[3]" /> : null}
-                            </span>
-                            {tr("Select all", "എല്ലാം")}
                           </button>
                         </div>
                         {expanded ? (
@@ -1005,155 +972,19 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
                   </p>
                 ) : null}
               </section>
-            )}
-
-            {createStep === 1 && (
-              <section className="space-y-2.5 rounded-2xl border border-border bg-card p-3 shadow-2xs">
-                <div className="flex items-center gap-1.5 border-b border-border/60 pb-2">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-[10px] font-extrabold text-white">
-                    2
-                  </span>
-                  <h4 className="text-[12px] font-extrabold text-foreground">
-                    {tr("Administrative Permissions", "അഡ്മിനിസ്ട്രേറ്റീവ് അനുമതികൾ")}
-                  </h4>
-                </div>
-                <p className="text-[8.5px] leading-snug text-muted-foreground">
-                  {tr(
-                    "Elevated controls for roles and access. Not included in Create or Edit Party Worker.",
-                    "റോളുകൾക്കും ആക്സസിനുമുള്ള ഉയർന്ന അധികാരങ്ങൾ. Party Worker സൃഷ്ടിക്കുക/തിരുത്തുക എന്നതിൽ ഇവ ഉൾപ്പെടുന്നില്ല.",
-                  )}
-                </p>
-                <div className="space-y-1.5">
-                  <button
-                    type="button"
-                    role="checkbox"
-                    aria-checked={roleAccessChecked}
-                    onClick={() =>
-                      setDraft((current) => ({
-                        ...current,
-                        administrativePermissions: current.administrativePermissions.some((id) =>
-                          roleAccessPermissionIds.includes(id),
-                        )
-                          ? current.administrativePermissions.filter(
-                              (id) => !roleAccessPermissionIds.includes(id),
-                            )
-                          : [
-                              ...current.administrativePermissions.filter(
-                                (id) => !roleAccessPermissionIds.includes(id),
-                              ),
-                              ...roleAccessPermissionIds,
-                            ],
-                      }))
-                    }
-                    className={cn(
-                      "flex w-full items-start gap-2 rounded-lg border px-2 py-1.5 text-left transition-colors cursor-pointer",
-                      roleAccessChecked
-                        ? "border-amber-300 bg-amber-50/70 dark:border-amber-900/60 dark:bg-amber-950/20"
-                        : "border-border hover:bg-muted/30",
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "mt-px flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[3px] border",
-                        roleAccessChecked
-                          ? "border-amber-500 bg-amber-500 text-white"
-                          : "border-slate-300 dark:border-slate-600",
-                      )}
-                    >
-                      {roleAccessChecked ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : null}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[10px] font-bold text-foreground">
-                        {tr("Role and access management", "റോൾ & ആക്സസ് മാനേജ്മെന്റ്")}
-                      </span>
-                      <span className="block text-[8.5px] leading-snug text-muted-foreground">
-                        {tr(
-                          "Create roles and assign access to party workers.",
-                          "റോളുകൾ സൃഷ്ടിക്കാം, പാർട്ടി പ്രവർത്തകർക്ക് ആക്സസ് നൽകാം.",
-                        )}
-                      </span>
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    role="checkbox"
-                    aria-checked={delegateAccessChecked}
-                    onClick={() =>
-                      setDraft((current) => ({
-                        ...current,
-                        administrativePermissions: current.administrativePermissions.includes(
-                          delegateAccessPermissionId,
-                        )
-                          ? current.administrativePermissions.filter(
-                              (id) => id !== delegateAccessPermissionId,
-                            )
-                          : [...current.administrativePermissions, delegateAccessPermissionId],
-                      }))
-                    }
-                    className={cn(
-                      "flex w-full items-start gap-2 rounded-lg border px-2 py-1.5 text-left transition-colors cursor-pointer",
-                      delegateAccessChecked
-                        ? "border-amber-300 bg-amber-50/70 dark:border-amber-900/60 dark:bg-amber-950/20"
-                        : "border-border hover:bg-muted/30",
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "mt-px flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[3px] border",
-                        delegateAccessChecked
-                          ? "border-amber-500 bg-amber-500 text-white"
-                          : "border-slate-300 dark:border-slate-600",
-                      )}
-                    >
-                      {delegateAccessChecked ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : null}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[10px] font-bold text-foreground">
-                        {tr("Access delegation", "ആക്സസ് ഡെലിഗേഷൻ")}
-                      </span>
-                      <span className="block text-[8.5px] leading-snug text-muted-foreground">
-                        {tr(
-                          "Grant access-management authority to other administrators.",
-                          "മറ്റ് അഡ്മിനിസ്ട്രേറ്റർമാർക്ക് ആക്സസ് മാനേജ്മെന്റ് അധികാരം നൽകാം.",
-                        )}
-                      </span>
-                    </span>
-                  </button>
-                </div>
-              </section>
-            )}
+            </section>
           </div>
 
           <div className="shrink-0 border-t border-border/70 bg-background/95 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur">
-            {createStep === 1 ? (
-              <Button
-                type="button"
-                className="h-10 w-full rounded-xl text-[11.5px] font-extrabold"
-                onClick={goToModuleStep}
-              >
-                {tr("Continue", "തുടരുക")}
-              </Button>
-            ) : (
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setCreateStep(1)}
-                  aria-label={tr("Back to role details", "റോൾ വിവരങ്ങളിലേക്ക് മടങ്ങുക")}
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-background text-foreground transition-colors hover:bg-muted/40 cursor-pointer"
-                >
-                  <ArrowLeft className="h-4 w-4 stroke-[2.2]" />
-                </button>
-                <Button
-                  type="button"
-                  className="h-10 flex-1 rounded-xl text-[11.5px] font-extrabold"
-                  onClick={saveRole}
-                >
-                  {isCreating
-                    ? tr("Save and Create", "സേവ് ചെയ്ത് സൃഷ്ടിക്കുക")
-                    : tr("Save Changes", "മാറ്റങ്ങൾ സേവ് ചെയ്യുക")}
-                </Button>
-              </div>
-            )}
+            <Button
+              type="button"
+              className="h-10 w-full rounded-xl text-[11.5px] font-extrabold"
+              onClick={saveRole}
+            >
+              {isCreating
+                ? tr("Save and Create", "സേവ് ചെയ്ത് സൃഷ്ടിക്കുക")
+                : tr("Save Changes", "മാറ്റങ്ങൾ സേവ് ചെയ്യുക")}
+            </Button>
           </div>
         </div>
       )}
