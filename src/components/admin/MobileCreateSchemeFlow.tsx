@@ -2825,48 +2825,6 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                       className="w-full resize-none rounded-lg border border-orange-200/80 bg-[#FFFDF7] px-3 py-2 text-[11px] text-foreground outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-800"
                     />
                   </div>
-                  <div className="flex items-start justify-between gap-3 rounded-xl border border-orange-100 bg-orange-50/40 px-3 py-2.5 dark:border-slate-700 dark:bg-slate-800/70">
-                    <div className="min-w-0">
-                      <p className="text-[10.5px] font-extrabold text-[#1E293B] dark:text-slate-100">
-                        Allow verification without upload
-                      </p>
-                      <p className="mt-0.5 text-[9px] font-medium leading-snug text-muted-foreground">
-                        Workers can verify the original document in person instead of uploading a copy.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setFieldAllowOfflineVerif((value) => !value)}
-                      className={`relative mt-0.5 h-5 w-9 shrink-0 rounded-full transition-colors ${
-                        fieldAllowOfflineVerif ? "bg-[#FF5500]" : "bg-slate-300 dark:bg-slate-600"
-                      }`}
-                      aria-label="Allow verification without upload"
-                    >
-                      <span
-                        className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${
-                          fieldAllowOfflineVerif ? "left-[18px]" : "left-0.5"
-                        }`}
-                      />
-                    </button>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="block text-[10.5px] font-extrabold text-[#1E293B] dark:text-slate-200">
-                      Allow verification without upload — Malayalam
-                    </label>
-                    <input
-                      type="text"
-                      value={fieldOfflineVerificationLabelMl}
-                      onChange={(event) =>
-                        setFieldOfflineVerificationLabelMl(event.target.value)
-                      }
-                      onFocus={keepFieldInputVisible}
-                      placeholder="അപ്ലോഡ് ഇല്ലാതെ രേഖ പരിശോധിക്കാൻ അനുവദിക്കുക"
-                      className="w-full rounded-lg border border-orange-200/80 bg-[#FFFDF7] px-3 py-2 text-[11.5px] text-foreground outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-800"
-                    />
-                    <p className="text-[9px] font-medium leading-snug text-muted-foreground">
-                      Shown to workers when offline verification is available.
-                    </p>
-                  </div>
                 </div>
               )}
 
@@ -2885,20 +2843,6 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                       className="w-full rounded-lg border border-orange-200/80 bg-[#FFFDF7] px-3 py-2 text-[11.5px] text-foreground outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-800"
                     />
                   </div>
-                  <div className="space-y-1">
-                    <label className="block text-[10.5px] font-extrabold text-[#1E293B] dark:text-slate-200">
-                      Help text — Malayalam
-                    </label>
-                    <input
-                      type="text"
-                      value={fieldHelpTextMl}
-                      onChange={(event) => setFieldHelpTextMl(event.target.value)}
-                      onFocus={keepFieldInputVisible}
-                      placeholder="ഐച്ഛിക സഹായ വിവരം"
-                      className="w-full rounded-lg border border-orange-200/80 bg-[#FFFDF7] px-3 py-2 text-[11.5px] text-foreground outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-800"
-                    />
-                  </div>
-
                   <div className="rounded-xl border border-orange-100 bg-orange-50/40 px-3 py-2.5 dark:border-slate-700 dark:bg-slate-800/70">
                     <div className="flex items-center justify-between gap-3">
                       <div>
@@ -2974,32 +2918,21 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
 
               {(fieldType === "descriptive_text" || fieldType === "single_text") && (
                 <div className="space-y-2.5 border-t border-orange-100 pt-3 dark:border-slate-800">
-                  <div className="space-y-1">
-                    <label className="block text-[10.5px] font-extrabold text-[#1E293B] dark:text-slate-200">
-                      Placeholder — English
-                    </label>
-                    <input
-                      type="text"
-                      value={fieldPlaceholderEn}
-                      onChange={(event) => setFieldPlaceholderEn(event.target.value)}
-                      onFocus={keepFieldInputVisible}
-                      placeholder="Placeholder shown inside the field"
-                      className="w-full rounded-lg border border-orange-200/80 bg-[#FFFDF7] px-3 py-2 text-[11.5px] text-foreground outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-800"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="block text-[10.5px] font-extrabold text-[#1E293B] dark:text-slate-200">
-                      Placeholder — Malayalam
-                    </label>
-                    <input
-                      type="text"
-                      value={fieldPlaceholderMl}
-                      onChange={(event) => setFieldPlaceholderMl(event.target.value)}
-                      onFocus={keepFieldInputVisible}
-                      placeholder="ഉദാ. വിവരങ്ങൾ നൽകുക"
-                      className="w-full rounded-lg border border-orange-200/80 bg-[#FFFDF7] px-3 py-2 text-[11.5px] text-foreground outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-800"
-                    />
-                  </div>
+                  {fieldType === "single_text" && (
+                    <div className="space-y-1">
+                      <label className="block text-[10.5px] font-extrabold text-[#1E293B] dark:text-slate-200">
+                        Placeholder — English
+                      </label>
+                      <input
+                        type="text"
+                        value={fieldPlaceholderEn}
+                        onChange={(event) => setFieldPlaceholderEn(event.target.value)}
+                        onFocus={keepFieldInputVisible}
+                        placeholder="Placeholder shown inside the field"
+                        className="w-full rounded-lg border border-orange-200/80 bg-[#FFFDF7] px-3 py-2 text-[11.5px] text-foreground outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-800"
+                      />
+                    </div>
+                  )}
                   <div className="space-y-1">
                     <label className="block text-[10.5px] font-extrabold text-[#1E293B] dark:text-slate-200">
                       Help text — English
@@ -3010,19 +2943,6 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                       onChange={(event) => setFieldHelpTextEn(event.target.value)}
                       onFocus={keepFieldInputVisible}
                       placeholder="Optional guidance for the worker"
-                      className="w-full rounded-lg border border-orange-200/80 bg-[#FFFDF7] px-3 py-2 text-[11.5px] text-foreground outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-800"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="block text-[10.5px] font-extrabold text-[#1E293B] dark:text-slate-200">
-                      Help text — Malayalam
-                    </label>
-                    <input
-                      type="text"
-                      value={fieldHelpTextMl}
-                      onChange={(event) => setFieldHelpTextMl(event.target.value)}
-                      onFocus={keepFieldInputVisible}
-                      placeholder="ഐച്ഛിക സഹായ വിവരം"
                       className="w-full rounded-lg border border-orange-200/80 bg-[#FFFDF7] px-3 py-2 text-[11.5px] text-foreground outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-800"
                     />
                   </div>
@@ -3212,7 +3132,8 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                 </div>
               )}
 
-              <div className="overflow-hidden rounded-xl border border-orange-100 dark:border-slate-700">
+              {fieldType === "file_upload" && (
+                <div className="overflow-hidden rounded-xl border border-orange-100 dark:border-slate-700">
                 <button
                   type="button"
                   onClick={() => setShowFieldAdvanced((value) => !value)}
@@ -3347,7 +3268,8 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                     )}
                   </div>
                 )}
-              </div>
+                </div>
+              )}
             </div>
 
             <div className="shrink-0 border-t border-orange-100 bg-white px-4 py-3 pb-[calc(0.75rem_+_env(safe-area-inset-bottom))] dark:border-slate-800 dark:bg-slate-900">
