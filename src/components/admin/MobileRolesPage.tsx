@@ -14,6 +14,7 @@ import {
   Plus,
   Search,
   UserRound,
+  UserPlus,
   Users,
   UsersRound,
   X,
@@ -86,6 +87,10 @@ const defaultExpandedModules: Record<PermissionModuleId, boolean> = {
   users: false,
 };
 
+const allPermissionKeys = permissionModules.flatMap((module) =>
+  module.actions.map((action) => permissionKey(module.id, action.id)),
+);
+
 const roleAccessPermissionIds: AdministrativePermissionId[] = ["manage_roles", "assign_access"];
 const delegateAccessPermissionId: AdministrativePermissionId = "delegate_access";
 
@@ -118,6 +123,9 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
   const delegateAccessChecked = draft.administrativePermissions.includes(
     delegateAccessPermissionId,
   );
+  const allPermissionsSelected =
+    allPermissionKeys.length > 0 &&
+    allPermissionKeys.every((key) => draft.permissions.includes(key));
 
   useEffect(() => {
     return () => onFormOpenChange?.(false);
@@ -141,6 +149,18 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
     setExpandedModules(defaultExpandedModules);
     setActiveView("form");
     setCreateStep(1);
+    onFormOpenChange?.(true);
+  };
+
+  const openAssignRole = (role: ManagedRole) => {
+    setIsCreating(false);
+    setEditTarget(null);
+    setAssignmentRole(role);
+    setAssignmentWorkerIds(role.assignedWorkerIds ? [...role.assignedWorkerIds] : []);
+    setAssignmentWorkers(loadAssignablePartyWorkers());
+    setAssignmentSearch("");
+    setAssignmentDistrict("");
+    setActiveView("assign");
     onFormOpenChange?.(true);
   };
 
@@ -440,6 +460,13 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
                       className="w-44 rounded-xl border-orange-100 p-1.5 shadow-lg dark:border-slate-800"
                     >
                       <DropdownMenuItem
+                        onSelect={() => openAssignRole(role)}
+                        className="gap-2 rounded-lg px-2 py-2 text-[11px] font-semibold"
+                      >
+                        <UserPlus className="h-3.5 w-3.5" />
+                        {tr("Assign Role", "റോൾ അസൈൻ ചെയ്യുക")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
                         onSelect={() => openEdit(role)}
                         className="gap-2 rounded-lg px-2 py-2 text-[11px] font-semibold"
                       >
@@ -477,7 +504,7 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
               {tr("Assign Party Workers", "പാർട്ടി പ്രവർത്തകരെ നൽകുക")}
             </h1>
             <span className="absolute right-3 rounded-full border border-orange-100 bg-orange-50 px-2 py-1 text-[8.5px] font-bold text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/50 dark:text-orange-300">
-              {tr("Step 3 of 3", "ഘട്ടം 3/3")}
+              {isCreating ? tr("Step 3 of 3", "ഘട്ടം 3/3") : tr("Assign Role", "റോൾ അസൈൻ")}
             </span>
           </header>
 
@@ -788,59 +815,134 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
                     "ആവശ്യമായ കാഴ്ച അനുമതികൾ സ്വയം ചേർക്കും.",
                   )}
                 </p>
+                <button
+                  type="button"
+                  role="checkbox"
+                  aria-checked={allPermissionsSelected}
+                  onClick={() => {
+                    setDraft((current) => ({
+                      ...current,
+                      permissions: allPermissionsSelected ? [] : [...allPermissionKeys],
+                    }));
+                    setErrors((current) => ({ ...current, permissions: "" }));
+                  }}
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-xl border px-2.5 py-2 text-left transition-colors cursor-pointer",
+                    allPermissionsSelected
+                      ? "border-orange-300 bg-orange-50/70 dark:border-orange-900/60 dark:bg-orange-950/20"
+                      : "border-border hover:bg-muted/30",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[3px] border",
+                      allPermissionsSelected
+                        ? "border-orange-500 bg-orange-500 text-white"
+                        : "border-slate-300 dark:border-slate-600",
+                    )}
+                  >
+                    {allPermissionsSelected ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : null}
+                  </span>
+                  <span className="min-w-0 flex-1 text-[10px] font-extrabold text-foreground">
+                    {tr("Select all module permissions", "എല്ലാ മൊഡ്യൂൾ അനുമതികളും തിരഞ്ഞെടുക്കുക")}
+                  </span>
+                  <span className="shrink-0 text-[8.5px] font-bold text-muted-foreground">
+                    {draft.permissions.length}/{allPermissionKeys.length}
+                  </span>
+                </button>
                 <div className="space-y-1.5">
                   {permissionModules.map((module) => {
                     const Icon = moduleIcons[module.id];
                     const expanded = expandedModules[module.id];
+                    const moduleKeys = module.actions.map((action) =>
+                      permissionKey(module.id, action.id),
+                    );
                     const selectedActions = module.actions.filter((action) =>
                       draft.permissions.includes(permissionKey(module.id, action.id)),
                     );
+                    const allModuleSelected =
+                      module.actions.length > 0 && selectedActions.length === module.actions.length;
                     return (
                       <div
                         key={module.id}
                         className="overflow-hidden rounded-xl border border-border"
                       >
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setExpandedModules((current) => ({
-                              ...current,
-                              [module.id]: !current[module.id],
-                            }))
-                          }
-                          aria-expanded={expanded}
-                          className="flex w-full items-center gap-2 bg-orange-50/40 px-2.5 py-2 text-left transition-colors hover:bg-orange-50 dark:bg-slate-800/40 dark:hover:bg-slate-800/70 cursor-pointer"
-                        >
-                          <Icon className="h-3.5 w-3.5 shrink-0 text-orange-600 dark:text-orange-300" />
-                          <span className="min-w-0 flex-1">
-                            <span className="block text-[10.5px] font-extrabold text-foreground">
-                              {isMalayalam ? module.ml : module.en}
+                        <div className="flex w-full items-center gap-2 bg-orange-50/40 px-2.5 py-2 transition-colors hover:bg-orange-50 dark:bg-slate-800/40 dark:hover:bg-slate-800/70">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpandedModules((current) => ({
+                                ...current,
+                                [module.id]: !current[module.id],
+                              }))
+                            }
+                            aria-expanded={expanded}
+                            className="flex min-w-0 flex-1 items-center gap-2 text-left cursor-pointer"
+                          >
+                            <Icon className="h-3.5 w-3.5 shrink-0 text-orange-600 dark:text-orange-300" />
+                            <span className="min-w-0 flex-1">
+                              <span className="block text-[10.5px] font-extrabold text-foreground">
+                                {isMalayalam ? module.ml : module.en}
+                              </span>
+                              <span className="block truncate text-[8.5px] text-muted-foreground">
+                                {selectedActions.length > 0
+                                  ? selectedActions
+                                      .map((action) => (isMalayalam ? action.ml : action.en))
+                                      .join(", ")
+                                  : tr("No permissions selected", "അനുമതികൾ തിരഞ്ഞെടുത്തിട്ടില്ല")}
+                              </span>
                             </span>
-                            <span className="block truncate text-[8.5px] text-muted-foreground">
-                              {selectedActions.length > 0
-                                ? selectedActions
-                                    .map((action) => (isMalayalam ? action.ml : action.en))
-                                    .join(", ")
-                                : tr("No permissions selected", "അനുമതികൾ തിരഞ്ഞെടുത്തിട്ടില്ല")}
+                            <span
+                              className={cn(
+                                "rounded-full px-1.5 py-0.5 text-[8.5px] font-bold",
+                                selectedActions.length > 0
+                                  ? "bg-orange-100 text-orange-700 dark:bg-orange-950/60 dark:text-orange-300"
+                                  : "bg-muted text-muted-foreground",
+                              )}
+                            >
+                              {selectedActions.length}/{module.actions.length}
                             </span>
-                          </span>
-                          <span
+                            <ChevronDown
+                              className={cn(
+                                "h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform",
+                                expanded && "rotate-180",
+                              )}
+                            />
+                          </button>
+                          <button
+                            type="button"
+                            role="checkbox"
+                            aria-checked={allModuleSelected}
+                            aria-label={`${tr("Select all", "എല്ലാം തിരഞ്ഞെടുക്കുക")} ${isMalayalam ? module.ml : module.en}`}
+                            onClick={() => {
+                              setDraft((current) => ({
+                                ...current,
+                                permissions: allModuleSelected
+                                  ? current.permissions.filter((key) => !moduleKeys.includes(key))
+                                  : Array.from(new Set([...current.permissions, ...moduleKeys])),
+                              }));
+                              setErrors((current) => ({ ...current, permissions: "" }));
+                            }}
                             className={cn(
-                              "rounded-full px-1.5 py-0.5 text-[8.5px] font-bold",
-                              selectedActions.length > 0
-                                ? "bg-orange-100 text-orange-700 dark:bg-orange-950/60 dark:text-orange-300"
-                                : "bg-muted text-muted-foreground",
+                              "flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-1 text-[8px] font-bold transition-colors cursor-pointer",
+                              allModuleSelected
+                                ? "border-orange-300 bg-orange-100/70 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300"
+                                : "border-border bg-background/70 text-muted-foreground hover:bg-muted/40",
                             )}
                           >
-                            {selectedActions.length}/{module.actions.length}
-                          </span>
-                          <ChevronDown
-                            className={cn(
-                              "h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform",
-                              expanded && "rotate-180",
-                            )}
-                          />
-                        </button>
+                            <span
+                              className={cn(
+                                "flex h-3 w-3 items-center justify-center rounded-[2px] border",
+                                allModuleSelected
+                                  ? "border-orange-500 bg-orange-500 text-white"
+                                  : "border-slate-300 dark:border-slate-600",
+                              )}
+                            >
+                              {allModuleSelected ? <Check className="h-2 w-2 stroke-[3]" /> : null}
+                            </span>
+                            {tr("Select all", "എല്ലാം")}
+                          </button>
+                        </div>
                         {expanded ? (
                           <div className="space-y-1 border-t border-border/70 p-2">
                             {module.actions.map((action) => {
