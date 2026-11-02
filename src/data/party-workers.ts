@@ -12,7 +12,16 @@ import { orgHierarchyData, type OrgLevel } from "./admin-dashboard-metrics";
 /* -------------------------------------------------------------------------- */
 
 export type AssignmentLevel =
-  "state" | "district" | "assembly_constituency" | "local_body" | "ward" | "booth" | "org_unit";
+  | "state"
+  | "region"
+  | "district"
+  | "mandalam"
+  | "area"
+  | "assembly_constituency"
+  | "local_body"
+  | "ward"
+  | "booth"
+  | "org_unit";
 
 export interface AssignmentLevelOption {
   id: AssignmentLevel;
@@ -72,6 +81,21 @@ export const assignmentLevels: AssignmentLevelOption[] = [
     hintEn: "Administrator-configured party hierarchy",
     hintMl: "അഡ്മിനിസ്ട്രേറ്റർ ക്രമീകരിച്ച പാർട്ടി ഘടന",
   },
+];
+
+export interface OrganisationLevelOption {
+  id: AssignmentLevel;
+  en: string;
+  ml: string;
+}
+
+export const roleOrganisationLevels: OrganisationLevelOption[] = [
+  { id: "state", en: "State", ml: "സംസ്ഥാനം" },
+  { id: "region", en: "Region", ml: "റീജിയൺ" },
+  { id: "district", en: "Org District", ml: "ഓർഗനൈസേഷൻ ജില്ല" },
+  { id: "mandalam", en: "Mandalam", ml: "മണ്ഡലം" },
+  { id: "area", en: "Area", ml: "ഏരിയ" },
+  { id: "booth", en: "Booth", ml: "ബൂത്ത്" },
 ];
 
 export interface PartyDesignation {

@@ -228,7 +228,10 @@ const moduleIcons: Record<PermissionModuleId, React.ElementType> = {
 
 const rolePresetForLevel: Record<AssignmentLevel, Exclude<RolePresetId, "custom">> = {
   state: "state_admin",
+  region: "district_admin",
   district: "district_admin",
+  mandalam: "constituency_admin",
+  area: "party_worker",
   assembly_constituency: "constituency_admin",
   local_body: "local_body_admin",
   ward: "party_worker",

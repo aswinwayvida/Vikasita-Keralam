@@ -27,7 +27,7 @@ import {
   X,
 } from "lucide-react";
 import { schemes, type Scheme } from "@/data/schemes";
-import { constituencies, districts, type LocalBodyType } from "@/data/geo";
+import { districts, getWardsForLocalBody, panchayats, type LocalBodyType } from "@/data/geo";
 import {
   evaluateEligibility,
   type EligibilityAnswers,
@@ -67,7 +67,8 @@ type Props = {
 };
 
 type View = "questions" | "loading" | "results" | "browse" | "error" | "success";
-type PickerKey = "district" | "mandalam";
+type PickerKey = "district" | "localBodyType" | "localBody" | "ward";
+
 type PickerOption = { value: string; label: string; hint?: string };
 
 const EMPTY: GuestEligibilityAnswers = {
@@ -278,13 +279,15 @@ function SearchableSelect({
         disabled={disabled}
         aria-expanded={open}
         onClick={onToggle}
-        className={`flex w-full items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-left text-[11.5px] transition-colors ${
+        className={`flex w-full min-w-0 items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-left text-[11.5px] transition-colors ${
           disabled
             ? "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400"
             : "cursor-pointer border-slate-200 bg-white text-slate-800 hover:border-orange-300"
         }`}
       >
-        <span className={valueLabel ? "font-bold text-slate-800" : "text-slate-400"}>
+        <span
+          className={`block min-w-0 truncate ${valueLabel ? "font-bold text-slate-800" : "text-slate-400"}`}
+        >
           {valueLabel || placeholder}
         </span>
         <ChevronDown
@@ -379,8 +382,9 @@ export function MobileGuestEligibilityQuestionnaire({
   );
   const [assistanceNotes, setAssistanceNotes] = useState("");
   const [assistanceDistrictId, setAssistanceDistrictId] = useState("");
-  const [assistanceMandalamId, setAssistanceMandalamId] = useState("");
-  const [assistanceConsent, setAssistanceConsent] = useState(false);
+  const [assistanceLocalBodyType, setAssistanceLocalBodyType] = useState<LocalBodyType | "">("");
+  const [assistanceLocalBodyId, setAssistanceLocalBodyId] = useState("");
+  const [assistanceWardId, setAssistanceWardId] = useState("");
   const [assistanceErrors, setAssistanceErrors] = useState<Record<string, string>>({});
   const [assistanceSending, setAssistanceSending] = useState(false);
   const [assistanceSubmitError, setAssistanceSubmitError] = useState("");
@@ -407,10 +411,24 @@ export function MobileGuestEligibilityQuestionnaire({
   }, [view]);
 
   const selectedDistrict = districts.find((district) => district.id === assistanceDistrictId);
-  const districtConstituencies = constituencies.filter(
-    (item) => item.districtId === assistanceDistrictId,
-  );
-  const selectedMandalam = districtConstituencies.find((item) => item.id === assistanceMandalamId);
+  const districtLocalBodies = assistanceDistrictId
+    ? panchayats.filter((item) => item.districtId === assistanceDistrictId)
+    : [];
+  const localBodyTypeOptions: LocalBodyType[] = ["panchayat", "municipality", "corporation"].filter(
+    (type) => districtLocalBodies.some((item) => item.type === type),
+  ) as LocalBodyType[];
+  const localBodyOptions = assistanceLocalBodyType
+    ? districtLocalBodies.filter((item) => item.type === assistanceLocalBodyType)
+    : [];
+  const selectedLocalBody = panchayats.find((item) => item.id === assistanceLocalBodyId);
+  const wardOptions = assistanceLocalBodyId ? getWardsForLocalBody(assistanceLocalBodyId) : [];
+  const selectedWard = wardOptions.find((item) => item.id === assistanceWardId);
+  const localBodyTypeLabel = (type: LocalBodyType) =>
+    type === "corporation"
+      ? t("Corporation", "കോർപ്പറേഷൻ")
+      : type === "municipality"
+        ? t("Municipality", "മുനിസിപ്പാലിറ്റി")
+        : t("Panchayat", "പഞ്ചായത്ത്");
   const selectedOccupation = OCCUPATION_OPTIONS.find((item) => item.value === answers.occupation);
   const filteredOccupations = OCCUPATION_OPTIONS.filter((option) => {
     const normalized = occupationQuery.trim().toLocaleLowerCase();
@@ -523,12 +541,35 @@ export function MobileGuestEligibilityQuestionnaire({
 
   const handleAssistanceDistrictChange = (value: string) => {
     setAssistanceDistrictId(value);
-    setAssistanceMandalamId("");
+    setAssistanceLocalBodyType("");
+    setAssistanceLocalBodyId("");
+    setAssistanceWardId("");
     setOpenPicker(null);
+    setAssistanceErrors((current) => ({
+      ...current,
+      district: "",
+      localBodyType: "",
+      localBody: "",
+      ward: "",
+    }));
   };
-  const handleAssistanceMandalamChange = (value: string) => {
-    setAssistanceMandalamId(value);
+  const handleAssistanceLocalBodyTypeChange = (value: string) => {
+    setAssistanceLocalBodyType(value as LocalBodyType);
+    setAssistanceLocalBodyId("");
+    setAssistanceWardId("");
     setOpenPicker(null);
+    setAssistanceErrors((current) => ({ ...current, localBodyType: "", localBody: "", ward: "" }));
+  };
+  const handleAssistanceLocalBodyChange = (value: string) => {
+    setAssistanceLocalBodyId(value);
+    setAssistanceWardId("");
+    setOpenPicker(null);
+    setAssistanceErrors((current) => ({ ...current, localBody: "", ward: "" }));
+  };
+  const handleAssistanceWardChange = (value: string) => {
+    setAssistanceWardId(value);
+    setOpenPicker(null);
+    setAssistanceErrors((current) => ({ ...current, ward: "" }));
   };
 
   const runCheck = () => {
@@ -609,11 +650,21 @@ export function MobileGuestEligibilityQuestionnaire({
         "Enter a valid 10-digit mobile number.",
         "സാധുവായ 10 അക്ക മൊബൈൽ നമ്പർ നൽകുക.",
       );
-    if (!assistanceConsent)
-      nextErrors.consent = t(
-        "Please agree to share your details.",
-        "വിവരങ്ങൾ പങ്കിടാൻ സമ്മതിക്കുക.",
+    if (!assistanceDistrictId)
+      nextErrors.district = t("Select your district.", "നിങ്ങളുടെ ജില്ല തിരഞ്ഞെടുക്കുക.");
+    if (!assistanceLocalBodyType)
+      nextErrors.localBodyType = t(
+        "Select your local body type.",
+        "നിങ്ങളുടെ തദ്ദേശ സ്ഥാപന തരം തിരഞ്ഞെടുക്കുക.",
       );
+    if (!assistanceLocalBodyId)
+      nextErrors.localBody = t(
+        "Select and confirm your local body.",
+        "നിങ്ങളുടെ തദ്ദേശ സ്ഥാപനം തിരഞ്ഞെടുത്ത് സ്ഥിരീകരിക്കുക.",
+      );
+    if (!assistanceWardId)
+      nextErrors.ward = t("Select your ward.", "നിങ്ങളുടെ വാർഡ് തിരഞ്ഞെടുക്കുക.");
+
     setAssistanceErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
@@ -627,9 +678,7 @@ export function MobileGuestEligibilityQuestionnaire({
     if (assistanceSending) return;
     const cleanOtp = assistanceOtp.trim();
     if (cleanOtp.length < 6) {
-      setAssistanceOtpError(
-        t("Enter the 6-digit OTP code.", "6 അക്ക OTP നൽകുക."),
-      );
+      setAssistanceOtpError(t("Enter the 6-digit OTP code.", "6 അക്ക OTP നൽകുക."));
       return;
     }
     if (cleanOtp !== "123456") {
@@ -646,10 +695,10 @@ export function MobileGuestEligibilityQuestionnaire({
       answers: {
         ...answers,
         districtId: assistanceDistrictId,
-        localBodyType: "",
-        localBodyId: "",
-        wardId: "",
-        mandalamId: assistanceMandalamId,
+        localBodyType: assistanceLocalBodyType || selectedLocalBody?.type || "",
+        localBodyId: assistanceLocalBodyId,
+        wardId: assistanceWardId,
+        mandalamId: "",
       },
       schemeIds: selectedSchemeIds,
       fullName: assistanceName,
@@ -1124,7 +1173,10 @@ export function MobileGuestEligibilityQuestionnaire({
     if (/(life mission|housing|home|shelter|awas)/.test(title) || scheme.category === "housing") {
       return "/images/category-icons/cat_housing.png";
     }
-    if (/(pension|vayoshreshtha|bima|apy|pmsby|pmjjby)/.test(title) || scheme.category === "welfare") {
+    if (
+      /(pension|vayoshreshtha|bima|apy|pmsby|pmjjby)/.test(title) ||
+      scheme.category === "welfare"
+    ) {
       return "/images/category-icons/cat_banking.png";
     }
     if (scheme.category === "women") {
@@ -1230,7 +1282,9 @@ export function MobileGuestEligibilityQuestionnaire({
               type="button"
               onClick={() => setShowHeaderSearch((prev) => !prev)}
               className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors ${
-                showHeaderSearch || resultQuery ? "bg-orange-100 text-orange-600" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                showHeaderSearch || resultQuery
+                  ? "bg-orange-100 text-orange-600"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               }`}
               aria-label={t("Search schemes", "പദ്ധതികൾ തിരയുക")}
             >
@@ -1559,9 +1613,7 @@ export function MobileGuestEligibilityQuestionnaire({
             {t("Verification code sent to", "OTP അയച്ച മൊബൈൽ നമ്പർ")}
           </p>
           <div className="mt-1 flex items-center justify-center gap-2">
-            <span className="text-[13px] font-bold text-slate-900">
-              +91 {assistanceMobile}
-            </span>
+            <span className="text-[13px] font-bold text-slate-900">+91 {assistanceMobile}</span>
             <button
               type="button"
               onClick={() => {
@@ -1736,38 +1788,7 @@ export function MobileGuestEligibilityQuestionnaire({
                   <X className="h-4 w-4 stroke-[2.2]" />
                 </button>
               </div>
-              <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-3.5 py-2.5">
-                <div className="overflow-hidden rounded-xl border border-orange-200 bg-orange-50/70">
-                  <button
-                    type="button"
-                    onClick={() => setSchemeNamesExpanded((current) => !current)}
-                    className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left"
-                  >
-                    <span className="flex items-center gap-1.5 text-[10.5px] font-extrabold text-orange-800">
-                      <HeartHandshake className="h-3.5 w-3.5" />
-                      {count === 1
-                        ? t("1 scheme selected", "1 പദ്ധതി തിരഞ്ഞെടുത്തു")
-                        : t(`${count} schemes selected`, `${count} പദ്ധതികൾ തിരഞ്ഞെടുത്തു`)}
-                    </span>
-                    <ChevronDown
-                      className={`h-4 w-4 shrink-0 text-orange-700 transition-transform ${schemeNamesExpanded ? "rotate-180" : ""}`}
-                    />
-                  </button>
-                  {schemeNamesExpanded ? (
-                    <ul className="space-y-1 border-t border-orange-200/70 px-3 py-2">
-                      {selectedSchemes.map((scheme) => (
-                        <li
-                          key={scheme.id}
-                          className="flex items-start gap-1.5 text-[10px] font-semibold text-orange-900"
-                        >
-                          <Check className="mt-0.5 h-3 w-3 shrink-0 stroke-[3]" />
-                          <span>{lang === "ml" ? scheme.ml : scheme.en}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null}
-                </div>
-
+              <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-3.5 py-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <div className="space-y-1">
                   <label
                     htmlFor="guest-assistance-name"
@@ -1789,7 +1810,9 @@ export function MobileGuestEligibilityQuestionnaire({
                     }`}
                   />
                   {assistanceErrors.name ? (
-                    <p className="text-[9.5px] font-semibold text-rose-600">{assistanceErrors.name}</p>
+                    <p className="text-[9.5px] font-semibold text-rose-600">
+                      {assistanceErrors.name}
+                    </p>
                   ) : null}
                 </div>
 
@@ -1823,46 +1846,124 @@ export function MobileGuestEligibilityQuestionnaire({
                 </div>
 
                 <div className="space-y-2.5">
+                  <div className="grid grid-cols-2 items-start gap-2">
+                    <div className="min-w-0 space-y-1">
+                      <SearchableSelect
+                        label={t("District", "ജില്ല")}
+                        valueLabel={
+                          selectedDistrict
+                            ? lang === "ml"
+                              ? selectedDistrict.ml
+                              : selectedDistrict.en
+                            : ""
+                        }
+                        placeholder={t("Select district", "ജില്ല തിരഞ്ഞെടുക്കുക")}
+                        searchPlaceholder={t("Search districts", "ജില്ലകൾ തിരയുക")}
+                        options={districts.map((district) => ({
+                          value: district.id,
+                          label: lang === "ml" ? district.ml : district.en,
+                        }))}
+                        open={openPicker === "district"}
+                        onToggle={() =>
+                          setOpenPicker((current) => (current === "district" ? null : "district"))
+                        }
+                        onSelect={handleAssistanceDistrictChange}
+                      />
+                      {assistanceErrors.district ? (
+                        <p className="text-[9.5px] font-semibold text-rose-600">
+                          {assistanceErrors.district}
+                        </p>
+                      ) : null}
+                    </div>
+
+                    <div className="min-w-0 space-y-1">
+                      <SearchableSelect
+                        label={t("Local Body Type", "തദ്ദേശ സ്ഥാപന തരം")}
+                        valueLabel={
+                          assistanceLocalBodyType ? localBodyTypeLabel(assistanceLocalBodyType) : ""
+                        }
+                        placeholder={t("Select type", "തരം തിരഞ്ഞെടുക്കുക")}
+                        searchPlaceholder={t(
+                          "Search local body types",
+                          "തദ്ദേശ സ്ഥാപന തരങ്ങൾ തിരയുക",
+                        )}
+                        options={localBodyTypeOptions.map((type) => ({
+                          value: type,
+                          label: localBodyTypeLabel(type),
+                        }))}
+                        disabled={!assistanceDistrictId}
+                        open={openPicker === "localBodyType"}
+                        onToggle={() =>
+                          setOpenPicker((current) =>
+                            current === "localBodyType" ? null : "localBodyType",
+                          )
+                        }
+                        onSelect={handleAssistanceLocalBodyTypeChange}
+                      />
+                      {assistanceErrors.localBodyType ? (
+                        <p className="text-[9.5px] font-semibold text-rose-600">
+                          {assistanceErrors.localBodyType}
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+
                   <SearchableSelect
-                    label={t("District", "ജില്ല")}
+                    label={t("Local Body", "തദ്ദേശ സ്ഥാപനം")}
                     valueLabel={
-                      selectedDistrict ? (lang === "ml" ? selectedDistrict.ml : selectedDistrict.en) : ""
+                      selectedLocalBody
+                        ? lang === "ml"
+                          ? selectedLocalBody.ml
+                          : selectedLocalBody.en
+                        : ""
                     }
-                    placeholder={t("Select district", "ജില്ല തിരഞ്ഞെടുക്കുക")}
-                    searchPlaceholder={t("Search districts", "ജില്ലകൾ തിരയുക")}
-                    options={districts.map((district) => ({
-                      value: district.id,
-                      label: lang === "ml" ? district.ml : district.en,
-                    }))}
-                    open={openPicker === "district"}
-                    onToggle={() =>
-                      setOpenPicker((current) => (current === "district" ? null : "district"))
-                    }
-                    onSelect={handleAssistanceDistrictChange}
-                  />
-                  <SearchableSelect
-                    label={t("Assembly Mandalam", "അസംബ്ലി മണ്ഡലം")}
-                    valueLabel={
-                      selectedMandalam ? (lang === "ml" ? selectedMandalam.ml : selectedMandalam.en) : ""
-                    }
-                    placeholder={t(
-                      "Select Assembly Mandalam",
-                      "അസംബ്ലി മണ്ഡലം തിരഞ്ഞെടുക്കുക",
-                    )}
-                    searchPlaceholder={t("Search constituencies", "മണ്ഡലങ്ങൾ തിരയുക")}
-                    options={districtConstituencies.map((item) => ({
+                    placeholder={t("Select local body", "തദ്ദേശ സ്ഥാപനം തിരഞ്ഞെടുക്കുക")}
+                    searchPlaceholder={t("Search local bodies", "തദ്ദേശ സ്ഥാപനങ്ങൾ തിരയുക")}
+                    options={localBodyOptions.map((item) => ({
                       value: item.id,
                       label: lang === "ml" ? item.ml : item.en,
                     }))}
-                    disabled={!assistanceDistrictId}
-                    open={openPicker === "mandalam"}
+                    disabled={!assistanceDistrictId || !assistanceLocalBodyType}
+                    open={openPicker === "localBody"}
                     onToggle={() =>
-                      setOpenPicker((current) => (current === "mandalam" ? null : "mandalam"))
+                      setOpenPicker((current) => (current === "localBody" ? null : "localBody"))
                     }
-                    onSelect={handleAssistanceMandalamChange}
+                    onSelect={handleAssistanceLocalBodyChange}
                   />
-                </div>
+                  {assistanceErrors.localBody ? (
+                    <p className="text-[9.5px] font-semibold text-rose-600">
+                      {assistanceErrors.localBody}
+                    </p>
+                  ) : null}
 
+                  <SearchableSelect
+                    label={t("Ward", "വാർഡ്")}
+                    valueLabel={
+                      selectedWard
+                        ? lang === "ml"
+                          ? selectedWard.displayMl
+                          : selectedWard.displayEn
+                        : ""
+                    }
+                    placeholder={t("Select your ward", "നിങ്ങളുടെ വാർഡ് തിരഞ്ഞെടുക്കുക")}
+                    searchPlaceholder={t("Search wards", "വാർഡുകൾ തിരയുക")}
+                    options={wardOptions.map((ward) => ({
+                      value: ward.id,
+                      label: lang === "ml" ? ward.displayMl : ward.displayEn,
+                    }))}
+                    disabled={!assistanceLocalBodyId}
+                    open={openPicker === "ward"}
+                    onToggle={() =>
+                      setOpenPicker((current) => (current === "ward" ? null : "ward"))
+                    }
+                    onSelect={handleAssistanceWardChange}
+                  />
+                  {assistanceErrors.ward ? (
+                    <p className="text-[9.5px] font-semibold text-rose-600">
+                      {assistanceErrors.ward}
+                    </p>
+                  ) : null}
+                </div>
                 <div className="space-y-1">
                   <label
                     htmlFor="guest-assistance-notes"
@@ -1882,34 +1983,41 @@ export function MobileGuestEligibilityQuestionnaire({
                     className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-medium leading-relaxed text-slate-800 outline-none transition-colors focus:border-orange-400"
                   />
                 </div>
-
-                <div>
-                  <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-slate-200 bg-slate-50/60 p-2">
-                    <input
-                      type="checkbox"
-                      checked={assistanceConsent}
-                      onChange={(event) => {
-                        setAssistanceConsent(event.target.checked);
-                        setAssistanceErrors((current) => ({ ...current, consent: "" }));
-                      }}
-                      className="mt-0.5 h-4 w-4 shrink-0 accent-orange-500"
-                    />
-                    <span className="text-[9.5px] font-semibold leading-relaxed text-slate-600">
-                      {t(
-                        "I agree to share these details with the party leaders handling my request.",
-                        "എന്റെ അഭ്യർത്ഥന കൈകാര്യം ചെയ്യുന്ന പാർട്ടി നേതാക്കളുമായി ഈ വിവരങ്ങൾ പങ്കിടാൻ ഞാൻ സമ്മതിക്കുന്നു.",
-                      )}
+                <div className="overflow-hidden rounded-xl border border-orange-200 bg-orange-50/70">
+                  <button
+                    type="button"
+                    onClick={() => setSchemeNamesExpanded((current) => !current)}
+                    className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left"
+                  >
+                    <span className="flex items-center gap-1.5 text-[10.5px] font-extrabold text-orange-800">
+                      <HeartHandshake className="h-3.5 w-3.5" />
+                      {count === 1
+                        ? t("1 scheme selected", "1 പദ്ധതി തിരഞ്ഞെടുത്തു")
+                        : t(`${count} schemes selected`, `${count} പദ്ധതികൾ തിരഞ്ഞെടുത്തു`)}
                     </span>
-                  </label>
-                  {assistanceErrors.consent ? (
-                    <p className="mt-1 text-[9.5px] font-semibold text-rose-600">
-                      {assistanceErrors.consent}
-                    </p>
+                    <ChevronDown
+                      className={`h-4 w-4 shrink-0 text-orange-700 transition-transform ${schemeNamesExpanded ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                  {schemeNamesExpanded ? (
+                    <ul className="space-y-1 border-t border-orange-200/70 px-3 py-2">
+                      {selectedSchemes.map((scheme) => (
+                        <li
+                          key={scheme.id}
+                          className="flex items-start gap-1.5 text-[10px] font-semibold text-orange-900"
+                        >
+                          <Check className="mt-0.5 h-3 w-3 shrink-0 stroke-[3]" />
+                          <span>{lang === "ml" ? scheme.ml : scheme.en}</span>
+                        </li>
+                      ))}
+                    </ul>
                   ) : null}
                 </div>
 
                 {assistanceErrors.schemes ? (
-                  <p className="text-[9.5px] font-semibold text-rose-600">{assistanceErrors.schemes}</p>
+                  <p className="text-[9.5px] font-semibold text-rose-600">
+                    {assistanceErrors.schemes}
+                  </p>
                 ) : null}
                 {assistanceSubmitError ? (
                   <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-[9.5px] font-semibold leading-relaxed text-rose-700">
@@ -2056,10 +2164,7 @@ export function MobileGuestEligibilityQuestionnaire({
   return (
     <div className="relative flex h-full flex-col overflow-hidden bg-[#FAFAFA]">
       {view === "questions"
-        ? renderHeader(
-            t("Check Eligibility", "യോഗ്യത പരിശോധിക്കുക"),
-            true,
-          )
+        ? renderHeader(t("Check Eligibility", "യോഗ്യത പരിശോധിക്കുക"), true)
         : renderHeader(
             view === "success"
               ? t("Help request sent", "സഹായ അഭ്യർത്ഥന അയച്ചു")

@@ -1,9 +1,73 @@
 import {
+  assignmentLevels,
   permissionModules,
+  roleOrganisationLevels,
   rolePresets,
   type AssignmentLevel,
   type RolePresetId,
 } from "./party-workers";
+
+export interface CustomOrganisationLevel {
+  id: AssignmentLevel;
+  name: string;
+  under: AssignmentLevel;
+}
+
+export const customOrganisationLevelStorageKey = "vk-custom-organisation-levels";
+
+export function loadCustomOrganisationLevels(): CustomOrganisationLevel[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const parsed = JSON.parse(
+      window.localStorage.getItem(customOrganisationLevelStorageKey) || "[]",
+    ) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (item): item is CustomOrganisationLevel =>
+        Boolean(item) &&
+        typeof item === "object" &&
+        typeof (item as CustomOrganisationLevel).id === "string" &&
+        typeof (item as CustomOrganisationLevel).name === "string" &&
+        Boolean((item as CustomOrganisationLevel).name.trim()) &&
+        typeof (item as CustomOrganisationLevel).under === "string",
+    );
+  } catch {
+    return [];
+  }
+}
+
+export function saveCustomOrganisationLevels(levels: CustomOrganisationLevel[]) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(customOrganisationLevelStorageKey, JSON.stringify(levels));
+  } catch {
+    // Persistence is best-effort in this prototype.
+  }
+}
+
+export function createCustomOrganisationLevelId(name: string) {
+  const slug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 32);
+  return `custom_org_${slug || "level"}_${Date.now().toString(36)}_${Math.random()
+    .toString(36)
+    .slice(2, 6)}` as AssignmentLevel;
+}
+
+export function organisationLevelLabel(
+  level: AssignmentLevel,
+  lang: "en" | "ml",
+  customLevels: CustomOrganisationLevel[] = [],
+) {
+  const custom = customLevels.find((item) => item.id === level);
+  if (custom) return custom.name;
+  const roleLevel = roleOrganisationLevels.find((item) => item.id === level);
+  if (roleLevel) return lang === "ml" ? roleLevel.ml : roleLevel.en;
+  const option = assignmentLevels.find((item) => item.id === level);
+  return option ? (lang === "ml" ? option.ml : option.en) : level;
+}
 
 export type ManagedRoleStatus = "Active" | "Inactive";
 

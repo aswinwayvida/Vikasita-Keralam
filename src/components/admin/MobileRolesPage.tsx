@@ -32,9 +32,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
-  assignmentLevels,
   permissionKey,
   permissionModules,
+  roleOrganisationLevels,
   togglePermission,
   type AssignmentLevel,
   type PermissionModuleId,
@@ -45,12 +45,17 @@ import {
 } from "@/data/party-worker-directory";
 import {
   createRoleId,
+  createCustomOrganisationLevelId,
   draftFromRole,
   emptyRoleDraft,
+  loadCustomOrganisationLevels,
   loadManagedRoles,
   nextRoleCopyName,
+  organisationLevelLabel,
+  saveCustomOrganisationLevels,
   saveManagedRoles,
   type AdministrativePermissionId,
+  type CustomOrganisationLevel,
   type ManagedRole,
   type RoleDraft,
 } from "@/data/role-management";
@@ -103,6 +108,7 @@ const allPermissionKeys = permissionModules.flatMap((module) =>
 
 const roleAccessPermissionIds: AdministrativePermissionId[] = ["manage_roles", "assign_access"];
 const delegateAccessPermissionId: AdministrativePermissionId = "delegate_access";
+const createNewOrganisationLevelValue = "__create_new_organisation_level__";
 
 const normalizeAdministrativePermissions = (ids: AdministrativePermissionId[]) => [
   ...(ids.some((id) => roleAccessPermissionIds.includes(id)) ? roleAccessPermissionIds : []),
@@ -126,6 +132,13 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
   const [assignmentSearch, setAssignmentSearch] = useState("");
   const [assignmentDistrict, setAssignmentDistrict] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [customOrganisationLevels, setCustomOrganisationLevels] = useState<
+    CustomOrganisationLevel[]
+  >([]);
+  const [isCreateLevelSheetOpen, setIsCreateLevelSheetOpen] = useState(false);
+  const [newLevelName, setNewLevelName] = useState("");
+  const [newLevelParent, setNewLevelParent] = useState<AssignmentLevel | "">("");
+  const [newLevelErrors, setNewLevelErrors] = useState<Record<string, string>>({});
   const [expandedModules, setExpandedModules] =
     useState<Record<PermissionModuleId, boolean>>(defaultExpandedModules);
   const allPermissionsSelected =
@@ -136,15 +149,26 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
     return () => onFormOpenChange?.(false);
   }, [onFormOpenChange]);
 
+  useEffect(() => {
+    setCustomOrganisationLevels(loadCustomOrganisationLevels());
+  }, []);
+
   const commitRoles = (nextRoles: ManagedRole[]) => {
     setRoles(nextRoles);
     saveManagedRoles(nextRoles);
   };
 
-  const levelLabel = (level: AssignmentLevel) => {
-    const option = assignmentLevels.find((item) => item.id === level);
-    return option ? (isMalayalam ? option.ml : option.en) : level;
-  };
+  const organisationLevelOptions = [
+    ...roleOrganisationLevels,
+    ...customOrganisationLevels.map((level) => ({
+      id: level.id,
+      en: level.name,
+      ml: level.name,
+    })),
+  ];
+
+  const levelLabel = (level: AssignmentLevel) =>
+    organisationLevelLabel(level, lang, customOrganisationLevels);
 
   const normalizedRoleSearch = roleSearch.trim().toLowerCase();
   const filteredRoles = normalizedRoleSearch
@@ -195,8 +219,62 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
     setAssignmentWorkers([]);
     setAssignmentSearch("");
     setAssignmentDistrict("");
+    setIsCreateLevelSheetOpen(false);
+    setNewLevelName("");
+    setNewLevelParent("");
+    setNewLevelErrors({});
     setActiveView("list");
     onFormOpenChange?.(false);
+  };
+
+  const openCreateOrganisationLevelSheet = () => {
+    setNewLevelName("");
+    setNewLevelParent(draft.assignmentLevels[0] ?? "");
+    setNewLevelErrors({});
+    setIsCreateLevelSheetOpen(true);
+  };
+
+  const createOrganisationLevel = () => {
+    const name = newLevelName.trim();
+    const nextErrors: Record<string, string> = {};
+    if (!name) {
+      nextErrors.name = tr(
+        "Organisation level name is required.",
+        "ഓർഗനൈസേഷൻ ലെവൽ നാമം നിർബന്ധമാണ്.",
+      );
+    } else if (
+      organisationLevelOptions.some(
+        (option) => option.en.trim().toLowerCase() === name.toLowerCase(),
+      )
+    ) {
+      nextErrors.name = tr(
+        "An organisation level with this name already exists.",
+        "ഈ പേരിലുള്ള ഓർഗനൈസേഷൻ ലെവൽ ഇതിനകം നിലവിലുണ്ട്.",
+      );
+    }
+    if (!newLevelParent) {
+      nextErrors.parent = tr(
+        "Select the organisation level this should sit under.",
+        "ഇത് ഏത് ഓർഗനൈസേഷൻ ലെവലിന് കീഴിലാണെന്ന് തിരഞ്ഞെടുക്കുക.",
+      );
+    }
+    setNewLevelErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
+
+    const created: CustomOrganisationLevel = {
+      id: createCustomOrganisationLevelId(name),
+      name,
+      under: newLevelParent as AssignmentLevel,
+    };
+    const nextLevels = [...customOrganisationLevels, created];
+    setCustomOrganisationLevels(nextLevels);
+    saveCustomOrganisationLevels(nextLevels);
+    setDraft((current) => ({ ...current, assignmentLevels: [created.id] }));
+    setErrors((current) => ({ ...current, levels: "" }));
+    setIsCreateLevelSheetOpen(false);
+    setNewLevelName("");
+    setNewLevelParent("");
+    toast.success(tr("Organisation level created.", "ഓർഗനൈസേഷൻ ലെവൽ സൃഷ്ടിച്ചു."));
   };
 
   const validateRoleBasics = () => {
@@ -217,10 +295,7 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
       );
     }
     if (draft.assignmentLevels.length === 0) {
-      nextErrors.levels = tr(
-        "Select at least one allowed assignment level.",
-        "കുറഞ്ഞത് ഒരു അനുവദനീയ അസൈൻമെന്റ് ലെവൽ തിരഞ്ഞെടുക്കുക.",
-      );
+      nextErrors.levels = tr("Select an organisation level.", "ഓർഗനൈസേഷൻ ലെവൽ തിരഞ്ഞെടുക്കുക.");
     }
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
@@ -378,7 +453,7 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
       className={cn(
         "animate-in fade-in duration-200",
         activeView === "form" || activeView === "assign"
-          ? "flex h-full min-h-0 w-full flex-col bg-muted/20"
+          ? "relative flex h-full min-h-0 w-full flex-col bg-muted/20"
           : "relative flex h-full min-h-0 w-full flex-col",
       )}
     >
@@ -805,13 +880,17 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
 
                 <div>
                   <label className="mb-1 block text-[11px] font-bold text-foreground">
-                    {tr("Allowed Assignment Levels", "അനുവദനീയ അസൈൻമെന്റ് ലെവലുകൾ")}{" "}
+                    {tr("Organisation Level", "ഓർഗനൈസേഷൻ ലെവൽ")}{" "}
                     <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
                     <select
                       value={draft.assignmentLevels[0] ?? ""}
                       onChange={(event) => {
+                        if (event.target.value === createNewOrganisationLevelValue) {
+                          openCreateOrganisationLevelSheet();
+                          return;
+                        }
                         const nextLevel = event.target.value as AssignmentLevel | "";
                         setDraft((current) => ({
                           ...current,
@@ -827,15 +906,26 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
                     >
                       <option value="">
                         {tr(
-                          "-- Select assignment level --",
-                          "-- അസൈൻമെന്റ് ലെവൽ തിരഞ്ഞെടുക്കുക --",
+                          "-- Select organisation level --",
+                          "-- ഓർഗനൈസേഷൻ ലെവൽ തിരഞ്ഞെടുക്കുക --",
                         )}
                       </option>
-                      {assignmentLevels.map((level) => (
+                      {draft.assignmentLevels[0] &&
+                      !organisationLevelOptions.some(
+                        (level) => level.id === draft.assignmentLevels[0],
+                      ) ? (
+                        <option value={draft.assignmentLevels[0]}>
+                          {levelLabel(draft.assignmentLevels[0])}
+                        </option>
+                      ) : null}
+                      {organisationLevelOptions.map((level) => (
                         <option key={level.id} value={level.id}>
                           {isMalayalam ? level.ml : level.en}
                         </option>
                       ))}
+                      <option value={createNewOrganisationLevelValue}>
+                        + {tr("Create New", "പുതിയത് സൃഷ്ടിക്കുക")}
+                      </option>
                     </select>
                     <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
                   </div>
@@ -1046,6 +1136,122 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
           </div>
         </div>
       )}
+
+      {isCreateLevelSheetOpen ? (
+        <div
+          className="absolute inset-0 z-[120] flex items-end bg-slate-950/50 backdrop-blur-[1px] animate-in fade-in duration-150"
+          onClick={() => setIsCreateLevelSheetOpen(false)}
+        >
+          <form
+            className="w-full rounded-t-2xl border-t border-orange-100 bg-white shadow-2xl animate-in slide-in-from-bottom duration-200 dark:border-slate-800 dark:bg-slate-900"
+            onClick={(event) => event.stopPropagation()}
+            onSubmit={(event) => {
+              event.preventDefault();
+              createOrganisationLevel();
+            }}
+          >
+            <div className="flex items-start justify-between gap-3 border-b border-border/70 px-4 pb-3 pt-3">
+              <div>
+                <h3 className="text-[13px] font-extrabold text-foreground">
+                  {tr("Create Organisation Level", "ഓർഗനൈസേഷൻ ലെവൽ സൃഷ്ടിക്കുക")}
+                </h3>
+                <p className="mt-0.5 text-[9.5px] font-medium text-muted-foreground">
+                  {tr(
+                    "Add a level to the organisation hierarchy.",
+                    "ഓർഗനൈസേഷൻ ഘടനയിലേക്ക് ഒരു ലെവൽ ചേർക്കുക.",
+                  )}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCreateLevelSheetOpen(false)}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted/60 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground dark:bg-slate-800 dark:hover:bg-slate-700"
+                aria-label={tr("Close", "അടയ്ക്കുക")}
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 px-4 py-3">
+              <div>
+                <label className="mb-1 block text-[10.5px] font-bold text-foreground">
+                  {tr("Organisation Level Name", "ഓർഗനൈസേഷൻ ലെവൽ നാമം")}{" "}
+                  <span className="text-rose-500">*</span>
+                </label>
+                <Input
+                  autoFocus
+                  value={newLevelName}
+                  maxLength={50}
+                  onChange={(event) => {
+                    setNewLevelName(event.target.value);
+                    setNewLevelErrors((current) => ({ ...current, name: "" }));
+                  }}
+                  placeholder={tr("Enter organisation level name", "ഓർഗനൈസേഷൻ ലെവൽ നാമം നൽകുക")}
+                  className={cn(
+                    "h-9 rounded-lg border-border bg-background px-2.5 text-[11.5px] font-medium text-foreground shadow-none focus:border-orange-400 focus:ring-1 focus:ring-orange-500 md:text-[11.5px]",
+                    newLevelErrors.name && "border-rose-400",
+                  )}
+                  aria-invalid={Boolean(newLevelErrors.name)}
+                />
+                {newLevelErrors.name ? (
+                  <p className="mt-1 text-[9.5px] font-semibold text-rose-600">
+                    {newLevelErrors.name}
+                  </p>
+                ) : null}
+              </div>
+
+              <div>
+                <label className="mb-1 block text-[10.5px] font-bold text-foreground">
+                  {tr("Organisation Level under", "ഓർഗനൈസേഷൻ ലെവൽ ഇതിന് കീഴിൽ")}{" "}
+                  <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <select
+                    value={newLevelParent}
+                    onChange={(event) => {
+                      setNewLevelParent(event.target.value as AssignmentLevel | "");
+                      setNewLevelErrors((current) => ({ ...current, parent: "" }));
+                    }}
+                    aria-invalid={Boolean(newLevelErrors.parent)}
+                    className={cn(
+                      "h-9 w-full cursor-pointer appearance-none rounded-lg border border-border bg-background px-2.5 pr-8 text-[11.5px] font-medium text-foreground outline-none transition-colors focus:border-orange-400 focus:ring-1 focus:ring-orange-500",
+                      newLevelErrors.parent && "border-rose-400",
+                    )}
+                  >
+                    <option value="">
+                      {tr("-- Select parent level --", "-- പാരന്റ് ലെവൽ തിരഞ്ഞെടുക്കുക --")}
+                    </option>
+                    {organisationLevelOptions.map((level) => (
+                      <option key={level.id} value={level.id}>
+                        {isMalayalam ? level.ml : level.en}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                </div>
+                {newLevelErrors.parent ? (
+                  <p className="mt-1 text-[9.5px] font-semibold text-rose-600">
+                    {newLevelErrors.parent}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 border-t border-border/70 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
+              <button
+                type="button"
+                onClick={() => setIsCreateLevelSheetOpen(false)}
+                className="h-10 w-[35%] shrink-0 rounded-lg border border-orange-200 bg-white px-3 text-[10.5px] font-extrabold text-orange-700 transition-colors hover:bg-orange-50 dark:border-orange-900/60 dark:bg-slate-900 dark:text-orange-300 dark:hover:bg-orange-950/40"
+              >
+                {tr("Cancel", "റദ്ദാക്കുക")}
+              </button>
+              <Button type="submit" className="h-10 flex-1 rounded-lg text-[11.5px] font-extrabold">
+                {tr("Create Level", "ലെവൽ സൃഷ്ടിക്കുക")}
+              </Button>
+            </div>
+          </form>
+        </div>
+      ) : null}
     </div>
   );
 }
