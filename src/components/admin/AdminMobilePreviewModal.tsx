@@ -8121,23 +8121,25 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
   const renderGuestAboutPage = () => (
     <div className="animate-in fade-in duration-200 space-y-2.5 pb-8 pt-1">
-      <div className="overflow-hidden rounded-xl border border-orange-100 bg-gradient-to-b from-orange-50/90 to-white p-3.5 text-center dark:border-slate-800 dark:from-slate-900 dark:to-slate-900">
+      <div className="flex items-center gap-3 overflow-hidden rounded-2xl border border-orange-200/80 bg-[#FFFBF5] p-3.5 dark:border-slate-800 dark:bg-slate-900">
         <img
           src={aboutVikasitaIcon}
           alt="Vikasita Keralam"
-          className="mx-auto h-14 w-14 object-contain"
+          className="h-24 w-24 shrink-0 object-contain mix-blend-multiply dark:mix-blend-normal"
         />
-        <h2 className="mt-1.5 font-display text-[15px] font-extrabold tracking-tight text-[#0F172A] dark:text-white">
-          {lang === "ml" ? "വികസിത കേരളം" : "Vikasita Keralam"}
-        </h2>
-        <p className="mt-0.5 text-[10.5px] font-bold text-orange-600 dark:text-orange-400">
-          {lang === "ml" ? "എല്ലാവരോടും, എല്ലാവർക്കുമായി" : "With Everyone, For Everyone"}
-        </p>
-        <p className="mx-auto mt-2 max-w-[270px] text-[11px] font-medium leading-relaxed text-slate-600 dark:text-slate-300">
-          {lang === "ml"
-            ? "കേരളത്തിലെ എല്ലാ ജില്ലകളിലുമുള്ള സാധ്യമായ ക്ഷേമപദ്ധതികൾ ഒരിടത്ത് നിന്ന് കണ്ടെത്താനും മനസ്സിലാക്കാനും അപേക്ഷിക്കാനും സഹായിക്കുന്ന പൊതു പ്ലാറ്റ്ഫോം."
-            : "A public platform that helps every eligible citizen discover, understand and apply for Central Government welfare schemes across Kerala."}
-        </p>
+        <div className="min-w-0 flex-1 text-left">
+          <h2 className="font-display text-[17px] font-extrabold leading-tight tracking-tight text-[#0F172A] dark:text-white">
+            {lang === "ml" ? "വികസിത കേരളം" : "Vikasita Keralam"}
+          </h2>
+          <p className="mt-0.5 text-[10.5px] font-bold text-orange-600 dark:text-orange-400">
+            {lang === "ml" ? "എല്ലാവരോടും, എല്ലാവർക്കുമായി" : "With Everyone, For Everyone"}
+          </p>
+          <p className="mt-1.5 text-[11px] font-medium leading-snug text-slate-600 dark:text-slate-300">
+            {lang === "ml"
+              ? "ക്ഷേമപദ്ധതികൾ കണ്ടെത്താനും നിങ്ങളുടെ അപേക്ഷയ്ക്ക് സഹായം നേടാനും."
+              : "Discover welfare schemes and get help with your application."}
+          </p>
+        </div>
       </div>
 
       <section className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
@@ -8154,9 +8156,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             ? "ഓരോ അർഹനായ വ്യക്തിക്കും തങ്ങളുടെ ആനുകൂല്യങ്ങൾ അറിയാനും എളുപ്പത്തിൽ അപേക്ഷിക്കാനും സാധിക്കുന്ന വിധത്തിൽ ക്ഷേമസേവനങ്ങൾ എല്ലാവർക്കും ഒരുപോലെ ലഭ്യമാക്കുക."
             : "Ensure that every eligible citizen can access the welfare benefits they deserve — clearly, simply and without barriers."}
         </p>
-      </section>
 
-      <section className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
+        <div className="my-3 border-t border-slate-100 dark:border-slate-800" />
+
         <h3 className="text-[12px] font-extrabold tracking-tight text-[#0F172A] dark:text-white">
           {lang === "ml" ? "ഞങ്ങൾ ചെയ്യുന്നത്" : "What We Do"}
         </h3>
@@ -8233,25 +8235,32 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       href?: string;
     }> = [
       {
+        icon: MapPin,
+        labelEn: "Address",
+        labelMl: "വിലാസം",
+        value:
+          "BJP Kerala\nMararji Smrithi Mandiram,\nThycaud P.O,\nTrivandrum, Kerala 695014,\nIndia",
+      },
+      {
         icon: PhoneCall,
-        labelEn: "Toll-Free Helpline",
-        labelMl: "ടോൾ ഫ്രീ ഹെൽപ്പ്‌ലൈൻ",
-        value: "1800-200-400",
-        href: "tel:1800200400",
+        labelEn: "Official Phone Number",
+        labelMl: "ഔദ്യോഗിക ഫോൺ നമ്പർ",
+        value: "+91.4712333390",
+        href: "tel:+914712333390",
       },
       {
         icon: Mail,
-        labelEn: "Email Support",
-        labelMl: "ഇമെയിൽ പിന്തുണ",
-        value: "support@vikasitakeralam.gov.in",
-        href: "mailto:support@vikasitakeralam.gov.in",
+        labelEn: "Official Email ID",
+        labelMl: "ഔദ്യോഗിക ഇമെയിൽ വിലാസം",
+        value: "bjpkerala@gmail.com",
+        href: "mailto:bjpkerala@gmail.com",
       },
       {
-        icon: MapPin,
-        labelEn: "Main Office",
-        labelMl: "പ്രധാന ഓഫീസ്",
-        valueEn: "Kazhakoottam, Thiruvananthapuram, Kerala 695581",
-        valueMl: "കഴക്കൂട്ടം, തിരുവനന്തപുരം, കേരളം 695581",
+        icon: Clock,
+        labelEn: "Business Hours",
+        labelMl: "പ്രവർത്തന സമയം",
+        valueEn: "10 AM to 5:30 PM",
+        valueMl: "രാവിലെ 10 മുതൽ വൈകുന്നേരം 5:30 വരെ",
       },
     ];
 
@@ -8282,7 +8291,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">
                     {lang === "ml" ? item.labelMl : item.labelEn}
                   </span>
-                  <span className="mt-0.5 block break-words text-[11.5px] font-bold leading-snug text-slate-900 dark:text-slate-100">
+                  <span className="mt-0.5 block whitespace-pre-line break-words text-[11.5px] font-bold leading-snug text-slate-900 dark:text-slate-100">
                     {item.value ?? (lang === "ml" ? item.valueMl : item.valueEn)}
                   </span>
                 </span>
