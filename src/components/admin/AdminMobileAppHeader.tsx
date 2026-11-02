@@ -22,11 +22,8 @@ import {
   Info,
   PhoneCall,
   Search,
-  Mail,
-  MapPin,
 } from "lucide-react";
 import { useLang } from "@/i18n/LanguageProvider";
-import { Link } from "@tanstack/react-router";
 import { AdminMobileTab } from "./AdminMobileAppBottomNav";
 
 interface AdminMobileAppHeaderProps {
@@ -40,6 +37,8 @@ interface AdminMobileAppHeaderProps {
   onLogout?: () => void;
   isGuest?: boolean;
   onLoginClick?: () => void;
+  onOpenAbout?: () => void;
+  onOpenContact?: () => void;
   onMenuOpenChange?: (isOpen: boolean) => void;
 }
 
@@ -54,6 +53,8 @@ export function AdminMobileAppHeader({
   onLogout,
   isGuest = false,
   onLoginClick,
+  onOpenAbout,
+  onOpenContact,
   onMenuOpenChange,
 }: AdminMobileAppHeaderProps = {}) {
   const { lang, setLang } = useLang();
@@ -67,8 +68,6 @@ export function AdminMobileAppHeader({
   };
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [guestSearchQuery, setGuestSearchQuery] = useState("");
-  const [showAboutModal, setShowAboutModal] = useState(false);
-  const [showContactModal, setShowContactModal] = useState(false);
 
   return (
     <header className="relative z-40 w-full bg-[#FFFDF9] dark:bg-slate-900 border-b border-slate-200/60 dark:border-slate-800/60 shadow-2xs">
@@ -249,17 +248,20 @@ export function AdminMobileAppHeader({
                         </span>
                       </button>
 
-                      <Link
-                        to="/admin"
-                        onClick={() => setIsProfileOpen(false)}
-                        className="flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-foreground hover:bg-amber-50 dark:hover:bg-slate-800 font-medium transition-all"
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsProfileOpen(false);
+                          if (onOpenSettings) onOpenSettings();
+                        }}
+                        className="flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-foreground hover:bg-amber-50 dark:hover:bg-slate-800 font-medium transition-all cursor-pointer"
                       >
                         <span className="flex items-center gap-2">
                           <Settings className="h-4 w-4 text-muted-foreground" />{" "}
                           {lang === "ml" ? "ക്രമീകരണങ്ങൾ" : "Settings"}
                         </span>
                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                      </Link>
+                      </button>
 
                       <button
                         type="button"
@@ -341,7 +343,7 @@ export function AdminMobileAppHeader({
                   type="button"
                   onClick={() => {
                     setMenuOpen(false);
-                    setShowAboutModal(true);
+                    if (onOpenAbout) onOpenAbout();
                   }}
                   className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-orange-50 dark:hover:bg-slate-800/80 font-bold text-xs transition-all cursor-pointer group"
                 >
@@ -357,29 +359,13 @@ export function AdminMobileAppHeader({
                   type="button"
                   onClick={() => {
                     setMenuOpen(false);
-                    setShowContactModal(true);
+                    if (onOpenContact) onOpenContact();
                   }}
                   className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-orange-50 dark:hover:bg-slate-800/80 font-bold text-xs transition-all cursor-pointer group"
                 >
                   <span className="flex items-center gap-3">
                     <PhoneCall className="h-4.5 w-4.5 text-orange-500 stroke-[2]" />
                     <span>{lang === "ml" ? "ബന്ധപ്പെടുക" : "Contact Us"}</span>
-                  </span>
-                  <ChevronRight className="h-3.5 w-3.5 text-slate-300 dark:text-slate-600 group-hover:translate-x-0.5 transition-transform" />
-                </button>
-
-                {/* 4. Login / Sign Up */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    if (onLoginClick) onLoginClick();
-                  }}
-                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-orange-50 dark:hover:bg-slate-800/80 font-bold text-xs transition-all cursor-pointer group"
-                >
-                  <span className="flex items-center gap-3">
-                    <LogIn className="h-4.5 w-4.5 text-orange-500 stroke-[2]" />
-                    <span>{lang === "ml" ? "ലോഗിൻ / സൈൻ അപ്പ്" : "Login / Sign Up"}</span>
                   </span>
                   <ChevronRight className="h-3.5 w-3.5 text-slate-300 dark:text-slate-600 group-hover:translate-x-0.5 transition-transform" />
                 </button>
@@ -622,135 +608,6 @@ export function AdminMobileAppHeader({
                 </a>
               </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* About Us Modal */}
-      {showAboutModal && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="w-full max-w-[340px] bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-2xl border border-amber-200/80 dark:border-slate-800 space-y-3.5 text-left animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400">
-                  <Info className="h-4.5 w-4.5 stroke-[2.2]" />
-                </div>
-                <h3 className="font-extrabold text-sm text-slate-900 dark:text-white">
-                  {lang === "ml" ? "ഞങ്ങളെക്കുറിച്ച്" : "About Vikasita Keralam"}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowAboutModal(false)}
-                className="p-1 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              >
-                <X className="h-4.5 w-4.5" />
-              </button>
-            </div>
-
-            <div className="space-y-2.5 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-              <p className="font-semibold text-slate-900 dark:text-slate-100">
-                {lang === "ml"
-                  ? "വികസിത കേരളം - വികസനവും ക്ഷേമവും എല്ലാവരിലേക്കും."
-                  : "Vikasita Keralam - Empowering citizens through accessible welfare."}
-              </p>
-              <p>
-                {lang === "ml"
-                  ? "കേന്ദ്ര സർക്കാരിന്റെ പ്രധാനപ്പെട്ട എല്ലാ ക്ഷേമപദ്ധതികളുടെയും വിവരങ്ങൾ, യോഗ്യതാ പരിശോധന, അപേക്ഷാ മാർഗ്ഗനിർദ്ദേശങ്ങൾ എന്നിവ ഒറ്റ പ്ലാറ്റ്‌ഫോമിൽ ലഭ്യമാക്കുന്നു."
-                  : "Providing unified access to Central Government welfare schemes, eligibility verification, and application guidance for citizens across all 14 districts of Kerala."}
-              </p>
-              <div className="p-2.5 rounded-xl bg-orange-50 dark:bg-orange-950/40 border border-orange-200/60 dark:border-orange-800/50 space-y-1">
-                <span className="block text-[10px] font-black uppercase text-orange-600 dark:text-orange-400 tracking-wider">
-                  {lang === "ml" ? "ലക്ഷ്യം" : "OUR MISSION"}
-                </span>
-                <p className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
-                  {lang === "ml"
-                    ? "ഓരോ അർഹനായ വ്യക്തിക്കും തങ്ങളുടെ ആനുകൂല്യങ്ങൾ തടസ്സമില്ലാതെ എത്തിക്കുക."
-                    : "Ensuring zero delay in connecting every eligible citizen with their entitled welfare benefits."}
-                </p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setShowAboutModal(false)}
-              className="w-full h-9 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs transition-colors cursor-pointer"
-            >
-              {lang === "ml" ? "മനസ്സിലായി" : "Close"}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Contact Us Modal */}
-      {showContactModal && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="w-full max-w-[340px] bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-2xl border border-amber-200/80 dark:border-slate-800 space-y-3.5 text-left animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400">
-                  <PhoneCall className="h-4.5 w-4.5 stroke-[2.2]" />
-                </div>
-                <h3 className="font-extrabold text-sm text-slate-900 dark:text-white">
-                  {lang === "ml" ? "ബന്ധപ്പെടുക" : "Contact Us"}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowContactModal(false)}
-                className="p-1 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              >
-                <X className="h-4.5 w-4.5" />
-              </button>
-            </div>
-
-            <div className="space-y-2.5 text-xs text-slate-600 dark:text-slate-300">
-              <div className="flex items-start gap-3 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
-                <PhoneCall className="h-4 w-4 text-orange-500 shrink-0 mt-0.5" />
-                <div>
-                  <span className="block font-bold text-slate-900 dark:text-white text-xs">
-                    {lang === "ml" ? "ടോൾ ഫ്രീ ഹെൽപ്പ്‌ലൈൻ" : "Toll-Free Helpline"}
-                  </span>
-                  <span className="font-mono font-extrabold text-orange-600 dark:text-orange-400 text-xs">
-                    1800-200-400
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
-                <Mail className="h-4 w-4 text-orange-500 shrink-0 mt-0.5" />
-                <div>
-                  <span className="block font-bold text-slate-900 dark:text-white text-xs">
-                    {lang === "ml" ? "ഇമെയിൽ പിന്തുണ" : "Email Support"}
-                  </span>
-                  <span className="font-mono text-slate-700 dark:text-slate-300 text-[11px]">
-                    support@vikasitakeralam.gov.in
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
-                <MapPin className="h-4 w-4 text-orange-500 shrink-0 mt-0.5" />
-                <div>
-                  <span className="block font-bold text-slate-900 dark:text-white text-xs">
-                    {lang === "ml" ? "പ്രധാന ഓഫീസ്" : "Main Office"}
-                  </span>
-                  <span className="text-slate-600 dark:text-slate-400 text-[11px] leading-tight block">
-                    {lang === "ml"
-                      ? "കഴക്കൂട്ടം, തിരുവനന്തപുരം, കേരളം 695581"
-                      : "Kazhakoottam, Thiruvananthapuram, Kerala 695581"}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setShowContactModal(false)}
-              className="w-full h-9 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs transition-colors cursor-pointer"
-            >
-              {lang === "ml" ? "അടയ്ക്കുക" : "Close"}
-            </button>
           </div>
         </div>
       )}

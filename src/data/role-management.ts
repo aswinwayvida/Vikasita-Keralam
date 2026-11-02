@@ -1,5 +1,6 @@
 import {
   assignmentLevels,
+  partyDesignations,
   permissionModules,
   roleOrganisationLevels,
   rolePresets,
@@ -227,7 +228,47 @@ const builtInRoleSeeds: BuiltInRoleSeed[] = [
 
 const roleTimestamp = "2024-01-01T00:00:00.000Z";
 
-export const builtInManagedRoles: ManagedRole[] = builtInRoleSeeds.map((seed) => {
+const presetIdForDesignationLevel: Record<AssignmentLevel, Exclude<RolePresetId, "custom">> = {
+  state: "state_admin",
+  region: "district_admin",
+  district: "district_admin",
+  mandalam: "constituency_admin",
+  area: "party_worker",
+  assembly_constituency: "constituency_admin",
+  local_body: "local_body_admin",
+  ward: "party_worker",
+  booth: "booth_admin",
+  org_unit: "party_worker",
+};
+
+const designationRoleLevels = new Set<AssignmentLevel>(
+  roleOrganisationLevels.map((level) => level.id),
+);
+
+const partyDesignationManagedRoles: ManagedRole[] = partyDesignations
+  .filter((designation) => designationRoleLevels.has(designation.level))
+  .map((designation) => {
+    const presetId = presetIdForDesignationLevel[designation.level];
+    const preset = rolePresets.find((item) => item.id === presetId)!;
+    const levelLabel = organisationLevelLabel(designation.level, "en");
+
+    return {
+      id: `system_designation_${designation.id}`,
+      name: designation.en,
+      description: `${levelLabel} · Party designation`,
+      assignmentLevels: [designation.level],
+      permissions: [...preset.permissions],
+      administrativePermissions: [],
+      status: "Active",
+      system: true,
+      presetId,
+      assignedUsers: 0,
+      createdAt: roleTimestamp,
+      updatedAt: roleTimestamp,
+    };
+  });
+
+const builtInAccessRoles: ManagedRole[] = builtInRoleSeeds.map((seed) => {
   const preset = rolePresets.find((item) => item.id === seed.presetId)!;
   return {
     id: `system_${seed.presetId}`,
@@ -245,7 +286,26 @@ export const builtInManagedRoles: ManagedRole[] = builtInRoleSeeds.map((seed) =>
   };
 });
 
+export const builtInManagedRoles: ManagedRole[] = [
+  ...builtInAccessRoles,
+  ...partyDesignationManagedRoles,
+];
+
 export const managedRoleStorageKey = "vk-managed-roles";
+
+const retiredCustomRoleNames = new Set([
+  "new role",
+  "role",
+  "ghdbbn",
+  "ssss",
+  "dass",
+  "aaa",
+  "sss",
+]);
+
+export function isRetiredCustomRole(role: ManagedRole) {
+  return !role.system && retiredCustomRoleNames.has(role.name.trim().toLowerCase());
+}
 
 const validPermissionKeys = new Set(
   permissionModules.flatMap((module) =>
@@ -267,7 +327,14 @@ export function loadManagedRoles(): ManagedRole[] {
     if (!Array.isArray(parsed) || parsed.length === 0) {
       return builtInManagedRoles.map(sanitizeRole);
     }
-    return (parsed as ManagedRole[]).map(sanitizeRole);
+    const storedRoles = (parsed as ManagedRole[])
+      .map(sanitizeRole)
+      .filter((role) => !isRetiredCustomRole(role));
+    const storedIds = new Set(storedRoles.map((role) => role.id));
+    const missingBuiltIns = builtInManagedRoles
+      .filter((role) => !storedIds.has(role.id))
+      .map(sanitizeRole);
+    return [...storedRoles, ...missingBuiltIns];
   } catch {
     return builtInManagedRoles.map(sanitizeRole);
   }

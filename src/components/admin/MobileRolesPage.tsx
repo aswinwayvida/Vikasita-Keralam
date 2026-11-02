@@ -48,6 +48,7 @@ import {
   createCustomOrganisationLevelId,
   draftFromRole,
   emptyRoleDraft,
+  isRetiredCustomRole,
   isRetiredOrganisationLevelName,
   loadCustomOrganisationLevels,
   loadManagedRoles,
@@ -173,14 +174,15 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
   const levelLabel = (level: AssignmentLevel) =>
     organisationLevelLabel(level, lang, customOrganisationLevels);
 
+  const visibleRoles = roles.filter((role) => !isRetiredCustomRole(role));
   const normalizedRoleSearch = roleSearch.trim().toLowerCase();
   const filteredRoles = normalizedRoleSearch
-    ? roles.filter((role) =>
+    ? visibleRoles.filter((role) =>
         [role.name, role.description, role.status, ...role.assignmentLevels.map(levelLabel)].some(
           (value) => value?.toLowerCase().includes(normalizedRoleSearch),
         ),
       )
-    : roles;
+    : visibleRoles;
 
   const openEdit = (role: ManagedRole) => {
     setIsCreating(false);
@@ -500,7 +502,7 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
                   <ArrowLeft className="h-3.5 w-3.5 stroke-[2.2]" />
                 </button>
                 <h1 className="text-[13px] font-extrabold tracking-tight text-[#152153] dark:text-white">
-                  {tr("Roles and Control", "റോളുകളും നിയന്ത്രണവും")} ({roles.length})
+                  {tr("Roles and Control", "റോളുകളും നിയന്ത്രണവും")} ({visibleRoles.length})
                 </h1>
                 <div className="absolute right-0 flex items-center gap-1.5">
                   <button

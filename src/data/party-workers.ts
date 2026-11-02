@@ -110,20 +110,45 @@ export interface PartyDesignation {
  * assignment level, and the level filters this list in Step 1.
  */
 export const partyDesignations: PartyDesignation[] = [
+  /* State */
   { id: "state-president", en: "State President", ml: "സംസ്ഥാന പ്രസിഡന്റ്", level: "state" },
+  { id: "state-vice-president", en: "Vice President", ml: "വൈസ് പ്രസിഡന്റ്", level: "state" },
   {
     id: "state-general-secretary",
-    en: "State General Secretary",
-    ml: "സംസ്ഥാന ജനറൽ സെക്രട്ടറി",
+    en: "General Secretary",
+    ml: "ജനറൽ സെക്രട്ടറി",
     level: "state",
   },
-  { id: "state-secretary", en: "State Secretary", ml: "സംസ്ഥാന സെക്രട്ടറി", level: "state" },
+  { id: "state-secretary", en: "Secretary", ml: "സെക്രട്ടറി", level: "state" },
+  { id: "state-treasurer", en: "Treasurer", ml: "ട്രഷറർ", level: "state" },
   {
-    id: "state-executive",
-    en: "State Executive Member",
-    ml: "സംസ്ഥാന എക്സിക്യൂട്ടീവ് അംഗം",
+    id: "state-committee-member",
+    en: "Committee Member",
+    ml: "കമ്മിറ്റി അംഗം",
     level: "state",
   },
+
+  /* Region */
+  {
+    id: "region-president",
+    en: "Regional President",
+    ml: "റീജിയണൽ പ്രസിഡന്റ്",
+    level: "region",
+  },
+  {
+    id: "region-in-charge",
+    en: "Regional In-charge",
+    ml: "റീജിയണൽ ഇൻ-ചാർജ്",
+    level: "region",
+  },
+  {
+    id: "region-coordinator",
+    en: "Regional Coordinator",
+    ml: "റീജിയണൽ കോർഡിനേറ്റർ",
+    level: "region",
+  },
+
+  /* Organisational District */
   {
     id: "district-president",
     en: "District President",
@@ -131,17 +156,113 @@ export const partyDesignations: PartyDesignation[] = [
     level: "district",
   },
   {
-    id: "district-general-secretary",
-    en: "District General Secretary",
-    ml: "ജില്ലാ ജനറൽ സെക്രട്ടറി",
+    id: "district-vice-president",
+    en: "Vice President",
+    ml: "വൈസ് പ്രസിഡന്റ്",
     level: "district",
   },
   {
-    id: "district-executive",
-    en: "District Executive",
-    ml: "ജില്ലാ എക്സിക്യൂട്ടീവ്",
+    id: "district-general-secretary",
+    en: "General Secretary",
+    ml: "ജനറൽ സെക്രട്ടറി",
     level: "district",
   },
+  {
+    id: "district-secretary",
+    en: "Secretary",
+    ml: "സെക്രട്ടറി",
+    level: "district",
+  },
+  {
+    id: "district-treasurer",
+    en: "Treasurer",
+    ml: "ട്രഷറർ",
+    level: "district",
+  },
+  {
+    id: "district-committee-member",
+    en: "Committee Member",
+    ml: "കമ്മിറ്റി അംഗം",
+    level: "district",
+  },
+
+  /* Mandalam */
+  {
+    id: "mandalam-president",
+    en: "Mandalam President",
+    ml: "മണ്ഡലം പ്രസിഡന്റ്",
+    level: "mandalam",
+  },
+  {
+    id: "mandalam-vice-president",
+    en: "Vice President",
+    ml: "വൈസ് പ്രസിഡന്റ്",
+    level: "mandalam",
+  },
+  {
+    id: "mandalam-general-secretary",
+    en: "General Secretary",
+    ml: "ജനറൽ സെക്രട്ടറി",
+    level: "mandalam",
+  },
+  {
+    id: "mandalam-secretary",
+    en: "Secretary",
+    ml: "സെക്രട്ടറി",
+    level: "mandalam",
+  },
+  {
+    id: "mandalam-treasurer",
+    en: "Treasurer",
+    ml: "ട്രഷറർ",
+    level: "mandalam",
+  },
+  {
+    id: "mandalam-committee-member",
+    en: "Committee Member",
+    ml: "കമ്മിറ്റി അംഗം",
+    level: "mandalam",
+  },
+
+  /* Area */
+  { id: "area-president", en: "Area President", ml: "ഏരിയ പ്രസിഡന്റ്", level: "area" },
+  { id: "area-secretary", en: "Area Secretary", ml: "ഏരിയ സെക്രട്ടറി", level: "area" },
+  {
+    id: "area-coordinator",
+    en: "Area Coordinator",
+    ml: "ഏരിയ കോർഡിനേറ്റർ",
+    level: "area",
+  },
+  {
+    id: "area-committee-member",
+    en: "Committee Member",
+    ml: "കമ്മിറ്റി അംഗം",
+    level: "area",
+  },
+
+  /* Booth */
+  {
+    id: "booth-president",
+    en: "Booth President",
+    ml: "ബൂത്ത് പ്രസിഡന്റ്",
+    level: "booth",
+  },
+  {
+    id: "booth-secretary",
+    en: "Booth Secretary",
+    ml: "ബൂത്ത് സെക്രട്ടറി",
+    level: "booth",
+  },
+  { id: "booth-agent", en: "Booth Agent", ml: "ബൂത്ത് ഏജന്റ്", level: "booth" },
+  {
+    id: "booth-committee-member",
+    en: "Booth Committee Member",
+    ml: "ബൂത്ത് കമ്മിറ്റി അംഗം",
+    level: "booth",
+  },
+  { id: "karyakarta", en: "Karyakarta", ml: "കാര്യകർത്താവ്", level: "booth" },
+
+  /* Legacy levels kept for existing records and worker filters */
   {
     id: "constituency-president",
     en: "Constituency President",
@@ -181,23 +302,18 @@ export const partyDesignations: PartyDesignation[] = [
   { id: "ward-president", en: "Ward President", ml: "വാർഡ് പ്രസിഡന്റ്", level: "ward" },
   { id: "ward-lead", en: "Ward Lead", ml: "വാർഡ് ലീഡ്", level: "ward" },
   { id: "ward-in-charge", en: "Ward In-Charge", ml: "വാർഡ് ഇൻ-ചാർജ്", level: "ward" },
-  { id: "booth-president", en: "Booth President", ml: "ബൂത്ത് പ്രസിഡന്റ്", level: "booth" },
-  { id: "booth-in-charge", en: "Booth In-Charge", ml: "ബൂത്ത് ഇൻ-ചാർജ്", level: "booth" },
-  { id: "booth-volunteer", en: "Booth Volunteer", ml: "ബൂത്ത് വോളന്റിയർ", level: "booth" },
   {
-    id: "region-coordinator",
-    en: "Region Coordinator",
-    ml: "റീജിയൺ കോർഡിനേറ്റർ",
+    id: "mandalam-in-charge",
+    en: "Mandalam In-Charge",
+    ml: "മണ്ഡലം ഇൻ-ചാർജ്",
     level: "org_unit",
   },
-  { id: "mandalam-in-charge", en: "Mandalam In-Charge", ml: "മണ്ഡലം ഇൻ-ചാർജ്", level: "org_unit" },
   {
     id: "mandalam-coordinator",
     en: "Mandalam Coordinator",
     ml: "മണ്ഡലം കോർഡിനേറ്റർ",
     level: "org_unit",
   },
-  { id: "area-secretary", en: "Area Secretary", ml: "ഏരിയ സെക്രട്ടറി", level: "org_unit" },
 ];
 
 export function designationsForLevel(level: AssignmentLevel | "") {
@@ -710,7 +826,7 @@ export const canDelegateAccessManagement = (role: ActorRole) =>
 /* -------------------------------------------------------------------------- */
 
 export type ScopeType =
-  "all_kerala" | "districts" | "constituencies" | "local_bodies" | "wards" | "booths";
+  "all_kerala" | "regions" | "districts" | "constituencies" | "local_bodies" | "wards" | "booths";
 
 export interface ScopeTypeOption {
   id: ScopeType;
@@ -718,13 +834,20 @@ export interface ScopeTypeOption {
   ml: string;
 }
 
+export const partyRegions = [
+  { id: "REG-SOUTH", en: "South Region", ml: "സൗത്ത് റീജിയൺ" },
+  { id: "REG-CENTRAL", en: "Central Region", ml: "സെൻട്രൽ റീജിയൺ" },
+  { id: "REG-NORTH", en: "North Region", ml: "നോർത്ത് റീജിയൺ" },
+];
+
 export const scopeTypeOptions: ScopeTypeOption[] = [
-  { id: "all_kerala", en: "All Kerala", ml: "കേരളം മുഴുവൻ" },
-  { id: "districts", en: "Districts", ml: "ജില്ലകൾ" },
-  { id: "constituencies", en: "Assembly Constituencies", ml: "നിയോജകമണ്ഡലങ്ങൾ" },
-  { id: "local_bodies", en: "Local Bodies", ml: "തദ്ദേശ സ്ഥാപനങ്ങൾ" },
-  { id: "wards", en: "Wards", ml: "വാർഡുകൾ" },
-  { id: "booths", en: "Booths", ml: "ബൂത്തുകൾ" },
+  { id: "all_kerala", en: "State", ml: "സംസ്ഥാനം" },
+  { id: "regions", en: "Region", ml: "റീജിയൺ" },
+  { id: "districts", en: "Organisational District", ml: "ഓർഗനൈസേഷണൽ ജില്ല" },
+  { id: "constituencies", en: "Mandalam", ml: "മണ്ഡലം" },
+  { id: "local_bodies", en: "Area", ml: "ഏരിയ" },
+  { id: "wards", en: "Ward", ml: "വാർഡ്" },
+  { id: "booths", en: "Booth", ml: "ബൂത്ത്" },
 ];
 
 export interface AreaRef {
@@ -785,6 +908,16 @@ export function getAreaOptions(
         shortMl: "കേരളം",
       },
     ];
+  }
+
+  if (scopeType === "regions") {
+    return partyRegions.map((region) => ({
+      id: region.id,
+      en: region.en,
+      ml: region.ml,
+      shortEn: region.en,
+      shortMl: region.ml,
+    }));
   }
 
   if (scopeType === "districts") {
@@ -893,6 +1026,9 @@ function areasForSentence(grant: AccessGrant, lang: "en" | "ml") {
     return needsParent ? `${short}, ${parent}` : short;
   });
   const areasText = joinLabels(labels, lang);
+  if (grant.scopeType === "regions") {
+    return lang === "ml" ? `${areasText} റീജിയണുകളിൽ` : `in ${areasText}`;
+  }
   if (grant.scopeType === "districts") {
     return lang === "ml"
       ? `${areasText} ജില്ലകളിൽ`

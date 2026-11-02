@@ -1375,11 +1375,26 @@ export function MobileCreatePartyWorkerFlow({
     setIsAccessSheetOpen(true);
   };
 
-  const availableScopeTypes: ScopeTypeOption[] = scopeTypeOptions.filter(
+  const accessOrganisationLevelOptions: ScopeTypeOption[] = [
+    { id: "all_kerala", en: "State", ml: "സംസ്ഥാനം" },
+    { id: "regions", en: "Region", ml: "റീജിയൺ" },
+    { id: "districts", en: "Organisational District", ml: "ഓർഗനൈസേഷണൽ ജില്ല" },
+    { id: "constituencies", en: "Mandalam", ml: "മണ്ഡലം" },
+    { id: "local_bodies", en: "Area", ml: "ഏരിയ" },
+    { id: "booths", en: "Booth", ml: "ബൂത്ത്" },
+  ];
+  const availableScopeTypes: ScopeTypeOption[] = accessOrganisationLevelOptions.filter(
     (option: ScopeTypeOption) => {
       return option.id !== "all_kerala" || canDelegateStatewide(actorRole);
     },
   );
+  const legacyScopeType =
+    editingGrantId && !availableScopeTypes.some((option) => option.id === sheetScope)
+      ? scopeTypeOptions.find((option) => option.id === sheetScope) || null
+      : null;
+  const scopeTypeChoices = legacyScopeType
+    ? [...availableScopeTypes, legacyScopeType]
+    : availableScopeTypes;
 
   const handleScopeChange = (scope: ScopeType) => {
     setSheetScope(scope);
@@ -3132,8 +3147,8 @@ export function MobileCreatePartyWorkerFlow({
                 </h3>
                 <p className="mt-0.5 text-[9.5px] font-semibold leading-snug text-slate-500 dark:text-slate-400">
                   {tr(
-                    "Choose the areas where this worker's permissions apply.",
-                    "ഈ പ്രവർത്തകന്റെ അനുമതികൾ ബാധകമാകുന്ന പ്രദേശങ്ങൾ തിരഞ്ഞെടുക്കുക.",
+                    "Choose the organisation level and areas where this worker's permissions apply.",
+                    "ഈ പ്രവർത്തകന്റെ അനുമതികൾ ബാധകമാകുന്ന ഓർഗനൈസേഷൻ ലെവലും പ്രദേശങ്ങളും തിരഞ്ഞെടുക്കുക.",
                   )}
                 </p>
               </div>
@@ -3150,9 +3165,9 @@ export function MobileCreatePartyWorkerFlow({
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3.5 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div>
               <p className="mb-1.5 text-[9px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                1 · {tr("Scope Type", "സ്കോപ്പ് തരം")}
+                1 · {tr("Organisation Level", "ഓർഗനൈസേഷൻ ലെവൽ")}
               </p>
-              {availableScopeTypes.length === 0 ? (
+              {scopeTypeChoices.length === 0 ? (
                 <p className="rounded-xl border border-amber-200 bg-amber-50 p-2 text-[9px] font-bold text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300">
                   {tr(
                     "You are not authorised to delegate an access scope.",
@@ -3166,7 +3181,7 @@ export function MobileCreatePartyWorkerFlow({
                     onChange={(event) => handleScopeChange(event.target.value as ScopeType)}
                     className="h-9 w-full appearance-none rounded-lg border border-slate-200 bg-white px-2.5 pr-8 text-[12px] font-medium text-slate-900 outline-none focus:border-[#ff5500] focus:ring-2 focus:ring-orange-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                   >
-                    {availableScopeTypes.map((option) => (
+                    {scopeTypeChoices.map((option) => (
                       <option key={option.id} value={option.id}>
                         {lang === "ml" ? option.ml : option.en}
                       </option>
@@ -3786,6 +3801,10 @@ function groupGrantAreas(grant: AccessGrant, lang: Lang): GrantAreaGroup[] {
   };
 
   grant.areas.forEach((area) => {
+    if (grant.scopeType === "regions") {
+      add("regions", {}, area);
+      return;
+    }
     if (grant.scopeType === "districts") {
       add("districts", {}, area);
       return;
@@ -3861,7 +3880,11 @@ function GrantAreaGroups({ grant, lang }: { grant: AccessGrant; lang: Lang }) {
   const groups = groupGrantAreas(grant, lang);
   if (groups.length === 0) return null;
   const areasLabel =
-    grant.scopeType === "wards"
+    grant.scopeType === "regions"
+      ? lang === "ml"
+        ? "റീജിയണുകൾ"
+        : "Regions"
+      : grant.scopeType === "wards"
       ? lang === "ml"
         ? "വാർഡുകൾ"
         : "Wards"
