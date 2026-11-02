@@ -62,6 +62,9 @@ export function RoleAccessSettings() {
     schemes: true,
     party_workers: true,
     applications: true,
+    help_desk: true,
+    applicant_profile: true,
+    users: true,
   });
   const [viewRole, setViewRole] = useState<ManagedRole | null>(null);
   const [statusTarget, setStatusTarget] = useState<ManagedRole | null>(null);
@@ -91,7 +94,14 @@ export function RoleAccessSettings() {
     setEditingId(null);
     setDraft(emptyRoleDraft);
     setErrors({});
-    setExpandedModules({ schemes: true, party_workers: true, applications: true });
+    setExpandedModules({
+      schemes: true,
+      party_workers: true,
+      applications: true,
+      help_desk: true,
+      applicant_profile: true,
+      users: true,
+    });
     setEditorOpen(true);
   };
 
@@ -101,7 +111,14 @@ export function RoleAccessSettings() {
     setEditingId(role.id);
     setDraft(draftFromRole(role));
     setErrors({});
-    setExpandedModules({ schemes: true, party_workers: true, applications: true });
+    setExpandedModules({
+      schemes: true,
+      party_workers: true,
+      applications: true,
+      help_desk: true,
+      applicant_profile: true,
+      users: true,
+    });
     setEditorOpen(true);
   };
 
@@ -110,7 +127,14 @@ export function RoleAccessSettings() {
     setEditingId(null);
     setDraft(draftFromRole(role, nextRoleCopyName(role.name, roles)));
     setErrors({});
-    setExpandedModules({ schemes: true, party_workers: true, applications: true });
+    setExpandedModules({
+      schemes: true,
+      party_workers: true,
+      applications: true,
+      help_desk: true,
+      applicant_profile: true,
+      users: true,
+    });
     setEditorOpen(true);
   };
 

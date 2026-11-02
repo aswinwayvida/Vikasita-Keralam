@@ -10,6 +10,7 @@ import {
   ClipboardList,
   FileText,
   Filter,
+  Headset,
   Landmark,
   Layers,
   Lock,
@@ -20,11 +21,14 @@ import {
   Search,
   ShieldCheck,
   Trash2,
+  UserRound,
   UserX,
   Users2,
+  UsersRound,
   X,
 } from "lucide-react";
 import { mockUsers, type AppUser } from "@/data/users";
+import { partyWorkerStorageKey } from "@/data/party-worker-directory";
 import {
   constituencies,
   districts,
@@ -152,12 +156,12 @@ function toggleFilterId<T extends string>(ids: T[] | undefined, id: T): T[] | un
 }
 
 const sessionCreatedWorkers: WorkerProfile[] = [];
-const workerStorageKey = "vk-party-workers";
-
 function readStoredWorkers(): WorkerProfile[] {
   if (typeof window === "undefined") return [];
   try {
-    const parsed = JSON.parse(window.localStorage.getItem(workerStorageKey) || "[]") as unknown;
+    const parsed = JSON.parse(
+      window.localStorage.getItem(partyWorkerStorageKey) || "[]",
+    ) as unknown;
     return Array.isArray(parsed) ? (parsed as WorkerProfile[]) : [];
   } catch {
     return [];
@@ -169,7 +173,7 @@ function persistWorker(worker: WorkerProfile) {
   try {
     const previous = readStoredWorkers().filter((item) => item.id !== worker.id);
     window.localStorage.setItem(
-      workerStorageKey,
+      partyWorkerStorageKey,
       JSON.stringify([worker, ...previous].slice(0, 50)),
     );
   } catch {
@@ -215,6 +219,9 @@ const moduleIcons: Record<PermissionModuleId, React.ElementType> = {
   schemes: FileText,
   party_workers: Users2,
   applications: ClipboardList,
+  help_desk: Headset,
+  applicant_profile: UserRound,
+  users: UsersRound,
 };
 
 function profileFromAppUser(user: AppUser): WorkerProfile {
@@ -532,6 +539,9 @@ export function MobileCreatePartyWorkerFlow({
     schemes: false,
     party_workers: false,
     applications: true,
+    help_desk: false,
+    applicant_profile: false,
+    users: false,
   });
   const [accessManagement, setAccessManagement] = useState(false);
   const [grants, setGrants] = useState<AccessGrant[]>([]);

@@ -1,4 +1,15 @@
-import { ClipboardList, FileText, Info, Lock, Pencil, Users, type LucideIcon } from "lucide-react";
+import {
+  ClipboardList,
+  FileText,
+  Headset,
+  Info,
+  Lock,
+  Pencil,
+  UserRound,
+  Users,
+  UsersRound,
+  type LucideIcon,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +33,9 @@ const moduleIcons: Record<PermissionModuleId, LucideIcon> = {
   schemes: FileText,
   party_workers: Users,
   applications: ClipboardList,
+  help_desk: Headset,
+  applicant_profile: UserRound,
+  users: UsersRound,
 };
 
 export function RoleViewDialog({

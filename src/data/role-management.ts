@@ -1,4 +1,9 @@
-import { rolePresets, type AssignmentLevel, type RolePresetId } from "./party-workers";
+import {
+  permissionModules,
+  rolePresets,
+  type AssignmentLevel,
+  type RolePresetId,
+} from "./party-workers";
 
 export type ManagedRoleStatus = "Active" | "Inactive";
 
@@ -47,6 +52,7 @@ export interface ManagedRole {
   system: boolean;
   presetId?: RolePresetId;
   assignedUsers: number;
+  assignedWorkerIds?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -162,18 +168,29 @@ export const builtInManagedRoles: ManagedRole[] = builtInRoleSeeds.map((seed) =>
 
 export const managedRoleStorageKey = "vk-managed-roles";
 
+const validPermissionKeys = new Set(
+  permissionModules.flatMap((module) =>
+    module.actions.map((action) => `${module.id}.${action.id}`),
+  ),
+);
+
+const sanitizeRole = (role: ManagedRole): ManagedRole => ({
+  ...role,
+  permissions: (role.permissions ?? []).filter((key) => validPermissionKeys.has(key)),
+});
+
 export function loadManagedRoles(): ManagedRole[] {
-  if (typeof window === "undefined") return builtInManagedRoles.map((role) => ({ ...role }));
+  if (typeof window === "undefined") return builtInManagedRoles.map(sanitizeRole);
   try {
     const parsed = JSON.parse(
       window.localStorage.getItem(managedRoleStorageKey) || "[]",
     ) as unknown;
     if (!Array.isArray(parsed) || parsed.length === 0) {
-      return builtInManagedRoles.map((role) => ({ ...role }));
+      return builtInManagedRoles.map(sanitizeRole);
     }
-    return parsed as ManagedRole[];
+    return (parsed as ManagedRole[]).map(sanitizeRole);
   } catch {
-    return builtInManagedRoles.map((role) => ({ ...role }));
+    return builtInManagedRoles.map(sanitizeRole);
   }
 }
 

@@ -1,5 +1,15 @@
 import type { LucideIcon } from "lucide-react";
-import { AlertTriangle, Check, ChevronDown, ClipboardList, FileText, Users } from "lucide-react";
+import {
+  AlertTriangle,
+  Check,
+  ChevronDown,
+  ClipboardList,
+  FileText,
+  Headset,
+  UserRound,
+  Users,
+  UsersRound,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -32,6 +42,9 @@ const moduleIcons: Record<PermissionModuleId, LucideIcon> = {
   schemes: FileText,
   party_workers: Users,
   applications: ClipboardList,
+  help_desk: Headset,
+  applicant_profile: UserRound,
+  users: UsersRound,
 };
 
 export function RoleEditorDialog({

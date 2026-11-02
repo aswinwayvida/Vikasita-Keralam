@@ -6,13 +6,17 @@ import {
   ClipboardList,
   Copy,
   FileText,
+  Filter,
+  Headset,
+  MapPin,
   MoreVertical,
   Pencil,
   Plus,
-  Power,
-  RotateCcw,
-  Trash2,
+  Search,
+  UserRound,
   Users,
+  UsersRound,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -21,7 +25,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -34,13 +39,17 @@ import {
   type PermissionModuleId,
 } from "@/data/party-workers";
 import {
-  administrativePermissionOptions,
+  loadAssignablePartyWorkers,
+  type AssignablePartyWorker,
+} from "@/data/party-worker-directory";
+import {
   createRoleId,
   draftFromRole,
   emptyRoleDraft,
   loadManagedRoles,
   nextRoleCopyName,
   saveManagedRoles,
+  type AdministrativePermissionId,
   type ManagedRole,
   type RoleDraft,
 } from "@/data/role-management";
@@ -56,6 +65,9 @@ const moduleIcons = {
   schemes: FileText,
   party_workers: Users,
   applications: ClipboardList,
+  help_desk: Headset,
+  applicant_profile: UserRound,
+  users: UsersRound,
 } as const;
 
 const freshDraft = (): RoleDraft => ({
@@ -69,24 +81,43 @@ const defaultExpandedModules: Record<PermissionModuleId, boolean> = {
   schemes: true,
   party_workers: false,
   applications: false,
+  help_desk: false,
+  applicant_profile: false,
+  users: false,
 };
+
+const roleAccessPermissionIds: AdministrativePermissionId[] = ["manage_roles", "assign_access"];
+const delegateAccessPermissionId: AdministrativePermissionId = "delegate_access";
+
+const normalizeAdministrativePermissions = (ids: AdministrativePermissionId[]) => [
+  ...(ids.some((id) => roleAccessPermissionIds.includes(id)) ? roleAccessPermissionIds : []),
+  ...(ids.includes(delegateAccessPermissionId) ? [delegateAccessPermissionId] : []),
+];
 
 export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPageProps) {
   const { lang } = useLang();
   const isMalayalam = lang === "ml";
   const tr = (en: string, ml: string) => (isMalayalam ? ml : en);
   const [roles, setRoles] = useState<ManagedRole[]>(() => loadManagedRoles());
-  const [activeView, setActiveView] = useState<"list" | "form">("list");
+  const [activeView, setActiveView] = useState<"list" | "form" | "assign">("list");
   const [createStep, setCreateStep] = useState<1 | 2>(1);
   const [isCreating, setIsCreating] = useState(false);
   const [editTarget, setEditTarget] = useState<ManagedRole | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<ManagedRole | null>(null);
-  const [statusTarget, setStatusTarget] = useState<ManagedRole | null>(null);
-  const [statusAcknowledged, setStatusAcknowledged] = useState(false);
   const [draft, setDraft] = useState<RoleDraft>(freshDraft);
+  const [assignmentRole, setAssignmentRole] = useState<ManagedRole | null>(null);
+  const [assignmentWorkerIds, setAssignmentWorkerIds] = useState<string[]>([]);
+  const [assignmentWorkers, setAssignmentWorkers] = useState<AssignablePartyWorker[]>([]);
+  const [assignmentSearch, setAssignmentSearch] = useState("");
+  const [assignmentDistrict, setAssignmentDistrict] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [expandedModules, setExpandedModules] =
     useState<Record<PermissionModuleId, boolean>>(defaultExpandedModules);
+  const roleAccessChecked = draft.administrativePermissions.some((id) =>
+    roleAccessPermissionIds.includes(id),
+  );
+  const delegateAccessChecked = draft.administrativePermissions.includes(
+    delegateAccessPermissionId,
+  );
 
   useEffect(() => {
     return () => onFormOpenChange?.(false);
@@ -127,6 +158,11 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
   const closeRoleDialog = () => {
     setIsCreating(false);
     setEditTarget(null);
+    setAssignmentRole(null);
+    setAssignmentWorkerIds([]);
+    setAssignmentWorkers([]);
+    setAssignmentSearch("");
+    setAssignmentDistrict("");
     setActiveView("list");
     setCreateStep(1);
     onFormOpenChange?.(false);
@@ -193,7 +229,9 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
         description: draft.description.trim(),
         assignmentLevels: [...draft.assignmentLevels],
         permissions: [...draft.permissions],
-        administrativePermissions: [...draft.administrativePermissions],
+        administrativePermissions: normalizeAdministrativePermissions(
+          draft.administrativePermissions,
+        ),
         status: draft.status,
         system: false,
         assignedUsers: 0,
@@ -201,7 +239,19 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
         updatedAt: now,
       };
       commitRoles([created, ...roles]);
-      toast.success(tr("Role created.", "റോൾ സൃഷ്ടിച്ചു."));
+      setAssignmentRole(created);
+      setAssignmentWorkerIds([]);
+      setAssignmentWorkers(loadAssignablePartyWorkers());
+      setAssignmentSearch("");
+      setAssignmentDistrict("");
+      setActiveView("assign");
+      toast.success(
+        tr(
+          "Role created. Assign party workers next.",
+          "റോൾ സൃഷ്ടിച്ചു. അടുത്ത് പാർട്ടി പ്രവർത്തകരെ നൽകുക.",
+        ),
+      );
+      return;
     } else if (editTarget) {
       const updated: ManagedRole = {
         ...editTarget,
@@ -209,13 +259,39 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
         description: draft.description.trim(),
         assignmentLevels: [...draft.assignmentLevels],
         permissions: [...draft.permissions],
-        administrativePermissions: [...draft.administrativePermissions],
+        administrativePermissions: normalizeAdministrativePermissions(
+          draft.administrativePermissions,
+        ),
         status: draft.status,
         updatedAt: now,
       };
       commitRoles(roles.map((role) => (role.id === updated.id ? updated : role)));
       toast.success(tr("Role updated.", "റോൾ അപ്ഡേറ്റ് ചെയ്തു."));
     }
+    closeRoleDialog();
+  };
+
+  const toggleAssignmentWorker = (workerId: string) => {
+    setAssignmentWorkerIds((current) =>
+      current.includes(workerId) ? current.filter((id) => id !== workerId) : [...current, workerId],
+    );
+  };
+
+  const finishWorkerAssignment = () => {
+    if (!assignmentRole) return;
+    const updated: ManagedRole = {
+      ...assignmentRole,
+      assignedWorkerIds: [...assignmentWorkerIds],
+      assignedUsers: assignmentWorkerIds.length,
+      updatedAt: new Date().toISOString(),
+    };
+    commitRoles(roles.map((role) => (role.id === updated.id ? updated : role)));
+    toast.success(
+      tr(
+        `${assignmentWorkerIds.length} party worker${assignmentWorkerIds.length === 1 ? "" : "s"} assigned to ${updated.name}.`,
+        `${assignmentWorkerIds.length} പാർട്ടി പ്രവർത്തകരെ ${updated.name} റോളിലേക്ക് നൽകി.`,
+      ),
+    );
     closeRoleDialog();
   };
 
@@ -238,40 +314,50 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
     toast.success(tr("Role duplicated.", "റോൾ പകർത്തി."));
   };
 
-  const openStatusConfirm = (role: ManagedRole) => {
-    setStatusAcknowledged(false);
-    setStatusTarget(role);
-  };
+  const assignmentDistrictOptions = Array.from(
+    assignmentWorkers.reduce((options, worker) => {
+      const value = worker.districtEn || worker.districtMl;
+      if (!value || options.has(value)) return options;
+      options.set(
+        value,
+        isMalayalam
+          ? worker.districtMl || worker.districtEn
+          : worker.districtEn || worker.districtMl,
+      );
+      return options;
+    }, new Map<string, string>()),
+  )
+    .map(([value, label]) => ({ value, label }))
+    .sort((a, b) => a.label.localeCompare(b.label));
 
-  const confirmRoleStatus = () => {
-    if (!statusTarget) return;
-    const nextStatus = statusTarget.status === "Active" ? "Inactive" : "Active";
-    const updated: ManagedRole = {
-      ...statusTarget,
-      status: nextStatus,
-      updatedAt: new Date().toISOString(),
-    };
-    commitRoles(roles.map((item) => (item.id === updated.id ? updated : item)));
-    toast.success(
-      nextStatus === "Inactive"
-        ? tr("Role deactivated.", "റോൾ നിർജ്ജീവമാക്കി.")
-        : tr("Role reactivated.", "റോൾ വീണ്ടും സജീവമാക്കി."),
-    );
-    setStatusTarget(null);
-  };
+  const assignmentDistrictLabel =
+    assignmentDistrictOptions.find((district) => district.value === assignmentDistrict)?.label ??
+    "";
 
-  const removeRole = () => {
-    if (!deleteTarget) return;
-    commitRoles(roles.filter((role) => role.id !== deleteTarget.id));
-    toast.success(tr("Role deleted.", "റോൾ ഇല്ലാതാക്കി."));
-    setDeleteTarget(null);
-  };
+  const normalizedAssignmentSearch = assignmentSearch.trim().toLowerCase();
+  const filteredAssignmentWorkers = assignmentWorkers.filter((worker) => {
+    if (assignmentDistrict && (worker.districtEn || worker.districtMl) !== assignmentDistrict) {
+      return false;
+    }
+    if (!normalizedAssignmentSearch) return true;
+    return [
+      worker.name,
+      worker.nameMl,
+      worker.mobile,
+      worker.designationEn,
+      worker.designationMl,
+      worker.locationEn,
+      worker.locationMl,
+      worker.districtEn,
+      worker.districtMl,
+    ].some((value) => value?.toLowerCase().includes(normalizedAssignmentSearch));
+  });
 
   return (
     <div
       className={cn(
         "animate-in fade-in duration-200",
-        activeView === "form"
+        activeView === "form" || activeView === "assign"
           ? "flex h-full min-h-0 w-full flex-col bg-muted/20"
           : "relative flex h-full min-h-0 w-full flex-col",
       )}
@@ -367,27 +453,6 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
                         <Copy className="h-3.5 w-3.5" />
                         {tr("Duplicate", "പകർത്തുക")}
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onSelect={() => openStatusConfirm(role)}
-                        className="gap-2 rounded-lg px-2 py-2 text-[11px] font-semibold"
-                      >
-                        {role.status === "Active" ? (
-                          <Power className="h-3.5 w-3.5" />
-                        ) : (
-                          <RotateCcw className="h-3.5 w-3.5" />
-                        )}
-                        {role.status === "Active"
-                          ? tr("Deactivate", "നിർജ്ജീവമാക്കുക")
-                          : tr("Reactivate", "സജീവമാക്കുക")}
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator className="bg-orange-100 dark:bg-slate-800" />
-                      <DropdownMenuItem
-                        onSelect={() => setDeleteTarget(role)}
-                        className="gap-2 rounded-lg px-2 py-2 text-[11px] font-semibold text-rose-600 focus:bg-rose-50 focus:text-rose-700 dark:focus:bg-rose-950/30 dark:focus:text-rose-300"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        {tr("Delete", "ഇല്ലാതാക്കുക")}
-                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -395,6 +460,215 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
             ))}
           </div>
         </>
+      )}
+
+      {activeView === "assign" && assignmentRole && (
+        <div className="flex min-h-0 flex-1 flex-col bg-muted/20">
+          <header className="relative flex h-10 shrink-0 items-center justify-center border-b border-border/70 bg-card px-3 dark:bg-slate-900">
+            <button
+              type="button"
+              onClick={closeRoleDialog}
+              className="absolute left-3 flex h-7 w-7 items-center justify-center rounded-full bg-muted/60 text-foreground transition-colors hover:bg-muted dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 cursor-pointer"
+              aria-label={tr("Back to roles", "റോളുകളിലേക്ക് മടങ്ങുക")}
+            >
+              <ArrowLeft className="h-3.5 w-3.5 stroke-[2.2]" />
+            </button>
+            <h1 className="text-[13px] font-extrabold tracking-tight text-[#152153] dark:text-white">
+              {tr("Assign Party Workers", "പാർട്ടി പ്രവർത്തകരെ നൽകുക")}
+            </h1>
+            <span className="absolute right-3 rounded-full border border-orange-100 bg-orange-50 px-2 py-1 text-[8.5px] font-bold text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/50 dark:text-orange-300">
+              {tr("Step 3 of 3", "ഘട്ടം 3/3")}
+            </span>
+          </header>
+
+          <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-3 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <section className="space-y-2.5 rounded-2xl border border-border bg-card p-3 shadow-2xs">
+              <div className="flex items-center gap-2">
+                <div className="relative flex min-w-0 flex-1 items-center">
+                  <Search className="pointer-events-none absolute left-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                  <input
+                    type="text"
+                    value={assignmentSearch}
+                    onChange={(event) => setAssignmentSearch(event.target.value)}
+                    placeholder={tr(
+                      "Search name, location, phone...",
+                      "പേര്, സ്ഥലം, ഫോൺ തിരയുക...",
+                    )}
+                    aria-label={tr("Search party workers", "പാർട്ടി പ്രവർത്തകരെ തിരയുക")}
+                    className="w-full rounded-xl border border-border bg-muted/30 py-1.5 pl-8 pr-7 text-[10.5px] font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  />
+                  {assignmentSearch ? (
+                    <button
+                      type="button"
+                      onClick={() => setAssignmentSearch("")}
+                      aria-label={tr("Clear search", "തിരയൽ മായ്ക്കുക")}
+                      className="absolute right-2 rounded-full p-0.5 text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  ) : null}
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label={tr("Filter by district", "ജില്ല തിരിച്ച് ഫിൽട്ടർ ചെയ്യുക")}
+                      className={cn(
+                        "relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border transition-colors cursor-pointer",
+                        assignmentDistrict
+                          ? "border-orange-300 bg-orange-50 text-orange-700 dark:border-orange-800 dark:bg-orange-950/40 dark:text-orange-300"
+                          : "border-border bg-muted/40 text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      <Filter className="h-3.5 w-3.5 stroke-[2.2]" />
+                      {assignmentDistrict ? (
+                        <span className="absolute right-1 top-1 h-1 w-1 rounded-full bg-orange-500" />
+                      ) : null}
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-52 rounded-xl p-1">
+                    <div className="px-2 py-1.5 text-[9px] font-black uppercase tracking-wider text-muted-foreground">
+                      {tr("Filter by district", "ജില്ല തിരിച്ച് ഫിൽട്ടർ ചെയ്യുക")}
+                    </div>
+                    <DropdownMenuRadioGroup
+                      value={assignmentDistrict}
+                      onValueChange={setAssignmentDistrict}
+                    >
+                      <DropdownMenuRadioItem
+                        value=""
+                        className="rounded-lg py-1.5 text-[11px] font-semibold"
+                      >
+                        {tr("All districts", "എല്ലാ ജില്ല")}
+                      </DropdownMenuRadioItem>
+                      {assignmentDistrictOptions.map((district) => (
+                        <DropdownMenuRadioItem
+                          key={district.value}
+                          value={district.value}
+                          className="rounded-lg py-1.5 text-[11px] font-semibold"
+                        >
+                          {district.label}
+                        </DropdownMenuRadioItem>
+                      ))}
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              {assignmentDistrict ? (
+                <button
+                  type="button"
+                  onClick={() => setAssignmentDistrict("")}
+                  className="inline-flex max-w-full items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[8.5px] font-bold text-orange-700 transition-colors hover:bg-orange-100 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-300 dark:hover:bg-orange-950/50 cursor-pointer"
+                >
+                  <MapPin className="h-2.5 w-2.5 shrink-0" />
+                  <span className="truncate">{assignmentDistrictLabel}</span>
+                  <X className="h-2.5 w-2.5 shrink-0" />
+                </button>
+              ) : null}
+
+              <div className="overflow-hidden rounded-xl border border-border">
+                <div className="divide-y divide-border/60">
+                  {filteredAssignmentWorkers.length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-border bg-card px-4 py-8 text-center">
+                      {assignmentWorkers.length === 0 ? (
+                        <Users className="mx-auto h-5 w-5 text-muted-foreground" />
+                      ) : (
+                        <Search className="mx-auto h-5 w-5 text-muted-foreground" />
+                      )}
+                      <p className="mt-2 text-[10.5px] font-bold text-foreground">
+                        {assignmentWorkers.length === 0
+                          ? tr("No party workers found", "പാർട്ടി പ്രവർത്തകരെ കണ്ടെത്തിയില്ല")
+                          : tr(
+                              "No workers match your filters",
+                              "ഫിൽട്ടറുകളുമായി പൊരുത്തപ്പെടുന്ന പ്രവർത്തകരില്ല",
+                            )}
+                      </p>
+                      {assignmentWorkers.length > 0 ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAssignmentSearch("");
+                            setAssignmentDistrict("");
+                          }}
+                          className="mt-2 text-[9px] font-bold text-orange-600 hover:text-orange-700 cursor-pointer"
+                        >
+                          {tr("Clear search and filters", "തിരയലും ഫിൽട്ടറുകളും മായ്ക്കുക")}
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : (
+                    filteredAssignmentWorkers.map((worker) => {
+                      const selected = assignmentWorkerIds.includes(worker.id);
+                      const workerName = isMalayalam ? worker.nameMl || worker.name : worker.name;
+                      const workerLocation = isMalayalam ? worker.locationMl : worker.locationEn;
+                      return (
+                        <button
+                          key={worker.id}
+                          type="button"
+                          role="checkbox"
+                          aria-checked={selected}
+                          onClick={() => toggleAssignmentWorker(worker.id)}
+                          className={cn(
+                            "flex w-full items-start gap-2 px-3 py-2 text-left transition-colors cursor-pointer",
+                            selected
+                              ? "bg-orange-50/60 dark:bg-orange-950/20"
+                              : "hover:bg-muted/40",
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "mt-px flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[3px] border",
+                              selected
+                                ? "border-orange-500 bg-orange-500 text-white"
+                                : "border-slate-300 dark:border-slate-600",
+                            )}
+                          >
+                            {selected ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : null}
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-[10px] font-bold text-foreground">
+                              {workerName}
+                            </span>
+                            <span className="mt-0.5 flex min-w-0 items-center gap-1 text-[8.5px] leading-snug text-muted-foreground">
+                              <MapPin className="h-2.5 w-2.5 shrink-0 text-orange-500" />
+                              <span className="truncate">{workerLocation}</span>
+                            </span>
+                          </span>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div className="shrink-0 border-t border-border/70 bg-background/95 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={closeRoleDialog}
+                aria-label={tr("Back to roles", "റോളുകളിലേക്ക് മടങ്ങുക")}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-background text-foreground transition-colors hover:bg-muted/40 cursor-pointer"
+              >
+                <ArrowLeft className="h-4 w-4 stroke-[2.2]" />
+              </button>
+              <Button
+                type="button"
+                className="h-10 flex-1 rounded-xl text-[11.5px] font-extrabold"
+                onClick={finishWorkerAssignment}
+                disabled={assignmentWorkerIds.length === 0}
+              >
+                {assignmentWorkerIds.length === 0
+                  ? tr("Select at least one worker", "കുറഞ്ഞത് ഒരു പ്രവർത്തകനെ തിരഞ്ഞെടുക്കുക")
+                  : tr(
+                      `Assign ${assignmentWorkerIds.length} party worker${assignmentWorkerIds.length === 1 ? "" : "s"}`,
+                      `${assignmentWorkerIds.length} പാർട്ടി പ്രവർത്തകരെ നൽകുക`,
+                    )}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
 
       {activeView === "form" && (
@@ -643,55 +917,106 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
                 </div>
                 <p className="text-[8.5px] leading-snug text-muted-foreground">
                   {tr(
-                    "Separate elevated controls. These are not included in Create or Edit Party Worker.",
-                    "വേറിട്ട ഉയർന്ന അധികാരങ്ങൾ. ഇവ Party Worker സൃഷ്ടിക്കുക/തിരുത്തുക എന്നതിൽ ഉൾപ്പെടുന്നില്ല.",
+                    "Elevated controls for roles and access. Not included in Create or Edit Party Worker.",
+                    "റോളുകൾക്കും ആക്സസിനുമുള്ള ഉയർന്ന അധികാരങ്ങൾ. Party Worker സൃഷ്ടിക്കുക/തിരുത്തുക എന്നതിൽ ഇവ ഉൾപ്പെടുന്നില്ല.",
                   )}
                 </p>
                 <div className="space-y-1.5">
-                  {administrativePermissionOptions.map((option) => {
-                    const checked = draft.administrativePermissions.includes(option.id);
-                    return (
-                      <button
-                        key={option.id}
-                        type="button"
-                        role="checkbox"
-                        aria-checked={checked}
-                        onClick={() =>
-                          setDraft((current) => ({
-                            ...current,
-                            administrativePermissions: checked
-                              ? current.administrativePermissions.filter((id) => id !== option.id)
-                              : [...current.administrativePermissions, option.id],
-                          }))
-                        }
-                        className={cn(
-                          "flex w-full items-start gap-2 rounded-lg border px-2 py-1.5 text-left transition-colors cursor-pointer",
-                          checked
-                            ? "border-amber-300 bg-amber-50/70 dark:border-amber-900/60 dark:bg-amber-950/20"
-                            : "border-border hover:bg-muted/30",
+                  <button
+                    type="button"
+                    role="checkbox"
+                    aria-checked={roleAccessChecked}
+                    onClick={() =>
+                      setDraft((current) => ({
+                        ...current,
+                        administrativePermissions: current.administrativePermissions.some((id) =>
+                          roleAccessPermissionIds.includes(id),
+                        )
+                          ? current.administrativePermissions.filter(
+                              (id) => !roleAccessPermissionIds.includes(id),
+                            )
+                          : [
+                              ...current.administrativePermissions.filter(
+                                (id) => !roleAccessPermissionIds.includes(id),
+                              ),
+                              ...roleAccessPermissionIds,
+                            ],
+                      }))
+                    }
+                    className={cn(
+                      "flex w-full items-start gap-2 rounded-lg border px-2 py-1.5 text-left transition-colors cursor-pointer",
+                      roleAccessChecked
+                        ? "border-amber-300 bg-amber-50/70 dark:border-amber-900/60 dark:bg-amber-950/20"
+                        : "border-border hover:bg-muted/30",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "mt-px flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[3px] border",
+                        roleAccessChecked
+                          ? "border-amber-500 bg-amber-500 text-white"
+                          : "border-slate-300 dark:border-slate-600",
+                      )}
+                    >
+                      {roleAccessChecked ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : null}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[10px] font-bold text-foreground">
+                        {tr("Role and access management", "റോൾ & ആക്സസ് മാനേജ്മെന്റ്")}
+                      </span>
+                      <span className="block text-[8.5px] leading-snug text-muted-foreground">
+                        {tr(
+                          "Create roles and assign access to party workers.",
+                          "റോളുകൾ സൃഷ്ടിക്കാം, പാർട്ടി പ്രവർത്തകർക്ക് ആക്സസ് നൽകാം.",
                         )}
-                      >
-                        <span
-                          className={cn(
-                            "mt-px flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[3px] border",
-                            checked
-                              ? "border-amber-500 bg-amber-500 text-white"
-                              : "border-slate-300 dark:border-slate-600",
-                          )}
-                        >
-                          {checked ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : null}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block text-[10px] font-bold text-foreground">
-                            {isMalayalam ? option.ml : option.en}
-                          </span>
-                          <span className="block text-[8.5px] leading-snug text-muted-foreground">
-                            {isMalayalam ? option.descriptionMl : option.descriptionEn}
-                          </span>
-                        </span>
-                      </button>
-                    );
-                  })}
+                      </span>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    role="checkbox"
+                    aria-checked={delegateAccessChecked}
+                    onClick={() =>
+                      setDraft((current) => ({
+                        ...current,
+                        administrativePermissions: current.administrativePermissions.includes(
+                          delegateAccessPermissionId,
+                        )
+                          ? current.administrativePermissions.filter(
+                              (id) => id !== delegateAccessPermissionId,
+                            )
+                          : [...current.administrativePermissions, delegateAccessPermissionId],
+                      }))
+                    }
+                    className={cn(
+                      "flex w-full items-start gap-2 rounded-lg border px-2 py-1.5 text-left transition-colors cursor-pointer",
+                      delegateAccessChecked
+                        ? "border-amber-300 bg-amber-50/70 dark:border-amber-900/60 dark:bg-amber-950/20"
+                        : "border-border hover:bg-muted/30",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "mt-px flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[3px] border",
+                        delegateAccessChecked
+                          ? "border-amber-500 bg-amber-500 text-white"
+                          : "border-slate-300 dark:border-slate-600",
+                      )}
+                    >
+                      {delegateAccessChecked ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : null}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[10px] font-bold text-foreground">
+                        {tr("Access delegation", "ആക്സസ് ഡെലിഗേഷൻ")}
+                      </span>
+                      <span className="block text-[8.5px] leading-snug text-muted-foreground">
+                        {tr(
+                          "Grant access-management authority to other administrators.",
+                          "മറ്റ് അഡ്മിനിസ്ട്രേറ്റർമാർക്ക് ആക്സസ് മാനേജ്മെന്റ് അധികാരം നൽകാം.",
+                        )}
+                      </span>
+                    </span>
+                  </button>
                 </div>
               </section>
             )}
@@ -730,180 +1055,6 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
           </div>
         </div>
       )}
-
-      {statusTarget ? (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={tr("Role status confirmation", "റോൾ നില സ്ഥിരീകരണം")}
-          className="absolute inset-0 z-[130] flex items-end bg-black/55 backdrop-blur-[1px] animate-in fade-in duration-150"
-          onClick={() => setStatusTarget(null)}
-        >
-          <div
-            className="w-full rounded-t-2xl border-t border-orange-100 bg-white px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2.5 shadow-2xl animate-in slide-in-from-bottom duration-200 dark:border-slate-800 dark:bg-slate-900"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="mx-auto mb-2.5 h-1 w-9 rounded-full bg-slate-200 dark:bg-slate-700" />
-
-            <div className="flex items-start gap-2.5">
-              <span
-                className={cn(
-                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
-                  statusTarget.status === "Active"
-                    ? "bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-300"
-                    : "bg-orange-50 text-orange-600 dark:bg-orange-950/50 dark:text-orange-300",
-                )}
-              >
-                {statusTarget.status === "Active" ? (
-                  <Power className="h-4 w-4" />
-                ) : (
-                  <RotateCcw className="h-4 w-4" />
-                )}
-              </span>
-              <div className="min-w-0 flex-1">
-                <h2 className="text-[13px] font-extrabold text-foreground">
-                  {statusTarget.status === "Active"
-                    ? tr("Deactivate role?", "റോൾ നിർജ്ജീവമാക്കണോ?")
-                    : tr("Reactivate role?", "റോൾ വീണ്ടും സജീവമാക്കണോ?")}
-                </h2>
-                <p className="mt-0.5 text-[10.5px] font-medium leading-relaxed text-muted-foreground">
-                  {statusTarget.status === "Active"
-                    ? tr(
-                        `${statusTarget.name} will stop being available for new assignments. ${statusTarget.assignedUsers} users currently use this role.`,
-                        `${statusTarget.name} പുതിയ അസൈൻമെന്റുകൾക്ക് ലഭ്യമാകില്ല. ഈ റോൾ ഇപ്പോൾ ${statusTarget.assignedUsers} ഉപയോക്താക്കൾ ഉപയോഗിക്കുന്നു.`,
-                      )
-                    : tr(
-                        `${statusTarget.name} will be available for new assignments again.`,
-                        `${statusTarget.name} വീണ്ടും പുതിയ അസൈൻമെന്റുകൾക്ക് ലഭ്യമാകും.`,
-                      )}
-                </p>
-              </div>
-            </div>
-
-            {statusTarget.status === "Active" && statusTarget.assignedUsers > 0 ? (
-              <button
-                type="button"
-                role="checkbox"
-                aria-checked={statusAcknowledged}
-                onClick={() => setStatusAcknowledged((current) => !current)}
-                className="mt-3 flex w-full items-start gap-2 rounded-xl border border-orange-100 bg-orange-50/60 p-2.5 text-left transition-colors hover:bg-orange-50 dark:border-orange-900/60 dark:bg-orange-950/30 dark:hover:bg-orange-950/50 cursor-pointer"
-              >
-                <span
-                  className={cn(
-                    "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] border",
-                    statusAcknowledged
-                      ? "border-orange-500 bg-orange-500 text-white"
-                      : "border-slate-300 bg-background dark:border-slate-600",
-                  )}
-                >
-                  {statusAcknowledged ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : null}
-                </span>
-                <span className="text-[9.5px] font-semibold leading-relaxed text-slate-600 dark:text-slate-300">
-                  {tr(
-                    `I will review the ${statusTarget.assignedUsers} affected users and reassign them where required.`,
-                    `ബാധകമായ ${statusTarget.assignedUsers} ഉപയോക്താക്കളെ അവലോകനം ചെയ്ത് ആവശ്യമെങ്കിൽ പുനഃഅസൈൻ ചെയ്യും.`,
-                  )}
-                </span>
-              </button>
-            ) : null}
-
-            <div className="mt-3 flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="h-10 flex-1 rounded-xl text-[11.5px] font-extrabold"
-                onClick={() => setStatusTarget(null)}
-              >
-                {tr("Cancel", "റദ്ദാക്കുക")}
-              </Button>
-              <Button
-                type="button"
-                variant={statusTarget.status === "Active" ? "destructive" : "default"}
-                className="h-10 flex-1 rounded-xl text-[11.5px] font-extrabold"
-                disabled={
-                  statusTarget.status === "Active" &&
-                  statusTarget.assignedUsers > 0 &&
-                  !statusAcknowledged
-                }
-                onClick={confirmRoleStatus}
-              >
-                {statusTarget.status === "Active"
-                  ? tr("Deactivate", "നിർജ്ജീവമാക്കുക")
-                  : tr("Reactivate", "സജീവമാക്കുക")}
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {deleteTarget ? (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={tr("Delete role confirmation", "റോൾ ഇല്ലാതാക്കാനുള്ള സ്ഥിരീകരണം")}
-          className="absolute inset-0 z-[130] flex items-end bg-black/55 backdrop-blur-[1px] animate-in fade-in duration-150"
-          onClick={() => setDeleteTarget(null)}
-        >
-          <div
-            className="w-full rounded-t-2xl border-t border-orange-100 bg-white px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2.5 shadow-2xl animate-in slide-in-from-bottom duration-200 dark:border-slate-800 dark:bg-slate-900"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="mx-auto mb-2.5 h-1 w-9 rounded-full bg-slate-200 dark:bg-slate-700" />
-
-            <div className="flex items-start gap-2.5">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-300">
-                <Trash2 className="h-4 w-4" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <h2 className="text-[13px] font-extrabold text-foreground">
-                  {tr("Delete role?", "റോൾ ഇല്ലാതാക്കണോ?")}
-                </h2>
-                <p className="mt-0.5 text-[10.5px] font-medium leading-relaxed text-muted-foreground">
-                  {tr(
-                    `${deleteTarget.name} will be permanently removed from the role list.`,
-                    `${deleteTarget.name} റോൾ ലിസ്റ്റിൽ നിന്ന് സ്ഥിരമായി നീക്കം ചെയ്യും.`,
-                  )}
-                </p>
-              </div>
-            </div>
-
-            {deleteTarget.system ? (
-              <p className="mt-2.5 rounded-xl border border-amber-200 bg-amber-50 px-2.5 py-2 text-[9.5px] font-semibold leading-relaxed text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
-                {tr(
-                  `Built-in role with ${deleteTarget.assignedUsers} assigned workers. Deleting it removes the role for all of them.`,
-                  `ബിൽട്ട്-ഇൻ റോൾ. ${deleteTarget.assignedUsers} പ്രവർത്തകർ ഈ റോൾ ഉപയോഗിക്കുന്നു; ഇല്ലാതാക്കിയാൽ അവർക്കെല്ലാം ഇത് നഷ്ടമാകും.`,
-                )}
-              </p>
-            ) : deleteTarget.assignedUsers > 0 ? (
-              <p className="mt-2.5 rounded-xl border border-amber-200 bg-amber-50 px-2.5 py-2 text-[9.5px] font-semibold leading-relaxed text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
-                {tr(
-                  `${deleteTarget.assignedUsers} party workers are assigned to this role and will need a new one.`,
-                  `ഈ റോളിൽ ${deleteTarget.assignedUsers} പാർട്ടി പ്രവർത്തകരെ അസൈൻ ചെയ്തിട്ടുണ്ട്; അവർക്ക് പുതിയ റോൾ ആവശ്യമാകും.`,
-                )}
-              </p>
-            ) : null}
-
-            <div className="mt-3 flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="h-10 flex-1 rounded-xl text-[11.5px] font-extrabold"
-                onClick={() => setDeleteTarget(null)}
-              >
-                {tr("Cancel", "റദ്ദാക്കുക")}
-              </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                className="h-10 flex-1 rounded-xl text-[11.5px] font-extrabold"
-                onClick={removeRole}
-              >
-                {tr("Delete", "ഇല്ലാതാക്കുക")}
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }

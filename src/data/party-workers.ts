@@ -274,7 +274,8 @@ export function getPartyOrgPath(unitId: string, lang: "en" | "ml") {
 /* Permissions                                                                */
 /* -------------------------------------------------------------------------- */
 
-export type PermissionModuleId = "schemes" | "party_workers" | "applications";
+export type PermissionModuleId =
+  "schemes" | "party_workers" | "applications" | "help_desk" | "applicant_profile" | "users";
 
 export interface PermissionActionOption {
   id: string;
@@ -438,14 +439,86 @@ export const permissionModules: PermissionModule[] = [
         verbEn: "edit applications",
         verbMl: "അപേക്ഷകൾ തിരുത്താൻ",
       },
+    ],
+  },
+  {
+    id: "help_desk",
+    en: "Help Desk",
+    ml: "ഹെൽപ്പ് ഡെസ്ക്",
+    descriptionEn: "Citizen help requests and team assignment",
+    descriptionMl: "പൗര സഹായ അഭ്യർത്ഥനകളും ടീം അസൈൻമെന്റും",
+    actions: [
       {
-        id: "assign_worker",
-        en: "Assign Worker",
-        ml: "പ്രവർത്തകനെ നൽകുക",
-        helpEn: "Assign a worker to an application",
-        helpMl: "അപേക്ഷയിലേക്ക് പ്രവർത്തകനെ നൽകാം",
-        verbEn: "assign workers to applications",
-        verbMl: "അപേക്ഷകളിലേക്ക് പ്രവർത്തകരെ നൽകാൻ",
+        id: "view",
+        en: "View",
+        ml: "കാണുക",
+        helpEn: "Open help desk requests",
+        helpMl: "ഹെൽപ്പ് ഡെസ്ക് അഭ്യർത്ഥനകൾ കാണാം",
+        verbEn: "view help desk requests",
+        verbMl: "ഹെൽപ്പ് ഡെസ്ക് അഭ്യർത്ഥനകൾ കാണാൻ",
+      },
+      {
+        id: "assign_team_member",
+        en: "Assign to Team Member",
+        ml: "ടീം അംഗത്തിന് നൽകുക",
+        helpEn: "Assign a help desk request to a team member",
+        helpMl: "ഹെൽപ്പ് ഡെസ്ക് അഭ്യർത്ഥന ഒരു ടീം അംഗത്തിന് നൽകാം",
+        verbEn: "assign help desk requests to team members",
+        verbMl: "ഹെൽപ്പ് ഡെസ്ക് അഭ്യർത്ഥനകൾ ടീം അംഗങ്ങൾക്ക് നൽകാൻ",
+      },
+    ],
+  },
+  {
+    id: "applicant_profile",
+    en: "Applicant Profile",
+    ml: "അപേക്ഷക പ്രൊഫൈൽ",
+    descriptionEn: "Applicant records and profile management",
+    descriptionMl: "അപേക്ഷക റെക്കോർഡുകളും പ്രൊഫൈൽ മാനേജ്മെന്റും",
+    actions: [
+      {
+        id: "create",
+        en: "Create",
+        ml: "സൃഷ്ടിക്കുക",
+        helpEn: "Create applicant profiles",
+        helpMl: "അപേക്ഷക പ്രൊഫൈലുകൾ സൃഷ്ടിക്കാം",
+        verbEn: "create applicant profiles",
+        verbMl: "അപേക്ഷക പ്രൊഫൈലുകൾ സൃഷ്ടിക്കാൻ",
+      },
+      {
+        id: "edit",
+        en: "Edit",
+        ml: "തിരുത്തുക",
+        helpEn: "Edit applicant profile details",
+        helpMl: "അപേക്ഷക പ്രൊഫൈൽ വിവരങ്ങൾ തിരുത്താം",
+        verbEn: "edit applicant profiles",
+        verbMl: "അപേക്ഷക പ്രൊഫൈലുകൾ തിരുത്താൻ",
+      },
+      {
+        id: "view",
+        en: "View",
+        ml: "കാണുക",
+        helpEn: "Open applicant profiles",
+        helpMl: "അപേക്ഷക പ്രൊഫൈലുകൾ കാണാം",
+        verbEn: "view applicant profiles",
+        verbMl: "അപേക്ഷക പ്രൊഫൈലുകൾ കാണാൻ",
+      },
+    ],
+  },
+  {
+    id: "users",
+    en: "Users",
+    ml: "ഉപയോക്താക്കൾ",
+    descriptionEn: "User directory and account visibility",
+    descriptionMl: "ഉപയോക്തൃ ഡയറക്ടറിയും അക്കൗണ്ട് കാഴ്ചയും",
+    actions: [
+      {
+        id: "view",
+        en: "View",
+        ml: "കാണുക",
+        helpEn: "Open the user directory",
+        helpMl: "ഉപയോക്തൃ ഡയറക്ടറി കാണാം",
+        verbEn: "view users",
+        verbMl: "ഉപയോക്താക്കളെ കാണാൻ",
       },
     ],
   },
@@ -474,7 +547,9 @@ export const permissionPrerequisites: Record<string, string[]> = {
   "party_workers.suspend_reactivate": ["party_workers.view"],
   "applications.create": ["applications.view"],
   "applications.edit": ["applications.view"],
-  "applications.assign_worker": ["applications.view"],
+  "help_desk.assign_team_member": ["help_desk.view"],
+  "applicant_profile.create": ["applicant_profile.view"],
+  "applicant_profile.edit": ["applicant_profile.view"],
 };
 
 export function withPrerequisites(selected: string[], keys: string[]) {
@@ -549,7 +624,7 @@ export const rolePresets: RolePreset[] = [
         "view_teams",
         "suspend_reactivate",
       ]),
-      ...keys("applications", ["view", "create", "edit", "assign_worker"]),
+      ...keys("applications", ["view", "create", "edit"]),
     ],
   },
   {
@@ -561,7 +636,7 @@ export const rolePresets: RolePreset[] = [
     permissions: [
       ...keys("schemes", ["view_list", "view_details"]),
       ...keys("party_workers", ["view", "create", "edit", "assign_teams", "view_teams"]),
-      ...keys("applications", ["view", "create", "edit", "assign_worker"]),
+      ...keys("applications", ["view", "create", "edit"]),
     ],
   },
   {
@@ -573,7 +648,7 @@ export const rolePresets: RolePreset[] = [
     permissions: [
       ...keys("schemes", ["view_list", "view_details"]),
       ...keys("party_workers", ["view", "create", "edit", "view_teams"]),
-      ...keys("applications", ["view", "create", "edit", "assign_worker"]),
+      ...keys("applications", ["view", "create", "edit"]),
     ],
   },
   {
