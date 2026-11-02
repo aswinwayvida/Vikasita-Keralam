@@ -160,6 +160,7 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
   const [activeView, setActiveView] = useState<"list" | "form" | "assign">("list");
   const [showRoleSearch, setShowRoleSearch] = useState(false);
   const [roleSearch, setRoleSearch] = useState("");
+  const [roleLevelFilter, setRoleLevelFilter] = useState<AssignmentLevel | "all">("all");
   const [expandedRoleGroups, setExpandedRoleGroups] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(
       [...requestedRoleOrganisationLevelOrder, "other"].map((level) => [level, true]),
@@ -251,9 +252,30 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
         return a.name.localeCompare(b.name);
       }),
     }));
+  const levelFilteredRoleGroups =
+    roleLevelFilter === "all"
+      ? roleGroups
+      : roleGroups.filter((group) => group.id === roleLevelFilter);
   const displayedRoleGroups = normalizedRoleSearch
-    ? roleGroups.filter((group) => group.roles.length > 0)
-    : roleGroups;
+    ? levelFilteredRoleGroups.filter((group) => group.roles.length > 0)
+    : levelFilteredRoleGroups;
+  const allRoleGroupsExpanded =
+    displayedRoleGroups.length > 0 &&
+    displayedRoleGroups.every((group) => expandedRoleGroups[group.id] ?? true);
+
+  const roleLevelFilterLabel = (value: AssignmentLevel | "all") => {
+    if (value === "all") return tr("All levels", "എല്ലാ ലെവലുകളും");
+    const level = roleOrganisationLevels.find((item) => item.id === value);
+    return level ? tr(`${level.en} level`, `${level.ml} ലെവൽ`) : value;
+  };
+
+  const setAllRoleGroupsExpanded = (expanded: boolean) => {
+    setExpandedRoleGroups(
+      Object.fromEntries(
+        [...requestedRoleOrganisationLevelOrder, "other"].map((level) => [level, expanded]),
+      ),
+    );
+  };
 
   const openEdit = (role: ManagedRole) => {
     setIsCreating(false);
@@ -611,6 +633,74 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
           </header>
 
           <div className="mt-2 min-h-0 flex-1 space-y-1.5 overflow-y-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex items-center justify-between gap-2 px-1">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex max-w-[165px] items-center gap-1 rounded-md border border-orange-100 bg-white px-2 py-1 text-[9.5px] font-extrabold text-foreground transition-colors hover:bg-orange-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800 cursor-pointer"
+                    aria-label={tr(
+                      "Filter by organisation level",
+                      "ഓർഗനൈസേഷൻ ലെവൽ ഫിൽട്ടർ ചെയ്യുക",
+                    )}
+                  >
+                    <Filter className="h-3 w-3 shrink-0 text-orange-600 dark:text-orange-300" />
+                    <span className="truncate">{roleLevelFilterLabel(roleLevelFilter)}</span>
+                    <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-52 rounded-xl p-1">
+                  <div className="px-2 py-1.5 text-[9px] font-black uppercase tracking-wider text-muted-foreground">
+                    {tr("Organisation level", "ഓർഗനൈസേഷൻ ലെവൽ")}
+                  </div>
+                  <DropdownMenuRadioGroup
+                    value={roleLevelFilter}
+                    onValueChange={(value) => setRoleLevelFilter(value as AssignmentLevel | "all")}
+                  >
+                    <DropdownMenuRadioItem
+                      value="all"
+                      className="rounded-lg py-1.5 text-[11px] font-semibold"
+                    >
+                      {roleLevelFilterLabel("all")}
+                    </DropdownMenuRadioItem>
+                    {roleOrganisationLevels.map((level) => (
+                      <DropdownMenuRadioItem
+                        key={level.id}
+                        value={level.id}
+                        className="rounded-lg py-1.5 text-[11px] font-semibold"
+                      >
+                        {roleLevelFilterLabel(level.id)}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {displayedRoleGroups.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => setAllRoleGroupsExpanded(!allRoleGroupsExpanded)}
+                  className="inline-flex items-center gap-1 rounded-md bg-orange-50 px-2 py-1 text-[9.5px] font-extrabold text-orange-700 transition-colors hover:bg-orange-100 dark:bg-slate-800 dark:text-orange-300 dark:hover:bg-slate-700 cursor-pointer"
+                  aria-label={
+                    allRoleGroupsExpanded
+                      ? tr(
+                          "Collapse all organisation levels",
+                          "എല്ലാ ഓർഗനൈസേഷൻ ലെവലുകളും ചുരുക്കുക",
+                        )
+                      : tr("Expand all organisation levels", "എല്ലാ ഓർഗനൈസേഷൻ ലെവലുകളും വിടർത്തുക")
+                  }
+                >
+                  <ChevronDown
+                    className={cn(
+                      "h-3 w-3 transition-transform",
+                      allRoleGroupsExpanded && "rotate-180",
+                    )}
+                  />
+                  {allRoleGroupsExpanded
+                    ? tr("Collapse all", "എല്ലാം ചുരുക്കുക")
+                    : tr("Expand all", "എല്ലാം വിടർത്തുക")}
+                </button>
+              ) : null}
+            </div>
             {displayedRoleGroups.map((group) => {
               const expanded = expandedRoleGroups[group.id] ?? true;
               return (
@@ -760,7 +850,7 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
                 </section>
               );
             })}
-            {filteredRoles.length === 0 ? (
+            {displayedRoleGroups.length === 0 ? (
               <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border bg-card px-4 py-8 text-center">
                 <Search className="h-5 w-5 text-muted-foreground" />
                 <p className="text-[10.5px] font-bold text-foreground">
