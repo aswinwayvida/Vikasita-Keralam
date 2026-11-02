@@ -30,7 +30,7 @@ export function MobileSettingsPage({
       : "Area President"
     : isMalayalam
       ? "സംസ്ഥാന ഭരണം"
-      : "State Administration";
+      : "State Admin";
   const placeLabel = isMalayalam ? "കഴക്കൂട്ടം, തിരുവനന്തപുരം" : "Kazhakkoottam, Trivandrum";
   const avatarUrl = isPartyWorker
     ? "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80"

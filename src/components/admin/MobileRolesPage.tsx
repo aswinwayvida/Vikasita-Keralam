@@ -13,6 +13,7 @@ import {
   Pencil,
   Plus,
   Search,
+  Trash2,
   UserRound,
   UserPlus,
   Users,
@@ -52,6 +53,7 @@ import {
   isRetiredOrganisationLevelName,
   loadCustomOrganisationLevels,
   loadManagedRoles,
+  markManagedRoleDeleted,
   nextRoleCopyName,
   organisationLevelLabel,
   saveCustomOrganisationLevels,
@@ -127,6 +129,7 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
   const [roleSearch, setRoleSearch] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [editTarget, setEditTarget] = useState<ManagedRole | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ManagedRole | null>(null);
   const [draft, setDraft] = useState<RoleDraft>(freshDraft);
   const [assignmentRole, setAssignmentRole] = useState<ManagedRole | null>(null);
   const [assignmentWorkerIds, setAssignmentWorkerIds] = useState<string[]>([]);
@@ -414,6 +417,16 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
     toast.success(tr("Role duplicated.", "റോൾ പകർത്തി."));
   };
 
+  const confirmDeleteRole = () => {
+    if (!deleteTarget) return;
+    const targetId = deleteTarget.id;
+    markManagedRoleDeleted(targetId);
+    commitRoles(roles.filter((role) => role.id !== targetId));
+    if (assignmentRole?.id === targetId) setAssignmentRole(null);
+    setDeleteTarget(null);
+    toast.success(tr("Role deleted.", "റോൾ മായ്ച്ചു."));
+  };
+
   const assignmentDistrictOptions = Array.from(
     assignmentWorkers.reduce((options, worker) => {
       const value = worker.districtEn || worker.districtMl;
@@ -602,6 +615,13 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
                       >
                         <Copy className="h-3.5 w-3.5" />
                         {tr("Duplicate", "പകർത്തുക")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onSelect={() => setDeleteTarget(role)}
+                        className="gap-2 rounded-lg px-2 py-2 text-[11px] font-semibold text-rose-600 focus:bg-rose-50 focus:text-rose-700 dark:text-rose-400 dark:focus:bg-rose-950/30"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        {tr("Delete", "മായ്ക്കുക")}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -1255,6 +1275,73 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
               </Button>
             </div>
           </form>
+        </div>
+      ) : null}
+
+      {deleteTarget ? (
+        <div
+          className="absolute inset-0 z-[130] flex items-end bg-slate-950/50 backdrop-blur-[1px] animate-in fade-in duration-150"
+          onClick={() => setDeleteTarget(null)}
+        >
+          <div
+            className="w-full rounded-t-2xl border-t border-orange-100 bg-white shadow-2xl animate-in slide-in-from-bottom duration-200 dark:border-slate-800 dark:bg-slate-900"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3 border-b border-border/70 px-4 pb-3 pt-3">
+              <div>
+                <h3 className="text-[13px] font-extrabold text-foreground">
+                  {tr("Delete Role", "റോൾ മായ്ക്കുക")}
+                </h3>
+                <p className="mt-0.5 text-[9.5px] font-medium text-muted-foreground">
+                  {tr("This action cannot be undone.", "ഈ പ്രവർത്തനം പഴയപടിയാക്കാനാകില്ല.")}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted/60 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground dark:bg-slate-800 dark:hover:bg-slate-700"
+                aria-label={tr("Close", "അടയ്ക്കുക")}
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+
+            <div className="px-4 py-3">
+              <p className="text-[11.5px] font-bold text-foreground">
+                {tr(`Delete “${deleteTarget.name}”?`, `“${deleteTarget.name}” മായ്ക്കണോ?`)}
+              </p>
+              <p className="mt-1 text-[9.5px] font-medium leading-relaxed text-muted-foreground">
+                {deleteTarget.assignedUsers > 0
+                  ? tr(
+                      `${deleteTarget.assignedUsers} assigned user${
+                        deleteTarget.assignedUsers === 1 ? "" : "s"
+                      } will lose this role.`,
+                      `ഈ റോൾ നൽകിയ ${deleteTarget.assignedUsers} ഉപയോക്താവിന് ഇത് നഷ്ടമാകും.`,
+                    )
+                  : tr(
+                      "This role will be removed from Roles and Control.",
+                      "ഈ റോൾ Roles and Control-ൽ നിന്ന് നീക്കം ചെയ്യും.",
+                    )}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 border-t border-border/70 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                className="h-10 w-[35%] shrink-0 rounded-lg border border-orange-200 bg-white px-3 text-[10.5px] font-extrabold text-orange-700 transition-colors hover:bg-orange-50 dark:border-orange-900/60 dark:bg-slate-900 dark:text-orange-300 dark:hover:bg-orange-950/40"
+              >
+                {tr("Cancel", "റദ്ദാക്കുക")}
+              </button>
+              <Button
+                type="button"
+                onClick={confirmDeleteRole}
+                className="h-10 flex-1 rounded-lg bg-rose-600 text-[11.5px] font-extrabold text-white hover:bg-rose-700"
+              >
+                {tr("Delete Role", "റോൾ മായ്ക്കുക")}
+              </Button>
+            </div>
+          </div>
         </div>
       ) : null}
     </div>

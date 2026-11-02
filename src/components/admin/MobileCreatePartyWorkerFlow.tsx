@@ -32,6 +32,7 @@ import {
   constituencies,
   districts,
   getWardsForLocalBody,
+  organisationalDistricts,
   panchayats,
   type LocalBodyType,
 } from "@/data/geo";
@@ -103,6 +104,12 @@ interface WorkerProfile {
   locationLines: { en: string; ml: string };
   districtNameEn: string;
   districtNameMl: string;
+  regionIds?: string[];
+  regionNamesEn?: string[];
+  regionNamesMl?: string[];
+  orgDistrictId?: string;
+  orgDistrictNameEn?: string;
+  orgDistrictNameMl?: string;
   permissions: string[];
   grants: AccessGrant[];
   accessManagement: boolean;
@@ -125,6 +132,8 @@ interface WorkerProfile {
 type PickerKey =
   | "designation"
   | "level"
+  | "regions"
+  | "org_district"
   | "district"
   | "constituency"
   | "local_body_type"
@@ -303,6 +312,16 @@ function workerAreaLabel(worker: WorkerProfile, lang: Lang) {
     districts.find(
       (item) => item.en === worker.districtNameEn || item.ml === worker.districtNameMl,
     );
+  const orgDistrict =
+    organisationalDistricts.find((item) => item.id === worker.orgDistrictId) ||
+    organisationalDistricts.find(
+      (item) => item.en === worker.orgDistrictNameEn || item.ml === worker.orgDistrictNameMl,
+    ) ||
+    (level === "district"
+      ? organisationalDistricts.find(
+          (item) => item.en === worker.districtNameEn || item.ml === worker.districtNameMl,
+        )
+      : undefined);
   const constituency =
     constituencies.find((item) => item.id === worker.constituencyId) ||
     constituencies.find(
@@ -334,7 +353,21 @@ function workerAreaLabel(worker: WorkerProfile, lang: Lang) {
   const parent = (en?: string, ml?: string) => (en || ml ? ` · ${pick(en, ml)}` : "");
 
   if (level === "state") return lang === "ml" ? "കേരളം" : "Kerala";
-  if (level === "district") return pick(district?.en, district?.ml);
+  if (level === "district") {
+    return pick(
+      orgDistrict?.en || district?.en || worker.districtNameEn,
+      orgDistrict?.ml || district?.ml || worker.districtNameMl,
+    );
+  }
+  if (level === "area") {
+    return [
+      pick(district?.en, district?.ml),
+      pick(orgDistrict?.en, orgDistrict?.ml),
+      pick(constituency?.en, constituency?.ml),
+    ]
+      .filter(Boolean)
+      .join(" → ");
+  }
   if (level === "assembly_constituency") {
     return `${pick(constituency?.en, constituency?.ml)}${parent(district?.en, district?.ml)}`;
   }
@@ -562,6 +595,8 @@ export function MobileCreatePartyWorkerFlow({
   const [mobile, setMobile] = useState("");
   const [designationId, setDesignationId] = useState("");
   const [level, setLevel] = useState<AssignmentLevel | "">("");
+  const [regionIds, setRegionIds] = useState<string[]>([]);
+  const [orgDistrictId, setOrgDistrictId] = useState("");
   const [districtId, setDistrictId] = useState("");
   const [constituencyId, setConstituencyId] = useState("");
   const [localBodyType, setLocalBodyType] = useState<LocalBodyType | "">("");
@@ -703,6 +738,11 @@ export function MobileCreatePartyWorkerFlow({
 
   const levelOption = allLevelOptions.find((item) => item.id === level) || null;
   const district = districts.find((item) => item.id === districtId) || null;
+  const selectedRegions = useMemo(
+    () => districts.filter((item) => regionIds.includes(item.id)),
+    [regionIds],
+  );
+  const orgDistrict = organisationalDistricts.find((item) => item.id === orgDistrictId) || null;
   const constituency = constituencies.find((item) => item.id === constituencyId) || null;
   const localBody = panchayats.find((item) => item.id === localBodyId) || null;
   const ward = localBodyId
@@ -728,6 +768,14 @@ export function MobileCreatePartyWorkerFlow({
   const constituencyOptions = districtId
     ? constituencies.filter((item) => item.districtId === districtId)
     : [];
+  const orgDistrictOptions =
+    level === "area"
+      ? districtId
+        ? organisationalDistricts.filter(
+            (item) => item.id.replace(/^od-/, "").split("-")[0] === districtId,
+          )
+        : []
+      : organisationalDistricts;
 
   const workerFilterDesignation = allDesignationChoices.find(
     (item) => item.id === draftWorkerFilters.designationId,
@@ -787,9 +835,26 @@ export function MobileCreatePartyWorkerFlow({
       return language === "ml" ? "കേരളം, സംസ്ഥാന വ്യാപകം" : "Kerala, statewide";
     }
     if (level === "district") {
-      return district ? (language === "ml" ? district.ml : district.en) : "";
+      return orgDistrict ? (language === "ml" ? orgDistrict.ml : orgDistrict.en) : "";
     }
-    if (level === "region" || level === "area" || level.startsWith("custom_org_")) {
+    if (level === "region") {
+      return selectedRegions.map((item) => (language === "ml" ? item.ml : item.en)).join(", ");
+    }
+    if (level === "area") {
+      const regionLabel = district ? (language === "ml" ? district.ml : district.en) : "";
+      const orgDistrictLabel = orgDistrict
+        ? language === "ml"
+          ? orgDistrict.ml
+          : orgDistrict.en
+        : "";
+      const mandalamLabel = constituency
+        ? language === "ml"
+          ? constituency.ml
+          : constituency.en
+        : "";
+      return [regionLabel, orgDistrictLabel, mandalamLabel].filter(Boolean).join(" → ");
+    }
+    if (level.startsWith("custom_org_")) {
       return district ? (language === "ml" ? district.ml : district.en) : "";
     }
     if (level === "mandalam") {
@@ -835,6 +900,8 @@ export function MobileCreatePartyWorkerFlow({
   };
 
   const resetLocations = () => {
+    setRegionIds([]);
+    setOrgDistrictId("");
     setDistrictId("");
     setConstituencyId("");
     setLocalBodyType("");
@@ -847,7 +914,14 @@ export function MobileCreatePartyWorkerFlow({
   const handleLevelChange = (nextLevel: AssignmentLevel) => {
     if (nextLevel !== level) resetLocations();
     setLevel(nextLevel);
-    setErrors((prev) => ({ ...prev, level: "", designation: "" }));
+    setErrors((prev) => ({
+      ...prev,
+      level: "",
+      designation: "",
+      district: "",
+      region: "",
+      org_district: "",
+    }));
     if (designation && designation.level !== nextLevel) setDesignationId("");
   };
 
@@ -869,6 +943,7 @@ export function MobileCreatePartyWorkerFlow({
 
   const handleDistrictChange = (nextId: string) => {
     setDistrictId(nextId);
+    if (level === "area") setOrgDistrictId("");
     setConstituencyId("");
     setLocalBodyId("");
     setWardId("");
@@ -876,6 +951,8 @@ export function MobileCreatePartyWorkerFlow({
     setErrors((prev) => ({
       ...prev,
       district: "",
+      org_district: "",
+      region: "",
       constituency: "",
       local_body: "",
       ward: "",
@@ -927,14 +1004,35 @@ export function MobileCreatePartyWorkerFlow({
     if (!level) {
       nextErrors.level = tr("Select an organisation level.", "ഓർഗനൈസേഷൻ ലെവൽ തിരഞ്ഞെടുക്കുക.");
     }
-    if (level && level !== "state" && !districtId) {
+    if ((level === "district" || level === "area") && !orgDistrictId) {
+      nextErrors.org_district = tr(
+        "Select an organisational district.",
+        "ഓർഗനൈസേഷണൽ ജില്ല തിരഞ്ഞെടുക്കുക.",
+      );
+    } else if (
+      level &&
+      level !== "state" &&
+      level !== "region" &&
+      level !== "district" &&
+      level !== "area" &&
+      !districtId
+    ) {
       nextErrors.district = tr("Select a district.", "ജില്ല തിരഞ്ഞെടുക്കുക.");
     }
-    if ((level === "assembly_constituency" || level === "mandalam") && !constituencyId) {
-      nextErrors.constituency = tr(
-        "Select an assembly constituency.",
-        "നിയോജകമണ്ഡലം തിരഞ്ഞെടുക്കുക.",
-      );
+    if (level === "region" && regionIds.length === 0) {
+      nextErrors.region = tr("Select at least one region.", "കുറഞ്ഞത് ഒരു റീജിയൺ തിരഞ്ഞെടുക്കുക.");
+    }
+    if (level === "area" && !districtId) {
+      nextErrors.region = tr("Select a region.", "റീജിയൺ തിരഞ്ഞെടുക്കുക.");
+    }
+    if (
+      (level === "assembly_constituency" || level === "mandalam" || level === "area") &&
+      !constituencyId
+    ) {
+      nextErrors.constituency =
+        level === "area"
+          ? tr("Select a Mandalam.", "മണ്ഡലം തിരഞ്ഞെടുക്കുക.")
+          : tr("Select an assembly constituency.", "നിയോജകമണ്ഡലം തിരഞ്ഞെടുക്കുക.");
     }
     if (level === "local_body" || level === "ward") {
       if (!localBodyType) {
@@ -982,14 +1080,26 @@ export function MobileCreatePartyWorkerFlow({
       levelLabelEn: levelOption?.en || "",
       levelLabelMl: levelOption?.ml || "",
       locationLines: { en: locationLine("en"), ml: locationLine("ml") },
-      districtNameEn: district?.en || tr("Kerala", "കേരളം"),
-      districtNameMl: district?.ml || "കേരളം",
+      districtNameEn:
+        level === "district" || level === "area"
+          ? orgDistrict?.en || tr("Kerala", "കേരളം")
+          : district?.en || selectedRegions[0]?.en || tr("Kerala", "കേരളം"),
+      districtNameMl:
+        level === "district" || level === "area"
+          ? orgDistrict?.ml || "കേരളം"
+          : district?.ml || selectedRegions[0]?.ml || "കേരളം",
+      orgDistrictId: orgDistrictId || undefined,
+      orgDistrictNameEn: orgDistrict?.en,
+      orgDistrictNameMl: orgDistrict?.ml,
+      regionIds: regionIds.length ? regionIds : undefined,
+      regionNamesEn: selectedRegions.length ? selectedRegions.map((item) => item.en) : undefined,
+      regionNamesMl: selectedRegions.length ? selectedRegions.map((item) => item.ml) : undefined,
       permissions,
       grants,
       accessManagement,
       designationId,
       level: level || undefined,
-      districtId: districtId || undefined,
+      districtId: level === "region" || level === "district" ? undefined : districtId || undefined,
       constituencyId: constituencyId || undefined,
       localBodyType: localBodyType || undefined,
       localBodyId: localBodyId || undefined,
@@ -1138,6 +1248,34 @@ export function MobileCreatePartyWorkerFlow({
       districts.find(
         (item) => item.en === worker.districtNameEn || item.ml === worker.districtNameMl,
       );
+    const workerOrgDistrict =
+      organisationalDistricts.find((item) => item.id === worker.orgDistrictId) ||
+      organisationalDistricts.find(
+        (item) => item.en === worker.orgDistrictNameEn || item.ml === worker.orgDistrictNameMl,
+      ) ||
+      organisationalDistricts.find(
+        (item) => item.en === worker.districtNameEn || item.ml === worker.districtNameMl,
+      );
+    const workerRegionIds = (() => {
+      const workerLevelId = workerLevel?.id || worker.level;
+      if (workerLevelId !== "region") return [];
+      const storedIds = (worker.regionIds ?? []).filter((id) =>
+        districts.some((item) => item.id === id),
+      );
+      if (storedIds.length) return storedIds;
+      const storedNamesEn = worker.regionNamesEn ?? [];
+      const storedNamesMl = worker.regionNamesMl ?? [];
+      const byName = districts.filter(
+        (item) => storedNamesEn.includes(item.en) || storedNamesMl.includes(item.ml),
+      );
+      if (byName.length) return byName.map((item) => item.id);
+      return districts
+        .filter(
+          (item) =>
+            worker.locationLines.en.includes(item.en) || worker.locationLines.ml.includes(item.ml),
+        )
+        .map((item) => item.id);
+    })();
     const workerConstituency =
       constituencies.find((item) => item.id === worker.constituencyId) ||
       constituencies.find(
@@ -1166,7 +1304,13 @@ export function MobileCreatePartyWorkerFlow({
     setMobile(worker.mobile);
     setDesignationId(workerDesignation?.id || "");
     setLevel(workerLevel?.id || "");
-    setDistrictId(workerDistrict?.id || "");
+    setRegionIds(workerRegionIds);
+    setOrgDistrictId(workerOrgDistrict?.id || "");
+    setDistrictId(
+      workerLevel?.id === "region" || workerLevel?.id === "district"
+        ? ""
+        : workerDistrict?.id || "",
+    );
     setConstituencyId(workerConstituency?.id || "");
     setLocalBodyType(workerLocalBody?.type || worker.localBodyType || "");
     setLocalBodyId(workerLocalBody?.id || "");
@@ -1530,7 +1674,7 @@ export function MobileCreatePartyWorkerFlow({
 
   const renderPicker = () => {
     if (!picker) return null;
-    const isMultiFilter = picker.startsWith("filter_");
+    const isMultiFilter = picker.startsWith("filter_") || picker === "regions";
     let title = "";
     let options: PickerOption[] = [];
     let selectedId = "";
@@ -1558,8 +1702,38 @@ export function MobileCreatePartyWorkerFlow({
       }));
       selectedId = level;
       onPick = (id) => handleLevelChange(id as AssignmentLevel);
+    } else if (picker === "org_district") {
+      title = tr("Organisational District", "ഓർഗനൈസേഷണൽ ജില്ല");
+      options = orgDistrictOptions.map((item) => ({
+        id: item.id,
+        label: lang === "ml" ? item.ml : item.en,
+        search: `${item.en} ${item.ml}`,
+      }));
+      selectedId = orgDistrictId;
+      onPick = (id) => {
+        setOrgDistrictId(id);
+        if (level === "area") setConstituencyId("");
+        setErrors((prev) => ({
+          ...prev,
+          org_district: "",
+          ...(level === "area" ? { constituency: "" } : {}),
+        }));
+      };
+    } else if (picker === "regions") {
+      title = tr("Regions", "റീജിയണുകൾ");
+      options = districts.map((item) => ({
+        id: item.id,
+        label: lang === "ml" ? item.ml : item.en,
+        search: `${item.en} ${item.ml}`,
+      }));
+      selectedIds = regionIds;
+      onToggle = (id) => {
+        setRegionIds((prev) => toggleFilterId(prev, id) ?? []);
+        setErrors((prev) => ({ ...prev, region: "" }));
+      };
+      onClear = () => setRegionIds([]);
     } else if (picker === "district") {
-      title = tr("District", "ജില്ല");
+      title = level === "area" ? tr("Region", "റീജിയൺ") : tr("District", "ജില്ല");
       options = districts.map((item) => ({
         id: item.id,
         label: lang === "ml" ? item.ml : item.en,
@@ -1568,7 +1742,8 @@ export function MobileCreatePartyWorkerFlow({
       selectedId = districtId;
       onPick = handleDistrictChange;
     } else if (picker === "constituency") {
-      title = tr("Assembly Constituency", "നിയോജകമണ്ഡലം");
+      title =
+        level === "area" ? tr("Mandalam", "മണ്ഡലം") : tr("Assembly Constituency", "നിയോജകമണ്ഡലം");
       options = constituencyOptions.map((item) => ({
         id: item.id,
         label: lang === "ml" ? item.ml : item.en,
@@ -2123,7 +2298,60 @@ export function MobileCreatePartyWorkerFlow({
             </Field>
           ) : null}
 
-          {level && level !== "state" ? (
+          {level === "area" ? (
+            <PickerButton
+              label={tr("Region", "റീജിയൺ")}
+              required
+              value={district ? (lang === "ml" ? district.ml : district.en) : ""}
+              placeholder={tr("Select region", "റീജിയൺ തിരഞ്ഞെടുക്കുക")}
+              error={errors.region}
+              onClick={() => openPicker("district")}
+            />
+          ) : null}
+
+          {level === "district" || level === "area" ? (
+            <PickerButton
+              label={tr("Organisational District", "ഓർഗനൈസേഷണൽ ജില്ല")}
+              required
+              value={orgDistrict ? (lang === "ml" ? orgDistrict.ml : orgDistrict.en) : ""}
+              placeholder={
+                level === "area" && !districtId
+                  ? tr("Select a region first", "ആദ്യം റീജിയൺ തിരഞ്ഞെടുക്കുക")
+                  : tr("Select organisational district", "ഓർഗനൈസേഷണൽ ജില്ല തിരഞ്ഞെടുക്കുക")
+              }
+              hint={
+                level === "area"
+                  ? tr(
+                      "Organisational districts within the selected region.",
+                      "തിരഞ്ഞെടുത്ത റീജിയണിലെ ഓർഗനൈസേഷണൽ ജില്ലകൾ.",
+                    )
+                  : undefined
+              }
+              error={errors.org_district}
+              disabled={level === "area" && !districtId}
+              onClick={() =>
+                level === "area" && !districtId ? undefined : openPicker("org_district")
+              }
+            />
+          ) : null}
+
+          {level === "region" ? (
+            <PickerButton
+              label={tr("Regions", "റീജിയണുകൾ")}
+              required
+              value={selectedRegions.map((item) => item[lang]).join(", ")}
+              placeholder={tr("Select regions", "റീജിയണുകൾ തിരഞ്ഞെടുക്കുക")}
+              hint={tr("Select one or more regions.", "ഒന്നോ അതിലധികമോ റീജിയണുകൾ തിരഞ്ഞെടുക്കുക.")}
+              error={errors.region}
+              onClick={() => openPicker("regions")}
+            />
+          ) : null}
+
+          {level &&
+          level !== "state" &&
+          level !== "region" &&
+          level !== "district" &&
+          level !== "area" ? (
             <PickerButton
               label={tr("District", "ജില്ല")}
               required
@@ -2134,19 +2362,35 @@ export function MobileCreatePartyWorkerFlow({
             />
           ) : null}
 
-          {level === "assembly_constituency" || level === "mandalam" || level === "booth" ? (
+          {level === "assembly_constituency" ||
+          level === "mandalam" ||
+          level === "area" ||
+          level === "booth" ? (
             <PickerButton
-              label={tr("Assembly Constituency", "നിയോജകമണ്ഡലം")}
+              label={
+                level === "area"
+                  ? tr("Mandalam", "മണ്ഡലം")
+                  : tr("Assembly Constituency", "നിയോജകമണ്ഡലം")
+              }
               required
               value={constituency ? (lang === "ml" ? constituency.ml : constituency.en) : ""}
               placeholder={
-                districtId
-                  ? tr("Select constituency", "മണ്ഡലം തിരഞ്ഞെടുക്കുക")
-                  : tr("Select a district first", "ആദ്യം ജില്ല തിരഞ്ഞെടുക്കുക")
+                level === "area"
+                  ? orgDistrictId
+                    ? tr("Select Mandalam", "മണ്ഡലം തിരഞ്ഞെടുക്കുക")
+                    : tr(
+                        "Select a region and organisational district first",
+                        "ആദ്യം റീജിയണും ഓർഗനൈസേഷണൽ ജില്ലയും തിരഞ്ഞെടുക്കുക",
+                      )
+                  : districtId
+                    ? tr("Select constituency", "മണ്ഡലം തിരഞ്ഞെടുക്കുക")
+                    : tr("Select a district first", "ആദ്യം ജില്ല തിരഞ്ഞെടുക്കുക")
               }
               error={errors.constituency}
-              disabled={!districtId}
-              onClick={() => districtId && openPicker("constituency")}
+              disabled={level === "area" ? !orgDistrictId : !districtId}
+              onClick={() =>
+                (level === "area" ? orgDistrictId : districtId) && openPicker("constituency")
+              }
             />
           ) : null}
 
@@ -2932,6 +3176,11 @@ export function MobileCreatePartyWorkerFlow({
       districts.find(
         (item) => item.en === profile.districtNameEn || item.ml === profile.districtNameMl,
       );
+    const profileOrgDistrict =
+      organisationalDistricts.find((item) => item.id === profile.orgDistrictId) ||
+      organisationalDistricts.find(
+        (item) => item.en === profile.orgDistrictNameEn || item.ml === profile.orgDistrictNameMl,
+      );
     const profileConstituency =
       constituencies.find((item) => item.id === profile.constituencyId) ||
       constituencies.find(
@@ -2954,10 +3203,33 @@ export function MobileCreatePartyWorkerFlow({
       : undefined;
     const profileAreaLabel = (() => {
       if (profileLevel === "state") return lang === "ml" ? "കേരളം" : "Kerala";
+      if (profileLevel === "region") {
+        const names = lang === "ml" ? (profile.regionNamesMl ?? []) : (profile.regionNamesEn ?? []);
+        const resolved = names.length
+          ? names
+          : districts
+              .filter((item) => (profile.regionIds ?? []).includes(item.id))
+              .map((item) => (lang === "ml" ? item.ml : item.en));
+        if (resolved.length) return resolved.join(", ");
+        return lang === "ml" ? profile.districtNameMl || "" : profile.districtNameEn || "";
+      }
       if (profileLevel === "district") {
         return lang === "ml"
           ? profileDistrict?.ml || profile.districtNameMl
           : profileDistrict?.en || profile.districtNameEn;
+      }
+      if (profileLevel === "area") {
+        return [
+          profileDistrict ? (lang === "ml" ? profileDistrict.ml : profileDistrict.en) : "",
+          profileOrgDistrict ? (lang === "ml" ? profileOrgDistrict.ml : profileOrgDistrict.en) : "",
+          profileConstituency
+            ? lang === "ml"
+              ? profileConstituency.ml
+              : profileConstituency.en
+            : "",
+        ]
+          .filter(Boolean)
+          .join(" → ");
       }
       if (profileLevel === "assembly_constituency") {
         return profileConstituency
@@ -3055,8 +3327,31 @@ export function MobileCreatePartyWorkerFlow({
             />
             <SummaryRow label={tr("Mobile", "മൊബൈൽ")} value={`+91 ${profile.mobile}`} />
             <SummaryRow
-              label={tr("District", "ജില്ല")}
-              value={lang === "ml" ? profile.districtNameMl : profile.districtNameEn}
+              label={
+                profileLevel === "region"
+                  ? tr("Regions", "റീജിയണുകൾ")
+                  : profileLevel === "district"
+                    ? tr("Organisational District", "ഓർഗനൈസേഷണൽ ജില്ല")
+                    : profileLevel === "area"
+                      ? tr("Region", "റീജിയൺ")
+                      : tr("District", "ജില്ല")
+              }
+              value={
+                profileLevel === "region"
+                  ? profileAreaLabel ||
+                    (lang === "ml" ? profile.districtNameMl : profile.districtNameEn)
+                  : profileLevel === "area"
+                    ? profileDistrict
+                      ? lang === "ml"
+                        ? profileDistrict.ml
+                        : profileDistrict.en
+                      : lang === "ml"
+                        ? profile.districtNameMl
+                        : profile.districtNameEn
+                    : lang === "ml"
+                      ? profile.districtNameMl
+                      : profile.districtNameEn
+              }
             />
           </div>
         </div>

@@ -292,6 +292,30 @@ export const builtInManagedRoles: ManagedRole[] = [
 ];
 
 export const managedRoleStorageKey = "vk-managed-roles";
+export const deletedManagedRoleStorageKey = "vk-deleted-managed-role-ids";
+
+export function loadDeletedManagedRoleIds(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const parsed = JSON.parse(
+      window.localStorage.getItem(deletedManagedRoleStorageKey) || "[]",
+    ) as unknown;
+    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+export function markManagedRoleDeleted(id: string) {
+  if (typeof window === "undefined") return;
+  const ids = loadDeletedManagedRoleIds();
+  if (ids.includes(id)) return;
+  try {
+    window.localStorage.setItem(deletedManagedRoleStorageKey, JSON.stringify([...ids, id]));
+  } catch {
+    // Persistence is best-effort in this prototype.
+  }
+}
 
 const retiredCustomRoleNames = new Set([
   "new role",
@@ -319,24 +343,27 @@ const sanitizeRole = (role: ManagedRole): ManagedRole => ({
 });
 
 export function loadManagedRoles(): ManagedRole[] {
-  if (typeof window === "undefined") return builtInManagedRoles.map(sanitizeRole);
+  const deletedIds = new Set(loadDeletedManagedRoleIds());
+  if (typeof window === "undefined") {
+    return builtInManagedRoles.filter((role) => !deletedIds.has(role.id)).map(sanitizeRole);
+  }
   try {
     const parsed = JSON.parse(
       window.localStorage.getItem(managedRoleStorageKey) || "[]",
     ) as unknown;
     if (!Array.isArray(parsed) || parsed.length === 0) {
-      return builtInManagedRoles.map(sanitizeRole);
+      return builtInManagedRoles.filter((role) => !deletedIds.has(role.id)).map(sanitizeRole);
     }
     const storedRoles = (parsed as ManagedRole[])
       .map(sanitizeRole)
-      .filter((role) => !isRetiredCustomRole(role));
+      .filter((role) => !isRetiredCustomRole(role) && !deletedIds.has(role.id));
     const storedIds = new Set(storedRoles.map((role) => role.id));
     const missingBuiltIns = builtInManagedRoles
-      .filter((role) => !storedIds.has(role.id))
+      .filter((role) => !storedIds.has(role.id) && !deletedIds.has(role.id))
       .map(sanitizeRole);
     return [...storedRoles, ...missingBuiltIns];
   } catch {
-    return builtInManagedRoles.map(sanitizeRole);
+    return builtInManagedRoles.filter((role) => !deletedIds.has(role.id)).map(sanitizeRole);
   }
 }
 

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
-import { X, Smartphone, Wifi, Battery, Signal, ChevronRight, ChevronLeft, ArrowLeft, ArrowRight, Users, Users2, HeartHandshake, Database, Layers, Sparkles, MessageSquare, Clock3, Clock, UserCheck, LayoutDashboard, Sliders, Calendar, FileText, XCircle, CheckCircle2, Hourglass, MapPin, Mail, PhoneCall, Trophy, AlertTriangle, Activity, Globe, Map as MapIcon, Network, Store, ShieldCheck, ChevronDown, Filter, Search, SearchCheck, Megaphone, CalendarDays, BellRing, Phone, RotateCcw, GraduationCap, Sprout, LayoutGrid, MoreVertical, AlertCircle, Star, Zap, Headphones, Edit, Upload, FileCheck, Loader2, SearchX, RefreshCw, Check, Lock, User, Eye, Send, Info, Plus, Inbox, FileSearch, HandCoins, UserRound, Paperclip, ClipboardList, Headset, Copy, Pencil, Download, FileImage, ExternalLink, CloudUpload, Home, Building2, Flame, HelpCircle, UserPlus, Trash2, Accessibility, Briefcase, Percent, BookOpen } from "lucide-react";
+import { X, Smartphone, Wifi, Battery, Signal, ChevronRight, ChevronLeft, ArrowLeft, ArrowRight, Users, Users2, HeartHandshake, Database, Layers, Sparkles, MessageSquare, Clock3, Clock, UserCheck, LayoutDashboard, Sliders, Calendar, FileText, XCircle, CheckCircle2, Hourglass, MapPin, Mail, PhoneCall, Trophy, AlertTriangle, Activity, Globe, Map as MapIcon, Network, Store, ShieldCheck, ChevronDown, Filter, Search, SearchCheck, Megaphone, CalendarDays, BellRing, Phone, RotateCcw, GraduationCap, Sprout, LayoutGrid, MoreVertical, AlertCircle, Star, Zap, Headphones, Edit, Upload, FileCheck, Loader2, SearchX, RefreshCw, Check, Lock, User, Eye, Send, Info, Plus, Inbox, FileSearch, HandCoins, UserRound, Paperclip, ClipboardList, Headset, Copy, Pencil, Download, FileImage, ExternalLink, CloudUpload, Home, Building2, Flame, HelpCircle, UserPlus, Trash2, Accessibility, Briefcase, Percent, BookOpen, Share2 } from "lucide-react";
 import { useLang } from "@/i18n/LanguageProvider";
 import officialLotus from "@/assets/bjp-official-lotus.png";
 import vikasitaMlLogo from "@/assets/logo-vikasita-ml-official.png";
@@ -436,6 +436,30 @@ interface AdminMobilePreviewModalProps {
   onClose?: () => void;
   standalone?: boolean;
 }
+
+type SchemeDetailsEditDraft = {
+  fullSchemeNameEn: string;
+  fullSchemeNameMl: string;
+  categoryEn: string;
+  categoryMl: string;
+  ministryEn: string;
+  ministryMl: string;
+  aboutEn: string;
+  aboutMl: string;
+  officialPortalUrl: string;
+};
+
+const emptySchemeDetailsEditDraft: SchemeDetailsEditDraft = {
+  fullSchemeNameEn: "",
+  fullSchemeNameMl: "",
+  categoryEn: "",
+  categoryMl: "",
+  ministryEn: "",
+  ministryMl: "",
+  aboutEn: "",
+  aboutMl: "",
+  officialPortalUrl: "",
+};
 
 type MobileSchemeFieldKey =
   | "bankAccountNumber"
@@ -2561,6 +2585,17 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [partyWorkerStartPhase, setPartyWorkerStartPhase] = useState<"form" | "list">("form");
   const [isSkipDocumentVerifyModalOpen, setIsSkipDocumentVerifyModalOpen] = useState<boolean>(false);
   const [isOfflineDocChecked, setIsOfflineDocChecked] = useState<boolean>(false);
+
+  // Scheme details header actions
+  const [schemeDetailsMenuOpen, setSchemeDetailsMenuOpen] = useState<boolean>(false);
+  const [isSchemeEditSheetOpen, setIsSchemeEditSheetOpen] = useState<boolean>(false);
+  const [schemeEditTargetKey, setSchemeEditTargetKey] = useState<string>("");
+  const [schemeEditDraft, setSchemeEditDraft] = useState<SchemeDetailsEditDraft>(
+    emptySchemeDetailsEditDraft,
+  );
+  const [schemeDetailsOverrides, setSchemeDetailsOverrides] = useState<
+    Record<string, Partial<SchemeDetailsEditDraft>>
+  >({});
 
   // Form states for Create Scheme
   const [newSchemeNameEn, setNewSchemeNameEn] = useState<string>("");
@@ -7131,8 +7166,78 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     setPeriodCustomLabel(formatDateWithDay(newDate));
   };
 
+  const openSchemeEditSheet = () => {
+    const base = getDetailedSchemeData(selectedScheme);
+    const key =
+      selectedCreatedScheme?.id || selectedScheme?.id || selectedSchemeName || base.id || "scheme";
+    setSchemeEditTargetKey(key);
+    setSchemeEditDraft({
+      fullSchemeNameEn: base.fullSchemeNameEn || "",
+      fullSchemeNameMl: base.fullSchemeNameMl || "",
+      categoryEn: base.categoryEn || "",
+      categoryMl: base.categoryMl || "",
+      ministryEn: base.ministryEn || "",
+      ministryMl: base.ministryMl || "",
+      aboutEn: base.aboutEn || "",
+      aboutMl: base.aboutMl || "",
+      officialPortalUrl:
+        base.officialPortalUrl && base.officialPortalUrl !== "#" ? base.officialPortalUrl : "",
+    });
+    setIsSchemeEditSheetOpen(true);
+    setSchemeDetailsMenuOpen(false);
+  };
+
+  const saveSchemeEditSheet = () => {
+    setSchemeDetailsOverrides((previous) => ({
+      ...previous,
+      [schemeEditTargetKey]: {
+        ...(previous[schemeEditTargetKey] ?? {}),
+        ...schemeEditDraft,
+      },
+    }));
+    setIsSchemeEditSheetOpen(false);
+    toast.success(lang === "ml" ? "പദ്ധതി വിവരങ്ങൾ അപ്ഡേറ്റ് ചെയ്തു" : "Scheme details updated");
+  };
+
+  const updateSchemeEditDraft = (key: keyof SchemeDetailsEditDraft, value: string) => {
+    setSchemeEditDraft((previous) => ({ ...previous, [key]: value }));
+  };
+
+  const shareSchemeDetails = async () => {
+    const base = getDetailedSchemeData(selectedScheme);
+    const title = lang === "ml" ? base.fullSchemeNameMl : base.fullSchemeNameEn;
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    try {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share({ title, text: title, url });
+      } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+        await navigator.clipboard.writeText(url);
+        toast.success(lang === "ml" ? "ലിങ്ക് പകർത്തി" : "Link copied to clipboard");
+      }
+    } catch {
+      // User cancelled the share sheet.
+    } finally {
+      setSchemeDetailsMenuOpen(false);
+    }
+  };
+
+  const visitSchemeWebsite = () => {
+    const base = getDetailedSchemeData(selectedScheme);
+    const url =
+      base.officialPortalUrl && base.officialPortalUrl !== "#"
+        ? base.officialPortalUrl
+        : "https://india.gov.in";
+    if (typeof window !== "undefined") window.open(url, "_blank", "noopener,noreferrer");
+    setSchemeDetailsMenuOpen(false);
+  };
+
   const renderSchemeDetailsSubpage = () => {
-    const detail = getDetailedSchemeData(selectedScheme);
+    const schemeDetailsKey =
+      selectedCreatedScheme?.id || selectedScheme?.id || selectedSchemeName || "scheme";
+    const detail = {
+      ...getDetailedSchemeData(selectedScheme),
+      ...(schemeDetailsOverrides[schemeDetailsKey] ?? {}),
+    };
 
     const requiredAttributes = [
       {
@@ -8715,6 +8820,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   </div>
                 ) : (
                 <div className="relative flex h-10 items-center justify-between px-3 py-1">
+                  <div className="relative z-10 flex items-center gap-1">
                   <button
                     type="button"
                     onClick={() => {
@@ -8759,6 +8865,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   >
                     <ArrowLeft className="h-3.5 w-3.5 stroke-[2.2]" />
                   </button>
+
+                  </div>
 
                   <h3 className="absolute inset-x-0 text-center text-[13.5px] font-extrabold text-[#0F172A] dark:text-white pointer-events-none px-10 truncate">
                     {mobileSubPage === "create_scheme"
@@ -8826,7 +8934,54 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             : `${3 + followUpCollectionRecords.length} Items`}
                         </span>
                       </span>
-                    ) : mobileSubPage === "scheme_details" || mobileSubPage === "about" || mobileSubPage === "contact" || (activeTab === "create" && createFlowStep === "scheme_details") ? null : (
+                    ) : mobileSubPage === "scheme_details" ? (
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setSchemeDetailsMenuOpen((previous) => !previous)}
+                          className="flex h-7 w-7 items-center justify-center rounded-full text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer transition-colors"
+                          aria-label={lang === "ml" ? "കൂടുതൽ പ്രവർത്തനങ്ങൾ" : "More actions"}
+                          title={lang === "ml" ? "കൂടുതൽ പ്രവർത്തനങ്ങൾ" : "More actions"}
+                        >
+                          <MoreVertical className="h-3.5 w-3.5 stroke-[2]" />
+                        </button>
+
+                        {schemeDetailsMenuOpen ? (
+                          <>
+                            <div
+                              className="fixed inset-0 z-20"
+                              onClick={() => setSchemeDetailsMenuOpen(false)}
+                            />
+                            <div className="absolute right-0 top-8 z-30 w-52 overflow-hidden rounded-xl border border-slate-200/80 bg-white py-1 shadow-lg animate-in fade-in zoom-in-95 duration-150 dark:border-slate-800 dark:bg-slate-900">
+                              <button
+                                type="button"
+                                onClick={openSchemeEditSheet}
+                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-[11.5px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
+                              >
+                                <Pencil className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                                {lang === "ml" ? "തിരുത്തുക" : "Edit"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void shareSchemeDetails()}
+                                className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-2 text-left text-[11.5px] font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
+                              >
+                                <Share2 className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                                {lang === "ml" ? "പങ്കിടുക" : "Share"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={visitSchemeWebsite}
+                                className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-2 text-left text-[11.5px] font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
+                              >
+                                <ExternalLink className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                                {lang === "ml" ? "ഔദ്യോഗിക വെബ്സൈറ്റ് സന്ദർശിക്കുക" : "Visit Official Website"}
+                              </button>
+                            </div>
+                          </>
+                        ) : null}
+                      </div>
+                    ) : mobileSubPage === "about" || mobileSubPage === "contact" || (activeTab === "create" && createFlowStep === "scheme_details") ? null : (
                       <>
                         <button
                           type="button"
@@ -16683,6 +16838,174 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       </p>
                     </div>
                     <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0 group-hover:translate-x-0.5 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-all" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Scheme Details Edit Sheet */}
+          {isSchemeEditSheetOpen && (
+            <div
+              className="absolute inset-0 z-[120] flex items-end bg-black/55 backdrop-blur-[1px] animate-in fade-in duration-150"
+              onClick={() => setIsSchemeEditSheetOpen(false)}
+            >
+              <div
+                className="flex max-h-[82%] w-full flex-col rounded-t-2xl border-t border-orange-100 bg-white shadow-2xl animate-in slide-in-from-bottom duration-200 dark:border-slate-800 dark:bg-slate-900"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="shrink-0 px-4 pt-3">
+                  <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-slate-200 dark:bg-slate-700" />
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h3 className="text-[13px] font-extrabold text-slate-900 dark:text-white">
+                        {lang === "ml" ? "പദ്ധതി വിവരങ്ങൾ തിരുത്തുക" : "Edit Scheme Details"}
+                      </h3>
+                      <p className="mt-0.5 text-[10px] font-medium text-slate-500 dark:text-slate-400">
+                        {lang === "ml"
+                          ? "പദ്ധതിയുടെ അടിസ്ഥാന വിവരങ്ങൾ അപ്ഡേറ്റ് ചെയ്യുക."
+                          : "Update the scheme's basic information."}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsSchemeEditSheetOpen(false)}
+                      className="rounded-full p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                      aria-label={lang === "ml" ? "അടയ്ക്കുക" : "Close"}
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex-1 space-y-2.5 overflow-y-auto px-4 pb-3 pt-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                  <div className="grid grid-cols-1 gap-2.5">
+                    <label className="space-y-1">
+                      <span className="block text-[10.5px] font-bold text-slate-700 dark:text-slate-300">
+                        {lang === "ml" ? "പദ്ധതിയുടെ പേര് (ഇംഗ്ലീഷ്)" : "Scheme name (English)"}
+                      </span>
+                      <input
+                        value={schemeEditDraft.fullSchemeNameEn}
+                        onChange={(event) =>
+                          updateSchemeEditDraft("fullSchemeNameEn", event.target.value)
+                        }
+                        className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-medium text-slate-900 outline-none focus:ring-1 focus:ring-[#ff5500] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="block text-[10.5px] font-bold text-slate-700 dark:text-slate-300">
+                        {lang === "ml" ? "പദ്ധതിയുടെ പേര് (മലയാളം)" : "Scheme name (Malayalam)"}
+                      </span>
+                      <input
+                        value={schemeEditDraft.fullSchemeNameMl}
+                        onChange={(event) =>
+                          updateSchemeEditDraft("fullSchemeNameMl", event.target.value)
+                        }
+                        className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-medium text-slate-900 outline-none focus:ring-1 focus:ring-[#ff5500] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                      />
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="space-y-1">
+                        <span className="block text-[10.5px] font-bold text-slate-700 dark:text-slate-300">
+                          {lang === "ml" ? "വിഭാഗം (ഇംഗ്ലീഷ്)" : "Category (English)"}
+                        </span>
+                        <input
+                          value={schemeEditDraft.categoryEn}
+                          onChange={(event) =>
+                            updateSchemeEditDraft("categoryEn", event.target.value)
+                          }
+                          className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-medium text-slate-900 outline-none focus:ring-1 focus:ring-[#ff5500] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        />
+                      </label>
+                      <label className="space-y-1">
+                        <span className="block text-[10.5px] font-bold text-slate-700 dark:text-slate-300">
+                          {lang === "ml" ? "വിഭാഗം (മലയാളം)" : "Category (Malayalam)"}
+                        </span>
+                        <input
+                          value={schemeEditDraft.categoryMl}
+                          onChange={(event) =>
+                            updateSchemeEditDraft("categoryMl", event.target.value)
+                          }
+                          className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-medium text-slate-900 outline-none focus:ring-1 focus:ring-[#ff5500] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        />
+                      </label>
+                    </div>
+                    <label className="space-y-1">
+                      <span className="block text-[10.5px] font-bold text-slate-700 dark:text-slate-300">
+                        {lang === "ml" ? "മന്ത്രാലയം / വകുപ്പ് (ഇംഗ്ലീഷ്)" : "Ministry / Department (English)"}
+                      </span>
+                      <input
+                        value={schemeEditDraft.ministryEn}
+                        onChange={(event) =>
+                          updateSchemeEditDraft("ministryEn", event.target.value)
+                        }
+                        className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-medium text-slate-900 outline-none focus:ring-1 focus:ring-[#ff5500] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="block text-[10.5px] font-bold text-slate-700 dark:text-slate-300">
+                        {lang === "ml" ? "മന്ത്രാലയം / വകുപ്പ് (മലയാളം)" : "Ministry / Department (Malayalam)"}
+                      </span>
+                      <input
+                        value={schemeEditDraft.ministryMl}
+                        onChange={(event) =>
+                          updateSchemeEditDraft("ministryMl", event.target.value)
+                        }
+                        className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-medium text-slate-900 outline-none focus:ring-1 focus:ring-[#ff5500] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="block text-[10.5px] font-bold text-slate-700 dark:text-slate-300">
+                        {lang === "ml" ? "ഔദ്യോഗിക വെബ്സൈറ്റ്" : "Official website"}
+                      </span>
+                      <input
+                        value={schemeEditDraft.officialPortalUrl}
+                        onChange={(event) =>
+                          updateSchemeEditDraft("officialPortalUrl", event.target.value)
+                        }
+                        placeholder="https://"
+                        className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-medium text-slate-900 outline-none focus:ring-1 focus:ring-[#ff5500] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="block text-[10.5px] font-bold text-slate-700 dark:text-slate-300">
+                        {lang === "ml" ? "വിവരണം (ഇംഗ്ലീഷ്)" : "About (English)"}
+                      </span>
+                      <textarea
+                        value={schemeEditDraft.aboutEn}
+                        onChange={(event) => updateSchemeEditDraft("aboutEn", event.target.value)}
+                        rows={3}
+                        className="w-full resize-none rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[12px] font-medium text-slate-900 outline-none focus:ring-1 focus:ring-[#ff5500] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="block text-[10.5px] font-bold text-slate-700 dark:text-slate-300">
+                        {lang === "ml" ? "വിവരണം (മലയാളം)" : "About (Malayalam)"}
+                      </span>
+                      <textarea
+                        value={schemeEditDraft.aboutMl}
+                        onChange={(event) => updateSchemeEditDraft("aboutMl", event.target.value)}
+                        rows={3}
+                        className="w-full resize-none rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[12px] font-medium text-slate-900 outline-none focus:ring-1 focus:ring-[#ff5500] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                <div className="flex shrink-0 gap-2 border-t border-slate-100 px-4 pb-[max(0.9rem,env(safe-area-inset-bottom))] pt-2.5 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setIsSchemeEditSheetOpen(false)}
+                    className="flex-1 rounded-lg border border-slate-200 bg-white py-2 text-[11.5px] font-extrabold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                  >
+                    {lang === "ml" ? "റദ്ദാക്കുക" : "Cancel"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={saveSchemeEditSheet}
+                    className="flex-[2] rounded-lg bg-[#ff5500] py-2 text-[11.5px] font-extrabold text-white transition-colors hover:bg-orange-600"
+                  >
+                    {lang === "ml" ? "മാറ്റങ്ങൾ സേവ് ചെയ്യുക" : "Save Changes"}
                   </button>
                 </div>
               </div>

@@ -199,7 +199,7 @@ export function AdminMobileAppHeader({
                           <div>
                             <h3 className="font-bold text-xs text-foreground">Jayasurya</h3>
                             <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium leading-tight">
-                              {lang === "ml" ? "സംസ്ഥാന ഭരണം" : "State Administration"}
+                              {lang === "ml" ? "സംസ്ഥാന ഭരണം" : "State Admin"}
                             </p>
                           </div>
                         )}
@@ -472,7 +472,7 @@ export function AdminMobileAppHeader({
                         Jayasurya
                       </h3>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                        State Administration
+                        State Admin
                       </p>
                       <span className="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-full text-[9.5px] font-bold bg-orange-100 dark:bg-orange-950/80 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
                         <ShieldCheck className="h-2.5 w-2.5" /> State Admin

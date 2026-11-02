@@ -30,6 +30,41 @@ export const districts: District[] = [
   { id: "ksd", ml: "കാസർഗോഡ്", en: "Kasaragod" },
 ];
 
+export type OrganisationalDistrict = { id: string; ml: string; en: string };
+
+export const organisationalDistricts: OrganisationalDistrict[] = [
+  { id: "od-tvm-north", ml: "തിരുവനന്തപുരം നോർത്ത്", en: "Thiruvananthapuram North" },
+  { id: "od-tvm-south", ml: "തിരുവനന്തപുരം സൗത്ത്", en: "Thiruvananthapuram South" },
+  { id: "od-tvm-city", ml: "തിരുവനന്തപുരം സിറ്റി", en: "Thiruvananthapuram City" },
+  { id: "od-klm-east", ml: "കൊല്ലം ഈസ്റ്റ്", en: "Kollam East" },
+  { id: "od-klm-west", ml: "കൊല്ലം വെസ്റ്റ്", en: "Kollam West" },
+  { id: "od-ptm", ml: "പത്തനംതിട്ട", en: "Pathanamthitta" },
+  { id: "od-alp-north", ml: "ആലപ്പുഴ നോർത്ത്", en: "Alappuzha North" },
+  { id: "od-alp-south", ml: "ആലപ്പുഴ സൗത്ത്", en: "Alappuzha South" },
+  { id: "od-ktm-east", ml: "കോട്ടയം ഈസ്റ്റ്", en: "Kottayam East" },
+  { id: "od-ktm-west", ml: "കോട്ടയം വെസ്റ്റ്", en: "Kottayam West" },
+  { id: "od-idk-north", ml: "ഇടുക്കി നോർത്ത്", en: "Idukki North" },
+  { id: "od-idk-south", ml: "ഇടുക്കി സൗത്ത്", en: "Idukki South" },
+  { id: "od-ekm-city", ml: "എറണാകുളം സിറ്റി", en: "Ernakulam City" },
+  { id: "od-ekm-north", ml: "എറണാകുളം നോർത്ത്", en: "Ernakulam North" },
+  { id: "od-ekm-east", ml: "എറണാകുളം ഈസ്റ്റ്", en: "Ernakulam East" },
+  { id: "od-tsr-city", ml: "തൃശ്ശൂർ സിറ്റി", en: "Thrissur City" },
+  { id: "od-tsr-north", ml: "തൃശ്ശൂർ നോർത്ത്", en: "Thrissur North" },
+  { id: "od-tsr-south", ml: "തൃശ്ശൂർ സൗത്ത്", en: "Thrissur South" },
+  { id: "od-pkd-east", ml: "പാലക്കാട് ഈസ്റ്റ്", en: "Palakkad East" },
+  { id: "od-pkd-west", ml: "പാലക്കാട് വെസ്റ്റ്", en: "Palakkad West" },
+  { id: "od-mlp-central", ml: "മലപ്പുറം സെൻട്രൽ", en: "Malappuram Central" },
+  { id: "od-mlp-east", ml: "മലപ്പുറം ഈസ്റ്റ്", en: "Malappuram East" },
+  { id: "od-mlp-west", ml: "മലപ്പുറം വെസ്റ്റ്", en: "Malappuram West" },
+  { id: "od-kkd-city", ml: "കോഴിക്കോട് സിറ്റി", en: "Kozhikode City" },
+  { id: "od-kkd-rural", ml: "കോഴിക്കോട് റൂറൽ", en: "Kozhikode Rural" },
+  { id: "od-kkd-north", ml: "കോഴിക്കോട് നോർത്ത്", en: "Kozhikode North" },
+  { id: "od-wyd", ml: "വയനാട്", en: "Wayanad" },
+  { id: "od-knr-north", ml: "കണ്ണൂർ നോർത്ത്", en: "Kannur North" },
+  { id: "od-knr-south", ml: "കണ്ണൂർ സൗത്ത്", en: "Kannur South" },
+  { id: "od-ksd", ml: "കാസർഗോഡ്", en: "Kasaragod" },
+];
+
 export const constituencies: Constituency[] = [
   // 1. Kasaragod (ksd) - 5
   { id: "ksd-c1", districtId: "ksd", ml: "മഞ്ചേശ്വരം", en: "Manjeshwar" },
