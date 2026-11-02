@@ -8,6 +8,7 @@ import {
   FileText,
   Filter,
   Headset,
+  Layers,
   MapPin,
   MoreVertical,
   Pencil,
@@ -56,6 +57,8 @@ import {
   markManagedRoleDeleted,
   nextRoleCopyName,
   organisationLevelLabel,
+  requestedRoleNamesByOrganisationLevel,
+  requestedRoleOrganisationLevelOrder,
   saveCustomOrganisationLevels,
   saveManagedRoles,
   type AdministrativePermissionId,
@@ -106,6 +109,18 @@ const orderedPermissionModules = [...permissionModules].sort(
   (a, b) => permissionModuleOrder.indexOf(a.id) - permissionModuleOrder.indexOf(b.id),
 );
 
+const rolePermissionModuleLabel = (
+  module: { id: PermissionModuleId; en: string; ml: string },
+  isMalayalam: boolean,
+) =>
+  module.id === "help_desk"
+    ? isMalayalam
+      ? "സപ്പോർട്ട് ഹാൻഡ്ലിംഗ്"
+      : "Support Handling"
+    : isMalayalam
+      ? module.ml
+      : module.en;
+
 const allPermissionKeys = permissionModules.flatMap((module) =>
   module.actions.map((action) => permissionKey(module.id, action.id)),
 );
@@ -113,6 +128,24 @@ const allPermissionKeys = permissionModules.flatMap((module) =>
 const roleAccessPermissionIds: AdministrativePermissionId[] = ["manage_roles", "assign_access"];
 const delegateAccessPermissionId: AdministrativePermissionId = "delegate_access";
 const createNewOrganisationLevelValue = "__create_new_organisation_level__";
+
+const roleLevelNamePrefixes: Partial<Record<AssignmentLevel, string[]>> = {
+  state: ["State"],
+  region: ["Regional", "Region"],
+  district: ["District", "Organisational District"],
+  mandalam: ["Mandalam"],
+  area: ["Area"],
+  booth: ["Booth"],
+};
+
+const roleNameWithoutLevelPrefix = (name: string, level: AssignmentLevel | "other") => {
+  if (level === "other") return name;
+  const prefix = roleLevelNamePrefixes[level]?.find((value) =>
+    name.toLowerCase().startsWith(`${value.toLowerCase()} `),
+  );
+  if (!prefix) return name;
+  return name.slice(prefix.length).trim() || name;
+};
 
 const normalizeAdministrativePermissions = (ids: AdministrativePermissionId[]) => [
   ...(ids.some((id) => roleAccessPermissionIds.includes(id)) ? roleAccessPermissionIds : []),
@@ -127,6 +160,11 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
   const [activeView, setActiveView] = useState<"list" | "form" | "assign">("list");
   const [showRoleSearch, setShowRoleSearch] = useState(false);
   const [roleSearch, setRoleSearch] = useState("");
+  const [expandedRoleGroups, setExpandedRoleGroups] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(
+      [...requestedRoleOrganisationLevelOrder, "other"].map((level) => [level, true]),
+    ),
+  );
   const [isCreating, setIsCreating] = useState(false);
   const [editTarget, setEditTarget] = useState<ManagedRole | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ManagedRole | null>(null);
@@ -179,13 +217,43 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
 
   const visibleRoles = roles.filter((role) => !isRetiredCustomRole(role));
   const normalizedRoleSearch = roleSearch.trim().toLowerCase();
-  const filteredRoles = normalizedRoleSearch
-    ? visibleRoles.filter((role) =>
-        [role.name, role.description, role.status, ...role.assignmentLevels.map(levelLabel)].some(
-          (value) => value?.toLowerCase().includes(normalizedRoleSearch),
-        ),
-      )
-    : visibleRoles;
+  const primaryRoleLevel = (role: ManagedRole) =>
+    requestedRoleOrganisationLevelOrder.find((level) => role.assignmentLevels.includes(level)) ??
+    "other";
+  const filteredRoles = visibleRoles.filter((role) => {
+    const matchesSearch =
+      !normalizedRoleSearch || role.name.toLowerCase().includes(normalizedRoleSearch);
+    return matchesSearch;
+  });
+  const roleGroups = [
+    ...roleOrganisationLevels.map((level) => ({
+      id: level.id as AssignmentLevel | "other",
+      label: isMalayalam ? level.ml : level.en,
+      roles: filteredRoles.filter((role) => primaryRoleLevel(role) === level.id),
+    })),
+    {
+      id: "other" as AssignmentLevel | "other",
+      label: tr("Other roles", "മറ്റ് റോളുകൾ"),
+      roles: filteredRoles.filter((role) => primaryRoleLevel(role) === "other"),
+    },
+  ]
+    .filter((group) => group.id !== "other" || group.roles.length > 0)
+    .map((group) => ({
+      ...group,
+      roles: [...group.roles].sort((a, b) => {
+        const requestedNames =
+          group.id === "other" ? undefined : requestedRoleNamesByOrganisationLevel[group.id];
+        const aIndex = requestedNames?.indexOf(a.name) ?? -1;
+        const bIndex = requestedNames?.indexOf(b.name) ?? -1;
+        if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+        if (aIndex !== -1) return -1;
+        if (bIndex !== -1) return 1;
+        return a.name.localeCompare(b.name);
+      }),
+    }));
+  const displayedRoleGroups = normalizedRoleSearch
+    ? roleGroups.filter((group) => group.roles.length > 0)
+    : roleGroups;
 
   const openEdit = (role: ManagedRole) => {
     setIsCreating(false);
@@ -542,92 +610,156 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
             )}
           </header>
 
-          <div className="mt-2 min-h-0 flex-1 space-y-2 overflow-y-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {filteredRoles.map((role) => (
-              <article
-                key={role.id}
-                className={cn(
-                  "rounded-2xl border border-orange-100 bg-card px-3 py-2.5 shadow-2xs transition-colors hover:border-orange-200 dark:border-slate-800 dark:hover:border-slate-700",
-                  role.status === "Inactive" && "opacity-60",
-                )}
-              >
-                <div className="flex items-center gap-2">
+          <div className="mt-2 min-h-0 flex-1 space-y-1.5 overflow-y-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {displayedRoleGroups.map((group) => {
+              const expanded = expandedRoleGroups[group.id] ?? true;
+              return (
+                <section
+                  key={group.id}
+                  className="overflow-hidden rounded-lg border border-white bg-card shadow-2xs"
+                >
                   <button
                     type="button"
-                    onClick={() => openEdit(role)}
-                    className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300"
-                    aria-label={tr(`Edit ${role.name}`, `${role.name} തിരുത്തുക`)}
+                    onClick={() =>
+                      setExpandedRoleGroups((current) => ({
+                        ...current,
+                        [group.id]: !(current[group.id] ?? true),
+                      }))
+                    }
+                    aria-expanded={expanded}
+                    className="flex w-full items-center gap-2 bg-orange-50/60 px-2.5 py-2 text-left transition-colors hover:bg-orange-100/60 dark:bg-slate-800/60 dark:hover:bg-slate-800 cursor-pointer"
                   >
-                    <img
-                      src="/images/settings/role-card.png"
-                      alt=""
-                      aria-hidden="true"
-                      className="h-8 w-8 shrink-0 object-contain"
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-300">
+                      <Layers className="h-3 w-3 stroke-[2.2]" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[11.5px] font-extrabold leading-tight text-foreground">
+                        {group.id === "other"
+                          ? group.label
+                          : tr(`${group.label} level`, `${group.label} ലെവൽ`)}
+                      </span>
+                    </span>
+                    <span className="rounded-full border border-orange-100 bg-orange-50/70 px-1.5 py-px text-[8.5px] font-black text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-300">
+                      {group.roles.length}
+                    </span>
+                    <ChevronDown
+                      className={cn(
+                        "h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform",
+                        expanded && "rotate-180",
+                      )}
                     />
-                    <div className="min-w-0 flex-1">
-                      <h3 className="truncate text-[11.5px] font-extrabold leading-tight text-foreground">
-                        {role.name}
-                      </h3>
-                      <div className="mt-1 flex flex-wrap gap-1">
-                        {role.assignmentLevels.slice(0, 1).map((level) => (
-                          <span
-                            key={level}
-                            className="rounded-md border border-orange-100 bg-orange-50/70 px-1.5 py-px text-[8.5px] font-bold text-orange-800 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-200"
-                          >
-                            {levelLabel(level)}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
                   </button>
 
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        type="button"
-                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-orange-50 hover:text-orange-600 dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
-                        aria-label={tr(`Actions for ${role.name}`, `${role.name} നടപടികൾ`)}
-                      >
-                        <MoreVertical className="h-3.5 w-3.5" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="end"
-                      className="w-44 rounded-xl border-orange-100 p-1.5 shadow-lg dark:border-slate-800"
-                    >
-                      <DropdownMenuItem
-                        onSelect={() => openAssignRole(role)}
-                        className="gap-2 rounded-lg px-2 py-2 text-[11px] font-semibold"
-                      >
-                        <UserPlus className="h-3.5 w-3.5" />
-                        {tr("Assign Role", "റോൾ അസൈൻ ചെയ്യുക")}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onSelect={() => openEdit(role)}
-                        className="gap-2 rounded-lg px-2 py-2 text-[11px] font-semibold"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                        {tr("Edit", "തിരുത്തുക")}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onSelect={() => duplicateRole(role)}
-                        className="gap-2 rounded-lg px-2 py-2 text-[11px] font-semibold"
-                      >
-                        <Copy className="h-3.5 w-3.5" />
-                        {tr("Duplicate", "പകർത്തുക")}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onSelect={() => setDeleteTarget(role)}
-                        className="gap-2 rounded-lg px-2 py-2 text-[11px] font-semibold text-rose-600 focus:bg-rose-50 focus:text-rose-700 dark:text-rose-400 dark:focus:bg-rose-950/30"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        {tr("Delete", "മായ്ക്കുക")}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </article>
-            ))}
+                  {expanded ? (
+                    group.roles.length > 0 ? (
+                      <div className="divide-y divide-border/70 border-t border-border/70">
+                        {group.roles.map((role) => {
+                          const displayName = roleNameWithoutLevelPrefix(role.name, group.id);
+                          const otherLevelLabel =
+                            role.assignmentLevels.map(levelLabel).join(" · ") ||
+                            tr("No level", "ലെവൽ ഇല്ല");
+                          return (
+                            <div
+                              key={role.id}
+                              className={cn(
+                                "flex items-center gap-2 px-2.5 py-1.5",
+                                role.status === "Inactive" && "opacity-60",
+                              )}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => openEdit(role)}
+                                className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300"
+                                aria-label={tr(`Edit ${displayName}`, `${displayName} തിരുത്തുക`)}
+                              >
+                                <img
+                                  src="/images/settings/role-card.png"
+                                  alt=""
+                                  aria-hidden="true"
+                                  className="h-7 w-7 shrink-0 object-contain"
+                                />
+                                <div className="min-w-0 flex-1">
+                                  <h3 className="truncate text-[11.5px] font-extrabold leading-tight text-foreground">
+                                    {displayName}
+                                  </h3>
+                                  <div className="mt-0.5 flex flex-wrap items-center gap-1">
+                                    {group.id === "other" ? (
+                                      <span className="rounded-md border border-orange-100 bg-orange-50/70 px-1.5 py-px text-[8.5px] font-bold text-orange-800 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-200">
+                                        {otherLevelLabel}
+                                      </span>
+                                    ) : null}
+                                    {role.assignedUsers > 0 ? (
+                                      <span className="text-[8.5px] font-semibold text-muted-foreground">
+                                        {tr(
+                                          `${role.assignedUsers.toLocaleString("en-IN")} assigned`,
+                                          `${role.assignedUsers.toLocaleString("en-IN")} അസൈൻ ചെയ്തു`,
+                                        )}
+                                      </span>
+                                    ) : null}
+                                  </div>
+                                </div>
+                              </button>
+
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <button
+                                    type="button"
+                                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-orange-50 hover:text-orange-600 dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
+                                    aria-label={tr(
+                                      `Actions for ${displayName}`,
+                                      `${displayName} നടപടികൾ`,
+                                    )}
+                                  >
+                                    <MoreVertical className="h-3.5 w-3.5" />
+                                  </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                  align="end"
+                                  className="w-44 rounded-xl border-orange-100 p-1.5 shadow-lg dark:border-slate-800"
+                                >
+                                  <DropdownMenuItem
+                                    onSelect={() => openAssignRole(role)}
+                                    className="gap-2 rounded-lg px-2 py-2 text-[11px] font-semibold"
+                                  >
+                                    <UserPlus className="h-3.5 w-3.5" />
+                                    {tr("Assign Role", "റോൾ അസൈൻ ചെയ്യുക")}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onSelect={() => openEdit(role)}
+                                    className="gap-2 rounded-lg px-2 py-2 text-[11px] font-semibold"
+                                  >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                    {tr("Edit", "തിരുത്തുക")}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onSelect={() => duplicateRole(role)}
+                                    className="gap-2 rounded-lg px-2 py-2 text-[11px] font-semibold"
+                                  >
+                                    <Copy className="h-3.5 w-3.5" />
+                                    {tr("Duplicate", "പകർത്തുക")}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onSelect={() => setDeleteTarget(role)}
+                                    className="gap-2 rounded-lg px-2 py-2 text-[11px] font-semibold text-rose-600 focus:bg-rose-50 focus:text-rose-700 dark:text-rose-400 dark:focus:bg-rose-950/30"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                    {tr("Delete", "മായ്ക്കുക")}
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="border-t border-border/70 px-3 py-3 text-[9px] font-semibold text-muted-foreground">
+                        {tr("No roles at this level.", "ഈ ലെവലിൽ റോളുകളില്ല.")}
+                      </p>
+                    )
+                  ) : null}
+                </section>
+              );
+            })}
             {filteredRoles.length === 0 ? (
               <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border bg-card px-4 py-8 text-center">
                 <Search className="h-5 w-5 text-muted-foreground" />
@@ -891,7 +1023,7 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
                       setDraft((current) => ({ ...current, name: event.target.value }));
                       setErrors((current) => ({ ...current, name: "" }));
                     }}
-                    placeholder={tr("e.g. Local Body Admin", "ഉദാ: തദ്ദേശ സ്ഥാപന അഡ്മിൻ")}
+                    placeholder={tr("e.g. Area Coordinator", "ഉദാ: ഏരിയ കോർഡിനേറ്റർ")}
                     className={cn(
                       "h-9 rounded-lg border-border bg-background px-2.5 text-[11.5px] font-medium text-foreground shadow-none transition-colors focus:border-orange-400 focus:ring-1 focus:ring-orange-500 md:text-[11.5px]",
                       errors.name && "border-rose-400",
@@ -1038,7 +1170,7 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
                               }));
                               setErrors((current) => ({ ...current, permissions: "" }));
                             }}
-                            aria-label={`${tr("Select all", "എല്ലാം തിരഞ്ഞെടുക്കുക")} ${isMalayalam ? module.ml : module.en}`}
+                            aria-label={`${tr("Select all", "എല്ലാം തിരഞ്ഞെടുക്കുക")} ${rolePermissionModuleLabel(module, isMalayalam)}`}
                             className="h-3.5 w-3.5 shrink-0 rounded-[3px] border-slate-300 [&_svg]:h-2.5 [&_svg]:w-2.5 data-[state=checked]:border-orange-500 data-[state=checked]:bg-orange-500 dark:border-slate-600"
                           />
                           <button
@@ -1055,7 +1187,7 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
                             <Icon className="h-3.5 w-3.5 shrink-0 text-orange-600 dark:text-orange-300" />
                             <span className="min-w-0 flex-1">
                               <span className="block text-[10.5px] font-extrabold text-foreground">
-                                {isMalayalam ? module.ml : module.en}
+                                {rolePermissionModuleLabel(module, isMalayalam)}
                               </span>
                               <span className="block truncate text-[8.5px] text-muted-foreground">
                                 {selectedActions.length > 0
@@ -1227,8 +1359,7 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
 
               <div>
                 <label className="mb-1 block text-[10.5px] font-bold text-foreground">
-                  {tr("Parent Level", "മാതൃ ലെവൽ")}{" "}
-                  <span className="text-rose-500">*</span>
+                  {tr("Parent Level", "മാതൃ ലെവൽ")} <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
                   <select

@@ -588,6 +588,15 @@ export const permissionModules: PermissionModule[] = [
         verbEn: "assign help desk requests to team members",
         verbMl: "ഹെൽപ്പ് ഡെസ്ക് അഭ്യർത്ഥനകൾ ടീം അംഗങ്ങൾക്ക് നൽകാൻ",
       },
+      {
+        id: "respond_reply",
+        en: "Respond/Reply",
+        ml: "മറുപടി നൽകുക",
+        helpEn: "Reply to help desk requests",
+        helpMl: "ഹെൽപ്പ് ഡെസ്ക് അഭ്യർത്ഥനകൾക്ക് മറുപടി നൽകാം",
+        verbEn: "respond to help desk requests",
+        verbMl: "ഹെൽപ്പ് ഡെസ്ക് അഭ്യർത്ഥനകൾക്ക് മറുപടി നൽകാൻ",
+      },
     ],
   },
   {
@@ -650,6 +659,7 @@ export const permissionPrerequisites: Record<string, string[]> = {
   "applications.create": ["applications.view"],
   "applications.edit": ["applications.view"],
   "help_desk.assign_team_member": ["help_desk.view"],
+  "help_desk.respond_reply": ["help_desk.view"],
   "applicant_profile.create": ["applicant_profile.view"],
   "applicant_profile.edit": ["applicant_profile.view"],
 };

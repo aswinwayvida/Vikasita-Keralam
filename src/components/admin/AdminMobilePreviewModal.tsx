@@ -2581,6 +2581,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   // State Admin Create Actions Modals/Sheets
   const [isStateAdminCreateMenuOpen, setIsStateAdminCreateMenuOpen] = useState<boolean>(false);
   const [isCreateSchemeModalOpen, setIsCreateSchemeModalOpen] = useState<boolean>(false);
+  const [createSchemeInitialData, setCreateSchemeInitialData] = useState<CreatedSchemePayload | null>(null);
   const [isCreatePartyWorkerModalOpen, setIsCreatePartyWorkerModalOpen] = useState<boolean>(false);
   const [partyWorkerStartPhase, setPartyWorkerStartPhase] = useState<"form" | "list">("form");
   const [isSkipDocumentVerifyModalOpen, setIsSkipDocumentVerifyModalOpen] = useState<boolean>(false);
@@ -7170,21 +7171,65 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     const base = getDetailedSchemeData(selectedScheme);
     const key =
       selectedCreatedScheme?.id || selectedScheme?.id || selectedSchemeName || base.id || "scheme";
-    setSchemeEditTargetKey(key);
-    setSchemeEditDraft({
-      fullSchemeNameEn: base.fullSchemeNameEn || "",
-      fullSchemeNameMl: base.fullSchemeNameMl || "",
-      categoryEn: base.categoryEn || "",
-      categoryMl: base.categoryMl || "",
-      ministryEn: base.ministryEn || "",
-      ministryMl: base.ministryMl || "",
-      aboutEn: base.aboutEn || "",
-      aboutMl: base.aboutMl || "",
-      officialPortalUrl:
-        base.officialPortalUrl && base.officialPortalUrl !== "#" ? base.officialPortalUrl : "",
-    });
-    setIsSchemeEditSheetOpen(true);
+    const override = schemeDetailsOverrides[key] ?? {};
+    const initialScheme: CreatedSchemePayload = selectedCreatedScheme
+      ? {
+          ...selectedCreatedScheme,
+          nameEn: override.fullSchemeNameEn || selectedCreatedScheme.nameEn,
+          nameMl: override.fullSchemeNameMl || selectedCreatedScheme.nameMl,
+          category: override.categoryEn || selectedCreatedScheme.category,
+          categoryMl: override.categoryMl || selectedCreatedScheme.categoryMl,
+          department: override.ministryEn || selectedCreatedScheme.department,
+          aboutScheme: override.aboutEn || selectedCreatedScheme.aboutScheme,
+          officialWebsite:
+            override.officialPortalUrl !== undefined
+              ? override.officialPortalUrl
+              : selectedCreatedScheme.officialWebsite,
+        }
+      : {
+          id: key,
+          createdAt: new Date().toISOString(),
+          nameEn: override.fullSchemeNameEn || base.fullSchemeNameEn || "",
+          nameMl: override.fullSchemeNameMl || base.fullSchemeNameMl || "",
+          shortName: "",
+          logoUrl: typeof base.logo === "string" ? base.logo : null,
+          category: override.categoryEn || base.categoryEn || "Other",
+          categoryMl: override.categoryMl || base.categoryMl || "മറ്റുള്ളവ",
+          department: override.ministryEn || base.ministryEn || "",
+          aboutScheme: override.aboutEn || base.aboutEn || "",
+          shortCardDescription: base.benefitAmountEn || "",
+          officialWebsite:
+            override.officialPortalUrl !== undefined
+              ? override.officialPortalUrl
+              : base.officialPortalUrl && base.officialPortalUrl !== "#"
+                ? base.officialPortalUrl
+                : "",
+          benefitTypes: (base.benefitTypeEn || "Financial Assistance")
+            .split(",")
+            .map((type) => type.trim())
+            .filter(Boolean),
+          benefitSummary: base.benefitAmountEn || "",
+          benefitAmountType: "fixed",
+          benefitAmount: base.benefitAmountEn || "",
+          paymentFrequency: base.paymentFrequencyEn || "",
+          benefitDuration: base.benefitDurationEn || "",
+          coverageLimit: base.applicableLimitsEn || "",
+          contributionType: "None",
+          contributionValue: "",
+          eligibilitySummary: (base.eligibilityConditionsEn || []).join("\n"),
+          eligibilityGrouping: "ALL",
+          eligibilityRules: [],
+          exclusions: base.exclusionsEn || [],
+          applicableLocations: "All Kerala",
+          localBodyTypes: ["Grama Panchayat", "Municipality", "Municipal Corporation"],
+          blockTaluk: "",
+          manualReviewConditions: "",
+          customFields: [],
+        };
+    setCreateSchemeInitialData(initialScheme);
+    setIsSchemeEditSheetOpen(false);
     setSchemeDetailsMenuOpen(false);
+    setMobileSubPage("create_scheme");
   };
 
   const saveSchemeEditSheet = () => {
@@ -8953,18 +8998,22 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                               onClick={() => setSchemeDetailsMenuOpen(false)}
                             />
                             <div className="absolute right-0 top-8 z-30 w-52 overflow-hidden rounded-xl border border-slate-200/80 bg-white py-1 shadow-lg animate-in fade-in zoom-in-95 duration-150 dark:border-slate-800 dark:bg-slate-900">
-                              <button
-                                type="button"
-                                onClick={openSchemeEditSheet}
-                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-[11.5px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
-                              >
-                                <Pencil className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
-                                {lang === "ml" ? "തിരുത്തുക" : "Edit"}
-                              </button>
+                              {!isGuest ? (
+                                <button
+                                  type="button"
+                                  onClick={openSchemeEditSheet}
+                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-[11.5px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
+                                >
+                                  <Pencil className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                                  {lang === "ml" ? "തിരുത്തുക" : "Edit"}
+                                </button>
+                              ) : null}
                               <button
                                 type="button"
                                 onClick={() => void shareSchemeDetails()}
-                                className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-2 text-left text-[11.5px] font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
+                                className={`flex w-full items-center gap-2 px-3 py-2 text-left text-[11.5px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer ${
+                                  isGuest ? "" : "border-t border-slate-100 dark:border-slate-800"
+                                }`}
                               >
                                 <Share2 className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
                                 {lang === "ml" ? "പങ്കിടുക" : "Share"}
@@ -9110,7 +9159,40 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   } space-y-2.5`
             }`}
           >
-            {isLogoutSplashScreen ? (
+            {mobileSubPage === "create_scheme" ? (
+              <MobileCreateSchemeFlow
+                lang={lang}
+                initialScheme={createSchemeInitialData ?? undefined}
+                onClose={() => {
+                  setMobileSubPage(createSchemeInitialData ? "scheme_details" : "none");
+                  setCreateSchemeInitialData(null);
+                }}
+                onPublishSuccess={(schemeData) => {
+                  const wasEditing = Boolean(createSchemeInitialData);
+                  setCreatedSchemes((previous) => [
+                    schemeData,
+                    ...previous.filter((created) => created.id !== schemeData.id),
+                  ]);
+                  toast.success(
+                    lang === "ml"
+                      ? wasEditing
+                        ? `പദ്ധതി '${schemeData.nameMl || schemeData.nameEn}' വിജയകരമായി അപ്ഡേറ്റ് ചെയ്തു!`
+                        : `പദ്ധതി '${schemeData.nameMl || schemeData.nameEn}' വിജയകരമായി സൃഷ്ടിച്ചു!`
+                      : wasEditing
+                        ? `Scheme '${schemeData.nameEn}' updated successfully!`
+                        : `Scheme '${schemeData.nameEn}' successfully created!`
+                  );
+                  setActiveTab("schemes");
+                  setIsCreateSchemeModalOpen(false);
+                  setCreateSchemeInitialData(null);
+                  openMobileSchemeDetailsView(
+                    toSchemeFromCreated(schemeData),
+                    "none",
+                    schemeData
+                  );
+                }}
+              />
+            ) : isLogoutSplashScreen ? (
               <div className="absolute inset-0 z-50 h-full w-full bg-[#f96302] flex flex-col items-center justify-between overflow-hidden animate-in fade-in duration-300">
                 <img
                   src="/images/splash_screen_logout.png"
@@ -12652,32 +12734,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           )}
                         </div>
                       </div>
-                    )}
-
-                    {/* Dedicated Subpage: Create New Scheme Form (3-Step Flow) */}
-                    {mobileSubPage === "create_scheme" && (
-                      <MobileCreateSchemeFlow
-                        lang={lang}
-                        onClose={() => setMobileSubPage("none")}
-                        onPublishSuccess={(schemeData) => {
-                          setCreatedSchemes((previous) => [
-                            schemeData,
-                            ...previous.filter((created) => created.id !== schemeData.id),
-                          ]);
-                          toast.success(
-                            lang === "ml"
-                              ? `പദ്ധതി '${schemeData.nameMl || schemeData.nameEn}' വിജയകരമായി സൃഷ്ടിച്ചു!`
-                              : `Scheme '${schemeData.nameEn}' successfully created!`
-                          );
-                          setActiveTab("schemes");
-                          setIsCreateSchemeModalOpen(false);
-                          openMobileSchemeDetailsView(
-                            toSchemeFromCreated(schemeData),
-                            "none",
-                            schemeData
-                          );
-                        }}
-                      />
                     )}
 
                     {/* Dedicated Subpage: Events & Announcements Page */}
@@ -16331,6 +16387,18 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       <button
                                         type="button"
                                         onClick={() => {
+                                          alert(lang === "ml" ? `${req.contactName || req.applicant}-ന് മറുപടി നൽകുക.` : `Respond/Reply to ${req.contactName || req.applicant}.`);
+                                          setOpenHelpdeskMenuIndex(null);
+                                        }}
+                                        className="w-full text-left px-3 py-2 hover:bg-orange-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium flex items-center gap-2 transition-colors cursor-pointer border-t border-slate-100 dark:border-slate-800/80"
+                                      >
+                                        <MessageSquare className="h-3.5 w-3.5 text-orange-500 shrink-0" />
+                                        <span>{lang === "ml" ? "മറുപടി നൽകുക" : "Respond/Reply"}</span>
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => {
                                           setHelpdeskRequests((prev) => prev.filter((_, i) => i !== idx));
                                           setOpenHelpdeskMenuIndex(null);
                                         }}
@@ -16766,6 +16834,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     type="button"
                     onClick={() => {
                       setIsStateAdminCreateMenuOpen(false);
+                      setCreateSchemeInitialData(null);
                       setMobileSubPage("create_scheme");
                     }}
                     className="flex w-full items-center gap-3 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-left shadow-2xs group cursor-pointer"
@@ -17032,7 +17101,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           )}
 
           {/* Floating SahAI Help Chatbot Button - Guest (public) mode only */}
-          {isGuest && !isLogoutSplashScreen && !isGuestEligibilityOpen && !isMobileAuthOpen && (
+          {isGuest && !isLogoutSplashScreen && !isGuestEligibilityOpen && !isMobileAuthOpen && mobileSubPage !== "create_scheme" && (
             <button
               type="button"
               onClick={() => setIsSahAiOpen(true)}

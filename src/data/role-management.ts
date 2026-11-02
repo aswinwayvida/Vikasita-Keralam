@@ -19,9 +19,7 @@ export const customOrganisationLevelStorageKey = "vk-custom-organisation-levels"
 const retiredOrganisationLevelNames = new Set(["dbjmn", "it cell"]);
 
 export function isRetiredOrganisationLevelName(name: string) {
-  return retiredOrganisationLevelNames.has(
-    name.trim().toLowerCase().replace(/\s+/g, " "),
-  );
+  return retiredOrganisationLevelNames.has(name.trim().toLowerCase().replace(/\s+/g, " "));
 }
 
 export function loadCustomOrganisationLevels(): CustomOrganisationLevel[] {
@@ -40,9 +38,7 @@ export function loadCustomOrganisationLevels(): CustomOrganisationLevel[] {
         Boolean((item as CustomOrganisationLevel).name.trim()) &&
         typeof (item as CustomOrganisationLevel).under === "string",
     );
-    const cleaned = levels.filter(
-      (level) => !isRetiredOrganisationLevelName(level.name),
-    );
+    const cleaned = levels.filter((level) => !isRetiredOrganisationLevelName(level.name));
     if (cleaned.length !== levels.length) {
       saveCustomOrganisationLevels(cleaned);
     }
@@ -228,6 +224,86 @@ const builtInRoleSeeds: BuiltInRoleSeed[] = [
 
 const roleTimestamp = "2024-01-01T00:00:00.000Z";
 
+export const requestedRoleOrganisationLevelOrder: AssignmentLevel[] = [
+  "state",
+  "region",
+  "district",
+  "mandalam",
+  "area",
+  "booth",
+];
+
+export const requestedRoleNamesByOrganisationLevel: Partial<
+  Record<AssignmentLevel, readonly string[]>
+> = {
+  state: [
+    "State President",
+    "State Vice President",
+    "State General Secretary",
+    "State Secretary",
+    "State Treasurer",
+    "State Committee Member",
+  ],
+  region: ["Regional President", "Regional In-charge", "Regional Coordinator"],
+  district: [
+    "District President",
+    "District Vice President",
+    "District General Secretary",
+    "District Secretary",
+    "District Treasurer",
+    "District Committee Member",
+  ],
+  mandalam: [
+    "Mandalam President",
+    "Mandalam Vice President",
+    "Mandalam General Secretary",
+    "Mandalam Secretary",
+    "Mandalam Treasurer",
+    "Mandalam Committee Member",
+  ],
+  area: ["Area President", "Area Secretary", "Area Coordinator", "Area Committee Member"],
+  booth: [
+    "Booth President",
+    "Booth Secretary",
+    "Booth Agent",
+    "Booth Committee Member",
+    "Karyakarta",
+  ],
+};
+
+const requestedDesignationRoleNames: Record<string, string> = {
+  "state-president": "State President",
+  "state-vice-president": "State Vice President",
+  "state-general-secretary": "State General Secretary",
+  "state-secretary": "State Secretary",
+  "state-treasurer": "State Treasurer",
+  "state-committee-member": "State Committee Member",
+  "region-president": "Regional President",
+  "region-in-charge": "Regional In-charge",
+  "region-coordinator": "Regional Coordinator",
+  "district-president": "District President",
+  "district-vice-president": "District Vice President",
+  "district-general-secretary": "District General Secretary",
+  "district-secretary": "District Secretary",
+  "district-treasurer": "District Treasurer",
+  "district-committee-member": "District Committee Member",
+  "mandalam-president": "Mandalam President",
+  "mandalam-vice-president": "Mandalam Vice President",
+  "mandalam-general-secretary": "Mandalam General Secretary",
+  "mandalam-secretary": "Mandalam Secretary",
+  "mandalam-treasurer": "Mandalam Treasurer",
+  "mandalam-committee-member": "Mandalam Committee Member",
+  "area-president": "Area President",
+  "area-secretary": "Area Secretary",
+  "area-coordinator": "Area Coordinator",
+  "area-committee-member": "Area Committee Member",
+  "booth-president": "Booth President",
+  "booth-secretary": "Booth Secretary",
+  "booth-agent": "Booth Agent",
+  "booth-committee-member": "Booth Committee Member",
+  karyakarta: "Karyakarta",
+};
+
 const presetIdForDesignationLevel: Record<AssignmentLevel, Exclude<RolePresetId, "custom">> = {
   state: "state_admin",
   region: "district_admin",
@@ -254,7 +330,7 @@ const partyDesignationManagedRoles: ManagedRole[] = partyDesignations
 
     return {
       id: `system_designation_${designation.id}`,
-      name: designation.en,
+      name: requestedDesignationRoleNames[designation.id] ?? designation.en,
       description: `${levelLabel} · Party designation`,
       assignmentLevels: [designation.level],
       permissions: [...preset.permissions],
@@ -342,6 +418,20 @@ const sanitizeRole = (role: ManagedRole): ManagedRole => ({
   permissions: (role.permissions ?? []).filter((key) => validPermissionKeys.has(key)),
 });
 
+const migrateStoredDesignationRoleName = (role: ManagedRole): ManagedRole => {
+  if (!role.system) return role;
+  const designationPrefix = "system_designation_";
+  if (!role.id.startsWith(designationPrefix)) return role;
+  const designationId = role.id.slice(designationPrefix.length);
+  const requestedName = requestedDesignationRoleNames[designationId];
+  if (!requestedName) return role;
+  const legacyName = partyDesignations.find((item) => item.id === designationId)?.en;
+  if (!legacyName || role.name.trim().toLowerCase() !== legacyName.trim().toLowerCase()) {
+    return role;
+  }
+  return role.name === requestedName ? role : { ...role, name: requestedName };
+};
+
 export function loadManagedRoles(): ManagedRole[] {
   const deletedIds = new Set(loadDeletedManagedRoleIds());
   if (typeof window === "undefined") {
@@ -356,10 +446,17 @@ export function loadManagedRoles(): ManagedRole[] {
     }
     const storedRoles = (parsed as ManagedRole[])
       .map(sanitizeRole)
+      .map(migrateStoredDesignationRoleName)
       .filter((role) => !isRetiredCustomRole(role) && !deletedIds.has(role.id));
     const storedIds = new Set(storedRoles.map((role) => role.id));
+    const storedNames = new Set(storedRoles.map((role) => role.name.trim().toLowerCase()));
     const missingBuiltIns = builtInManagedRoles
-      .filter((role) => !storedIds.has(role.id) && !deletedIds.has(role.id))
+      .filter(
+        (role) =>
+          !storedIds.has(role.id) &&
+          !deletedIds.has(role.id) &&
+          !storedNames.has(role.name.trim().toLowerCase()),
+      )
       .map(sanitizeRole);
     return [...storedRoles, ...missingBuiltIns];
   } catch {

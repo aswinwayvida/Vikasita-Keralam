@@ -32,6 +32,7 @@ import {
 
 export interface CreateSchemeFlowProps {
   lang: "en" | "ml";
+  initialScheme?: CreatedSchemePayload;
   onClose: () => void;
   onPublishSuccess?: (schemeData: CreatedSchemePayload) => void;
 }
@@ -434,9 +435,12 @@ const rulesFromConditions = (
 
 export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
   lang,
+  initialScheme,
   onClose,
   onPublishSuccess,
 }) => {
+  const isEditMode = Boolean(initialScheme);
+
   // Navigation State
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -668,6 +672,96 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
   const [simulatedYesNoAnswers, setSimulatedYesNoAnswers] = useState<Record<string, string>>({});
   const [simulatedDropdownAnswers, setSimulatedDropdownAnswers] = useState<Record<string, string>>({});
 
+  useEffect(() => {
+    if (!initialScheme) return;
+
+    const knownBenefitTypes = ["Financial Assistance", "Insurance", "Loan", "Subsidy", "Pension", "Service"];
+    const customBenefitValues = initialScheme.benefitTypes.filter(
+      (type) => !knownBenefitTypes.includes(type) && type !== "Other"
+    );
+
+    setSchemeNameEn(initialScheme.nameEn);
+    setSchemeNameMl(initialScheme.nameMl);
+    setShortName(initialScheme.shortName);
+    setLogoUrl(initialScheme.logoUrl);
+    const matchedCategory =
+      categoryOptions.find((option) => option.en.toLowerCase() === initialScheme.category.toLowerCase()) ??
+      categoryOptions.find((option) => {
+        const keyword = option.en.split(" ")[0].toLowerCase();
+        return initialScheme.category.toLowerCase().includes(keyword);
+      }) ??
+      categoryOptions.find((option) => option.en === "Other") ??
+      categoryOptions[0];
+    setCategory(matchedCategory.en);
+
+    const matchedDepartment = departmentOptions.find(
+      (option) => option.toLowerCase() === initialScheme.department.toLowerCase()
+    ) ?? departmentOptions.find((option) => {
+      if (option === "Custom / Other") return false;
+      const keyword = option.replace("Department of ", "").split(" ")[0].toLowerCase();
+      return initialScheme.department.toLowerCase().includes(keyword);
+    });
+    if (matchedDepartment) {
+      setDepartment(matchedDepartment);
+      setDepartmentCustom("");
+    } else {
+      setDepartment("Custom / Other");
+      setDepartmentCustom(initialScheme.department);
+    }
+
+    setAboutScheme(initialScheme.aboutScheme);
+    setShortCardDescription(initialScheme.shortCardDescription);
+    setOfficialWebsite(initialScheme.officialWebsite);
+
+    setSelectedBenefitTypes(
+      initialScheme.benefitTypes.length
+        ? initialScheme.benefitTypes.map((type) =>
+            knownBenefitTypes.includes(type) ? type : "Other"
+          ).filter((type, index, all) => all.indexOf(type) === index)
+        : ["Financial Assistance"]
+    );
+    setCustomBenefitType(customBenefitValues.join(", "));
+    setBenefitSummary(initialScheme.benefitSummary);
+    setBenefitAmountType(initialScheme.benefitAmountType);
+    const amountValue = initialScheme.benefitAmount.trim();
+    if (initialScheme.benefitAmountType === "range") {
+      const [minimum = "", maximum = ""] = amountValue.split(/\s*(?:–|—|-|to)\s*/i);
+      setMinAmount(minimum.replace(/^[₹$]/, "").trim());
+      setMaxAmount(maximum.replace(/^[₹$]/, "").trim());
+      setFixedAmount("");
+    } else {
+      setFixedAmount(
+        initialScheme.benefitAmountType === "fixed" ? amountValue.replace(/^[₹$]/, "").trim() : ""
+      );
+      setMinAmount("");
+      setMaxAmount("");
+    }
+    setPaymentFrequency(initialScheme.paymentFrequency || "Monthly");
+    setCustomPaymentFrequency("");
+    setBenefitDuration(initialScheme.benefitDuration);
+    setCoverageLimit(initialScheme.coverageLimit);
+    setContributionType(initialScheme.contributionType);
+    setContributionValue(initialScheme.contributionValue);
+
+    setEligibilitySummary(initialScheme.eligibilitySummary);
+    setExclusionsText(initialScheme.exclusions.join("\n"));
+    const locations = initialScheme.applicableLocations.trim();
+    const appliesToAllLocations = !locations || /^all\b/i.test(locations);
+    setApplicableLocationsType(appliesToAllLocations ? "all" : "selected");
+    setSelectedDistricts(
+      appliesToAllLocations
+        ? []
+        : locations.split(",").map((location) => location.trim()).filter(Boolean)
+    );
+    setSelectedLocalBodyTypes(initialScheme.localBodyTypes);
+    setSelectedBlockTaluk(initialScheme.blockTaluk);
+    setManualReviewConditions(initialScheme.manualReviewConditions);
+    setOverallGrouping(initialScheme.eligibilityGrouping);
+    setEligibilityRules(initialScheme.eligibilityRules);
+    setEligibilityConditions(conditionsFromRules(initialScheme.eligibilityRules));
+    setCustomFields(initialScheme.customFields);
+  }, [initialScheme]);
+
   // ---------------------------------------------------------------------------
   // HELPER FUNCTIONS & ACTIONS
   // ---------------------------------------------------------------------------
@@ -690,7 +784,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
     if (department === "Custom / Other" && !customDepartment.trim()) {
       errs.customDepartment = lang === "ml" ? "വകുപ്പിന്റെ പേര് നൽകുക" : "Please enter custom department name";
     }
-    if (!aboutScheme.trim()) errs.aboutScheme = lang === "ml" ? "പദ്ധതിയെപ്പറ്റി വിവരിക്കുക" : "About Us is required";
+    if (!aboutScheme.trim()) errs.aboutScheme = lang === "ml" ? "പദ്ധതിയെപ്പറ്റി വിവരിക്കുക" : "About Scheme is required";
     if (selectedBenefitTypes.length === 0) {
       errs.benefitTypes = lang === "ml" ? "കുറഞ്ഞത് ഒരു ആനുകൂല്യ തരം തിരഞ്ഞെടുക്കുക" : "Select at least one Benefit Type";
     }
@@ -788,8 +882,8 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
     const categoryLabelMl = categoryOptions.find((option) => option.en === category)?.ml || category;
 
     const schemePayload: CreatedSchemePayload = {
-      id: `created-${Date.now()}`,
-      createdAt: new Date().toISOString(),
+      id: initialScheme?.id ?? `created-${Date.now()}`,
+      createdAt: initialScheme?.createdAt ?? new Date().toISOString(),
       nameEn: schemeNameEn,
       nameMl: schemeNameMl || schemeNameEn,
       shortName,
@@ -1404,6 +1498,10 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                 ? lang === "ml"
                   ? "പദ്ധതി പ്രിവ്യൂ"
                   : "Preview Scheme"
+                : isEditMode
+                ? lang === "ml"
+                  ? "പദ്ധതി തിരുത്തുക"
+                  : "Edit Scheme"
                 : lang === "ml"
                 ? "പുതിയ പദ്ധതി ചേർക്കുക"
                 : "Create New Scheme"}
@@ -1989,10 +2087,10 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                   </div>
                 </div>
 
-                {/* About Us */}
+                {/* About Scheme */}
                 <div className="space-y-1">
                   <label className="text-[11px] font-bold text-[#1E293B] dark:text-slate-200 block">
-                    {lang === "ml" ? "ഞങ്ങളെക്കുറിച്ച് *" : "About Us *"}
+                    {lang === "ml" ? "പദ്ധതിയെപ്പറ്റി *" : "About Scheme *"}
                   </label>
                   <textarea
                     rows={3}
@@ -2510,7 +2608,9 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
               onClick={handlePublishScheme}
               className="flex-1 py-2.5 rounded-lg bg-[#FF5500] hover:bg-[#E64D00] text-white font-extrabold text-xs shadow-xs transition-colors cursor-pointer"
             >
-              {lang === "ml" ? "പദ്ധതി പബ്ലിഷ് ചെയ്യുക" : "Publish Scheme"}
+              {isEditMode
+                ? lang === "ml" ? "മാറ്റങ്ങൾ സേവ് ചെയ്യുക" : "Save Changes"
+                : lang === "ml" ? "പദ്ധതി പബ്ലിഷ് ചെയ്യുക" : "Publish Scheme"}
             </button>
           </>
         ) : (
@@ -2539,7 +2639,9 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
                   onClick={handlePublishScheme}
                   className="flex-1 py-2.5 rounded-lg bg-[#FF5500] hover:bg-[#E64D00] text-white font-extrabold text-xs shadow-xs transition-colors cursor-pointer text-center"
                 >
-                  {lang === "ml" ? "സേവ് ചെയ്ത് സ്കീം സൃഷ്ടിക്കുക" : "Save & Create Scheme"}
+                  {isEditMode
+                    ? lang === "ml" ? "മാറ്റങ്ങൾ സേവ് ചെയ്യുക" : "Save Changes"
+                    : lang === "ml" ? "സേവ് ചെയ്ത് സ്കീം സൃഷ്ടിക്കുക" : "Save & Create Scheme"}
                 </button>
               </div>
             )}
