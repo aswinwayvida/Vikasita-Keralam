@@ -13141,51 +13141,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       </div>
                     </div>
 
-                    {createdSchemes.length > 0 && (
-                      <div className="space-y-1.5 rounded-2xl border border-emerald-200/70 bg-emerald-50/30 p-2.5 dark:border-emerald-900/50 dark:bg-emerald-950/10">
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-1.5">
-                            <span className="flex h-5 w-5 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400">
-                              <CheckCircle2 className="h-3.5 w-3.5 stroke-[2.4]" />
-                            </span>
-                            <h4 className="text-[13px] font-extrabold text-[#0a0f1d] dark:text-slate-100">
-                              {lang === "ml" ? "സൃഷ്ടിച്ച പദ്ധതികൾ" : "Created Schemes"}
-                            </h4>
-                          </div>
-                          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-100 px-1.5 text-[9.5px] font-extrabold text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300">
-                            {createdSchemes.length}
-                          </span>
-                        </div>
-                        <div className="space-y-1.5">
-                          {createdSchemes.map((created) => (
-                            <button
-                              key={created.id}
-                              type="button"
-                              onClick={() => openMobileSchemeDetailsView(toSchemeFromCreated(created), "none", created)}
-                              className="flex w-full items-center gap-2.5 rounded-xl border border-emerald-100 bg-white px-2.5 py-2 text-left transition-colors hover:border-emerald-300 hover:bg-emerald-50/40 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/20"
-                            >
-                              <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-emerald-100 bg-emerald-50/60 p-0.5 dark:border-slate-700 dark:bg-slate-800">
-                                <img
-                                  src={created.logoUrl || officialLotus}
-                                  alt={created.nameEn}
-                                  className="h-full w-full object-contain"
-                                />
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="truncate text-[11.5px] font-extrabold leading-tight text-slate-900 dark:text-white">
-                                  {lang === "ml" ? created.nameMl || created.nameEn : created.nameEn}
-                                </p>
-                                <p className="mt-0.5 truncate text-[10px] font-medium text-slate-500 dark:text-slate-400">
-                                  {created.shortCardDescription || created.department}
-                                </p>
-                              </div>
-                              <ChevronRight className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
                     {/* Popular Schemes - Single Row with Horizontal Scrolling */}
                     <div className="pt-1 pb-0.5">
                       <div className="flex items-center justify-between mb-1.5 px-1">

@@ -13,7 +13,6 @@ import {
   Headset,
   Landmark,
   Layers,
-  Lock,
   MapPin,
   MoreVertical,
   Pencil,
@@ -629,6 +628,7 @@ export function MobileCreatePartyWorkerFlow({
 
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
+  const [designationTitle, setDesignationTitle] = useState("");
   const [designationId, setDesignationId] = useState("");
   const [level, setLevel] = useState<AssignmentLevel | "">("");
   const [regionIds, setRegionIds] = useState<string[]>([]);
@@ -1111,8 +1111,8 @@ export function MobileCreatePartyWorkerFlow({
     return {
       id: `PW-${Date.now().toString().slice(-6)}`,
       name: name.trim(),
-      designationEn: designation?.en || "",
-      designationMl: designation?.ml || "",
+      designationEn: designationTitle.trim() || designation?.en || "",
+      designationMl: designationTitle.trim() || designation?.ml || "",
       mobile,
       levelLabelEn: levelOption?.en || "",
       levelLabelMl: levelOption?.ml || "",
@@ -1339,6 +1339,7 @@ export function MobileCreatePartyWorkerFlow({
 
     setName(worker.name);
     setMobile(worker.mobile);
+    setDesignationTitle(worker.designationEn || "");
     setDesignationId(workerDesignation?.id || "");
     setLevel(workerLevel?.id || "");
     setRegionIds(workerRegionIds);
@@ -1721,7 +1722,7 @@ export function MobileCreatePartyWorkerFlow({
     let onClear: (() => void) | null = null;
 
     if (picker === "designation") {
-      title = tr("Party Designation/Role", "പാർട്ടി പദവി/റോൾ");
+      title = tr("Role", "റോൾ");
       options = designationOptions.map((item) => ({
         id: item.id,
         label: lang === "ml" ? item.ml : item.en,
@@ -2280,6 +2281,16 @@ export function MobileCreatePartyWorkerFlow({
             ) : null}
           </Field>
 
+          <Field label={tr("Designation", "പദവി")}>
+            <input
+              type="text"
+              value={designationTitle}
+              onChange={(event) => setDesignationTitle(event.target.value)}
+              placeholder={tr("e.g. Booth Pramukh", "ഉദാ: ബൂത്ത് പ്രമുഖ്")}
+              className={inputClass}
+            />
+          </Field>
+
           <PickerButton
             label={tr("Organisation Level", "ഓർഗനൈസേഷൻ ലെവൽ")}
             required
@@ -2300,7 +2311,7 @@ export function MobileCreatePartyWorkerFlow({
           />
 
           <PickerButton
-            label={tr("Party Designation/Role", "പാർട്ടി പദവി/റോൾ")}
+            label={tr("Role", "റോൾ")}
             required
             value={designation ? (lang === "ml" ? designation.ml : designation.en) : ""}
             placeholder={tr("Select designation or role", "പദവി അല്ലെങ്കിൽ റോൾ തിരഞ്ഞെടുക്കുക")}
@@ -3335,20 +3346,166 @@ export function MobileCreatePartyWorkerFlow({
     );
   };
 
+  const renderProfilePermissions = (permissions: string[]) => {
+    const grantedAdditionalPermissions = additionalPermissionModulesForCreateUser.flatMap(
+      ({ module, actions }) =>
+        actions
+          .filter((action) => permissions.includes(permissionKey(module.id, action.id)))
+          .map((action) => ({ module, action })),
+    );
+    const permissionStateLabel = (value: "allowed" | "notAllowed" | "unavailable") =>
+      value === "allowed"
+        ? tr("Allowed", "അനുവദിച്ചിരിക്കുന്നു")
+        : value === "notAllowed"
+          ? tr("Not Allowed", "അനുവദിച്ചിട്ടില്ല")
+          : tr("Unavailable", "ലഭ്യമല്ല");
+
+    return (
+      <div className="p-3">
+        <SectionHeading
+          icon={ShieldCheck}
+          title={tr("Permissions", "അനുമതികൾ")}
+          subtitle={tr("Access assigned to this worker", "ഈ പ്രവർത്തകന് നൽകിയ ആക്സസ്")}
+        />
+
+        <div className="mt-2.5">
+          <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+            <div className="grid grid-cols-[minmax(0,1fr)_36px_36px_36px_36px] items-center gap-1 bg-orange-50/70 px-2 py-2 dark:bg-slate-800/70">
+              <span className="pl-1 text-[8px] font-black uppercase tracking-wide text-orange-700/80 dark:text-orange-300">
+                {tr("Module", "മൊഡ്യൂൾ")}
+              </span>
+              {permissionTableColumns.map((column) => (
+                <span
+                  key={column.id}
+                  className="text-center text-[7.5px] font-black uppercase tracking-tight text-orange-700/80 dark:text-orange-300"
+                >
+                  {lang === "ml" ? column.ml : column.en}
+                </span>
+              ))}
+            </div>
+
+            {orderedPartyWorkerPermissions.map((module) => {
+              const Icon = moduleIcons[module.id];
+              const moduleLabel = createUserPermissionModuleLabel(module, lang === "ml");
+
+              return (
+                <div
+                  key={module.id}
+                  className="grid grid-cols-[minmax(0,1fr)_36px_36px_36px_36px] items-center gap-1 border-t border-slate-200/80 px-2 dark:border-slate-700"
+                >
+                  <div className="flex min-w-0 items-start gap-1.5 py-1.5">
+                    <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-orange-600 dark:text-orange-300" />
+                    <span className="min-w-0 whitespace-normal break-words text-[9.5px] font-extrabold leading-snug text-foreground">
+                      {moduleLabel}
+                    </span>
+                  </div>
+                  {permissionTableColumns.map((column) => {
+                    const action = module.actions.find((item) => item.id === column.id);
+                    const permissionIds =
+                      permissionTableKeyOverrides[module.id]?.[column.id] ??
+                      (action ? [action.id] : []);
+                    const available = permissionIds.length > 0;
+                    const checked =
+                      available &&
+                      permissionIds.every((id) =>
+                        permissions.includes(permissionKey(module.id, id)),
+                      );
+                    const columnLabel = lang === "ml" ? column.ml : column.en;
+                    const status = !available
+                      ? permissionStateLabel("unavailable")
+                      : checked
+                        ? permissionStateLabel("allowed")
+                        : permissionStateLabel("notAllowed");
+
+                    return (
+                      <span
+                        key={column.id}
+                        role="img"
+                        aria-label={`${moduleLabel} ${columnLabel}: ${status}`}
+                        className="flex h-9 items-center justify-center"
+                      >
+                        {!available ? (
+                          <span className="text-[11px] font-semibold text-slate-300 dark:text-slate-600">
+                            —
+                          </span>
+                        ) : (
+                          <span
+                            className={`flex h-4 w-4 items-center justify-center rounded-[3px] border ${
+                              checked
+                                ? "border-[#ff5500] bg-[#ff5500] text-white"
+                                : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900"
+                            }`}
+                          >
+                            {checked ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : null}
+                          </span>
+                        )}
+                      </span>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 px-0.5 text-[8px] font-semibold text-muted-foreground">
+            <span className="inline-flex items-center gap-1">
+              <span className="flex h-3.5 w-3.5 items-center justify-center rounded-[3px] border border-[#ff5500] bg-[#ff5500] text-white">
+                <Check className="h-2.5 w-2.5 stroke-[3]" />
+              </span>
+              {permissionStateLabel("allowed")}
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <span className="h-3.5 w-3.5 rounded-[3px] border border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900" />
+              {permissionStateLabel("notAllowed")}
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <span className="w-3.5 text-center text-[11px] font-semibold text-slate-300 dark:text-slate-600">
+                —
+              </span>
+              {permissionStateLabel("unavailable")}
+            </span>
+          </div>
+
+          {grantedAdditionalPermissions.length > 0 ? (
+            <div className="mt-2 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+              <div className="bg-orange-50/70 px-2.5 py-1.5 dark:bg-slate-800/70">
+                <span className="text-[8px] font-black uppercase tracking-wide text-orange-700/80 dark:text-orange-300">
+                  {tr("Additional Permissions", "അധിക അനുമതികൾ")}
+                </span>
+              </div>
+              {grantedAdditionalPermissions.map(({ module, action }) => {
+                const Icon = moduleIcons[module.id];
+                const moduleLabel = createUserPermissionModuleLabel(module, lang === "ml");
+                return (
+                  <div
+                    key={`${module.id}.${action.id}`}
+                    className="flex items-center justify-between gap-2 border-t border-slate-200/80 px-2.5 py-1.5 dark:border-slate-700"
+                  >
+                    <div className="flex min-w-0 items-center gap-1.5">
+                      <Icon className="h-3.5 w-3.5 shrink-0 text-orange-600 dark:text-orange-300" />
+                      <span className="min-w-0 truncate text-[9.5px] font-extrabold text-foreground">
+                        {moduleLabel}
+                      </span>
+                      <span className="shrink-0 text-[9.5px] text-slate-400">·</span>
+                      <span className="min-w-0 truncate text-[9.5px] font-semibold text-slate-600 dark:text-slate-300">
+                        {lang === "ml" ? action.ml : action.en}
+                      </span>
+                    </div>
+                    <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] border border-[#ff5500] bg-[#ff5500] text-white">
+                      <Check className="h-2.5 w-2.5 stroke-[3]" />
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    );
+  };
+
   const renderProfile = () => {
     if (!profile) return null;
-    const groupedPermissions = permissionModules
-      .map((module) => ({
-        module,
-        actions: module.actions.filter((action) =>
-          profile.permissions.includes(permissionKey(module.id, action.id)),
-        ),
-      }))
-      .filter((entry) => entry.actions.length > 0);
-    const permissionActionCount = groupedPermissions.reduce(
-      (total, entry) => total + entry.actions.length,
-      0,
-    );
     const designationLevel = partyDesignations.find(
       (item) => item.en === profile.designationEn || item.ml === profile.designationMl,
     )?.level;
@@ -3551,61 +3708,7 @@ export function MobileCreatePartyWorkerFlow({
           </div>
         </div>
 
-        <div className="p-3">
-          <SectionHeading
-            icon={ShieldCheck}
-            title={tr("Permissions", "അനുമതികൾ")}
-            subtitle={tr("Access assigned to this worker", "ഈ പ്രവർത്തകന് നൽകിയ ആക്സസ്")}
-            badge={tr(`${permissionActionCount} actions`, `${permissionActionCount} പ്രവർത്തനങ്ങൾ`)}
-          />
-          <div className="mt-2.5 space-y-2">
-            {groupedPermissions.length === 0 ? (
-              <p className="rounded-xl border border-dashed border-slate-200 px-3 py-3 text-center text-[9.5px] font-semibold text-slate-500 dark:border-slate-700">
-                {tr(
-                  "No module permissions recorded for this account.",
-                  "ഈ അക്കൗണ്ടിന് മൊഡ്യൂൾ അനുമതികൾ രേഖപ്പെടുത്തിയിട്ടില്ല.",
-                )}
-              </p>
-            ) : (
-              <div className="divide-y divide-slate-200/80 overflow-hidden rounded-xl border border-slate-200 bg-white dark:divide-slate-700 dark:border-slate-700 dark:bg-slate-900">
-                {groupedPermissions.map(({ module, actions }) => {
-                  const Icon = moduleIcons[module.id];
-                  return (
-                    <div key={module.id} className="p-3">
-                      <div className="flex items-center gap-2">
-                        <Icon className="h-4 w-4 shrink-0 text-[#ff5500] dark:text-orange-400" />
-                        <p className="min-w-0 flex-1 text-[11px] font-extrabold text-slate-800 dark:text-white">
-                          {lang === "ml" ? module.ml : module.en}
-                        </p>
-                        <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-slate-100 px-1.5 text-[9px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                          {actions.length}
-                        </span>
-                      </div>
-                      <div className="mt-2 grid grid-cols-3 gap-x-2 gap-y-1.5">
-                        {actions.map((action) => (
-                          <div key={action.id} className="flex min-w-0 items-start gap-1.5">
-                            <Check className="mt-px h-3 w-3 shrink-0 stroke-[2.6] text-[#ff5500] dark:text-orange-400" />
-                            <span className="min-w-0 text-[9px] font-semibold leading-snug text-slate-700 dark:text-slate-200">
-                              {lang === "ml" ? action.ml : action.en}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-            {profile.accessManagement ? (
-              <div className="flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 p-2 dark:border-amber-900/60 dark:bg-amber-950/30">
-                <Lock className="h-3 w-3 text-amber-600 dark:text-amber-400" />
-                <p className="text-[9px] font-extrabold text-amber-800 dark:text-amber-300">
-                  {tr("Access management authority granted", "ആക്സസ് മാനേജ്മെന്റ് അധികാരം നൽകി")}
-                </p>
-              </div>
-            ) : null}
-          </div>
-        </div>
+        {renderProfilePermissions(profile.permissions)}
 
         <div className="p-3">
           <SectionHeading
