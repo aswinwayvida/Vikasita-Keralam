@@ -5160,6 +5160,152 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     setCreateFlowStep("form");
   };
 
+  const prefillApplicantFromHelpdeskRequest = (request: HelpdeskRequest) => {
+    setCreateFullName(request.contactName || request.applicant || "");
+    setCreatePhone(
+      (request.contactMobile || request.mobile || "")
+        .replace(/\*/g, "9")
+        .replace(/\D/g, "")
+        .slice(0, 10),
+    );
+
+    const eligibility = request.eligibility;
+
+    const genderMap: Record<string, string> = {
+      male: "Male",
+      female: "Female",
+      transgender: "Transgender / Other",
+    };
+    const gender = genderMap[(eligibility?.gender || "").toLowerCase()] || eligibility?.gender || "";
+    if (["Male", "Female", "Transgender / Other"].includes(gender)) {
+      setCreateGender(gender);
+    }
+
+    const casteMap: Record<string, string> = {
+      general: "General",
+      obc: "OBC",
+      sc: "SC",
+      st: "ST",
+      ews: "EWS",
+      "obc-ncl": "OBC-NCL",
+      obc_ncl: "OBC-NCL",
+    };
+    const rawCaste = eligibility?.casteCommunity || eligibility?.socialCategory || "";
+    const caste = casteMap[rawCaste.toLowerCase()] || rawCaste;
+    if (["General", "OBC", "SC", "ST", "OBC-NCL", "EWS"].includes(caste)) {
+      setCreateCaste(caste);
+    }
+
+    const religionMap: Record<string, string> = {
+      hindu: "Hindu",
+      islam: "Islam",
+      muslim: "Islam",
+      christianity: "Christianity",
+      christian: "Christianity",
+      sikhism: "Sikhism",
+      buddhism: "Buddhism",
+      jainism: "Jainism",
+      other: "Other",
+    };
+    const religion =
+      religionMap[(eligibility?.religion || "").toLowerCase()] || eligibility?.religion || "";
+    if (["Hindu", "Islam", "Christianity", "Sikhism", "Buddhism", "Jainism", "Other"].includes(religion)) {
+      setCreateReligion(religion);
+    }
+
+    const maritalMap: Record<string, string> = {
+      single: "Single / Unmarried",
+      unmarried: "Single / Unmarried",
+      "single / unmarried": "Single / Unmarried",
+      married: "Married",
+      widowed: "Widowed",
+      divorcee: "Divorcee",
+      divorced: "Divorcee",
+      separated: "Separated",
+    };
+    const maritalStatus =
+      maritalMap[(eligibility?.maritalStatus || "").toLowerCase()] || eligibility?.maritalStatus || "";
+    if (["Single / Unmarried", "Married", "Widowed", "Divorcee", "Separated"].includes(maritalStatus)) {
+      setCreateMaritalStatus(maritalStatus);
+    }
+
+    const occupationMap: Record<string, string> = {
+      farmer: "Farmer / Agriculture",
+      "farmer / agriculture": "Farmer / Agriculture",
+      dailywage: "Daily Wage Worker",
+      "daily wage worker": "Daily Wage Worker",
+      salaried: "Salaried",
+      salariedprivate: "Salaried",
+      salariedgovernment: "Salaried",
+      selfemployed: "Self-Employed",
+      "self-employed": "Self-Employed",
+      "self-employed / business": "Self-Employed",
+      homemaker: "Homemaker",
+      student: "Student",
+      unemployed: "Unemployed",
+      retired: "Retired",
+      other: "Other",
+    };
+    const occupation =
+      occupationMap[(eligibility?.occupation || "").toLowerCase()] || eligibility?.occupation || "";
+    if (
+      ["Farmer / Agriculture", "Daily Wage Worker", "Salaried", "Self-Employed", "Homemaker", "Student", "Unemployed", "Retired", "Other"].includes(
+        occupation,
+      )
+    ) {
+      setCreateOccupation(occupation);
+    }
+
+    const incomeMap: Record<string, string> = {
+      under1: "₹50,000 - ₹1,00,000",
+      onetotwofive: "₹1,00,000 - ₹2,50,000",
+      twofivetofive: "₹2,50,000 - ₹5,00,000",
+      fivetoeight: "Above ₹5,00,000",
+      aboveeight: "Above ₹5,00,000",
+    };
+    const income = incomeMap[(eligibility?.annualFamilyIncome || "").toLowerCase()];
+    if (income) {
+      setCreateIncomeRange(income);
+    }
+
+    const location = request.location;
+    const district = location?.districtName
+      ? districts.find((item) => item.en === location.districtName)
+      : districts.find((item) => item.id === location?.districtId);
+    if (district) {
+      setCreateDistrict(district.en);
+    }
+
+    const localBodyType = (location?.localBodyType || "").toLowerCase();
+    if (localBodyType === "panchayat" || localBodyType === "municipality" || localBodyType === "corporation") {
+      setCreateLocalBodyType(localBodyType);
+    }
+
+    const localBody = location?.localBodyName
+      ? panchayats.find((item) => item.en === location.localBodyName)
+      : panchayats.find((item) => item.id === location?.localBodyId);
+    if (localBody) {
+      setCreateLocalBody(localBody.en);
+    }
+
+    if (location?.wardName) {
+      setCreateWard(location.wardName);
+    }
+
+    const mandalam = location?.mandalamName
+      ? constituencies.find((item) => item.en === location.mandalamName)
+      : constituencies.find((item) => item.id === location?.mandalamId);
+    if (mandalam) {
+      setCreateMandalam(mandalam.en);
+    }
+    setIsMandalamAutoFilled(false);
+
+    setCreateOtpSectionStep("verified");
+    setCreateProfileStep(1);
+    setActiveTab("create");
+    setCreateFlowStep("form");
+  };
+
     const [mobileSubPage, setMobileSubPage] = useState<"none" | "leaderboard" | "needs_attention" | "recent_activity" | "beneficiaries" | "users" | "applicants" | "user_detail" | "notifications" | "applications" | "events_announcements" | "app_detail" | "category_schemes" | "scheme_details" | "guest_popular_schemes" | "guest_schemes" | "about" | "contact" | "create_scheme" | "settings">("none");
   const [isMobileSettingsFormOpen, setIsMobileSettingsFormOpen] = useState(false);
   const [showSupportModal, setShowSupportModal] = useState(false);
@@ -16331,12 +16477,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                               key={req.reference || idx}
                               onClick={(e) => {
                                 if ((e.target as HTMLElement).closest(".relative.shrink-0")) return;
-                                setCreateFullName(req.contactName || req.applicant);
-                                setCreatePhone((req.contactMobile || req.mobile || "9633360166").replace(/\*/g, "9"));
-                                setCreateOtpSectionStep("verified");
-                                setCreateProfileStep(1);
-                                setActiveTab("create");
-                                setCreateFlowStep("form");
+                                setHelpdeskDetailRequest(req);
                                 setOpenHelpdeskMenuIndex(null);
                               }}
                               className="bg-card p-2 rounded-xl border border-border shadow-2xs hover:border-orange-200 transition-all space-y-1 cursor-pointer"
@@ -16389,12 +16530,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       <button
                                         type="button"
                                         onClick={() => {
-                                          setCreateFullName(req.contactName || req.applicant);
-                                          setCreatePhone((req.contactMobile || req.mobile).replace(/\*/g, "9"));
-                                          setCreateOtpSectionStep("verified");
-                                          setCreateProfileStep(1);
-                                          setActiveTab("create");
-                                          setCreateFlowStep("form");
+                                          prefillApplicantFromHelpdeskRequest(req);
                                           setOpenHelpdeskMenuIndex(null);
                                         }}
                                         className="w-full text-left px-3 py-2 hover:bg-orange-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium flex items-center gap-2 transition-colors cursor-pointer border-t border-slate-100 dark:border-slate-800/80"
@@ -16674,19 +16810,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 )
               }
               onConvertToApplication={() => {
-                setCreateFullName(
-                  helpdeskDetailRequest.contactName || helpdeskDetailRequest.applicant,
-                );
-                setCreatePhone(
-                  (helpdeskDetailRequest.contactMobile || helpdeskDetailRequest.mobile).replace(
-                    /\*/g,
-                    "9",
-                  ),
-                );
-                setCreateOtpSectionStep("verified");
-                setCreateProfileStep(1);
-                setActiveTab("create");
-                setCreateFlowStep("form");
+                prefillApplicantFromHelpdeskRequest(helpdeskDetailRequest);
                 setHelpdeskDetailRequest(null);
                 setOpenHelpdeskMenuIndex(null);
               }}
