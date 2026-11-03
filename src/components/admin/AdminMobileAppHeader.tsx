@@ -421,7 +421,7 @@ export function AdminMobileAppHeader({
           <div className="w-[85%] max-w-[320px] h-full bg-white dark:bg-slate-900 p-4 flex flex-col justify-between shadow-2xl border-r border-slate-200 dark:border-slate-800 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             <div className="space-y-3.5">
               {/* Logo & Close Header */}
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-200/80 dark:border-slate-800">
                 <img
                   src="/images/vikasita-logo.png"
                   alt="Vikasita Keralam"
@@ -434,52 +434,6 @@ export function AdminMobileAppHeader({
                 >
                   <X className="h-5 w-5 stroke-[2.5]" />
                 </button>
-              </div>
-
-              {/* Profile Card Header */}
-              <div className="flex items-center gap-3 pt-1">
-                <div className="relative flex h-11 w-11 items-center justify-center rounded-full ring-2 ring-orange-300 p-0.5 bg-orange-100 shrink-0 overflow-hidden">
-                  <img
-                    src={
-                      userRole === "party_worker"
-                        ? "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80"
-                        : "https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150&auto=format&fit=crop&q=80"
-                    }
-                    alt={userRole === "party_worker" ? "Dhyan M S" : "Jayasurya"}
-                    className="h-full w-full object-cover rounded-full"
-                  />
-                </div>
-                <div className="min-w-0 flex-1">
-                  {userRole === "party_worker" ? (
-                    <div className="space-y-0.5">
-                      {/* Line 1: Name + Role Badge */}
-                      <div className="flex flex-wrap items-center gap-1.5 min-w-0">
-                        <h3 className="text-[15px] font-semibold text-[#0a0f1d] dark:text-slate-100 leading-tight">
-                          Dhyan M S
-                        </h3>
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 border border-orange-200/80 dark:border-orange-800/60 whitespace-nowrap">
-                          {lang === "ml" ? "ഏരിയ പ്രസിഡന്റ്" : "Area President"}
-                        </span>
-                      </div>
-                      {/* Line 2: Location */}
-                      <p className="text-[12px] font-medium text-slate-500 dark:text-slate-400 leading-tight truncate">
-                        {lang === "ml" ? "കഴക്കൂട്ടം, തിരുവനന്തപുരം" : "Kazhakkoottam, Trivandrum"}
-                      </p>
-                    </div>
-                  ) : (
-                    <div>
-                      <h3 className="font-bold text-sm text-slate-900 dark:text-white leading-tight">
-                        Jayasurya
-                      </h3>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                        State Admin
-                      </p>
-                      <span className="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-full text-[9.5px] font-bold bg-orange-100 dark:bg-orange-950/80 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
-                        <ShieldCheck className="h-2.5 w-2.5" /> State Admin
-                      </span>
-                    </div>
-                  )}
-                </div>
               </div>
 
               {/* Drawer Links */}
@@ -592,20 +546,64 @@ export function AdminMobileAppHeader({
             </div>
 
             {/* Bottom Info Footer */}
-            <div className="border-t border-slate-100 dark:border-slate-800 pt-3 pb-2 text-center space-y-1.5">
-              <p className="text-[12.5px] font-extrabold text-slate-700 dark:text-slate-300">
-                Vikasita Keralam Portal
-              </p>
-              <div className="text-[11.5px] text-slate-400 dark:text-slate-500 font-medium flex items-center justify-center gap-1">
-                <span>Powered by</span>
-                <a
-                  href="https://wayvida.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-bold text-slate-700 dark:text-slate-200 hover:text-orange-600 dark:hover:text-orange-400 transition-colors cursor-pointer"
-                >
-                  Wayvida
-                </a>
+            <div className="space-y-2.5">
+              <div className="flex items-center gap-2.5 rounded-xl border border-orange-200/80 bg-orange-50/40 px-2 py-1.5 dark:border-slate-700 dark:bg-slate-800/40">
+                <div className="relative flex h-9 w-9 items-center justify-center rounded-full ring-2 ring-orange-300 p-0.5 bg-orange-100 shrink-0 overflow-hidden">
+                  <img
+                    src={
+                      userRole === "party_worker"
+                        ? "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80"
+                        : "https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150&auto=format&fit=crop&q=80"
+                    }
+                    alt={userRole === "party_worker" ? "Dhyan M S" : "Jayasurya"}
+                    className="h-full w-full object-cover rounded-full"
+                  />
+                </div>
+                <div className="min-w-0 flex-1">
+                  {userRole === "party_worker" ? (
+                    <div className="space-y-0.5">
+                      <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                        <h3 className="text-[13px] font-semibold text-[#0a0f1d] dark:text-slate-100 leading-tight">
+                          Dhyan M S
+                        </h3>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 border border-orange-200/80 dark:border-orange-800/60 whitespace-nowrap">
+                          {lang === "ml" ? "ഏരിയ പ്രസിഡന്റ്" : "Area President"}
+                        </span>
+                      </div>
+                      <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 leading-tight truncate">
+                        {lang === "ml" ? "കഴക്കൂട്ടം, തിരുവനന്തപുരം" : "Kazhakkoottam, Trivandrum"}
+                      </p>
+                    </div>
+                  ) : (
+                    <div>
+                      <h3 className="font-bold text-[13px] text-slate-900 dark:text-white leading-tight">
+                        Jayasurya
+                      </h3>
+                      <span className="mt-0.5 inline-flex max-w-full items-center gap-1 rounded-full border border-orange-200 bg-orange-100 px-2 py-0.5 text-[9px] font-bold text-orange-600 dark:border-orange-800 dark:bg-orange-950/80 dark:text-orange-400">
+                        <ShieldCheck className="h-2.5 w-2.5 shrink-0" />
+                        <span className="truncate">
+                          {lang === "ml" ? "സംസ്ഥാന പ്രസിഡന്റ്" : "State President"}
+                        </span>
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="border-t border-slate-200/80 dark:border-slate-800 pt-2.5 pb-1.5 text-center space-y-1">
+                <p className="text-[12.5px] font-extrabold text-slate-700 dark:text-slate-300">
+                  Vikasita Keralam Portal
+                </p>
+                <div className="text-[11.5px] text-slate-400 dark:text-slate-500 font-medium flex items-center justify-center gap-1">
+                  <span>Powered by</span>
+                  <a
+                    href="https://wayvida.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-bold text-slate-700 dark:text-slate-200 hover:text-orange-600 dark:hover:text-orange-400 transition-colors cursor-pointer"
+                  >
+                    Wayvida
+                  </a>
+                </div>
               </div>
             </div>
           </div>
