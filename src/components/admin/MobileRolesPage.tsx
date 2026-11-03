@@ -290,7 +290,7 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
   const roleLevelFilterLabel = (value: AssignmentLevel | "all") => {
     if (value === "all") return tr("All levels", "എല്ലാ ലെവലുകളും");
     const level = roleOrganisationLevels.find((item) => item.id === value);
-    return level ? tr(`${level.en} level`, `${level.ml} ലെവൽ`) : value;
+    return level ? tr(level.en, level.ml) : value;
   };
 
   const setAllRoleGroupsExpanded = (expanded: boolean) => {
@@ -748,9 +748,7 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[11.5px] font-extrabold leading-tight text-foreground">
-                        {group.id === "other"
-                          ? group.label
-                          : tr(`${group.label} level`, `${group.label} ലെവൽ`)}
+                        {group.label}
                       </span>
                     </span>
                     <span className="rounded-full border border-orange-100 bg-orange-50/70 px-1.5 py-px text-[8.5px] font-black text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-300">

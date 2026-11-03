@@ -4273,7 +4273,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
   const openSchemeDetails = (
     schemeId: string,
-    returnStep: "selected_schemes" | "applicant_applications" = "selected_schemes"
+    returnStep: "eligibility_result" | "eligible_schemes" | "selected_schemes" | "applicant_applications" = "selected_schemes"
   ) => {
     const scheme = mockEligibleSchemesList.find((item) => item.id === schemeId)
       || mobileCollectionRecords.find((item) => item.scheme.id === schemeId)?.scheme;
@@ -14909,13 +14909,19 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 const isSelected = selectedEligibleSchemeIds.includes(scheme.id);
                                 const category = getSchemeCategoryLabel(scheme);
                                 return (
-                                  <button
-                                    type="button"
+                                  <div
                                     key={scheme.id}
                                     role="checkbox"
+                                    tabIndex={0}
                                     aria-checked={isSelected}
                                     aria-label={`${lang === "ml" ? "പദ്ധതി തിരഞ്ഞെടുക്കുക" : "Select scheme"}: ${lang === "ml" ? scheme.titleMl : scheme.titleEn}`}
                                     onClick={() => toggleEligibleSchemeSelection(scheme.id)}
+                                    onKeyDown={(event) => {
+                                      if (event.key === "Enter" || event.key === " ") {
+                                        event.preventDefault();
+                                        toggleEligibleSchemeSelection(scheme.id);
+                                      }
+                                    }}
                                     className={`w-full cursor-pointer bg-card p-3 rounded-2xl border shadow-2xs transition-all space-y-2 text-left ${
                                       isSelected
                                         ? "border-orange-400 bg-orange-50/40 ring-2 ring-orange-200/80 dark:border-orange-700 dark:bg-orange-950/20 dark:ring-orange-900/60"
@@ -14933,9 +14939,17 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                         />
                                       </span>
                                       <div className="min-w-0">
-                                        <h4 onClick={(e) => { e.stopPropagation(); openSchemeDetails(scheme.id, "eligible_schemes"); }} className="font-bold text-[13px] text-foreground leading-snug break-words hover:text-orange-600 dark:hover:text-orange-400 hover:underline cursor-pointer">
+                                        <button
+                                          type="button"
+                                          onClick={(event) => {
+                                            event.stopPropagation();
+                                            openSchemeDetails(scheme.id, "eligible_schemes");
+                                          }}
+                                          onKeyDown={(event) => event.stopPropagation()}
+                                          className="block max-w-full text-left font-bold text-[13px] text-foreground leading-snug break-words hover:text-orange-600 dark:hover:text-orange-400 hover:underline cursor-pointer"
+                                        >
                                           {lang === "ml" ? scheme.titleMl : scheme.titleEn}
-                                        </h4>
+                                        </button>
                                         <p className="mt-0.5 text-[10.5px] font-semibold text-muted-foreground leading-snug">
                                           {lang === "ml" ? category.ml : category.en}
                                         </p>
@@ -14959,7 +14973,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     {lang === "ml" ? scheme.benefitMl : scheme.benefitEn}
                                   </p>
 
-                                </button>
+                                </div>
                                 );
                               })}
                           </div>

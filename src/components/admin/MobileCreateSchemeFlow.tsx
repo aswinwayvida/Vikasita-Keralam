@@ -207,7 +207,7 @@ const NUMERIC_ELIGIBILITY_ATTRIBUTES = [
   "Annual Family Income",
 ];
 
-const SEARCHABLE_ELIGIBILITY_ATTRIBUTES = ["Occupation", "Caste / Community"];
+const SEARCHABLE_ELIGIBILITY_ATTRIBUTES: string[] = [];
 
 const ELIGIBILITY_ATTRIBUTE_UNITS: Record<string, string> = {
   "Age, calculated from date of birth": "Years",
@@ -237,10 +237,10 @@ const ELIGIBILITY_VALUE_OPTIONS: Record<string, string[]> = {
 const ELIGIBILITY_VALUE_LABELS: Record<string, string> = {
   Gender: "Select applicable genders",
   "Employment Status": "Select applicable statuses",
-  Occupation: "Search and select occupations",
+  Occupation: "Select applicable occupations",
   "Marital Status": "Select applicable statuses",
   Religion: "Select applicable religions",
-  "Caste / Community": "Search and select castes",
+  "Caste / Community": "Select applicable castes",
 };
 
 const todayIso = () => {
