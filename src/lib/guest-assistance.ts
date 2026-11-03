@@ -1,6 +1,10 @@
 import { constituencies, districts, getWardsForLocalBody, panchayats } from "@/data/geo";
 import { helpdeskLocations } from "@/data/helpdesk-locations";
-import { saveHelpdeskRequest, type HelpdeskRequest } from "@/lib/helpdesk-requests";
+import {
+  saveHelpdeskRequest,
+  type HelpdeskRequest,
+  type HelpdeskRequestEligibility,
+} from "@/lib/helpdesk-requests";
 
 export type GuestAssistanceLocationAnswers = {
   districtId: string;
@@ -16,6 +20,7 @@ export type GuestAssistanceInput = {
   fullName: string;
   mobile: string;
   notes?: string;
+  eligibility?: HelpdeskRequestEligibility;
 };
 
 export type GuestAssistanceResult = { ok: true; reference: string } | { ok: false };
@@ -57,6 +62,7 @@ export function buildGuestAssistanceRequest(input: GuestAssistanceInput): Helpde
       mandalamId: mandalam?.id,
       mandalamName: mandalam?.en,
     },
+    eligibility: input.eligibility,
     source: "guest_eligibility",
     documents: [],
     missingDocuments: [],

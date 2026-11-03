@@ -19,6 +19,23 @@ export type HelpdeskRequestLocation = {
   mandalamName?: string;
 };
 
+export type HelpdeskRequestEligibility = {
+  gender?: string;
+  age?: number | null;
+  socialCategory?: string;
+  minorityStatus?: string;
+  disabilityStatus?: string;
+  disabilityPercentage?: string;
+  studentStatus?: string;
+  employmentStatus?: string;
+  occupation?: string;
+  bplStatus?: string;
+  annualFamilyIncome?: string;
+  maritalStatus?: string;
+  religion?: string;
+  casteCommunity?: string;
+};
+
 export type HelpdeskRequest = {
   reference: string;
   applicant: string;
@@ -33,6 +50,7 @@ export type HelpdeskRequest = {
   contactMobile?: string;
   notes?: string;
   location?: HelpdeskRequestLocation;
+  eligibility?: HelpdeskRequestEligibility;
   source?: "scheme_application" | "guest_eligibility";
   documents: HelpdeskRequestDocument[];
   missingDocuments: string[];

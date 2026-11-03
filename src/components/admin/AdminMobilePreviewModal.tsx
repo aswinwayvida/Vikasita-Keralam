@@ -47,6 +47,7 @@ import { PartyFlagIcon } from "@/components/common/PartyFlagIcon";
 import { districts, constituencies, panchayats, wards, getDistrictName, getConstituencyName, getWardsForLocalBody, getMappedConstituencyForWard, LocalBodyType, WardItem } from "@/data/geo";
 import { LeaderboardTop3Podium } from "./LeaderboardTop3Podium";
 import { loadHelpdeskRequests, type HelpdeskRequest } from "@/lib/helpdesk-requests";
+import { mockUsers } from "@/data/users";
 
 const INITIAL_MOCK_HELP_REQUESTS: HelpdeskRequest[] = [
   {
@@ -429,7 +430,31 @@ const INITIAL_MOCK_HELP_REQUESTS: HelpdeskRequest[] = [
     status: "helpdesk_request_created",
     createdAt: new Date(Date.now() - 68400000).toISOString(),
   },
-];
+].map((request, index) =>
+  request.source === "guest_eligibility"
+    ? {
+        ...request,
+        eligibility: (request as HelpdeskRequest).eligibility ?? {
+          gender: index % 2 === 0 ? "male" : "female",
+          age: 24 + ((index * 3) % 30),
+          socialCategory: index % 4 === 0 ? "sc" : index % 3 === 0 ? "st" : "obc",
+          minorityStatus: index % 5 === 0 ? "yes" : "no",
+          disabilityStatus: index % 6 === 0 ? "yes" : "no",
+          disabilityPercentage: index % 6 === 0 ? "fortyPlus" : "",
+          studentStatus: index % 6 === 0 ? "yes" : "no",
+          employmentStatus:
+            index % 3 === 0 ? "unemployed" : index % 3 === 1 ? "self_employed" : "employed",
+          occupation:
+            index % 3 === 0 ? "student" : index % 3 === 1 ? "selfEmployed" : "salariedPrivate",
+          bplStatus: index % 4 === 0 ? "yes" : "no",
+          annualFamilyIncome: index % 4 === 0 ? "under1" : "oneToTwoFive",
+          maritalStatus: index % 2 === 0 ? "Married" : "Single",
+          religion: "Hindu",
+          casteCommunity: index % 4 === 0 ? "SC" : index % 3 === 0 ? "ST" : "OBC",
+        },
+      }
+    : request,
+);
 
 interface AdminMobilePreviewModalProps {
   isOpen?: boolean;
@@ -2608,6 +2633,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
   const [helpdeskRequests, setHelpdeskRequests] = useState<HelpdeskRequest[]>(INITIAL_MOCK_HELP_REQUESTS);
   const [openHelpdeskMenuIndex, setOpenHelpdeskMenuIndex] = useState<number | null>(null);
+  const [helpdeskDetailRequest, setHelpdeskDetailRequest] = useState<HelpdeskRequest | null>(null);
+  const [assignUserRequest, setAssignUserRequest] = useState<HelpdeskRequest | null>(null);
   const [isHelpdeskSearchOpen, setIsHelpdeskSearchOpen] = useState<boolean>(false);
   const [helpdeskSearchQuery, setHelpdeskSearchQuery] = useState<string>("");
   const [isHelpdeskFilterOpen, setIsHelpdeskFilterOpen] = useState<boolean>(false);
@@ -5687,6 +5714,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [selectedApplicationRecord, setSelectedApplicationRecord] = useState<MobileApplicationRecord | null>(null);
   const [appDetailView, setAppDetailView] = useState<"overview" | "applicant" | "scheme" | "documents" | "history" | "support">("overview");
   const [appInfoMenuOpen, setAppInfoMenuOpen] = useState(false);
+  const [appDeleteConfirmOpen, setAppDeleteConfirmOpen] = useState(false);
+  const [deletedApplicationRefs, setDeletedApplicationRefs] = useState<string[]>([]);
   const [appDetailMenuOpen, setAppDetailMenuOpen] = useState<boolean>(false);
   const [isTrackingSheetOpen, setIsTrackingSheetOpen] = useState<boolean>(false);
   const [isTrackingSuccessOpen, setIsTrackingSuccessOpen] = useState<boolean>(false);
@@ -5986,6 +6015,22 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     setMobileSubPage("none");
     setCreateFlowStep("form");
     mobileContentRef.current?.scrollTo({ top: 0 });
+  };
+
+  const handleDeleteSelectedApplication = () => {
+    const applicationRef = selectedApplicationRecord?.ref;
+    if (!applicationRef) return;
+    setSavedApplicationRecords((current) =>
+      current.filter((application) => application.ref !== applicationRef),
+    );
+    setDeletedApplicationRefs((current) =>
+      current.includes(applicationRef) ? current : [...current, applicationRef],
+    );
+    setAppDeleteConfirmOpen(false);
+    setAppInfoMenuOpen(false);
+    setAppDetailView("overview");
+    setSelectedApplicationRecord(null);
+    setMobileSubPage(appDetailReturnSubPage || "applications");
   };
 
   const handleSaveEditedApplicationDetails = () => {
@@ -7790,7 +7835,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         : applicationStatusFilter === "assisted"
           ? mobileApplicationRecordsByStatus.beneficiary
           : mobileApplicationRecordsByStatus[applicationStatusFilter]),
-  ];
+  ].filter((application) => !deletedApplicationRefs.includes(application.ref));
 
   const applicationQuery = applicationSearchQuery.trim().toLowerCase();
   const displayedMobileApplicationRecords = applicationRecordsForActiveFilter.filter((application) => {
@@ -7828,7 +7873,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       }
     >();
 
-    [...savedApplicationRecords, ...mobileApplicationAllPreviewRecords].forEach((application) => {
+    [...savedApplicationRecords, ...mobileApplicationAllPreviewRecords]
+      .filter((application) => !deletedApplicationRefs.includes(application.ref))
+      .forEach((application) => {
       const key = application.applicantNameEn.trim().toLowerCase();
       const existing = usersByName.get(key);
       if (existing) {
@@ -7845,7 +7892,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         phone: application.phone,
         applicationCount: 1,
       });
-    });
+      });
 
     return Array.from(usersByName.values()).sort(
       (a, b) => b.applicationCount - a.applicationCount || a.nameEn.localeCompare(b.nameEn),
@@ -7883,7 +7930,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
   const selectedApplicationUserApplications = selectedApplicationUser
     ? [...savedApplicationRecords, ...mobileApplicationAllPreviewRecords].filter(
-        (application) => application.applicantNameEn.trim().toLowerCase() === selectedApplicationUser.id,
+        (application) =>
+          application.applicantNameEn.trim().toLowerCase() === selectedApplicationUser.id &&
+          !deletedApplicationRefs.includes(application.ref),
       )
     : [];
 
@@ -9074,6 +9123,19 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 <Clock3 className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
                                 {lang === "ml" ? "പ്രവർത്തന രേഖ" : "Activity Log"}
                               </button>
+                              {mobileSubPage === "app_detail" ? (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setAppInfoMenuOpen(false);
+                                    setAppDeleteConfirmOpen(true);
+                                  }}
+                                  className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-1.5 text-left text-[11.5px] font-semibold text-red-600 hover:bg-red-50 dark:border-slate-800 dark:text-red-400 dark:hover:bg-red-950/40 cursor-pointer"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5 text-red-500 dark:text-red-400" />
+                                  {lang === "ml" ? "നീക്കം ചെയ്യുക" : "Delete"}
+                                </button>
+                              ) : null}
                               <button
                                 type="button"
                                 onClick={() => {
@@ -13780,22 +13842,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                               <div className="space-y-2.5">
                                 <div>
                                   <label className="text-[11px] font-bold text-foreground block mb-0.5">
-                                    {lang === "ml" ? "പൂർണ്ണമായ പേര് *" : "Full Name *"}
-                                  </label>
-                                  <input 
-                                    type="text" 
-                                    value={createFullName}
-                                    onChange={(e) => setCreateFullName(e.target.value)}
-                                    placeholder={lang === "ml" ? "ഉദാ: സോമൻ പി" : "Enter Full Name"}
-                                    className="w-full text-xs h-9 px-2.5 rounded-lg border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground" 
-                                  />
-                                </div>
-
-                                <div>
-                                  <label className="text-[11px] font-bold text-foreground block mb-0.5">
                                     {lang === "ml" ? "മൊബൈൽ നമ്പർ *" : "Mobile Number *"}
                                   </label>
-                                  <input 
+                                  <input
                                     type="tel"
                                     maxLength={10}
                                     value={createPhone}
@@ -13808,7 +13857,20 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       }
                                     }}
                                     placeholder="10-digit phone number"
-                                    className="w-full text-xs h-9 px-2.5 rounded-lg border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground" 
+                                    className="w-full text-xs h-9 px-2.5 rounded-lg border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="text-[11px] font-bold text-foreground block mb-0.5">
+                                    {lang === "ml" ? "പൂർണ്ണമായ പേര് *" : "Full Name *"}
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={createFullName}
+                                    onChange={(e) => setCreateFullName(e.target.value)}
+                                    placeholder={lang === "ml" ? "ഉദാ: സോമൻ പി" : "Enter Full Name"}
+                                    className="w-full text-xs h-9 px-2.5 rounded-lg border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
                                   />
                                 </div>
                               </div>
@@ -16301,13 +16363,13 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       <button
                                         type="button"
                                         onClick={() => {
-                                          alert(lang === "ml" ? `${req.contactName || req.applicant}-നെ പ്രവർത്തകന് നൽകി.` : `Assigned ${req.contactName || req.applicant} to worker.`);
+                                          setAssignUserRequest(req);
                                           setOpenHelpdeskMenuIndex(null);
                                         }}
                                         className="w-full text-left px-3 py-2 hover:bg-orange-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium flex items-center gap-2 transition-colors cursor-pointer"
                                       >
                                         <UserPlus className="h-3.5 w-3.5 text-orange-500 shrink-0" />
-                                        <span>{lang === "ml" ? "പ്രവർത്തകന് നൽകുക" : "Assign to Worker"}</span>
+                                        <span>{lang === "ml" ? "ഉപയോക്താവിന് നൽകുക" : "Assign User"}</span>
                                       </button>
 
                                       <button
@@ -16330,7 +16392,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       <button
                                         type="button"
                                         onClick={() => {
-                                          openMobileSchemeDetailsView(req.schemeId || req.schemeIds?.[0] || "pm-kisan", "central_schemes");
+                                          setHelpdeskDetailRequest(req);
                                           setOpenHelpdeskMenuIndex(null);
                                         }}
                                         className="w-full text-left px-3 py-2 hover:bg-orange-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium flex items-center gap-2 transition-colors cursor-pointer border-t border-slate-100 dark:border-slate-800/80"
@@ -16532,6 +16594,115 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           </>
           )}
           </div>
+
+          {appDeleteConfirmOpen && mobileSubPage === "app_detail" ? (
+            <div
+              className="absolute inset-0 z-[80] flex items-center justify-center bg-slate-900/60 p-5 backdrop-blur-xs animate-in fade-in duration-150"
+              onClick={() => setAppDeleteConfirmOpen(false)}
+            >
+              <div
+                className="w-full max-w-[300px] rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="flex items-start gap-2.5">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600 dark:bg-red-950/60 dark:text-red-400">
+                    <Trash2 className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <h4 className="text-[13px] font-extrabold text-slate-900 dark:text-white">
+                      {lang === "ml" ? "അപേക്ഷ നീക്കം ചെയ്യണോ?" : "Delete application?"}
+                    </h4>
+                    <p className="mt-1 text-[10.5px] font-medium leading-relaxed text-slate-500 dark:text-slate-400">
+                      {lang === "ml"
+                        ? "ഈ അപേക്ഷ സ്ഥിരമായി നീക്കം ചെയ്യും. ഇത് പഴയപടിയാക്കാൻ സാധിക്കില്ല."
+                        : "This application will be permanently removed. This action cannot be undone."}
+                    </p>
+                    {selectedApplicationRecord ? (
+                      <p className="mt-1.5 truncate text-[10px] font-bold text-slate-700 dark:text-slate-300">
+                        {lang === "ml"
+                          ? selectedApplicationRecord.applicantNameMl
+                          : selectedApplicationRecord.applicantNameEn}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+                <div className="mt-4 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setAppDeleteConfirmOpen(false)}
+                    className="min-h-9 flex-1 rounded-lg border border-slate-200 bg-white px-3 text-[11px] font-extrabold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer"
+                  >
+                    {lang === "ml" ? "റദ്ദാക്കുക" : "Cancel"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDeleteSelectedApplication}
+                    className="min-h-9 flex-1 rounded-lg bg-red-600 px-3 text-[11px] font-extrabold text-white hover:bg-red-700 active:scale-[0.98] transition-all cursor-pointer"
+                  >
+                    {lang === "ml" ? "നീക്കം ചെയ്യുക" : "Delete"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {helpdeskDetailRequest ? (
+            <HelpdeskRequestDetailView
+              request={helpdeskDetailRequest}
+              lang={lang}
+              standalone={standalone}
+              onClose={() => setHelpdeskDetailRequest(null)}
+              onAssignUsers={(names) =>
+                toast.success(
+                  lang === "ml"
+                    ? `${helpdeskDetailRequest.contactName || helpdeskDetailRequest.applicant}-നെ ${names.join(", ")}-ന് നൽകി.`
+                    : `Assigned ${helpdeskDetailRequest.contactName || helpdeskDetailRequest.applicant} to ${names.join(", ")}.`,
+                )
+              }
+              onConvertToApplication={() => {
+                setCreateFullName(
+                  helpdeskDetailRequest.contactName || helpdeskDetailRequest.applicant,
+                );
+                setCreatePhone(
+                  (helpdeskDetailRequest.contactMobile || helpdeskDetailRequest.mobile).replace(
+                    /\*/g,
+                    "9",
+                  ),
+                );
+                setCreateOtpSectionStep("verified");
+                setCreateProfileStep(1);
+                setActiveTab("create");
+                setCreateFlowStep("form");
+                setHelpdeskDetailRequest(null);
+                setOpenHelpdeskMenuIndex(null);
+              }}
+              schemeNames={(
+                helpdeskDetailRequest.schemeIds && helpdeskDetailRequest.schemeIds.length > 0
+                  ? helpdeskDetailRequest.schemeIds
+                  : [helpdeskDetailRequest.schemeId]
+              ).map((schemeId) => {
+                const matched = schemes.find((scheme) => scheme.id === schemeId);
+                return matched ? (lang === "ml" ? matched.ml : matched.en) : schemeId;
+              })}
+            />
+          ) : null}
+
+          <AssignUserSheet
+            open={assignUserRequest !== null}
+            lang={lang}
+            standalone={standalone}
+            onClose={() => setAssignUserRequest(null)}
+            onAssign={(names) => {
+              if (assignUserRequest) {
+                toast.success(
+                  lang === "ml"
+                    ? `${assignUserRequest.contactName || assignUserRequest.applicant}-നെ ${names.join(", ")}-ന് നൽകി.`
+                    : `Assigned ${assignUserRequest.contactName || assignUserRequest.applicant} to ${names.join(", ")}.`,
+                );
+              }
+              setAssignUserRequest(null);
+            }}
+          />
 
           {/* Sticky Phone App Bottom Footer Navigation */}
           {activeTab === "create" && createFlowStep !== "applicant_applications" && createFlowStep !== "selected_schemes" && createFlowStep !== "form" && (
@@ -19939,6 +20110,510 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           {appContent}
         </div>
       </div>
+    </div>
+  );
+}
+
+function AssignUserSheet({
+  open,
+  lang,
+  standalone = false,
+  onClose,
+  onAssign,
+}: {
+  open: boolean;
+  lang: "en" | "ml";
+  standalone?: boolean;
+  onClose: () => void;
+  onAssign: (names: string[]) => void;
+}) {
+  const t = (en: string, ml: string) => (lang === "ml" ? ml : en);
+  const [selectedTeamMemberIds, setSelectedTeamMemberIds] = useState<string[]>([]);
+  const teamMembers = useMemo(
+    () => mockUsers.filter((member) => member.category === "bjp_member"),
+    [],
+  );
+
+  useEffect(() => {
+    if (open) setSelectedTeamMemberIds([]);
+  }, [open]);
+
+  if (!open) return null;
+
+  return (
+    <div
+      className={`${standalone ? "fixed" : "absolute"} inset-0 z-[95] flex items-end bg-black/55 backdrop-blur-[1px] animate-in fade-in duration-150`}
+      onClick={onClose}
+    >
+      <div
+        className="flex max-h-[78%] w-full flex-col rounded-t-2xl border-t border-orange-100 bg-white shadow-2xl animate-in slide-in-from-bottom duration-200 dark:border-slate-800 dark:bg-slate-900"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="shrink-0 px-4 pt-3">
+          <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-slate-200 dark:bg-slate-700" />
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <h3 className="text-[13px] font-extrabold text-slate-900 dark:text-white">
+                {t("Assign User", "ഉപയോക്താവിന് നൽകുക")}
+              </h3>
+              <p className="mt-0.5 text-[10px] font-medium text-slate-500 dark:text-slate-400">
+                {t(
+                  "Select team members for this request.",
+                  "ഈ അഭ്യർത്ഥനയ്ക്കായി ടീം അംഗങ്ങളെ തിരഞ്ഞെടുക്കുക.",
+                )}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-full p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+              aria-label={t("Close", "അടയ്ക്കുക")}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-3 flex-1 overflow-y-auto border-t border-slate-100 px-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden dark:border-slate-800">
+          {teamMembers.map((member) => {
+            const checked = selectedTeamMemberIds.includes(member.id);
+            return (
+              <label
+                key={member.id}
+                className="flex cursor-pointer items-center gap-2.5 border-b border-slate-100 py-2.5 last:border-0 dark:border-slate-800/70"
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() =>
+                    setSelectedTeamMemberIds((previous) =>
+                      previous.includes(member.id)
+                        ? previous.filter((id) => id !== member.id)
+                        : [...previous, member.id],
+                    )
+                  }
+                  className="h-4 w-4 shrink-0 cursor-pointer rounded accent-orange-500"
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[11.5px] font-bold text-slate-900 dark:text-white">
+                    {member.name}
+                  </span>
+                  <span className="mt-0.5 block truncate text-[10px] font-medium text-slate-500 dark:text-slate-400">
+                    {lang === "ml" ? member.designationMl : member.designationEn}
+                  </span>
+                </span>
+              </label>
+            );
+          })}
+        </div>
+
+        <div className="shrink-0 border-t border-slate-200/80 px-4 pb-5 pt-3 dark:border-slate-800">
+          <button
+            type="button"
+            disabled={selectedTeamMemberIds.length === 0}
+            onClick={() => {
+              const names = teamMembers
+                .filter((member) => selectedTeamMemberIds.includes(member.id))
+                .map((member) => member.name);
+              onAssign(names);
+            }}
+            className="flex h-10 w-full items-center justify-center gap-1.5 rounded-lg bg-primary text-[11px] font-extrabold text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <UserCheck className="h-3.5 w-3.5" />
+            {selectedTeamMemberIds.length > 0
+              ? t(
+                  `Assign ${selectedTeamMemberIds.length} User${selectedTeamMemberIds.length > 1 ? "s" : ""}`,
+                  `${selectedTeamMemberIds.length} ഉപയോക്താവിനെ നൽകുക`,
+                )
+              : t("Assign User", "ഉപയോക്താവിന് നൽകുക")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HelpdeskRequestDetailView({
+  request,
+  lang,
+  schemeNames,
+  standalone = false,
+  onClose,
+  onAssignUsers,
+  onConvertToApplication,
+}: {
+  request: HelpdeskRequest;
+  lang: "en" | "ml";
+  schemeNames: string[];
+  standalone?: boolean;
+  onClose: () => void;
+  onAssignUsers: (names: string[]) => void;
+  onConvertToApplication: () => void;
+}) {
+  const t = (en: string, ml: string) => (lang === "ml" ? ml : en);
+  const [isAssignSheetOpen, setIsAssignSheetOpen] = useState(false);
+  const notProvided = t("Not provided", "നൽകിയിട്ടില്ല");
+  const localBodyType = request.location?.localBodyType
+    ? request.location.localBodyType.charAt(0).toUpperCase() +
+      request.location.localBodyType.slice(1)
+    : notProvided;
+  const receivedDate = (() => {
+    const date = new Date(request.createdAt);
+    return Number.isNaN(date.getTime())
+      ? request.createdAt
+      : date.toLocaleString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+  })();
+  const applicantName = request.contactName || request.applicant;
+  const eligibility = request.eligibility;
+  const eligibilityLabels = {
+    gender: {
+      male: { en: "Male", ml: "പുരുഷൻ" },
+      female: { en: "Female", ml: "സ്ത്രീ" },
+      transgender: { en: "Other", ml: "മറ്റുള്ളവർ" },
+      prefer_not: { en: "Prefer not to say", ml: "പറയാൻ താൽപര്യമില്ല" },
+    } as Record<string, { en: string; ml: string }>,
+    socialCategory: {
+      general: { en: "General", ml: "ജനറൽ" },
+      obc: { en: "OBC / SEBC", ml: "OBC / SEBC" },
+      sc: { en: "Scheduled Caste (SC)", ml: "പട്ടികജാതി (SC)" },
+      st: { en: "Scheduled Tribe (ST)", ml: "പട്ടികവർഗം (ST)" },
+      prefer_not: { en: "Prefer not to say", ml: "പറയാൻ താൽപര്യമില്ല" },
+    } as Record<string, { en: string; ml: string }>,
+    disabilityPercentage: {
+      below40: { en: "Below 40%", ml: "40%-ൽ താഴെ" },
+      fortyPlus: { en: "40% or above", ml: "40% അല്ലെങ്കിൽ കൂടുതൽ" },
+      unknown: { en: "Not sure", ml: "അറിയില്ല" },
+    } as Record<string, { en: string; ml: string }>,
+    employmentStatus: {
+      employed: { en: "Employed", ml: "തൊഴിലുള്ളവർ" },
+      self_employed: { en: "Self-employed", ml: "സ്വയംതൊഴിൽ / സംരംഭകൻ" },
+      unemployed: { en: "Unemployed", ml: "തൊഴിലില്ലാത്തവർ" },
+    } as Record<string, { en: string; ml: string }>,
+    occupation: {
+      farmer: { en: "Farmer / Agriculture", ml: "കർഷകൻ / കൃഷി" },
+      dailyWage: { en: "Daily wage worker", ml: "ദിനബത്ത തൊഴിലാളി" },
+      salariedPrivate: { en: "Salaried (private)", ml: "സ്വകാര്യ മേഖല ഉദ്യോഗസ്ഥൻ" },
+      salariedGovernment: { en: "Salaried (government)", ml: "സർക്കാർ ഉദ്യോഗസ്ഥൻ" },
+      selfEmployed: { en: "Self-employed / Business", ml: "സ്വയംതൊഴിൽ / ബിസിനസ്സ്" },
+      homemaker: { en: "Homemaker", ml: "ഗൃഹനാഥ / വീട്ടമ്മ" },
+      student: { en: "Student", ml: "വിദ്യാർത്ഥി" },
+      unemployed: { en: "Unemployed", ml: "തൊഴിൽ രഹിതൻ" },
+      retired: { en: "Retired", ml: "വിരമിച്ച വ്യക്തി" },
+      other: { en: "Other", ml: "മറ്റുള്ളവ" },
+      notApplicable: { en: "Not applicable", ml: "ബാധകമല്ല" },
+    } as Record<string, { en: string; ml: string }>,
+    annualFamilyIncome: {
+      under1: { en: "Below ₹1 lakh", ml: "₹1 ലക്ഷത്തിൽ താഴെ" },
+      oneToTwoFive: { en: "₹1–2.5 lakh", ml: "₹1–2.5 ലക്ഷം" },
+      twoFiveToFive: { en: "₹2.5–5 lakh", ml: "₹2.5–5 ലക്ഷം" },
+      fiveToEight: { en: "₹5–8 lakh", ml: "₹5–8 ലക്ഷം" },
+      aboveEight: { en: "Above ₹8 lakh", ml: "₹8 ലക്ഷത്തിന് മുകളിൽ" },
+      unknown: { en: "Not sure", ml: "അറിയില്ല" },
+    } as Record<string, { en: string; ml: string }>,
+  };
+  const eligibilityValue = (
+    value: string | null | undefined,
+    labels: Record<string, { en: string; ml: string }>,
+  ) => {
+    if (!value) return "";
+    const label = labels[value];
+    return label ? t(label.en, label.ml) : value;
+  };
+  const eligibilityRows: Array<{
+    icon: typeof UserRound;
+    label: string;
+    value: string;
+  }> = [];
+  const addEligibilityRow = (
+    icon: typeof UserRound,
+    labelEn: string,
+    labelMl: string,
+    value: string,
+  ) => {
+    if (value.trim()) eligibilityRows.push({ icon, label: t(labelEn, labelMl), value });
+  };
+  const yesNoUnknown = (value?: string) =>
+    value === "yes"
+      ? t("Yes", "അതെ")
+      : value === "no"
+        ? t("No", "അല്ല")
+        : value === "unknown"
+          ? t("Not sure", "അറിയില്ല")
+          : value?.trim() || "";
+  addEligibilityRow(
+    UserRound,
+    "Gender",
+    "ലിംഗം",
+    eligibilityValue(eligibility?.gender, eligibilityLabels.gender),
+  );
+  if (typeof eligibility?.age === "number" && Number.isFinite(eligibility.age)) {
+    addEligibilityRow(CalendarDays, "Age", "പ്രായം", t(`${eligibility.age} years`, `${eligibility.age} വയസ്സ്`));
+  }
+  addEligibilityRow(
+    Users,
+    "Social Category",
+    "സാമൂഹിക വിഭാഗം",
+    eligibilityValue(eligibility?.socialCategory, eligibilityLabels.socialCategory),
+  );
+  addEligibilityRow(
+    Users2,
+    "Minority Status",
+    "ന്യൂനപക്ഷ പദവി",
+    yesNoUnknown(eligibility?.minorityStatus),
+  );
+  addEligibilityRow(
+    Accessibility,
+    "Disability Status",
+    "ഭിന്നശേഷി പദവി",
+    yesNoUnknown(eligibility?.disabilityStatus),
+  );
+  addEligibilityRow(
+    Percent,
+    "Disability Percentage",
+    "ഭിന്നശേഷി ശതമാനം",
+    eligibilityValue(eligibility?.disabilityPercentage, eligibilityLabels.disabilityPercentage),
+  );
+  addEligibilityRow(
+    GraduationCap,
+    "Student Status",
+    "വിദ്യാർത്ഥി പദവി",
+    yesNoUnknown(eligibility?.studentStatus),
+  );
+  addEligibilityRow(
+    Briefcase,
+    "Employment Status",
+    "തൊഴിൽ പദവി",
+    eligibilityValue(eligibility?.employmentStatus, eligibilityLabels.employmentStatus),
+  );
+  addEligibilityRow(
+    Store,
+    "Occupation",
+    "തൊഴിൽ",
+    eligibilityValue(eligibility?.occupation, eligibilityLabels.occupation),
+  );
+  addEligibilityRow(Home, "Household BPL Status", "കുടുംബ BPL പദവി", yesNoUnknown(eligibility?.bplStatus));
+  addEligibilityRow(
+    HandCoins,
+    "Annual Family Income",
+    "വാർഷിക കുടുംബ വരുമാനം",
+    eligibilityValue(eligibility?.annualFamilyIncome, eligibilityLabels.annualFamilyIncome),
+  );
+  addEligibilityRow(HeartHandshake, "Marital Status", "വൈവാഹിക പദവി", eligibility?.maritalStatus?.trim() || "");
+  addEligibilityRow(BookOpen, "Religion", "മതം", eligibility?.religion?.trim() || "");
+  addEligibilityRow(Network, "Caste / Community", "ജാതി / സമുദായം", eligibility?.casteCommunity?.trim() || "");
+  const contactRows: Array<{ label: string; value: string; icon: typeof UserRound }> = [
+    {
+      label: t("Full name", "മുഴുവൻ പേര്"),
+      value: applicantName || notProvided,
+      icon: UserRound,
+    },
+    {
+      label: t("Mobile number", "മൊബൈൽ നമ്പർ"),
+      value: request.contactMobile || request.mobile || notProvided,
+      icon: Phone,
+    },
+    { label: t("Email", "ഇമെയിൽ"), value: request.email || notProvided, icon: Mail },
+    {
+      label: t("District", "ജില്ല"),
+      value: request.location?.districtName || request.district || notProvided,
+      icon: MapPin,
+    },
+    {
+      label: t("Mandalam", "മണ്ഡലം"),
+      value: request.location?.mandalamName || notProvided,
+      icon: Network,
+    },
+    {
+      label: t("Local body type", "തദ്ദേശ സ്ഥാപന തരം"),
+      value: localBodyType,
+      icon: Building2,
+    },
+    {
+      label: t("Local body", "തദ്ദേശ സ്ഥാപനം"),
+      value: request.location?.localBodyName || notProvided,
+      icon: MapIcon,
+    },
+    { label: t("Ward", "വാർഡ്"), value: request.location?.wardName || notProvided, icon: Home },
+  ];
+
+  return (
+    <div className="absolute inset-0 z-[75] flex flex-col bg-[#f8fafc] animate-in slide-in-from-right duration-200 dark:bg-slate-950">
+      <div className="flex h-11 shrink-0 items-center gap-2 border-b border-slate-200/70 bg-[#FFFDF9] px-3 dark:border-slate-800 dark:bg-slate-900">
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FFF7EC] text-[#1b255a] transition-colors hover:bg-orange-100 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 cursor-pointer"
+          aria-label={t("Go back", "തിരികെ പോവുക")}
+        >
+          <ArrowLeft className="h-3.5 w-3.5 stroke-[2.2]" />
+        </button>
+        <h3 className="flex-1 truncate text-center text-[12.5px] font-extrabold text-[#0F172A] dark:text-white">
+          {t("Request Details", "അഭ്യർത്ഥന വിവരങ്ങൾ")}
+        </h3>
+        <span className="h-7 w-7 shrink-0" />
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-3 py-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <div className="space-y-2.5 pb-6">
+          <section className="rounded-2xl border border-orange-100 bg-white p-3 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex items-center gap-2.5 border-b border-orange-100/70 pb-3 dark:border-slate-800">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[12px] font-extrabold text-orange-600 dark:bg-orange-950/60 dark:text-orange-300">
+                {(applicantName || "A").charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <h2 className="truncate text-[13px] font-extrabold leading-tight text-[#0F172A] dark:text-white">
+                  {applicantName || notProvided}
+                </h2>
+                <p className="mt-0.5 truncate text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                  {receivedDate || notProvided}
+                </p>
+              </div>
+            </div>
+            <h4 className="mt-3 text-[10px] font-extrabold uppercase tracking-[0.1em] text-slate-500 dark:text-slate-400">
+              {t("Contact & location details", "ബന്ധപ്പെടുന്ന വിവരങ്ങളും പ്രദേശ വിവരങ്ങളും")}
+            </h4>
+            <div className="mt-1">
+              {contactRows.map((row) => {
+                const RowIcon = row.icon;
+                return (
+                  <div
+                    key={row.label}
+                    className="flex items-start gap-2 border-b border-slate-100/80 py-1.5 last:border-0 dark:border-slate-800/70"
+                  >
+                    <RowIcon
+                      className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary"
+                      strokeWidth={2}
+                    />
+                    <span className="min-w-0 flex-1 text-[10.5px] font-medium text-slate-500 dark:text-slate-400">
+                      {row.label}
+                    </span>
+                    <span className="max-w-[58%] text-right text-[10.5px] font-bold leading-snug text-[#0F172A] dark:text-white">
+                      {row.value}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="my-3 border-t border-slate-100 dark:border-slate-800/70" />
+
+            <div className="flex items-center gap-1.5">
+              <Layers className="h-3.5 w-3.5 text-[#ff5500]" />
+              <h4 className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-slate-500 dark:text-slate-400">
+                {t("Requested schemes", "ആവശ്യപ്പെട്ട പദ്ധതികൾ")}
+              </h4>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {schemeNames.length > 0 ? (
+                schemeNames.map((schemeName) => (
+                  <span
+                    key={schemeName}
+                    className="rounded-full border border-orange-200/80 bg-orange-100/80 px-2.5 py-0.5 text-[10px] font-bold text-orange-800 dark:border-orange-900/60 dark:bg-orange-950/60 dark:text-orange-300"
+                  >
+                    {schemeName}
+                  </span>
+                ))
+              ) : (
+                <span className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
+                  {notProvided}
+                </span>
+              )}
+            </div>
+
+            <div className="my-3 border-t border-slate-100 dark:border-slate-800/70" />
+
+            <div className="flex items-center gap-1.5">
+              <MessageSquare className="h-3.5 w-3.5 text-[#ff5500]" />
+              <h4 className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-slate-500 dark:text-slate-400">
+                {t("Notes", "കുറിപ്പുകൾ")}
+              </h4>
+            </div>
+            <p className="mt-2 whitespace-pre-wrap text-[10.5px] font-semibold leading-relaxed text-slate-700 dark:text-slate-200">
+              {request.notes?.trim() || t("No notes added", "കുറിപ്പുകൾ നൽകിയിട്ടില്ല")}
+            </p>
+          </section>
+
+          <section className="rounded-2xl border border-orange-100 bg-white p-3 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
+            <h4 className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-slate-500 dark:text-slate-400">
+              {t("Request details", "അഭ്യർത്ഥന വിവരങ്ങൾ")}
+            </h4>
+            {eligibilityRows.length > 0 ? (
+              <div className="mt-2 rounded-xl bg-slate-50 p-2.5 dark:bg-slate-800/50">
+                <ul className="text-[10.5px]">
+                  {eligibilityRows.map((row) => {
+                    const EligibilityIcon = row.icon;
+                    return (
+                      <li
+                        key={row.label}
+                        className="flex items-start gap-2 border-b-[0.5px] border-slate-300/80 py-1.5 first:pt-0 last:border-b-0 last:pb-0 dark:border-slate-700/70"
+                      >
+                        <EligibilityIcon
+                          className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary"
+                          strokeWidth={2}
+                        />
+                        <span className="min-w-0 leading-snug">
+                          <span className="font-normal text-slate-500 dark:text-slate-400">
+                            {row.label}
+                          </span>
+                          <span className="px-1 text-slate-400 dark:text-slate-500">:</span>
+                          <span className="font-bold text-slate-900 dark:text-white">
+                            {row.value}
+                          </span>
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ) : (
+              <p className="mt-2 text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
+                {notProvided}
+              </p>
+            )}
+          </section>
+
+        </div>
+      </div>
+
+      <div className="sticky bottom-0 z-20 shrink-0 border-t border-slate-200/80 bg-[#FFFDF9]/95 px-3 pb-5 pt-3 shadow-[0_-4px_16px_rgba(15,23,42,0.06)] backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/95">
+        <div className="grid grid-cols-2 gap-2.5">
+          <button
+            type="button"
+            onClick={() => {
+              setIsAssignSheetOpen(true);
+            }}
+            className="flex h-10 items-center justify-center gap-1.5 rounded-lg border border-primary/60 bg-white text-[11px] font-extrabold text-primary transition-colors hover:bg-orange-50 dark:bg-slate-900 dark:hover:bg-slate-800"
+          >
+            <UserPlus className="h-3.5 w-3.5" />
+            {t("Assign User", "ഉപയോക്താവിന് നൽകുക")}
+          </button>
+          <button
+            type="button"
+            onClick={onConvertToApplication}
+            className="flex h-10 items-center justify-center gap-1.5 rounded-lg bg-primary text-[11px] font-extrabold text-white transition-colors hover:bg-primary/90"
+          >
+            <FileText className="h-3.5 w-3.5" />
+            {t("Convert to Applications", "അപേക്ഷയാക്കി മാറ്റുക")}
+          </button>
+        </div>
+      </div>
+
+      <AssignUserSheet
+        open={isAssignSheetOpen}
+        lang={lang}
+        standalone={standalone}
+        onClose={() => setIsAssignSheetOpen(false)}
+        onAssign={(names) => {
+          onAssignUsers(names);
+          setIsAssignSheetOpen(false);
+        }}
+      />
     </div>
   );
 }

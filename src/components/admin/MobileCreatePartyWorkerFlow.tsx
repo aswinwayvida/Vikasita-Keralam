@@ -625,10 +625,12 @@ export function MobileCreatePartyWorkerFlow({
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const profilePhotoInputRef = useRef<HTMLInputElement>(null);
   const accessAreasRef = useRef<HTMLElement>(null);
+  const designationFieldRef = useRef<HTMLDivElement>(null);
 
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
   const [designationTitle, setDesignationTitle] = useState("");
+  const [designationSuggestOpen, setDesignationSuggestOpen] = useState(false);
   const [designationId, setDesignationId] = useState("");
   const [level, setLevel] = useState<AssignmentLevel | "">("");
   const [regionIds, setRegionIds] = useState<string[]>([]);
@@ -675,6 +677,22 @@ export function MobileCreatePartyWorkerFlow({
     return [...base, ...custom];
   }, [allDesignationChoices, level, managedRoles]);
 
+  const designationSuggestions = useMemo(() => {
+    const query = designationTitle.trim().toLowerCase();
+    const seen = new Set<string>();
+    return designationOptions
+      .map((item) => ({
+        id: item.id,
+        label: lang === "ml" ? item.ml : item.en,
+      }))
+      .filter((item) => {
+        if (seen.has(item.label)) return false;
+        seen.add(item.label);
+        return !query || item.label.toLowerCase().includes(query);
+      })
+      .slice(0, 6);
+  }, [designationOptions, designationTitle, lang]);
+
   const [picker, setPicker] = useState<PickerKey | null>(null);
   const [pickerSearch, setPickerSearch] = useState("");
 
@@ -698,6 +716,17 @@ export function MobileCreatePartyWorkerFlow({
     document.addEventListener("pointerdown", closeMenu);
     return () => document.removeEventListener("pointerdown", closeMenu);
   }, [profileMenuOpen]);
+
+  useEffect(() => {
+    if (!designationSuggestOpen) return;
+    const closeMenu = (event: PointerEvent) => {
+      if (!designationFieldRef.current?.contains(event.target as Node)) {
+        setDesignationSuggestOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", closeMenu);
+    return () => document.removeEventListener("pointerdown", closeMenu);
+  }, [designationSuggestOpen]);
 
   useEffect(() => {
     if (!focusAccessAreas || phase !== "form" || step !== 2) return;
@@ -2282,13 +2311,67 @@ export function MobileCreatePartyWorkerFlow({
           </Field>
 
           <Field label={tr("Designation", "പദവി")}>
-            <input
-              type="text"
-              value={designationTitle}
-              onChange={(event) => setDesignationTitle(event.target.value)}
-              placeholder={tr("e.g. Booth Pramukh", "ഉദാ: ബൂത്ത് പ്രമുഖ്")}
-              className={inputClass}
-            />
+            <div ref={designationFieldRef} className="relative">
+              <input
+                type="text"
+                role="combobox"
+                aria-expanded={designationSuggestOpen}
+                aria-autocomplete="list"
+                aria-controls="party-worker-designation-suggestions"
+                autoComplete="off"
+                value={designationTitle}
+                onChange={(event) => {
+                  const nextValue = event.target.value;
+                  setDesignationTitle(nextValue);
+                  setDesignationSuggestOpen(true);
+                  const selected = allDesignationChoices.find((item) => item.id === designationId);
+                  const selectedLabel = selected ? (lang === "ml" ? selected.ml : selected.en) : "";
+                  if (designationId && nextValue !== selectedLabel) setDesignationId("");
+                }}
+                onFocus={() => setDesignationSuggestOpen(true)}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") setDesignationSuggestOpen(false);
+                }}
+                placeholder={tr("e.g. Booth Pramukh", "ഉദാ: ബൂത്ത് പ്രമുഖ്")}
+                className={inputClass}
+              />
+              {designationSuggestOpen ? (
+                <div
+                  id="party-worker-designation-suggestions"
+                  role="listbox"
+                  className="absolute left-0 right-0 top-full z-30 mt-1 max-h-52 overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-md dark:border-slate-700 dark:bg-slate-900"
+                >
+                  {designationSuggestions.length > 0 ? (
+                    designationSuggestions.map((suggestion) => (
+                      <button
+                        key={suggestion.id}
+                        type="button"
+                        role="option"
+                        aria-selected={false}
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => {
+                          setDesignationTitle(suggestion.label);
+                          handleDesignationChange(suggestion.id);
+                          setDesignationSuggestOpen(false);
+                        }}
+                        className="flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left hover:bg-orange-50 dark:hover:bg-slate-800"
+                      >
+                        <span className="truncate text-[11px] font-bold text-slate-800 dark:text-slate-100">
+                          {suggestion.label}
+                        </span>
+                      </button>
+                    ))
+                  ) : (
+                    <p className="px-2.5 py-2 text-[10px] font-medium text-slate-500 dark:text-slate-400">
+                      {tr(
+                        "No matching designations - you can keep typing.",
+                        "പൊരുത്തമുള്ള പദവികളില്ല - നിങ്ങൾക്ക് ടൈപ്പ് ചെയ്തുകൊണ്ടിരിക്കാം.",
+                      )}
+                    </p>
+                  )}
+                </div>
+              ) : null}
+            </div>
           </Field>
 
           <PickerButton

@@ -704,6 +704,19 @@ export function MobileGuestEligibilityQuestionnaire({
       fullName: assistanceName,
       mobile: assistanceMobile,
       notes: assistanceNotes,
+      eligibility: {
+        gender: answers.gender,
+        age: answers.age,
+        socialCategory: answers.socialCategory,
+        minorityStatus: answers.minorityStatus,
+        disabilityStatus: answers.disabilityStatus,
+        disabilityPercentage: answers.disabilityPercentage,
+        studentStatus: answers.studentStatus,
+        employmentStatus: answers.employmentStatus,
+        occupation: answers.occupation,
+        bplStatus: answers.bplStatus,
+        annualFamilyIncome: answers.annualFamilyIncome,
+      },
     });
     setAssistanceSending(false);
     if (!result.ok) {
