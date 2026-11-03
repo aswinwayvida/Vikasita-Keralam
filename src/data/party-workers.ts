@@ -561,6 +561,15 @@ export const permissionModules: PermissionModule[] = [
         verbEn: "edit applications",
         verbMl: "അപേക്ഷകൾ തിരുത്താൻ",
       },
+      {
+        id: "delete",
+        en: "Delete",
+        ml: "നീക്കം ചെയ്യുക",
+        helpEn: "Delete applications",
+        helpMl: "അപേക്ഷകൾ നീക്കം ചെയ്യാം",
+        verbEn: "delete applications",
+        verbMl: "അപേക്ഷകൾ നീക്കം ചെയ്യാൻ",
+      },
     ],
   },
   {
@@ -658,6 +667,7 @@ export const permissionPrerequisites: Record<string, string[]> = {
   "party_workers.view_teams": ["party_workers.view"],
   "applications.create": ["applications.view"],
   "applications.edit": ["applications.view"],
+  "applications.delete": ["applications.view"],
   "help_desk.assign_team_member": ["help_desk.view"],
   "help_desk.respond_reply": ["help_desk.view"],
   "applicant_profile.create": ["applicant_profile.view"],
