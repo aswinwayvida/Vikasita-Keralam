@@ -7,12 +7,16 @@ import {
   ChevronRight,
   ClipboardList,
   FileText,
+  Filter,
   Headset,
   LogOut,
   MapPin,
   MoreVertical,
   Pencil,
+  Plus,
+  Search,
   ShieldCheck,
+  Trash2,
   UserRound,
   Users2,
   X,
@@ -20,16 +24,37 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { MobileRolesPage } from "@/components/admin/MobileRolesPage";
 import { useLang } from "@/i18n/LanguageProvider";
 import {
+  partyDesignations,
   permissionKey,
   permissionModules,
+  roleOrganisationLevels,
   rolePresets,
+  type AssignmentLevel,
+  type PartyDesignation,
   type PermissionModuleId,
 } from "@/data/party-workers";
+import {
+  customDesignationStorageKey,
+  designationOverrideStorageKey,
+  hiddenDesignationStorageKey,
+  isRetiredCustomRole,
+  loadCustomOrganisationLevels,
+  loadManagedRoles,
+  organisationLevelLabel,
+} from "@/data/role-management";
 
 interface MobileSettingsPageProps {
   userRole: "state_admin" | "party_worker";
@@ -47,6 +72,68 @@ const profileOrganisationLevels = [
   { id: "booth", en: "Booth", ml: "ബൂത്ത്" },
 ] as const;
 
+interface DesignationEntry {
+  id: string;
+  name: string;
+  level: AssignmentLevel;
+}
+
+interface DesignationOverride {
+  name: string;
+  level: AssignmentLevel;
+}
+
+function readStoredJson<T>(key: string, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(key) || "null") as T | null;
+    return parsed ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeStoredJson(key: string, value: unknown) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // Persistence is best-effort in this prototype.
+  }
+}
+
+function loadCustomDesignations(): PartyDesignation[] {
+  const parsed = readStoredJson<unknown>(customDesignationStorageKey, []);
+  if (!Array.isArray(parsed)) return [];
+  return parsed.filter(
+    (item): item is PartyDesignation =>
+      Boolean(item) &&
+      typeof item === "object" &&
+      typeof (item as PartyDesignation).id === "string" &&
+      typeof (item as PartyDesignation).en === "string" &&
+      typeof (item as PartyDesignation).level === "string",
+  );
+}
+
+function loadDesignationOverrides(): Record<string, DesignationOverride> {
+  const parsed = readStoredJson<unknown>(designationOverrideStorageKey, {});
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+  return Object.fromEntries(
+    Object.entries(parsed).filter(
+      ([, value]) =>
+        Boolean(value) &&
+        typeof value === "object" &&
+        typeof (value as DesignationOverride).name === "string" &&
+        typeof (value as DesignationOverride).level === "string",
+    ),
+  ) as Record<string, DesignationOverride>;
+}
+
+function loadHiddenDesignationIds(): string[] {
+  const parsed = readStoredJson<unknown>(hiddenDesignationStorageKey, []);
+  return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string") : [];
+}
+
 export function MobileSettingsPage({
   userRole,
   onBack,
@@ -55,7 +142,32 @@ export function MobileSettingsPage({
 }: MobileSettingsPageProps) {
   const { lang, setLang } = useLang();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [activeView, setActiveView] = useState<"settings" | "roles" | "user">("settings");
+  const [activeView, setActiveView] = useState<"settings" | "roles" | "designations" | "user">(
+    "settings",
+  );
+  const [customDesignations, setCustomDesignations] =
+    useState<PartyDesignation[]>(loadCustomDesignations);
+  const [designationOverrides, setDesignationOverrides] =
+    useState<Record<string, DesignationOverride>>(loadDesignationOverrides);
+  const [hiddenDesignationIds, setHiddenDesignationIds] =
+    useState<string[]>(loadHiddenDesignationIds);
+  const [showDesignationSearch, setShowDesignationSearch] = useState(false);
+  const [designationSearch, setDesignationSearch] = useState("");
+  const [designationLevelFilter, setDesignationLevelFilter] = useState<AssignmentLevel | "all">(
+    "all",
+  );
+  const [designationDialog, setDesignationDialog] = useState<{
+    mode: "create" | "edit";
+    id?: string;
+  } | null>(null);
+  const [designationDraft, setDesignationDraft] = useState<{
+    name: string;
+    level: AssignmentLevel;
+  }>({ name: "", level: "state" });
+  const [designationFormError, setDesignationFormError] = useState("");
+  const [designationDeleteTarget, setDesignationDeleteTarget] = useState<DesignationEntry | null>(
+    null,
+  );
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [profileNameOverride, setProfileNameOverride] = useState<string | null>(null);
@@ -132,6 +244,56 @@ export function MobileSettingsPage({
     setAccessAreaOpen(false);
   };
 
+  const openCreateDesignation = () => {
+    setDesignationDraft({ name: "", level: "state" });
+    setDesignationFormError("");
+    setDesignationDialog({ mode: "create" });
+  };
+
+  const openEditDesignation = (designation: DesignationEntry) => {
+    setDesignationDraft({ name: designation.name, level: designation.level });
+    setDesignationFormError("");
+    setDesignationDialog({ mode: "edit", id: designation.id });
+  };
+
+  const saveDesignation = () => {
+    const name = designationDraft.name.trim();
+    if (!name) {
+      setDesignationFormError("Designation name is required.");
+      return;
+    }
+    if (designationDialog?.mode === "create") {
+      const designation: PartyDesignation = {
+        id: `custom_designation_${Date.now().toString(36)}_${Math.random()
+          .toString(36)
+          .slice(2, 6)}`,
+        en: name,
+        ml: name,
+        level: designationDraft.level,
+      };
+      const nextDesignations = [...customDesignations, designation];
+      setCustomDesignations(nextDesignations);
+      writeStoredJson(customDesignationStorageKey, nextDesignations);
+    } else if (designationDialog?.mode === "edit" && designationDialog.id) {
+      const nextOverrides = {
+        ...designationOverrides,
+        [designationDialog.id]: { name, level: designationDraft.level },
+      };
+      setDesignationOverrides(nextOverrides);
+      writeStoredJson(designationOverrideStorageKey, nextOverrides);
+    }
+    setDesignationDialog(null);
+    setDesignationFormError("");
+  };
+
+  const deleteDesignation = () => {
+    if (!designationDeleteTarget) return;
+    const nextHidden = [...hiddenDesignationIds, designationDeleteTarget.id];
+    setHiddenDesignationIds(nextHidden);
+    writeStoredJson(hiddenDesignationStorageKey, nextHidden);
+    setDesignationDeleteTarget(null);
+  };
+
   if (activeView === "roles") {
     return (
       <MobileRolesPage
@@ -141,6 +303,381 @@ export function MobileSettingsPage({
     );
   }
 
+  if (activeView === "designations") {
+    const customLevels = loadCustomOrganisationLevels();
+    const managedCustomDesignations = loadManagedRoles()
+      .filter((role) => !role.system && role.status === "Active" && !isRetiredCustomRole(role))
+      .map((role) => ({
+        id: role.id,
+        name: role.name,
+        level: role.assignmentLevels[0] ?? ("state" as const),
+      }));
+    const baseDesignations: DesignationEntry[] = [
+      ...partyDesignations.map((designation) => ({
+        id: designation.id,
+        name: isMalayalam ? designation.ml : designation.en,
+        level: designation.level,
+      })),
+      ...managedCustomDesignations,
+      ...customDesignations.map((designation) => ({
+        id: designation.id,
+        name: isMalayalam ? designation.ml : designation.en,
+        level: designation.level,
+      })),
+    ];
+    const designations = baseDesignations
+      .filter((designation) => !hiddenDesignationIds.includes(designation.id))
+      .map((designation) => {
+        const override = designationOverrides[designation.id];
+        return override
+          ? { ...designation, name: override.name, level: override.level }
+          : designation;
+      });
+    const normalizedDesignationSearch = designationSearch.trim().toLowerCase();
+    const filteredDesignations = designations.filter((designation) => {
+      const matchesSearch =
+        !normalizedDesignationSearch ||
+        designation.name.toLowerCase().includes(normalizedDesignationSearch);
+      const matchesLevel =
+        designationLevelFilter === "all" || designation.level === designationLevelFilter;
+      return matchesSearch && matchesLevel;
+    });
+    const levelLabel = (level: AssignmentLevel) =>
+      organisationLevelLabel(level, lang, customLevels);
+    const designationLevelOptions = [
+      ...roleOrganisationLevels.map((level) => ({
+        id: level.id,
+        label: isMalayalam ? level.ml : level.en,
+      })),
+      ...customLevels.map((level) => ({ id: level.id, label: level.name })),
+    ];
+    const availableLevels = [...new Set(designations.map((designation) => designation.level))].sort(
+      (a, b) => {
+        const order = designationLevelOptions.map((level) => level.id);
+        const aIndex = order.indexOf(a);
+        const bIndex = order.indexOf(b);
+        return (aIndex === -1 ? order.length : aIndex) - (bIndex === -1 ? order.length : bIndex);
+      },
+    );
+
+    return (
+      <div className="relative flex h-full max-h-[100dvh] min-h-0 w-full flex-col overflow-hidden animate-in fade-in duration-200">
+        <header className="relative flex h-10 shrink-0 items-center justify-center border-b border-border/70 px-3">
+          {showDesignationSearch ? (
+            <div className="flex w-full items-center gap-2">
+              <div className="relative flex min-w-0 flex-1 items-center">
+                <Search className="pointer-events-none absolute left-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={designationSearch}
+                  onChange={(event) => setDesignationSearch(event.target.value)}
+                  placeholder={isMalayalam ? "ഡെസിഗ്നേഷനുകൾ തിരയുക..." : "Search designations..."}
+                  aria-label={isMalayalam ? "ഡെസിഗ്നേഷനുകൾ തിരയുക" : "Search designations"}
+                  autoFocus
+                  className="h-7 w-full rounded-full border border-border bg-muted/30 pl-8 pr-2 text-[10.5px] font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDesignationSearch(false);
+                  setDesignationSearch("");
+                }}
+                aria-label={isMalayalam ? "തിരയൽ റദ്ദാക്കുക" : "Cancel search"}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted/60 text-foreground transition-colors hover:bg-muted dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 cursor-pointer"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => setActiveView("settings")}
+                className="absolute left-0 flex h-7 w-7 items-center justify-center rounded-full bg-muted/60 text-foreground transition-colors hover:bg-muted dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 cursor-pointer"
+                aria-label={isMalayalam ? "ക്രമീകരണങ്ങളിലേക്ക് മടങ്ങുക" : "Back to settings"}
+              >
+                <ArrowLeft className="h-3.5 w-3.5 stroke-[2.2]" />
+              </button>
+              <h1 className="text-[12px] font-extrabold tracking-tight text-[#152153] dark:text-white">
+                {isMalayalam ? "ഡെസിഗ്നേഷനുകൾ" : "Designations"} ({designations.length})
+              </h1>
+              <div className="absolute right-0 flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDesignationSearch(true);
+                    setDesignationSearch("");
+                  }}
+                  className="flex h-6 w-6 items-center justify-center rounded-full bg-muted/60 text-foreground transition-colors hover:bg-muted dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 cursor-pointer"
+                  aria-label={isMalayalam ? "ഡെസിഗ്നേഷനുകൾ തിരയുക" : "Search designations"}
+                >
+                  <Search className="h-3 w-3 stroke-[2.4]" />
+                </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className={
+                        designationLevelFilter === "all"
+                          ? "flex h-6 w-6 items-center justify-center rounded-full bg-muted/60 text-foreground transition-colors hover:bg-muted dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 cursor-pointer"
+                          : "flex h-6 w-6 items-center justify-center rounded-full bg-orange-100 text-orange-600 transition-colors hover:bg-orange-200 dark:bg-orange-950/60 dark:text-orange-300 dark:hover:bg-orange-900/60 cursor-pointer"
+                      }
+                      aria-label={
+                        isMalayalam
+                          ? "ഓർഗനൈസേഷൻ ലെവൽ ഫിൽട്ടർ ചെയ്യുക"
+                          : "Filter by organisation level"
+                      }
+                    >
+                      <Filter className="h-3 w-3 stroke-[2.2]" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-52 rounded-xl p-1">
+                    <div className="px-2 py-1.5 text-[9px] font-black uppercase tracking-wider text-muted-foreground">
+                      {isMalayalam ? "ഓർഗനൈസേഷൻ ലെവൽ" : "Organisation level"}
+                    </div>
+                    <DropdownMenuRadioGroup
+                      value={designationLevelFilter}
+                      onValueChange={(value) =>
+                        setDesignationLevelFilter(value as AssignmentLevel | "all")
+                      }
+                    >
+                      <DropdownMenuRadioItem
+                        value="all"
+                        className="rounded-lg py-1.5 text-[11px] font-semibold"
+                      >
+                        {isMalayalam ? "എല്ലാ ലെവലുകളും" : "All levels"}
+                      </DropdownMenuRadioItem>
+                      {availableLevels.map((level) => (
+                        <DropdownMenuRadioItem
+                          key={level}
+                          value={level}
+                          className="rounded-lg py-1.5 text-[11px] font-semibold"
+                        >
+                          {levelLabel(level)}
+                        </DropdownMenuRadioItem>
+                      ))}
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <button
+                  type="button"
+                  onClick={openCreateDesignation}
+                  className="flex h-6 w-6 items-center justify-center rounded-full bg-orange-100 text-orange-600 transition-colors hover:bg-orange-200 dark:bg-orange-950/60 dark:text-orange-300 dark:hover:bg-orange-900/60 cursor-pointer"
+                  aria-label={isMalayalam ? "ഡെസിഗ്നേഷൻ ചേർക്കുക" : "Add designation"}
+                >
+                  <Plus className="h-3.5 w-3.5 stroke-[2.6]" />
+                </button>
+              </div>
+            </>
+          )}
+        </header>
+
+        <div className="mt-2 min-h-0 flex-1 overflow-y-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {filteredDesignations.length > 0 ? (
+            <section className="mx-1 overflow-hidden rounded-lg border border-white bg-card shadow-2xs">
+              <div className="divide-y divide-border/70">
+                {filteredDesignations.map((designation) => (
+                  <div key={designation.id} className="flex items-center gap-2 px-2.5 py-2">
+                    <img
+                      src="/images/settings/role-card.png"
+                      alt=""
+                      aria-hidden="true"
+                      className="h-8 w-8 shrink-0 object-contain"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <h2 className="truncate text-[11.5px] font-extrabold leading-tight text-foreground">
+                        {designation.name}
+                      </h2>
+                      <p className="mt-0.5 text-[9.5px] font-semibold text-muted-foreground">
+                        {levelLabel(designation.level)}
+                      </p>
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-orange-50 hover:text-orange-600 dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
+                          aria-label={
+                            isMalayalam
+                              ? `${designation.name} നടപടികൾ`
+                              : `Actions for ${designation.name}`
+                          }
+                        >
+                          <MoreVertical className="h-3.5 w-3.5" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="w-40 rounded-xl border-orange-100 p-1.5 shadow-lg dark:border-slate-800"
+                      >
+                        <DropdownMenuItem
+                          onSelect={() => openEditDesignation(designation)}
+                          className="gap-2 rounded-lg px-2 py-2 text-[11px] font-semibold"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                          {isMalayalam ? "തിരുത്തുക" : "Edit"}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onSelect={() => setDesignationDeleteTarget(designation)}
+                          className="gap-2 rounded-lg px-2 py-2 text-[11px] font-semibold text-rose-600 focus:text-rose-600"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          {isMalayalam ? "ഡിലീറ്റ് ചെയ്യുക" : "Delete"}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : (
+            <p className="mx-1 rounded-lg border border-dashed border-border px-3 py-6 text-center text-[10.5px] font-semibold text-muted-foreground">
+              {isMalayalam ? "ഡെസിഗ്നേഷനുകൾ കണ്ടെത്തിയില്ല." : "No designations found."}
+            </p>
+          )}
+        </div>
+
+        {designationDialog ? (
+          <div
+            className="absolute inset-0 z-[120] flex items-end bg-slate-950/50 backdrop-blur-[1px] animate-in fade-in duration-150"
+            onClick={() => setDesignationDialog(null)}
+          >
+            <div
+              className="w-full rounded-t-2xl border-t border-orange-100 bg-white shadow-2xl animate-in slide-in-from-bottom duration-200 dark:border-slate-800 dark:bg-slate-900"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="flex items-start justify-between gap-3 border-b border-border/70 px-4 pb-3 pt-3">
+                <div>
+                  <h3 className="text-[13px] font-extrabold text-foreground">
+                    {designationDialog.mode === "create"
+                      ? isMalayalam
+                        ? "പുതിയ ഡെസിഗ്നേഷൻ"
+                        : "New Designation"
+                      : isMalayalam
+                        ? "ഡെസിഗ്നേഷൻ തിരുത്തുക"
+                        : "Edit Designation"}
+                  </h3>
+                  <p className="mt-0.5 text-[9.5px] font-medium text-muted-foreground">
+                    {isMalayalam
+                      ? "ഡെസിഗ്നേഷന്റെ പേരും ഓർഗനൈസേഷൻ ലെവലും നൽകുക."
+                      : "Enter the designation name and organisation level."}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDesignationDialog(null)}
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted/60 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground dark:bg-slate-800 dark:hover:bg-slate-700"
+                  aria-label={isMalayalam ? "അടയ്ക്കുക" : "Close"}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+
+              <div className="space-y-3 px-4 py-3">
+                <div>
+                  <label className="mb-1 block text-[10.5px] font-bold text-foreground">
+                    {isMalayalam ? "ഡെസിഗ്നേഷൻ പേര്" : "Designation Name"}{" "}
+                    <span className="text-rose-500">*</span>
+                  </label>
+                  <Input
+                    value={designationDraft.name}
+                    onChange={(event) => {
+                      setDesignationDraft((draft) => ({ ...draft, name: event.target.value }));
+                      setDesignationFormError("");
+                    }}
+                    placeholder={isMalayalam ? "ഉദാ: ബൂത്ത് പ്രസിഡന്റ്" : "e.g. Booth President"}
+                    className="h-9 rounded-lg border-border bg-background px-2.5 text-[11.5px] font-medium text-foreground shadow-none focus:border-orange-400 focus:ring-1 focus:ring-orange-500 md:text-[11.5px]"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-[10.5px] font-bold text-foreground">
+                    {isMalayalam ? "ഓർഗനൈസേഷൻ ലെവൽ" : "Organisation Level"}
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={designationDraft.level}
+                      onChange={(event) =>
+                        setDesignationDraft((draft) => ({
+                          ...draft,
+                          level: event.target.value as AssignmentLevel,
+                        }))
+                      }
+                      className="h-9 w-full cursor-pointer appearance-none rounded-lg border border-border bg-background px-2.5 pr-8 text-[11.5px] font-medium text-foreground outline-none transition-colors focus:border-orange-400 focus:ring-1 focus:ring-orange-500"
+                    >
+                      {designationLevelOptions.map((level) => (
+                        <option key={level.id} value={level.id}>
+                          {level.label}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                  </div>
+                </div>
+                {designationFormError ? (
+                  <p className="text-[9.5px] font-semibold text-rose-600">{designationFormError}</p>
+                ) : null}
+              </div>
+
+              <div className="flex items-center gap-2 border-t border-border/70 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
+                <button
+                  type="button"
+                  onClick={() => setDesignationDialog(null)}
+                  className="h-10 w-[35%] shrink-0 rounded-lg border border-orange-200 bg-white px-3 text-[10.5px] font-extrabold text-orange-700 transition-colors hover:bg-orange-50 dark:border-orange-900/60 dark:bg-slate-900 dark:text-orange-300 dark:hover:bg-orange-950/40"
+                >
+                  {isMalayalam ? "റദ്ദാക്കുക" : "Cancel"}
+                </button>
+                <Button
+                  type="button"
+                  onClick={saveDesignation}
+                  className="h-10 flex-1 rounded-lg text-[11.5px] font-extrabold"
+                >
+                  {isMalayalam ? "സേവ് ചെയ്യുക" : "Save"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {designationDeleteTarget ? (
+          <div
+            className="absolute inset-0 z-[120] flex items-end bg-slate-950/50 backdrop-blur-[1px] animate-in fade-in duration-150"
+            onClick={() => setDesignationDeleteTarget(null)}
+          >
+            <div
+              className="w-full rounded-t-2xl border-t border-orange-100 bg-white p-4 shadow-2xl animate-in slide-in-from-bottom duration-200 dark:border-slate-800 dark:bg-slate-900"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <h3 className="text-[13px] font-extrabold text-foreground">
+                {isMalayalam ? "ഡെസിഗ്നേഷൻ ഡിലീറ്റ് ചെയ്യണോ?" : "Delete designation?"}
+              </h3>
+              <p className="mt-1 text-[10px] font-medium text-muted-foreground">
+                {isMalayalam
+                  ? `${designationDeleteTarget.name} ഈ പട്ടികയിൽ നിന്ന് നീക്കം ചെയ്യും.`
+                  : `${designationDeleteTarget.name} will be removed from this list.`}
+              </p>
+              <div className="mt-4 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDesignationDeleteTarget(null)}
+                  className="h-10 w-[35%] shrink-0 rounded-lg border border-border bg-white px-3 text-[10.5px] font-extrabold text-foreground transition-colors hover:bg-muted dark:bg-slate-900"
+                >
+                  {isMalayalam ? "റദ്ദാക്കുക" : "Cancel"}
+                </button>
+                <button
+                  type="button"
+                  onClick={deleteDesignation}
+                  className="h-10 flex-1 rounded-lg bg-rose-600 px-3 text-[11.5px] font-extrabold text-white transition-colors hover:bg-rose-700"
+                >
+                  {isMalayalam ? "ഡിലീറ്റ് ചെയ്യുക" : "Delete"}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
   if (activeView === "user") {
     const presetId = isPartyWorker ? "party_worker" : "state_admin";
     const grantedPermissions =
@@ -642,6 +1179,34 @@ export function MobileSettingsPage({
 
         <button
           type="button"
+          onClick={() => setActiveView("designations")}
+          className="flex w-full items-center justify-between gap-3 border-b border-border/70 px-4 py-3 text-left transition-colors hover:bg-orange-50/60 dark:hover:bg-slate-800/70 cursor-pointer"
+        >
+          <span className="flex min-w-0 items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-100 dark:bg-orange-950/60">
+              <img
+                src="/images/settings/designations.png"
+                alt=""
+                aria-hidden="true"
+                className="h-6 w-6 object-contain"
+              />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-[11.5px] font-extrabold text-foreground">
+                {isMalayalam ? "ഡെസിഗ്നേഷനുകൾ" : "Designations"}
+              </span>
+              <span className="block text-[9.5px] text-muted-foreground">
+                {isMalayalam
+                  ? "എല്ലാ പാർട്ടി ഡെസിഗ്നേഷനുകളും കാണുക"
+                  : "View all party designations"}
+              </span>
+            </span>
+          </span>
+          <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
+        </button>
+
+        <button
+          type="button"
           onClick={onLogout}
           className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-rose-600 transition-colors hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
         >
@@ -670,6 +1235,8 @@ const profileModuleIcons: Record<PermissionModuleId, LucideIcon> = {
   applications: ClipboardList,
   help_desk: Headset,
   applicant_profile: UserRound,
+  roles: ShieldCheck,
+  designations: Users2,
 };
 
 const profilePermissionColumns = [
@@ -690,6 +1257,8 @@ const profilePermissionModuleOrder: PermissionModuleId[] = [
   "help_desk",
   "schemes",
   "party_workers",
+  "roles",
+  "designations",
 ];
 
 const orderedProfilePermissionModules = [...permissionModules].sort(

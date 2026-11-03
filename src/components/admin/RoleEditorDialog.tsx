@@ -6,8 +6,10 @@ import {
   ClipboardList,
   FileText,
   Headset,
+  ShieldCheck,
   UserRound,
   Users,
+  Users2,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -43,6 +45,8 @@ const moduleIcons: Record<PermissionModuleId, LucideIcon> = {
   applications: ClipboardList,
   help_desk: Headset,
   applicant_profile: UserRound,
+  roles: ShieldCheck,
+  designations: Users2,
 };
 
 export function RoleEditorDialog({

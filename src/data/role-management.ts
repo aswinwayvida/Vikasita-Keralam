@@ -5,6 +5,7 @@ import {
   roleOrganisationLevels,
   rolePresets,
   type AssignmentLevel,
+  type PartyDesignation,
   type RolePresetId,
 } from "./party-workers";
 
@@ -367,6 +368,52 @@ export const builtInManagedRoles: ManagedRole[] = [
   ...partyDesignationManagedRoles,
 ];
 
+export const rolesPageAdminRoleId = "system_state_admin";
+export const rolesPageSubAdminRoleId = "system_sub_admin";
+
+const createRolesPageFallbackAdmin = (): ManagedRole => {
+  const preset = rolePresets.find((item) => item.id === "state_admin");
+  return {
+    id: rolesPageAdminRoleId,
+    name: "State Admin",
+    description: preset?.descriptionEn ?? "Statewide administration",
+    assignmentLevels: ["state"],
+    permissions: [...(preset?.permissions ?? [])],
+    administrativePermissions: ["manage_roles", "assign_access", "delegate_access"],
+    status: "Active",
+    system: true,
+    presetId: "state_admin",
+    assignedUsers: 0,
+    createdAt: "2024-01-01T00:00:00.000Z",
+    updatedAt: "2024-01-01T00:00:00.000Z",
+  };
+};
+
+export function ensureRolesPageAccessRoles(roles: ManagedRole[]): ManagedRole[] {
+  const existingAdmin =
+    roles.find((role) => role.id === rolesPageAdminRoleId) ?? createRolesPageFallbackAdmin();
+  const existingSubAdmin = roles.find((role) => role.id === rolesPageSubAdminRoleId);
+  const baseRoles = roles.some((role) => role.id === rolesPageAdminRoleId)
+    ? roles
+    : [...roles, existingAdmin];
+  if (existingSubAdmin) return baseRoles;
+
+  return [
+    ...baseRoles,
+    {
+      ...existingAdmin,
+      id: rolesPageSubAdminRoleId,
+      name: "State Sub Admin",
+      description: "Statewide sub-administration",
+      administrativePermissions: existingAdmin.administrativePermissions.filter(
+        (permission) => permission !== "delegate_access",
+      ),
+      assignedUsers: 0,
+      assignedWorkerIds: [],
+    },
+  ];
+}
+
 export const managedRoleStorageKey = "vk-managed-roles";
 export const deletedManagedRoleStorageKey = "vk-deleted-managed-role-ids";
 
@@ -405,6 +452,26 @@ const retiredCustomRoleNames = new Set([
 
 export function isRetiredCustomRole(role: ManagedRole) {
   return !role.system && retiredCustomRoleNames.has(role.name.trim().toLowerCase());
+}
+
+const rolesAndControlOrder = [rolesPageAdminRoleId, rolesPageSubAdminRoleId];
+
+export function getRolesAndControlRoles(roles: ManagedRole[]) {
+  return roles
+    .filter(
+      (role) =>
+        !isRetiredCustomRole(role) && (rolesAndControlOrder.includes(role.id) || !role.system),
+    )
+    .sort((a, b) => {
+      const aOrder = rolesAndControlOrder.indexOf(a.id);
+      const bOrder = rolesAndControlOrder.indexOf(b.id);
+      if (aOrder !== -1 || bOrder !== -1) {
+        if (aOrder === -1) return 1;
+        if (bOrder === -1) return -1;
+        return aOrder - bOrder;
+      }
+      return a.name.localeCompare(b.name);
+    });
 }
 
 const validPermissionKeys = new Set(
@@ -471,4 +538,87 @@ export function saveManagedRoles(roles: ManagedRole[]) {
   } catch {
     // Persistence is best-effort in this prototype.
   }
+}
+
+export const customDesignationStorageKey = "vk-custom-designations";
+export const designationOverrideStorageKey = "vk-designation-overrides";
+export const hiddenDesignationStorageKey = "vk-hidden-designation-ids";
+
+interface StoredDesignationOverride {
+  name: string;
+  level: AssignmentLevel;
+}
+
+function readStoredDesignationJson<T>(key: string, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(key) || "null") as T | null;
+    return parsed ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+/**
+ * Designations shown on the Designations page: built-in party designations,
+ * custom roles, and administrator-created designations, with overrides and
+ * deletions applied. Used by Create/Edit User so the Designation picker stays
+ * in sync with that register.
+ */
+export function loadDesignationCatalogue(): PartyDesignation[] {
+  const storedCustom = readStoredDesignationJson<unknown>(customDesignationStorageKey, []);
+  const customDesignations: PartyDesignation[] = Array.isArray(storedCustom)
+    ? storedCustom.filter(
+        (item): item is PartyDesignation =>
+          Boolean(item) &&
+          typeof item === "object" &&
+          typeof (item as PartyDesignation).id === "string" &&
+          typeof (item as PartyDesignation).en === "string" &&
+          typeof (item as PartyDesignation).level === "string",
+      )
+    : [];
+
+  const storedOverrides = readStoredDesignationJson<Record<string, StoredDesignationOverride>>(
+    designationOverrideStorageKey,
+    {},
+  );
+  const overrides =
+    storedOverrides && typeof storedOverrides === "object" && !Array.isArray(storedOverrides)
+      ? storedOverrides
+      : {};
+
+  const storedHidden = readStoredDesignationJson<unknown>(hiddenDesignationStorageKey, []);
+  const hidden = new Set(
+    Array.isArray(storedHidden)
+      ? storedHidden.filter((id): id is string => typeof id === "string")
+      : [],
+  );
+
+  const managedDesignations: PartyDesignation[] = loadManagedRoles()
+    .filter((role) => !role.system && role.status === "Active" && !isRetiredCustomRole(role))
+    .map((role) => ({
+      id: role.id,
+      en: role.name,
+      ml: role.name,
+      level: role.assignmentLevels[0] ?? ("state" as AssignmentLevel),
+    }));
+
+  const entries = [...partyDesignations, ...managedDesignations, ...customDesignations]
+    .filter((entry) => !hidden.has(entry.id))
+    .map((entry) => {
+      const override = overrides[entry.id];
+      return override && typeof override.name === "string" && typeof override.level === "string"
+        ? { ...entry, en: override.name, ml: override.name, level: override.level }
+        : entry;
+    });
+
+  const seenIds = new Set<string>();
+  const seenLabels = new Set<string>();
+  return entries.filter((entry) => {
+    const label = entry.en.trim().toLowerCase();
+    if (seenIds.has(entry.id) || seenLabels.has(label)) return false;
+    seenIds.add(entry.id);
+    seenLabels.add(label);
+    return true;
+  });
 }

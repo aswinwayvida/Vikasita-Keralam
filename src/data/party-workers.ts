@@ -415,7 +415,13 @@ export function getPartyOrgPath(unitId: string, lang: "en" | "ml") {
 /* -------------------------------------------------------------------------- */
 
 export type PermissionModuleId =
-  "schemes" | "party_workers" | "applications" | "help_desk" | "applicant_profile";
+  | "schemes"
+  | "party_workers"
+  | "applications"
+  | "help_desk"
+  | "applicant_profile"
+  | "roles"
+  | "designations";
 
 export interface PermissionActionOption {
   id: string;
@@ -480,6 +486,15 @@ export const permissionModules: PermissionModule[] = [
         verbEn: "edit shared schemes",
         verbMl: "പങ്കിട്ട പദ്ധതികൾ തിരുത്താൻ",
       },
+      {
+        id: "delete",
+        en: "Delete",
+        ml: "നീക്കം ചെയ്യുക",
+        helpEn: "Delete schemes from the shared catalogue",
+        helpMl: "പങ്കിട്ട കാറ്റലോഗിൽ നിന്ന് പദ്ധതികൾ നീക്കം ചെയ്യാം",
+        verbEn: "delete schemes",
+        verbMl: "പദ്ധതികൾ നീക്കം ചെയ്യാൻ",
+      },
     ],
   },
   {
@@ -515,6 +530,15 @@ export const permissionModules: PermissionModule[] = [
         helpMl: "പ്രവർത്തക വിവരങ്ങൾ തിരുത്താം",
         verbEn: "edit users",
         verbMl: "ഉപയോക്താക്കളെ തിരുത്താൻ",
+      },
+      {
+        id: "delete",
+        en: "Delete",
+        ml: "നീക്കം ചെയ്യുക",
+        helpEn: "Delete user records",
+        helpMl: "ഉപയോക്തൃ റെക്കോർഡുകൾ നീക്കം ചെയ്യാം",
+        verbEn: "delete users",
+        verbMl: "ഉപയോക്താക്കളെ നീക്കം ചെയ്യാൻ",
       },
       {
         id: "view_teams",
@@ -642,6 +666,105 @@ export const permissionModules: PermissionModule[] = [
         verbEn: "view applicant profiles",
         verbMl: "അപേക്ഷക പ്രൊഫൈലുകൾ കാണാൻ",
       },
+      {
+        id: "delete",
+        en: "Delete",
+        ml: "നീക്കം ചെയ്യുക",
+        helpEn: "Delete applicant profiles",
+        helpMl: "അപേക്ഷക പ്രൊഫൈലുകൾ നീക്കം ചെയ്യാം",
+        verbEn: "delete applicant profiles",
+        verbMl: "അപേക്ഷക പ്രൊഫൈലുകൾ നീക്കം ചെയ്യാൻ",
+      },
+    ],
+  },
+  {
+    id: "roles",
+    en: "Role",
+    ml: "റോൾ",
+    descriptionEn: "Role records and assignments",
+    descriptionMl: "റോൾ റെക്കോർഡുകളും അസൈൻമെന്റുകളും",
+    actions: [
+      {
+        id: "view",
+        en: "View",
+        ml: "കാണുക",
+        helpEn: "View roles",
+        helpMl: "റോളുകൾ കാണാം",
+        verbEn: "view roles",
+        verbMl: "റോളുകൾ കാണാൻ",
+      },
+      {
+        id: "create",
+        en: "Create",
+        ml: "സൃഷ്ടിക്കുക",
+        helpEn: "Create roles",
+        helpMl: "റോളുകൾ സൃഷ്ടിക്കാം",
+        verbEn: "create roles",
+        verbMl: "റോളുകൾ സൃഷ്ടിക്കാൻ",
+      },
+      {
+        id: "edit",
+        en: "Edit",
+        ml: "തിരുത്തുക",
+        helpEn: "Edit roles",
+        helpMl: "റോളുകൾ തിരുത്താം",
+        verbEn: "edit roles",
+        verbMl: "റോളുകൾ തിരുത്താൻ",
+      },
+      {
+        id: "delete",
+        en: "Delete",
+        ml: "നീക്കം ചെയ്യുക",
+        helpEn: "Delete roles",
+        helpMl: "റോളുകൾ നീക്കം ചെയ്യാം",
+        verbEn: "delete roles",
+        verbMl: "റോളുകൾ നീക്കം ചെയ്യാൻ",
+      },
+    ],
+  },
+  {
+    id: "designations",
+    en: "Designation",
+    ml: "ഡെസിഗ്നേഷൻ",
+    descriptionEn: "Designation catalogue and assignments",
+    descriptionMl: "ഡെസിഗ്നേഷൻ കാറ്റലോഗും അസൈൻമെന്റുകളും",
+    actions: [
+      {
+        id: "view",
+        en: "View",
+        ml: "കാണുക",
+        helpEn: "View designations",
+        helpMl: "ഡെസിഗ്നേഷനുകൾ കാണാം",
+        verbEn: "view designations",
+        verbMl: "ഡെസിഗ്നേഷനുകൾ കാണാൻ",
+      },
+      {
+        id: "create",
+        en: "Create",
+        ml: "സൃഷ്ടിക്കുക",
+        helpEn: "Create designations",
+        helpMl: "ഡെസിഗ്നേഷനുകൾ സൃഷ്ടിക്കാം",
+        verbEn: "create designations",
+        verbMl: "ഡെസിഗ്നേഷനുകൾ സൃഷ്ടിക്കാൻ",
+      },
+      {
+        id: "edit",
+        en: "Edit",
+        ml: "തിരുത്തുക",
+        helpEn: "Edit designations",
+        helpMl: "ഡെസിഗ്നേഷനുകൾ തിരുത്താം",
+        verbEn: "edit designations",
+        verbMl: "ഡെസിഗ്നേഷനുകൾ തിരുത്താൻ",
+      },
+      {
+        id: "delete",
+        en: "Delete",
+        ml: "നീക്കം ചെയ്യുക",
+        helpEn: "Delete designations",
+        helpMl: "ഡെസിഗ്നേഷനുകൾ നീക്കം ചെയ്യാം",
+        verbEn: "delete designations",
+        verbMl: "ഡെസിഗ്നേഷനുകൾ നീക്കം ചെയ്യാൻ",
+      },
     ],
   },
 ];
@@ -662,8 +785,10 @@ export const permissionPrerequisites: Record<string, string[]> = {
   "schemes.view_details": ["schemes.view_list"],
   "schemes.create": ["schemes.view_list", "schemes.view_details"],
   "schemes.edit": ["schemes.view_list", "schemes.view_details"],
+  "schemes.delete": ["schemes.view_list", "schemes.view_details"],
   "party_workers.create": ["party_workers.view"],
   "party_workers.edit": ["party_workers.view"],
+  "party_workers.delete": ["party_workers.view"],
   "party_workers.view_teams": ["party_workers.view"],
   "applications.create": ["applications.view"],
   "applications.edit": ["applications.view"],
@@ -672,6 +797,13 @@ export const permissionPrerequisites: Record<string, string[]> = {
   "help_desk.respond_reply": ["help_desk.view"],
   "applicant_profile.create": ["applicant_profile.view"],
   "applicant_profile.edit": ["applicant_profile.view"],
+  "applicant_profile.delete": ["applicant_profile.view"],
+  "roles.create": ["roles.view"],
+  "roles.edit": ["roles.view"],
+  "roles.delete": ["roles.view"],
+  "designations.create": ["designations.view"],
+  "designations.edit": ["designations.view"],
+  "designations.delete": ["designations.view"],
 };
 
 export function withPrerequisites(selected: string[], keys: string[]) {

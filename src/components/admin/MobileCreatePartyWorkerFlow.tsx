@@ -71,10 +71,15 @@ import {
   type ScopeTypeOption,
 } from "@/data/party-workers";
 import {
+  ensureRolesPageAccessRoles,
+  getRolesAndControlRoles,
   isRetiredCustomRole,
   isRetiredOrganisationLevelName,
   loadCustomOrganisationLevels,
+  loadDesignationCatalogue,
   loadManagedRoles,
+  rolesPageAdminRoleId,
+  rolesPageSubAdminRoleId,
   type ManagedRole,
 } from "@/data/role-management";
 
@@ -128,7 +133,9 @@ interface WorkerProfile {
 }
 
 type PickerKey =
-  | "designation"
+  | "app_role"
+  | "designation_catalogue"
+  | "role_level"
   | "level"
   | "regions"
   | "org_district"
@@ -235,6 +242,8 @@ const moduleIcons: Record<PermissionModuleId, React.ElementType> = {
   applications: ClipboardList,
   help_desk: Headset,
   applicant_profile: UserRound,
+  roles: ShieldCheck,
+  designations: Users2,
 };
 
 const rolePresetForLevel: Record<AssignmentLevel, Exclude<RolePresetId, "custom">> = {
@@ -250,12 +259,25 @@ const rolePresetForLevel: Record<AssignmentLevel, Exclude<RolePresetId, "custom"
   org_unit: "party_worker",
 };
 
+const roleLevelOptions: { id: AssignmentLevel; en: string; ml: string }[] = [
+  { id: "state", en: "State", ml: "സംസ്ഥാനം" },
+  { id: "region", en: "Region", ml: "റീജിയൺ" },
+  { id: "district", en: "Organisation District", ml: "ഓർഗനൈസേഷണൽ ജില്ല" },
+  { id: "mandalam", en: "Mandalam", ml: "മണ്ഡലം" },
+  { id: "area", en: "Area", ml: "ഏരിയ" },
+  { id: "local_body", en: "Local body", ml: "തദ്ദേശ സ്ഥാപനം" },
+  { id: "ward", en: "Ward", ml: "വാർഡ്" },
+  { id: "booth", en: "Booth", ml: "ബൂത്ത്" },
+];
+
 const partyWorkerPermissionOrder: PermissionModuleId[] = [
   "applicant_profile",
   "applications",
   "help_desk",
   "schemes",
   "party_workers",
+  "roles",
+  "designations",
 ];
 
 const orderedPartyWorkerPermissions = [...permissionModules].sort(
@@ -442,6 +464,19 @@ function managedRoleDesignation(role: ManagedRole, level?: AssignmentLevel | "")
   };
 }
 
+function designationOptionLabel(
+  designation: PartyDesignation,
+  lang: Lang,
+  level: AssignmentLevel | "",
+) {
+  const label = lang === "ml" ? designation.ml : designation.en;
+  if (level !== "booth") return label;
+  return label
+    .replace(/^Booth\s+/i, "")
+    .replace(/^ബൂത്ത്\s+/, "")
+    .trim();
+}
+
 const defaultWorkerListFilters: WorkerListFilters = {
   status: "all",
   level: "all",
@@ -625,13 +660,13 @@ export function MobileCreatePartyWorkerFlow({
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const profilePhotoInputRef = useRef<HTMLInputElement>(null);
   const accessAreasRef = useRef<HTMLElement>(null);
-  const designationFieldRef = useRef<HTMLDivElement>(null);
 
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
   const [designationTitle, setDesignationTitle] = useState("");
-  const [designationSuggestOpen, setDesignationSuggestOpen] = useState(false);
   const [designationId, setDesignationId] = useState("");
+  const [appRoleId, setAppRoleId] = useState(rolesPageAdminRoleId);
+  const [roleLevel, setRoleLevel] = useState<AssignmentLevel | "">("");
   const [level, setLevel] = useState<AssignmentLevel | "">("");
   const [regionIds, setRegionIds] = useState<string[]>([]);
   const [orgDistrictId, setOrgDistrictId] = useState("");
@@ -652,7 +687,10 @@ export function MobileCreatePartyWorkerFlow({
   const [grants, setGrants] = useState<AccessGrant[]>([]);
   const [permissionError, setPermissionError] = useState("");
   const [isPermissionDetailsOpen, setIsPermissionDetailsOpen] = useState(false);
-  const managedRoles = useMemo<ManagedRole[]>(() => loadManagedRoles(), []);
+  const managedRoles = useMemo<ManagedRole[]>(
+    () => ensureRolesPageAccessRoles(loadManagedRoles()),
+    [],
+  );
 
   const allDesignationChoices = useMemo<PartyDesignation[]>(() => {
     const customRoles = managedRoles
@@ -661,37 +699,31 @@ export function MobileCreatePartyWorkerFlow({
     return [...partyDesignations, ...customRoles];
   }, [managedRoles]);
 
-  const designationOptions = useMemo<PartyDesignation[]>(() => {
-    if (!level) return allDesignationChoices;
-    const standard = partyDesignations.filter((item) => item.level === level);
-    const custom = managedRoles
-      .filter(
-        (role) =>
-          !role.system &&
-          role.status === "Active" &&
-          !isRetiredCustomRole(role) &&
-          role.assignmentLevels.includes(level),
-      )
-      .map((role) => managedRoleDesignation(role, level));
-    const base = standard.length > 0 ? standard : partyDesignations;
-    return [...base, ...custom];
-  }, [allDesignationChoices, level, managedRoles]);
+  const designationCatalogue = useMemo<PartyDesignation[]>(() => loadDesignationCatalogue(), []);
 
-  const designationSuggestions = useMemo(() => {
-    const query = designationTitle.trim().toLowerCase();
-    const seen = new Set<string>();
-    return designationOptions
-      .map((item) => ({
-        id: item.id,
-        label: lang === "ml" ? item.ml : item.en,
-      }))
-      .filter((item) => {
-        if (seen.has(item.label)) return false;
-        seen.add(item.label);
-        return !query || item.label.toLowerCase().includes(query);
-      })
-      .slice(0, 6);
-  }, [designationOptions, designationTitle, lang]);
+  const rolesControlChoices = useMemo<ManagedRole[]>(() => {
+    return getRolesAndControlRoles(managedRoles).filter(
+      (role) =>
+        role.id === rolesPageAdminRoleId ||
+        role.id === rolesPageSubAdminRoleId ||
+        role.name.trim().toLowerCase() === "support admin",
+    );
+  }, [managedRoles]);
+
+  const roleChoices = useMemo<PartyDesignation[]>(
+    () => rolesControlChoices.map((role) => managedRoleDesignation(role)),
+    [rolesControlChoices],
+  );
+
+  const designationLookupChoices = useMemo<PartyDesignation[]>(() => {
+    const merged = [...allDesignationChoices, ...designationCatalogue, ...roleChoices];
+    const ids = new Set<string>();
+    return merged.filter((item) => {
+      if (ids.has(item.id)) return false;
+      ids.add(item.id);
+      return true;
+    });
+  }, [allDesignationChoices, designationCatalogue, roleChoices]);
 
   const [picker, setPicker] = useState<PickerKey | null>(null);
   const [pickerSearch, setPickerSearch] = useState("");
@@ -699,6 +731,7 @@ export function MobileCreatePartyWorkerFlow({
   const [isAccessSheetOpen, setIsAccessSheetOpen] = useState(false);
   const [editingGrantId, setEditingGrantId] = useState<string | null>(null);
   const [sheetScope, setSheetScope] = useState<ScopeType>("districts");
+  const [sheetAppRoleId, setSheetAppRoleId] = useState(rolesPageAdminRoleId);
   const [sheetFilters, setSheetFilters] = useState<AreaFilters>({});
   const [sheetAreas, setSheetAreas] = useState<Record<string, AreaRef>>({});
   const [sheetSearch, setSheetSearch] = useState("");
@@ -718,17 +751,6 @@ export function MobileCreatePartyWorkerFlow({
   }, [profileMenuOpen]);
 
   useEffect(() => {
-    if (!designationSuggestOpen) return;
-    const closeMenu = (event: PointerEvent) => {
-      if (!designationFieldRef.current?.contains(event.target as Node)) {
-        setDesignationSuggestOpen(false);
-      }
-    };
-    document.addEventListener("pointerdown", closeMenu);
-    return () => document.removeEventListener("pointerdown", closeMenu);
-  }, [designationSuggestOpen]);
-
-  useEffect(() => {
     if (!focusAccessAreas || phase !== "form" || step !== 2) return;
     const frame = requestAnimationFrame(() => {
       const body = bodyRef.current;
@@ -743,7 +765,9 @@ export function MobileCreatePartyWorkerFlow({
   }, [focusAccessAreas, phase, step]);
 
   const duplicateWorker = useMemo(() => findExistingWorker(mobile), [mobile]);
-  const designation = allDesignationChoices.find((item) => item.id === designationId) || null;
+  const designation = designationLookupChoices.find((item) => item.id === designationId) || null;
+  const appRole = roleChoices.find((item) => item.id === appRoleId) ?? roleChoices[0] ?? null;
+  const roleLevelOption = roleLevelOptions.find((item) => item.id === roleLevel);
   const designationManagedRole = designation
     ? managedRoles.find((role) => role.id === designation.id)
     : undefined;
@@ -992,7 +1016,7 @@ export function MobileCreatePartyWorkerFlow({
   };
 
   const handleDesignationChange = (nextId: string) => {
-    const next = allDesignationChoices.find((item) => item.id === nextId);
+    const next = designationLookupChoices.find((item) => item.id === nextId);
     if (!next) return;
     const isOrganisationOnlyLevel =
       level === "region" ||
@@ -1059,12 +1083,6 @@ export function MobileCreatePartyWorkerFlow({
       nextErrors.mobile = tr(
         "This mobile number is already registered.",
         "ഈ മൊബൈൽ നമ്പർ ഇതിനകം രജിസ്റ്റർ ചെയ്തിട്ടുണ്ട്.",
-      );
-    }
-    if (!designationId) {
-      nextErrors.designation = tr(
-        "Select a party designation or role.",
-        "പാർട്ടി പദവി അല്ലെങ്കിൽ റോൾ തിരഞ്ഞെടുക്കുക.",
       );
     }
     if (!level) {
@@ -1222,6 +1240,13 @@ export function MobileCreatePartyWorkerFlow({
   const handleCreate = () => {
     if (!validateStep1()) {
       setStep(1);
+      return;
+    }
+    if (!appRoleId) {
+      setErrors((prev) => ({
+        ...prev,
+        role: tr("Select a role.", "ഒരു റോൾ തിരഞ്ഞെടുക്കുക."),
+      }));
       return;
     }
     const unauthorisedPermission = permissions.find((key) => {
@@ -1619,6 +1644,7 @@ export function MobileCreatePartyWorkerFlow({
   };
 
   const openAccessSheet = (grant?: AccessGrant) => {
+    setSheetAppRoleId(appRoleId);
     if (grant) {
       setEditingGrantId(grant.id);
       setSheetScope(grant.scopeType);
@@ -1729,6 +1755,7 @@ export function MobileCreatePartyWorkerFlow({
         ? prev.map((item) => (item.id === editingGrantId ? grant : item))
         : [...prev, grant],
     );
+    setAppRoleId(sheetAppRoleId);
     setIsAccessSheetOpen(false);
     setEditingGrantId(null);
     setSheetError("");
@@ -1750,15 +1777,39 @@ export function MobileCreatePartyWorkerFlow({
     let onToggle: (id: string) => void = () => undefined;
     let onClear: (() => void) | null = null;
 
-    if (picker === "designation") {
+    if (picker === "app_role") {
       title = tr("Role", "റോൾ");
-      options = designationOptions.map((item) => ({
+      options = roleChoices.map((item) => ({
         id: item.id,
         label: lang === "ml" ? item.ml : item.en,
         search: `${item.en} ${item.ml}`,
       }));
+      selectedId = appRoleId;
+      onPick = (id) => {
+        setAppRoleId(id);
+        setErrors((prev) => ({ ...prev, role: "" }));
+      };
+    } else if (picker === "designation_catalogue") {
+      title = tr("Designation", "പദവി");
+      const catalogueChoices = level
+        ? designationCatalogue.filter((item) => item.level === level)
+        : designationCatalogue;
+      options = catalogueChoices.map((item) => ({
+        id: item.id,
+        label: designationOptionLabel(item, lang, level),
+        search: `${item.en} ${item.ml}`,
+      }));
       selectedId = designationId;
       onPick = handleDesignationChange;
+    } else if (picker === "role_level") {
+      title = tr("Role Level", "റോൾ ലെവൽ");
+      options = roleLevelOptions.map((item) => ({
+        id: item.id,
+        label: lang === "ml" ? item.ml : item.en,
+        search: `${item.en} ${item.ml}`,
+      }));
+      selectedId = roleLevel;
+      onPick = (id) => setRoleLevel(id as AssignmentLevel);
     } else if (picker === "level") {
       title = tr("Organisation Level", "ഓർഗനൈസേഷൻ ലെവൽ");
       options = organisationLevelOptions.map((item) => ({
@@ -2310,70 +2361,6 @@ export function MobileCreatePartyWorkerFlow({
             ) : null}
           </Field>
 
-          <Field label={tr("Designation", "പദവി")}>
-            <div ref={designationFieldRef} className="relative">
-              <input
-                type="text"
-                role="combobox"
-                aria-expanded={designationSuggestOpen}
-                aria-autocomplete="list"
-                aria-controls="party-worker-designation-suggestions"
-                autoComplete="off"
-                value={designationTitle}
-                onChange={(event) => {
-                  const nextValue = event.target.value;
-                  setDesignationTitle(nextValue);
-                  setDesignationSuggestOpen(true);
-                  const selected = allDesignationChoices.find((item) => item.id === designationId);
-                  const selectedLabel = selected ? (lang === "ml" ? selected.ml : selected.en) : "";
-                  if (designationId && nextValue !== selectedLabel) setDesignationId("");
-                }}
-                onFocus={() => setDesignationSuggestOpen(true)}
-                onKeyDown={(event) => {
-                  if (event.key === "Escape") setDesignationSuggestOpen(false);
-                }}
-                placeholder={tr("e.g. Booth Pramukh", "ഉദാ: ബൂത്ത് പ്രമുഖ്")}
-                className={inputClass}
-              />
-              {designationSuggestOpen ? (
-                <div
-                  id="party-worker-designation-suggestions"
-                  role="listbox"
-                  className="absolute left-0 right-0 top-full z-30 mt-1 max-h-52 overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-md dark:border-slate-700 dark:bg-slate-900"
-                >
-                  {designationSuggestions.length > 0 ? (
-                    designationSuggestions.map((suggestion) => (
-                      <button
-                        key={suggestion.id}
-                        type="button"
-                        role="option"
-                        aria-selected={false}
-                        onMouseDown={(event) => event.preventDefault()}
-                        onClick={() => {
-                          setDesignationTitle(suggestion.label);
-                          handleDesignationChange(suggestion.id);
-                          setDesignationSuggestOpen(false);
-                        }}
-                        className="flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left hover:bg-orange-50 dark:hover:bg-slate-800"
-                      >
-                        <span className="truncate text-[11px] font-bold text-slate-800 dark:text-slate-100">
-                          {suggestion.label}
-                        </span>
-                      </button>
-                    ))
-                  ) : (
-                    <p className="px-2.5 py-2 text-[10px] font-medium text-slate-500 dark:text-slate-400">
-                      {tr(
-                        "No matching designations - you can keep typing.",
-                        "പൊരുത്തമുള്ള പദവികളില്ല - നിങ്ങൾക്ക് ടൈപ്പ് ചെയ്തുകൊണ്ടിരിക്കാം.",
-                      )}
-                    </p>
-                  )}
-                </div>
-              ) : null}
-            </div>
-          </Field>
-
           <PickerButton
             label={tr("Organisation Level", "ഓർഗനൈസേഷൻ ലെവൽ")}
             required
@@ -2385,8 +2372,8 @@ export function MobileCreatePartyWorkerFlow({
                   ? levelOption.hintMl
                   : levelOption.hintEn
                 : tr(
-                    "Selecting a designation suggests its level",
-                    "പദവി തിരഞ്ഞെടുക്കുമ്പോൾ ലെവൽ നിർദ്ദേശിക്കും",
+                    "Select the organisation level for this user.",
+                    "ഈ ഉപയോക്താവിനുള്ള ഓർഗനൈസേഷൻ ലെവൽ തിരഞ്ഞെടുക്കുക.",
                   )
             }
             error={errors.level}
@@ -2394,25 +2381,13 @@ export function MobileCreatePartyWorkerFlow({
           />
 
           <PickerButton
-            label={tr("Role", "റോൾ")}
-            required
-            value={designation ? (lang === "ml" ? designation.ml : designation.en) : ""}
-            placeholder={tr("Select designation or role", "പദവി അല്ലെങ്കിൽ റോൾ തിരഞ്ഞെടുക്കുക")}
-            hint={
-              designation
-                ? assignmentLevels.find((item) => item.id === designation.level)?.[lang]
-                : level
-                  ? tr(
-                      `Showing designations and roles for ${levelOption?.en}`,
-                      `${levelOption?.ml} പദവികളും റോളുകളും കാണിക്കുന്നു`,
-                    )
-                  : tr(
-                      "All configured designations and roles",
-                      "ക്രമീകരിച്ച എല്ലാ പദവികളും റോളുകളും",
-                    )
+            label={tr("Designation", "പദവി")}
+            value={
+              designation ? (lang === "ml" ? designation.ml : designation.en) : designationTitle
             }
+            placeholder={tr("Select designation", "പദവി തിരഞ്ഞെടുക്കുക")}
             error={errors.designation}
-            onClick={() => openPicker("designation")}
+            onClick={() => openPicker("designation_catalogue")}
           />
 
           {level === "state" ? (
@@ -2623,11 +2598,14 @@ export function MobileCreatePartyWorkerFlow({
                 {tr("Assignment summary", "അസൈൻമെന്റ് സംഗ്രഹം")}
               </p>
             </div>
-            {designation || level ? (
+            {level ? (
               <div className="mt-1.5 space-y-1">
                 <SummaryRow
                   label={tr("Designation", "പദവി")}
-                  value={designation ? (lang === "ml" ? designation.ml : designation.en) : "—"}
+                  value={
+                    designationTitle.trim() ||
+                    (designation ? (lang === "ml" ? designation.ml : designation.en) : "—")
+                  }
                 />
                 <SummaryRow
                   label={tr("Level", "ലെവൽ")}
@@ -2641,8 +2619,8 @@ export function MobileCreatePartyWorkerFlow({
             ) : (
               <p className="mt-1 text-[10px] font-semibold text-slate-500 dark:text-slate-400">
                 {tr(
-                  "Choose a designation and level to preview the assignment.",
-                  "അസൈൻമെന്റ് കാണാൻ പദവിയും ലെവലും തിരഞ്ഞെടുക്കുക.",
+                  "Choose an organisation level to preview the assignment.",
+                  "അസൈൻമെന്റ് കാണാൻ ഓർഗനൈസേഷൻ ലെവൽ തിരഞ്ഞെടുക്കുക.",
                 )}
               </p>
             )}
@@ -2675,7 +2653,25 @@ export function MobileCreatePartyWorkerFlow({
     return (
       <div className="space-y-3.5">
         <section className="rounded-2xl border border-orange-100 bg-white p-3 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-2">
+          <div className="grid grid-cols-[1.35fr_1fr] gap-2">
+            <PickerButton
+              label={tr("Role", "റോൾ")}
+              required
+              value={appRole ? (lang === "ml" ? appRole.ml : appRole.en) : ""}
+              placeholder={tr("Select role", "റോൾ തിരഞ്ഞെടുക്കുക")}
+              error={errors.role}
+              onClick={() => openPicker("app_role")}
+            />
+            <PickerButton
+              label={tr("Role Level", "റോൾ ലെവൽ")}
+              value={
+                roleLevelOption ? (lang === "ml" ? roleLevelOption.ml : roleLevelOption.en) : ""
+              }
+              placeholder={tr("Select level", "ലെവൽ തിരഞ്ഞെടുക്കുക")}
+              onClick={() => openPicker("role_level")}
+            />
+          </div>
+          <div className="mt-2.5 flex items-center justify-between gap-2 border-y border-border/60 py-2">
             <div className="flex items-center gap-1.5">
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-[10px] font-extrabold text-white">
                 2
@@ -2823,8 +2819,10 @@ export function MobileCreatePartyWorkerFlow({
                 {tr("Unavailable", "ലഭ്യമല്ല")}
               </span>
             </div>
+          </div>
 
-            {visibleAdditionalPermissionKeys.length > 0 ? (
+          {visibleAdditionalPermissionKeys.length > 0 ? (
+            <div className="mt-2.5">
               <div className="overflow-hidden rounded-xl border border-border">
                 <button
                   type="button"
@@ -2909,8 +2907,8 @@ export function MobileCreatePartyWorkerFlow({
                   </div>
                 ) : null}
               </div>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
         </section>
 
         <section
@@ -3896,33 +3894,54 @@ export function MobileCreatePartyWorkerFlow({
           </div>
 
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3.5 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <div>
-              <p className="mb-1.5 text-[9px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                1 · {tr("Organisation Level", "ഓർഗനൈസേഷൻ ലെവൽ")}
-              </p>
-              {scopeTypeChoices.length === 0 ? (
-                <p className="rounded-xl border border-amber-200 bg-amber-50 p-2 text-[9px] font-bold text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300">
-                  {tr(
-                    "You are not authorised to delegate an access scope.",
-                    "ആക്സസ് സ്കോപ്പ് നൽകാൻ നിങ്ങൾക്ക് അനുമതിയില്ല.",
-                  )}
+            <div className="grid grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] gap-2">
+              <div className="min-w-0">
+                <p className="mb-1.5 text-[9px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  1 · {tr("Organisation Level", "ഓർഗനൈസേഷൻ ലെവൽ")}
                 </p>
-              ) : (
+                {scopeTypeChoices.length === 0 ? (
+                  <p className="rounded-xl border border-amber-200 bg-amber-50 p-2 text-[9px] font-bold text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300">
+                    {tr(
+                      "You are not authorised to delegate an access scope.",
+                      "ആക്സസ് സ്കോപ്പ് നൽകാൻ നിങ്ങൾക്ക് അനുമതിയില്ല.",
+                    )}
+                  </p>
+                ) : (
+                  <div className="relative">
+                    <select
+                      value={sheetScope}
+                      onChange={(event) => handleScopeChange(event.target.value as ScopeType)}
+                      className="h-9 w-full appearance-none rounded-lg border border-slate-200 bg-white px-2.5 pr-8 text-[12px] font-medium text-slate-900 outline-none focus:border-[#ff5500] focus:ring-2 focus:ring-orange-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    >
+                      {scopeTypeChoices.map((option) => (
+                        <option key={option.id} value={option.id}>
+                          {lang === "ml" ? option.ml : option.en}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="mb-1.5 text-[9px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  {tr("Role", "റോൾ")}
+                </p>
                 <div className="relative">
                   <select
-                    value={sheetScope}
-                    onChange={(event) => handleScopeChange(event.target.value as ScopeType)}
+                    value={sheetAppRoleId}
+                    onChange={(event) => setSheetAppRoleId(event.target.value)}
                     className="h-9 w-full appearance-none rounded-lg border border-slate-200 bg-white px-2.5 pr-8 text-[12px] font-medium text-slate-900 outline-none focus:border-[#ff5500] focus:ring-2 focus:ring-orange-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                   >
-                    {scopeTypeChoices.map((option) => (
-                      <option key={option.id} value={option.id}>
-                        {lang === "ml" ? option.ml : option.en}
+                    {roleChoices.map((role) => (
+                      <option key={role.id} value={role.id}>
+                        {lang === "ml" ? role.ml : role.en}
                       </option>
                     ))}
                   </select>
                   <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
                 </div>
-              )}
+              </div>
             </div>
 
             {needsDistrict || needsLocalBodyType || needsLocalBody || needsConstituency ? (

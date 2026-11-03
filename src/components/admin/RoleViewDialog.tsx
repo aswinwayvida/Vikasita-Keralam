@@ -5,8 +5,10 @@ import {
   Info,
   Lock,
   Pencil,
+  ShieldCheck,
   UserRound,
   Users,
+  Users2,
   type LucideIcon,
 } from "lucide-react";
 
@@ -34,6 +36,8 @@ const moduleIcons: Record<PermissionModuleId, LucideIcon> = {
   applications: ClipboardList,
   help_desk: Headset,
   applicant_profile: UserRound,
+  roles: ShieldCheck,
+  designations: Users2,
 };
 
 export function RoleViewDialog({
