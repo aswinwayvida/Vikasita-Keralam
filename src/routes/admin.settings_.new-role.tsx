@@ -257,13 +257,53 @@ function CreateRolePage() {
     setErrors((current) => ({ ...current, permissions: "" }));
   };
 
-  const toggleMatrixCell = (
-    row: MatrixRow,
-    scope: DataAccessScope,
-    columnId: MatrixColumnId,
-    checked: boolean,
-  ) => {
-    setScopedPermissions(selectActionForScope(scopedPermissions, row, scope, columnId, checked));
+  const isActionGroupEnabled = (row: MatrixRow, columnId: MatrixColumnId) =>
+    getMatrixColumnActionIds(row, columnId).some((actionId) =>
+      dataAccessOptions.some((scope) =>
+        scopedPermissions.includes(scopedPermissionKey(row.moduleId, scope.id, actionId)),
+      ),
+    );
+
+  const globalDataAccessState = (scope: DataAccessScope, columnId: MatrixColumnId) => {
+    let selectedCount = 0;
+    let totalCount = 0;
+
+    for (const row of allMatrixRows) {
+      const actionIds = getMatrixColumnActionIds(row, columnId);
+      if (actionIds.length === 0 || !isActionGroupEnabled(row, columnId)) continue;
+      for (const actionId of actionIds) {
+        totalCount += 1;
+        if (scopedPermissions.includes(scopedPermissionKey(row.moduleId, scope, actionId))) {
+          selectedCount += 1;
+        }
+      }
+    }
+
+    return {
+      totalCount,
+      selectedCount,
+      all: totalCount > 0 && selectedCount === totalCount,
+      partial: selectedCount > 0 && selectedCount < totalCount,
+    };
+  };
+
+  const toggleGlobalDataAccess = (scope: DataAccessScope, columnId: MatrixColumnId) => {
+    const state = globalDataAccessState(scope, columnId);
+    if (state.totalCount === 0) return;
+
+    const enable = !state.all;
+    let next = scopedPermissions;
+
+    for (const row of allMatrixRows) {
+      const actionIds = getMatrixColumnActionIds(row, columnId);
+      if (actionIds.length === 0) continue;
+      if (enable && !isActionGroupEnabled(row, columnId)) continue;
+      for (const actionId of actionIds) {
+        next = toggleScopedPermissionAction(next, row.moduleId, scope, actionId, enable);
+      }
+    }
+
+    setScopedPermissions(next);
     setErrors((current) => ({ ...current, permissions: "" }));
   };
 
@@ -343,7 +383,6 @@ function CreateRolePage() {
         const moduleTotalCellCount =
           row.columns.filter((column) => getMatrixColumnActionIds(row, column.id).length > 0)
             .length * dataAccessOptions.length;
-        const moduleHasAccess = moduleSelectedCount > 0;
 
         return (
           <div key={row.key} className="border-t border-border first:border-t-0">
@@ -411,67 +450,97 @@ function CreateRolePage() {
                 );
               })}
             </div>
-
-            {moduleHasAccess ? (
-              <div className="border-t border-border/60 bg-muted/20 px-4 py-2">
-                <div className={cn(gridClass, "items-center gap-1 pb-1")}>
-                  <span className="text-[8.5px] font-black uppercase tracking-wide text-primary">
-                    {tr("Data Access", "ഡാറ്റ ആക്സസ്")}
-                  </span>
-                </div>
-                {dataAccessOptions.map((scope) => (
-                  <div
-                    key={scope.id}
-                    className={cn(gridClass, "items-center gap-1 border-t border-border/40 py-1")}
-                  >
-                    <span className="min-w-0 text-xs font-bold text-foreground">
-                      {lang === "ml" ? scope.shortMl : scope.shortEn}
-                    </span>
-                    {row.columns.map((column) => {
-                      const actionIds = getMatrixColumnActionIds(row, column.id);
-                      if (actionIds.length === 0) {
-                        return (
-                          <span
-                            key={column.id}
-                            className="flex h-9 items-center justify-center text-xs font-semibold text-muted-foreground/40"
-                          >
-                            —
-                          </span>
-                        );
-                      }
-                      const checked = matrixCellSelected(row, scope.id, column.id);
-                      return (
-                        <button
-                          key={column.id}
-                          type="button"
-                          role="checkbox"
-                          aria-checked={checked}
-                          aria-label={`${row.en} ${scope.en} ${
-                            lang === "ml" ? column.ml : column.en
-                          }`}
-                          onClick={() => toggleMatrixCell(row, scope.id, column.id, !checked)}
-                          className="flex h-9 w-full cursor-pointer items-center justify-center rounded-md transition-colors hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-                        >
-                          <span
-                            className={cn(
-                              "flex h-4.5 w-4.5 items-center justify-center rounded-[4px] border",
-                              checked
-                                ? "border-primary bg-primary text-primary-foreground"
-                                : "border-border bg-white",
-                            )}
-                          >
-                            {checked ? <Check className="h-3 w-3 stroke-[3]" /> : null}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
-            ) : null}
           </div>
         );
       })}
+    </div>
+  );
+
+  const renderGlobalDataAccess = () => (
+    <div className="overflow-hidden rounded-2xl border border-border bg-white">
+      <div
+        className={cn(
+          primaryMatrixGridClass,
+          "items-center gap-1 border-b border-border bg-muted/40 px-4 py-2.5",
+        )}
+      >
+        <div className="flex min-w-0 flex-col justify-center">
+          <span className="text-[9px] font-black uppercase tracking-wide text-primary md:text-[11px]">
+            {tr("Data Access", "ഡാറ്റ ആക്സസ്")}
+          </span>
+          <span className="text-[9px] font-semibold text-muted-foreground">
+            {tr("Applies to all modules", "എല്ലാ മൊഡ്യൂളുകൾക്കും ബാധകം")}
+          </span>
+        </div>
+        {primaryMatrixColumns.map((column) => (
+          <span
+            key={column.id}
+            className="text-center text-[9px] font-black uppercase tracking-tight text-primary md:text-[11px] md:leading-tight"
+          >
+            {lang === "ml" ? column.ml : column.en}
+          </span>
+        ))}
+      </div>
+
+      {dataAccessOptions.map((scope) => (
+        <div
+          key={scope.id}
+          className={cn(
+            primaryMatrixGridClass,
+            "items-center gap-1 border-t border-border/60 px-4 py-1.5",
+          )}
+        >
+          <span className="min-w-0 text-xs font-bold text-foreground">
+            {lang === "ml" ? scope.shortMl : scope.shortEn}
+          </span>
+          {primaryMatrixColumns.map((column) => {
+            const state = globalDataAccessState(scope.id, column.id);
+            if (state.totalCount === 0) {
+              return (
+                <span
+                  key={column.id}
+                  title={tr("Unavailable", "ലഭ്യമല്ല")}
+                  aria-label={tr("Unavailable", "ലഭ്യമല്ല")}
+                  className="flex h-10 items-center justify-center text-xs font-semibold text-muted-foreground/40"
+                >
+                  —
+                </span>
+              );
+            }
+
+            return (
+              <button
+                key={column.id}
+                type="button"
+                role="checkbox"
+                aria-checked={state.all ? true : state.partial ? "mixed" : false}
+                aria-label={`${lang === "ml" ? scope.ml : scope.en} — ${
+                  lang === "ml" ? column.ml : column.en
+                }`}
+                onClick={() => toggleGlobalDataAccess(scope.id, column.id)}
+                className="flex h-10 w-full cursor-pointer items-center justify-center rounded-md transition-colors hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+              >
+                <span
+                  className={cn(
+                    "flex h-5 w-5 items-center justify-center rounded-[4px] border",
+                    state.all
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : state.partial
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border bg-white",
+                  )}
+                >
+                  {state.all ? (
+                    <Check className="h-3.5 w-3.5 stroke-[3]" />
+                  ) : state.partial ? (
+                    <span className="h-[2px] w-2.5 rounded-full bg-primary" />
+                  ) : null}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      ))}
     </div>
   );
 
@@ -595,6 +664,7 @@ function CreateRolePage() {
                 secondaryMatrixColumns,
                 secondaryMatrixGridClass,
               )}
+              {renderGlobalDataAccess()}
             </div>
           </div>
         </section>

@@ -29,6 +29,8 @@ import {
 import { toast } from "sonner";
 import { auditLog } from "@/data/volunteers";
 
+import { useAdminTopSearch } from "@/lib/admin-search-store";
+
 export const Route = createFileRoute("/admin/issues")({
   beforeLoad: () => {
     if (!FEATURES.janashabdam) {
@@ -41,6 +43,7 @@ export const Route = createFileRoute("/admin/issues")({
 
 function AdminIssues() {
   const { lang, t } = useLang();
+  const topSearchQuery = useAdminTopSearch();
   const [list, setList] = useState<Issue[]>(ALL_ISSUES);
   const [category, setCategory] = useState("all");
   const [district, setDistrict] = useState("all");
@@ -48,14 +51,16 @@ function AdminIssues() {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState<Issue | null>(null);
 
+  const query = q || topSearchQuery;
+
   const filtered = useMemo(() => {
     return list.filter((i) =>
       (category === "all" || i.category === category) &&
       (district === "all" || i.districtId === district) &&
       (status === "all" || i.status === status) &&
-      (!q || i.title[lang].toLowerCase().includes(q.toLowerCase()) || i.id.toLowerCase().includes(q.toLowerCase()))
+      (!query || i.title[lang].toLowerCase().includes(query.toLowerCase()) || i.id.toLowerCase().includes(query.toLowerCase()))
     );
-  }, [list, category, district, status, q, lang]);
+  }, [list, category, district, status, query, lang]);
 
   const summary = {
     submitted: list.filter((i) => i.status === "submitted").length,

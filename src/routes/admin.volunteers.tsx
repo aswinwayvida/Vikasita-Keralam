@@ -4,6 +4,8 @@ import { useLang } from "@/i18n/LanguageProvider";
 import { volunteers } from "@/data/volunteers";
 import { getDistrictName, getConstituencyName } from "@/data/geo";
 
+import { useAdminTopSearch } from "@/lib/admin-search-store";
+
 export const Route = createFileRoute("/admin/volunteers")({
   head: () => ({ meta: [{ title: "Volunteers · Admin" }] }),
   component: VolunteersPage,
@@ -12,6 +14,19 @@ export const Route = createFileRoute("/admin/volunteers")({
 function VolunteersPage() {
   const { lang } = useLang();
   const navigate = useNavigate();
+  const topSearchQuery = useAdminTopSearch();
+
+  const filteredVolunteers = volunteers.filter((v) => {
+    const q = topSearchQuery.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      v.name.toLowerCase().includes(q) ||
+      v.mobile.toLowerCase().includes(q) ||
+      v.role.toLowerCase().includes(q) ||
+      getDistrictName(v.districtId, lang).toLowerCase().includes(q) ||
+      getConstituencyName(v.constituencyId, lang).toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div className="space-y-5">
@@ -43,7 +58,7 @@ function VolunteersPage() {
               </tr>
             </thead>
             <tbody>
-              {volunteers.map((v) => (
+              {filteredVolunteers.map((v) => (
                 <tr
                   key={v.id}
                   onClick={() => navigate({ to: "/admin/volunteers/$volunteerId", params: { volunteerId: v.id } })}
