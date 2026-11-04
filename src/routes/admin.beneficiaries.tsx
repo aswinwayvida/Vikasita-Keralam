@@ -39,11 +39,25 @@ function BeneficiariesPage() {
     }
   }, []);
 
+  const topSearchQuery = useAdminTopSearch();
+
+  const filteredBeneficiaries = mockBeneficiaries.filter((b) => {
+    const q = topSearchQuery.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      b.name.toLowerCase().includes(q) ||
+      b.id.toLowerCase().includes(q) ||
+      b.scheme.toLowerCase().includes(q) ||
+      b.location.toLowerCase().includes(q) ||
+      b.category.toLowerCase().includes(q)
+    );
+  });
+
   function toggleSelectAll() {
-    if (selectedIds.size === mockBeneficiaries.length) {
+    if (selectedIds.size === filteredBeneficiaries.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(mockBeneficiaries.map((r) => r.id)));
+      setSelectedIds(new Set(filteredBeneficiaries.map((r) => r.id)));
     }
   }
 
@@ -195,7 +209,7 @@ function BeneficiariesPage() {
         {/* Cards View */}
         {viewMode === "cards" && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            {mockBeneficiaries.map((b) => {
+            {filteredBeneficiaries.map((b) => {
               const isSelected = selectedIds.has(b.id);
               return (
                 <div
@@ -260,7 +274,7 @@ function BeneficiariesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60 font-semibold">
-                {mockBeneficiaries.map((b) => {
+                {filteredBeneficiaries.map((b) => {
                   const isSelected = selectedIds.has(b.id);
                   return (
                     <tr
