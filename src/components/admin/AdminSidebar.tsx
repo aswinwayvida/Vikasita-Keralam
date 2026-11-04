@@ -105,7 +105,8 @@ export function AdminSidebar() {
                   const isRolesLink = item.label === "Roles and Control";
                   const isGeneralSettings = item.label === "General settings";
                   const active = isRolesLink
-                    ? path === item.to && search?.tab === "roles"
+                    ? (path === item.to && search?.tab === "roles") ||
+                      path === "/admin/settings/new-role"
                     : isGeneralSettings
                       ? path === item.to && search?.tab !== "roles"
                       : exact

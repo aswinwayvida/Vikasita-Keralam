@@ -1254,11 +1254,11 @@ const profilePermissionKeyOverrides: Partial<Record<PermissionModuleId, Record<s
 const profilePermissionModuleOrder: PermissionModuleId[] = [
   "applicant_profile",
   "applications",
-  "help_desk",
   "schemes",
-  "party_workers",
   "roles",
   "designations",
+  "party_workers",
+  "help_desk",
 ];
 
 const orderedProfilePermissionModules = [...permissionModules].sort(
@@ -1283,8 +1283,8 @@ const profilePermissionModuleLabel = (
 ) =>
   module.id === "help_desk"
     ? isMalayalam
-      ? "സപ്പോർട്ട് ഹാൻഡ്ലിംഗ്"
-      : "Support Handling"
+      ? "അഭ്യർത്ഥന"
+      : "Request"
     : isMalayalam
       ? module.ml
       : module.en;

@@ -86,10 +86,13 @@ export function formatWaitingTime(hours: number) {
   return rem > 0 ? `${days}d ${rem}h` : `${days}d`;
 }
 
+import { useAdminTopSearch } from "@/lib/admin-search-store";
+
 function ApplicationsPage() {
   const { lang } = useLang();
   const navigate = useNavigate();
   const routeSearch = Route.useSearch();
+  const topSearchQuery = useAdminTopSearch();
   const [stage, setStage] = useState<"All" | QueueStage>(routeSearch.stage ?? "All");
   const [district, setDistrict] = useState("All");
   const [schemeCategoryFilter, setSchemeCategoryFilter] = useState("all");
@@ -112,6 +115,8 @@ function ApplicationsPage() {
     };
   }, []);
 
+  const activeSearch = searchQuery || topSearchQuery;
+
   const filtered = useMemo(
     () =>
       adminApplications.filter((record) => {
@@ -128,13 +133,23 @@ function ApplicationsPage() {
             record.queueStage !== "Completed" &&
             record.ageHours > 48) ||
           (routeSearch.filter === "unassigned" && record.reviewer === "Not assigned");
+
+        const q = activeSearch.trim().toLowerCase();
+        const searchMatch =
+          !q ||
+          record.applicantName.toLowerCase().includes(q) ||
+          record.id.toLowerCase().includes(q) ||
+          record.schemeName.en.toLowerCase().includes(q) ||
+          record.schemeName.ml.toLowerCase().includes(q);
+
         return (
           filterMatch &&
+          searchMatch &&
           (stage === "All" || record.queueStage === stage) &&
           (district === "All" || record.districtId === district)
         );
       }),
-    [district, routeSearch.filter, searchQuery, stage, schemeCategoryFilter, assistanceStatusFilter, dateFilter, customStartDate, customEndDate],
+    [district, routeSearch.filter, activeSearch, stage, schemeCategoryFilter, assistanceStatusFilter, dateFilter, customStartDate, customEndDate],
   );
   const visible = filtered.slice(0, 40);
   const allVisibleSelected =

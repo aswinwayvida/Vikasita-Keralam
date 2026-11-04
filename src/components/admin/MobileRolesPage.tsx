@@ -8,7 +8,6 @@ import {
   FileText,
   Filter,
   Headset,
-  Layers,
   MapPin,
   MoreVertical,
   Pencil,
@@ -46,15 +45,24 @@ import {
   type AssignablePartyWorker,
 } from "@/data/party-worker-directory";
 import {
+  allScopedPermissionKeys,
+  cloneRoleDataAccess,
   createRoleId,
+  dataAccessOptions,
   draftFromRole,
   emptyRoleDraft,
   ensureRolesPageAccessRoles,
+  getPermissionMatrixActionIds,
   getRolesAndControlRoles,
   loadManagedRoles,
   markManagedRoleDeleted,
   nextRoleCopyName,
+  permissionsFromScopedPermissions,
   saveManagedRoles,
+  scopedPermissionKey,
+  scopedPermissionsFromRole,
+  syncRoleDataAccessWithScopedPermissions,
+  toggleScopedPermission,
   type AdministrativePermissionId,
   type ManagedRole,
   type RoleDraft,
@@ -87,11 +95,11 @@ const freshDraft = (): RoleDraft => ({
 const permissionModuleOrder: PermissionModuleId[] = [
   "applicant_profile",
   "applications",
-  "help_desk",
   "schemes",
-  "party_workers",
   "roles",
   "designations",
+  "party_workers",
+  "help_desk",
 ];
 
 const orderedPermissionModules = [...permissionModules].sort(
@@ -104,10 +112,6 @@ const crudPermissionColumns = [
   { id: "edit", en: "Edit", ml: "തിരുത്തുക" },
   { id: "delete", en: "Delete", ml: "നീക്കം ചെയ്യുക" },
 ] as const;
-
-const crudPermissionKeyOverrides: Partial<Record<PermissionModuleId, Record<string, string[]>>> = {
-  schemes: { view: ["view_list", "view_details"] },
-};
 
 const crudPermissionActionIds = new Set<string>(crudPermissionColumns.map((column) => column.id));
 
@@ -125,14 +129,20 @@ const rolePermissionModuleLabel = (
 ) =>
   module.id === "help_desk"
     ? isMalayalam
-      ? "സപ്പോർട്ട് ഹാൻഡ്ലിംഗ്"
-      : "Support Handling"
+      ? "അഭ്യർത്ഥന"
+      : "Request"
     : isMalayalam
       ? module.ml
       : module.en;
 
-const allPermissionKeys = permissionModules.flatMap((module) =>
-  module.actions.map((action) => permissionKey(module.id, action.id)),
+const totalMatrixCellCount = orderedPermissionModules.reduce(
+  (moduleTotal, module) =>
+    moduleTotal +
+    crudPermissionColumns.filter(
+      (column) => getPermissionMatrixActionIds(module.id, column.id).length > 0,
+    ).length *
+      dataAccessOptions.length,
+  0,
 );
 
 const roleAccessPermissionIds: AdministrativePermissionId[] = ["manage_roles", "assign_access"];
@@ -174,30 +184,46 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
   const [editTarget, setEditTarget] = useState<ManagedRole | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ManagedRole | null>(null);
   const [draft, setDraft] = useState<RoleDraft>(freshDraft);
+  const [scopedPermissions, setScopedPermissions] = useState<string[]>([]);
+  const [expandedPermissionModules, setExpandedPermissionModules] = useState<
+    Set<PermissionModuleId>
+  >(() => new Set([orderedPermissionModules[0].id]));
   const [assignmentRole, setAssignmentRole] = useState<ManagedRole | null>(null);
   const [assignmentWorkerIds, setAssignmentWorkerIds] = useState<string[]>([]);
   const [assignmentWorkers, setAssignmentWorkers] = useState<AssignablePartyWorker[]>([]);
   const [assignmentSearch, setAssignmentSearch] = useState("");
   const [assignmentDistrict, setAssignmentDistrict] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isAdditionalPermissionsOpen, setIsAdditionalPermissionsOpen] = useState(false);
-  const allPermissionsSelected =
-    allPermissionKeys.length > 0 &&
-    allPermissionKeys.every((key) => draft.permissions.includes(key));
-  const selectedPermissionCount = allPermissionKeys.filter((key) =>
-    draft.permissions.includes(key),
-  ).length;
-  const visibleAdditionalPermissionModules = additionalPermissionModules.filter(({ module }) => {
-    const viewAction = module.actions.find((action) => action.id === "view");
-    return viewAction ? draft.permissions.includes(permissionKey(module.id, viewAction.id)) : true;
-  });
-  const visibleAdditionalPermissionKeys = visibleAdditionalPermissionModules.flatMap(
-    ({ module, actions }) => actions.map((action) => permissionKey(module.id, action.id)),
+  const scopedPermissionSet = new Set(scopedPermissions);
+  const matrixCellSelected = (
+    moduleId: PermissionModuleId,
+    scope: (typeof dataAccessOptions)[number]["id"],
+    columnId: (typeof crudPermissionColumns)[number]["id"],
+  ) => {
+    const actionIds = getPermissionMatrixActionIds(moduleId, columnId);
+    return (
+      actionIds.length > 0 &&
+      actionIds.every((actionId) =>
+        scopedPermissionSet.has(scopedPermissionKey(moduleId, scope, actionId)),
+      )
+    );
+  };
+  const selectedPermissionCount = orderedPermissionModules.reduce(
+    (moduleTotal, module) =>
+      moduleTotal +
+      dataAccessOptions.reduce(
+        (scopeTotal, scope) =>
+          scopeTotal +
+          crudPermissionColumns.filter((column) =>
+            matrixCellSelected(module.id, scope.id, column.id),
+          ).length,
+        0,
+      ),
+    0,
   );
-  const selectedAdditionalPermissionCount = visibleAdditionalPermissionKeys.filter((key) =>
-    draft.permissions.includes(key),
-  ).length;
-
+  const allPermissionsSelected =
+    totalMatrixCellCount > 0 && selectedPermissionCount === totalMatrixCellCount;
+  const hasPartialPermissionSelection = selectedPermissionCount > 0 && !allPermissionsSelected;
   useEffect(() => {
     return () => onFormOpenChange?.(false);
   }, [onFormOpenChange]);
@@ -219,8 +245,17 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
     setIsCreating(false);
     setEditTarget(role);
     setDraft(draftFromRole(role));
+    const nextScopedPermissions = scopedPermissionsFromRole(role);
+    setScopedPermissions(nextScopedPermissions);
+    const modulesWithAccess = new Set(
+      orderedPermissionModules
+        .filter((module) => nextScopedPermissions.some((key) => key.startsWith(`${module.id}.`)))
+        .map((module) => module.id),
+    );
+    setExpandedPermissionModules(
+      modulesWithAccess.size > 0 ? modulesWithAccess : new Set([orderedPermissionModules[0].id]),
+    );
     setErrors({});
-    setIsAdditionalPermissionsOpen(false);
     setActiveView("form");
     onFormOpenChange?.(true);
   };
@@ -241,8 +276,9 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
     setIsCreating(true);
     setEditTarget(null);
     setDraft(freshDraft());
+    setScopedPermissions([]);
+    setExpandedPermissionModules(new Set([orderedPermissionModules[0].id]));
     setErrors({});
-    setIsAdditionalPermissionsOpen(false);
     setActiveView("form");
     onFormOpenChange?.(true);
   };
@@ -299,16 +335,23 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
 
     const name = draft.name.trim();
     const now = new Date().toISOString();
+    const nextPermissions = permissionsFromScopedPermissions(scopedPermissions, draft.permissions);
+    const nextDataAccess = syncRoleDataAccessWithScopedPermissions(
+      draft.dataAccess,
+      scopedPermissions,
+    );
     if (isCreating) {
       const created: ManagedRole = {
         id: createRoleId(),
         name,
         description: draft.description.trim(),
         assignmentLevels: [...draft.assignmentLevels],
-        permissions: [...draft.permissions],
+        permissions: nextPermissions,
         administrativePermissions: normalizeAdministrativePermissions(
           draft.administrativePermissions,
         ),
+        dataAccess: nextDataAccess,
+        scopedPermissions: [...scopedPermissions],
         status: draft.status,
         system: false,
         assignedUsers: 0,
@@ -332,10 +375,12 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
         name,
         description: draft.description.trim(),
         assignmentLevels: [...draft.assignmentLevels],
-        permissions: [...draft.permissions],
+        permissions: nextPermissions,
         administrativePermissions: normalizeAdministrativePermissions(
           draft.administrativePermissions,
         ),
+        dataAccess: nextDataAccess,
+        scopedPermissions: [...scopedPermissions],
         status: draft.status,
         updatedAt: now,
       };
@@ -378,6 +423,8 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
       assignmentLevels: [...role.assignmentLevels],
       permissions: [...role.permissions],
       administrativePermissions: [...role.administrativePermissions],
+      dataAccess: cloneRoleDataAccess(role.dataAccess),
+      scopedPermissions: scopedPermissionsFromRole(role),
       status: "Active",
       system: false,
       assignedUsers: 0,
@@ -883,15 +930,32 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
                   <button
                     type="button"
                     role="checkbox"
-                    aria-checked={allPermissionsSelected}
+                    aria-checked={
+                      allPermissionsSelected
+                        ? true
+                        : hasPartialPermissionSelection
+                          ? "mixed"
+                          : false
+                    }
                     aria-label={tr(
                       "Select all module permissions",
                       "എല്ലാ മൊഡ്യൂൾ അനുമതികളും തിരഞ്ഞെടുക്കുക",
                     )}
                     onClick={() => {
+                      const nextScopedPermissions = allPermissionsSelected
+                        ? []
+                        : [...allScopedPermissionKeys];
+                      setScopedPermissions(nextScopedPermissions);
                       setDraft((current) => ({
                         ...current,
-                        permissions: allPermissionsSelected ? [] : [...allPermissionKeys],
+                        permissions: permissionsFromScopedPermissions(
+                          nextScopedPermissions,
+                          current.permissions,
+                        ),
+                        dataAccess: syncRoleDataAccessWithScopedPermissions(
+                          current.dataAccess,
+                          nextScopedPermissions,
+                        ),
                       }));
                       setErrors((current) => ({ ...current, permissions: "" }));
                     }}
@@ -910,104 +974,255 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
                           : "border-orange-300 bg-white dark:border-orange-800 dark:bg-slate-900",
                       )}
                     >
-                      {allPermissionsSelected ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : null}
+                      {allPermissionsSelected ? (
+                        <Check className="h-2.5 w-2.5 stroke-[3]" />
+                      ) : hasPartialPermissionSelection ? (
+                        <span className="h-[1.5px] w-2 rounded-full bg-orange-600 dark:bg-orange-300" />
+                      ) : null}
                     </span>
                     <span>{tr("All", "എല്ലാം")}</span>
                     <span>
-                      ({selectedPermissionCount}/{allPermissionKeys.length})
+                      ({selectedPermissionCount}/{totalMatrixCellCount})
                     </span>
                   </button>
                 </div>
                 <div className="space-y-2">
-                  <div className="overflow-hidden rounded-xl border border-border">
-                    <div className="grid grid-cols-[minmax(0,1fr)_36px_36px_36px_36px] items-center gap-1 bg-orange-50/70 px-2 py-2 dark:bg-slate-800/70">
-                      <span className="pl-1 text-[8px] font-black uppercase tracking-wide text-orange-700/80 dark:text-orange-300">
-                        {tr("Module", "മൊഡ്യൂൾ")}
-                      </span>
-                      {crudPermissionColumns.map((column) => (
-                        <span
-                          key={column.id}
-                          className="text-center text-[7.5px] font-black uppercase tracking-tight text-orange-700/80 dark:text-orange-300"
-                        >
-                          {isMalayalam ? column.ml : column.en}
-                        </span>
-                      ))}
-                    </div>
-
+                  <div className="overflow-hidden rounded-xl border border-border bg-white dark:bg-slate-900">
                     {orderedPermissionModules.map((module) => {
                       const Icon = moduleIcons[module.id];
                       const moduleLabel = rolePermissionModuleLabel(module, isMalayalam);
+                      const extraActions =
+                        additionalPermissionModules.find((group) => group.module.id === module.id)
+                          ?.actions ?? [];
+                      const hasViewPermission = dataAccessOptions.some((scope) =>
+                        matrixCellSelected(module.id, scope.id, "view"),
+                      );
+                      const showExtraActions =
+                        extraActions.length > 0 &&
+                        (module.actions.some((action) => action.id === "view")
+                          ? hasViewPermission
+                          : true);
+                      const moduleSelectedCount = dataAccessOptions.reduce(
+                        (scopeTotal, scope) =>
+                          scopeTotal +
+                          crudPermissionColumns.filter((column) =>
+                            matrixCellSelected(module.id, scope.id, column.id),
+                          ).length,
+                        0,
+                      );
+                      const moduleTotalCellCount =
+                        crudPermissionColumns.filter(
+                          (column) => getPermissionMatrixActionIds(module.id, column.id).length > 0,
+                        ).length * dataAccessOptions.length;
+                      const expanded = expandedPermissionModules.has(module.id);
                       return (
-                        <div
-                          key={module.id}
-                          className="grid grid-cols-[minmax(0,1fr)_36px_36px_36px_36px] items-center gap-1 border-t border-border/60 px-2 py-0.5"
-                        >
-                          <div className="flex min-w-0 items-start gap-1.5 py-1.5">
-                            <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-orange-600 dark:text-orange-300" />
-                            <span className="min-w-0 whitespace-normal break-words text-[9.5px] font-extrabold leading-snug text-foreground">
+                        <div key={module.id} className="border-t border-border first:border-t-0">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpandedPermissionModules((current) => {
+                                const next = new Set(current);
+                                if (next.has(module.id)) next.delete(module.id);
+                                else next.add(module.id);
+                                return next;
+                              })
+                            }
+                            aria-expanded={expanded}
+                            className="flex w-full items-center gap-2.5 bg-white px-3.5 py-3 text-left transition-colors hover:bg-orange-50/40 dark:bg-slate-900 dark:hover:bg-slate-800/60"
+                          >
+                            <Icon className="h-4 w-4 shrink-0 text-orange-600 dark:text-orange-300" />
+                            <span className="min-w-0 flex-1 whitespace-normal break-words text-[12px] font-extrabold leading-snug text-foreground">
                               {moduleLabel}
                             </span>
-                          </div>
-                          {crudPermissionColumns.map((column) => {
-                            const action = module.actions.find((item) => item.id === column.id);
-                            const permissionIds =
-                              crudPermissionKeyOverrides[module.id]?.[column.id] ??
-                              (action ? [action.id] : []);
-                            if (permissionIds.length === 0) {
-                              return (
-                                <span
-                                  key={column.id}
-                                  title={tr("Unavailable", "ലഭ്യമല്ല")}
-                                  aria-label={tr("Unavailable", "ലഭ്യമല്ല")}
-                                  className="flex h-9 items-center justify-center text-[11px] font-semibold text-slate-300 dark:text-slate-600"
-                                >
-                                  —
+                            <span
+                              className={cn(
+                                "rounded-full px-2 py-0.5 text-[10.5px] font-bold",
+                                moduleSelectedCount > 0
+                                  ? "bg-orange-100 text-orange-700 dark:bg-orange-950/60 dark:text-orange-300"
+                                  : "bg-muted text-muted-foreground",
+                              )}
+                            >
+                              {moduleSelectedCount}/{moduleTotalCellCount}
+                            </span>
+                            <ChevronDown
+                              className={cn(
+                                "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+                                expanded && "rotate-180",
+                              )}
+                            />
+                          </button>
+
+                          {expanded ? (
+                            <div className="border-t border-border/60 bg-white px-2 pb-2 pt-1.5 dark:bg-slate-900">
+                              <div className="grid grid-cols-[minmax(0,1fr)_36px_36px_36px_36px] items-center gap-1 pb-1">
+                                <span className="pl-1 text-[8px] font-black uppercase tracking-wide text-orange-700/80 dark:text-orange-300">
+                                  {tr("Data Access", "ഡാറ്റ ആക്സസ്")}
                                 </span>
-                              );
-                            }
-                            const permissionKeys = permissionIds.map((id) =>
-                              permissionKey(module.id, id),
-                            );
-                            const checked = permissionKeys.every((key) =>
-                              draft.permissions.includes(key),
-                            );
-                            const actionLabel = isMalayalam ? column.ml : column.en;
-                            return (
-                              <button
-                                key={column.id}
-                                type="button"
-                                role="checkbox"
-                                aria-checked={checked}
-                                aria-label={`${moduleLabel} ${actionLabel}: ${
-                                  checked
-                                    ? tr("Allowed", "അനുവദിച്ചിരിക്കുന്നു")
-                                    : tr("Not Allowed", "അനുവദിച്ചിട്ടില്ല")
-                                }`}
-                                onClick={() => {
-                                  setDraft((current) => {
-                                    let permissions = current.permissions;
-                                    permissionKeys.forEach((key) => {
-                                      permissions = togglePermission(permissions, key, !checked);
-                                    });
-                                    return { ...current, permissions };
-                                  });
-                                  setErrors((current) => ({ ...current, permissions: "" }));
-                                }}
-                                className="flex h-9 w-full items-center justify-center rounded-md transition-colors hover:bg-orange-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 dark:hover:bg-slate-800 cursor-pointer"
-                              >
-                                <span
-                                  className={cn(
-                                    "flex h-4 w-4 items-center justify-center rounded-[3px] border",
-                                    checked
-                                      ? "border-orange-500 bg-orange-500 text-white"
-                                      : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900",
-                                  )}
-                                >
-                                  {checked ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : null}
-                                </span>
-                              </button>
-                            );
-                          })}
+                                {crudPermissionColumns.map((column) => (
+                                  <span
+                                    key={column.id}
+                                    className="text-center text-[7.5px] font-black uppercase tracking-tight text-orange-700/80 dark:text-orange-300"
+                                  >
+                                    {isMalayalam ? column.ml : column.en}
+                                  </span>
+                                ))}
+                              </div>
+                              {dataAccessOptions.map((scope) => {
+                                const scopeLabel = isMalayalam ? scope.shortMl : scope.shortEn;
+                                return (
+                                  <div
+                                    key={scope.id}
+                                    className="grid grid-cols-[minmax(0,1fr)_36px_36px_36px_36px] items-center gap-1 border-t border-border/40 py-0.5"
+                                  >
+                                    <span className="min-w-0 pl-1 text-[9.5px] font-bold text-foreground">
+                                      {scopeLabel}
+                                    </span>
+                                    {crudPermissionColumns.map((column) => {
+                                      const actionIds = getPermissionMatrixActionIds(
+                                        module.id,
+                                        column.id,
+                                      );
+                                      if (actionIds.length === 0) {
+                                        return (
+                                          <span
+                                            key={column.id}
+                                            title={tr("Unavailable", "ലഭ്യമല്ല")}
+                                            aria-label={tr("Unavailable", "ലഭ്യമല്ല")}
+                                            className="flex h-9 items-center justify-center text-[11px] font-semibold text-slate-300 dark:text-slate-600"
+                                          >
+                                            —
+                                          </span>
+                                        );
+                                      }
+                                      const checked = matrixCellSelected(
+                                        module.id,
+                                        scope.id,
+                                        column.id,
+                                      );
+                                      const columnLabel = isMalayalam ? column.ml : column.en;
+                                      return (
+                                        <button
+                                          key={column.id}
+                                          type="button"
+                                          role="checkbox"
+                                          aria-checked={checked}
+                                          aria-label={`${moduleLabel} ${scopeLabel} ${columnLabel}: ${
+                                            checked
+                                              ? tr("Allowed", "അനുവദിച്ചിരിക്കുന്നു")
+                                              : tr("Not Allowed", "അനുവദിച്ചിട്ടില്ല")
+                                          }`}
+                                          onClick={() => {
+                                            const nextScopedPermissions = toggleScopedPermission(
+                                              scopedPermissions,
+                                              module.id,
+                                              scope.id,
+                                              column.id,
+                                              !checked,
+                                            );
+                                            setScopedPermissions(nextScopedPermissions);
+                                            setDraft((current) => ({
+                                              ...current,
+                                              permissions: permissionsFromScopedPermissions(
+                                                nextScopedPermissions,
+                                                current.permissions,
+                                              ),
+                                              dataAccess: syncRoleDataAccessWithScopedPermissions(
+                                                current.dataAccess,
+                                                nextScopedPermissions,
+                                              ),
+                                            }));
+                                            setErrors((current) => ({
+                                              ...current,
+                                              permissions: "",
+                                            }));
+                                          }}
+                                          className="flex h-9 w-full cursor-pointer items-center justify-center rounded-md transition-colors hover:bg-orange-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 dark:hover:bg-slate-800"
+                                        >
+                                          <span
+                                            className={cn(
+                                              "flex h-4 w-4 items-center justify-center rounded-[3px] border",
+                                              checked
+                                                ? "border-orange-500 bg-orange-500 text-white"
+                                                : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900",
+                                            )}
+                                          >
+                                            {checked ? (
+                                              <Check className="h-2.5 w-2.5 stroke-[3]" />
+                                            ) : null}
+                                          </span>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                );
+                              })}
+
+                              {showExtraActions ? (
+                                <div className="mt-1 border-t border-dashed border-border/60 pt-2">
+                                  <p className="text-[7.5px] font-black uppercase tracking-wide text-muted-foreground">
+                                    {tr("Additional permissions", "അധിക അനുമതികൾ")}
+                                  </p>
+                                  <div className="mt-1 flex items-stretch gap-1.5">
+                                    {extraActions.map((action) => {
+                                      const key = permissionKey(module.id, action.id);
+                                      const checked = draft.permissions.includes(key);
+                                      return (
+                                        <button
+                                          key={action.id}
+                                          type="button"
+                                          role="checkbox"
+                                          aria-checked={checked}
+                                          aria-label={`${moduleLabel} ${
+                                            isMalayalam ? action.ml : action.en
+                                          }: ${
+                                            checked
+                                              ? tr("Allowed", "അനുവദിച്ചിരിക്കുന്നു")
+                                              : tr("Not Allowed", "അനുവദിച്ചിട്ടില്ല")
+                                          }`}
+                                          onClick={() => {
+                                            setDraft((current) => ({
+                                              ...current,
+                                              permissions: togglePermission(
+                                                current.permissions,
+                                                key,
+                                                !checked,
+                                              ),
+                                            }));
+                                            setErrors((current) => ({
+                                              ...current,
+                                              permissions: "",
+                                            }));
+                                          }}
+                                          className={cn(
+                                            "flex min-h-8 min-w-0 flex-1 cursor-pointer items-center gap-1.5 rounded-md border px-2 py-1.5 text-left transition-colors",
+                                            checked
+                                              ? "border-orange-200 bg-orange-50/70 dark:border-orange-900/60 dark:bg-orange-950/20"
+                                              : "border-border/70 hover:bg-muted/40",
+                                          )}
+                                        >
+                                          <span
+                                            className={cn(
+                                              "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[3px] border",
+                                              checked
+                                                ? "border-orange-500 bg-orange-500 text-white"
+                                                : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900",
+                                            )}
+                                          >
+                                            {checked ? (
+                                              <Check className="h-2 w-2 stroke-[3]" />
+                                            ) : null}
+                                          </span>
+                                          <span className="min-w-0 flex-1 text-[9.5px] font-bold leading-snug text-foreground">
+                                            {isMalayalam ? action.ml : action.en}
+                                          </span>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              ) : null}
+                            </div>
+                          ) : null}
                         </div>
                       );
                     })}
@@ -1031,107 +1246,6 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
                       {tr("Unavailable", "ലഭ്യമല്ല")}
                     </span>
                   </div>
-
-                  {visibleAdditionalPermissionKeys.length > 0 ? (
-                    <div className="overflow-hidden rounded-xl border border-border">
-                      <button
-                        type="button"
-                        onClick={() => setIsAdditionalPermissionsOpen((current) => !current)}
-                        aria-expanded={isAdditionalPermissionsOpen}
-                        className="flex w-full items-center gap-2 bg-orange-50/40 px-2.5 py-2 text-left transition-colors hover:bg-orange-50 dark:bg-slate-800/40 dark:hover:bg-slate-800/70 cursor-pointer"
-                      >
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-300">
-                          <Layers className="h-3.5 w-3.5" />
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block text-[10.5px] font-extrabold text-foreground">
-                            {tr("Additional Permissions", "അധിക അനുമതികൾ")}
-                          </span>
-                          <span className="block truncate text-[8.5px] text-muted-foreground">
-                            {tr(
-                              "Other actions for these modules",
-                              "ഈ മൊഡ്യൂളുകളിലെ മറ്റ് പ്രവർത്തനങ്ങൾ",
-                            )}
-                          </span>
-                        </span>
-                        <span className="rounded-full bg-orange-100 px-1.5 py-0.5 text-[8.5px] font-bold text-orange-700 dark:bg-orange-950/60 dark:text-orange-300">
-                          {selectedAdditionalPermissionCount}/
-                          {visibleAdditionalPermissionKeys.length}
-                        </span>
-                        <ChevronDown
-                          className={cn(
-                            "h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform",
-                            isAdditionalPermissionsOpen && "rotate-180",
-                          )}
-                        />
-                      </button>
-
-                      {isAdditionalPermissionsOpen ? (
-                        <div className="divide-y divide-border/70 border-t border-border/70">
-                          {visibleAdditionalPermissionModules.map(({ module, actions }) => {
-                            const Icon = moduleIcons[module.id];
-                            return (
-                              <div key={module.id} className="px-2.5 py-2">
-                                <div className="flex items-center gap-1.5 text-[8.5px] font-black uppercase tracking-wide text-muted-foreground">
-                                  <Icon className="h-3 w-3 shrink-0 text-orange-600 dark:text-orange-300" />
-                                  <span className="min-w-0 break-words">
-                                    {rolePermissionModuleLabel(module, isMalayalam)}
-                                  </span>
-                                </div>
-                                <div className="mt-1 flex items-stretch gap-1.5">
-                                  {actions.map((action) => {
-                                    const key = permissionKey(module.id, action.id);
-                                    const checked = draft.permissions.includes(key);
-                                    return (
-                                      <button
-                                        key={action.id}
-                                        type="button"
-                                        role="checkbox"
-                                        aria-checked={checked}
-                                        onClick={() => {
-                                          setDraft((current) => ({
-                                            ...current,
-                                            permissions: togglePermission(
-                                              current.permissions,
-                                              key,
-                                              !checked,
-                                            ),
-                                          }));
-                                          setErrors((current) => ({ ...current, permissions: "" }));
-                                        }}
-                                        className={cn(
-                                          "flex min-h-8 min-w-0 flex-1 items-center gap-2 rounded-md border px-2 py-1.5 text-left transition-colors cursor-pointer",
-                                          checked
-                                            ? "border-orange-200 bg-orange-50/60 dark:border-orange-900/60 dark:bg-orange-950/20"
-                                            : "border-transparent hover:bg-muted/40",
-                                        )}
-                                      >
-                                        <span
-                                          className={cn(
-                                            "flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] border",
-                                            checked
-                                              ? "border-orange-500 bg-orange-500 text-white"
-                                              : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900",
-                                          )}
-                                        >
-                                          {checked ? (
-                                            <Check className="h-2.5 w-2.5 stroke-[3]" />
-                                          ) : null}
-                                        </span>
-                                        <span className="min-w-0 flex-1 text-[9.5px] font-bold text-foreground">
-                                          {isMalayalam ? action.ml : action.en}
-                                        </span>
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ) : null}
-                    </div>
-                  ) : null}
                 </div>
                 {errors.permissions ? (
                   <p className="mt-1 text-[9.5px] font-semibold text-rose-600">

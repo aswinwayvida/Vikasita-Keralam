@@ -1,11 +1,14 @@
 import {
   assignmentLevels,
   partyDesignations,
+  permissionPrerequisites,
   permissionModules,
   roleOrganisationLevels,
   rolePresets,
+  togglePermission,
   type AssignmentLevel,
   type PartyDesignation,
+  type PermissionModuleId,
   type RolePresetId,
 } from "./party-workers";
 
@@ -118,6 +121,310 @@ export const administrativePermissionOptions: AdministrativePermissionOption[] =
   },
 ];
 
+export type DataAccessScope = "own_records" | "below_level" | "same_level" | "above_level";
+
+export interface DataAccessOption {
+  id: DataAccessScope;
+  en: string;
+  ml: string;
+  shortEn: string;
+  shortMl: string;
+}
+
+export const dataAccessOptions: DataAccessOption[] = [
+  {
+    id: "own_records",
+    en: "Own Records",
+    ml: "സ്വന്തം റെക്കോർഡുകൾ",
+    shortEn: "Own",
+    shortMl: "സ്വന്തം",
+  },
+  {
+    id: "below_level",
+    en: "Below My Level",
+    ml: "എന്റെ തലത്തിന് താഴെ",
+    shortEn: "Below",
+    shortMl: "താഴെ",
+  },
+  {
+    id: "same_level",
+    en: "Same Level — Peers",
+    ml: "ഒരേ തലം — സമപദവിക്കാർ",
+    shortEn: "Peers",
+    shortMl: "സമപദവി",
+  },
+  {
+    id: "above_level",
+    en: "Above My Level",
+    ml: "എന്റെ തലത്തിന് മുകളിൽ",
+    shortEn: "Above",
+    shortMl: "മുകളിൽ",
+  },
+];
+
+export type RoleDataAccess = Partial<Record<PermissionModuleId, DataAccessScope[]>>;
+
+const dataAccessScopeIds = new Set<DataAccessScope>(dataAccessOptions.map((option) => option.id));
+
+export function defaultRoleDataAccess(): RoleDataAccess {
+  return Object.fromEntries(
+    permissionModules.map((module) => [module.id, ["own_records"]]),
+  ) as RoleDataAccess;
+}
+
+export function sanitizeRoleDataAccess(value: unknown): RoleDataAccess {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return defaultRoleDataAccess();
+  }
+  const result: RoleDataAccess = {};
+  for (const module of permissionModules) {
+    const scopes = (value as Record<string, unknown>)[module.id];
+    if (!Array.isArray(scopes)) {
+      result[module.id] = ["own_records"];
+      continue;
+    }
+    const selected = new Set(
+      scopes.filter(
+        (scope): scope is DataAccessScope =>
+          typeof scope === "string" && dataAccessScopeIds.has(scope as DataAccessScope),
+      ),
+    );
+    const ordered = dataAccessOptions
+      .map((option) => option.id)
+      .filter((scope) => selected.has(scope));
+    result[module.id] = ordered;
+  }
+  return result;
+}
+
+export function cloneRoleDataAccess(value?: RoleDataAccess): RoleDataAccess {
+  const sanitized = sanitizeRoleDataAccess(value);
+  return Object.fromEntries(
+    Object.entries(sanitized).map(([moduleId, scopes]) => [moduleId, [...(scopes ?? [])]]),
+  ) as RoleDataAccess;
+}
+
+export function toggleRoleDataAccess(
+  current: RoleDataAccess,
+  moduleId: PermissionModuleId,
+  scope: DataAccessScope,
+): RoleDataAccess {
+  const selected = new Set(current[moduleId] ?? []);
+  if (selected.has(scope)) selected.delete(scope);
+  else selected.add(scope);
+  const ordered = dataAccessOptions
+    .map((option) => option.id)
+    .filter((optionId) => selected.has(optionId));
+  const next = { ...current };
+  next[moduleId] = ordered;
+  return next;
+}
+
+export type PermissionMatrixColumnId = "create" | "view" | "edit" | "delete";
+
+export const permissionMatrixColumnIds: PermissionMatrixColumnId[] = [
+  "create",
+  "view",
+  "edit",
+  "delete",
+];
+
+const permissionMatrixViewActionIds: Partial<Record<PermissionModuleId, string[]>> = {
+  schemes: ["view_list", "view_details"],
+};
+
+export function getPermissionMatrixActionIds(
+  moduleId: PermissionModuleId,
+  columnId: PermissionMatrixColumnId,
+): string[] {
+  const module = permissionModules.find((item) => item.id === moduleId);
+  if (!module) return [];
+  if (columnId === "view") {
+    const override = permissionMatrixViewActionIds[moduleId];
+    if (override) {
+      return override.filter((actionId) => module.actions.some((action) => action.id === actionId));
+    }
+  }
+  return module.actions.filter((action) => action.id === columnId).map((action) => action.id);
+}
+
+const matrixActionIdsByModule = new Map<PermissionModuleId, Set<string>>(
+  permissionModules.map((module) => [
+    module.id,
+    new Set(
+      permissionMatrixColumnIds.flatMap((columnId) =>
+        getPermissionMatrixActionIds(module.id, columnId),
+      ),
+    ),
+  ]),
+);
+
+export function scopedPermissionKey(
+  moduleId: PermissionModuleId,
+  scope: DataAccessScope,
+  actionId: string,
+) {
+  return `${moduleId}.${scope}.${actionId}`;
+}
+
+export const allScopedPermissionKeys = permissionModules.flatMap((module) =>
+  dataAccessOptions.flatMap((scope) =>
+    Array.from(matrixActionIdsByModule.get(module.id) ?? []).map((actionId) =>
+      scopedPermissionKey(module.id, scope.id, actionId),
+    ),
+  ),
+);
+
+export const allScopedPermissionKeysWithExtras = permissionModules.flatMap((module) =>
+  dataAccessOptions.flatMap((scope) =>
+    module.actions.map((action) => scopedPermissionKey(module.id, scope.id, action.id)),
+  ),
+);
+
+const validScopedPermissionKeys = new Set(allScopedPermissionKeysWithExtras);
+
+export function sanitizeScopedPermissions(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return Array.from(
+    new Set(
+      value.filter(
+        (key): key is string => typeof key === "string" && validScopedPermissionKeys.has(key),
+      ),
+    ),
+  );
+}
+
+function legacyScopedPermissions(
+  permissions: string[],
+  dataAccess: RoleDataAccess | undefined,
+): string[] {
+  const selectedPermissions = new Set(permissions);
+  const selectedDataAccess = sanitizeRoleDataAccess(dataAccess);
+  const result: string[] = [];
+  for (const module of permissionModules) {
+    const actionIds = matrixActionIdsByModule.get(module.id) ?? new Set<string>();
+    const scopes = selectedDataAccess[module.id] ?? [];
+    if (scopes.length === 0) continue;
+    for (const actionId of actionIds) {
+      if (!selectedPermissions.has(`${module.id}.${actionId}`)) continue;
+      for (const scope of scopes) {
+        result.push(scopedPermissionKey(module.id, scope, actionId));
+      }
+    }
+  }
+  return Array.from(new Set(result));
+}
+
+export function scopedPermissionsFromRole(role: {
+  permissions?: string[] | null;
+  dataAccess?: RoleDataAccess;
+  scopedPermissions?: string[] | null;
+}): string[] {
+  if (Array.isArray(role.scopedPermissions)) {
+    return sanitizeScopedPermissions(role.scopedPermissions);
+  }
+  return legacyScopedPermissions(role.permissions ?? [], role.dataAccess);
+}
+
+const moduleActionIds = new Map<PermissionModuleId, Set<string>>(
+  permissionModules.map((module) => [
+    module.id,
+    new Set(module.actions.map((action) => action.id)),
+  ]),
+);
+
+function isModulePermissionKey(key: string) {
+  const separator = key.indexOf(".");
+  if (separator === -1) return false;
+  const moduleId = key.slice(0, separator) as PermissionModuleId;
+  const actionId = key.slice(separator + 1);
+  return moduleActionIds.get(moduleId)?.has(actionId) ?? false;
+}
+
+export function permissionsFromScopedPermissions(
+  scopedPermissions: string[],
+  currentPermissions: string[],
+): string[] {
+  const extras = currentPermissions.filter((key) => !isModulePermissionKey(key));
+  const next = new Set(extras);
+  for (const key of sanitizeScopedPermissions(scopedPermissions)) {
+    const [moduleId, , actionId] = key.split(".");
+    next.add(`${moduleId}.${actionId}`);
+  }
+
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const key of Array.from(next)) {
+      const prerequisites = permissionPrerequisites[key] ?? [];
+      if (prerequisites.some((prerequisite) => !next.has(prerequisite))) {
+        next.delete(key);
+        changed = true;
+      }
+    }
+  }
+  return Array.from(next);
+}
+
+export function toggleScopedPermission(
+  current: string[],
+  moduleId: PermissionModuleId,
+  scope: DataAccessScope,
+  columnId: PermissionMatrixColumnId,
+  enabled: boolean,
+): string[] {
+  const actionIds = getPermissionMatrixActionIds(moduleId, columnId);
+  if (actionIds.length === 0) return current;
+
+  return actionIds.reduce(
+    (next, actionId) => toggleScopedPermissionAction(next, moduleId, scope, actionId, enabled),
+    current,
+  );
+}
+
+export function toggleScopedPermissionAction(
+  current: string[],
+  moduleId: PermissionModuleId,
+  scope: DataAccessScope,
+  actionId: string,
+  enabled: boolean,
+): string[] {
+  const module = permissionModules.find((item) => item.id === moduleId);
+  if (!module?.actions.some((action) => action.id === actionId)) return current;
+
+  const prefix = `${moduleId}.${scope}.`;
+  const existingActionKeys = current
+    .filter((key) => key.startsWith(prefix))
+    .map((key) => `${moduleId}.${key.slice(prefix.length)}`);
+
+  const nextActionKeys = togglePermission(existingActionKeys, `${moduleId}.${actionId}`, enabled);
+
+  const withoutScope = current.filter((key) => !key.startsWith(prefix));
+  const nextScoped = nextActionKeys.map((key) =>
+    scopedPermissionKey(moduleId, scope, key.slice(moduleId.length + 1)),
+  );
+  return [...withoutScope, ...nextScoped];
+}
+
+export function syncRoleDataAccessWithScopedPermissions(
+  current: RoleDataAccess,
+  scopedPermissions: string[],
+): RoleDataAccess {
+  const next = cloneRoleDataAccess(current);
+  for (const module of permissionModules) {
+    const scopedScopes = new Set(
+      scopedPermissions
+        .filter((key) => key.startsWith(`${module.id}.`))
+        .map((key) => key.split(".")[1]),
+    );
+    if (scopedScopes.size === 0) continue;
+    next[module.id] = dataAccessOptions
+      .map((option) => option.id)
+      .filter((scope) => scopedScopes.has(scope));
+  }
+  return next;
+}
+
 export interface ManagedRole {
   id: string;
   name: string;
@@ -130,6 +437,8 @@ export interface ManagedRole {
   presetId?: RolePresetId;
   assignedUsers: number;
   assignedWorkerIds?: string[];
+  dataAccess?: RoleDataAccess;
+  scopedPermissions?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -140,6 +449,7 @@ export interface RoleDraft {
   assignmentLevels: AssignmentLevel[];
   permissions: string[];
   administrativePermissions: AdministrativePermissionId[];
+  dataAccess: RoleDataAccess;
   status: ManagedRoleStatus;
 }
 
@@ -149,6 +459,7 @@ export const emptyRoleDraft: RoleDraft = {
   assignmentLevels: [],
   permissions: [],
   administrativePermissions: [],
+  dataAccess: defaultRoleDataAccess(),
   status: "Active",
 };
 
@@ -159,6 +470,7 @@ export function draftFromRole(role: ManagedRole, name = role.name): RoleDraft {
     assignmentLevels: [...role.assignmentLevels],
     permissions: [...role.permissions],
     administrativePermissions: [...role.administrativePermissions],
+    dataAccess: cloneRoleDataAccess(role.dataAccess),
     status: role.status,
   };
 }
@@ -480,10 +792,15 @@ const validPermissionKeys = new Set(
   ),
 );
 
-const sanitizeRole = (role: ManagedRole): ManagedRole => ({
-  ...role,
-  permissions: (role.permissions ?? []).filter((key) => validPermissionKeys.has(key)),
-});
+const sanitizeRole = (role: ManagedRole): ManagedRole => {
+  const dataAccess = sanitizeRoleDataAccess(role.dataAccess);
+  return {
+    ...role,
+    permissions: (role.permissions ?? []).filter((key) => validPermissionKeys.has(key)),
+    dataAccess,
+    scopedPermissions: scopedPermissionsFromRole({ ...role, dataAccess }),
+  };
+};
 
 const migrateStoredDesignationRoleName = (role: ManagedRole): ManagedRole => {
   if (!role.system) return role;

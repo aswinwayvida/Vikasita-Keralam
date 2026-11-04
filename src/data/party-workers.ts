@@ -442,7 +442,7 @@ export interface PermissionModule {
   actions: PermissionActionOption[];
 }
 
-export const permissionModules: PermissionModule[] = [
+const permissionModulesBase: PermissionModule[] = [
   {
     id: "schemes",
     en: "Schemes",
@@ -598,10 +598,10 @@ export const permissionModules: PermissionModule[] = [
   },
   {
     id: "help_desk",
-    en: "Help Desk",
-    ml: "ഹെൽപ്പ് ഡെസ്ക്",
-    descriptionEn: "Citizen help requests and team assignment",
-    descriptionMl: "പൗര സഹായ അഭ്യർത്ഥനകളും ടീം അസൈൻമെന്റും",
+    en: "Request",
+    ml: "അഭ്യർത്ഥന",
+    descriptionEn: "Citizen requests and team assignment",
+    descriptionMl: "പൗര അഭ്യർത്ഥനകളും ടീം അസൈൻമെന്റും",
     actions: [
       {
         id: "view",
@@ -679,10 +679,10 @@ export const permissionModules: PermissionModule[] = [
   },
   {
     id: "roles",
-    en: "Role",
-    ml: "റോൾ",
-    descriptionEn: "Role records and assignments",
-    descriptionMl: "റോൾ റെക്കോർഡുകളും അസൈൻമെന്റുകളും",
+    en: "Role & Access",
+    ml: "റോൾ & ആക്സസ്",
+    descriptionEn: "Role records, access control and assignments",
+    descriptionMl: "റോൾ റെക്കോർഡുകൾ, ആക്സസ് നിയന്ത്രണം, അസൈൻമെന്റുകൾ",
     actions: [
       {
         id: "view",
@@ -768,6 +768,20 @@ export const permissionModules: PermissionModule[] = [
     ],
   },
 ];
+
+const permissionModuleDisplayOrder: PermissionModuleId[] = [
+  "applicant_profile",
+  "applications",
+  "schemes",
+  "roles",
+  "designations",
+  "party_workers",
+  "help_desk",
+];
+
+export const permissionModules: PermissionModule[] = [...permissionModulesBase].sort(
+  (a, b) => permissionModuleDisplayOrder.indexOf(a.id) - permissionModuleDisplayOrder.indexOf(b.id),
+);
 
 export function getPermissionModule(moduleId: PermissionModuleId) {
   return permissionModules.find((module) => module.id === moduleId)!;

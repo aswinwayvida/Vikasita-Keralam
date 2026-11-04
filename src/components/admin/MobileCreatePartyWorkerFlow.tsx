@@ -71,6 +71,9 @@ import {
   type ScopeTypeOption,
 } from "@/data/party-workers";
 import {
+  cloneRoleDataAccess,
+  dataAccessOptions,
+  defaultRoleDataAccess,
   ensureRolesPageAccessRoles,
   getRolesAndControlRoles,
   isRetiredCustomRole,
@@ -80,7 +83,9 @@ import {
   loadManagedRoles,
   rolesPageAdminRoleId,
   rolesPageSubAdminRoleId,
+  toggleRoleDataAccess,
   type ManagedRole,
+  type RoleDataAccess,
 } from "@/data/role-management";
 
 type Lang = "en" | "ml";
@@ -114,6 +119,7 @@ interface WorkerProfile {
   orgDistrictNameEn?: string;
   orgDistrictNameMl?: string;
   permissions: string[];
+  dataAccess?: RoleDataAccess;
   grants: AccessGrant[];
   accessManagement: boolean;
   designationId?: string;
@@ -273,11 +279,11 @@ const roleLevelOptions: { id: AssignmentLevel; en: string; ml: string }[] = [
 const partyWorkerPermissionOrder: PermissionModuleId[] = [
   "applicant_profile",
   "applications",
-  "help_desk",
   "schemes",
-  "party_workers",
   "roles",
   "designations",
+  "party_workers",
+  "help_desk",
 ];
 
 const orderedPartyWorkerPermissions = [...permissionModules].sort(
@@ -315,8 +321,8 @@ const createUserPermissionModuleLabel = (
 ) =>
   module.id === "help_desk"
     ? isMalayalam
-      ? "സപ്പോർട്ട് ഹാൻഡ്ലിംഗ്"
-      : "Support Handling"
+      ? "അഭ്യർത്ഥന"
+      : "Request"
     : isMalayalam
       ? module.ml
       : module.en;
@@ -686,7 +692,7 @@ export function MobileCreatePartyWorkerFlow({
   const [accessManagement, setAccessManagement] = useState(false);
   const [grants, setGrants] = useState<AccessGrant[]>([]);
   const [permissionError, setPermissionError] = useState("");
-  const [isPermissionDetailsOpen, setIsPermissionDetailsOpen] = useState(false);
+  const [dataAccess, setDataAccess] = useState<RoleDataAccess>(defaultRoleDataAccess);
   const managedRoles = useMemo<ManagedRole[]>(
     () => ensureRolesPageAccessRoles(loadManagedRoles()),
     [],
@@ -1179,6 +1185,7 @@ export function MobileCreatePartyWorkerFlow({
       regionNamesEn: selectedRegions.length ? selectedRegions.map((item) => item.en) : undefined,
       regionNamesMl: selectedRegions.length ? selectedRegions.map((item) => item.ml) : undefined,
       permissions,
+      dataAccess,
       grants,
       accessManagement,
       designationId,
@@ -1411,6 +1418,7 @@ export function MobileCreatePartyWorkerFlow({
     setOrgUnitId(worker.orgUnitId || "");
     setPresetId(worker.presetId || "custom");
     setPermissions(worker.permissions);
+    setDataAccess(cloneRoleDataAccess(worker.dataAccess));
     setGrants(worker.grants);
     setAccessManagement(worker.accessManagement);
     setErrors({});
@@ -2637,18 +2645,9 @@ export function MobileCreatePartyWorkerFlow({
     const allPermissionsSelected =
       allCreateUserPermissionKeys.length > 0 &&
       allCreateUserPermissionKeys.every((key) => permissions.includes(key));
-    const visibleAdditionalPermissionModules = additionalPermissionModulesForCreateUser.filter(
-      ({ module }) => {
-        const viewAction = module.actions.find((action) => action.id === "view");
-        return viewAction ? permissions.includes(permissionKey(module.id, viewAction.id)) : true;
-      },
+    const dataAccessModules = orderedPartyWorkerPermissions.filter((module) =>
+      permissions.some((key) => key.startsWith(`${module.id}.`)),
     );
-    const visibleAdditionalPermissionKeys = visibleAdditionalPermissionModules.flatMap(
-      ({ module, actions }) => actions.map((action) => permissionKey(module.id, action.id)),
-    );
-    const selectedAdditionalPermissionCount = visibleAdditionalPermissionKeys.filter((key) =>
-      permissions.includes(key),
-    ).length;
 
     return (
       <div className="space-y-3.5">
@@ -2711,8 +2710,8 @@ export function MobileCreatePartyWorkerFlow({
           </div>
 
           <div className="mt-2 space-y-2">
-            <div className="overflow-hidden rounded-xl border border-border">
-              <div className="grid grid-cols-[minmax(0,1fr)_36px_36px_36px_36px] items-center gap-1 bg-orange-50/70 px-2 py-2 dark:bg-slate-800/70">
+            <div className="overflow-hidden rounded-xl border border-border bg-white dark:bg-slate-900">
+              <div className="grid grid-cols-[minmax(0,1fr)_36px_36px_36px_36px] items-center gap-1 border-b border-border bg-white px-2 py-2 dark:bg-slate-900">
                 <span className="pl-1 text-[8px] font-black uppercase tracking-wide text-orange-700/80 dark:text-orange-300">
                   {tr("Module", "മൊഡ്യൂൾ")}
                 </span>
@@ -2726,79 +2725,138 @@ export function MobileCreatePartyWorkerFlow({
                 ))}
               </div>
 
-              {orderedPartyWorkerPermissions.map((module) => {
-                const Icon = moduleIcons[module.id];
-                const moduleLabel = createUserPermissionModuleLabel(module, lang === "ml");
-                return (
-                  <div
-                    key={module.id}
-                    className="grid grid-cols-[minmax(0,1fr)_36px_36px_36px_36px] items-center gap-1 border-t border-border/60 px-2 py-0.5"
-                  >
-                    <div className="flex min-w-0 items-start gap-1.5 py-1.5">
-                      <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-orange-600 dark:text-orange-300" />
-                      <span className="min-w-0 whitespace-normal break-words text-[9.5px] font-extrabold leading-snug text-foreground">
-                        {moduleLabel}
-                      </span>
+              <div>
+                {orderedPartyWorkerPermissions.map((module) => {
+                  const Icon = moduleIcons[module.id];
+                  const moduleLabel = createUserPermissionModuleLabel(module, lang === "ml");
+                  const extraActions =
+                    additionalPermissionModulesForCreateUser.find(
+                      (group) => group.module.id === module.id,
+                    )?.actions ?? [];
+                  const viewAction = module.actions.find((action) => action.id === "view");
+                  const showExtraActions =
+                    extraActions.length > 0 &&
+                    (!viewAction || permissions.includes(permissionKey(module.id, viewAction.id)));
+                  return (
+                    <div key={module.id} className="border-t border-border first:border-t-0">
+                      <div className="grid grid-cols-[minmax(0,1fr)_36px_36px_36px_36px] items-center gap-1 bg-white px-2 py-1 dark:bg-slate-900">
+                        <div className="flex min-w-0 items-start gap-1.5 py-1.5">
+                          <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-orange-600 dark:text-orange-300" />
+                          <span className="min-w-0 whitespace-normal break-words text-[9.5px] font-extrabold leading-snug text-foreground">
+                            {moduleLabel}
+                          </span>
+                        </div>
+                        {permissionTableColumns.map((column) => {
+                          const action = module.actions.find((item) => item.id === column.id);
+                          const permissionIds =
+                            permissionTableKeyOverrides[module.id]?.[column.id] ??
+                            (action ? [action.id] : []);
+                          if (permissionIds.length === 0) {
+                            return (
+                              <span
+                                key={column.id}
+                                title={tr("Unavailable", "ലഭ്യമല്ല")}
+                                aria-label={tr("Unavailable", "ലഭ്യമല്ല")}
+                                className="flex h-9 items-center justify-center text-[11px] font-semibold text-slate-300 dark:text-slate-600"
+                              >
+                                —
+                              </span>
+                            );
+                          }
+                          const permissionKeys = permissionIds.map((id) =>
+                            permissionKey(module.id, id),
+                          );
+                          const checked = permissionKeys.every((key) => permissions.includes(key));
+                          return (
+                            <button
+                              key={column.id}
+                              type="button"
+                              role="checkbox"
+                              aria-checked={checked}
+                              aria-label={`${moduleLabel} ${lang === "ml" ? column.ml : column.en}: ${
+                                checked
+                                  ? tr("Allowed", "അനുവദിച്ചിരിക്കുന്നു")
+                                  : tr("Not Allowed", "അനുവദിച്ചിട്ടില്ല")
+                              }`}
+                              onClick={() => {
+                                setPermissions((current) => {
+                                  let next = current;
+                                  permissionKeys.forEach((key) => {
+                                    next = togglePermission(next, key, !checked);
+                                  });
+                                  return next;
+                                });
+                                setPermissionError("");
+                              }}
+                              className="flex h-9 w-full cursor-pointer items-center justify-center rounded-md transition-colors hover:bg-orange-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 dark:hover:bg-slate-800"
+                            >
+                              <span
+                                className={`flex h-4 w-4 items-center justify-center rounded-[3px] border ${
+                                  checked
+                                    ? "border-orange-500 bg-orange-500 text-white"
+                                    : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900"
+                                }`}
+                              >
+                                {checked ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : null}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {showExtraActions ? (
+                        <div className="border-t border-dashed border-border/60 bg-white px-2 py-2 dark:bg-slate-900">
+                          <p className="text-[7.5px] font-black uppercase tracking-wide text-muted-foreground">
+                            {tr("Additional permissions", "അധിക അനുമതികൾ")}
+                          </p>
+                          <div className="mt-1 flex items-stretch gap-1.5">
+                            {extraActions.map((action) => {
+                              const key = permissionKey(module.id, action.id);
+                              const checked = permissions.includes(key);
+                              return (
+                                <button
+                                  key={action.id}
+                                  type="button"
+                                  role="checkbox"
+                                  aria-checked={checked}
+                                  aria-label={`${moduleLabel} ${lang === "ml" ? action.ml : action.en}: ${
+                                    checked
+                                      ? tr("Allowed", "അനുവദിച്ചിരിക്കുന്നു")
+                                      : tr("Not Allowed", "അനുവദിച്ചിട്ടില്ല")
+                                  }`}
+                                  onClick={() => {
+                                    setPermissions((current) =>
+                                      togglePermission(current, key, !checked),
+                                    );
+                                    setPermissionError("");
+                                  }}
+                                  className={`flex min-h-8 min-w-0 flex-1 items-center gap-1.5 rounded-md border px-2 py-1.5 text-left transition-colors cursor-pointer ${
+                                    checked
+                                      ? "border-orange-200 bg-orange-50/70 dark:border-orange-900/60 dark:bg-orange-950/20"
+                                      : "border-border/70 hover:bg-muted/40"
+                                  }`}
+                                >
+                                  <span
+                                    className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[3px] border ${
+                                      checked
+                                        ? "border-orange-500 bg-orange-500 text-white"
+                                        : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900"
+                                    }`}
+                                  >
+                                    {checked ? <Check className="h-2 w-2 stroke-[3]" /> : null}
+                                  </span>
+                                  <span className="min-w-0 flex-1 text-[9.5px] font-bold leading-snug text-foreground">
+                                    {lang === "ml" ? action.ml : action.en}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
-                    {permissionTableColumns.map((column) => {
-                      const action = module.actions.find((item) => item.id === column.id);
-                      const permissionIds =
-                        permissionTableKeyOverrides[module.id]?.[column.id] ??
-                        (action ? [action.id] : []);
-                      if (permissionIds.length === 0) {
-                        return (
-                          <span
-                            key={column.id}
-                            title={tr("Unavailable", "ലഭ്യമല്ല")}
-                            aria-label={tr("Unavailable", "ലഭ്യമല്ല")}
-                            className="flex h-9 items-center justify-center text-[11px] font-semibold text-slate-300 dark:text-slate-600"
-                          >
-                            —
-                          </span>
-                        );
-                      }
-                      const permissionKeys = permissionIds.map((id) =>
-                        permissionKey(module.id, id),
-                      );
-                      const checked = permissionKeys.every((key) => permissions.includes(key));
-                      return (
-                        <button
-                          key={column.id}
-                          type="button"
-                          role="checkbox"
-                          aria-checked={checked}
-                          aria-label={`${moduleLabel} ${lang === "ml" ? column.ml : column.en}: ${
-                            checked
-                              ? tr("Allowed", "അനുവദിച്ചിരിക്കുന്നു")
-                              : tr("Not Allowed", "അനുവദിച്ചിട്ടില്ല")
-                          }`}
-                          onClick={() => {
-                            setPermissions((current) => {
-                              let next = current;
-                              permissionKeys.forEach((key) => {
-                                next = togglePermission(next, key, !checked);
-                              });
-                              return next;
-                            });
-                            setPermissionError("");
-                          }}
-                          className="flex h-9 w-full cursor-pointer items-center justify-center rounded-md transition-colors hover:bg-orange-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 dark:hover:bg-slate-800"
-                        >
-                          <span
-                            className={`flex h-4 w-4 items-center justify-center rounded-[3px] border ${
-                              checked
-                                ? "border-orange-500 bg-orange-500 text-white"
-                                : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900"
-                            }`}
-                          >
-                            {checked ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : null}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-0.5 text-[8px] font-semibold text-muted-foreground">
@@ -2820,95 +2878,99 @@ export function MobileCreatePartyWorkerFlow({
               </span>
             </div>
           </div>
+        </section>
 
-          {visibleAdditionalPermissionKeys.length > 0 ? (
-            <div className="mt-2.5">
-              <div className="overflow-hidden rounded-xl border border-border">
-                <button
-                  type="button"
-                  onClick={() => setIsPermissionDetailsOpen((current) => !current)}
-                  aria-expanded={isPermissionDetailsOpen}
-                  className="flex w-full cursor-pointer items-center gap-2 bg-orange-50/40 px-2.5 py-2 text-left transition-colors hover:bg-orange-50 dark:bg-slate-800/40 dark:hover:bg-slate-800/70"
+        <section className="rounded-2xl border border-orange-100 bg-white p-3 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-center gap-1.5 border-b border-border/60 pb-2">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-[10px] font-extrabold text-white">
+              3
+            </span>
+            <h4 className="text-[12px] font-extrabold text-foreground">
+              {tr("Data Access", "ഡാറ്റ ആക്സസ്")}
+            </h4>
+          </div>
+          <p className="mt-2 text-[9.5px] font-semibold leading-relaxed text-muted-foreground">
+            {tr(
+              "Choose whose records this user can access in each module.",
+              "ഓരോ മൊഡ്യൂളിലും ഈ ഉപയോക്താവിന് ആക്സസ് ഉള്ള റെക്കോർഡുകൾ തിരഞ്ഞെടുക്കുക.",
+            )}
+          </p>
+          <div className="mt-2 overflow-hidden rounded-xl border border-border">
+            <div className="grid grid-cols-[minmax(0,1fr)_40px_40px_40px_40px] items-center gap-1 border-b border-border bg-white px-2 py-2 dark:bg-slate-900">
+              <span className="pl-1 text-[8px] font-black uppercase tracking-wide text-orange-700/80 dark:text-orange-300">
+                {tr("Module", "മൊഡ്യൂൾ")}
+              </span>
+              {dataAccessOptions.map((option) => (
+                <span
+                  key={option.id}
+                  title={lang === "ml" ? option.ml : option.en}
+                  className="text-center text-[7px] font-black uppercase leading-tight tracking-tight text-orange-700/80 dark:text-orange-300"
                 >
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-300">
-                    <Layers className="h-3.5 w-3.5" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[10.5px] font-extrabold text-foreground">
-                      {tr("Additional Permissions", "അധിക അനുമതികൾ")}
-                    </span>
-                    <span className="block truncate text-[8.5px] text-muted-foreground">
-                      {tr("Other actions for these modules", "ഈ മൊഡ്യൂളുകളിലെ മറ്റ് പ്രവർത്തനങ്ങൾ")}
-                    </span>
-                  </span>
-                  <span className="rounded-full bg-orange-100 px-1.5 py-0.5 text-[8.5px] font-bold text-orange-700 dark:bg-orange-950/60 dark:text-orange-300">
-                    {selectedAdditionalPermissionCount}/{visibleAdditionalPermissionKeys.length}
-                  </span>
-                  <ChevronDown
-                    className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${
-                      isPermissionDetailsOpen ? "rotate-180" : ""
-                    }`}
-                  />
-                </button>
-
-                {isPermissionDetailsOpen ? (
-                  <div className="divide-y divide-border/70 border-t border-border/70">
-                    {visibleAdditionalPermissionModules.map(({ module, actions }) => {
-                      const Icon = moduleIcons[module.id];
+                  {lang === "ml" ? option.shortMl : option.shortEn}
+                </span>
+              ))}
+            </div>
+            {dataAccessModules.length === 0 ? (
+              <p className="px-3 py-4 text-center text-[9.5px] font-semibold text-muted-foreground">
+                {tr(
+                  "No module has permissions yet. Select Create, View, Edit or Delete above.",
+                  "ഇതുവരെ ഏതെങ്കിലും മൊഡ്യൂളിന് അനുമതികളില്ല. മുകളിൽ സൃഷ്ടിക്കുക, കാണുക, തിരുത്തുക അല്ലെങ്കിൽ നീക്കം ചെയ്യുക തിരഞ്ഞെടുക്കുക.",
+                )}
+              </p>
+            ) : (
+              dataAccessModules.map((module) => {
+                const Icon = moduleIcons[module.id];
+                const moduleLabel = createUserPermissionModuleLabel(module, lang === "ml");
+                const selected = dataAccess[module.id] ?? [];
+                return (
+                  <div
+                    key={module.id}
+                    className="grid grid-cols-[minmax(0,1fr)_40px_40px_40px_40px] items-center gap-1 border-t border-border/60 px-2 first:border-t-0"
+                  >
+                    <div className="flex min-w-0 items-start gap-1.5 py-1.5">
+                      <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-orange-600 dark:text-orange-300" />
+                      <span className="min-w-0 whitespace-normal break-words text-[9.5px] font-extrabold leading-snug text-foreground">
+                        {moduleLabel}
+                      </span>
+                    </div>
+                    {dataAccessOptions.map((option) => {
+                      const checked = selected.includes(option.id);
+                      const optionLabel = lang === "ml" ? option.ml : option.en;
                       return (
-                        <div key={module.id} className="px-2.5 py-2">
-                          <div className="flex items-center gap-1.5 text-[8.5px] font-black uppercase tracking-wide text-muted-foreground">
-                            <Icon className="h-3 w-3 shrink-0 text-orange-600 dark:text-orange-300" />
-                            <span className="min-w-0 break-words">
-                              {createUserPermissionModuleLabel(module, lang === "ml")}
-                            </span>
-                          </div>
-                          <div className="mt-1 flex items-stretch gap-1.5">
-                            {actions.map((action) => {
-                              const key = permissionKey(module.id, action.id);
-                              const checked = permissions.includes(key);
-                              return (
-                                <button
-                                  key={action.id}
-                                  type="button"
-                                  role="checkbox"
-                                  aria-checked={checked}
-                                  onClick={() => {
-                                    setPermissions((current) =>
-                                      togglePermission(current, key, !checked),
-                                    );
-                                    setPermissionError("");
-                                  }}
-                                  className={`flex min-h-8 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-md border px-2 py-1.5 text-left transition-colors ${
-                                    checked
-                                      ? "border-orange-200 bg-orange-50/60 dark:border-orange-900/60 dark:bg-orange-950/20"
-                                      : "border-transparent hover:bg-muted/40"
-                                  }`}
-                                >
-                                  <span
-                                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] border ${
-                                      checked
-                                        ? "border-orange-500 bg-orange-500 text-white"
-                                        : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900"
-                                    }`}
-                                  >
-                                    {checked ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : null}
-                                  </span>
-                                  <span className="min-w-0 flex-1 text-[9.5px] font-bold text-foreground">
-                                    {lang === "ml" ? action.ml : action.en}
-                                  </span>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
+                        <button
+                          key={option.id}
+                          type="button"
+                          role="checkbox"
+                          aria-checked={checked}
+                          aria-label={`${moduleLabel} ${optionLabel}: ${
+                            checked
+                              ? tr("Allowed", "അനുവദിച്ചിരിക്കുന്നു")
+                              : tr("Not Allowed", "അനുവദിച്ചിട്ടില്ല")
+                          }`}
+                          onClick={() =>
+                            setDataAccess((current) =>
+                              toggleRoleDataAccess(current, module.id, option.id),
+                            )
+                          }
+                          className="flex h-9 w-full cursor-pointer items-center justify-center rounded-md transition-colors hover:bg-orange-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 dark:hover:bg-slate-800"
+                        >
+                          <span
+                            className={`flex h-4 w-4 items-center justify-center rounded-[3px] border ${
+                              checked
+                                ? "border-orange-500 bg-orange-500 text-white"
+                                : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900"
+                            }`}
+                          >
+                            {checked ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : null}
+                          </span>
+                        </button>
                       );
                     })}
                   </div>
-                ) : null}
-              </div>
-            </div>
-          ) : null}
+                );
+              })
+            )}
+          </div>
         </section>
 
         <section

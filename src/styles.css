@@ -389,3 +389,32 @@
   transform-origin: 70% 70%;
   animation: wave-hand 1.8s infinite ease-in-out;
 }
+
+/* Create Scheme wizard (desktop only): hide the page scroll indicators
+   without disabling scrolling. */
+@media (min-width: 640px) {
+  html.desktop-hide-page-scrollbar,
+  html.desktop-hide-page-scrollbar body {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  html.desktop-hide-page-scrollbar::-webkit-scrollbar,
+  html.desktop-hide-page-scrollbar body::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+}
+
+/* Inner scroll regions inside the Create Scheme wizard follow the same rule. */
+.desktop-hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.desktop-hide-scrollbar::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
