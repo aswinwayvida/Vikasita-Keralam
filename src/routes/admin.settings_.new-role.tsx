@@ -4,6 +4,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   ArrowLeft,
   Check,
+  ChevronDown,
   ClipboardList,
   FileText,
   Headset,
@@ -16,6 +17,7 @@ import {
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useSidebar } from "@/components/ui/sidebar";
 import { permissionModules, type PermissionModuleId } from "@/data/party-workers";
 import {
@@ -27,7 +29,6 @@ import {
   permissionsFromScopedPermissions,
   saveManagedRoles,
   scopedPermissionKey,
-  syncRoleDataAccessWithScopedPermissions,
   toggleScopedPermissionAction,
   type DataAccessScope,
   type ManagedRole,
@@ -79,8 +80,13 @@ type MatrixColumn = (typeof matrixColumns)[number];
 const primaryMatrixColumns = matrixColumns.slice(0, 4);
 const secondaryMatrixColumns = [matrixColumns[1], matrixColumns[5], matrixColumns[6]];
 
-const primaryMatrixGridClass = "grid grid-cols-[minmax(0,1fr)_repeat(4,84px)]";
-const secondaryMatrixGridClass = "grid grid-cols-[minmax(0,1fr)_repeat(3,112px)]";
+const primaryMatrixGridClass = "grid grid-cols-[minmax(200px,1fr)_repeat(4,84px)_360px]";
+const secondaryMatrixGridClass = "grid grid-cols-[minmax(200px,1fr)_repeat(3,104px)_360px]";
+
+const dataAccessChoices = dataAccessOptions.filter((option) => option.id !== "above_level");
+const supportedScopedPermissionKeys = allScopedPermissionKeysWithExtras.filter(
+  (key) => !key.includes(".above_level."),
+);
 
 interface MatrixRow {
   key: string;
@@ -136,14 +142,6 @@ function getMatrixColumnActionIds(row: MatrixRow, columnId: MatrixColumnId) {
   );
 }
 
-const totalMatrixCellCount = allMatrixRows.reduce(
-  (moduleTotal, row) =>
-    moduleTotal +
-    row.columns.filter((column) => getMatrixColumnActionIds(row, column.id).length > 0).length *
-      dataAccessOptions.length,
-  0,
-);
-
 function CreateRolePage() {
   const { lang } = useLang();
   const { isMobile, state: sidebarState } = useSidebar();
@@ -153,7 +151,23 @@ function CreateRolePage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [scopedPermissions, setScopedPermissions] = useState<string[]>([]);
+  const [moduleDataAccess, setModuleDataAccess] = useState<
+    Partial<Record<PermissionModuleId, DataAccessScope[]>>
+  >(() =>
+    Object.fromEntries(
+      permissionModules.map((module) => [module.id, ["own_records"] as DataAccessScope[]]),
+    ),
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const scopesForModule = (moduleId: PermissionModuleId): DataAccessScope[] => {
+    const selectedScopes = (moduleDataAccess[moduleId] ?? []).filter(
+      (scope) => scope !== "above_level",
+    );
+    return selectedScopes.length > 0 ? selectedScopes : ["own_records"];
+  };
+
+  const scopesForRow = (row: MatrixRow): DataAccessScope[] => scopesForModule(row.moduleId);
 
   const isCellSelected = (
     permissions: string[],
@@ -174,23 +188,29 @@ function CreateRolePage() {
     isCellSelected(scopedPermissions, row, scope, columnId);
 
   const actionColumnState = (row: MatrixRow, columnId: MatrixColumnId) => {
-    const selectedCount = dataAccessOptions.filter((scope) =>
-      matrixCellSelected(row, scope.id, columnId),
-    ).length;
+    const scopes = scopesForRow(row);
+    const selectedCount = scopes.filter((scope) => matrixCellSelected(row, scope, columnId)).length;
     return {
       selectedCount,
-      all: selectedCount === dataAccessOptions.length,
-      partial: selectedCount > 0 && selectedCount < dataAccessOptions.length,
+      all: scopes.length > 0 && selectedCount === scopes.length,
+      partial: selectedCount > 0 && selectedCount < scopes.length,
     };
   };
 
+  const totalMatrixCellCount = allMatrixRows.reduce(
+    (moduleTotal, row) =>
+      moduleTotal +
+      row.columns.filter((column) => getMatrixColumnActionIds(row, column.id).length > 0).length *
+        Math.max(scopesForRow(row).length, 1),
+    0,
+  );
   const selectedPermissionCount = allMatrixRows.reduce(
     (moduleTotal, row) =>
       moduleTotal +
-      dataAccessOptions.reduce(
+      scopesForRow(row).reduce(
         (scopeTotal, scope) =>
           scopeTotal +
-          row.columns.filter((column) => matrixCellSelected(row, scope.id, column.id)).length,
+          row.columns.filter((column) => matrixCellSelected(row, scope, column.id)).length,
         0,
       ),
     0,
@@ -200,8 +220,19 @@ function CreateRolePage() {
   const hasPartialPermissionSelection = selectedPermissionCount > 0 && !allPermissionsSelected;
 
   const toggleAllPermissions = () => {
-    const next = allPermissionsSelected ? [] : [...allScopedPermissionKeysWithExtras];
-    setScopedPermissions(next);
+    if (allPermissionsSelected) {
+      setScopedPermissions([]);
+    } else {
+      setModuleDataAccess(
+        Object.fromEntries(
+          permissionModules.map((module) => [
+            module.id,
+            dataAccessChoices.map((option) => option.id),
+          ]),
+        ),
+      );
+      setScopedPermissions([...supportedScopedPermissionKeys]);
+    }
     setErrors((current) => ({ ...current, permissions: "" }));
   };
 
@@ -237,20 +268,14 @@ function CreateRolePage() {
   };
 
   const toggleModuleAction = (row: MatrixRow, columnId: MatrixColumnId) => {
+    const scopes = scopesForRow(row);
+    if (scopes.length === 0) return;
     const state = actionColumnState(row, columnId);
     let next = scopedPermissions;
 
-    if (state.all) {
-      for (const scope of dataAccessOptions) {
-        next = selectActionForScope(next, row, scope.id, columnId, false);
-      }
-    } else if (state.partial) {
-      for (const scope of dataAccessOptions) {
-        next = selectActionForScope(next, row, scope.id, columnId, true);
-      }
-    } else {
-      const ownScope = dataAccessOptions[0].id;
-      next = selectActionForScope(next, row, ownScope, columnId, true);
+    const enable = !state.all;
+    for (const scope of scopes) {
+      next = selectActionForScope(next, row, scope, columnId, enable);
     }
 
     setScopedPermissions(next);
@@ -259,52 +284,79 @@ function CreateRolePage() {
 
   const isActionGroupEnabled = (row: MatrixRow, columnId: MatrixColumnId) =>
     getMatrixColumnActionIds(row, columnId).some((actionId) =>
-      dataAccessOptions.some((scope) =>
-        scopedPermissions.includes(scopedPermissionKey(row.moduleId, scope.id, actionId)),
+      scopesForRow(row).some((scope) =>
+        scopedPermissions.includes(scopedPermissionKey(row.moduleId, scope, actionId)),
       ),
     );
 
-  const globalDataAccessState = (scope: DataAccessScope, columnId: MatrixColumnId) => {
-    let selectedCount = 0;
-    let totalCount = 0;
+  const toggleRowDataAccess = (row: MatrixRow, scope: DataAccessScope, checked: boolean) => {
+    const scopes = scopesForRow(row);
+    const nextScopeSet = new Set(
+      checked ? [...scopes, scope] : scopes.filter((id) => id !== scope),
+    );
+    const nextScopes = dataAccessChoices
+      .map((option) => option.id)
+      .filter((id) => nextScopeSet.has(id));
+    let next = scopedPermissions;
 
-    for (const row of allMatrixRows) {
-      const actionIds = getMatrixColumnActionIds(row, columnId);
-      if (actionIds.length === 0 || !isActionGroupEnabled(row, columnId)) continue;
-      for (const actionId of actionIds) {
-        totalCount += 1;
-        if (scopedPermissions.includes(scopedPermissionKey(row.moduleId, scope, actionId))) {
-          selectedCount += 1;
+    for (const column of row.columns) {
+      if (checked) {
+        if (!isActionGroupEnabled(row, column.id)) continue;
+        next = selectActionForScope(next, row, scope, column.id, true);
+      } else {
+        for (const actionId of getMatrixColumnActionIds(row, column.id)) {
+          next = toggleScopedPermissionAction(next, row.moduleId, scope, actionId, false);
         }
       }
     }
 
-    return {
-      totalCount,
-      selectedCount,
-      all: totalCount > 0 && selectedCount === totalCount,
-      partial: selectedCount > 0 && selectedCount < totalCount,
-    };
-  };
-
-  const toggleGlobalDataAccess = (scope: DataAccessScope, columnId: MatrixColumnId) => {
-    const state = globalDataAccessState(scope, columnId);
-    if (state.totalCount === 0) return;
-
-    const enable = !state.all;
-    let next = scopedPermissions;
-
-    for (const row of allMatrixRows) {
-      const actionIds = getMatrixColumnActionIds(row, columnId);
-      if (actionIds.length === 0) continue;
-      if (enable && !isActionGroupEnabled(row, columnId)) continue;
-      for (const actionId of actionIds) {
-        next = toggleScopedPermissionAction(next, row.moduleId, scope, actionId, enable);
-      }
-    }
-
+    setModuleDataAccess((current) => ({ ...current, [row.moduleId]: nextScopes }));
     setScopedPermissions(next);
     setErrors((current) => ({ ...current, permissions: "" }));
+  };
+
+  const toggleRowDataAccessAll = (row: MatrixRow) => {
+    const scopes = scopesForRow(row);
+    if (scopes.length === dataAccessChoices.length) {
+      let next = scopedPermissions;
+      for (const column of row.columns) {
+        for (const actionId of getMatrixColumnActionIds(row, column.id)) {
+          for (const scope of dataAccessChoices) {
+            next = toggleScopedPermissionAction(next, row.moduleId, scope.id, actionId, false);
+          }
+        }
+      }
+      setModuleDataAccess((current) => ({ ...current, [row.moduleId]: [] }));
+      setScopedPermissions(next);
+    } else {
+      let next = scopedPermissions;
+      for (const option of dataAccessChoices) {
+        if (scopes.includes(option.id)) continue;
+        for (const column of row.columns) {
+          if (!isActionGroupEnabled(row, column.id)) continue;
+          next = selectActionForScope(next, row, option.id, column.id, true);
+        }
+      }
+      setModuleDataAccess((current) => ({
+        ...current,
+        [row.moduleId]: dataAccessChoices.map((option) => option.id),
+      }));
+      setScopedPermissions(next);
+    }
+    setErrors((current) => ({ ...current, permissions: "" }));
+  };
+
+  const dataAccessSummary = (scopes: DataAccessScope[]) => {
+    if (scopes.length === 0) {
+      return tr("Select access", "ആക്സസ് തിരഞ്ഞെടുക്കുക");
+    }
+    if (scopes.length === dataAccessChoices.length) {
+      return tr("All Records", "എല്ലാ റെക്കോർഡുകളും");
+    }
+    const labels = dataAccessChoices
+      .filter((option) => scopes.includes(option.id))
+      .map((option) => (lang === "ml" ? option.shortMl : option.shortEn));
+    return lang === "ml" ? `${labels.join(" + ")} റെക്കോർഡുകൾ` : `${labels.join(" + ")} Records`;
   };
 
   const handleSave = () => {
@@ -323,6 +375,13 @@ function CreateRolePage() {
     if (Object.keys(nextErrors).length > 0) return;
 
     const now = new Date().toISOString();
+    const dataAccess = permissionModules.reduce<NonNullable<ManagedRole["dataAccess"]>>(
+      (current, module) => ({
+        ...current,
+        [module.id]: scopesForModule(module.id),
+      }),
+      { ...emptyRoleDraft.dataAccess },
+    );
     const role: ManagedRole = {
       id: createRoleId(),
       name: trimmedName,
@@ -330,10 +389,7 @@ function CreateRolePage() {
       assignmentLevels: ["state"],
       permissions: permissionsFromScopedPermissions(scopedPermissions, []),
       administrativePermissions: [],
-      dataAccess: syncRoleDataAccessWithScopedPermissions(
-        emptyRoleDraft.dataAccess,
-        scopedPermissions,
-      ),
+      dataAccess,
       scopedPermissions: [...scopedPermissions],
       status: "Active",
       system: false,
@@ -352,7 +408,7 @@ function CreateRolePage() {
     columns: readonly MatrixColumn[],
     gridClass: string,
   ) => (
-    <div className="overflow-hidden rounded-2xl border border-border bg-white">
+    <div className="overflow-x-auto rounded-lg border border-border bg-white">
       <div
         className={cn(
           gridClass,
@@ -370,19 +426,13 @@ function CreateRolePage() {
             {lang === "ml" ? column.ml : column.en}
           </span>
         ))}
+        <span className="text-center text-[9px] font-black uppercase tracking-tight text-primary md:text-[11px] md:leading-tight">
+          {tr("Data Access", "ഡാറ്റ ആക്സസ്")}
+        </span>
       </div>
 
       {rows.map((row) => {
         const Icon = row.icon;
-        const moduleSelectedCount = dataAccessOptions.reduce(
-          (scopeTotal, scope) =>
-            scopeTotal +
-            row.columns.filter((column) => matrixCellSelected(row, scope.id, column.id)).length,
-          0,
-        );
-        const moduleTotalCellCount =
-          row.columns.filter((column) => getMatrixColumnActionIds(row, column.id).length > 0)
-            .length * dataAccessOptions.length;
 
         return (
           <div key={row.key} className="border-t border-border first:border-t-0">
@@ -391,16 +441,6 @@ function CreateRolePage() {
                 <Icon className="h-4 w-4 shrink-0 text-primary" />
                 <span className="min-w-0 truncate text-[12.5px] font-extrabold text-foreground">
                   {lang === "ml" ? row.ml : row.en}
-                </span>
-                <span
-                  className={cn(
-                    "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold",
-                    moduleSelectedCount > 0
-                      ? "bg-primary/10 text-primary"
-                      : "bg-muted text-muted-foreground",
-                  )}
-                >
-                  {moduleSelectedCount}/{moduleTotalCellCount}
                 </span>
               </div>
 
@@ -420,6 +460,7 @@ function CreateRolePage() {
                 }
                 const state = actionColumnState(row, column.id);
                 const columnLabel = lang === "ml" ? column.ml : column.en;
+                const canSelect = scopesForRow(row).length > 0;
                 return (
                   <button
                     key={column.id}
@@ -428,7 +469,13 @@ function CreateRolePage() {
                     aria-checked={state.all ? true : state.partial ? "mixed" : false}
                     aria-label={`${row.en} ${columnLabel}`}
                     onClick={() => toggleModuleAction(row, column.id)}
-                    className="flex h-11 w-full cursor-pointer items-center justify-center rounded-md transition-colors hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                    disabled={!canSelect}
+                    className={cn(
+                      "flex h-11 w-full items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+                      canSelect
+                        ? "cursor-pointer hover:bg-primary/5"
+                        : "cursor-not-allowed opacity-40",
+                    )}
                   >
                     <span
                       className={cn(
@@ -449,98 +496,81 @@ function CreateRolePage() {
                   </button>
                 );
               })}
+
+              <div className="flex h-11 items-center justify-center">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label={`${row.en} ${tr("Data Access", "ഡാറ്റ ആക്സസ്")}`}
+                      className="flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-border bg-white px-3 text-left text-[11px] font-semibold text-foreground shadow-2xs transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                    >
+                      <span className="min-w-0 truncate">
+                        {dataAccessSummary(scopesForRow(row))}
+                      </span>
+                      <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-64 rounded-lg border-border p-2">
+                    <div className="space-y-0.5">
+                      {dataAccessChoices.map((option) => {
+                        const checked = scopesForRow(row).includes(option.id);
+                        return (
+                          <button
+                            key={option.id}
+                            type="button"
+                            role="checkbox"
+                            aria-checked={checked}
+                            onClick={() => toggleRowDataAccess(row, option.id, !checked)}
+                            className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-[11px] font-semibold text-foreground transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                          >
+                            <span
+                              className={cn(
+                                "flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border",
+                                checked
+                                  ? "border-primary bg-primary text-primary-foreground"
+                                  : "border-border bg-white",
+                              )}
+                            >
+                              {checked ? <Check className="h-3 w-3 stroke-[3]" /> : null}
+                            </span>
+                            <span>{lang === "ml" ? option.shortMl : option.shortEn}</span>
+                          </button>
+                        );
+                      })}
+                      <div className="my-1 h-px bg-border" />
+                      <button
+                        type="button"
+                        role="checkbox"
+                        aria-checked={scopesForRow(row).length === dataAccessChoices.length}
+                        onClick={() => toggleRowDataAccessAll(row)}
+                        className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-[11px] font-bold text-foreground transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                      >
+                        <span
+                          className={cn(
+                            "flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border",
+                            scopesForRow(row).length === dataAccessChoices.length
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-border bg-white",
+                          )}
+                        >
+                          {scopesForRow(row).length === dataAccessChoices.length ? (
+                            <Check className="h-3 w-3 stroke-[3]" />
+                          ) : null}
+                        </span>
+                        <span>{tr("All", "എല്ലാം")}</span>
+                        <span className="ml-auto text-[9px] font-semibold text-muted-foreground">
+                          {tr("3 levels", "3 തലങ്ങൾ")}
+                        </span>
+                      </button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
           </div>
         );
       })}
-    </div>
-  );
-
-  const renderGlobalDataAccess = () => (
-    <div className="overflow-hidden rounded-2xl border border-border bg-white">
-      <div
-        className={cn(
-          primaryMatrixGridClass,
-          "items-center gap-1 border-b border-border bg-muted/40 px-4 py-2.5",
-        )}
-      >
-        <div className="flex min-w-0 flex-col justify-center">
-          <span className="text-[9px] font-black uppercase tracking-wide text-primary md:text-[11px]">
-            {tr("Data Access", "ഡാറ്റ ആക്സസ്")}
-          </span>
-          <span className="text-[9px] font-semibold text-muted-foreground">
-            {tr("Applies to all modules", "എല്ലാ മൊഡ്യൂളുകൾക്കും ബാധകം")}
-          </span>
-        </div>
-        {primaryMatrixColumns.map((column) => (
-          <span
-            key={column.id}
-            className="text-center text-[9px] font-black uppercase tracking-tight text-primary md:text-[11px] md:leading-tight"
-          >
-            {lang === "ml" ? column.ml : column.en}
-          </span>
-        ))}
-      </div>
-
-      {dataAccessOptions.map((scope) => (
-        <div
-          key={scope.id}
-          className={cn(
-            primaryMatrixGridClass,
-            "items-center gap-1 border-t border-border/60 px-4 py-1.5",
-          )}
-        >
-          <span className="min-w-0 text-xs font-bold text-foreground">
-            {lang === "ml" ? scope.shortMl : scope.shortEn}
-          </span>
-          {primaryMatrixColumns.map((column) => {
-            const state = globalDataAccessState(scope.id, column.id);
-            if (state.totalCount === 0) {
-              return (
-                <span
-                  key={column.id}
-                  title={tr("Unavailable", "ലഭ്യമല്ല")}
-                  aria-label={tr("Unavailable", "ലഭ്യമല്ല")}
-                  className="flex h-10 items-center justify-center text-xs font-semibold text-muted-foreground/40"
-                >
-                  —
-                </span>
-              );
-            }
-
-            return (
-              <button
-                key={column.id}
-                type="button"
-                role="checkbox"
-                aria-checked={state.all ? true : state.partial ? "mixed" : false}
-                aria-label={`${lang === "ml" ? scope.ml : scope.en} — ${
-                  lang === "ml" ? column.ml : column.en
-                }`}
-                onClick={() => toggleGlobalDataAccess(scope.id, column.id)}
-                className="flex h-10 w-full cursor-pointer items-center justify-center rounded-md transition-colors hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-              >
-                <span
-                  className={cn(
-                    "flex h-5 w-5 items-center justify-center rounded-[4px] border",
-                    state.all
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : state.partial
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border bg-white",
-                  )}
-                >
-                  {state.all ? (
-                    <Check className="h-3.5 w-3.5 stroke-[3]" />
-                  ) : state.partial ? (
-                    <span className="h-[2px] w-2.5 rounded-full bg-primary" />
-                  ) : null}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      ))}
     </div>
   );
 
@@ -645,9 +675,6 @@ function CreateRolePage() {
                   ) : null}
                 </span>
                 <span>{tr("All", "എല്ലാം")}</span>
-                <span>
-                  ({selectedPermissionCount}/{totalMatrixCellCount})
-                </span>
               </button>
             </div>
 
@@ -664,7 +691,6 @@ function CreateRolePage() {
                 secondaryMatrixColumns,
                 secondaryMatrixGridClass,
               )}
-              {renderGlobalDataAccess()}
             </div>
           </div>
         </section>
