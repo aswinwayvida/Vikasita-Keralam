@@ -1,17 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
-  AlertTriangle,
   ChevronRight,
-  CheckCircle2,
   ExternalLink,
   Filter,
   Download,
+  Upload,
   LayoutGrid,
   List,
-  Link2,
-  RefreshCw,
-  Sparkles,
   Plus,
   Power,
   MoreHorizontal,
@@ -27,6 +23,9 @@ import {
   HandHeart,
   Building2,
   Columns3,
+  Search,
+  ChevronDown,
+  Check,
 } from "lucide-react";
 import { schemes, type Scheme } from "@/data/schemes";
 import { useLang } from "@/i18n/LanguageProvider";
@@ -40,7 +39,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import schemeLogoFallback from "@/assets/kpi-3d/schemes.png";
+import { useAdminTopSearch } from "@/lib/admin-search-store";
 
 export const Route = createFileRoute("/admin/schemes")({
   head: () => ({ meta: [{ title: "Schemes · Admin" }] }),
@@ -76,7 +78,14 @@ const categoryIcons: Record<Scheme["category"], typeof Sprout> = {
   msme: Building2,
 };
 
-type SchemeColumnKey = "scheme" | "department" | "category" | "portal" | "status" | "applications" | "actions";
+type SchemeColumnKey =
+  | "scheme"
+  | "department"
+  | "category"
+  | "portal"
+  | "status"
+  | "applications"
+  | "actions";
 
 const SCHEME_COLUMNS: { key: SchemeColumnKey; en: string; ml: string }[] = [
   { key: "scheme", en: "Scheme Name", ml: "പദ്ധതിയുടെ പേര്" },
@@ -88,6 +97,45 @@ const SCHEME_COLUMNS: { key: SchemeColumnKey; en: string; ml: string }[] = [
   { key: "actions", en: "Actions", ml: "നടപടികൾ" },
 ];
 
+const CATEGORY_OPTIONS = [
+  "Agriculture",
+  "Housing",
+  "Healthcare",
+  "Education",
+  "Employment",
+  "Women & Child",
+  "Social Welfare",
+  "Financial Assistance",
+  "Others",
+];
+
+const STATUS_OPTIONS = ["Active", "Inactive", "Draft", "Archived"];
+
+const BENEFICIARY_OPTIONS = [
+  "Farmers",
+  "Women",
+  "Students",
+  "Senior Citizens",
+  "Persons with Disabilities",
+  "Workers",
+  "General Public",
+];
+
+const PRESET_MINISTRIES = [
+  "Agriculture & Farmers Welfare",
+  "Rural Development",
+  "Health & Family Welfare",
+  "Education",
+  "Finance",
+  "Housing & Urban Affairs",
+  "Petroleum & Natural Gas",
+  "Skill Development & Entrepreneurship",
+  "Labour & Employment",
+  "Women & Child Development",
+  "Jal Shakti",
+  "Social Justice & Empowerment",
+];
+
 function CategoryTag({ category, lang }: { category: Scheme["category"]; lang: "en" | "ml" }) {
   const CategoryIcon = categoryIcons[category];
   return (
@@ -96,6 +144,49 @@ function CategoryTag({ category, lang }: { category: Scheme["category"]; lang: "
       {categoryLabels[category][lang]}
     </span>
   );
+}
+
+function getCategoryDisplay(category: Scheme["category"]): string {
+  switch (category) {
+    case "agriculture":
+      return "Agriculture";
+    case "housing":
+      return "Housing";
+    case "health":
+      return "Healthcare";
+    case "education":
+      return "Education";
+    case "employment":
+      return "Employment";
+    case "women":
+      return "Women & Child";
+    case "welfare":
+      return "Social Welfare";
+    case "msme":
+      return "Financial Assistance";
+    default:
+      return "Others";
+  }
+}
+
+function getBeneficiariesForScheme(record: Scheme): string[] {
+  const text = `${record.en} ${record.eligibility.en} ${record.benefit.en} ${record.category}`.toLowerCase();
+  const list: string[] = [];
+  if (text.includes("farmer") || text.includes("kisan") || text.includes("crop") || record.category === "agriculture")
+    list.push("Farmers");
+  if (text.includes("women") || text.includes("girl") || text.includes("mother") || text.includes("matru") || record.category === "women")
+    list.push("Women");
+  if (text.includes("student") || text.includes("school") || text.includes("child") || text.includes("education") || record.category === "education")
+    list.push("Students");
+  if (text.includes("60") || text.includes("pension") || text.includes("senior") || text.includes("age 18"))
+    list.push("Senior Citizens");
+  if (text.includes("disability") || text.includes("handicapped") || text.includes("special"))
+    list.push("Persons with Disabilities");
+  if (text.includes("worker") || text.includes("labour") || text.includes("entrepreneur") || text.includes("skill") || record.category === "employment" || record.category === "msme")
+    list.push("Workers");
+  if (list.length === 0 || text.includes("bpl") || text.includes("household") || text.includes("insurance"))
+    list.push("General Public");
+  return Array.from(new Set(list));
 }
 
 const schemeLogoUrls: Record<string, string> = {
@@ -142,55 +233,280 @@ function ModePill({ mode }: { mode: string }) {
   );
 }
 
-import { useAdminTopSearch } from "@/lib/admin-search-store";
+// Exactly matching the FilterDropdownSelector UI used for User Filter in RoleAccessSettings.tsx
+function FilterDropdownSelector({
+  title,
+  placeholder,
+  options,
+  selectedValues,
+  onChange,
+  tr,
+}: {
+  title: string;
+  placeholder: string;
+  options: string[];
+  selectedValues: string[];
+  onChange: (newValues: string[]) => void;
+  tr: (en: string, ml: string) => string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const filteredOptions = useMemo(() => {
+    if (!search.trim()) return options;
+    return options.filter((opt) =>
+      opt.toLowerCase().includes(search.toLowerCase()),
+    );
+  }, [options, search]);
+
+  const toggleOption = (val: string) => {
+    if (selectedValues.includes(val)) {
+      onChange(selectedValues.filter((item) => item !== val));
+    } else {
+      onChange([...selectedValues, val]);
+    }
+  };
+
+  const getLabelText = () => {
+    if (selectedValues.length === 0) return placeholder;
+    if (selectedValues.length === 1) return selectedValues[0];
+    return `${selectedValues.length} ${tr("Selected", "തിരഞ്ഞെടുത്തു")}`;
+  };
+
+  if (options.length === 0) return null;
+
+  return (
+    <div className="space-y-1">
+      <label className="font-bold text-slate-500 text-[10px] uppercase tracking-wider block">
+        {title}
+      </label>
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className={cn(
+              "w-full h-9 px-3 rounded-lg border flex items-center justify-between text-xs font-semibold transition-all bg-white cursor-pointer select-none text-left shadow-2xs",
+              selectedValues.length > 0
+                ? "border-amber-400 bg-[#FFF8F0] text-amber-950 font-bold"
+                : "border-border text-slate-800 hover:border-amber-300 hover:bg-slate-50/50",
+            )}
+          >
+            <span className="truncate pr-2">{getLabelText()}</span>
+            <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform duration-200", isOpen && "rotate-180")} />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-64 p-2 text-xs bg-white shadow-xl border border-amber-200 rounded-xl space-y-2 z-50">
+          {options.length > 4 && (
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={tr("Search...", "തിരയുക...")}
+                className="w-full h-8 pl-8 pr-2 text-xs rounded-md border border-border bg-slate-50 focus:border-amber-500 focus:bg-white focus:outline-none"
+              />
+            </div>
+          )}
+
+          <div className="flex items-center justify-between px-1.5 py-1 border-b border-slate-100 text-[11px]">
+            <span className="font-bold text-slate-500">
+              {selectedValues.length > 0 ? `${selectedValues.length} ${tr("selected", "തിരഞ്ഞെടുത്തു")}` : tr("All", "എല്ലാം")}
+            </span>
+            {selectedValues.length > 0 && (
+              <button
+                type="button"
+                onClick={() => onChange([])}
+                className="text-amber-600 hover:text-amber-700 font-bold cursor-pointer hover:underline"
+              >
+                {tr("Clear", "നീക്കം ചെയ്യുക")}
+              </button>
+            )}
+          </div>
+
+          <div className="max-h-60 overflow-y-auto pr-1 space-y-0.5 custom-scrollbar">
+            <div
+              onClick={() => onChange([])}
+              className={cn(
+                "flex items-center justify-between py-1.5 px-2 rounded-md cursor-pointer text-xs transition-colors font-medium",
+                selectedValues.length === 0
+                  ? "bg-amber-50 text-amber-900 font-bold"
+                  : "hover:bg-slate-100 text-slate-700",
+              )}
+            >
+              <span>{tr("All", "എല്ലാം")}</span>
+              {selectedValues.length === 0 && <Check className="h-3.5 w-3.5 text-amber-600 stroke-[2.5]" />}
+            </div>
+
+            {filteredOptions.map((opt) => {
+              const isChecked = selectedValues.includes(opt);
+              return (
+                <div
+                  key={opt}
+                  onClick={() => toggleOption(opt)}
+                  className={cn(
+                    "flex items-center gap-2.5 py-1.5 px-2 rounded-md cursor-pointer text-xs transition-colors select-none",
+                    isChecked
+                      ? "bg-[#FFF8F0] text-amber-950 font-bold"
+                      : "hover:bg-slate-100 text-slate-700 font-medium",
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "h-4 w-4 rounded-md border shrink-0 flex items-center justify-center transition-colors",
+                      isChecked
+                        ? "border-amber-500 bg-amber-500 text-white"
+                        : "border-slate-300 bg-white",
+                    )}
+                  >
+                    {isChecked && <Check className="h-2.5 w-2.5 stroke-[3]" />}
+                  </div>
+                  <span className="truncate flex-1">{opt}</span>
+                </div>
+              );
+            })}
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
 
 function SchemesPage() {
   const { lang } = useLang();
+  const tr = (en: string, ml: string) => (lang === "ml" ? ml : en);
   const navigate = useNavigate();
   const topSearchQuery = useAdminTopSearch();
-  const [mode, setMode] = useState("All");
-  const [syncStatus, setSyncStatus] = useState("All");
-  const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [disabledSchemeIds, setDisabledSchemeIds] = useState<Set<string>>(() => new Set());
   const [deletedSchemeIds, setDeletedSchemeIds] = useState<Set<string>>(() => new Set());
   const [visibleColumns, setVisibleColumns] = useState<Set<SchemeColumnKey>>(
     () => new Set(SCHEME_COLUMNS.map((column) => column.key)),
   );
 
+  // Filter states matching User Filter approach
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedMinistries, setSelectedMinistries] = useState<string[]>([]);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [selectedBeneficiaries, setSelectedBeneficiaries] = useState<string[]>([]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+
+  const allMinistryOptions = useMemo(() => {
+    const dynamic = Array.from(new Set(schemes.map((s) => s.ministry.en)));
+    const combined = Array.from(new Set([...PRESET_MINISTRIES, ...dynamic]));
+    return combined.sort();
+  }, []);
+
   const records = useMemo(
     () =>
-      schemes.map((scheme, index) => ({
-        ...scheme,
-        mode: modes[index % modes.length],
-        source:
-          index % 3 === 0
-            ? "Official ministry"
-            : index % 3 === 1
-              ? "myScheme reference"
-              : "Department portal",
-        verifiedDays: index % 6,
-        applications: 38 + ((index * 17) % 148),
-        sync: index % 7 === 0 ? "Needs checking" : "Up to date",
-      })),
-    [],
+      schemes.map((scheme, index) => {
+        const categoryDisplay = getCategoryDisplay(scheme.category);
+        const beneficiaries = getBeneficiariesForScheme(scheme);
+        const status = disabledSchemeIds.has(scheme.id)
+          ? "Inactive"
+          : index % 11 === 0
+            ? "Draft"
+            : index % 13 === 0
+              ? "Archived"
+              : "Active";
+
+        return {
+          ...scheme,
+          mode: modes[index % modes.length],
+          source:
+            index % 3 === 0
+              ? "Official ministry"
+              : index % 3 === 1
+                ? "myScheme reference"
+                : "Department portal",
+          verifiedDays: index % 6,
+          applications: 38 + ((index * 17) % 148),
+          sync: index % 7 === 0 ? "Needs checking" : "Up to date",
+          categoryDisplay,
+          ministryDisplay: scheme.ministry.en,
+          beneficiaries,
+          status,
+        };
+      }),
+    [disabledSchemeIds],
   );
 
-  const filtered = records.filter((record) => {
-    if (deletedSchemeIds.has(record.id)) return false;
-    const matchesFilter =
-      (mode === "All" || record.mode === mode) &&
-      (syncStatus === "All" || record.sync === syncStatus);
-    if (!matchesFilter) return false;
-    const q = topSearchQuery.trim().toLowerCase();
-    if (!q) return true;
-    return (
-      record.en.toLowerCase().includes(q) ||
-      record.ml.toLowerCase().includes(q) ||
-      record.category.toLowerCase().includes(q) ||
-      record.ministry.en.toLowerCase().includes(q) ||
-      record.ministry.ml.toLowerCase().includes(q)
-    );
-  });
+  const filtered = useMemo(() => {
+    return records.filter((record) => {
+      if (deletedSchemeIds.has(record.id)) return false;
+
+      const q = topSearchQuery.trim().toLowerCase();
+      if (q) {
+        const matchesSearch =
+          record.en.toLowerCase().includes(q) ||
+          record.ml.toLowerCase().includes(q) ||
+          record.category.toLowerCase().includes(q) ||
+          record.ministry.en.toLowerCase().includes(q) ||
+          record.ministry.ml.toLowerCase().includes(q);
+        if (!matchesSearch) return false;
+      }
+
+      // 1. Category Filter
+      if (selectedCategories.length > 0) {
+        if (!selectedCategories.includes(record.categoryDisplay)) return false;
+      }
+
+      // 2. Ministry Filter
+      if (selectedMinistries.length > 0) {
+        const recordMinistry = record.ministryDisplay;
+        const matchesMinistry = selectedMinistries.some(
+          (m) =>
+            recordMinistry.toLowerCase().includes(m.toLowerCase()) ||
+            m.toLowerCase().includes(recordMinistry.toLowerCase()),
+        );
+        if (!matchesMinistry) return false;
+      }
+
+      // 3. Status Filter
+      if (selectedStatuses.length > 0) {
+        if (!selectedStatuses.includes(record.status)) return false;
+      }
+
+      // 4. Target Beneficiary Filter
+      if (selectedBeneficiaries.length > 0) {
+        const matchesBeneficiary = record.beneficiaries.some((b) =>
+          selectedBeneficiaries.includes(b),
+        );
+        if (!matchesBeneficiary) return false;
+      }
+
+      return true;
+    });
+  }, [
+    records,
+    deletedSchemeIds,
+    topSearchQuery,
+    selectedCategories,
+    selectedMinistries,
+    selectedStatuses,
+    selectedBeneficiaries,
+  ]);
+
+  const activeFilterCount =
+    selectedCategories.length +
+    selectedMinistries.length +
+    selectedStatuses.length +
+    selectedBeneficiaries.length;
+
+  const handleResetFilters = () => {
+    setSelectedCategories([]);
+    setSelectedMinistries([]);
+    setSelectedStatuses([]);
+    setSelectedBeneficiaries([]);
+    setCurrentPage(1);
+  };
+
+  const totalPages = Math.ceil(filtered.length / pageSize) || 1;
+  const paginatedFiltered = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, currentPage, pageSize]);
 
   const toggleSchemeEnabled = (record: (typeof records)[number]) => {
     const isDisabled = disabledSchemeIds.has(record.id);
@@ -263,7 +579,6 @@ function SchemesPage() {
     }
   }, []);
 
-  // Desktop only: hide the page scroll indicators on the Schemes List.
   useEffect(() => {
     const root = document.documentElement;
     const desktopQuery = window.matchMedia("(min-width: 640px)");
@@ -276,21 +591,21 @@ function SchemesPage() {
     };
   }, []);
 
-  const activeFilterCount = (mode !== "All" ? 1 : 0) + (syncStatus !== "All" ? 1 : 0);
-
   return (
     <div className="space-y-6 pb-8">
       {/* Merged Single Section Container */}
       <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-xs">
-        {/* Top Header Row with Title & Filter / Export / Add Scheme Buttons */}
+        {/* Top Header Row with Title & Filter / Export / Import / Add Scheme Buttons */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 p-4 sm:p-5">
           <div>
             <h2 className="font-display text-base font-bold text-foreground">
-              {lang === "ml" ? "പദ്ധതി പട്ടിക (25)" : "Schemes List (25)"}
+              {lang === "ml"
+                ? `പദ്ധതി പട്ടിക (${filtered.length})`
+                : `Schemes List (${filtered.length})`}
             </h2>
           </div>
 
-          {/* Filter, Export & Add Scheme Controls on the Right */}
+          {/* Controls on the Right */}
           <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar desktop-hide-scrollbar pb-0.5 max-w-full sm:ml-auto shrink-0">
             {/* Column Management */}
             <DropdownMenu>
@@ -322,7 +637,9 @@ function SchemesPage() {
                 ))}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onSelect={() => setVisibleColumns(new Set(SCHEME_COLUMNS.map((column) => column.key)))}
+                  onSelect={() =>
+                    setVisibleColumns(new Set(SCHEME_COLUMNS.map((column) => column.key)))
+                  }
                   className="text-xs font-semibold text-primary"
                 >
                   {lang === "ml" ? "എല്ലാ നിരകളും കാണിക്കുക" : "Show all columns"}
@@ -360,102 +677,116 @@ function SchemesPage() {
               </button>
             </div>
 
-            {/* Filter and Export Actions Pair */}
+            {/* Actions Group: Filter, Import, Export */}
             <div className="flex items-center gap-2 shrink-0">
-              {/* Filter Button with Popover Menu */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowFilterMenu(!showFilterMenu)}
-                  className={`flex items-center gap-1.5 rounded-xl sm:rounded-lg border px-3.5 py-1.5 text-[13px] leading-tight font-semibold transition-colors shrink-0 ${
-                    activeFilterCount > 0 || showFilterMenu
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border bg-background text-foreground hover:bg-muted"
-                  }`}
-                >
-                  <Filter className="h-4 w-4" />
-                  {lang === "ml" ? "ഫിൽട്ടറുകൾ" : "Filter"}
-                  {activeFilterCount > 0 && (
-                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                      {activeFilterCount}
+              {/* Filter Dropdown Menu (Identical to User Filter) */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-xl sm:rounded-lg border px-3.5 py-1.5 text-[13px] leading-tight font-semibold transition-colors shrink-0 cursor-pointer",
+                      activeFilterCount > 0
+                        ? "border-primary bg-primary/10 text-primary font-bold"
+                        : "border-border bg-background text-foreground hover:bg-muted",
+                    )}
+                  >
+                    <Filter className="h-4 w-4 text-muted-foreground" />
+                    <span>{tr("Filter", "ഫിൽട്ടർ")}</span>
+                    {activeFilterCount > 0 && (
+                      <span className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                        {activeFilterCount}
+                      </span>
+                    )}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64 p-3 text-xs space-y-3 max-h-96 overflow-y-auto">
+                  <div className="flex items-center justify-between pb-1.5 border-b border-border">
+                    <span className="font-bold text-foreground text-xs">
+                      {tr("Filter Schemes", "പദ്ധതികൾ ഫിൽട്ടർ ചെയ്യുക")}
                     </span>
-                  )}
-                </button>
-
-                {showFilterMenu && (
-                  <div className="absolute right-0 top-full mt-2 z-30 w-72 rounded-xl border border-border bg-card p-4 shadow-lg space-y-3.5">
-                    <div className="flex items-center justify-between border-b border-border pb-2">
-                      <h4 className="text-xs font-bold text-foreground">
-                        {lang === "ml" ? "പദ്ധതി ഫിൽട്ടറുകൾ" : "Filter Schemes"}
-                      </h4>
-                      {activeFilterCount > 0 && (
-                        <button
-                          onClick={() => {
-                            setMode("All");
-                            setSyncStatus("All");
-                          }}
-                          className="text-[11px] font-semibold text-primary hover:underline"
-                        >
-                          {lang === "ml" ? "റീസെറ്റ്" : "Reset all"}
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Mode / Application Channel Filter */}
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-semibold text-muted-foreground block">
-                        {lang === "ml" ? "അപേക്ഷിക്കുന്ന രീതി" : "Application Mode"}
-                      </label>
-                      <select
-                        value={mode}
-                        onChange={(event) => setMode(event.target.value)}
-                        className="w-full h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold outline-none"
+                    {activeFilterCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleResetFilters}
+                        className="text-[11px] font-semibold text-primary hover:underline cursor-pointer"
                       >
-                        <option value="All">
-                          {lang === "ml" ? "എല്ലാ രീതികളും" : "All Modes"}
-                        </option>
-                        {modes.map((item) => (
-                          <option key={item} value={item}>
-                            {item}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Verification Sync Status Filter */}
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-semibold text-muted-foreground block">
-                        {lang === "ml" ? "പരിശോധന സ്റ്റാറ്റസ്" : "Verification Status"}
-                      </label>
-                      <select
-                        value={syncStatus}
-                        onChange={(event) => setSyncStatus(event.target.value)}
-                        className="w-full h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold outline-none"
-                      >
-                        <option value="All">
-                          {lang === "ml" ? "എല്ലാ സ്റ്റാറ്റസുകളും" : "All Statuses"}
-                        </option>
-                        <option value="Up to date">
-                          {lang === "ml" ? "അപ്-ടു-ഡേറ്റ്" : "Up to date"}
-                        </option>
-                        <option value="Needs checking">
-                          {lang === "ml" ? "പരിശോധന വേണം" : "Needs checking"}
-                        </option>
-                      </select>
-                    </div>
+                        {tr("Reset All", "എല്ലാം റീസെറ്റ് ചെയ്യുക")}
+                      </button>
+                    )}
                   </div>
-                )}
-              </div>
 
+                  {/* 1. Scheme Category Filter */}
+                  <FilterDropdownSelector
+                    title={tr("SCHEME CATEGORY", "പദ്ധതി വിഭാഗം")}
+                    placeholder={tr("Select Category", "വിഭാഗം തിരഞ്ഞെടുക്കുക")}
+                    options={CATEGORY_OPTIONS}
+                    selectedValues={selectedCategories}
+                    onChange={setSelectedCategories}
+                    tr={tr}
+                  />
+
+                  {/* 2. Ministry / Department Filter */}
+                  <FilterDropdownSelector
+                    title={tr("MINISTRY / DEPARTMENT", "മന്ത്രാലയം / വകുപ്പ്")}
+                    placeholder={tr("Select Ministry", "മന്ത്രാലയം തിരഞ്ഞെടുക്കുക")}
+                    options={allMinistryOptions}
+                    selectedValues={selectedMinistries}
+                    onChange={setSelectedMinistries}
+                    tr={tr}
+                  />
+
+                  {/* 3. Scheme Status Filter */}
+                  <FilterDropdownSelector
+                    title={tr("SCHEME STATUS", "പദ്ധതി സ്റ്റാറ്റസ്")}
+                    placeholder={tr("Select Status", "സ്റ്റാറ്റസ് തിരഞ്ഞെടുക്കുക")}
+                    options={STATUS_OPTIONS}
+                    selectedValues={selectedStatuses}
+                    onChange={setSelectedStatuses}
+                    tr={tr}
+                  />
+
+                  {/* 4. Target Beneficiary Filter */}
+                  <FilterDropdownSelector
+                    title={tr("TARGET BENEFICIARY", "ലക്ഷ്യ ഗുണഭോക്താവ്")}
+                    placeholder={tr("Select Beneficiary", "ഗുണഭോക്താവ് തിരഞ്ഞെടുക്കുക")}
+                    options={BENEFICIARY_OPTIONS}
+                    selectedValues={selectedBeneficiaries}
+                    onChange={setSelectedBeneficiaries}
+                    tr={tr}
+                  />
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Import Button */}
               <button
-                className="flex items-center gap-1.5 rounded-xl sm:rounded-lg border border-border bg-background px-3 sm:px-4 py-1.5 text-[13px] leading-tight font-semibold text-foreground hover:bg-muted transition-colors shrink-0"
+                type="button"
+                onClick={() =>
+                  toast.info(lang === "ml" ? "ഇമ്പോർട്ട് സൗകര്യം ലഭ്യമാണ്" : "Import feature ready")
+                }
+                className="flex items-center gap-1.5 rounded-xl sm:rounded-lg border border-border bg-background px-3 sm:px-4 py-1.5 text-[13px] leading-tight font-semibold text-foreground hover:bg-muted transition-colors shrink-0 cursor-pointer"
+                title={lang === "ml" ? "ഇമ്പോർട്ട്" : "Import"}
+              >
+                <Upload className="h-4 w-4 text-muted-foreground" />
+                <span className="hidden sm:inline">{lang === "ml" ? "ഇമ്പോർട്ട്" : "Import"}</span>
+              </button>
+
+              {/* Export Button */}
+              <button
+                type="button"
+                onClick={() =>
+                  toast.success(
+                    lang === "ml" ? "പദ്ധതി വിവരങ്ങൾ എക്സ്പോർട്ട് ചെയ്തു" : "Schemes exported",
+                  )
+                }
+                className="flex items-center gap-1.5 rounded-xl sm:rounded-lg border border-border bg-background px-3 sm:px-4 py-1.5 text-[13px] leading-tight font-semibold text-foreground hover:bg-muted transition-colors shrink-0 cursor-pointer"
                 title={lang === "ml" ? "എക്സ്പോർട്ട്" : "Export"}
               >
                 <Download className="h-4 w-4 text-muted-foreground" />
-                <span className="hidden sm:inline">
-                  {lang === "ml" ? "എക്സ്പോർട്ട്" : "Export"}
-                </span>
+                <span className="hidden sm:inline">{lang === "ml" ? "എക്സ്പോർട്ട്" : "Export"}</span>
               </button>
             </div>
+
             <Link
               to="/admin/schemes/new"
               className="hidden sm:inline-flex items-center gap-1.5 rounded-xl sm:rounded-lg bg-primary px-4 py-1.5 text-[13px] leading-tight font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shrink-0"
@@ -469,7 +800,7 @@ function SchemesPage() {
         {/* Cards View */}
         {viewMode === "cards" && (
           <div className="p-4 sm:p-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            {filtered.map((record) => (
+            {paginatedFiltered.map((record) => (
               <div
                 key={record.id}
                 onClick={() =>
@@ -483,17 +814,19 @@ function SchemesPage() {
                       {record[lang]}
                     </h4>
                     <p className="text-[11px] text-muted-foreground font-medium truncate">
-                      {record.ministry[lang]} · {record.category}
+                      {record.ministry[lang]} · {record.categoryDisplay}
                     </p>
                   </div>
                   <span
                     className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-extrabold border shrink-0 ${
-                      record.sync === "Up to date"
+                      record.status === "Active"
                         ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                        : "bg-amber-500/10 text-amber-700 border-amber-500/20"
+                        : record.status === "Inactive"
+                          ? "bg-rose-500/10 text-rose-600 border-rose-500/20"
+                          : "bg-amber-500/10 text-amber-700 border-amber-500/20"
                     }`}
                   >
-                    {record.sync}
+                    {record.status}
                   </span>
                 </div>
 
@@ -536,7 +869,9 @@ function SchemesPage() {
                     </th>
                   )}
                   {visibleColumns.has("category") && (
-                    <th className="p-3.5 whitespace-nowrap">{lang === "ml" ? "വിഭാഗം" : "CATEGORY"}</th>
+                    <th className="p-3.5 whitespace-nowrap">
+                      {lang === "ml" ? "വിഭാഗം" : "CATEGORY"}
+                    </th>
                   )}
                   {visibleColumns.has("portal") && (
                     <th className="p-3.5 whitespace-nowrap">
@@ -549,7 +884,9 @@ function SchemesPage() {
                     </th>
                   )}
                   {visibleColumns.has("applications") && (
-                    <th className="p-3.5 text-right">{lang === "ml" ? "അപേക്ഷകൾ" : "APPLICATIONS"}</th>
+                    <th className="p-3.5 text-right">
+                      {lang === "ml" ? "അപേക്ഷകൾ" : "APPLICATIONS"}
+                    </th>
                   )}
                   {visibleColumns.has("actions") && (
                     <th className="py-3.5 pl-3 pr-4 sm:pr-5 text-right whitespace-nowrap">
@@ -559,7 +896,7 @@ function SchemesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60 font-semibold">
-                {filtered.map((record) => (
+                {paginatedFiltered.map((record) => (
                   <tr
                     key={record.id}
                     onClick={() =>
@@ -568,26 +905,28 @@ function SchemesPage() {
                     className="cursor-pointer hover:bg-muted/40 transition-colors"
                   >
                     {visibleColumns.has("scheme") && (
-                    <td className="py-3.5 pl-4 sm:pl-5 pr-3 min-w-44 max-w-80">
-                      <div className="flex items-center gap-2.5">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-white p-1 shadow-2xs">
-                          <img
-                            src={schemeLogoUrls[record.id] ?? schemeLogoFallback}
-                            alt=""
-                            className="h-full w-full object-contain"
-                            loading="lazy"
-                            onError={(event) => {
-                              event.currentTarget.onerror = null;
-                              event.currentTarget.src = schemeLogoFallback;
-                            }}
-                          />
-                        </span>
-                        <p className="font-bold text-foreground">{record[lang]}</p>
-                      </div>
-                    </td>
+                      <td className="py-3.5 pl-4 sm:pl-5 pr-3 min-w-44 max-w-80">
+                        <div className="flex items-center gap-2.5">
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-white p-1 shadow-2xs">
+                            <img
+                              src={schemeLogoUrls[record.id] ?? schemeLogoFallback}
+                              alt=""
+                              className="h-full w-full object-contain"
+                              loading="lazy"
+                              onError={(event) => {
+                                event.currentTarget.onerror = null;
+                                event.currentTarget.src = schemeLogoFallback;
+                              }}
+                            />
+                          </span>
+                          <p className="font-bold text-foreground">{record[lang]}</p>
+                        </div>
+                      </td>
                     )}
                     {visibleColumns.has("department") && (
-                      <td className="p-3.5 min-w-36 text-muted-foreground">{record.ministry[lang]}</td>
+                      <td className="p-3.5 min-w-36 text-muted-foreground">
+                        {record.ministry[lang]}
+                      </td>
                     )}
                     {visibleColumns.has("category") && (
                       <td className="p-3.5">
@@ -595,43 +934,33 @@ function SchemesPage() {
                       </td>
                     )}
                     {visibleColumns.has("portal") && (
-                    <td className="p-3.5 whitespace-nowrap">
-                      <a
-                        href={`https://www.myscheme.gov.in/search?q=${encodeURIComponent(record.en)}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={(event) => event.stopPropagation()}
-                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline"
-                      >
-                        {lang === "ml" ? "പോർട്ടൽ തുറക്കുക" : "Open portal"}
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
-                    </td>
+                      <td className="p-3.5 whitespace-nowrap">
+                        <a
+                          href={`https://www.myscheme.gov.in/search?q=${encodeURIComponent(record.en)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(event) => event.stopPropagation()}
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline"
+                        >
+                          {lang === "ml" ? "പോർട്ടൽ തുറക്കുക" : "Open portal"}
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </td>
                     )}
                     {visibleColumns.has("status") && (
-                    <td className="p-3.5">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-extrabold border ${
-                          disabledSchemeIds.has(record.id)
-                            ? "bg-rose-500/10 text-rose-600 border-rose-500/20"
-                            : record.sync === "Up to date"
+                      <td className="p-3.5">
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-extrabold border ${
+                            record.status === "Active"
                               ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                              : "bg-amber-500/10 text-amber-700 border-amber-500/20"
-                        }`}
-                      >
-                        {disabledSchemeIds.has(record.id)
-                          ? lang === "ml"
-                            ? "നിർജ്ജീവം"
-                            : "Disabled"
-                          : record.sync === "Up to date"
-                            ? lang === "ml"
-                              ? "സജീവം"
-                              : "Active"
-                            : lang === "ml"
-                              ? "പരിശോധന വേണം"
-                              : "Needs checking"}
-                      </span>
-                    </td>
+                              : record.status === "Inactive"
+                                ? "bg-rose-500/10 text-rose-600 border-rose-500/20"
+                                : "bg-amber-500/10 text-amber-700 border-amber-500/20"
+                          }`}
+                        >
+                          {record.status}
+                        </span>
+                      </td>
                     )}
                     {visibleColumns.has("applications") && (
                       <td className="p-3.5 text-right font-mono text-foreground font-bold whitespace-nowrap">
@@ -639,64 +968,67 @@ function SchemesPage() {
                       </td>
                     )}
                     {visibleColumns.has("actions") && (
-                    <td className="py-3.5 pl-3 pr-4 sm:pr-5 text-right" onClick={(event) => event.stopPropagation()}>
-                      <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            navigate({
-                              to: "/admin/schemes/new",
-                              search: { edit: record.id },
-                            })
-                          }
-                          className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-[11px] font-semibold text-foreground hover:border-primary/30 hover:bg-primary/5 hover:text-primary transition-colors"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                          {lang === "ml" ? "തിരുത്തുക" : "Edit"}
-                        </button>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button
-                              type="button"
-                              aria-label={lang === "ml" ? "കൂടുതൽ നടപടികൾ" : "More actions"}
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-primary/5 hover:text-primary transition-colors"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuItem
-                              onSelect={() => toggleSchemeEnabled(record)}
-                              className="gap-2 cursor-pointer"
-                            >
-                              <Power className="h-4 w-4" />
-                              {disabledSchemeIds.has(record.id)
-                                ? lang === "ml"
-                                  ? "സജീവമാക്കുക"
-                                  : "Enable scheme"
-                                : lang === "ml"
-                                  ? "നിർജ്ജീവമാക്കുക"
-                                  : "Disable scheme"}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onSelect={() => void shareScheme(record)}
-                              className="gap-2 cursor-pointer"
-                            >
-                              <Share2 className="h-4 w-4" />
-                              {lang === "ml" ? "പങ്കിടുക" : "Share"}
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onSelect={() => deleteScheme(record)}
-                              className="gap-2 cursor-pointer text-destructive focus:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              {lang === "ml" ? "ഡിലീറ്റ് ചെയ്യുക" : "Delete"}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </td>
+                      <td
+                        className="py-3.5 pl-3 pr-4 sm:pr-5 text-right"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              navigate({
+                                to: "/admin/schemes/new",
+                                search: { edit: record.id },
+                              })
+                            }
+                            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-[11px] font-semibold text-foreground hover:border-primary/30 hover:bg-primary/5 hover:text-primary transition-colors cursor-pointer"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                            {lang === "ml" ? "തിരുത്തുക" : "Edit"}
+                          </button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                type="button"
+                                aria-label={lang === "ml" ? "കൂടുതൽ നടപടികൾ" : "More actions"}
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-primary/5 hover:text-primary transition-colors cursor-pointer"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem
+                                onSelect={() => toggleSchemeEnabled(record)}
+                                className="gap-2 cursor-pointer"
+                              >
+                                <Power className="h-4 w-4" />
+                                {disabledSchemeIds.has(record.id)
+                                  ? lang === "ml"
+                                    ? "സജീവമാക്കുക"
+                                    : "Enable scheme"
+                                  : lang === "ml"
+                                    ? "നിർജ്ജീവമാക്കുക"
+                                    : "Disable scheme"}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onSelect={() => void shareScheme(record)}
+                                className="gap-2 cursor-pointer"
+                              >
+                                <Share2 className="h-4 w-4" />
+                                {lang === "ml" ? "പങ്കിടുക" : "Share"}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onSelect={() => deleteScheme(record)}
+                                className="gap-2 cursor-pointer text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                {lang === "ml" ? "ഡിലീറ്റ് ചെയ്യുക" : "Delete"}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </td>
                     )}
                   </tr>
                 ))}
@@ -711,6 +1043,54 @@ function SchemesPage() {
                 )}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Pagination Footer */}
+        {filtered.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border p-4 bg-muted/10 text-xs text-muted-foreground font-semibold">
+            <div>
+              {lang === "ml"
+                ? `${filtered.length} പദ്ധതികളിൽ ${Math.min((currentPage - 1) * pageSize + 1, filtered.length)} മുതൽ ${Math.min(currentPage * pageSize, filtered.length)} വരെ കാണിക്കുന്നു`
+                : `Showing ${Math.min((currentPage - 1) * pageSize + 1, filtered.length)} to ${Math.min(currentPage * pageSize, filtered.length)} of ${filtered.length} schemes`}
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-bold text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+              >
+                {lang === "ml" ? "മുൻപത്തെ" : "Previous"}
+              </button>
+
+              <div className="flex items-center gap-1 px-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    type="button"
+                    onClick={() => setCurrentPage(page)}
+                    className={`h-7 w-7 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      currentPage === page
+                        ? "bg-primary text-primary-foreground shadow-xs"
+                        : "hover:bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-bold text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+              >
+                {lang === "ml" ? "അടുത്തത്" : "Next"}
+              </button>
+            </div>
           </div>
         )}
       </div>

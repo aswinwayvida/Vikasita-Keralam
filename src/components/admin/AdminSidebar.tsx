@@ -41,11 +41,10 @@ export function AdminSidebar() {
       label: "Dashboard Menu",
       items: [
         { to: "/admin", icon: LayoutDashboard, label: "Dashboard", exact: true },
-        { to: "/admin/schemes", icon: Sparkles, label: "Schemes" },
         { to: "/admin/applications", icon: FileText, label: "Applications" },
-        { to: "/admin/beneficiaries", icon: HeartHandshake, label: "Beneficiaries" },
-        { to: "/admin/public-pulse", icon: Users, label: "Citizens" },
-        { to: "/admin/volunteers", icon: Building2, label: "Members" },
+        { to: "/admin/beneficiaries", icon: HeartHandshake, label: "Applicant Profiles" },
+        { to: "/admin/volunteers", icon: Users, label: "Users" },
+        { to: "/admin/schemes", icon: Sparkles, label: "Schemes" },
       ],
     },
     {
@@ -55,7 +54,6 @@ export function AdminSidebar() {
     {
       label: "Settings",
       items: [
-        { to: "/admin/settings", icon: Settings, label: "General settings", search: undefined },
         {
           to: "/admin/settings",
           icon: ShieldCheck,
@@ -103,15 +101,13 @@ export function AdminSidebar() {
                 {group.items.map((item) => {
                   const exact = "exact" in item && item.exact;
                   const isRolesLink = item.label === "Roles and Control";
-                  const isGeneralSettings = item.label === "General settings";
                   const active = isRolesLink
-                    ? (path === item.to && search?.tab === "roles") ||
-                      path === "/admin/settings/new-role"
-                    : isGeneralSettings
-                      ? path === item.to && search?.tab !== "roles"
-                      : exact
-                        ? path === item.to
-                        : path === item.to || path.startsWith(`${item.to}/`);
+                    ? path === item.to ||
+                      path === "/admin/settings/new-role" ||
+                      path.startsWith("/admin/settings_/")
+                    : exact
+                      ? path === item.to
+                      : path === item.to || path.startsWith(`${item.to}/`);
                   const itemSearch = "search" in item ? item.search : undefined;
                   return (
                     <SidebarMenuItem key={`${item.to}-${item.label}`}>

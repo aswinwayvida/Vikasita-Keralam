@@ -45,7 +45,10 @@ import { Route as AdminApplicationsApplicationIdRouteImport } from './routes/adm
 import { Route as AdminGrowthHelpdeskIdRouteImport } from './routes/admin.growth_.$helpdeskId'
 import { Route as AdminSchemesSchemeIdRouteImport } from './routes/admin.schemes_.$schemeId'
 import { Route as AdminSchemesNewRouteImport } from './routes/admin.schemes_.new'
+import { Route as AdminSettingsAssignRoleRouteImport } from './routes/admin.settings_.assign-role'
 import { Route as AdminSettingsNewRoleRouteImport } from './routes/admin.settings_.new-role'
+import { Route as AdminSettingsNewUserRouteImport } from './routes/admin.settings_.new-user'
+import { Route as AdminSettingsUserDetailsRouteImport } from './routes/admin.settings_.user-details'
 import { Route as AdminVolunteersVolunteerIdRouteImport } from './routes/admin.volunteers_.$volunteerId'
 import { Route as AdminWhatsappMessageIdRouteImport } from './routes/admin.whatsapp_.$messageId'
 
@@ -231,11 +234,27 @@ const AdminSchemesNewRoute = AdminSchemesNewRouteImport.update({
   path: '/schemes/new',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSettingsAssignRoleRoute = AdminSettingsAssignRoleRouteImport.update({
+  id: '/settings_/assign-role',
+  path: '/settings/assign-role',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminSettingsNewRoleRoute = AdminSettingsNewRoleRouteImport.update({
   id: '/settings_/new-role',
   path: '/settings/new-role',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSettingsNewUserRoute = AdminSettingsNewUserRouteImport.update({
+  id: '/settings_/new-user',
+  path: '/settings/new-user',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSettingsUserDetailsRoute =
+  AdminSettingsUserDetailsRouteImport.update({
+    id: '/settings_/user-details',
+    path: '/settings/user-details',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const AdminVolunteersVolunteerIdRoute =
   AdminVolunteersVolunteerIdRouteImport.update({
     id: '/volunteers_/$volunteerId',
@@ -285,7 +304,10 @@ export interface FileRoutesByFullPath {
   '/admin/growth/$helpdeskId': typeof AdminGrowthHelpdeskIdRoute
   '/admin/schemes/$schemeId': typeof AdminSchemesSchemeIdRoute
   '/admin/schemes/new': typeof AdminSchemesNewRoute
+  '/admin/settings/assign-role': typeof AdminSettingsAssignRoleRoute
   '/admin/settings/new-role': typeof AdminSettingsNewRoleRoute
+  '/admin/settings/new-user': typeof AdminSettingsNewUserRoute
+  '/admin/settings/user-details': typeof AdminSettingsUserDetailsRoute
   '/admin/volunteers/$volunteerId': typeof AdminVolunteersVolunteerIdRoute
   '/admin/whatsapp/$messageId': typeof AdminWhatsappMessageIdRoute
 }
@@ -324,7 +346,10 @@ export interface FileRoutesByTo {
   '/admin/growth/$helpdeskId': typeof AdminGrowthHelpdeskIdRoute
   '/admin/schemes/$schemeId': typeof AdminSchemesSchemeIdRoute
   '/admin/schemes/new': typeof AdminSchemesNewRoute
+  '/admin/settings/assign-role': typeof AdminSettingsAssignRoleRoute
   '/admin/settings/new-role': typeof AdminSettingsNewRoleRoute
+  '/admin/settings/new-user': typeof AdminSettingsNewUserRoute
+  '/admin/settings/user-details': typeof AdminSettingsUserDetailsRoute
   '/admin/volunteers/$volunteerId': typeof AdminVolunteersVolunteerIdRoute
   '/admin/whatsapp/$messageId': typeof AdminWhatsappMessageIdRoute
 }
@@ -366,7 +391,10 @@ export interface FileRoutesById {
   '/admin/growth_/$helpdeskId': typeof AdminGrowthHelpdeskIdRoute
   '/admin/schemes_/$schemeId': typeof AdminSchemesSchemeIdRoute
   '/admin/schemes_/new': typeof AdminSchemesNewRoute
+  '/admin/settings_/assign-role': typeof AdminSettingsAssignRoleRoute
   '/admin/settings_/new-role': typeof AdminSettingsNewRoleRoute
+  '/admin/settings_/new-user': typeof AdminSettingsNewUserRoute
+  '/admin/settings_/user-details': typeof AdminSettingsUserDetailsRoute
   '/admin/volunteers_/$volunteerId': typeof AdminVolunteersVolunteerIdRoute
   '/admin/whatsapp_/$messageId': typeof AdminWhatsappMessageIdRoute
 }
@@ -409,7 +437,10 @@ export interface FileRouteTypes {
     | '/admin/growth/$helpdeskId'
     | '/admin/schemes/$schemeId'
     | '/admin/schemes/new'
+    | '/admin/settings/assign-role'
     | '/admin/settings/new-role'
+    | '/admin/settings/new-user'
+    | '/admin/settings/user-details'
     | '/admin/volunteers/$volunteerId'
     | '/admin/whatsapp/$messageId'
   fileRoutesByTo: FileRoutesByTo
@@ -448,7 +479,10 @@ export interface FileRouteTypes {
     | '/admin/growth/$helpdeskId'
     | '/admin/schemes/$schemeId'
     | '/admin/schemes/new'
+    | '/admin/settings/assign-role'
     | '/admin/settings/new-role'
+    | '/admin/settings/new-user'
+    | '/admin/settings/user-details'
     | '/admin/volunteers/$volunteerId'
     | '/admin/whatsapp/$messageId'
   id:
@@ -489,7 +523,10 @@ export interface FileRouteTypes {
     | '/admin/growth_/$helpdeskId'
     | '/admin/schemes_/$schemeId'
     | '/admin/schemes_/new'
+    | '/admin/settings_/assign-role'
     | '/admin/settings_/new-role'
+    | '/admin/settings_/new-user'
+    | '/admin/settings_/user-details'
     | '/admin/volunteers_/$volunteerId'
     | '/admin/whatsapp_/$messageId'
   fileRoutesById: FileRoutesById
@@ -764,11 +801,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSchemesNewRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/settings_/assign-role': {
+      id: '/admin/settings_/assign-role'
+      path: '/settings/assign-role'
+      fullPath: '/admin/settings/assign-role'
+      preLoaderRoute: typeof AdminSettingsAssignRoleRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/settings_/new-role': {
       id: '/admin/settings_/new-role'
       path: '/settings/new-role'
       fullPath: '/admin/settings/new-role'
       preLoaderRoute: typeof AdminSettingsNewRoleRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/settings_/new-user': {
+      id: '/admin/settings_/new-user'
+      path: '/settings/new-user'
+      fullPath: '/admin/settings/new-user'
+      preLoaderRoute: typeof AdminSettingsNewUserRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/settings_/user-details': {
+      id: '/admin/settings_/user-details'
+      path: '/settings/user-details'
+      fullPath: '/admin/settings/user-details'
+      preLoaderRoute: typeof AdminSettingsUserDetailsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/volunteers_/$volunteerId': {
@@ -817,7 +875,10 @@ interface AdminRouteChildren {
   AdminGrowthHelpdeskIdRoute: typeof AdminGrowthHelpdeskIdRoute
   AdminSchemesSchemeIdRoute: typeof AdminSchemesSchemeIdRoute
   AdminSchemesNewRoute: typeof AdminSchemesNewRoute
+  AdminSettingsAssignRoleRoute: typeof AdminSettingsAssignRoleRoute
   AdminSettingsNewRoleRoute: typeof AdminSettingsNewRoleRoute
+  AdminSettingsNewUserRoute: typeof AdminSettingsNewUserRoute
+  AdminSettingsUserDetailsRoute: typeof AdminSettingsUserDetailsRoute
   AdminVolunteersVolunteerIdRoute: typeof AdminVolunteersVolunteerIdRoute
   AdminWhatsappMessageIdRoute: typeof AdminWhatsappMessageIdRoute
 }
@@ -840,7 +901,10 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminGrowthHelpdeskIdRoute: AdminGrowthHelpdeskIdRoute,
   AdminSchemesSchemeIdRoute: AdminSchemesSchemeIdRoute,
   AdminSchemesNewRoute: AdminSchemesNewRoute,
+  AdminSettingsAssignRoleRoute: AdminSettingsAssignRoleRoute,
   AdminSettingsNewRoleRoute: AdminSettingsNewRoleRoute,
+  AdminSettingsNewUserRoute: AdminSettingsNewUserRoute,
+  AdminSettingsUserDetailsRoute: AdminSettingsUserDetailsRoute,
   AdminVolunteersVolunteerIdRoute: AdminVolunteersVolunteerIdRoute,
   AdminWhatsappMessageIdRoute: AdminWhatsappMessageIdRoute,
 }

@@ -24,6 +24,129 @@ export interface AppUser {
   joinedDate: string;
   assignedTasksCount?: number;
   avatarUrl?: string;
+  regionEn?: string;
+  regionMl?: string;
+  mandalamEn?: string;
+  mandalamMl?: string;
+  areaEn?: string;
+  areaMl?: string;
+  boothEn?: string;
+  boothMl?: string;
+}
+
+export function getUserDesignation(user: Partial<AppUser> | null | undefined): string {
+  if (!user || !user.designationEn) return "Member";
+  const first = user.designationEn.split("•")[0].split("-")[0].trim();
+  return first || user.designationEn;
+}
+
+export function getUserRegion(user: Partial<AppUser> & { regionEn?: string } | null | undefined): string {
+  if (!user) return "South Region";
+  if (user.regionEn) return user.regionEn;
+  const dist = (user.districtNameEn || "").toLowerCase();
+  if (dist.includes("thiruvananthapuram") || dist.includes("kollam") || dist.includes("pathanamthitta")) {
+    return "South Region";
+  }
+  if (dist.includes("ernakulam") || dist.includes("thrissur") || dist.includes("palakkad")) {
+    return "Central Region";
+  }
+  return "North Region";
+}
+
+const ORG_DISTRICTS_MAP: Record<string, string[]> = {
+  Thiruvananthapuram: ["Thiruvananthapuram City", "Thiruvananthapuram North", "Thiruvananthapuram South"],
+  Kollam: ["Kollam East", "Kollam West"],
+  Pathanamthitta: ["Pathanamthitta"],
+  Alappuzha: ["Alappuzha North", "Alappuzha South"],
+  Kottayam: ["Kottayam East", "Kottayam West"],
+  Idukki: ["Idukki North", "Idukki South"],
+  Ernakulam: ["Ernakulam City", "Ernakulam North", "Ernakulam East"],
+  Thrissur: ["Thrissur City", "Thrissur North", "Thrissur South"],
+  Palakkad: ["Palakkad East", "Palakkad West"],
+  Malappuram: ["Malappuram Central", "Malappuram East", "Malappuram West"],
+  Kozhikode: ["Kozhikode City", "Kozhikode North", "Kozhikode Rural"],
+  Wayanad: ["Wayanad"],
+  Kannur: ["Kannur North", "Kannur South"],
+  Kasaragod: ["Kasaragod"],
+};
+
+export function getUserOrgDistrict(user: Partial<AppUser> | null | undefined): string {
+  if (!user || !user.districtNameEn) return "Thiruvananthapuram City";
+  if ((user as any).orgDistrictEn && (user as any).orgDistrictEn.trim() !== "") {
+    return (user as any).orgDistrictEn;
+  }
+
+  const revenueDistrict = user.districtNameEn;
+  const matchedKey = Object.keys(ORG_DISTRICTS_MAP).find((d) =>
+    revenueDistrict.toLowerCase().includes(d.toLowerCase()),
+  );
+
+  if (matchedKey && ORG_DISTRICTS_MAP[matchedKey]) {
+    const list = ORG_DISTRICTS_MAP[matchedKey];
+    const digits = parseInt((user.id || "1").replace(/\D/g, ""), 10) || 1;
+    return list[(digits - 1) % list.length];
+  }
+
+  return revenueDistrict;
+}
+
+export function getUserMandalam(user: Partial<AppUser> & { mandalamEn?: string } | null | undefined): string {
+  if (!user) return "Central Mandalam";
+  if (user.mandalamEn) return user.mandalamEn;
+  if (user.constituencyEn) {
+    return user.constituencyEn.toLowerCase().includes("mandalam")
+      ? user.constituencyEn
+      : `${user.constituencyEn} Mandalam`;
+  }
+  return "Central Mandalam";
+}
+
+const DISTRICT_AREAS_MAP: Record<string, string[]> = {
+  Thiruvananthapuram: ["Kazhakkoottam", "Pattom", "Nemom", "Vattiyoorkavu"],
+  Ernakulam: ["Edappally", "Palarivattom", "Vyttila", "Kakkanad"],
+  Thrissur: ["Punkunnam", "Ollur", "Ayyanthole", "Mannuthy"],
+  Kozhikode: ["Nadakkavu", "Beypore", "Feroke", "Kunnamangalam"],
+  Kollam: ["Chinnakada", "Kottiyam", "Kilikollur"],
+  Kannur: ["Thalassery", "Payyannur", "Taliparamba"],
+  Palakkad: ["Chittur", "Palakkad Town", "Ottapalam"],
+  Pathanamthitta: ["Thiruvalla", "Adoor", "Ranni"],
+  Malappuram: ["Ponnani", "Tirur", "Manjeri"],
+  Alappuzha: ["Cherthala", "Ambalappuzha", "Kayamkulam"],
+  Kottayam: ["Pala", "Changanassery", "Vaikom"],
+  Idukki: ["Thodupuzha", "Munnar", "Kattappana"],
+  Wayanad: ["Kalpetta", "Mananthavady", "Sulthan Bathery"],
+  Kasaragod: ["Kanhangad", "Nileshwaram", "Kasaragod Town"],
+};
+
+export function getUserArea(user: Partial<AppUser> & { areaEn?: string } | null | undefined): string {
+  if (!user) return "Kazhakkoottam";
+  if (user.areaEn && user.areaEn.trim() !== "") {
+    return user.areaEn.replace(/\s+Area$/i, "");
+  }
+
+  const dist = user.districtNameEn || "Thiruvananthapuram";
+  const matchedKey = Object.keys(DISTRICT_AREAS_MAP).find((d) =>
+    dist.toLowerCase().includes(d.toLowerCase()),
+  ) || "Thiruvananthapuram";
+
+  const areas = DISTRICT_AREAS_MAP[matchedKey];
+  if (areas && areas.length > 0) {
+    const digits = parseInt((user.id || "1").replace(/\D/g, ""), 10) || 1;
+    return areas[(digits - 1) % areas.length];
+  }
+
+  const base = (user.constituencyEn || user.districtNameEn || "Central").replace(/\s+Area$/i, "");
+  return base;
+}
+
+export function getUserBooth(user: Partial<AppUser> & { boothEn?: string } | null | undefined): string {
+  if (!user) return "Booth 01";
+  if (user.boothEn) return user.boothEn;
+  const match = (user.designationEn || "").match(/Booth\s*\d+/i);
+  if (match) return match[0];
+  const digits = parseInt((user.id || "1").replace(/\D/g, ""), 10) || 1;
+  const num = ((digits * 11) % 120) + 1;
+  return `Booth ${num}`;
 }
 
 export const isBjpMemberUser = (user: AppUser | null | undefined): boolean => {

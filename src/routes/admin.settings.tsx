@@ -9,7 +9,12 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/settings")({
   validateSearch: (search: Record<string, unknown>) => ({
-    tab: search.tab === "roles" ? ("roles" as const) : undefined,
+    tab:
+      search.tab === "roles"
+        ? ("roles" as const)
+        : search.tab === "users"
+          ? ("users" as const)
+          : undefined,
   }),
   head: () => ({ meta: [{ title: "Settings · Admin" }] }),
   component: SettingsPage,
@@ -37,10 +42,7 @@ const matrix: Record<string, boolean[]> = {
 };
 
 function SettingsPage() {
-  const { lang, t } = useLang();
   const search = Route.useSearch();
-  const navigate = useNavigate({ from: "/admin/settings" });
-  const activeTab: "general" | "roles" = search.tab === "roles" ? "roles" : "general";
 
   // Desktop only: hide page scrollbar on Settings / Roles page
   useEffect(() => {
@@ -55,68 +57,9 @@ function SettingsPage() {
     };
   }, []);
 
-  const setTab = (tab: "general" | "roles") => {
-    navigate({ search: { tab: tab === "roles" ? "roles" : undefined } });
-  };
-
   return (
     <div className="space-y-5 pb-8">
-      {activeTab !== "roles" && (
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => navigate({ to: "/admin" })}
-              className="inline-flex h-9 w-9 sm:h-8 sm:w-8 items-center justify-center rounded-full border border-border bg-card text-foreground hover:bg-muted hover:text-primary transition-all shadow-2xs group cursor-pointer shrink-0"
-              title={lang === "ml" ? "ഡാഷ്‌ബോർഡിലേക്ക് തിരികെ പോകുക" : "Back to Dashboard"}
-            >
-              <ArrowLeft className="h-4 w-4 sm:h-3.5 sm:w-3.5 transition-transform group-hover:-translate-x-0.5" />
-            </button>
-            <div>
-              <h1 className="font-display text-2xl font-bold text-foreground">
-                {t.admin.settings}
-              </h1>
-              <p className="mt-0.5 text-[11.5px] text-muted-foreground">
-                {lang === "ml"
-                  ? "പങ്കാളിത്തം, റോളുകൾ, അനുമതികൾ, ആക്സസ് എന്നിവ ഒരിടത്ത് നിയന്ത്രിക്കുക."
-                  : "Manage workspace permissions, reusable roles, and access policies in one place."}
-              </p>
-            </div>
-          </div>
-          <div className="inline-flex w-fit items-center rounded-xl border border-border bg-card p-1 shadow-xs">
-            <button
-              type="button"
-              onClick={() => setTab("general")}
-              aria-pressed={activeTab === "general"}
-              className={cn(
-                "inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-[11px] font-bold transition",
-                activeTab === "general"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-              )}
-            >
-              <Settings2 className="h-3.5 w-3.5" />
-              {lang === "ml" ? "പൊതു ക്രമീകരണങ്ങൾ" : "General Settings"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab("roles")}
-              aria-pressed={activeTab === "roles"}
-              className={cn(
-                "inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-[11px] font-bold transition",
-                activeTab === "roles"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-              )}
-            >
-              <ShieldCheck className="h-3.5 w-3.5" />
-              {lang === "ml" ? "റോൾ & ആക്സസ് ക്രമീകരണങ്ങൾ" : "Role and Access Settings"}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {activeTab === "roles" ? <RoleAccessSettings /> : <GeneralSettings lang={lang} />}
+      <RoleAccessSettings defaultTab={search.tab === "users" ? "users" : "roles"} />
     </div>
   );
 }

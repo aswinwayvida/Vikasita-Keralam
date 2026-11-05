@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -7,8 +7,11 @@ import {
   ChevronDown,
   ClipboardList,
   FileText,
+  Filter,
   Headset,
+  Search,
   ShieldCheck,
+  UserPlus,
   UserRound,
   Users,
   Users2,
@@ -17,7 +20,20 @@ import {
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { useSidebar } from "@/components/ui/sidebar";
 import { permissionModules, type PermissionModuleId } from "@/data/party-workers";
 import {
@@ -33,12 +49,28 @@ import {
   type DataAccessScope,
   type ManagedRole,
 } from "@/data/role-management";
+import {
+  getUserDesignation,
+  getUserRegion,
+  getUserOrgDistrict,
+  getUserMandalam,
+  getUserArea,
+  getUserBooth,
+} from "@/data/users";
+import {
+  loadManagedDesktopUsers,
+  saveManagedDesktopUsers,
+  type ManagedUser,
+} from "@/components/admin/RoleAccessSettings";
 import { useLang } from "@/i18n/LanguageProvider";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/settings_/new-role")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    editRoleId: typeof search.editRoleId === "string" ? search.editRoleId : undefined,
+  }),
   head: () => ({
-    meta: [{ title: "Create New Role · Admin · Vikasita Keralam" }],
+    meta: [{ title: "Create / Edit Role · Admin · Vikasita Keralam" }],
   }),
   component: CreateRolePage,
 });
@@ -80,8 +112,8 @@ type MatrixColumn = (typeof matrixColumns)[number];
 const primaryMatrixColumns = matrixColumns.slice(0, 4);
 const secondaryMatrixColumns = [matrixColumns[1], matrixColumns[5], matrixColumns[6]];
 
-const primaryMatrixGridClass = "grid grid-cols-[minmax(200px,1fr)_repeat(4,84px)_360px]";
-const secondaryMatrixGridClass = "grid grid-cols-[minmax(200px,1fr)_repeat(3,104px)_360px]";
+const primaryMatrixGridClass = "grid grid-cols-[1.5fr_repeat(4,1fr)_1.8fr]";
+const secondaryMatrixGridClass = "grid grid-cols-[1.5fr_repeat(3,1fr)_1.8fr]";
 
 const dataAccessChoices = dataAccessOptions.filter((option) => option.id !== "above_level");
 const supportedScopedPermissionKeys = allScopedPermissionKeysWithExtras.filter(
@@ -103,8 +135,8 @@ const primaryMatrixRows: MatrixRow[] = permissionModules
   .map((module) => ({
     key: module.id,
     moduleId: module.id,
-    en: module.en,
-    ml: module.ml,
+    en: module.id === "party_workers" ? "Users" : module.en,
+    ml: module.id === "party_workers" ? "ഉപയോക്താക്കൾ" : module.ml,
     icon: moduleIcons[module.id],
     columns: primaryMatrixColumns,
   }));
@@ -147,6 +179,7 @@ function CreateRolePage() {
   const { isMobile, state: sidebarState } = useSidebar();
   const tr = (en: string, ml: string) => (lang === "ml" ? ml : en);
   const navigate = useNavigate();
+  const { editRoleId } = Route.useSearch();
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -159,6 +192,182 @@ function CreateRolePage() {
     ),
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // User Assignment Popup State
+  const [showAssignUsersSheet, setShowAssignUsersSheet] = useState(false);
+  const [targetSavedRoleName, setTargetSavedRoleName] = useState<string>("");
+  const [assignUsersList, setAssignUsersList] = useState<ManagedUser[]>([]);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+
+  const [selectedDesignations, setSelectedDesignations] = useState<string[]>([]);
+  const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
+  const [selectedOrgDistricts, setSelectedOrgDistricts] = useState<string[]>([]);
+  const [selectedMandalams, setSelectedMandalams] = useState<string[]>([]);
+  const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
+  const [selectedBooths, setSelectedBooths] = useState<string[]>([]);
+
+  const availDesignations = useMemo(() => {
+    const set = new Set<string>();
+    assignUsersList.forEach((u) => set.add(getUserDesignation(u)));
+    return Array.from(set).sort();
+  }, [assignUsersList]);
+
+  const availRegions = useMemo(() => {
+    const set = new Set<string>();
+    assignUsersList.forEach((u) => set.add(getUserRegion(u)));
+    return Array.from(set).sort();
+  }, [assignUsersList]);
+
+  const availOrgDistricts = useMemo(() => {
+    const set = new Set<string>();
+    assignUsersList.forEach((u) => set.add(getUserOrgDistrict(u)));
+    return Array.from(set).sort();
+  }, [assignUsersList]);
+
+  const availMandalams = useMemo(() => {
+    const set = new Set<string>();
+    assignUsersList.forEach((u) => set.add(getUserMandalam(u)));
+    return Array.from(set).sort();
+  }, [assignUsersList]);
+
+  const availAreas = useMemo(() => {
+    const set = new Set<string>();
+    assignUsersList.forEach((u) => set.add(getUserArea(u)));
+    return Array.from(set).sort();
+  }, [assignUsersList]);
+
+  const availBooths = useMemo(() => {
+    const set = new Set<string>();
+    assignUsersList.forEach((u) => set.add(getUserBooth(u)));
+    return Array.from(set).sort();
+  }, [assignUsersList]);
+
+  const drawerActiveFilterCount =
+    selectedDesignations.length +
+    selectedRegions.length +
+    selectedOrgDistricts.length +
+    selectedMandalams.length +
+    selectedAreas.length +
+    selectedBooths.length;
+
+  const toggleArrayFilter = (
+    current: string[],
+    setter: React.Dispatch<React.SetStateAction<string[]>>,
+    val: string,
+  ) => {
+    if (current.includes(val)) {
+      setter(current.filter((item) => item !== val));
+    } else {
+      setter([...current, val]);
+    }
+  };
+
+  const filteredAssignUsers = useMemo(() => {
+    return assignUsersList.filter((u) => {
+      const q = userSearchQuery.trim().toLowerCase();
+      if (q) {
+        const nameEn = (u.name || "").toLowerCase();
+        const nameMl = (u.nameMl || "").toLowerCase();
+        const desigEn = (u.designationEn || "").toLowerCase();
+        const desigMl = (u.designationMl || "").toLowerCase();
+        const matchesQ = nameEn.includes(q) || nameMl.includes(q) || desigEn.includes(q) || desigMl.includes(q);
+        if (!matchesQ) return false;
+      }
+
+      if (selectedDesignations.length > 0 && !selectedDesignations.includes(getUserDesignation(u))) return false;
+      if (selectedRegions.length > 0 && !selectedRegions.includes(getUserRegion(u))) return false;
+      if (selectedOrgDistricts.length > 0 && !selectedOrgDistricts.includes(getUserOrgDistrict(u))) return false;
+      if (selectedMandalams.length > 0 && !selectedMandalams.includes(getUserMandalam(u))) return false;
+      if (selectedAreas.length > 0 && !selectedAreas.includes(getUserArea(u))) return false;
+      if (selectedBooths.length > 0 && !selectedBooths.includes(getUserBooth(u))) return false;
+
+      return true;
+    });
+  }, [
+    assignUsersList,
+    userSearchQuery,
+    selectedDesignations,
+    selectedRegions,
+    selectedOrgDistricts,
+    selectedMandalams,
+    selectedAreas,
+    selectedBooths,
+  ]);
+
+  const toggleUserSelection = (userId: string) => {
+    setSelectedUserIds((prev) =>
+      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId],
+    );
+  };
+
+  const allFilteredSelected =
+    filteredAssignUsers.length > 0 &&
+    filteredAssignUsers.every((u) => selectedUserIds.includes(u.id));
+
+  const toggleSelectAllUsers = () => {
+    if (allFilteredSelected) {
+      const filteredIds = new Set(filteredAssignUsers.map((u) => u.id));
+      setSelectedUserIds((prev) => prev.filter((id) => !filteredIds.has(id)));
+    } else {
+      const next = new Set([...selectedUserIds, ...filteredAssignUsers.map((u) => u.id)]);
+      setSelectedUserIds(Array.from(next));
+    }
+  };
+
+  const handleSaveUserAssignment = () => {
+    const updatedUsers = assignUsersList.map((u) => {
+      if (selectedUserIds.includes(u.id)) {
+        return { ...u, assignedRole: targetSavedRoleName };
+      }
+      if (u.assignedRole === targetSavedRoleName && !selectedUserIds.includes(u.id)) {
+        return { ...u, assignedRole: "Sub Admin" };
+      }
+      return u;
+    });
+
+    saveManagedDesktopUsers(updatedUsers);
+
+    // Update assignedUsers count in ManagedRole list
+    const allRoles = loadManagedRoles();
+    const updatedRoles = allRoles.map((r) =>
+      r.name.trim().toLowerCase() === targetSavedRoleName.trim().toLowerCase()
+        ? { ...r, assignedUsers: selectedUserIds.length, updatedAt: new Date().toISOString() }
+        : r,
+    );
+    saveManagedRoles(updatedRoles);
+
+    toast.success(
+      tr(
+        `Role and user assignments updated (${selectedUserIds.length} users assigned).`,
+        `റോളും ഉപയോക്തൃ അസൈൻമെന്റും അപ്‌ഡേറ്റ് ചെയ്തു (${selectedUserIds.length} പേരെ അസൈൻ ചെയ്തു).`,
+      ),
+    );
+    setShowAssignUsersSheet(false);
+    void navigate({ to: "/admin/settings", search: { tab: "roles" } });
+  };
+
+  const handleSkipUserAssignment = () => {
+    setShowAssignUsersSheet(false);
+    void navigate({ to: "/admin/settings", search: { tab: "roles" } });
+  };
+
+  useEffect(() => {
+    if (!editRoleId) return;
+    const existingRole = loadManagedRoles().find((r) => r.id === editRoleId);
+    if (!existingRole) return;
+
+    setName(existingRole.name || "");
+    setDescription(existingRole.description || "");
+    if (existingRole.scopedPermissions && existingRole.scopedPermissions.length > 0) {
+      setScopedPermissions(existingRole.scopedPermissions);
+    }
+    if (existingRole.dataAccess) {
+      setModuleDataAccess(
+        existingRole.dataAccess as Partial<Record<PermissionModuleId, DataAccessScope[]>>,
+      );
+    }
+  }, [editRoleId]);
 
   const scopesForModule = (moduleId: PermissionModuleId): DataAccessScope[] => {
     const selectedScopes = (moduleDataAccess[moduleId] ?? []).filter(
@@ -382,25 +591,58 @@ function CreateRolePage() {
       }),
       { ...emptyRoleDraft.dataAccess },
     );
-    const role: ManagedRole = {
-      id: createRoleId(),
-      name: trimmedName,
-      description: description.trim(),
-      assignmentLevels: ["state"],
-      permissions: permissionsFromScopedPermissions(scopedPermissions, []),
-      administrativePermissions: [],
-      dataAccess,
-      scopedPermissions: [...scopedPermissions],
-      status: "Active",
-      system: false,
-      assignedUsers: 0,
-      createdAt: now,
-      updatedAt: now,
-    };
 
-    saveManagedRoles([role, ...loadManagedRoles()]);
-    toast.success(tr("Role created successfully.", "റോൾ വിജയകരമായി സൃഷ്ടിച്ചു."));
-    void navigate({ to: "/admin/settings", search: { tab: "roles" } });
+    const allRoles = loadManagedRoles();
+    const existingRole = editRoleId ? allRoles.find((r) => r.id === editRoleId) : null;
+
+    if (existingRole) {
+      const updatedRole: ManagedRole = {
+        ...existingRole,
+        name: trimmedName,
+        description: description.trim(),
+        dataAccess,
+        scopedPermissions: [...scopedPermissions],
+        permissions: permissionsFromScopedPermissions(scopedPermissions, []),
+        updatedAt: now,
+      };
+      saveManagedRoles(allRoles.map((r) => (r.id === editRoleId ? updatedRole : r)));
+    } else {
+      const role: ManagedRole = {
+        id: createRoleId(),
+        name: trimmedName,
+        description: description.trim(),
+        assignmentLevels: ["state"],
+        permissions: permissionsFromScopedPermissions(scopedPermissions, []),
+        administrativePermissions: [],
+        dataAccess,
+        scopedPermissions: [...scopedPermissions],
+        status: "Active",
+        system: false,
+        assignedUsers: 0,
+        createdAt: now,
+        updatedAt: now,
+      };
+      saveManagedRoles([role, ...allRoles]);
+    }
+
+    // Open right-aligned User List popup
+    setTargetSavedRoleName(trimmedName);
+    const desktopUsers = loadManagedDesktopUsers();
+    setAssignUsersList(desktopUsers);
+
+    // Pre-select users who are assigned to this role
+    const currentlyAssignedUserIds = desktopUsers
+      .filter((u) => u.assignedRole === trimmedName)
+      .map((u) => u.id);
+    setSelectedUserIds(currentlyAssignedUserIds);
+    setShowAssignUsersSheet(true);
+
+    toast.success(
+      tr(
+        "Role saved. Select users to assign this role.",
+        "റോൾ സംരക്ഷിച്ചു. ഇനി ഉപയോക്താക്കളെ അസൈൻ ചെയ്യുക.",
+      ),
+    );
   };
 
   const renderMatrixTable = (
@@ -408,26 +650,30 @@ function CreateRolePage() {
     columns: readonly MatrixColumn[],
     gridClass: string,
   ) => (
-    <div className="overflow-x-auto rounded-lg border border-border bg-white">
+    <div className="overflow-x-auto rounded-xl border border-border bg-white shadow-2xs">
       <div
         className={cn(
           gridClass,
-          "items-center gap-1 border-b border-border bg-muted/40 px-4 py-2.5",
+          "items-center border-b border-border bg-slate-50/60 py-3",
         )}
       >
-        <span className="text-[9px] font-black uppercase tracking-wide text-primary md:text-[11px]">
-          {tr("Modules", "മൊഡ്യൂളുകൾ")}
+        <span className="border-r border-border/60 pl-4 pr-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">
+          {tr("MODULES", "മൊഡ്യൂളുകൾ")}
         </span>
         {columns.map((column) => (
           <span
             key={column.id}
-            className="text-center text-[9px] font-black uppercase tracking-tight text-primary md:text-[11px] md:leading-tight"
+            className="border-r border-border/60 px-2 text-center text-[11px] font-bold uppercase tracking-wider text-slate-500"
           >
-            {lang === "ml" ? column.ml : column.en}
+            {lang === "ml"
+              ? column.ml
+              : column.id === "respond_reply"
+                ? "RESPOND"
+                : column.en.toUpperCase()}
           </span>
         ))}
-        <span className="text-center text-[9px] font-black uppercase tracking-tight text-primary md:text-[11px] md:leading-tight">
-          {tr("Data Access", "ഡാറ്റ ആക്സസ്")}
+        <span className="px-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-500">
+          {tr("DATA ACCESS LEVEL", "ഡാറ്റാ ആക്സസ് ലെവൽ")}
         </span>
       </div>
 
@@ -435,11 +681,11 @@ function CreateRolePage() {
         const Icon = row.icon;
 
         return (
-          <div key={row.key} className="border-t border-border first:border-t-0">
-            <div className={cn(gridClass, "items-center gap-1 px-4 py-2")}>
-              <div className="flex min-w-0 items-center gap-2.5">
+          <div key={row.key} className="border-b border-border/60 last:border-b-0">
+            <div className={cn(gridClass, "items-center")}>
+              <div className="flex h-12 min-w-0 items-center gap-2.5 border-r border-border/60 pl-4 pr-3">
                 <Icon className="h-4 w-4 shrink-0 text-primary" />
-                <span className="min-w-0 truncate text-[12.5px] font-extrabold text-foreground">
+                <span className="min-w-0 truncate text-[13px] font-bold text-foreground">
                   {lang === "ml" ? row.ml : row.en}
                 </span>
               </div>
@@ -448,70 +694,72 @@ function CreateRolePage() {
                 const actionIds = getMatrixColumnActionIds(row, column.id);
                 if (actionIds.length === 0) {
                   return (
-                    <span
+                    <div
                       key={column.id}
-                      title={tr("Unavailable", "ലഭ്യമല്ല")}
-                      aria-label={tr("Unavailable", "ലഭ്യമല്ല")}
-                      className="flex h-11 items-center justify-center text-xs font-semibold text-muted-foreground/40"
+                      className="flex h-12 items-center justify-center border-r border-border/60 text-xs font-semibold text-muted-foreground/40"
                     >
                       —
-                    </span>
+                    </div>
                   );
                 }
                 const state = actionColumnState(row, column.id);
                 const columnLabel = lang === "ml" ? column.ml : column.en;
                 const canSelect = scopesForRow(row).length > 0;
                 return (
-                  <button
+                  <div
                     key={column.id}
-                    type="button"
-                    role="checkbox"
-                    aria-checked={state.all ? true : state.partial ? "mixed" : false}
-                    aria-label={`${row.en} ${columnLabel}`}
-                    onClick={() => toggleModuleAction(row, column.id)}
-                    disabled={!canSelect}
-                    className={cn(
-                      "flex h-11 w-full items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
-                      canSelect
-                        ? "cursor-pointer hover:bg-primary/5"
-                        : "cursor-not-allowed opacity-40",
-                    )}
+                    className="flex h-12 items-center justify-center border-r border-border/60"
                   >
-                    <span
+                    <button
+                      type="button"
+                      role="checkbox"
+                      aria-checked={state.all ? true : state.partial ? "mixed" : false}
+                      aria-label={`${row.en} ${columnLabel}`}
+                      onClick={() => toggleModuleAction(row, column.id)}
+                      disabled={!canSelect}
                       className={cn(
-                        "flex h-5 w-5 items-center justify-center rounded-[4px] border",
-                        state.all
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : state.partial
-                            ? "border-primary bg-primary/10 text-primary"
-                            : "border-border bg-white",
+                        "flex h-9 w-9 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+                        canSelect
+                          ? "cursor-pointer hover:bg-primary/5"
+                          : "cursor-not-allowed opacity-40",
                       )}
                     >
-                      {state.all ? (
-                        <Check className="h-3.5 w-3.5 stroke-[3]" />
-                      ) : state.partial ? (
-                        <span className="h-[2px] w-2.5 rounded-full bg-primary" />
-                      ) : null}
-                    </span>
-                  </button>
+                      <span
+                        className={cn(
+                          "flex h-5 w-5 items-center justify-center rounded-full border transition-all",
+                          state.all
+                            ? "border-primary bg-primary text-white shadow-2xs"
+                            : state.partial
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-amber-500/70 bg-white hover:border-amber-600",
+                        )}
+                      >
+                        {state.all ? (
+                          <Check className="h-3.5 w-3.5 stroke-[3] text-white" />
+                        ) : state.partial ? (
+                          <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                        ) : null}
+                      </span>
+                    </button>
+                  </div>
                 );
               })}
 
-              <div className="flex h-11 items-center justify-center">
+              <div className="flex h-12 items-center justify-center px-3">
                 <Popover>
                   <PopoverTrigger asChild>
                     <button
                       type="button"
                       aria-label={`${row.en} ${tr("Data Access", "ഡാറ്റ ആക്സസ്")}`}
-                      className="flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-border bg-white px-3 text-left text-[11px] font-semibold text-foreground shadow-2xs transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                      className="flex h-8 w-full items-center justify-between gap-2 rounded-full border border-border/80 bg-white px-3.5 text-left text-xs font-medium text-slate-800 shadow-2xs transition-colors hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                     >
-                      <span className="min-w-0 truncate">
+                      <span className="min-w-0 truncate text-[12px] font-medium text-slate-700">
                         {dataAccessSummary(scopesForRow(row))}
                       </span>
-                      <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      <ChevronDown className="h-3.5 w-3.5 shrink-0 text-slate-400" />
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent align="end" className="w-64 rounded-lg border-border p-2">
+                  <PopoverContent align="end" className="w-64 rounded-xl border-border p-2 shadow-lg">
                     <div className="space-y-0.5">
                       {dataAccessChoices.map((option) => {
                         const checked = scopesForRow(row).includes(option.id);
@@ -522,17 +770,17 @@ function CreateRolePage() {
                             role="checkbox"
                             aria-checked={checked}
                             onClick={() => toggleRowDataAccess(row, option.id, !checked)}
-                            className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-[11px] font-semibold text-foreground transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                            className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium text-foreground transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                           >
                             <span
                               className={cn(
-                                "flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border",
+                                "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-all",
                                 checked
-                                  ? "border-primary bg-primary text-primary-foreground"
+                                  ? "border-primary bg-primary text-white"
                                   : "border-border bg-white",
                               )}
                             >
-                              {checked ? <Check className="h-3 w-3 stroke-[3]" /> : null}
+                              {checked ? <Check className="h-3 w-3 stroke-[3] text-white" /> : null}
                             </span>
                             <span>{lang === "ml" ? option.shortMl : option.shortEn}</span>
                           </button>
@@ -544,22 +792,22 @@ function CreateRolePage() {
                         role="checkbox"
                         aria-checked={scopesForRow(row).length === dataAccessChoices.length}
                         onClick={() => toggleRowDataAccessAll(row)}
-                        className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-[11px] font-bold text-foreground transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                        className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-bold text-foreground transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                       >
                         <span
                           className={cn(
-                            "flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border",
+                            "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-all",
                             scopesForRow(row).length === dataAccessChoices.length
-                              ? "border-primary bg-primary text-primary-foreground"
+                              ? "border-primary bg-primary text-white"
                               : "border-border bg-white",
                           )}
                         >
                           {scopesForRow(row).length === dataAccessChoices.length ? (
-                            <Check className="h-3 w-3 stroke-[3]" />
+                            <Check className="h-3 w-3 stroke-[3] text-white" />
                           ) : null}
                         </span>
                         <span>{tr("All", "എല്ലാം")}</span>
-                        <span className="ml-auto text-[9px] font-semibold text-muted-foreground">
+                        <span className="ml-auto text-[10px] font-semibold text-muted-foreground">
                           {tr("3 levels", "3 തലങ്ങൾ")}
                         </span>
                       </button>
@@ -589,7 +837,9 @@ function CreateRolePage() {
             </button>
             <div>
               <h1 className="font-display text-lg font-bold tracking-tight text-foreground">
-                {tr("Create New Role", "പുതിയ റോൾ സൃഷ്ടിക്കുക")}
+                {editRoleId
+                  ? tr("Edit Role", "റോൾ തിരുത്തുക")
+                  : tr("Create New Role", "പുതിയ റോൾ സൃഷ്ടിക്കുക")}
               </h1>
             </div>
           </div>
@@ -721,11 +971,424 @@ function CreateRolePage() {
               className="shrink-0 gap-2 md:h-10 md:rounded-lg md:bg-primary md:px-5 md:py-2 md:text-xs md:font-bold md:shadow-xs md:transition-all md:hover:bg-primary/90 md:active:scale-98"
             >
               <Check className="h-4 w-4" />
-              {tr("Create Role", "റോൾ സൃഷ്ടിക്കുക")}
+              {editRoleId
+                ? tr("Save Changes", "മാറ്റങ്ങൾ സംരക്ഷിക്കുക")
+                : tr("Create Role", "റോൾ സൃഷ്ടിക്കുക")}
             </Button>
           </div>
         </div>
       </div>
+
+      {/* Right Aligned Users List Popup */}
+      <Sheet
+        open={showAssignUsersSheet}
+        onOpenChange={(open) => {
+          if (!open) handleSkipUserAssignment();
+        }}
+      >
+        <SheetContent side="right" className="w-full sm:max-w-md flex flex-col h-full p-0 gap-0 bg-white">
+          <SheetHeader className="p-5 border-b border-border bg-white text-left space-y-1">
+            <SheetTitle className="text-base font-bold flex items-center gap-2 text-foreground">
+              <UserPlus className="h-5 w-5 text-primary" />
+              {tr(
+                `Assign Users to "${targetSavedRoleName}"`,
+                `"${targetSavedRoleName}" റോളിലേക്ക് ഉപയോക്താക്കളെ അസൈൻ ചെയ്യുക`,
+              )}
+            </SheetTitle>
+            <SheetDescription className="text-xs text-muted-foreground">
+              {tr(
+                "Select desktop users to assign this role. Multi-selection enabled.",
+                "ഈ റോൾ നൽകാനായി ഉപയോക്താക്കളെ തിരഞ്ഞെടുക്കുക (ഒന്നിലധികം പേരെ തിരഞ്ഞെടുക്കാം).",
+              )}
+            </SheetDescription>
+
+            {/* Search Input & Filter Button */}
+            <div className="relative mt-3 flex items-center gap-2 pt-1">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={userSearchQuery}
+                  onChange={(e) => setUserSearchQuery(e.target.value)}
+                  placeholder={tr(
+                    "Search users by name or designation...",
+                    "പേരിലോ തസ്തികയിലോ തിരയുക...",
+                  )}
+                  className="h-9 w-full rounded-lg border border-border bg-white pl-9 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+                />
+              </div>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border px-3 text-xs font-semibold transition-colors cursor-pointer",
+                      drawerActiveFilterCount > 0
+                        ? "border-primary bg-primary/10 text-primary font-bold"
+                        : "border-border bg-background text-foreground hover:bg-muted",
+                    )}
+                  >
+                    <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span>{tr("Filter", "ഫിൽട്ടർ")}</span>
+                    {drawerActiveFilterCount > 0 && (
+                      <span className="ml-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
+                        {drawerActiveFilterCount}
+                      </span>
+                    )}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-72 p-3 text-xs space-y-3 max-h-96 overflow-y-auto">
+                  <div className="flex items-center justify-between pb-1.5 border-b border-border">
+                    <span className="font-bold text-foreground text-xs">{tr("Filter Users", "ഉപയോക്താക്കളെ ഫിൽട്ടർ ചെയ്യുക")}</span>
+                    {drawerActiveFilterCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedDesignations([]);
+                          setSelectedRegions([]);
+                          setSelectedOrgDistricts([]);
+                          setSelectedMandalams([]);
+                          setSelectedAreas([]);
+                          setSelectedBooths([]);
+                        }}
+                        className="text-[11px] font-semibold text-primary hover:underline cursor-pointer"
+                      >
+                        {tr("Reset All", "റീസെറ്റ് ചെയ്യുക")}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* 1. Designation Filter */}
+                  {availDesignations.length > 0 && (
+                    <div>
+                      <p className="font-bold text-muted-foreground text-[10px] uppercase tracking-wider mb-1">
+                        {tr("Designation", "തസ്തിക")}
+                      </p>
+                      <div className="space-y-0.5 max-h-28 overflow-y-auto pr-1">
+                        {availDesignations.map((item) => {
+                          const checked = selectedDesignations.includes(item);
+                          return (
+                            <div
+                              key={item}
+                              onClick={() => toggleArrayFilter(selectedDesignations, setSelectedDesignations, item)}
+                              className={cn(
+                                "flex items-center gap-2.5 py-1.5 px-2 rounded-lg cursor-pointer select-none transition-colors text-xs font-semibold",
+                                checked
+                                  ? "bg-[#FFF8F0] text-amber-950 font-bold"
+                                  : "hover:bg-slate-100 text-slate-800",
+                              )}
+                            >
+                              <div
+                                className={cn(
+                                  "h-4 w-4 rounded-full border-2 shrink-0 flex items-center justify-center transition-colors",
+                                  checked
+                                    ? "border-amber-500 bg-amber-500 text-white"
+                                    : "border-amber-400 bg-white",
+                                )}
+                              >
+                                {checked && <Check className="h-2.5 w-2.5 stroke-[3]" />}
+                              </div>
+                              <span className="truncate">{item}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 2. Region Filter */}
+                  {availRegions.length > 0 && (
+                    <div>
+                      <p className="font-bold text-muted-foreground text-[10px] uppercase tracking-wider mb-1">
+                        {tr("Region", "മേഖല")}
+                      </p>
+                      <div className="space-y-0.5 max-h-28 overflow-y-auto pr-1">
+                        {availRegions.map((item) => {
+                          const checked = selectedRegions.includes(item);
+                          return (
+                            <div
+                              key={item}
+                              onClick={() => toggleArrayFilter(selectedRegions, setSelectedRegions, item)}
+                              className={cn(
+                                "flex items-center gap-2.5 py-1.5 px-2 rounded-lg cursor-pointer select-none transition-colors text-xs font-semibold",
+                                checked
+                                  ? "bg-[#FFF8F0] text-amber-950 font-bold"
+                                  : "hover:bg-slate-100 text-slate-800",
+                              )}
+                            >
+                              <div
+                                className={cn(
+                                  "h-4 w-4 rounded-full border-2 shrink-0 flex items-center justify-center transition-colors",
+                                  checked
+                                    ? "border-amber-500 bg-amber-500 text-white"
+                                    : "border-amber-400 bg-white",
+                                )}
+                              >
+                                {checked && <Check className="h-2.5 w-2.5 stroke-[3]" />}
+                              </div>
+                              <span className="truncate">{item}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 3. Org District Filter */}
+                  {availOrgDistricts.length > 0 && (
+                    <div>
+                      <p className="font-bold text-muted-foreground text-[10px] uppercase tracking-wider mb-1">
+                        {tr("Org District", "സംഘടനാ ജില്ല")}
+                      </p>
+                      <div className="space-y-0.5 max-h-28 overflow-y-auto pr-1">
+                        {availOrgDistricts.map((item) => {
+                          const checked = selectedOrgDistricts.includes(item);
+                          return (
+                            <div
+                              key={item}
+                              onClick={() => toggleArrayFilter(selectedOrgDistricts, setSelectedOrgDistricts, item)}
+                              className={cn(
+                                "flex items-center gap-2.5 py-1.5 px-2 rounded-lg cursor-pointer select-none transition-colors text-xs font-semibold",
+                                checked
+                                  ? "bg-[#FFF8F0] text-amber-950 font-bold"
+                                  : "hover:bg-slate-100 text-slate-800",
+                              )}
+                            >
+                              <div
+                                className={cn(
+                                  "h-4 w-4 rounded-full border-2 shrink-0 flex items-center justify-center transition-colors",
+                                  checked
+                                    ? "border-amber-500 bg-amber-500 text-white"
+                                    : "border-amber-400 bg-white",
+                                )}
+                              >
+                                {checked && <Check className="h-2.5 w-2.5 stroke-[3]" />}
+                              </div>
+                              <span className="truncate">{item}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 4. Mandalam Filter */}
+                  {availMandalams.length > 0 && (
+                    <div>
+                      <p className="font-bold text-muted-foreground text-[10px] uppercase tracking-wider mb-1">
+                        {tr("Mandalam", "മണ്ഡലം")}
+                      </p>
+                      <div className="space-y-0.5 max-h-28 overflow-y-auto pr-1">
+                        {availMandalams.map((item) => {
+                          const checked = selectedMandalams.includes(item);
+                          return (
+                            <div
+                              key={item}
+                              onClick={() => toggleArrayFilter(selectedMandalams, setSelectedMandalams, item)}
+                              className={cn(
+                                "flex items-center gap-2.5 py-1.5 px-2 rounded-lg cursor-pointer select-none transition-colors text-xs font-semibold",
+                                checked
+                                  ? "bg-[#FFF8F0] text-amber-950 font-bold"
+                                  : "hover:bg-slate-100 text-slate-800",
+                              )}
+                            >
+                              <div
+                                className={cn(
+                                  "h-4 w-4 rounded-full border-2 shrink-0 flex items-center justify-center transition-colors",
+                                  checked
+                                    ? "border-amber-500 bg-amber-500 text-white"
+                                    : "border-amber-400 bg-white",
+                                )}
+                              >
+                                {checked && <Check className="h-2.5 w-2.5 stroke-[3]" />}
+                              </div>
+                              <span className="truncate">{item}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 5. Area Filter */}
+                  {availAreas.length > 0 && (
+                    <div>
+                      <p className="font-bold text-muted-foreground text-[10px] uppercase tracking-wider mb-1">
+                        {tr("Area", "ഏരിയ")}
+                      </p>
+                      <div className="space-y-0.5 max-h-28 overflow-y-auto pr-1">
+                        {availAreas.map((item) => {
+                          const checked = selectedAreas.includes(item);
+                          return (
+                            <div
+                              key={item}
+                              onClick={() => toggleArrayFilter(selectedAreas, setSelectedAreas, item)}
+                              className={cn(
+                                "flex items-center gap-2.5 py-1.5 px-2 rounded-lg cursor-pointer select-none transition-colors text-xs font-semibold",
+                                checked
+                                  ? "bg-[#FFF8F0] text-amber-950 font-bold"
+                                  : "hover:bg-slate-100 text-slate-800",
+                              )}
+                            >
+                              <div
+                                className={cn(
+                                  "h-4 w-4 rounded-full border-2 shrink-0 flex items-center justify-center transition-colors",
+                                  checked
+                                    ? "border-amber-500 bg-amber-500 text-white"
+                                    : "border-amber-400 bg-white",
+                                )}
+                              >
+                                {checked && <Check className="h-2.5 w-2.5 stroke-[3]" />}
+                              </div>
+                              <span className="truncate">{item}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 6. Booth Filter */}
+                  {availBooths.length > 0 && (
+                    <div>
+                      <p className="font-bold text-muted-foreground text-[10px] uppercase tracking-wider mb-1">
+                        {tr("Booth", "ബൂത്ത്")}
+                      </p>
+                      <div className="space-y-0.5 max-h-28 overflow-y-auto pr-1">
+                        {availBooths.map((item) => {
+                          const checked = selectedBooths.includes(item);
+                          return (
+                            <div
+                              key={item}
+                              onClick={() => toggleArrayFilter(selectedBooths, setSelectedBooths, item)}
+                              className={cn(
+                                "flex items-center gap-2.5 py-1.5 px-2 rounded-lg cursor-pointer select-none transition-colors text-xs font-semibold",
+                                checked
+                                  ? "bg-[#FFF8F0] text-amber-950 font-bold"
+                                  : "hover:bg-slate-100 text-slate-800",
+                              )}
+                            >
+                              <div
+                                className={cn(
+                                  "h-4 w-4 rounded-full border-2 shrink-0 flex items-center justify-center transition-colors",
+                                  checked
+                                    ? "border-amber-500 bg-amber-500 text-white"
+                                    : "border-amber-400 bg-white",
+                                )}
+                              >
+                                {checked && <Check className="h-2.5 w-2.5 stroke-[3]" />}
+                              </div>
+                              <span className="truncate">{item}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </SheetHeader>
+
+          {/* Selection Bar */}
+          <div className="flex items-center justify-between px-5 py-2.5 bg-white border-b border-border text-xs shrink-0">
+            <span className="font-semibold text-muted-foreground">
+              {tr(
+                `${selectedUserIds.length} of ${assignUsersList.length} users selected`,
+                `${selectedUserIds.length} / ${assignUsersList.length} ഉപയോക്താക്കൾ`,
+              )}
+            </span>
+            <button
+              type="button"
+              onClick={toggleSelectAllUsers}
+              className="text-primary font-bold hover:underline cursor-pointer text-xs"
+            >
+              {allFilteredSelected
+                ? tr("Deselect All", "എല്ലാം ഒഴിവാക്കുക")
+                : tr("Select All", "എല്ലാം തിരഞ്ഞെടുക്കുക")}
+            </button>
+          </div>
+
+          {/* User list */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-white">
+            {filteredAssignUsers.length === 0 ? (
+              <div className="py-10 text-center text-xs text-muted-foreground">
+                {tr("No matching users found.", "ഉപയോക്താക്കളെ കണ്ടെത്തിയില്ല.")}
+              </div>
+            ) : (
+              filteredAssignUsers.map((user) => {
+                const isChecked = selectedUserIds.includes(user.id);
+                return (
+                  <div
+                    key={user.id}
+                    onClick={() => toggleUserSelection(user.id)}
+                    className={cn(
+                      "flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer select-none",
+                      isChecked
+                        ? "border-primary/50 bg-white shadow-2xs ring-1 ring-primary/20"
+                        : "border-border/60 bg-white hover:bg-slate-50/60",
+                    )}
+                  >
+                    <Checkbox
+                      checked={isChecked}
+                      onCheckedChange={() => toggleUserSelection(user.id)}
+                      className="pointer-events-none"
+                    />
+                    {user.avatarUrl ? (
+                      <img
+                        src={user.avatarUrl}
+                        alt={user.name}
+                        className="h-8 w-8 rounded-full object-cover shrink-0"
+                      />
+                    ) : (
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 font-bold text-slate-700 text-xs">
+                        {user.name.charAt(0)}
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-xs text-foreground truncate">
+                        {lang === "ml" ? user.nameMl || user.name : user.name}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground truncate">
+                        {lang === "ml" ? user.designationMl : user.designationEn}
+                        {(user.constituencyEn || user.districtNameEn) && (
+                          <span className="text-muted-foreground/80 font-medium">
+                            {" • "}
+                            {lang === "ml"
+                              ? `${user.constituencyMl || user.districtNameMl}${user.districtNameMl ? `, ${user.districtNameMl}` : ""}`
+                              : `${user.constituencyEn || user.districtNameEn}${user.districtNameEn ? `, ${user.districtNameEn}` : ""}`}
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="p-4 border-t border-border bg-white flex items-center justify-end gap-2 shrink-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleSkipUserAssignment}
+              className="h-9 px-3.5 text-xs font-semibold cursor-pointer bg-white"
+            >
+              {tr("Skip", "ഒഴിവാക്കുക")}
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSaveUserAssignment}
+              className="h-9 px-4 text-xs font-bold gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
+            >
+              <Check className="h-3.5 w-3.5" />
+              {tr("Assign & Save", "അസൈൻ ചെയ്ത് സേവ് ചെയ്യുക")}
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
