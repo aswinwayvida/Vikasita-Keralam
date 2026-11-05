@@ -27,6 +27,7 @@ import {
   UserCog,
   UserPlus,
   Users,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -93,8 +94,47 @@ import {
   mockUsers,
   type AppUser,
 } from "@/data/users";
+import { districts, organisationalDistricts, constituencies } from "@/data/geo";
 import { useLang } from "@/i18n/LanguageProvider";
 import { cn } from "@/lib/utils";
+
+const LOCATION_ORG_LEVELS_DATA = [
+  { id: "LVL-1", name: "State", nameMl: "സംസ്ഥാനം", scope: "Entire Kerala State (1 Unit)", status: "Active" },
+  { id: "LVL-2", name: "Region", nameMl: "മേഖല", scope: "3 Regional Clusters (South, Central, North)", status: "Active" },
+  { id: "LVL-3", name: "Organisational District", nameMl: "സംഘടനാ ജില്ല", scope: "30 Organisational Districts", status: "Active" },
+  { id: "LVL-4", name: "Mandalam", nameMl: "മണ്ഡലം", scope: "140 Assembly Constituencies", status: "Active" },
+  { id: "LVL-5", name: "Area", nameMl: "ഏരിയ", scope: "Local Area Clusters", status: "Active" },
+  { id: "LVL-6", name: "Booth", nameMl: "ബൂത്ത്", scope: "Polling Booth Units (25,000+)", status: "Active" },
+];
+
+const LOCATION_REGIONS_DATA = [
+  { id: "REG-N", name: "Northern Region", nameMl: "വടക്കൻ മേഖല", scope: "10 Organisational Districts (48 Mandalams)", districts: "Kasaragod, Kannur, Wayanad, Kozhikode, Malappuram", status: "Active" },
+  { id: "REG-C", name: "Central Region", nameMl: "മധ്യ മേഖല", scope: "12 Organisational Districts (53 Mandalams)", districts: "Palakkad, Thrissur, Ernakulam, Idukki, Kottayam", status: "Active" },
+  { id: "REG-S", name: "Southern Region", nameMl: "തെക്കൻ മേഖല", scope: "8 Organisational Districts (39 Mandalams)", districts: "Alappuzha, Pathanamthitta, Kollam, Thiruvananthapuram", status: "Active" },
+];
+
+const getLocationRegionName = (districtName: string): string => {
+  const d = (districtName || "").toLowerCase();
+  if (
+    d.includes("thiruvananthapuram") ||
+    d.includes("trivandrum") ||
+    d.includes("kollam") ||
+    d.includes("pathanamthitta") ||
+    d.includes("alappuzha")
+  ) {
+    return "South";
+  }
+  if (
+    d.includes("kottayam") ||
+    d.includes("idukki") ||
+    d.includes("ernakulam") ||
+    d.includes("kochi") ||
+    d.includes("thrissur")
+  ) {
+    return "Central";
+  }
+  return "North";
+};
 
 export interface ManagedUser extends Omit<AppUser, "status"> {
   status: "Active" | "Verified" | "Pending" | "Inactive";
@@ -107,6 +147,111 @@ export interface ManagedUser extends Omit<AppUser, "status"> {
   areaMl?: string;
   boothEn?: string;
   boothMl?: string;
+  orgLevel?: string;
+}
+
+export interface ManagedDesignation {
+  id: string;
+  name: string;
+  orgLevel: string;
+  status: "Active" | "Disabled";
+}
+
+const MANAGED_DESIGNATIONS_KEY = "vikasita_managed_designations_v1";
+
+const DEFAULT_DESIGNATIONS_BY_LEVEL: Record<string, string[]> = {
+  State: [
+    "President",
+    "Vice President",
+    "General Secretary",
+    "General Secretary (Organisation)",
+    "Secretary",
+    "Treasurer",
+    "Executive Member",
+  ],
+  Region: [
+    "President",
+    "In-charge",
+    "Coordinator",
+    "Cluster In-charge",
+  ],
+  "Organisational District": [
+    "President",
+    "Vice President",
+    "General Secretary",
+    "General Secretary (Organisation)",
+    "Secretary",
+    "Treasurer",
+    "Executive Member",
+  ],
+  Mandalam: [
+    "President",
+    "Vice President",
+    "General Secretary",
+    "Secretary",
+    "Treasurer",
+    "Committee Member",
+  ],
+  Area: [
+    "Kendra Convener",
+    "Area Coordinator",
+    "Area In-charge",
+    "Area Committee Member",
+  ],
+  Booth: [
+    "President",
+    "Secretary",
+    "Committee Member",
+    "Worker",
+  ],
+};
+
+const ORG_LEVEL_OPTIONS_LIST = [
+  { id: "State", en: "State", ml: "സംസ്ഥാനം" },
+  { id: "Region", en: "Region", ml: "റീജിയൻ" },
+  { id: "Organisational District", en: "Organisational District", ml: "സംഘടനാ ജില്ല" },
+  { id: "Mandalam", en: "Mandalam", ml: "മണ്ഡലം" },
+  { id: "Area", en: "Area", ml: "ഏരിയ" },
+  { id: "Booth", en: "Booth", ml: "ബൂത്ത്" },
+];
+
+export function loadManagedDesignations(): ManagedDesignation[] {
+  if (typeof window === "undefined") return getDefaultDesignations();
+  try {
+    const raw = localStorage.getItem(MANAGED_DESIGNATIONS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {
+    // fallback
+  }
+  return getDefaultDesignations();
+}
+
+export function saveManagedDesignations(list: ManagedDesignation[]) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(MANAGED_DESIGNATIONS_KEY, JSON.stringify(list));
+  } catch {
+    // fallback
+  }
+}
+
+function getDefaultDesignations(): ManagedDesignation[] {
+  const defaults: ManagedDesignation[] = [];
+  let count = 1;
+  for (const [level, list] of Object.entries(DEFAULT_DESIGNATIONS_BY_LEVEL)) {
+    for (const name of list) {
+      defaults.push({
+        id: `DESIG-${String(count++).padStart(3, "0")}`,
+        name,
+        orgLevel: level,
+        status: "Active",
+      });
+    }
+  }
+  return defaults;
 }
 
 export function getUserAvatarUrl(user: { name?: string; avatarUrl?: string }): string {
@@ -366,7 +511,7 @@ function FilterDropdownSelector({
   );
 }
 
-export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "roles" | "users" } = {}) {
+export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "roles" | "users" | "designations" | "location" } = {}) {
   const navigate = useNavigate();
   const { lang } = useLang();
   const tr = (en: string, ml: string) => (lang === "ml" ? ml : en);
@@ -390,11 +535,767 @@ export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "rol
   const [assignTarget, setAssignTarget] = useState<ManagedRole | null>(null);
   const [statusTarget, setStatusTarget] = useState<ManagedRole | null>(null);
   const [reviewAcknowledged, setReviewAcknowledged] = useState(false);
-  const [activeTab, setActiveTab] = useState<"roles" | "users">(defaultTab);
+  const [activeTab, setActiveTab] = useState<"roles" | "users" | "designations" | "location">(defaultTab);
+  const [locationSubTab, setLocationSubTab] = useState<
+    "org-levels" | "region" | "org-district" | "mandalam" | "area" | "booth"
+  >("org-levels");
 
   useEffect(() => {
     setActiveTab(defaultTab);
   }, [defaultTab]);
+
+  // Designations management state
+  const [designationsList, setDesignationsList] = useState<ManagedDesignation[]>(() => loadManagedDesignations());
+  const [designationDialogOpen, setDesignationDialogOpen] = useState(false);
+  const [editingDesignation, setEditingDesignation] = useState<ManagedDesignation | null>(null);
+  const [designationForm, setDesignationForm] = useState({
+    name: "",
+    orgLevel: "State",
+  });
+  const [designationSearch, setDesignationSearch] = useState("");
+  const [selectedOrgLevelFilter, setSelectedOrgLevelFilter] = useState("All");
+
+  const commitDesignations = (next: ManagedDesignation[]) => {
+    setDesignationsList(next);
+    saveManagedDesignations(next);
+  };
+
+  const handleOpenCreateDesignation = () => {
+    setEditingDesignation(null);
+    setDesignationForm({ name: "", orgLevel: "State" });
+    setDesignationDialogOpen(true);
+  };
+
+  const handleOpenEditDesignation = (desig: ManagedDesignation) => {
+    setEditingDesignation(desig);
+    setDesignationForm({ name: desig.name, orgLevel: desig.orgLevel });
+    setDesignationDialogOpen(true);
+  };
+
+  const handleSaveDesignation = () => {
+    const trimmed = designationForm.name.trim();
+    if (!trimmed) {
+      toast.error(tr("Designation name is required.", "തസ്തിക നാമം നിർബന്ധമാണ്."));
+      return;
+    }
+
+    if (editingDesignation) {
+      const updated = designationsList.map((d) =>
+        d.id === editingDesignation.id ? { ...d, name: trimmed, orgLevel: designationForm.orgLevel } : d,
+      );
+      commitDesignations(updated);
+      toast.success(tr("Designation updated successfully.", "തസ്തിക വിജയകരമായി അപ്‌ഡേറ്റ് ചെയ്തു."));
+    } else {
+      const newDesig: ManagedDesignation = {
+        id: `DESIG-${Date.now()}`,
+        name: trimmed,
+        orgLevel: designationForm.orgLevel,
+        status: "Active",
+      };
+      commitDesignations([newDesig, ...designationsList]);
+      toast.success(tr("Designation created successfully.", "തസ്തിക വിജയകരമായി സൃഷ്ടിച്ചു."));
+    }
+    setDesignationDialogOpen(false);
+  };
+
+  const handleToggleDesignationStatus = (desig: ManagedDesignation) => {
+    const nextStatus: "Active" | "Disabled" = desig.status === "Active" ? "Disabled" : "Active";
+    const updated = designationsList.map((d) => (d.id === desig.id ? { ...d, status: nextStatus } : d));
+    commitDesignations(updated);
+    toast.success(
+      nextStatus === "Disabled"
+        ? tr("Designation disabled.", "തസ്തിക നിർജ്ജീവമാക്കി.")
+        : tr("Designation enabled.", "തസ്തിക സജീവമാക്കി."),
+    );
+  };
+
+  const handleDeleteDesignation = (desig: ManagedDesignation) => {
+    const confirmed = window.confirm(
+      lang === "ml"
+        ? `"${desig.name}" എന്ന തസ്തിക നീക്കം ചെയ്യണോ?`
+        : `Are you sure you want to delete "${desig.name}"?`,
+    );
+    if (!confirmed) return;
+    const updated = designationsList.filter((d) => d.id !== desig.id);
+    commitDesignations(updated);
+    toast.success(tr("Designation deleted.", "തസ്തിക നീക്കം ചെയ്തു."));
+  };
+
+  const filteredDesignations = useMemo(() => {
+    return designationsList.filter((d) => {
+      const q = topSearchQuery.trim().toLowerCase();
+      const matchesSearch =
+        !q ||
+        d.name.toLowerCase().includes(q) ||
+        d.orgLevel.toLowerCase().includes(q);
+      const matchesLevel = selectedOrgLevelFilter === "All" || d.orgLevel === selectedOrgLevelFilter;
+      return matchesSearch && matchesLevel;
+    });
+  }, [designationsList, topSearchQuery, selectedOrgLevelFilter]);
+
+  // Location datasets state
+  const [locationOrgLevels, setLocationOrgLevels] = useState(LOCATION_ORG_LEVELS_DATA);
+  const [locationRegions, setLocationRegions] = useState(LOCATION_REGIONS_DATA);
+
+  const initialOrgDistricts = useMemo(() => {
+    return [
+      // Northern Region (10)
+      { id: "OD-01", name: "Kasaragod", nameMl: "കാസർഗോഡ്", region: "North", revDistrict: "Kasaragod", status: "Active" as const },
+      { id: "OD-02", name: "Kannur North", nameMl: "കണ്ണൂർ നോർത്ത്", region: "North", revDistrict: "Kannur", status: "Active" as const },
+      { id: "OD-03", name: "Kannur South", nameMl: "കണ്ണൂർ സൗത്ത്", region: "North", revDistrict: "Kannur", status: "Active" as const },
+      { id: "OD-04", name: "Wayanad", nameMl: "വയനാട്", region: "North", revDistrict: "Wayanad", status: "Active" as const },
+      { id: "OD-05", name: "Kozhikode City", nameMl: "കോഴിക്കോട് സിറ്റി", region: "North", revDistrict: "Kozhikode", status: "Active" as const },
+      { id: "OD-06", name: "Kozhikode North", nameMl: "കോഴിക്കോട് നോർത്ത്", region: "North", revDistrict: "Kozhikode", status: "Active" as const },
+      { id: "OD-07", name: "Kozhikode Rural", nameMl: "കോഴിക്കോട് റൂറൽ", region: "North", revDistrict: "Kozhikode", status: "Active" as const },
+      { id: "OD-08", name: "Malappuram Central", nameMl: "മലപ്പുറം സെൻട്രൽ", region: "North", revDistrict: "Malappuram", status: "Active" as const },
+      { id: "OD-09", name: "Malappuram East", nameMl: "മലപ്പുറം ഈസ്റ്റ്", region: "North", revDistrict: "Malappuram", status: "Active" as const },
+      { id: "OD-10", name: "Malappuram West", nameMl: "മലപ്പുറം വെസ്റ്റ്", region: "North", revDistrict: "Malappuram", status: "Active" as const },
+
+      // Central Region (12)
+      { id: "OD-11", name: "Palakkad East", nameMl: "പാലക്കാട് ഈസ്റ്റ്", region: "Central", revDistrict: "Palakkad", status: "Active" as const },
+      { id: "OD-12", name: "Palakkad West", nameMl: "പാലക്കാട് വെസ്റ്റ്", region: "Central", revDistrict: "Palakkad", status: "Active" as const },
+      { id: "OD-13", name: "Thrissur City", nameMl: "തൃശ്ശൂർ സിറ്റി", region: "Central", revDistrict: "Thrissur", status: "Active" as const },
+      { id: "OD-14", name: "Thrissur North", nameMl: "തൃശ്ശൂർ നോർത്ത്", region: "Central", revDistrict: "Thrissur", status: "Active" as const },
+      { id: "OD-15", name: "Thrissur South", nameMl: "തൃശ്ശൂർ സൗത്ത്", region: "Central", revDistrict: "Thrissur", status: "Active" as const },
+      { id: "OD-16", name: "Ernakulam City", nameMl: "എറണാകുളം സിറ്റി", region: "Central", revDistrict: "Ernakulam", status: "Active" as const },
+      { id: "OD-17", name: "Ernakulam North", nameMl: "എറണാകുളം നോർത്ത്", region: "Central", revDistrict: "Ernakulam", status: "Active" as const },
+      { id: "OD-18", name: "Ernakulam East", nameMl: "എറണാകുളം ഈസ്റ്റ്", region: "Central", revDistrict: "Ernakulam", status: "Active" as const },
+      { id: "OD-19", name: "Idukki North", nameMl: "ഇടുക്കി നോർത്ത്", region: "Central", revDistrict: "Idukki", status: "Active" as const },
+      { id: "OD-20", name: "Idukki South", nameMl: "ഇടുക്കി സൗത്ത്", region: "Central", revDistrict: "Idukki", status: "Active" as const },
+      { id: "OD-21", name: "Kottayam East", nameMl: "കോട്ടയം ഈസ്റ്റ്", region: "Central", revDistrict: "Kottayam", status: "Active" as const },
+      { id: "OD-22", name: "Kottayam West", nameMl: "കോട്ടയം വെസ്റ്റ്", region: "Central", revDistrict: "Kottayam", status: "Active" as const },
+
+      // Southern Region (8)
+      { id: "OD-23", name: "Alappuzha North", nameMl: "ആലപ്പുഴ നോർത്ത്", region: "South", revDistrict: "Alappuzha", status: "Active" as const },
+      { id: "OD-24", name: "Alappuzha South", nameMl: "ആലപ്പുഴ സൗത്ത്", region: "South", revDistrict: "Alappuzha", status: "Active" as const },
+      { id: "OD-25", name: "Pathanamthitta", nameMl: "പത്തനംതിട്ട", region: "South", revDistrict: "Pathanamthitta", status: "Active" as const },
+      { id: "OD-26", name: "Kollam East", nameMl: "കൊല്ലം ഈസ്റ്റ്", region: "South", revDistrict: "Kollam", status: "Active" as const },
+      { id: "OD-27", name: "Kollam West", nameMl: "കൊല്ലം വെസ്റ്റ്", region: "South", revDistrict: "Kollam", status: "Active" as const },
+      { id: "OD-28", name: "Thiruvananthapuram City", nameMl: "തിരുവനന്തപുരം സിറ്റി", region: "South", revDistrict: "Thiruvananthapuram", status: "Active" as const },
+      { id: "OD-29", name: "Thiruvananthapuram North", nameMl: "തിരുവനന്തപുരം നോർത്ത്", region: "South", revDistrict: "Thiruvananthapuram", status: "Active" as const },
+      { id: "OD-30", name: "Thiruvananthapuram South", nameMl: "തിരുവനന്തപുരം സൗത്ത്", region: "South", revDistrict: "Thiruvananthapuram", status: "Active" as const },
+    ];
+  }, []);
+  const [locationOrgDistrictsState, setLocationOrgDistrictsState] = useState(initialOrgDistricts);
+
+  const initialMandalams = useMemo(() => {
+    return [
+      // 1. Northern Region (48 Mandalams)
+      // Kasaragod (5)
+      { id: "MAN-001", name: "Manjeshwar", nameMl: "മഞ്ചേശ്വരം", region: "North", orgDistrict: "Kasaragod", status: "Active" as const },
+      { id: "MAN-002", name: "Kasaragod", nameMl: "കാസർഗോഡ്", region: "North", orgDistrict: "Kasaragod", status: "Active" as const },
+      { id: "MAN-003", name: "Udma", nameMl: "ഉദുമ", region: "North", orgDistrict: "Kasaragod", status: "Active" as const },
+      { id: "MAN-004", name: "Kanhangad", nameMl: "കാഞ്ഞങ്ങാട്", region: "North", orgDistrict: "Kasaragod", status: "Active" as const },
+      { id: "MAN-005", name: "Trikaripur", nameMl: "തൃക്കരിപ്പൂർ", region: "North", orgDistrict: "Kasaragod", status: "Active" as const },
+      // Kannur North (5)
+      { id: "MAN-006", name: "Payyannur", nameMl: "പയ്യന്നൂർ", region: "North", orgDistrict: "Kannur North", status: "Active" as const },
+      { id: "MAN-007", name: "Kalliasseri", nameMl: "കല്യാശ്ശേരി", region: "North", orgDistrict: "Kannur North", status: "Active" as const },
+      { id: "MAN-008", name: "Taliparamba", nameMl: "തളിപ്പറമ്പ്", region: "North", orgDistrict: "Kannur North", status: "Active" as const },
+      { id: "MAN-009", name: "Irikkur", nameMl: "ഇരിക്കൂർ", region: "North", orgDistrict: "Kannur North", status: "Active" as const },
+      { id: "MAN-010", name: "Azhikode", nameMl: "അഴീക്കോട്", region: "North", orgDistrict: "Kannur North", status: "Active" as const },
+      // Kannur South (6)
+      { id: "MAN-011", name: "Kannur", nameMl: "കണ്ണൂർ", region: "North", orgDistrict: "Kannur South", status: "Active" as const },
+      { id: "MAN-012", name: "Dharmadam", nameMl: "ധർമ്മടം", region: "North", orgDistrict: "Kannur South", status: "Active" as const },
+      { id: "MAN-013", name: "Thalassery", nameMl: "തലശ്ശേരി", region: "North", orgDistrict: "Kannur South", status: "Active" as const },
+      { id: "MAN-014", name: "Kuthuparamba", nameMl: "കൂത്തുപറമ്പ്", region: "North", orgDistrict: "Kannur South", status: "Active" as const },
+      { id: "MAN-015", name: "Mattannur", nameMl: "മട്ടന്നൂർ", region: "North", orgDistrict: "Kannur South", status: "Active" as const },
+      { id: "MAN-016", name: "Peravoor", nameMl: "പേരാവൂർ", region: "North", orgDistrict: "Kannur South", status: "Active" as const },
+      // Wayanad (3)
+      { id: "MAN-017", name: "Mananthavady", nameMl: "മാനന്തവാടി", region: "North", orgDistrict: "Wayanad", status: "Active" as const },
+      { id: "MAN-018", name: "Sulthan Bathery", nameMl: "സുൽത്താൻ ബത്തേരി", region: "North", orgDistrict: "Wayanad", status: "Active" as const },
+      { id: "MAN-019", name: "Kalpetta", nameMl: "കൽപ്പറ്റ", region: "North", orgDistrict: "Wayanad", status: "Active" as const },
+      // Kozhikode City (3)
+      { id: "MAN-020", name: "Kozhikode North", nameMl: "കോഴിക്കോട് നോർത്ത്", region: "North", orgDistrict: "Kozhikode City", status: "Active" as const },
+      { id: "MAN-021", name: "Kozhikode South", nameMl: "കോഴിക്കോട് സൗത്ത്", region: "North", orgDistrict: "Kozhikode City", status: "Active" as const },
+      { id: "MAN-022", name: "Beypore", nameMl: "ബേപ്പൂർ", region: "North", orgDistrict: "Kozhikode City", status: "Active" as const },
+      // Kozhikode North (5)
+      { id: "MAN-023", name: "Vadakara", nameMl: "വടകര", region: "North", orgDistrict: "Kozhikode North", status: "Active" as const },
+      { id: "MAN-024", name: "Kuttiadi", nameMl: "കുറ്റ്യാടി", region: "North", orgDistrict: "Kozhikode North", status: "Active" as const },
+      { id: "MAN-025", name: "Nadapuram", nameMl: "നാദാപുരം", region: "North", orgDistrict: "Kozhikode North", status: "Active" as const },
+      { id: "MAN-026", name: "Quilandy", nameMl: "കൊയിലാണ്ടി", region: "North", orgDistrict: "Kozhikode North", status: "Active" as const },
+      { id: "MAN-027", name: "Perambra", nameMl: "പേരാമ്പ്ര", region: "North", orgDistrict: "Kozhikode North", status: "Active" as const },
+      // Kozhikode Rural (5)
+      { id: "MAN-028", name: "Balusseri", nameMl: "ബാലുശ്ശേരി", region: "North", orgDistrict: "Kozhikode Rural", status: "Active" as const },
+      { id: "MAN-029", name: "Elathur", nameMl: "എലത്തൂർ", region: "North", orgDistrict: "Kozhikode Rural", status: "Active" as const },
+      { id: "MAN-030", name: "Kunnamangalam", nameMl: "കുന്ദമംഗലം", region: "North", orgDistrict: "Kozhikode Rural", status: "Active" as const },
+      { id: "MAN-031", name: "Koduvally", nameMl: "കൊടുവള്ളി", region: "North", orgDistrict: "Kozhikode Rural", status: "Active" as const },
+      { id: "MAN-032", name: "Thiruvambady", nameMl: "തിരുവമ്പാടി", region: "North", orgDistrict: "Kozhikode Rural", status: "Active" as const },
+      // Malappuram Central (5)
+      { id: "MAN-033", name: "Manjeri", nameMl: "മഞ്ചേരി", region: "North", orgDistrict: "Malappuram Central", status: "Active" as const },
+      { id: "MAN-034", name: "Perinthalmanna", nameMl: "പെരിന്തൽമണ്ണ", region: "North", orgDistrict: "Malappuram Central", status: "Active" as const },
+      { id: "MAN-035", name: "Mankada", nameMl: "മങ്കട", region: "North", orgDistrict: "Malappuram Central", status: "Active" as const },
+      { id: "MAN-036", name: "Malappuram", nameMl: "മലപ്പുറം", region: "North", orgDistrict: "Malappuram Central", status: "Active" as const },
+      { id: "MAN-037", name: "Vengara", nameMl: "വേങ്ങര", region: "North", orgDistrict: "Malappuram Central", status: "Active" as const },
+      // Malappuram East (5)
+      { id: "MAN-038", name: "Kondotty", nameMl: "കൊണ്ടോട്ടി", region: "North", orgDistrict: "Malappuram East", status: "Active" as const },
+      { id: "MAN-039", name: "Eranad", nameMl: "ഏറനാട്", region: "North", orgDistrict: "Malappuram East", status: "Active" as const },
+      { id: "MAN-040", name: "Nilambur", nameMl: "നിലമ്പൂർ", region: "North", orgDistrict: "Malappuram East", status: "Active" as const },
+      { id: "MAN-041", name: "Wandoor", nameMl: "വണ്ടൂർ", region: "North", orgDistrict: "Malappuram East", status: "Active" as const },
+      { id: "MAN-042", name: "Vallikkunnu", nameMl: "വള്ളിക്കുന്ന്", region: "North", orgDistrict: "Malappuram East", status: "Active" as const },
+      // Malappuram West (6)
+      { id: "MAN-043", name: "Tirurangadi", nameMl: "തിരൂരങ്ങാടി", region: "North", orgDistrict: "Malappuram West", status: "Active" as const },
+      { id: "MAN-044", name: "Tanur", nameMl: "താനൂർ", region: "North", orgDistrict: "Malappuram West", status: "Active" as const },
+      { id: "MAN-045", name: "Tirur", nameMl: "തിരൂർ", region: "North", orgDistrict: "Malappuram West", status: "Active" as const },
+      { id: "MAN-046", name: "Kottakkal", nameMl: "കോട്ടക്കൽ", region: "North", orgDistrict: "Malappuram West", status: "Active" as const },
+      { id: "MAN-047", name: "Thavanur", nameMl: "തവനൂർ", region: "North", orgDistrict: "Malappuram West", status: "Active" as const },
+      { id: "MAN-048", name: "Ponnani", nameMl: "പൊന്നാനി", region: "North", orgDistrict: "Malappuram West", status: "Active" as const },
+
+      // 2. Central Region (53 Mandalams)
+      // Palakkad East (6)
+      { id: "MAN-049", name: "Mannarkkad", nameMl: "മണ്ണാർക്കാട്", region: "Central", orgDistrict: "Palakkad East", status: "Active" as const },
+      { id: "MAN-050", name: "Malampuzha", nameMl: "മലമ്പുഴ", region: "Central", orgDistrict: "Palakkad East", status: "Active" as const },
+      { id: "MAN-051", name: "Palakkad", nameMl: "പാലക്കാട്", region: "Central", orgDistrict: "Palakkad East", status: "Active" as const },
+      { id: "MAN-052", name: "Chittur", nameMl: "ചിറ്റൂർ", region: "Central", orgDistrict: "Palakkad East", status: "Active" as const },
+      { id: "MAN-053", name: "Nenmara", nameMl: "നെന്മാറ", region: "Central", orgDistrict: "Palakkad East", status: "Active" as const },
+      { id: "MAN-054", name: "Alathur", nameMl: "ആലത്തൂർ", region: "Central", orgDistrict: "Palakkad East", status: "Active" as const },
+      // Palakkad West (6)
+      { id: "MAN-055", name: "Thrithala", nameMl: "തൃത്താല", region: "Central", orgDistrict: "Palakkad West", status: "Active" as const },
+      { id: "MAN-056", name: "Pattambi", nameMl: "പട്ടാമ്പി", region: "Central", orgDistrict: "Palakkad West", status: "Active" as const },
+      { id: "MAN-057", name: "Shornur", nameMl: "ഷൊർണൂർ", region: "Central", orgDistrict: "Palakkad West", status: "Active" as const },
+      { id: "MAN-058", name: "Ottapalam", nameMl: "ഒറ്റപ്പാലം", region: "Central", orgDistrict: "Palakkad West", status: "Active" as const },
+      { id: "MAN-059", name: "Kongad", nameMl: "കൊങ്ങാട്", region: "Central", orgDistrict: "Palakkad West", status: "Active" as const },
+      { id: "MAN-060", name: "Tarur", nameMl: "തരൂർ", region: "Central", orgDistrict: "Palakkad West", status: "Active" as const },
+      // Thrissur City (4)
+      { id: "MAN-061", name: "Wadakkanchery", nameMl: "വടക്കാഞ്ചേരി", region: "Central", orgDistrict: "Thrissur City", status: "Active" as const },
+      { id: "MAN-062", name: "Ollur", nameMl: "ഒല്ലൂർ", region: "Central", orgDistrict: "Thrissur City", status: "Active" as const },
+      { id: "MAN-063", name: "Thrissur", nameMl: "തൃശ്ശൂർ", region: "Central", orgDistrict: "Thrissur City", status: "Active" as const },
+      { id: "MAN-064", name: "Puthukkad", nameMl: "പുതുക്കാട്", region: "Central", orgDistrict: "Thrissur City", status: "Active" as const },
+      // Thrissur North (4)
+      { id: "MAN-065", name: "Chelakkara", nameMl: "ചേലക്കര", region: "Central", orgDistrict: "Thrissur North", status: "Active" as const },
+      { id: "MAN-066", name: "Kunnamkulam", nameMl: "കുന്നംകുളം", region: "Central", orgDistrict: "Thrissur North", status: "Active" as const },
+      { id: "MAN-067", name: "Guruvayoor", nameMl: "ഗുരുവായൂർ", region: "Central", orgDistrict: "Thrissur North", status: "Active" as const },
+      { id: "MAN-068", name: "Manalur", nameMl: "മണലൂർ", region: "Central", orgDistrict: "Thrissur North", status: "Active" as const },
+      // Thrissur South (5)
+      { id: "MAN-069", name: "Nattika", nameMl: "നാട്ടിക", region: "Central", orgDistrict: "Thrissur South", status: "Active" as const },
+      { id: "MAN-070", name: "Kaipamangalam", nameMl: "കൈപ്പമംഗലം", region: "Central", orgDistrict: "Thrissur South", status: "Active" as const },
+      { id: "MAN-071", name: "Irinjalakuda", nameMl: "ഇരിഞ്ഞാലക്കുട", region: "Central", orgDistrict: "Thrissur South", status: "Active" as const },
+      { id: "MAN-072", name: "Chalakudy", nameMl: "ചാലക്കുടി", region: "Central", orgDistrict: "Thrissur South", status: "Active" as const },
+      { id: "MAN-073", name: "Kodungallur", nameMl: "കൊടുങ്ങല്ലൂർ", region: "Central", orgDistrict: "Thrissur South", status: "Active" as const },
+      // Ernakulam City (6)
+      { id: "MAN-074", name: "Kalamassery", nameMl: "കളമശ്ശേരി", region: "Central", orgDistrict: "Ernakulam City", status: "Active" as const },
+      { id: "MAN-075", name: "Vypen", nameMl: "വൈപ്പിൻ", region: "Central", orgDistrict: "Ernakulam City", status: "Active" as const },
+      { id: "MAN-076", name: "Kochi", nameMl: "കൊച്ചി", region: "Central", orgDistrict: "Ernakulam City", status: "Active" as const },
+      { id: "MAN-077", name: "Thripunithura", nameMl: "തൃപ്പൂണിത്തുറ", region: "Central", orgDistrict: "Ernakulam City", status: "Active" as const },
+      { id: "MAN-078", name: "Ernakulam", nameMl: "എറണാകുളം", region: "Central", orgDistrict: "Ernakulam City", status: "Active" as const },
+      { id: "MAN-079", name: "Thrikkakara", nameMl: "തൃക്കാക്കര", region: "Central", orgDistrict: "Ernakulam City", status: "Active" as const },
+      // Ernakulam North (4)
+      { id: "MAN-080", name: "Perumbavoor", nameMl: "പെരുമ്പാവൂർ", region: "Central", orgDistrict: "Ernakulam North", status: "Active" as const },
+      { id: "MAN-081", name: "Angamaly", nameMl: "അങ്കമാലി", region: "Central", orgDistrict: "Ernakulam North", status: "Active" as const },
+      { id: "MAN-082", name: "Aluva", nameMl: "ആലുവ", region: "Central", orgDistrict: "Ernakulam North", status: "Active" as const },
+      { id: "MAN-083", name: "Paravur", nameMl: "പറവൂർ", region: "Central", orgDistrict: "Ernakulam North", status: "Active" as const },
+      // Ernakulam East (4)
+      { id: "MAN-084", name: "Kunnathunad", nameMl: "കുന്നത്തുനാട്", region: "Central", orgDistrict: "Ernakulam East", status: "Active" as const },
+      { id: "MAN-085", name: "Piravom", nameMl: "പിറവം", region: "Central", orgDistrict: "Ernakulam East", status: "Active" as const },
+      { id: "MAN-086", name: "Muvattupuzha", nameMl: "മൂവാറ്റുപുഴ", region: "Central", orgDistrict: "Ernakulam East", status: "Active" as const },
+      { id: "MAN-087", name: "Kothamangalam", nameMl: "കോതമംഗലം", region: "Central", orgDistrict: "Ernakulam East", status: "Active" as const },
+      // Idukki North (2)
+      { id: "MAN-088", name: "Thodupuzha", nameMl: "തൊടുപുഴ", region: "Central", orgDistrict: "Idukki North", status: "Active" as const },
+      { id: "MAN-089", name: "Idukki", nameMl: "ഇടുക്കി", region: "Central", orgDistrict: "Idukki North", status: "Active" as const },
+      // Idukki South (3)
+      { id: "MAN-090", name: "Devikulam", nameMl: "ദേവികുളം", region: "Central", orgDistrict: "Idukki South", status: "Active" as const },
+      { id: "MAN-091", name: "Udumbanchola", nameMl: "ഉടുമ്പൻചോല", region: "Central", orgDistrict: "Idukki South", status: "Active" as const },
+      { id: "MAN-092", name: "Peerumade", nameMl: "പീരുമേട്", region: "Central", orgDistrict: "Idukki South", status: "Active" as const },
+      // Kottayam East (4)
+      { id: "MAN-093", name: "Pala", nameMl: "പാലാ", region: "Central", orgDistrict: "Kottayam East", status: "Active" as const },
+      { id: "MAN-094", name: "Kanjirappally", nameMl: "കാഞ്ഞിരപ്പള്ളി", region: "Central", orgDistrict: "Kottayam East", status: "Active" as const },
+      { id: "MAN-095", name: "Poonjar", nameMl: "പൂഞ്ഞാർ", region: "Central", orgDistrict: "Kottayam East", status: "Active" as const },
+      { id: "MAN-096", name: "Puthuppally", nameMl: "പുതുപ്പള്ളി", region: "Central", orgDistrict: "Kottayam East", status: "Active" as const },
+      // Kottayam West (5)
+      { id: "MAN-097", name: "Kaduthuruthy", nameMl: "കടുത്തുരുത്തി", region: "Central", orgDistrict: "Kottayam West", status: "Active" as const },
+      { id: "MAN-098", name: "Vaikom", nameMl: "വൈക്കം", region: "Central", orgDistrict: "Kottayam West", status: "Active" as const },
+      { id: "MAN-099", name: "Ettumanoor", nameMl: "ഏറ്റുമാനൂർ", region: "Central", orgDistrict: "Kottayam West", status: "Active" as const },
+      { id: "MAN-100", name: "Kottayam", nameMl: "കോട്ടയം", region: "Central", orgDistrict: "Kottayam West", status: "Active" as const },
+      { id: "MAN-101", name: "Changanassery", nameMl: "ചങ്ങനാശ്ശേരി", region: "Central", orgDistrict: "Kottayam West", status: "Active" as const },
+
+      // 3. Southern Region (39 Mandalams)
+      // Alappuzha North (5)
+      { id: "MAN-102", name: "Aroor", nameMl: "അരൂർ", region: "South", orgDistrict: "Alappuzha North", status: "Active" as const },
+      { id: "MAN-103", name: "Cherthala", nameMl: "ചേർത്തല", region: "South", orgDistrict: "Alappuzha North", status: "Active" as const },
+      { id: "MAN-104", name: "Alappuzha", nameMl: "ആലപ്പുഴ", region: "South", orgDistrict: "Alappuzha North", status: "Active" as const },
+      { id: "MAN-105", name: "Ambalapuzha", nameMl: "അമ്പലപ്പുഴ", region: "South", orgDistrict: "Alappuzha North", status: "Active" as const },
+      { id: "MAN-106", name: "Kuttanad", nameMl: "കുട്ടനാട്", region: "South", orgDistrict: "Alappuzha North", status: "Active" as const },
+      // Alappuzha South (4)
+      { id: "MAN-107", name: "Haripad", nameMl: "ഹരിപ്പാട്", region: "South", orgDistrict: "Alappuzha South", status: "Active" as const },
+      { id: "MAN-108", name: "Kayamkulam", nameMl: "കായംകുളം", region: "South", orgDistrict: "Alappuzha South", status: "Active" as const },
+      { id: "MAN-109", name: "Mavelikara", nameMl: "മാവേലിക്കര", region: "South", orgDistrict: "Alappuzha South", status: "Active" as const },
+      { id: "MAN-110", name: "Chengannur", nameMl: "ചെങ്ങന്നൂർ", region: "South", orgDistrict: "Alappuzha South", status: "Active" as const },
+      // Pathanamthitta (5)
+      { id: "MAN-111", name: "Thiruvalla", nameMl: "തിരുവല്ല", region: "South", orgDistrict: "Pathanamthitta", status: "Active" as const },
+      { id: "MAN-112", name: "Ranni", nameMl: "റാന്നി", region: "South", orgDistrict: "Pathanamthitta", status: "Active" as const },
+      { id: "MAN-113", name: "Aranmula", nameMl: "ആറന്മുള", region: "South", orgDistrict: "Pathanamthitta", status: "Active" as const },
+      { id: "MAN-114", name: "Konni", nameMl: "കോന്നി", region: "South", orgDistrict: "Pathanamthitta", status: "Active" as const },
+      { id: "MAN-115", name: "Adoor", nameMl: "അടൂർ", region: "South", orgDistrict: "Pathanamthitta", status: "Active" as const },
+      // Kollam East (5)
+      { id: "MAN-116", name: "Kunnathur", nameMl: "കുന്നത്തൂർ", region: "South", orgDistrict: "Kollam East", status: "Active" as const },
+      { id: "MAN-117", name: "Kottarakkara", nameMl: "കൊട്ടാരക്കര", region: "South", orgDistrict: "Kollam East", status: "Active" as const },
+      { id: "MAN-118", name: "Pathanapuram", nameMl: "പത്തനാപുരം", region: "South", orgDistrict: "Kollam East", status: "Active" as const },
+      { id: "MAN-119", name: "Punalur", nameMl: "പുനലൂർ", region: "South", orgDistrict: "Kollam East", status: "Active" as const },
+      { id: "MAN-120", name: "Chadayamangalam", nameMl: "ചടയമംഗലം", region: "South", orgDistrict: "Kollam East", status: "Active" as const },
+      // Kollam West (6)
+      { id: "MAN-121", name: "Karunagappally", nameMl: "കരുനാഗപ്പള്ളി", region: "South", orgDistrict: "Kollam West", status: "Active" as const },
+      { id: "MAN-122", name: "Chavara", nameMl: "ചവറ", region: "South", orgDistrict: "Kollam West", status: "Active" as const },
+      { id: "MAN-123", name: "Kundara", nameMl: "കുണ്ടറ", region: "South", orgDistrict: "Kollam West", status: "Active" as const },
+      { id: "MAN-124", name: "Kollam", nameMl: "കൊല്ലം", region: "South", orgDistrict: "Kollam West", status: "Active" as const },
+      { id: "MAN-125", name: "Eravipuram", nameMl: "ഇരവിപുരം", region: "South", orgDistrict: "Kollam West", status: "Active" as const },
+      { id: "MAN-126", name: "Chathannur", nameMl: "ചാത്തന്നൂർ", region: "South", orgDistrict: "Kollam West", status: "Active" as const },
+      // Thiruvananthapuram North (5)
+      { id: "MAN-127", name: "Varkala", nameMl: "വർക്കല", region: "South", orgDistrict: "Thiruvananthapuram North", status: "Active" as const },
+      { id: "MAN-128", name: "Attingal", nameMl: "ആറ്റിങ്ങൽ", region: "South", orgDistrict: "Thiruvananthapuram North", status: "Active" as const },
+      { id: "MAN-129", name: "Chirayinkeezhu", nameMl: "ചിറയിൻകീഴ്", region: "South", orgDistrict: "Thiruvananthapuram North", status: "Active" as const },
+      { id: "MAN-130", name: "Nedumangad", nameMl: "നെടുമങ്ങാട്", region: "South", orgDistrict: "Thiruvananthapuram North", status: "Active" as const },
+      { id: "MAN-131", name: "Vamanapuram", nameMl: "വാമനപുരം", region: "South", orgDistrict: "Thiruvananthapuram North", status: "Active" as const },
+      // Thiruvananthapuram City (4)
+      { id: "MAN-132", name: "Kazhakkoottam", nameMl: "കഴക്കൂട്ടം", region: "South", orgDistrict: "Thiruvananthapuram City", status: "Active" as const },
+      { id: "MAN-133", name: "Vattiyoorkavu", nameMl: "വട്ടിയൂർക്കാവ്", region: "South", orgDistrict: "Thiruvananthapuram City", status: "Active" as const },
+      { id: "MAN-134", name: "Thiruvananthapuram", nameMl: "തിരുവനന്തപുരം", region: "South", orgDistrict: "Thiruvananthapuram City", status: "Active" as const },
+      { id: "MAN-135", name: "Nemom", nameMl: "നേമം", region: "South", orgDistrict: "Thiruvananthapuram City", status: "Active" as const },
+      // Thiruvananthapuram South (5)
+      { id: "MAN-136", name: "Aruvikkara", nameMl: "അരുവിക്കര", region: "South", orgDistrict: "Thiruvananthapuram South", status: "Active" as const },
+      { id: "MAN-137", name: "Parassala", nameMl: "പാറശ്ശാല", region: "South", orgDistrict: "Parassala", status: "Active" as const },
+      { id: "MAN-138", name: "Kattakkada", nameMl: "കാട്ടാക്കട", region: "South", orgDistrict: "Thiruvananthapuram South", status: "Active" as const },
+      { id: "MAN-139", name: "Kovalam", nameMl: "കോവളം", region: "South", orgDistrict: "Thiruvananthapuram South", status: "Active" as const },
+      { id: "MAN-140", name: "Neyyattinkara", nameMl: "നെയ്യാറ്റിൻകര", region: "South", orgDistrict: "Thiruvananthapuram South", status: "Active" as const },
+    ];
+  }, []);
+  const [locationMandalamsState, setLocationMandalamsState] = useState(initialMandalams);
+
+  const initialAreas = useMemo(() => {
+    return constituencies.slice(0, 35).map((c, idx) => {
+      const revDistObj = districts.find((d) => d.id === c.districtId);
+      const revDistName = revDistObj?.en || "Thiruvananthapuram";
+      const regionName = getLocationRegionName(revDistName);
+      const odName = `${revDistName} City`;
+      return {
+        id: `AREA-${String(idx + 1).padStart(3, "0")}`,
+        name: `${c.en} Central`,
+        nameMl: `${c.ml} സെൻട്രൽ`,
+        region: regionName,
+        orgDistrict: odName,
+        mandalam: c.en,
+        mandalamMl: c.ml,
+        status: "Active" as "Active" | "Inactive",
+      };
+    });
+  }, []);
+  const [locationAreasState, setLocationAreasState] = useState(initialAreas);
+
+  const initialBooths = useMemo(() => {
+    return constituencies.slice(0, 25).flatMap((c, idx) => {
+      const revDistObj = districts.find((d) => d.id === c.districtId);
+      const revDistName = revDistObj?.en || "Thiruvananthapuram";
+      const regionName = getLocationRegionName(revDistName);
+      const odName = `${revDistName} City`;
+      return [
+        {
+          id: `BTH-${String(idx * 2 + 1).padStart(4, "0")}`,
+          number: `Booth ${idx * 2 + 1}`,
+          name: `Booth ${idx * 2 + 1} - Govt LP School`,
+          nameMl: `ബൂത്ത് ${idx * 2 + 1} - ഗവ. എൽ.പി സ്കൂൾ`,
+          region: regionName,
+          orgDistrict: odName,
+          mandalam: c.en,
+          area: `${c.en} Central`,
+          status: "Active" as "Active" | "Inactive",
+        },
+        {
+          id: `BTH-${String(idx * 2 + 2).padStart(4, "0")}`,
+          number: `Booth ${idx * 2 + 2}`,
+          name: `Booth ${idx * 2 + 2} - Town Hall`,
+          nameMl: `ബൂത്ത് ${idx * 2 + 2} - ടൗൺ ഹാൾ`,
+          region: regionName,
+          orgDistrict: odName,
+          mandalam: c.en,
+          area: `${c.en} North`,
+          status: "Active" as "Active" | "Inactive",
+        },
+      ];
+    });
+  }, []);
+  const [locationBoothsState, setLocationBoothsState] = useState(initialBooths);
+
+  // Modal State for Location Create / Edit
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
+  const [locationModalType, setLocationModalType] = useState<
+    "org-levels" | "region" | "org-district" | "mandalam" | "area" | "booth"
+  >("org-levels");
+  const [editingLocationItem, setEditingLocationItem] = useState<any | null>(null);
+
+  const [locationForm, setLocationForm] = useState({
+    name: "",
+    nameMl: "",
+    scope: "Statewide",
+    districts: "",
+    hq: "",
+    revDistrict: "",
+    mandalam: "",
+    area: "",
+    number: "",
+    region: "North",
+    orgDistrict: "Kasaragod",
+    hierarchyPos: 1,
+  });
+
+  const handleOpenLocationModal = (type: "org-levels" | "region" | "org-district" | "mandalam" | "area" | "booth", item?: any) => {
+    setLocationModalType(type);
+    if (item) {
+      setEditingLocationItem(item);
+      const currentPos = locationOrgLevels.findIndex((l) => l.id === item.id);
+      setLocationForm({
+        name: item.name || "",
+        nameMl: item.nameMl || "",
+        scope: item.scope || "Statewide",
+        districts: item.districts || "",
+        hq: item.hq || "",
+        revDistrict: item.revDistrict || "",
+        mandalam: item.mandalam || "",
+        area: item.area || "",
+        number: item.number || "",
+        region: item.region || "North",
+        orgDistrict: item.orgDistrict || "Kasaragod",
+        hierarchyPos: currentPos >= 0 ? currentPos : locationOrgLevels.length,
+      });
+    } else {
+      setEditingLocationItem(null);
+      setLocationForm({
+        name: "",
+        nameMl: "",
+        scope: "Statewide",
+        districts: "",
+        hq: "",
+        revDistrict: "",
+        mandalam: "",
+        area: "",
+        number: "",
+        region: "North",
+        orgDistrict: "Kasaragod",
+        hierarchyPos: locationOrgLevels.length,
+      });
+    }
+    setLocationModalOpen(true);
+  };
+
+  const handleSaveLocationItem = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!locationForm.name.trim()) {
+      toast.error(tr("Name is required", "പേര് ആവശ്യമാണ്"));
+      return;
+    }
+
+    if (locationModalType === "org-levels") {
+      const trimmedName = locationForm.name.trim();
+      if (!trimmedName) {
+        toast.error(tr("Level Name is required", "ലെവൽ പേര് ആവശ്യമാണ്"));
+        return;
+      }
+      const isDuplicate = locationOrgLevels.some(
+        (lvl) =>
+          lvl.id !== editingLocationItem?.id &&
+          lvl.name.trim().toLowerCase() === trimmedName.toLowerCase()
+      );
+      if (isDuplicate) {
+        toast.error(tr("Level Name already exists", "ഈ പേരിൽ ഒരു തലം നിലവിലുണ്ട്"));
+        return;
+      }
+
+      const scopeMap: Record<string, string> = {
+        Statewide: "Entire State Level Unit",
+        Regional: "Regional Level Clusters",
+        District: "District Level Units",
+        Local: "Local Level Units",
+        "Booth Level": "Polling Booth Units",
+      };
+      const scopeDisplay = scopeMap[locationForm.scope] || locationForm.scope || "Statewide";
+
+      if (editingLocationItem) {
+        setLocationOrgLevels((prev) =>
+          prev.map((i) =>
+            i.id === editingLocationItem.id
+              ? {
+                  ...i,
+                  name: trimmedName,
+                  nameMl: locationForm.nameMl || trimmedName,
+                  scope: scopeDisplay,
+                }
+              : i
+          )
+        );
+        toast.success(tr("Organisation Level updated", "സംഘടനാ തലം തിരുത്തി"));
+      } else {
+        const pos = Number(locationForm.hierarchyPos ?? locationOrgLevels.length);
+        const newItem = {
+          id: `LVL-${Date.now()}`,
+          name: trimmedName,
+          nameMl: locationForm.nameMl || trimmedName,
+          scope: scopeDisplay,
+          status: "Active" as const,
+        };
+        setLocationOrgLevels((prev) => {
+          const next = [...prev];
+          const insertIdx = Math.max(0, Math.min(pos, next.length));
+          next.splice(insertIdx, 0, newItem);
+          return next;
+        });
+        toast.success(tr("Organisation Level created", "സംഘടനാ തലം സൃഷ്ടിച്ചു"));
+      }
+    } else if (locationModalType === "region") {
+      if (editingLocationItem) {
+        setLocationRegions((prev) =>
+          prev.map((i) =>
+            i.id === editingLocationItem.id
+              ? {
+                  ...i,
+                  name: locationForm.name,
+                  nameMl: locationForm.nameMl || locationForm.name,
+                  scope: locationForm.scope || i.scope || "Regional Scope",
+                }
+              : i
+          )
+        );
+        toast.success(tr("Region updated", "മേഖല തിരുത്തി"));
+      } else {
+        const newItem = {
+          id: `REG-${String.fromCharCode(65 + locationRegions.length)}`,
+          name: locationForm.name,
+          nameMl: locationForm.nameMl || locationForm.name,
+          scope: locationForm.scope || "Regional Scope",
+          districts: locationForm.districts || "Kerala",
+          status: "Active",
+        };
+        setLocationRegions((prev) => [newItem, ...prev]);
+        toast.success(tr("Region created", "മേഖല സൃഷ്ടിച്ചു"));
+      }
+    } else if (locationModalType === "org-district") {
+      if (editingLocationItem) {
+        setLocationOrgDistrictsState((prev) =>
+          prev.map((i) =>
+            i.id === editingLocationItem.id
+              ? {
+                  ...i,
+                  name: locationForm.name,
+                  nameMl: locationForm.nameMl || locationForm.name,
+                  region: locationForm.region || (i as any).region || "North",
+                }
+              : i
+          )
+        );
+        toast.success(tr("Organisation District updated", "സംഘടനാ ജില്ല തിരുത്തി"));
+      } else {
+        const newItem = {
+          id: `OD-${String(locationOrgDistrictsState.length + 1).padStart(3, "0")}`,
+          name: locationForm.name,
+          nameMl: locationForm.nameMl || locationForm.name,
+          region: locationForm.region || "North",
+          status: "Active" as const,
+        };
+        setLocationOrgDistrictsState((prev) => [newItem, ...prev]);
+        toast.success(tr("Organisation District created", "സംഘടനാ ജില്ല സൃഷ്ടിച്ചു"));
+      }
+    } else if (locationModalType === "mandalam") {
+      if (editingLocationItem) {
+        setLocationMandalamsState((prev) =>
+          prev.map((i) =>
+            i.id === editingLocationItem.id
+              ? {
+                  ...i,
+                  name: locationForm.name,
+                  nameMl: locationForm.nameMl || locationForm.name,
+                  region: locationForm.region || i.region || "North",
+                  orgDistrict: locationForm.orgDistrict || i.orgDistrict || "Kasaragod",
+                }
+              : i
+          )
+        );
+        toast.success(tr("Mandalam updated", "മണ്ഡലം തിരുത്തി"));
+      } else {
+        const newItem = {
+          id: `MND-${String(locationMandalamsState.length + 1).padStart(3, "0")}`,
+          name: locationForm.name,
+          nameMl: locationForm.nameMl || locationForm.name,
+          region: locationForm.region || "North",
+          orgDistrict: locationForm.orgDistrict || "Kasaragod",
+          status: "Active" as const,
+        };
+        setLocationMandalamsState((prev) => [newItem, ...prev]);
+        toast.success(tr("Mandalam created", "മണ്ഡലം സൃഷ്ടിച്ചു"));
+      }
+    } else if (locationModalType === "area") {
+      if (editingLocationItem) {
+        setLocationAreasState((prev) =>
+          prev.map((i) =>
+            i.id === editingLocationItem.id
+              ? {
+                  ...i,
+                  name: locationForm.name,
+                  nameMl: locationForm.nameMl || locationForm.name,
+                  region: locationForm.region || (i as any).region || "North",
+                  orgDistrict: locationForm.orgDistrict || (i as any).orgDistrict || "Kasaragod",
+                  mandalam: locationForm.mandalam || i.mandalam,
+                  mandalamMl: locationForm.mandalam || i.mandalamMl,
+                }
+              : i
+          )
+        );
+        toast.success(tr("Area updated", "ഏരിയ തിരുത്തി"));
+      } else {
+        const newItem = {
+          id: `AREA-${String(locationAreasState.length + 1).padStart(3, "0")}`,
+          name: locationForm.name,
+          nameMl: locationForm.nameMl || locationForm.name,
+          region: locationForm.region || "North",
+          orgDistrict: locationForm.orgDistrict || "Kasaragod",
+          mandalam: locationForm.mandalam || "Manjeshwar",
+          mandalamMl: locationForm.mandalam || "മഞ്ചേശ്വരം",
+          status: "Active" as const,
+        };
+        setLocationAreasState((prev) => [newItem, ...prev]);
+        toast.success(tr("Area created", "ഏരിയ സൃഷ്ടിച്ചു"));
+      }
+    } else if (locationModalType === "booth") {
+      if (editingLocationItem) {
+        setLocationBoothsState((prev) =>
+          prev.map((i) =>
+            i.id === editingLocationItem.id
+              ? {
+                  ...i,
+                  number: locationForm.number || i.number,
+                  name: locationForm.name,
+                  nameMl: locationForm.nameMl || locationForm.name,
+                  region: locationForm.region || (i as any).region || "North",
+                  orgDistrict: locationForm.orgDistrict || (i as any).orgDistrict || "Kasaragod",
+                  mandalam: locationForm.mandalam || i.mandalam,
+                  area: locationForm.area || i.area,
+                }
+              : i
+          )
+        );
+        toast.success(tr("Booth updated", "ബൂത്ത് തിരുത്തി"));
+      } else {
+        const newItem = {
+          id: `BTH-${String(locationBoothsState.length + 1).padStart(4, "0")}`,
+          number: locationForm.number || `${locationBoothsState.length + 1}`,
+          name: locationForm.name,
+          nameMl: locationForm.nameMl || locationForm.name,
+          region: locationForm.region || "North",
+          orgDistrict: locationForm.orgDistrict || "Kasaragod",
+          mandalam: locationForm.mandalam || "Manjeshwar",
+          area: locationForm.area || "Manjeshwar Central",
+          status: "Active" as const,
+        };
+        setLocationBoothsState((prev) => [newItem, ...prev]);
+        toast.success(tr("Booth created", "ബൂത്ത് സൃഷ്ടിച്ചു"));
+      }
+    }
+
+    setLocationModalOpen(false);
+  };
+
+  const handleToggleDisableLocationItem = (item: any, type: "org-levels" | "region" | "org-district" | "mandalam" | "area" | "booth") => {
+    const nextStatus = item.status === "Active" ? "Inactive" : "Active";
+    if (type === "org-levels") {
+      setLocationOrgLevels((prev) => prev.map((i) => (i.id === item.id ? { ...i, status: nextStatus } : i)));
+    } else if (type === "region") {
+      setLocationRegions((prev) => prev.map((i) => (i.id === item.id ? { ...i, status: nextStatus } : i)));
+    } else if (type === "org-district") {
+      setLocationOrgDistrictsState((prev) => prev.map((i) => (i.id === item.id ? { ...i, status: nextStatus } : i)));
+    } else if (type === "mandalam") {
+      setLocationMandalamsState((prev) => prev.map((i) => (i.id === item.id ? { ...i, status: nextStatus } : i)));
+    } else if (type === "area") {
+      setLocationAreasState((prev) => prev.map((i) => (i.id === item.id ? { ...i, status: nextStatus } : i)));
+    } else if (type === "booth") {
+      setLocationBoothsState((prev) => prev.map((i) => (i.id === item.id ? { ...i, status: nextStatus } : i)));
+    }
+    toast.success(nextStatus === "Inactive" ? tr("Item disabled", "നിർജ്ജീവമാക്കി") : tr("Item enabled", "സജീവമാക്കി"));
+  };
+
+  const handleDeleteLocationItem = (item: any, type: "org-levels" | "region" | "org-district" | "mandalam" | "area" | "booth") => {
+    if (type === "org-levels") {
+      setLocationOrgLevels((prev) => prev.filter((i) => i.id !== item.id));
+    } else if (type === "region") {
+      setLocationRegions((prev) => prev.filter((i) => i.id !== item.id));
+    } else if (type === "org-district") {
+      setLocationOrgDistrictsState((prev) => prev.filter((i) => i.id !== item.id));
+    } else if (type === "mandalam") {
+      setLocationMandalamsState((prev) => prev.filter((i) => i.id !== item.id));
+    } else if (type === "area") {
+      setLocationAreasState((prev) => prev.filter((i) => i.id !== item.id));
+    } else if (type === "booth") {
+      setLocationBoothsState((prev) => prev.filter((i) => i.id !== item.id));
+    }
+    toast.success(tr("Item deleted", "ഡിലീറ്റ് ചെയ്തു"));
+  };
+
+  const filteredLocationOrgLevels = useMemo(() => {
+    const q = topSearchQuery.trim().toLowerCase();
+    if (!q) return locationOrgLevels;
+    return locationOrgLevels.filter(
+      (item) =>
+        item.name.toLowerCase().includes(q) ||
+        item.nameMl.toLowerCase().includes(q) ||
+        item.scope.toLowerCase().includes(q) ||
+        item.id.toLowerCase().includes(q),
+    );
+  }, [topSearchQuery, locationOrgLevels]);
+
+  const filteredLocationRegions = useMemo(() => {
+    const q = topSearchQuery.trim().toLowerCase();
+    if (!q) return locationRegions;
+    return locationRegions.filter(
+      (item) =>
+        item.name.toLowerCase().includes(q) ||
+        item.nameMl.toLowerCase().includes(q) ||
+        item.districts.toLowerCase().includes(q) ||
+        item.hq.toLowerCase().includes(q),
+    );
+  }, [topSearchQuery, locationRegions]);
+
+  const filteredLocationOrgDistricts = useMemo(() => {
+    const q = topSearchQuery.trim().toLowerCase();
+    if (!q) return locationOrgDistrictsState;
+    return locationOrgDistrictsState.filter(
+      (item) =>
+        item.name.toLowerCase().includes(q) ||
+        item.nameMl.toLowerCase().includes(q) ||
+        item.revDistrict.toLowerCase().includes(q) ||
+        item.id.toLowerCase().includes(q),
+    );
+  }, [topSearchQuery, locationOrgDistrictsState]);
+
+  const filteredLocationMandalams = useMemo(() => {
+    const q = topSearchQuery.trim().toLowerCase();
+    if (!q) return locationMandalamsState;
+    return locationMandalamsState.filter(
+      (item) =>
+        item.name.toLowerCase().includes(q) ||
+        item.nameMl.toLowerCase().includes(q) ||
+        item.revDistrict.toLowerCase().includes(q) ||
+        item.id.toLowerCase().includes(q),
+    );
+  }, [topSearchQuery, locationMandalamsState]);
+
+  const filteredLocationAreas = useMemo(() => {
+    const q = topSearchQuery.trim().toLowerCase();
+    if (!q) return locationAreasState;
+    return locationAreasState.filter(
+      (item) =>
+        item.name.toLowerCase().includes(q) ||
+        item.nameMl.toLowerCase().includes(q) ||
+        item.mandalam.toLowerCase().includes(q) ||
+        item.id.toLowerCase().includes(q),
+    );
+  }, [topSearchQuery, locationAreasState]);
+
+  const filteredLocationBooths = useMemo(() => {
+    const q = topSearchQuery.trim().toLowerCase();
+    if (!q) return locationBoothsState;
+    return locationBoothsState.filter(
+      (item) =>
+        item.name.toLowerCase().includes(q) ||
+        item.nameMl.toLowerCase().includes(q) ||
+        item.mandalam.toLowerCase().includes(q) ||
+        item.area.toLowerCase().includes(q) ||
+        item.number.toLowerCase().includes(q),
+    );
+  }, [topSearchQuery, locationBoothsState]);
 
   // User management state
   const [usersList, setUsersList] = useState<ManagedUser[]>(() => loadManagedDesktopUsers());
@@ -1137,33 +2038,61 @@ export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "rol
     <div className="space-y-4">
       <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 px-4 py-2.5 sm:px-5">
-          <div className="inline-flex items-center gap-1 rounded-xl border border-border/80 bg-muted/20 p-1 shadow-2xs">
-            <button
-              type="button"
-              onClick={() => setActiveTab("roles")}
-              className={cn(
-                "rounded-lg px-3 py-1.5 text-xs font-bold transition-colors cursor-pointer",
-                activeTab === "roles"
-                  ? "bg-primary/10 text-primary font-extrabold shadow-2xs"
-                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-              )}
-            >
-              {tr(`Roles (${pageRoles.length})`, `റോളുകൾ (${pageRoles.length})`)}
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("users")}
-              className={cn(
-                "rounded-lg px-3 py-1.5 text-xs font-bold transition-colors cursor-pointer",
-                activeTab === "users"
-                  ? "bg-primary/10 text-primary font-extrabold shadow-2xs"
-                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-              )}
-            >
-              {tr(`Users (${usersList.length})`, `ഉപയോക്താക്കൾ (${usersList.length})`)}
-            </button>
-          </div>
+          {activeTab === "location" ? (
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-extrabold text-foreground px-1">
+                {tr("Location Management", "സ്ഥല നിർവ്വഹണം")}
+              </h2>
+            </div>
+          ) : activeTab === "designations" ? (
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-extrabold text-foreground px-1">
+                {tr(`Designations (${designationsList.length})`, `തസ്തികകൾ (${designationsList.length})`)}
+              </h2>
+            </div>
+          ) : (
+            <div className="inline-flex items-center gap-1 rounded-xl border border-border/80 bg-muted/20 p-1 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => setActiveTab("roles")}
+                className={cn(
+                  "rounded-lg px-3 py-1.5 text-xs font-bold transition-colors cursor-pointer",
+                  activeTab === "roles"
+                    ? "bg-primary/10 text-primary font-extrabold shadow-2xs"
+                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                )}
+              >
+                {tr(`Roles (${pageRoles.length})`, `റോളുകൾ (${pageRoles.length})`)}
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("users")}
+                className={cn(
+                  "rounded-lg px-3 py-1.5 text-xs font-bold transition-colors cursor-pointer",
+                  activeTab === "users"
+                    ? "bg-primary/10 text-primary font-extrabold shadow-2xs"
+                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                )}
+              >
+                {tr(`Users (${usersList.length})`, `ഉപയോക്താക്കൾ (${usersList.length})`)}
+              </button>
+            </div>
+          )}
           <div className="flex flex-wrap items-center gap-2">
+            {activeTab === "designations" && (
+              <select
+                value={selectedOrgLevelFilter}
+                onChange={(e) => setSelectedOrgLevelFilter(e.target.value)}
+                className="h-8 rounded-lg border border-border bg-background px-3 text-xs font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer"
+              >
+                <option value="All">{tr("All Levels", "എല്ലാ തലങ്ങളും")}</option>
+                {ORG_LEVEL_OPTIONS_LIST.map((opt) => (
+                  <option key={opt.id} value={opt.id}>
+                    {tr(opt.en, opt.ml)}
+                  </option>
+                ))}
+              </select>
+            )}
             <button
               type="button"
               onClick={handleExportData}
@@ -1476,7 +2405,7 @@ export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "rol
                 <Plus className="h-4 w-4" />
                 {tr("Create New Role", "പുതിയ റോൾ സൃഷ്ടിക്കുക")}
               </Link>
-            ) : (
+            ) : activeTab === "users" ? (
               <button
                 type="button"
                 onClick={openCreateUser}
@@ -1485,7 +2414,73 @@ export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "rol
                 <Plus className="h-4 w-4" />
                 {tr("Create User", "ഉപയോക്താവിനെ ചേർക്കുക")}
               </button>
-            )}
+            ) : activeTab === "designations" ? (
+              <button
+                type="button"
+                onClick={handleOpenCreateDesignation}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 text-[12px] font-semibold leading-tight text-primary-foreground transition-colors hover:bg-primary/90 cursor-pointer"
+              >
+                <Plus className="h-4 w-4" />
+                {tr("Create New Designation", "പുതിയ തസ്തിക സൃഷ്ടിക്കുക")}
+              </button>
+            ) : activeTab === "location" ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 text-[12px] font-semibold leading-tight text-primary-foreground transition-colors hover:bg-primary/90 cursor-pointer shadow-2xs"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>{tr("Create Location", "ലൊക്കേഷൻ നിർമ്മിക്കുക")}</span>
+                    <ChevronDown className="h-3.5 w-3.5 opacity-80" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem
+                    onClick={() => handleOpenLocationModal("org-levels")}
+                    className="cursor-pointer gap-2 text-xs font-semibold"
+                  >
+                    <Plus className="h-3.5 w-3.5 text-primary" />
+                    {tr("Organisation Level", "സംഘടനാ തലം")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleOpenLocationModal("region")}
+                    className="cursor-pointer gap-2 text-xs font-semibold"
+                  >
+                    <Plus className="h-3.5 w-3.5 text-primary" />
+                    {tr("Region", "മേഖല")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleOpenLocationModal("org-district")}
+                    className="cursor-pointer gap-2 text-xs font-semibold"
+                  >
+                    <Plus className="h-3.5 w-3.5 text-primary" />
+                    {tr("Organisation District", "സംഘടനാ ജില്ല")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleOpenLocationModal("mandalam")}
+                    className="cursor-pointer gap-2 text-xs font-semibold"
+                  >
+                    <Plus className="h-3.5 w-3.5 text-primary" />
+                    {tr("Mandalam", "മണ്ഡലം")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleOpenLocationModal("area")}
+                    className="cursor-pointer gap-2 text-xs font-semibold"
+                  >
+                    <Plus className="h-3.5 w-3.5 text-primary" />
+                    {tr("Area", "ഏരിയ")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleOpenLocationModal("booth")}
+                    className="cursor-pointer gap-2 text-xs font-semibold"
+                  >
+                    <Plus className="h-3.5 w-3.5 text-primary" />
+                    {tr("Booth", "ബൂത്ത്")}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
           </div>
         </div>
 
@@ -1530,7 +2525,624 @@ export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "rol
           </div>
         )}
 
-        {activeTab === "roles" ? (
+        {activeTab === "location" && (
+          <div className="border-b border-border bg-muted/20 p-2.5 sm:px-4">
+            <div className="flex flex-wrap items-center gap-1.5">
+              {[
+                { id: "org-levels", en: `Organisation Levels (${filteredLocationOrgLevels.length})`, ml: `സംഘടനാ തലങ്ങൾ (${filteredLocationOrgLevels.length})` },
+                { id: "region", en: `Region (${filteredLocationRegions.length})`, ml: `മേഖല (${filteredLocationRegions.length})` },
+                { id: "org-district", en: `Organisation District (${filteredLocationOrgDistricts.length})`, ml: `സംഘടനാ ജില്ല (${filteredLocationOrgDistricts.length})` },
+                { id: "mandalam", en: `Mandalam (${filteredLocationMandalams.length})`, ml: `മണ്ഡലം (${filteredLocationMandalams.length})` },
+                { id: "area", en: `Area (${filteredLocationAreas.length})`, ml: `ഏരിയ / കേന്ദ്രം (${filteredLocationAreas.length})` },
+                { id: "booth", en: `Booth (${filteredLocationBooths.length})`, ml: `ബൂത്ത് (${filteredLocationBooths.length})` },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setLocationSubTab(tab.id as any)}
+                  className={cn(
+                    "rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer",
+                    locationSubTab === tab.id
+                      ? "bg-primary text-primary-foreground shadow-2xs font-extrabold"
+                      : "bg-background text-muted-foreground border border-border/80 hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  {tr(tab.en, tab.ml)}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === "location" ? (
+          <div className="overflow-x-auto desktop-hide-scrollbar">
+            {locationSubTab === "org-levels" && (
+              <table className="w-full text-left text-xs">
+                <thead className="border-b border-border bg-muted/50 font-bold text-muted-foreground">
+                  <tr>
+                    <th className="p-3">{tr("LEVEL NAME", "തലത്തിന്റെ പേര്")}</th>
+                    <th className="p-3">{tr("SCOPE", "പരിധി")}</th>
+                    <th className="p-3">{tr("STATUS", "സ്റ്റാറ്റസ്")}</th>
+                    <th className="p-3 text-right">{tr("ACTIONS", "നടപടികൾ")}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60 font-semibold">
+                  {filteredLocationOrgLevels.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="py-8 text-center text-muted-foreground text-xs font-semibold">
+                        {tr("No location items found.", "സ്ഥല വിവരങ്ങൾ ഒന്നും കണ്ടെത്തിയില്ല.")}
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredLocationOrgLevels.map((lvl) => (
+                      <tr key={lvl.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="p-3 font-bold text-foreground">
+                          {lang === "ml" ? lvl.nameMl : lvl.name}
+                        </td>
+                        <td className="p-3 text-muted-foreground">{lvl.scope}</td>
+                        <td className="p-3">
+                          {lvl.status === "Active" ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10.5px] font-bold text-emerald-700 border border-emerald-200">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                              {tr("Active", "സജീവം")}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10.5px] font-bold text-slate-600 border border-slate-200">
+                              <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+                              {tr("Inactive", "നിർജ്ജീവം")}
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-3 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenLocationModal("org-levels", lvl)}
+                              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-[11px] font-semibold text-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary cursor-pointer"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                              {tr("Edit", "തിരുത്തുക")}
+                            </button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button
+                                  type="button"
+                                  aria-label={tr("More actions", "കൂടുതൽ നടപടികൾ")}
+                                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary cursor-pointer"
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-40">
+                                <DropdownMenuItem
+                                  onClick={() => handleToggleDisableLocationItem(lvl, "org-levels")}
+                                  className="cursor-pointer gap-2 text-xs font-medium"
+                                >
+                                  {lvl.status === "Active" ? (
+                                    <>
+                                      <X className="h-3.5 w-3.5 text-amber-600" />
+                                      {tr("Disable", "നിർജ്ജീവമാക്കുക")}
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                      {tr("Enable", "സജീവമാക്കുക")}
+                                    </>
+                                  )}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => handleDeleteLocationItem(lvl, "org-levels")}
+                                  className="cursor-pointer gap-2 text-xs font-medium text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                  {tr("Delete", "ഡിലീറ്റ് ചെയ്യുക")}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
+
+            {locationSubTab === "region" && (
+              <table className="w-full text-left text-xs">
+                <thead className="border-b border-border bg-muted/50 font-bold text-muted-foreground">
+                  <tr>
+                    <th className="p-3">{tr("REGION NAME", "മേഖലയുടെ പേര്")}</th>
+                    <th className="p-3">{tr("SCOPE", "പരിധി")}</th>
+                    <th className="p-3">{tr("STATUS", "സ്റ്റാറ്റസ്")}</th>
+                    <th className="p-3 text-right">{tr("ACTIONS", "നടപടികൾ")}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60 font-semibold">
+                  {filteredLocationRegions.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="py-8 text-center text-muted-foreground text-xs font-semibold">
+                        {tr("No regions found.", "മേഖലകൾ ഒന്നും കണ്ടെത്തിയില്ല.")}
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredLocationRegions.map((reg) => (
+                      <tr key={reg.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="p-3 font-bold text-foreground">
+                          {lang === "ml" ? reg.nameMl : reg.name}
+                        </td>
+                        <td className="p-3 text-muted-foreground">{(reg as any).scope || reg.districts}</td>
+                        <td className="p-3">
+                          {reg.status === "Active" ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10.5px] font-bold text-emerald-700 border border-emerald-200">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                              {tr("Active", "സജീവം")}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10.5px] font-bold text-slate-600 border border-slate-200">
+                              <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+                              {tr("Inactive", "നിർജ്ജീവം")}
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-3 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenLocationModal("region", reg)}
+                              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-[11px] font-semibold text-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary cursor-pointer"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                              {tr("Edit", "തിരുത്തുക")}
+                            </button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button
+                                  type="button"
+                                  aria-label={tr("More actions", "കൂടുതൽ നടപടികൾ")}
+                                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary cursor-pointer"
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-40">
+                                <DropdownMenuItem
+                                  onClick={() => handleToggleDisableLocationItem(reg, "region")}
+                                  className="cursor-pointer gap-2 text-xs font-medium"
+                                >
+                                  {reg.status === "Active" ? (
+                                    <>
+                                      <X className="h-3.5 w-3.5 text-amber-600" />
+                                      {tr("Disable", "നിർജ്ജീവമാക്കുക")}
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                      {tr("Enable", "സജീവമാക്കുക")}
+                                    </>
+                                  )}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => handleDeleteLocationItem(reg, "region")}
+                                  className="cursor-pointer gap-2 text-xs font-medium text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                  {tr("Delete", "ഡിലീറ്റ് ചെയ്യുക")}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
+
+            {locationSubTab === "org-district" && (
+              <table className="w-full text-left text-xs">
+                <thead className="border-b border-border bg-muted/50 font-bold text-muted-foreground">
+                  <tr>
+                    <th className="p-3">{tr("ORGANISATION DISTRICT NAME", "സംഘടനാ ജില്ല")}</th>
+                    <th className="p-3">{tr("REGION", "മേഖല")}</th>
+                    <th className="p-3">{tr("STATUS", "സ്റ്റാറ്റസ്")}</th>
+                    <th className="p-3 text-right">{tr("ACTIONS", "നടപടികൾ")}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60 font-semibold">
+                  {filteredLocationOrgDistricts.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="py-8 text-center text-muted-foreground text-xs font-semibold">
+                        {tr("No organisation districts found.", "സംഘടനാ ജില്ലകൾ ഒന്നും കണ്ടെത്തിയില്ല.")}
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredLocationOrgDistricts.map((od) => (
+                      <tr key={od.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="p-3 font-bold text-foreground">
+                          {lang === "ml" ? od.nameMl : od.name}
+                        </td>
+                        <td className="p-3 text-muted-foreground font-medium">
+                          {(od as any).region === "North"
+                            ? tr("Northern Region", "വടക്കൻ മേഖല")
+                            : (od as any).region === "Central"
+                            ? tr("Central Region", "മധ്യ മേഖല")
+                            : tr("Southern Region", "തെക്കൻ മേഖല")}
+                        </td>
+                        <td className="p-3">
+                          {od.status === "Active" ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10.5px] font-bold text-emerald-700 border border-emerald-200">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                              {tr("Active", "സജീവം")}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10.5px] font-bold text-slate-600 border border-slate-200">
+                              <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+                              {tr("Inactive", "നിർജ്ജീവം")}
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-3 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenLocationModal("org-district", od)}
+                              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-[11px] font-semibold text-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary cursor-pointer"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                              {tr("Edit", "തിരുത്തുക")}
+                            </button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button
+                                  type="button"
+                                  aria-label={tr("More actions", "കൂടുതൽ നടപടികൾ")}
+                                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary cursor-pointer"
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-40">
+                                <DropdownMenuItem
+                                  onClick={() => handleToggleDisableLocationItem(od, "org-district")}
+                                  className="cursor-pointer gap-2 text-xs font-medium"
+                                >
+                                  {od.status === "Active" ? (
+                                    <>
+                                      <X className="h-3.5 w-3.5 text-amber-600" />
+                                      {tr("Disable", "നിർജ്ജീവമാക്കുക")}
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                      {tr("Enable", "സജീവമാക്കുക")}
+                                    </>
+                                  )}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => handleDeleteLocationItem(od, "org-district")}
+                                  className="cursor-pointer gap-2 text-xs font-medium text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                  {tr("Delete", "ഡിലീറ്റ് ചെയ്യുക")}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
+
+            {locationSubTab === "mandalam" && (
+              <table className="w-full text-left text-xs">
+                <thead className="border-b border-border bg-muted/50 font-bold text-muted-foreground">
+                  <tr>
+                    <th className="p-3">{tr("MANDALAM NAME", "മണ്ഡലം")}</th>
+                    <th className="p-3">{tr("REGION", "മേഖല")}</th>
+                    <th className="p-3">{tr("DISTRICT", "ജില്ല")}</th>
+                    <th className="p-3">{tr("STATUS", "സ്റ്റാറ്റസ്")}</th>
+                    <th className="p-3 text-right">{tr("ACTIONS", "നടപടികൾ")}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60 font-semibold">
+                  {filteredLocationMandalams.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-muted-foreground text-xs font-semibold">
+                        {tr("No mandalams found.", "മണ്ഡലങ്ങൾ ഒന്നും കണ്ടെത്തിയില്ല.")}
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredLocationMandalams.map((m) => (
+                      <tr key={m.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="p-3 font-bold text-foreground">
+                          {lang === "ml" ? m.nameMl : m.name}
+                        </td>
+                        <td className="p-3 text-muted-foreground font-medium">
+                          {(m as any).region === "North"
+                            ? tr("Northern Region", "വടക്കൻ മേഖല")
+                            : (m as any).region === "Central"
+                            ? tr("Central Region", "മധ്യ മേഖല")
+                            : tr("Southern Region", "തെക്കൻ മേഖല")}
+                        </td>
+                        <td className="p-3 text-muted-foreground font-medium">
+                          {(m as any).orgDistrict || m.revDistrict}
+                        </td>
+                        <td className="p-3">
+                          {m.status === "Active" ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10.5px] font-bold text-emerald-700 border border-emerald-200">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                              {tr("Active", "സജീവം")}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10.5px] font-bold text-slate-600 border border-slate-200">
+                              <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+                              {tr("Inactive", "നിർജ്ജീവം")}
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-3 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenLocationModal("mandalam", m)}
+                              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-[11px] font-semibold text-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary cursor-pointer"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                              {tr("Edit", "തിരുത്തുക")}
+                            </button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button
+                                  type="button"
+                                  aria-label={tr("More actions", "കൂടുതൽ നടപടികൾ")}
+                                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary cursor-pointer"
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-40">
+                                <DropdownMenuItem
+                                  onClick={() => handleToggleDisableLocationItem(m, "mandalam")}
+                                  className="cursor-pointer gap-2 text-xs font-medium"
+                                >
+                                  {m.status === "Active" ? (
+                                    <>
+                                      <X className="h-3.5 w-3.5 text-amber-600" />
+                                      {tr("Disable", "നിർജ്ജീവമാക്കുക")}
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                      {tr("Enable", "സജീവമാക്കുക")}
+                                    </>
+                                  )}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => handleDeleteLocationItem(m, "mandalam")}
+                                  className="cursor-pointer gap-2 text-xs font-medium text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                  {tr("Delete", "ഡിലീറ്റ് ചെയ്യുക")}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
+
+            {locationSubTab === "area" && (
+              <table className="w-full text-left text-xs">
+                <thead className="border-b border-border bg-muted/50 font-bold text-muted-foreground">
+                  <tr>
+                    <th className="p-3">{tr("AREA NAME", "ഏരിയ")}</th>
+                    <th className="p-3">{tr("REGION", "മേഖല")}</th>
+                    <th className="p-3">{tr("ORGANISATION DISTRICT", "സംഘടനാ ജില്ല")}</th>
+                    <th className="p-3">{tr("MANDALAM", "മണ്ഡലം")}</th>
+                    <th className="p-3">{tr("STATUS", "സ്റ്റാറ്റസ്")}</th>
+                    <th className="p-3 text-right">{tr("ACTIONS", "നടപടികൾ")}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60 font-semibold">
+                  {filteredLocationAreas.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-8 text-center text-muted-foreground text-xs font-semibold">
+                        {tr("No areas found.", "ഏരിയകൾ ഒന്നും കണ്ടെത്തിയില്ല.")}
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredLocationAreas.map((a) => (
+                      <tr key={a.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="p-3 font-bold text-foreground">
+                          {lang === "ml" ? a.nameMl : a.name}
+                        </td>
+                        <td className="p-3 text-muted-foreground">{(a as any).region || "South"}</td>
+                        <td className="p-3 text-muted-foreground">{(a as any).orgDistrict || "Trivandrum City"}</td>
+                        <td className="p-3 text-muted-foreground">
+                          {lang === "ml" ? a.mandalamMl || a.mandalam : a.mandalam}
+                        </td>
+                        <td className="p-3">
+                          {a.status === "Active" ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10.5px] font-bold text-emerald-700 border border-emerald-200">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                              {tr("Active", "സജീവം")}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10.5px] font-bold text-slate-600 border border-slate-200">
+                              <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+                              {tr("Inactive", "നിർജ്ജീവം")}
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-3 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenLocationModal("area", a)}
+                              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-[11px] font-semibold text-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary cursor-pointer"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                              {tr("Edit", "തിരുത്തുക")}
+                            </button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button
+                                  type="button"
+                                  aria-label={tr("More actions", "കൂടുതൽ നടപടികൾ")}
+                                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary cursor-pointer"
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-40">
+                                <DropdownMenuItem
+                                  onClick={() => handleToggleDisableLocationItem(a, "area")}
+                                  className="cursor-pointer gap-2 text-xs font-medium"
+                                >
+                                  {a.status === "Active" ? (
+                                    <>
+                                      <X className="h-3.5 w-3.5 text-amber-600" />
+                                      {tr("Disable", "നിർജ്ജീവമാക്കുക")}
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                      {tr("Enable", "സജീവമാക്കുക")}
+                                    </>
+                                  )}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => handleDeleteLocationItem(a, "area")}
+                                  className="cursor-pointer gap-2 text-xs font-medium text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                  {tr("Delete", "ഡിലീറ്റ് ചെയ്യുക")}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
+
+            {locationSubTab === "booth" && (
+              <table className="w-full text-left text-xs">
+                <thead className="border-b border-border bg-muted/50 font-bold text-muted-foreground">
+                  <tr>
+                    <th className="p-3">{tr("BOOTH NAME", "ബൂത്ത് പേര്")}</th>
+                    <th className="p-3">{tr("REGION", "മേഖല")}</th>
+                    <th className="p-3">{tr("ORGANISATION DISTRICT", "സംഘടനാ ജില്ല")}</th>
+                    <th className="p-3">{tr("MANDALAM", "മണ്ഡലം")}</th>
+                    <th className="p-3">{tr("AREA", "ഏരിയ")}</th>
+                    <th className="p-3">{tr("STATUS", "സ്റ്റാറ്റസ്")}</th>
+                    <th className="p-3 text-right">{tr("ACTIONS", "നടപടികൾ")}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60 font-semibold">
+                  {filteredLocationBooths.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-muted-foreground text-xs font-semibold">
+                        {tr("No booths found.", "ബൂത്തുകൾ ഒന്നും കണ്ടെത്തിയില്ല.")}
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredLocationBooths.map((b) => (
+                      <tr key={b.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="p-3 font-bold text-foreground">
+                          {lang === "ml" ? b.nameMl : b.name}
+                        </td>
+                        <td className="p-3 text-muted-foreground">{(b as any).region || "South"}</td>
+                        <td className="p-3 text-muted-foreground">{(b as any).orgDistrict || "Trivandrum City"}</td>
+                        <td className="p-3 text-muted-foreground">{b.mandalam}</td>
+                        <td className="p-3 text-muted-foreground">{b.area}</td>
+                        <td className="p-3">
+                          {b.status === "Active" ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10.5px] font-bold text-emerald-700 border border-emerald-200">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                              {tr("Active", "സജീവം")}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10.5px] font-bold text-slate-600 border border-slate-200">
+                              <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+                              {tr("Inactive", "നിർജ്ജീവം")}
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-3 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenLocationModal("booth", b)}
+                              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-[11px] font-semibold text-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary cursor-pointer"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                              {tr("Edit", "തിരുത്തുക")}
+                            </button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button
+                                  type="button"
+                                  aria-label={tr("More actions", "കൂടുതൽ നടപടികൾ")}
+                                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary cursor-pointer"
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-40">
+                                <DropdownMenuItem
+                                  onClick={() => handleToggleDisableLocationItem(b, "booth")}
+                                  className="cursor-pointer gap-2 text-xs font-medium"
+                                >
+                                  {b.status === "Active" ? (
+                                    <>
+                                      <X className="h-3.5 w-3.5 text-amber-600" />
+                                      {tr("Disable", "നിർജ്ജീവമാക്കുക")}
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                      {tr("Enable", "സജീവമാക്കുക")}
+                                    </>
+                                  )}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => handleDeleteLocationItem(b, "booth")}
+                                  className="cursor-pointer gap-2 text-xs font-medium text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                  {tr("Delete", "ഡിലീറ്റ് ചെയ്യുക")}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
+        ) : activeTab === "roles" ? (
           <div className="overflow-x-auto desktop-hide-scrollbar">
             <table className="w-full text-left text-xs">
               <thead className="border-b border-border bg-muted/50 font-bold text-muted-foreground">
@@ -1646,7 +3258,7 @@ export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "rol
               </tbody>
             </table>
           </div>
-        ) : (
+        ) : activeTab === "users" ? (
           <div className="overflow-x-auto desktop-hide-scrollbar">
             <table className="w-full text-left text-xs">
               <thead className="border-b border-border bg-muted/50 font-bold text-muted-foreground">
@@ -1831,8 +3443,822 @@ export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "rol
               </tbody>
             </table>
           </div>
+        ) : (
+          <div className="overflow-x-auto desktop-hide-scrollbar">
+            <table className="w-full text-left text-xs">
+              <thead className="border-b border-border bg-muted/50 font-bold text-muted-foreground">
+                <tr>
+                  <th className="p-3">{tr("DESIGNATION", "തസ്തിക")}</th>
+                  <th className="p-3">{tr("ORGANISATION LEVEL", "സംഘടനാ തലം")}</th>
+                  <th className="p-3">{tr("STATUS", "സ്റ്റാറ്റസ്")}</th>
+                  <th className="p-3 text-right">{tr("ACTIONS", "നടപടികൾ")}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/60 font-semibold">
+                {filteredDesignations.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="py-8 text-center text-muted-foreground text-xs font-semibold">
+                      {tr("No designations found.", "തസ്തികകൾ ഒന്നും കണ്ടെത്തിയില്ല.")}
+                    </td>
+                  </tr>
+                ) : (
+                  filteredDesignations.map((desig) => (
+                    <tr key={desig.id} className="hover:bg-muted/30 transition-colors">
+                      <td className="p-3 font-bold text-foreground">{desig.name}</td>
+                      <td className="p-3">
+                        <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-900 border border-amber-200">
+                          {desig.orgLevel}
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        <span
+                          className={cn(
+                            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-bold",
+                            desig.status === "Active"
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              : "bg-slate-100 text-slate-600 border border-slate-200",
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "h-1.5 w-1.5 rounded-full",
+                              desig.status === "Active" ? "bg-emerald-500" : "bg-slate-400",
+                            )}
+                          />
+                          {desig.status === "Active" ? tr("Active", "സജീവം") : tr("Disabled", "നിർജ്ജീവം")}
+                        </span>
+                      </td>
+                      <td className="p-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleOpenEditDesignation(desig)}
+                            className="h-8 px-2.5 text-xs font-bold gap-1 border-border hover:bg-muted cursor-pointer"
+                            title={tr("Edit Designation", "തസ്തിക തിരുത്തുക")}
+                          >
+                            <Pencil className="h-3.5 w-3.5 text-slate-600" />
+                            <span>{tr("Edit", "തിരുത്തുക")}</span>
+                          </Button>
+
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-40 text-xs">
+                              <DropdownMenuItem
+                                onClick={() => handleToggleDesignationStatus(desig)}
+                                className="gap-2 font-semibold cursor-pointer"
+                              >
+                                <Power className="h-3.5 w-3.5 text-slate-500" />
+                                <span>
+                                  {desig.status === "Active"
+                                    ? tr("Disable", "നിർജ്ജീവമാക്കുക")
+                                    : tr("Enable", "സജീവമാക്കുക")}
+                                </span>
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => handleDeleteDesignation(desig)}
+                                className="gap-2 font-semibold text-destructive focus:text-destructive cursor-pointer"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                <span>{tr("Delete", "നീക്കം ചെയ്യുക")}</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
+
+
+
+      {/* Create / Edit Designation Dialog */}
+      <Dialog open={designationDialogOpen} onOpenChange={setDesignationDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold text-foreground">
+              {editingDesignation
+                ? tr("Edit Designation", "തസ്തിക തിരുത്തുക")
+                : tr("Create New Designation", "പുതിയ തസ്തിക സൃഷ്ടിക്കുക")}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              {tr(
+                "Provide a designation name and assign its organisation level.",
+                "തസ്തികയുടെ നാമവും സംഘടനാ തലവും നൽകുക."
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2 text-xs">
+            <div className="space-y-1.5">
+              <label className="block font-bold text-foreground">
+                {tr("Designation Name", "തസ്തിക നാമം")} <span className="text-destructive">*</span>
+              </label>
+              <input
+                type="text"
+                value={designationForm.name}
+                onChange={(e) => setDesignationForm((prev) => ({ ...prev, name: e.target.value }))}
+                placeholder={tr("e.g. President", "ഉദാ. പ്രസിഡന്റ്")}
+                className="h-9 w-full rounded-lg border border-border bg-background px-3 font-semibold text-foreground focus:border-primary focus:outline-none"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block font-bold text-foreground">
+                {tr("Organisation Level", "സംഘടനാ തലം")} <span className="text-destructive">*</span>
+              </label>
+              <select
+                value={designationForm.orgLevel}
+                onChange={(e) => setDesignationForm((prev) => ({ ...prev, orgLevel: e.target.value }))}
+                className="h-9 w-full rounded-lg border border-border bg-background px-3 font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer"
+              >
+                {ORG_LEVEL_OPTIONS_LIST.map((opt) => (
+                  <option key={opt.id} value={opt.id}>
+                    {tr(opt.en, opt.ml)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDesignationDialogOpen(false)}
+              className="h-9 text-xs font-bold cursor-pointer"
+            >
+              {tr("Cancel", "റദ്ദാക്കുക")}
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSaveDesignation}
+              className="h-9 text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+            >
+              {editingDesignation
+                ? tr("Save Changes", "മാറ്റങ്ങൾ സംരക്ഷിക്കുക")
+                : tr("Create Designation", "തസ്തിക സൃഷ്ടിക്കുക")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create / Edit Location Dialog */}
+      <Dialog open={locationModalOpen} onOpenChange={setLocationModalOpen}>
+        <DialogContent className="sm:max-w-md bg-white text-zinc-900 border-border dark:bg-zinc-900 dark:text-zinc-100">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold text-foreground">
+              {editingLocationItem
+                ? tr("Edit Location Entry", "ലൊക്കേഷൻ വിവരങ്ങൾ തിരുത്തുക")
+                : tr(
+                    `Create ${
+                      locationModalType === "org-levels"
+                        ? "Organisation Level"
+                        : locationModalType === "region"
+                        ? "Region"
+                        : locationModalType === "org-district"
+                        ? "Organisation District"
+                        : locationModalType === "mandalam"
+                        ? "Mandalam"
+                        : locationModalType === "area"
+                        ? "Area"
+                        : "Booth"
+                    }`,
+                    `പുതിയ ${
+                      locationModalType === "org-levels"
+                        ? "സംഘടനാ തലം"
+                        : locationModalType === "region"
+                        ? "മേഖല"
+                        : locationModalType === "org-district"
+                        ? "സംഘടനാ ജില്ല"
+                        : locationModalType === "mandalam"
+                        ? "മണ്ഡലം"
+                        : locationModalType === "area"
+                        ? "ഏരിയ"
+                        : "ബൂത്ത്"
+                    } സൃഷ്ടിക്കുക`,
+                  )}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              {tr(
+                "Enter details for this location entry below.",
+                "ഈ ലൊക്കേഷൻ എൻട്രിയുടെ വിവരങ്ങൾ താഴെ നൽകുക.",
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSaveLocationItem} className="space-y-4 py-2 text-xs">
+            {locationModalType === "booth" && (
+              <div className="space-y-1.5">
+                <label className="block font-bold text-foreground">{tr("Booth Number", "ബൂത്ത് നമ്പർ")}</label>
+                <input
+                  type="text"
+                  value={locationForm.number}
+                  onChange={(e) => setLocationForm((p) => ({ ...p, number: e.target.value }))}
+                  placeholder="e.g. Booth 104"
+                  className="h-9 w-full rounded-lg border border-border bg-white px-3 font-semibold text-foreground focus:border-primary focus:outline-none dark:bg-zinc-800"
+                />
+              </div>
+            )}
+
+            {locationModalType === "org-levels" ? (
+              <>
+                <div className="space-y-1.5">
+                  <label className="block font-bold text-foreground">
+                    {tr("Level Name", "തലം പേര്")} <span className="text-destructive">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={locationForm.name}
+                    onChange={(e) => setLocationForm((p) => ({ ...p, name: e.target.value }))}
+                    placeholder="e.g. Sub-District / Sector"
+                    required
+                    className="h-9 w-full rounded-lg border border-border bg-white px-3 font-semibold text-foreground focus:border-primary focus:outline-none dark:bg-zinc-800"
+                  />
+                  {locationOrgLevels.some(
+                    (lvl) =>
+                      lvl.id !== editingLocationItem?.id &&
+                      lvl.name.trim().toLowerCase() === locationForm.name.trim().toLowerCase() &&
+                      locationForm.name.trim().length > 0
+                  ) && (
+                    <p className="text-[11px] font-semibold text-destructive">
+                      {tr("Level Name already exists in the organization hierarchy", "ഈ പേരിൽ ഒരു തലം നിലവിലുണ്ട്")}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block font-bold text-foreground">
+                    {tr("Scope", "പരിധി")} <span className="text-destructive">*</span>
+                  </label>
+                  <select
+                    value={locationForm.scope}
+                    onChange={(e) => setLocationForm((p) => ({ ...p, scope: e.target.value }))}
+                    className="h-9 w-full rounded-lg border border-border bg-white px-3 font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer text-xs dark:bg-zinc-800"
+                  >
+                    <option value="Statewide">{tr("Statewide", "സംസ്ഥാനതലം")}</option>
+                    <option value="Regional">{tr("Regional", "മേഖലാതലം")}</option>
+                    <option value="District">{tr("District", "ജില്ലാതലം")}</option>
+                    <option value="Local">{tr("Local", "പ്രാദേശികതലം")}</option>
+                    <option value="Booth Level">{tr("Booth Level", "ബൂത്ത് തലം")}</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block font-bold text-foreground">
+                    {tr("Hierarchy Position", "ഹയരാർക്കി സ്ഥാനം")} <span className="text-destructive">*</span>
+                  </label>
+                  <select
+                    value={locationForm.hierarchyPos}
+                    onChange={(e) => setLocationForm((p) => ({ ...p, hierarchyPos: Number(e.target.value) }))}
+                    className="h-9 w-full rounded-lg border border-border bg-white px-3 font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer text-xs dark:bg-zinc-800"
+                  >
+                    <option value={0}>
+                      {tr("1. At Top (Above ", "1. ഉയർന്ന തലത്തിൽ (")}
+                      {locationOrgLevels[0]?.name || "State"}
+                      {tr(")", ")")}
+                    </option>
+                    {locationOrgLevels.map((lvl, idx) => {
+                      const nextLvl = locationOrgLevels[idx + 1];
+                      if (nextLvl) {
+                        return (
+                          <option key={lvl.id} value={idx + 1}>
+                            {idx + 2}. {tr("Insert Between ", "ഇടയിൽ ചേർക്കുക: ")}
+                            {lvl.name} {tr("and ", "മറ്റും ")}
+                            {nextLvl.name}
+                          </option>
+                        );
+                      }
+                      return (
+                        <option key={lvl.id} value={idx + 1}>
+                          {idx + 2}. {tr("At Bottom (Below ", "താഴെ തലത്തിൽ (")}
+                          {lvl.name}
+                          {tr(")", ")")}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+
+                {(() => {
+                  const pos = Number(locationForm.hierarchyPos ?? locationOrgLevels.length);
+                  const parentLevel = pos > 0 ? locationOrgLevels[pos - 1]?.name : null;
+                  const childLevel = pos < locationOrgLevels.length ? locationOrgLevels[pos]?.name : null;
+                  return (
+                    <div className="rounded-lg border border-border bg-zinc-50 dark:bg-zinc-800/50 p-3 space-y-2">
+                      <div className="font-bold text-muted-foreground text-[11px] uppercase tracking-wider">
+                        {tr("Hierarchy Preview", "ഹയരാർക്കി പ്രിവ്യൂ")}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs flex-wrap font-semibold">
+                        <span className="px-2.5 py-1 rounded bg-white dark:bg-zinc-800 border border-border text-muted-foreground">
+                          {parentLevel ? parentLevel : tr("Top Level (Root)", "ഉയർന്ന തലം")}
+                        </span>
+                        <span className="text-primary font-bold">→</span>
+                        <span className="px-3 py-1 rounded bg-primary text-primary-foreground font-bold shadow-none">
+                          {locationForm.name.trim() || tr("New Level", "പുതിയ തലം")}
+                          <span className="ml-1.5 text-[10px] opacity-80">({locationForm.scope})</span>
+                        </span>
+                        <span className="text-primary font-bold">→</span>
+                        <span className="px-2.5 py-1 rounded bg-white dark:bg-zinc-800 border border-border text-muted-foreground">
+                          {childLevel ? childLevel : tr("Bottom Level (End)", "താഴ്ന്ന തലം")}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-muted-foreground pt-1 flex justify-between border-t border-border/50">
+                        <span>
+                          {tr("Parent Level", "രക്ഷിതാവ് തലം")}: <strong>{parentLevel || tr("None (Root)", "ഒന്നുമില്ല")}</strong>
+                        </span>
+                        <span>
+                          {tr("Child Level", "കീഴ് തലം")}: <strong>{childLevel || tr("None (Terminal)", "ഒന്നുമില്ല")}</strong>
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-[11px] text-amber-800 dark:text-amber-200 space-y-1">
+                  <div className="font-bold flex items-center gap-1.5 text-amber-700 dark:text-amber-300">
+                    <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                    {tr("Hierarchy Mapping Protection", "മാപ്പിംഗ് സംരക്ഷണ അറിയിപ്പ്")}
+                  </div>
+                  <p>
+                    {tr(
+                      "Saving will insert the new level into the organizational hierarchy. Existing location records, users, roles, permissions, and hierarchy relationships will be preserved.",
+                      "രൂപീകരണം നടത്തുമ്പോൾ നിലവിലുള്ള എല്ലാ ലൊക്കേഷൻ വിവരങ്ങളും ഉപയോക്താക്കളെയും റോളുകളെയും അനുമതികളെയും സംരക്ഷിക്കും."
+                    )}
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="space-y-1.5">
+                  <label className="block font-bold text-foreground">{tr("Name (English)", "പേര് (ഇംഗ്ലീഷ്)")} <span className="text-destructive">*</span></label>
+                  <input
+                    type="text"
+                    value={locationForm.name}
+                    onChange={(e) => setLocationForm((p) => ({ ...p, name: e.target.value }))}
+                    placeholder="e.g. South Region / Nemom"
+                    required
+                    className="h-9 w-full rounded-lg border border-border bg-white px-3 font-semibold text-foreground focus:border-primary focus:outline-none dark:bg-zinc-800"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block font-bold text-foreground">{tr("Name (Malayalam)", "പേര് (മലയാളം)")}</label>
+                  <input
+                    type="text"
+                    value={locationForm.nameMl}
+                    onChange={(e) => setLocationForm((p) => ({ ...p, nameMl: e.target.value }))}
+                    placeholder="e.g. നെമവും"
+                    className="h-9 w-full rounded-lg border border-border bg-white px-3 font-semibold text-foreground focus:border-primary focus:outline-none dark:bg-zinc-800"
+                  />
+                </div>
+              </>
+            )}
+
+            {locationModalType === "region" && (
+              <div className="space-y-1.5">
+                <label className="block font-bold text-foreground">{tr("Scope", "പരിധി")}</label>
+                <input
+                  type="text"
+                  value={locationForm.scope}
+                  onChange={(e) => setLocationForm((p) => ({ ...p, scope: e.target.value }))}
+                  placeholder={tr("e.g. 10 Organisational Districts (48 Mandalams)", "ഉദാ. 10 സംഘടനാ ജില്ലകൾ (48 മണ്ഡലങ്ങൾ)")}
+                  className="h-9 w-full rounded-lg border border-border bg-white px-3 font-semibold text-foreground focus:border-primary focus:outline-none dark:bg-zinc-800"
+                />
+              </div>
+            )}
+
+            {locationModalType === "org-district" && (
+              <div className="space-y-1.5">
+                <label className="block font-bold text-foreground">
+                  {tr("Region", "മേഖല")} <span className="text-destructive">*</span>
+                </label>
+                <select
+                  value={locationForm.region}
+                  onChange={(e) => setLocationForm((p) => ({ ...p, region: e.target.value }))}
+                  className="h-9 w-full rounded-lg border border-border bg-white px-3 font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer text-xs dark:bg-zinc-800"
+                >
+                  <option value="North">{tr("Northern Region", "വടക്കൻ മേഖല")}</option>
+                  <option value="Central">{tr("Central Region", "മധ്യ മേഖല")}</option>
+                  <option value="South">{tr("Southern Region", "തെക്കൻ മേഖല")}</option>
+                </select>
+              </div>
+            )}
+
+            {locationModalType === "mandalam" && (
+              <>
+                <div className="space-y-1.5">
+                  <label className="block font-bold text-foreground">
+                    {tr("Region", "മേഖല")} <span className="text-destructive">*</span>
+                  </label>
+                  <select
+                    value={locationForm.region}
+                    onChange={(e) => {
+                      const newRegion = e.target.value;
+                      const defaultOrgDistrict =
+                        newRegion === "North"
+                          ? "Kasaragod"
+                          : newRegion === "Central"
+                          ? "Palakkad East"
+                          : "Alappuzha North";
+                      setLocationForm((p) => ({
+                        ...p,
+                        region: newRegion,
+                        orgDistrict: defaultOrgDistrict,
+                      }));
+                    }}
+                    className="h-9 w-full rounded-lg border border-border bg-white px-3 font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer text-xs dark:bg-zinc-800"
+                  >
+                    <option value="North">{tr("Northern Region", "വടക്കൻ മേഖല")}</option>
+                    <option value="Central">{tr("Central Region", "മധ്യ മേഖല")}</option>
+                    <option value="South">{tr("Southern Region", "തെക്കൻ മേഖല")}</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block font-bold text-foreground">
+                    {tr("Organisation District", "സംഘടനാ ജില്ല")} <span className="text-destructive">*</span>
+                  </label>
+                  <select
+                    value={locationForm.orgDistrict}
+                    onChange={(e) => setLocationForm((p) => ({ ...p, orgDistrict: e.target.value }))}
+                    className="h-9 w-full rounded-lg border border-border bg-white px-3 font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer text-xs dark:bg-zinc-800"
+                  >
+                    {(locationForm.region === "North"
+                      ? [
+                          "Kasaragod",
+                          "Kannur North",
+                          "Kannur South",
+                          "Wayanad",
+                          "Kozhikode City",
+                          "Kozhikode North",
+                          "Kozhikode Rural",
+                          "Malappuram Central",
+                          "Malappuram East",
+                          "Malappuram West",
+                        ]
+                      : locationForm.region === "Central"
+                      ? [
+                          "Palakkad East",
+                          "Palakkad West",
+                          "Thrissur City",
+                          "Thrissur North",
+                          "Thrissur South",
+                          "Ernakulam City",
+                          "Ernakulam North",
+                          "Ernakulam East",
+                          "Idukki North",
+                          "Idukki South",
+                          "Kottayam East",
+                          "Kottayam West",
+                        ]
+                      : [
+                          "Alappuzha North",
+                          "Alappuzha South",
+                          "Pathanamthitta",
+                          "Kollam East",
+                          "Kollam West",
+                          "Thiruvananthapuram City",
+                          "Thiruvananthapuram North",
+                          "Thiruvananthapuram South",
+                        ]
+                    ).map((od) => (
+                      <option key={od} value={od}>
+                        {od}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
+
+            {locationModalType === "area" && (
+              <>
+                <div className="space-y-1.5">
+                  <label className="block font-bold text-foreground">
+                    {tr("Region", "മേഖല")} <span className="text-destructive">*</span>
+                  </label>
+                  <select
+                    value={locationForm.region}
+                    onChange={(e) => {
+                      const newRegion = e.target.value;
+                      const defaultOrgDistrict =
+                        newRegion === "North"
+                          ? "Kasaragod"
+                          : newRegion === "Central"
+                          ? "Palakkad East"
+                          : "Alappuzha North";
+                      const defaultMandalam =
+                        newRegion === "North"
+                          ? "Manjeshwar"
+                          : newRegion === "Central"
+                          ? "Mannarkkad"
+                          : "Aroor";
+                      setLocationForm((p) => ({
+                        ...p,
+                        region: newRegion,
+                        orgDistrict: defaultOrgDistrict,
+                        mandalam: defaultMandalam,
+                      }));
+                    }}
+                    className="h-9 w-full rounded-lg border border-border bg-white px-3 font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer text-xs dark:bg-zinc-800"
+                  >
+                    <option value="North">{tr("Northern Region", "വടക്കൻ മേഖല")}</option>
+                    <option value="Central">{tr("Central Region", "മധ്യ മേഖല")}</option>
+                    <option value="South">{tr("Southern Region", "തെക്കൻ മേഖല")}</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block font-bold text-foreground">
+                    {tr("Organisation District", "സംഘടനാ ജില്ല")} <span className="text-destructive">*</span>
+                  </label>
+                  <select
+                    value={locationForm.orgDistrict}
+                    onChange={(e) => {
+                      const newDistrict = e.target.value;
+                      const matchingMandalam = locationMandalamsState.find(
+                        (m) => (m as any).orgDistrict === newDistrict
+                      );
+                      setLocationForm((p) => ({
+                        ...p,
+                        orgDistrict: newDistrict,
+                        mandalam: matchingMandalam ? matchingMandalam.name : p.mandalam,
+                      }));
+                    }}
+                    className="h-9 w-full rounded-lg border border-border bg-white px-3 font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer text-xs dark:bg-zinc-800"
+                  >
+                    {(locationForm.region === "North"
+                      ? [
+                          "Kasaragod",
+                          "Kannur North",
+                          "Kannur South",
+                          "Wayanad",
+                          "Kozhikode City",
+                          "Kozhikode North",
+                          "Kozhikode Rural",
+                          "Malappuram Central",
+                          "Malappuram East",
+                          "Malappuram West",
+                        ]
+                      : locationForm.region === "Central"
+                      ? [
+                          "Palakkad East",
+                          "Palakkad West",
+                          "Thrissur City",
+                          "Thrissur North",
+                          "Thrissur South",
+                          "Ernakulam City",
+                          "Ernakulam North",
+                          "Ernakulam East",
+                          "Idukki North",
+                          "Idukki South",
+                          "Kottayam East",
+                          "Kottayam West",
+                        ]
+                      : [
+                          "Alappuzha North",
+                          "Alappuzha South",
+                          "Pathanamthitta",
+                          "Kollam East",
+                          "Kollam West",
+                          "Thiruvananthapuram City",
+                          "Thiruvananthapuram North",
+                          "Thiruvananthapuram South",
+                        ]
+                    ).map((od) => (
+                      <option key={od} value={od}>
+                        {od}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block font-bold text-foreground">
+                    {tr("Mandalam", "മണ്ഡലം")} <span className="text-destructive">*</span>
+                  </label>
+                  <select
+                    value={locationForm.mandalam}
+                    onChange={(e) => setLocationForm((p) => ({ ...p, mandalam: e.target.value }))}
+                    className="h-9 w-full rounded-lg border border-border bg-white px-3 font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer text-xs dark:bg-zinc-800"
+                  >
+                    {locationMandalamsState
+                      .filter((m) => !locationForm.orgDistrict || (m as any).orgDistrict === locationForm.orgDistrict)
+                      .map((m) => (
+                        <option key={m.id} value={m.name}>
+                          {lang === "ml" ? m.nameMl : m.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              </>
+            )}
+
+            {locationModalType === "booth" && (
+              <>
+                <div className="space-y-1.5">
+                  <label className="block font-bold text-foreground">
+                    {tr("Region", "മേഖല")} <span className="text-destructive">*</span>
+                  </label>
+                  <select
+                    value={locationForm.region}
+                    onChange={(e) => {
+                      const newRegion = e.target.value;
+                      const defaultOrgDistrict =
+                        newRegion === "North"
+                          ? "Kasaragod"
+                          : newRegion === "Central"
+                          ? "Palakkad East"
+                          : "Alappuzha North";
+                      const defaultMandalam =
+                        newRegion === "North"
+                          ? "Manjeshwar"
+                          : newRegion === "Central"
+                          ? "Mannarkkad"
+                          : "Aroor";
+                      const defaultArea =
+                        newRegion === "North"
+                          ? "Manjeshwar Central"
+                          : newRegion === "Central"
+                          ? "Mannarkkad Central"
+                          : "Aroor Central";
+                      setLocationForm((p) => ({
+                        ...p,
+                        region: newRegion,
+                        orgDistrict: defaultOrgDistrict,
+                        mandalam: defaultMandalam,
+                        area: defaultArea,
+                      }));
+                    }}
+                    className="h-9 w-full rounded-lg border border-border bg-white px-3 font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer text-xs dark:bg-zinc-800"
+                  >
+                    <option value="North">{tr("Northern Region", "വടക്കൻ മേഖല")}</option>
+                    <option value="Central">{tr("Central Region", "മധ്യ മേഖല")}</option>
+                    <option value="South">{tr("Southern Region", "തെക്കൻ മേഖല")}</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block font-bold text-foreground">
+                    {tr("Organisation District", "സംഘടനാ ജില്ല")} <span className="text-destructive">*</span>
+                  </label>
+                  <select
+                    value={locationForm.orgDistrict}
+                    onChange={(e) => {
+                      const newDistrict = e.target.value;
+                      const matchingMandalam = locationMandalamsState.find(
+                        (m) => (m as any).orgDistrict === newDistrict
+                      );
+                      const mandalamName = matchingMandalam ? matchingMandalam.name : "Manjeshwar";
+                      const matchingArea = locationAreasState.find(
+                        (a) => (a as any).mandalam === mandalamName
+                      );
+                      setLocationForm((p) => ({
+                        ...p,
+                        orgDistrict: newDistrict,
+                        mandalam: mandalamName,
+                        area: matchingArea ? matchingArea.name : p.area,
+                      }));
+                    }}
+                    className="h-9 w-full rounded-lg border border-border bg-white px-3 font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer text-xs dark:bg-zinc-800"
+                  >
+                    {(locationForm.region === "North"
+                      ? [
+                          "Kasaragod",
+                          "Kannur North",
+                          "Kannur South",
+                          "Wayanad",
+                          "Kozhikode City",
+                          "Kozhikode North",
+                          "Kozhikode Rural",
+                          "Malappuram Central",
+                          "Malappuram East",
+                          "Malappuram West",
+                        ]
+                      : locationForm.region === "Central"
+                      ? [
+                          "Palakkad East",
+                          "Palakkad West",
+                          "Thrissur City",
+                          "Thrissur North",
+                          "Thrissur South",
+                          "Ernakulam City",
+                          "Ernakulam North",
+                          "Ernakulam East",
+                          "Idukki North",
+                          "Idukki South",
+                          "Kottayam East",
+                          "Kottayam West",
+                        ]
+                      : [
+                          "Alappuzha North",
+                          "Alappuzha South",
+                          "Pathanamthitta",
+                          "Kollam East",
+                          "Kollam West",
+                          "Thiruvananthapuram City",
+                          "Thiruvananthapuram North",
+                          "Thiruvananthapuram South",
+                        ]
+                    ).map((od) => (
+                      <option key={od} value={od}>
+                        {od}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block font-bold text-foreground">
+                    {tr("Mandalam", "മണ്ഡലം")} <span className="text-destructive">*</span>
+                  </label>
+                  <select
+                    value={locationForm.mandalam}
+                    onChange={(e) => {
+                      const newMandalam = e.target.value;
+                      const matchingArea = locationAreasState.find(
+                        (a) => (a as any).mandalam === newMandalam
+                      );
+                      setLocationForm((p) => ({
+                        ...p,
+                        mandalam: newMandalam,
+                        area: matchingArea ? matchingArea.name : p.area,
+                      }));
+                    }}
+                    className="h-9 w-full rounded-lg border border-border bg-white px-3 font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer text-xs dark:bg-zinc-800"
+                  >
+                    {locationMandalamsState
+                      .filter((m) => !locationForm.orgDistrict || (m as any).orgDistrict === locationForm.orgDistrict)
+                      .map((m) => (
+                        <option key={m.id} value={m.name}>
+                          {lang === "ml" ? m.nameMl : m.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block font-bold text-foreground">
+                    {tr("Area / Kendra", "ഏരിയ / കേന്ദ്രം")} <span className="text-destructive">*</span>
+                  </label>
+                  <select
+                    value={locationForm.area}
+                    onChange={(e) => setLocationForm((p) => ({ ...p, area: e.target.value }))}
+                    className="h-9 w-full rounded-lg border border-border bg-white px-3 font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer text-xs dark:bg-zinc-800"
+                  >
+                    {locationAreasState
+                      .filter((a) => !locationForm.mandalam || (a as any).mandalam === locationForm.mandalam)
+                      .map((a) => (
+                        <option key={a.id} value={a.name}>
+                          {lang === "ml" ? a.nameMl : a.name}
+                        </option>
+                      ))}
+                    {locationAreasState.filter((a) => !locationForm.mandalam || (a as any).mandalam === locationForm.mandalam).length === 0 && (
+                      <option value={locationForm.area || "General Area"}>
+                        {locationForm.area || "General Area"}
+                      </option>
+                    )}
+                  </select>
+                </div>
+              </>
+            )}
+
+            <DialogFooter className="gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setLocationModalOpen(false)}
+                className="h-9 text-xs font-bold cursor-pointer shadow-none border-border bg-white hover:bg-zinc-100 dark:bg-zinc-800 dark:hover:bg-zinc-700"
+              >
+                {tr("Cancel", "റദ്ദാക്കുക")}
+              </Button>
+              <Button
+                type="submit"
+                className="h-9 text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer shadow-none"
+              >
+                {editingLocationItem ? tr("Save Changes", "മാറ്റങ്ങൾ സംരക്ഷിക്കുക") : tr("Create Entry", "എൻട്രി സൃഷ്ടിക്കുക")}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <RoleEditorDialog
         open={editorOpen}

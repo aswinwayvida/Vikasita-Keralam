@@ -14,7 +14,11 @@ export const Route = createFileRoute("/admin/settings")({
         ? ("roles" as const)
         : search.tab === "users"
           ? ("users" as const)
-          : undefined,
+          : search.tab === "designations"
+            ? ("designations" as const)
+            : search.tab === "location"
+              ? ("location" as const)
+              : undefined,
   }),
   head: () => ({ meta: [{ title: "Settings · Admin" }] }),
   component: SettingsPage,
@@ -59,7 +63,17 @@ function SettingsPage() {
 
   return (
     <div className="space-y-5 pb-8">
-      <RoleAccessSettings defaultTab={search.tab === "users" ? "users" : "roles"} />
+      <RoleAccessSettings
+        defaultTab={
+          search.tab === "users"
+            ? "users"
+            : search.tab === "designations"
+              ? "designations"
+              : search.tab === "location"
+                ? "location"
+                : "roles"
+        }
+      />
     </div>
   );
 }

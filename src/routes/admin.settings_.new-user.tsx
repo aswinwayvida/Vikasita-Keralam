@@ -7,6 +7,7 @@ import {
   ClipboardList,
   FileText,
   Headset,
+  Plus,
   ShieldCheck,
   UserRound,
   Users,
@@ -151,22 +152,69 @@ const DEFAULT_ROLE_SELECTIONS = [
   "Other Specific Role",
 ];
 
-const DESIGNATION_OPTIONS = [
-  "Admin",
-  "Sub Admin",
-  "Support Admin",
-  "Other Specific Role",
-  "Booth President",
-  "Mandalam President",
-  "Secretary",
-  "Area Coordinator",
-  "Area Secretary",
-  "Treasurer",
-  "Regional In-charge",
-  "State Committee Member",
-  "District President",
-  "Party Member",
-];
+export const DESIGNATIONS_BY_ORG_LEVEL: Record<string, string[]> = {
+  State: [
+    "President",
+    "Vice President",
+    "General Secretary",
+    "General Secretary (Organisation)",
+    "Secretary",
+    "Treasurer",
+    "Executive Member",
+  ],
+  Region: [
+    "President",
+    "In-charge",
+    "Coordinator",
+    "Cluster In-charge",
+  ],
+  "Organisational District": [
+    "President",
+    "Vice President",
+    "General Secretary",
+    "General Secretary (Organisation)",
+    "Secretary",
+    "Treasurer",
+    "Executive Member",
+  ],
+  Mandalam: [
+    "President",
+    "Vice President",
+    "General Secretary",
+    "Secretary",
+    "Treasurer",
+    "Committee Member",
+  ],
+  Area: [
+    "Kendra Convener",
+    "Area Coordinator",
+    "Area In-charge",
+    "Area Committee Member",
+  ],
+  Booth: [
+    "President",
+    "Secretary",
+    "Committee Member",
+    "Worker",
+  ],
+};
+
+export function getOrgLevelForDesignation(desig: string): string {
+  if (!desig) return "";
+  const clean = desig.toLowerCase().trim();
+  for (const [level, list] of Object.entries(DESIGNATIONS_BY_ORG_LEVEL)) {
+    if (list.some((item) => item.toLowerCase() === clean)) {
+      return level;
+    }
+  }
+  if (clean.includes("state")) return "State";
+  if (clean.includes("region") || clean.includes("cluster")) return "Region";
+  if (clean.includes("district")) return "Organisational District";
+  if (clean.includes("mandalam")) return "Mandalam";
+  if (clean.includes("kendra") || clean.includes("area")) return "Area";
+  if (clean.includes("booth")) return "Booth";
+  return "";
+}
 
 // Role Level Dropdown Options: State, Region, Organisational District, Mandalam, Area, Booth
 const ROLE_LEVEL_OPTIONS = [
@@ -281,10 +329,48 @@ function CreateUserPage() {
   // User details state
   const [fullName, setFullName] = useState("");
   const [mobile, setMobile] = useState("");
-  const [orgLevel, setOrgLevel] = useState("Organisational District");
-  const [designation, setDesignation] = useState("Booth President");
+  const [orgLevel, setOrgLevel] = useState("");
+  const [designation, setDesignation] = useState("");
   const [selectedRoleName, setSelectedRoleName] = useState("None");
   const [roleLevel, setRoleLevel] = useState("State");
+
+  // Custom designations state
+  const [customDesignations, setCustomDesignations] = useState<Record<string, string[]>>({});
+  const [newDesignationInput, setNewDesignationInput] = useState("");
+  const [showAddDesignationPopover, setShowAddDesignationPopover] = useState(false);
+
+  const activeDesignations = useMemo(() => {
+    if (!orgLevel) return [];
+    const base = DESIGNATIONS_BY_ORG_LEVEL[orgLevel] || [];
+    const custom = customDesignations[orgLevel] || [];
+    return Array.from(new Set([...base, ...custom]));
+  }, [orgLevel, customDesignations]);
+
+  const handleAddCustomDesignation = () => {
+    if (!orgLevel) {
+      toast.error(tr("Please select Organisation Level first.", "ആദ്യം സംഘടനാ തലം തിരഞ്ഞെടുക്കുക."));
+      return;
+    }
+    const name = newDesignationInput.trim();
+    if (!name) return;
+
+    setCustomDesignations((prev) => ({
+      ...prev,
+      [orgLevel]: [...(prev[orgLevel] || []), name],
+    }));
+    setDesignation(name);
+    setNewDesignationInput("");
+    setShowAddDesignationPopover(false);
+    if (errors.designation) setErrors((prev) => ({ ...prev, designation: "" }));
+    toast.success(tr(`Designation "${name}" created.`, `തസ്തിക "${name}" സൃഷ്ടിച്ചു.`));
+  };
+
+  const handleOrgLevelChange = (newLevel: string) => {
+    setOrgLevel(newLevel);
+    setDesignation("");
+    if (errors.orgLevel) setErrors((prev) => ({ ...prev, orgLevel: "" }));
+    if (errors.designation) setErrors((prev) => ({ ...prev, designation: "" }));
+  };
 
   // Organisation Hierarchy dependent state
   const [selectedRegion, setSelectedRegion] = useState("South Region");
@@ -354,7 +440,7 @@ function CreateUserPage() {
   };
 
   // Visibility logic based on Organisation Level
-  const showRegion = ["State", "Region", "Organisational District", "Mandalam", "Area", "Booth"].includes(orgLevel);
+  const showRegion = ["Region", "Organisational District", "Mandalam", "Area", "Booth"].includes(orgLevel);
   const showOrgDistrict = ["Organisational District", "Mandalam", "Area", "Booth"].includes(orgLevel);
   const showMandalam = ["Mandalam", "Area", "Booth"].includes(orgLevel);
   const showArea = ["Area", "Booth"].includes(orgLevel);
@@ -384,7 +470,11 @@ function CreateUserPage() {
 
     setFullName(existing.name || "");
     setMobile(existing.mobile || "");
-    setDesignation(existing.designationEn || "Booth President");
+    const existingDesig = existing.designationEn || "";
+    const level =
+      existing.orgLevel || getOrgLevelForDesignation(existingDesig) || "Organisational District";
+    setOrgLevel(level);
+    setDesignation(existingDesig);
     setSelectedRoleName(
       existing.assignedRole === "Unassigned" || !existing.assignedRole ? "None" : existing.assignedRole,
     );
@@ -526,6 +616,18 @@ function CreateUserPage() {
     if (!fullName.trim()) {
       newErrors.name = tr("Full name is required.", "മുഴുവൻ പേര് നിർബന്ധമാണ്.");
     }
+    if (!orgLevel) {
+      newErrors.orgLevel = tr("Organisation level is required.", "സംഘടനാ തലം നിർബന്ധമാണ്.");
+    }
+    if (!designation) {
+      newErrors.designation = tr("Designation is required.", "തസ്തിക നിർബന്ധമാണ്.");
+    } else if (orgLevel && !activeDesignations.includes(designation)) {
+      newErrors.designation = tr(
+        "Selected designation does not belong to the selected organisation level.",
+        "തിരഞ്ഞെടുത്ത തസ്തിക ലെവലിന് യോജിച്ചതല്ല.",
+      );
+    }
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -548,6 +650,7 @@ function CreateUserPage() {
               name: fullName.trim(),
               nameMl: fullName.trim(),
               mobile: mobile.trim() || u.mobile,
+              orgLevel: orgLevel,
               designationEn: designation,
               designationMl: designation,
               assignedRole: finalRole,
@@ -570,6 +673,7 @@ function CreateUserPage() {
         category: "bjp_member",
         categoryLabelEn: "BJP Member",
         categoryLabelMl: "ബി.ജെ.പി അംഗം",
+        orgLevel: orgLevel,
         designationEn: designation || "Party Member",
         designationMl: designation || "പാർട്ടി അംഗം",
         mobile: mobile.trim() || "9447000000",
@@ -771,19 +875,21 @@ function CreateUserPage() {
             {/* Organisation Level */}
             <div className="space-y-1.5">
               <label className="block text-xs font-bold text-foreground">
-                {tr("Organisation Level", "സംഘടനാ തലം")}
+                {tr("Organisation Level", "സംഘടനാ തലം")} <span className="text-destructive">*</span>
               </label>
               <select
                 value={orgLevel}
-                onChange={(e) => setOrgLevel(e.target.value)}
+                onChange={(e) => handleOrgLevelChange(e.target.value)}
                 className="h-10 w-full rounded-lg border border-border bg-white px-3 text-xs font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer"
               >
+                <option value="">{tr("Select Organisation Level", "സംഘടനാ തലം തിരഞ്ഞെടുക്കുക")}</option>
                 {ORG_LEVEL_OPTIONS.map((opt) => (
                   <option key={opt.id} value={opt.id}>
                     {tr(opt.en, opt.ml)}
                   </option>
                 ))}
               </select>
+              {errors.orgLevel && <p className="text-[11px] font-bold text-destructive">{errors.orgLevel}</p>}
             </div>
           </div>
 
@@ -791,27 +897,109 @@ function CreateUserPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Designation Dropdown */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-foreground">
-                {tr("Designation", "തസ്തിക")}
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-foreground">
+                  {tr("Designation", "തസ്തിക")} <span className="text-destructive">*</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!orgLevel) {
+                      toast.error(tr("Please select Organisation Level first.", "ആദ്യം സംഘടനാ തലം തിരഞ്ഞെടുക്കുക."));
+                      return;
+                    }
+                    setShowAddDesignationPopover((prev) => !prev);
+                  }}
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:text-primary/80 transition-colors cursor-pointer"
+                  title={tr("Create Designation", "തസ്തിക സൃഷ്ടിക്കുക")}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>{tr("Create Designation", "തസ്തിക സൃഷ്ടിക്കുക")}</span>
+                </button>
+              </div>
+
               <select
                 value={designation}
-                onChange={(e) => setDesignation(e.target.value)}
-                className="h-10 w-full rounded-lg border border-border bg-white px-3 text-xs font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer"
+                disabled={!orgLevel}
+                onChange={(e) => {
+                  setDesignation(e.target.value);
+                  if (errors.designation) setErrors((prev) => ({ ...prev, designation: "" }));
+                }}
+                className="h-10 w-full rounded-lg border border-border bg-white px-3 text-xs font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer disabled:bg-slate-100 disabled:text-muted-foreground disabled:cursor-not-allowed"
               >
-                {DESIGNATION_OPTIONS.map((d) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))}
+                {!orgLevel ? (
+                  <option value="">{tr("Select organisation level first", "ആദ്യം സംഘടനാ തലം തിരഞ്ഞെടുക്കുക")}</option>
+                ) : (
+                  <>
+                    <option value="">{tr("Select Designation", "തസ്തിക തിരഞ്ഞെടുക്കുക")}</option>
+                    {activeDesignations.map((desig) => (
+                      <option key={desig} value={desig}>
+                        {desig}
+                      </option>
+                    ))}
+                  </>
+                )}
               </select>
+
+              {showAddDesignationPopover && (
+                <div className="mt-1.5 p-2.5 rounded-lg border border-primary/30 bg-amber-50/50 space-y-2">
+                  <p className="text-xs font-bold text-foreground">
+                    {tr(`Create New Designation (${orgLevel})`, `പുതിയ തസ്തിക സൃഷ്ടിക്കുക (${orgLevel})`)}
+                  </p>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newDesignationInput}
+                      onChange={(e) => setNewDesignationInput(e.target.value)}
+                      placeholder={tr("Designation Name", "തസ്തിക പേര്")}
+                      className="h-8 flex-1 rounded-md border border-border bg-white px-2.5 text-xs font-semibold focus:border-primary focus:outline-none"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleAddCustomDesignation();
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleAddCustomDesignation}
+                      className="h-8 text-xs font-bold px-3"
+                    >
+                      {tr("Add", "ചേർക്കുക")}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setShowAddDesignationPopover(false)}
+                      className="h-8 text-xs font-bold px-2.5"
+                    >
+                      {tr("Cancel", "റദ്ദാക്കുക")}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {errors.designation && <p className="text-[11px] font-bold text-destructive">{errors.designation}</p>}
             </div>
 
             {/* Role Selection */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-foreground">
-                {tr("Role Selection", "റോൾ തിരഞ്ഞെടുക്കൽ")}
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-foreground">
+                  {tr("Role Selection", "റോൾ തിരഞ്ഞെടുക്കൽ")}
+                </label>
+                <button
+                  type="button"
+                  onClick={() => void navigate({ to: "/admin/settings", search: { tab: "roles" } })}
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:text-primary/80 transition-colors cursor-pointer"
+                  title={tr("Create Role", "റോൾ സൃഷ്ടിക്കുക")}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>{tr("Create Role", "റോൾ സൃഷ്ടിക്കുക")}</span>
+                </button>
+              </div>
               <select
                 value={selectedRoleName}
                 onChange={(e) => setSelectedRoleName(e.target.value)}
@@ -846,11 +1034,11 @@ function CreateUserPage() {
 
           {/* Dynamic Organisation Hierarchy Dropdowns */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
-            {/* Region / Cluster */}
+            {/* Region */}
             {showRegion && (
               <div className="space-y-1.5">
                 <label className="block text-xs font-bold text-foreground">
-                  {tr("Region / Cluster", "റീജിയൻ / ക്ലസ്റ്റർ")}
+                  {tr("Region", "റീജിയൻ")}
                 </label>
                 <select
                   value={selectedRegion}

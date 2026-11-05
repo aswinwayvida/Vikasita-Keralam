@@ -17,6 +17,12 @@ function getSearchPlaceholder(pathname: string, lang: "en" | "ml"): string {
   }
 
   if (p.includes("/admin/settings") || p.includes("roles")) {
+    if (typeof window !== "undefined" && window.location.search.includes("tab=designations")) {
+      return lang === "ml" ? "തസ്തികകൾ തിരയുക..." : "Search designations...";
+    }
+    if (typeof window !== "undefined" && window.location.search.includes("tab=location")) {
+      return lang === "ml" ? "സ്ഥലങ്ങൾ തിരയുക..." : "Search location...";
+    }
     return lang === "ml" ? "റോളുകൾ തിരയുക..." : "Search roles...";
   }
 
