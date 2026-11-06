@@ -40,6 +40,7 @@ import { Route as JanashabdamSuccessStoriesRouteImport } from './routes/janashab
 import { Route as JanashabdamTrackRouteImport } from './routes/janashabdam.track'
 import { Route as SchemesIndexRouteImport } from './routes/schemes.index'
 import { Route as SchemesIdRouteImport } from './routes/schemes.$id'
+import { Route as AdminApplicantsApplicantIdRouteImport } from './routes/admin.applicants_.$applicantId'
 import { Route as AdminApplicationsApplicationIdRouteImport } from './routes/admin.applications_.$applicationId'
 import { Route as AdminApplicationsNewRouteImport } from './routes/admin.applications_.new'
 import { Route as AdminGrowthHelpdeskIdRouteImport } from './routes/admin.growth_.$helpdeskId'
@@ -208,6 +209,12 @@ const SchemesIdRoute = SchemesIdRouteImport.update({
   path: '/schemes/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminApplicantsApplicantIdRoute =
+  AdminApplicantsApplicantIdRouteImport.update({
+    id: '/applicants_/$applicantId',
+    path: '/applicants/$applicantId',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const AdminApplicationsApplicationIdRoute =
   AdminApplicationsApplicationIdRouteImport.update({
     id: '/applications_/$applicationId',
@@ -299,6 +306,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/janashabdam/': typeof JanashabdamIndexRoute
   '/schemes/': typeof SchemesIndexRoute
+  '/admin/applicants/$applicantId': typeof AdminApplicantsApplicantIdRoute
   '/admin/applications/$applicationId': typeof AdminApplicationsApplicationIdRoute
   '/admin/applications/new': typeof AdminApplicationsNewRoute
   '/admin/growth/$helpdeskId': typeof AdminGrowthHelpdeskIdRoute
@@ -341,6 +349,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/janashabdam': typeof JanashabdamIndexRoute
   '/schemes': typeof SchemesIndexRoute
+  '/admin/applicants/$applicantId': typeof AdminApplicantsApplicantIdRoute
   '/admin/applications/$applicationId': typeof AdminApplicationsApplicationIdRoute
   '/admin/applications/new': typeof AdminApplicationsNewRoute
   '/admin/growth/$helpdeskId': typeof AdminGrowthHelpdeskIdRoute
@@ -386,6 +395,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/janashabdam/': typeof JanashabdamIndexRoute
   '/schemes/': typeof SchemesIndexRoute
+  '/admin/applicants_/$applicantId': typeof AdminApplicantsApplicantIdRoute
   '/admin/applications_/$applicationId': typeof AdminApplicationsApplicationIdRoute
   '/admin/applications_/new': typeof AdminApplicationsNewRoute
   '/admin/growth_/$helpdeskId': typeof AdminGrowthHelpdeskIdRoute
@@ -432,6 +442,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/janashabdam/'
     | '/schemes/'
+    | '/admin/applicants/$applicantId'
     | '/admin/applications/$applicationId'
     | '/admin/applications/new'
     | '/admin/growth/$helpdeskId'
@@ -474,6 +485,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/janashabdam'
     | '/schemes'
+    | '/admin/applicants/$applicantId'
     | '/admin/applications/$applicationId'
     | '/admin/applications/new'
     | '/admin/growth/$helpdeskId'
@@ -518,6 +530,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/janashabdam/'
     | '/schemes/'
+    | '/admin/applicants_/$applicantId'
     | '/admin/applications_/$applicationId'
     | '/admin/applications_/new'
     | '/admin/growth_/$helpdeskId'
@@ -766,6 +779,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SchemesIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/applicants_/$applicantId': {
+      id: '/admin/applicants_/$applicantId'
+      path: '/applicants/$applicantId'
+      fullPath: '/admin/applicants/$applicantId'
+      preLoaderRoute: typeof AdminApplicantsApplicantIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/applications_/$applicationId': {
       id: '/admin/applications_/$applicationId'
       path: '/applications/$applicationId'
@@ -860,6 +880,7 @@ interface AdminRouteChildren {
   AdminVolunteersRoute: typeof AdminVolunteersRoute
   AdminWhatsappRoute: typeof AdminWhatsappRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminApplicantsApplicantIdRoute: typeof AdminApplicantsApplicantIdRoute
   AdminApplicationsApplicationIdRoute: typeof AdminApplicationsApplicationIdRoute
   AdminApplicationsNewRoute: typeof AdminApplicationsNewRoute
   AdminGrowthHelpdeskIdRoute: typeof AdminGrowthHelpdeskIdRoute
@@ -887,6 +908,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminVolunteersRoute: AdminVolunteersRoute,
   AdminWhatsappRoute: AdminWhatsappRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminApplicantsApplicantIdRoute: AdminApplicantsApplicantIdRoute,
   AdminApplicationsApplicationIdRoute: AdminApplicationsApplicationIdRoute,
   AdminApplicationsNewRoute: AdminApplicationsNewRoute,
   AdminGrowthHelpdeskIdRoute: AdminGrowthHelpdeskIdRoute,

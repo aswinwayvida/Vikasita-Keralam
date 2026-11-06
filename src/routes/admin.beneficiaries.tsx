@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useAdminTopSearch } from "@/lib/admin-search-store";
 import { cn } from "@/lib/utils";
@@ -759,7 +759,13 @@ function BeneficiariesPage() {
                         case "applicantName":
                           return (
                             <td key="applicantName" className="p-3">
-                              <p className="font-bold text-foreground">{b.applicantName}</p>
+                              <Link
+                                to="/admin/applicants/$applicantId"
+                                params={{ applicantId: b.id }}
+                                className="font-bold text-foreground hover:text-primary hover:underline cursor-pointer"
+                              >
+                                {b.applicantName}
+                              </Link>
                               <p className="text-[10px] font-mono text-muted-foreground">{b.mobile || b.id}</p>
                             </td>
                           );
@@ -832,7 +838,7 @@ function BeneficiariesPage() {
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end" className="w-52 p-1 space-y-0.5 shadow-xl border-border">
                                     <DropdownMenuItem
-                                      onClick={() => setViewingApplicant(b)}
+                                      onClick={() => navigate({ to: "/admin/applicants/$applicantId", params: { applicantId: b.id } })}
                                       className="cursor-pointer text-xs font-semibold"
                                     >
                                       <Eye className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
