@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useAdminTopSearch } from "@/lib/admin-search-store";
+import { cn } from "@/lib/utils";
+import { districts } from "@/data/geo";
 import {
   HeartHandshake,
   Clock3,
@@ -22,6 +24,9 @@ import {
   UserCheck,
   Trash2,
   Plus,
+  Search,
+  ChevronDown,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -115,6 +120,156 @@ const availableStatuses: BeneficiaryApplicant["status"][] = [
   "In Review",
   "Pending",
 ];
+
+function FilterDropdownSelector({
+  title,
+  placeholder,
+  options,
+  selectedValues,
+  onChange,
+  tr,
+}: {
+  title: string;
+  placeholder: string;
+  options: string[];
+  selectedValues: string[];
+  onChange: (newValues: string[]) => void;
+  tr: (en: string, ml: string) => string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const filteredOptions = useMemo(() => {
+    if (!search.trim()) return options;
+    return options.filter((opt) =>
+      opt.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [options, search]);
+
+  const toggleOption = (val: string) => {
+    if (selectedValues.includes(val)) {
+      onChange(selectedValues.filter((item) => item !== val));
+    } else {
+      onChange([...selectedValues, val]);
+    }
+  };
+
+  const getLabelText = () => {
+    if (selectedValues.length === 0) return placeholder;
+    if (selectedValues.length === 1) return selectedValues[0];
+    return `${selectedValues.length} ${tr("Selected", "തിരഞ്ഞെടുത്തു")}`;
+  };
+
+  if (options.length === 0) return null;
+
+  return (
+    <div className="space-y-1">
+      <label className="font-bold text-slate-500 text-[10px] uppercase tracking-wider block">
+        {title}
+      </label>
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className={cn(
+              "w-full h-9 px-3 rounded-lg border flex items-center justify-between text-xs font-semibold transition-all bg-white cursor-pointer select-none text-left shadow-2xs",
+              selectedValues.length > 0
+                ? "border-amber-400 bg-[#FFF8F0] text-amber-950 font-bold"
+                : "border-border text-slate-800 hover:border-amber-300 hover:bg-slate-50/50",
+            )}
+          >
+            <span className="truncate pr-2">{getLabelText()}</span>
+            <ChevronDown
+              className={cn(
+                "h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform duration-200",
+                isOpen && "rotate-180"
+              )}
+            />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent
+          align="start"
+          className="w-64 p-2 text-xs bg-white shadow-xl border border-amber-200 rounded-xl space-y-2 z-50"
+        >
+          {options.length > 4 && (
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={tr("Search...", "തിരയുക...")}
+                className="w-full h-8 pl-8 pr-2 text-xs rounded-md border border-border bg-slate-50 focus:border-amber-500 focus:bg-white focus:outline-none"
+              />
+            </div>
+          )}
+
+          <div className="flex items-center justify-between px-1.5 py-1 border-b border-slate-100 text-[11px]">
+            <span className="font-bold text-slate-500">
+              {selectedValues.length > 0
+                ? `${selectedValues.length} ${tr("selected", "തിരഞ്ഞെടുത്തു")}`
+                : tr("All", "എല്ലാം")}
+            </span>
+            {selectedValues.length > 0 && (
+              <button
+                type="button"
+                onClick={() => onChange([])}
+                className="text-amber-600 hover:text-amber-700 font-bold cursor-pointer hover:underline"
+              >
+                {tr("Clear", "നീക്കം ചെയ്യുക")}
+              </button>
+            )}
+          </div>
+
+          <div className="max-h-60 overflow-y-auto pr-1 space-y-0.5 custom-scrollbar">
+            <div
+              onClick={() => onChange([])}
+              className={cn(
+                "flex items-center justify-between py-1.5 px-2 rounded-md cursor-pointer text-xs transition-colors font-medium",
+                selectedValues.length === 0
+                  ? "bg-amber-50 text-amber-900 font-bold"
+                  : "hover:bg-slate-100 text-slate-700",
+              )}
+            >
+              <span>{tr("All", "എല്ലാം")}</span>
+              {selectedValues.length === 0 && (
+                <Check className="h-3.5 w-3.5 text-amber-600 stroke-[2.5]" />
+              )}
+            </div>
+
+            {filteredOptions.map((opt) => {
+              const isChecked = selectedValues.includes(opt);
+              return (
+                <div
+                  key={opt}
+                  onClick={() => toggleOption(opt)}
+                  className={cn(
+                    "flex items-center gap-2.5 py-1.5 px-2 rounded-md cursor-pointer text-xs transition-colors select-none",
+                    isChecked
+                      ? "bg-[#FFF8F0] text-amber-950 font-bold"
+                      : "hover:bg-slate-100 text-slate-700 font-medium",
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "h-4 w-4 rounded border flex items-center justify-center shrink-0 transition-colors",
+                      isChecked
+                        ? "border-amber-500 bg-amber-500 text-white"
+                        : "border-slate-300 bg-white",
+                    )}
+                  >
+                    {isChecked && <Check className="h-3 w-3 stroke-[3]" />}
+                  </div>
+                  <span className="truncate">{opt}</span>
+                </div>
+              );
+            })}
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
 
 function BeneficiariesPage() {
   const { lang } = useLang();
@@ -220,18 +375,69 @@ function BeneficiariesPage() {
     }
   }, []);
 
+  const tr = (en: string, ml: string) => (lang === "ml" ? ml : en);
+
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
+  const [selectedMandalams, setSelectedMandalams] = useState<string[]>([]);
+  const [selectedCreatedBys, setSelectedCreatedBys] = useState<string[]>([]);
+
+  const availableDistrictsList = useMemo(() => {
+    const list = districts.map((d) => d.en).concat(beneficiariesList.map((b) => b.district));
+    return Array.from(new Set(list)).sort();
+  }, [beneficiariesList]);
+
+  const availableMandalamsList = useMemo(() => {
+    const list = beneficiariesList.map((b) => b.mandalam).filter(Boolean) as string[];
+    return Array.from(new Set(list)).sort();
+  }, [beneficiariesList]);
+
+  const availableCreatedBysList = useMemo(() => {
+    const list = availableReviewers.concat(beneficiariesList.map((b) => b.createdBy));
+    return Array.from(new Set(list)).sort();
+  }, [beneficiariesList]);
+
+  const activeFilterCount =
+    selectedStatuses.length +
+    selectedDistricts.length +
+    selectedMandalams.length +
+    selectedCreatedBys.length;
+
   const topSearchQuery = useAdminTopSearch();
 
-  const filteredBeneficiaries = beneficiariesList.filter((b) => {
-    const q = topSearchQuery.trim().toLowerCase();
-    if (!q) return true;
-    return (
-      b.applicantName.toLowerCase().includes(q) ||
-      b.id.toLowerCase().includes(q) ||
-      b.district.toLowerCase().includes(q) ||
-      b.createdBy.toLowerCase().includes(q)
-    );
-  });
+  const filteredBeneficiaries = useMemo(() => {
+    return beneficiariesList.filter((b) => {
+      const q = topSearchQuery.trim().toLowerCase();
+      const searchMatch =
+        !q ||
+        b.applicantName.toLowerCase().includes(q) ||
+        b.id.toLowerCase().includes(q) ||
+        b.district.toLowerCase().includes(q) ||
+        (b.mandalam && b.mandalam.toLowerCase().includes(q)) ||
+        b.createdBy.toLowerCase().includes(q);
+
+      const statusMatch =
+        selectedStatuses.length === 0 || selectedStatuses.includes(b.status);
+
+      const districtMatch =
+        selectedDistricts.length === 0 || selectedDistricts.includes(b.district);
+
+      const mandalamMatch =
+        selectedMandalams.length === 0 || (b.mandalam && selectedMandalams.includes(b.mandalam));
+
+      const createdByMatch =
+        selectedCreatedBys.length === 0 || selectedCreatedBys.includes(b.createdBy);
+
+      return searchMatch && statusMatch && districtMatch && mandalamMatch && createdByMatch;
+    });
+  }, [
+    beneficiariesList,
+    topSearchQuery,
+    selectedStatuses,
+    selectedDistricts,
+    selectedMandalams,
+    selectedCreatedBys,
+  ]);
 
   function toggleSelectAll() {
     if (selectedIds.size === filteredBeneficiaries.length) {
@@ -345,10 +551,84 @@ function BeneficiariesPage() {
               <option value="all">{lang === "ml" ? "എല്ലാ സമയവും" : "All Time"}</option>
             </select>
 
-            <button className="flex items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors shrink-0">
-              <Filter className="h-3.5 w-3.5 text-muted-foreground" />
-              {lang === "ml" ? "ഫിൽട്ടറുകൾ" : "Filter"}
-            </button>
+            {/* Filter Dropdown Popover */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors shrink-0 cursor-pointer",
+                    activeFilterCount > 0
+                      ? "border-amber-400 bg-[#FFF8F0] text-amber-950 font-bold"
+                      : "border-border bg-background text-foreground hover:bg-muted"
+                  )}
+                >
+                  <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span>{lang === "ml" ? "ഫിൽട്ടറുകൾ" : "Filter"}</span>
+                  {activeFilterCount > 0 && (
+                    <span className="ml-1 rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold text-white leading-none">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-72 p-3 space-y-3 shadow-xl border-border">
+                <div className="flex items-center justify-between border-b border-border pb-2">
+                  <h3 className="text-xs font-bold text-foreground">
+                    {lang === "ml" ? "അപേക്ഷകരെ ഫിൽട്ടർ ചെയ്യുക" : "Filter Applicants"}
+                  </h3>
+                  {activeFilterCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedStatuses([]);
+                        setSelectedDistricts([]);
+                        setSelectedMandalams([]);
+                        setSelectedCreatedBys([]);
+                      }}
+                      className="text-[11px] font-bold text-amber-600 hover:text-amber-700 hover:underline cursor-pointer"
+                    >
+                      {lang === "ml" ? "എല്ലാം റീസെറ്റ് ചെയ്യുക" : "Reset All"}
+                    </button>
+                  )}
+                </div>
+
+                <div className="space-y-2.5">
+                  <FilterDropdownSelector
+                    title={lang === "ml" ? "ജില്ല" : "DISTRICT"}
+                    placeholder={tr("Select District", "ജില്ല തിരഞ്ഞെടുക്കുക")}
+                    options={availableDistrictsList}
+                    selectedValues={selectedDistricts}
+                    onChange={setSelectedDistricts}
+                    tr={tr}
+                  />
+                  <FilterDropdownSelector
+                    title={lang === "ml" ? "മണ്ഡലം" : "MANDALAM"}
+                    placeholder={tr("Select Mandalam", "മണ്ഡലം തിരഞ്ഞെടുക്കുക")}
+                    options={availableMandalamsList}
+                    selectedValues={selectedMandalams}
+                    onChange={setSelectedMandalams}
+                    tr={tr}
+                  />
+                  <FilterDropdownSelector
+                    title={lang === "ml" ? "സൃഷ്ടിച്ചത്" : "CREATED BY"}
+                    placeholder={tr("Select Created By", "സൃഷ്ടിച്ചത് തിരഞ്ഞെടുക്കുക")}
+                    options={availableCreatedBysList}
+                    selectedValues={selectedCreatedBys}
+                    onChange={setSelectedCreatedBys}
+                    tr={tr}
+                  />
+                  <FilterDropdownSelector
+                    title={lang === "ml" ? "സ്റ്റാറ്റസ്" : "STATUS"}
+                    placeholder={tr("Select Status", "സ്റ്റാറ്റസ് തിരഞ്ഞെടുക്കുക")}
+                    options={availableStatuses}
+                    selectedValues={selectedStatuses}
+                    onChange={setSelectedStatuses}
+                    tr={tr}
+                  />
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {/* Create New Applicant Button */}
             <Button

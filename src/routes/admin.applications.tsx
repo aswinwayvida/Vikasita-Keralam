@@ -1,6 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
+  Search,
+  ChevronDown,
+  Check,
   ChevronRight,
   Filter,
   Download,
@@ -61,6 +64,157 @@ import { useLang } from "@/i18n/LanguageProvider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { useAdminTopSearch } from "@/lib/admin-search-store";
+import { cn } from "@/lib/utils";
+
+function FilterDropdownSelector({
+  title,
+  placeholder,
+  options,
+  selectedValues,
+  onChange,
+  tr,
+}: {
+  title: string;
+  placeholder: string;
+  options: string[];
+  selectedValues: string[];
+  onChange: (newValues: string[]) => void;
+  tr: (en: string, ml: string) => string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const filteredOptions = useMemo(() => {
+    if (!search.trim()) return options;
+    return options.filter((opt) =>
+      opt.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [options, search]);
+
+  const toggleOption = (val: string) => {
+    if (selectedValues.includes(val)) {
+      onChange(selectedValues.filter((item) => item !== val));
+    } else {
+      onChange([...selectedValues, val]);
+    }
+  };
+
+  const getLabelText = () => {
+    if (selectedValues.length === 0) return placeholder;
+    if (selectedValues.length === 1) return selectedValues[0];
+    return `${selectedValues.length} ${tr("Selected", "തിരഞ്ഞെടുത്തു")}`;
+  };
+
+  if (options.length === 0) return null;
+
+  return (
+    <div className="space-y-1">
+      <label className="font-bold text-slate-500 text-[10px] uppercase tracking-wider block">
+        {title}
+      </label>
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className={cn(
+              "w-full h-9 px-3 rounded-lg border flex items-center justify-between text-xs font-semibold transition-all bg-white cursor-pointer select-none text-left shadow-2xs",
+              selectedValues.length > 0
+                ? "border-amber-400 bg-[#FFF8F0] text-amber-950 font-bold"
+                : "border-border text-slate-800 hover:border-amber-300 hover:bg-slate-50/50"
+            )}
+          >
+            <span className="truncate pr-2">{getLabelText()}</span>
+            <ChevronDown
+              className={cn(
+                "h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform duration-200",
+                isOpen && "rotate-180"
+              )}
+            />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent
+          align="start"
+          className="w-64 p-2 text-xs bg-white shadow-xl border border-amber-200 rounded-xl space-y-2 z-50"
+        >
+          {options.length > 4 && (
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={tr("Search...", "തിരയുക...")}
+                className="w-full h-8 pl-8 pr-2 text-xs rounded-md border border-border bg-slate-50 focus:border-amber-500 focus:bg-white focus:outline-none"
+              />
+            </div>
+          )}
+
+          <div className="flex items-center justify-between px-1.5 py-1 border-b border-slate-100 text-[11px]">
+            <span className="font-bold text-slate-500">
+              {selectedValues.length > 0
+                ? `${selectedValues.length} ${tr("selected", "തിരഞ്ഞെടുത്തു")}`
+                : tr("All", "എല്ലാം")}
+            </span>
+            {selectedValues.length > 0 && (
+              <button
+                type="button"
+                onClick={() => onChange([])}
+                className="text-amber-600 hover:text-amber-700 font-bold cursor-pointer hover:underline"
+              >
+                {tr("Clear", "നീക്കം ചെയ്യുക")}
+              </button>
+            )}
+          </div>
+
+          <div className="max-h-60 overflow-y-auto pr-1 space-y-0.5 custom-scrollbar">
+            <div
+              onClick={() => onChange([])}
+              className={cn(
+                "flex items-center justify-between py-1.5 px-2 rounded-md cursor-pointer text-xs transition-colors font-medium",
+                selectedValues.length === 0
+                  ? "bg-amber-50 text-amber-900 font-bold"
+                  : "hover:bg-slate-100 text-slate-700"
+              )}
+            >
+              <span>{tr("All", "എല്ലാം")}</span>
+              {selectedValues.length === 0 && (
+                <Check className="h-3.5 w-3.5 text-amber-600 stroke-[2.5]" />
+              )}
+            </div>
+
+            {filteredOptions.map((opt) => {
+              const isChecked = selectedValues.includes(opt);
+              return (
+                <div
+                  key={opt}
+                  onClick={() => toggleOption(opt)}
+                  className={cn(
+                    "flex items-center gap-2.5 py-1.5 px-2 rounded-md cursor-pointer text-xs transition-colors select-none",
+                    isChecked
+                      ? "bg-[#FFF8F0] text-amber-950 font-bold"
+                      : "hover:bg-slate-100 text-slate-700 font-medium"
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "h-4 w-4 rounded border flex items-center justify-center transition-colors shrink-0",
+                      isChecked
+                        ? "border-amber-500 bg-amber-500 text-white"
+                        : "border-slate-300 bg-white"
+                    )}
+                  >
+                    {isChecked && <Check className="h-3 w-3 stroke-[3]" />}
+                  </div>
+                  <span className="truncate flex-1">{opt}</span>
+                </div>
+              );
+            })}
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/admin/applications")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -225,14 +379,38 @@ function ApplicationsPage() {
     })
   );
 
+  const tr = (en: string, ml: string) => (lang === "ml" ? ml : en);
+
   const [editingRecord, setEditingRecord] = useState<RichApplicationRecord | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>("All");
-  const [districtFilter, setDistrictFilter] = useState("All");
-  const [schemeCategoryFilter, setSchemeCategoryFilter] = useState("all");
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [selectedSchemes, setSelectedSchemes] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
+  const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
+  const [selectedCreatedBys, setSelectedCreatedBys] = useState<string[]>([]);
   const [dateFilter, setDateFilter] = useState("all");
   const [customStartDate, setCustomRangeStart] = useState("");
   const [customEndDate, setCustomRangeEnd] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const availableStatuses = useMemo(() => [...applicationStatuses], []);
+  const availableSchemes = useMemo(() => {
+    const list = schemes.map((s) => s.en);
+    return Array.from(new Set(list)).sort();
+  }, []);
+  const availableCategories = useMemo(() => [
+    "Agriculture",
+    "Education",
+    "Health",
+    "Housing",
+    "Pension & Welfare",
+    "Women Welfare",
+    "Employment",
+    "MSME & Business",
+  ], []);
+  const availableDistricts = useMemo(() => districts.map((d) => d.en).sort(), []);
+  const availableAreas = useMemo(() => Array.from(new Set(areaNames)).sort(), []);
+  const availableCreatedBys = useMemo(() => Array.from(new Set(Object.keys(reviewerDesignations))).sort(), []);
 
   const [visibleColumns, setVisibleColumns] = useState<Set<ApplicationColumnKey>>(
     () => new Set(APPLICATION_COLUMNS.map((c) => c.key).filter((k) => k !== "trackingId"))
@@ -242,7 +420,6 @@ function ApplicationsPage() {
   );
   const [draggedColumnIndex, setDraggedColumnIndex] = useState<number | null>(null);
 
-  const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [viewMode, setViewMode] = useState<"table" | "cards">(() => {
     if (typeof window !== "undefined" && window.innerWidth >= 768) {
       return "table";
@@ -362,11 +539,52 @@ function ApplicationsPage() {
         record.schemeId.toLowerCase().includes(q);
 
       const statusMatch =
-        statusFilter === "All" ||
-        record.appStatus === statusFilter ||
-        record.queueStage === statusFilter;
+        selectedStatuses.length === 0 ||
+        selectedStatuses.includes(record.appStatus || "") ||
+        selectedStatuses.includes(record.queueStage || "");
 
-      const districtMatch = districtFilter === "All" || record.districtId === districtFilter;
+      const districtMatch =
+        selectedDistricts.length === 0 ||
+        selectedDistricts.includes(record.orgDistrict) ||
+        selectedDistricts.some((dName) => {
+          const dObj = districts.find((d) => d.en.toLowerCase() === dName.toLowerCase() || d.id === record.districtId);
+          return dObj?.id === record.districtId;
+        });
+
+      const areaMatch =
+        selectedAreas.length === 0 || selectedAreas.includes(record.area);
+
+      const createdByMatch =
+        selectedCreatedBys.length === 0 || selectedCreatedBys.includes(record.reviewer);
+
+      const schemeMatch =
+        selectedSchemes.length === 0 ||
+        selectedSchemes.some((sTitle) => {
+          const sch = schemes.find((s) => s.id === record.schemeId);
+          if (!sch) return false;
+          return (
+            sch.en.toLowerCase() === sTitle.toLowerCase() ||
+            sch.ml === sTitle
+          );
+        });
+
+      let categoryMatch = true;
+      if (selectedCategories.length > 0) {
+        const sch = schemes.find((s) => s.id === record.schemeId);
+        if (!sch) {
+          categoryMatch = false;
+        } else {
+          categoryMatch = selectedCategories.some((cat) => {
+            const catLower = cat.toLowerCase();
+            const schCat = sch.category.toLowerCase();
+            if (schCat === catLower) return true;
+            if (catLower.includes("welfare") && schCat === "welfare") return true;
+            if (catLower.includes("women") && schCat === "women") return true;
+            if (catLower.includes("msme") && schCat === "msme") return true;
+            return false;
+          });
+        }
+      }
 
       let dateMatch = true;
       if (dateFilter !== "all") {
@@ -386,15 +604,28 @@ function ApplicationsPage() {
         }
       }
 
-      let categoryMatch = true;
-      if (schemeCategoryFilter !== "all") {
-        const sch = schemes.find((s) => s.id === record.schemeId);
-        categoryMatch = sch ? sch.category.toLowerCase() === schemeCategoryFilter.toLowerCase() : true;
-      }
-
-      return searchMatch && statusMatch && districtMatch && dateMatch && categoryMatch;
+      return (
+        searchMatch &&
+        statusMatch &&
+        districtMatch &&
+        areaMatch &&
+        createdByMatch &&
+        schemeMatch &&
+        categoryMatch &&
+        dateMatch
+      );
     });
-  }, [applicationsList, topSearchQuery, statusFilter, districtFilter, dateFilter, schemeCategoryFilter]);
+  }, [
+    applicationsList,
+    topSearchQuery,
+    selectedStatuses,
+    selectedSchemes,
+    selectedCategories,
+    selectedDistricts,
+    selectedAreas,
+    selectedCreatedBys,
+    dateFilter,
+  ]);
 
   const visible = filtered.slice(0, 50);
   const allVisibleSelected =
@@ -419,9 +650,12 @@ function ApplicationsPage() {
   }
 
   const activeFilterCount =
-    (statusFilter !== "All" ? 1 : 0) +
-    (districtFilter !== "All" ? 1 : 0) +
-    (schemeCategoryFilter !== "all" ? 1 : 0) +
+    selectedStatuses.length +
+    selectedSchemes.length +
+    selectedCategories.length +
+    selectedDistricts.length +
+    selectedAreas.length +
+    selectedCreatedBys.length +
     (dateFilter !== "all" ? 1 : 0);
 
   return (
@@ -551,146 +785,115 @@ function ApplicationsPage() {
               <option value="year">{lang === "ml" ? "കഴിഞ്ഞ 1 വർഷം" : "Last Year"}</option>
             </select>
 
-            {/* Filter Button with Dropdowns Inside Filter Popover */}
-            <div className="relative shrink-0">
-              <button
-                onClick={() => setShowFilterMenu(!showFilterMenu)}
-                className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors shrink-0 ${
-                  activeFilterCount > 0 || showFilterMenu
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border bg-background text-foreground hover:bg-muted"
-                }`}
+            {/* Filter Button with Multi-Select Dropdowns Inside Filter Popover */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer shrink-0",
+                    activeFilterCount > 0
+                      ? "border-primary bg-primary/10 text-primary font-bold"
+                      : "border-border bg-background text-foreground hover:bg-muted"
+                  )}
+                >
+                  <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span>{tr("Filter", "ഫിൽട്ടർ")}</span>
+                  {activeFilterCount > 0 && (
+                    <span className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="w-72 p-3 text-xs space-y-3.5 max-h-[85vh] overflow-y-auto z-50 bg-white border border-border shadow-xl rounded-xl"
               >
-                <Filter className="h-3.5 w-3.5" />
-                {lang === "ml" ? "ഫിൽട്ടറുകൾ" : "Filter"}
-                {activeFilterCount > 0 && (
-                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                    {activeFilterCount}
+                <div className="flex items-center justify-between pb-1.5 border-b border-border">
+                  <span className="font-bold text-foreground text-xs">
+                    {tr("Filter Applications", "അപേക്ഷകളെ ഫിൽട്ടർ ചെയ്യുക")}
                   </span>
-                )}
-              </button>
-
-              {showFilterMenu && (
-                <div className="absolute right-0 top-full mt-2 z-30 w-72 rounded-xl border border-border bg-card p-4 shadow-lg space-y-3.5">
-                  <div className="flex items-center justify-between border-b border-border pb-2">
-                    <h4 className="text-xs font-bold text-foreground">
-                      {lang === "ml" ? "അപേക്ഷ ഫിൽട്ടറുകൾ" : "Filter Applications"}
-                    </h4>
-                    {activeFilterCount > 0 && (
-                      <button
-                        onClick={() => {
-                          setStatusFilter("All");
-                          setDistrictFilter("All");
-                          setSchemeCategoryFilter("all");
-                          setDateFilter("all");
-                        }}
-                        className="text-[11px] font-semibold text-primary hover:underline"
-                      >
-                        {lang === "ml" ? "റീസെറ്റ്" : "Reset all"}
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Status / Stage Filter Dropdown */}
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-muted-foreground block">
-                      {lang === "ml" ? "സ്റ്റാറ്റസ്" : "Status"}
-                    </label>
-                    <select
-                      value={statusFilter}
-                      onChange={(event) => setStatusFilter(event.target.value)}
-                      className="w-full h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold outline-none"
+                  {activeFilterCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedStatuses([]);
+                        setSelectedSchemes([]);
+                        setSelectedCategories([]);
+                        setSelectedDistricts([]);
+                        setSelectedAreas([]);
+                        setSelectedCreatedBys([]);
+                        setDateFilter("all");
+                      }}
+                      className="text-[11px] font-semibold text-primary hover:underline cursor-pointer"
                     >
-                      <option value="All">{lang === "ml" ? "എല്ലാ സ്റ്റാറ്റസുകളും" : "All Statuses"}</option>
-                      {applicationStatuses.map((item) => (
-                        <option key={item} value={item}>{item}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* District Filter Dropdown */}
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-muted-foreground block">
-                      {lang === "ml" ? "ജില്ല" : "District"}
-                    </label>
-                    <select
-                      value={districtFilter}
-                      onChange={(event) => setDistrictFilter(event.target.value)}
-                      className="w-full h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold outline-none"
-                    >
-                      <option value="All">{lang === "ml" ? "എല്ലാ ജില്ലകളും" : "All Districts"}</option>
-                      {districts.map((item) => (
-                        <option key={item.id} value={item.id}>
-                          {item[lang]}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Scheme Category Filter Dropdown */}
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-muted-foreground block">
-                      {lang === "ml" ? "പദ്ധതി വിഭാഗം" : "Scheme Category"}
-                    </label>
-                    <select
-                      value={schemeCategoryFilter}
-                      onChange={(e) => setSchemeCategoryFilter(e.target.value)}
-                      className="w-full h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold outline-none"
-                    >
-                      <option value="all">{lang === "ml" ? "എല്ലാ വിഭാഗങ്ങളും" : "All Categories"}</option>
-                      <option value="agriculture">{lang === "ml" ? "കൃഷി" : "Agriculture"}</option>
-                      <option value="education">{lang === "ml" ? "വിദ്യാഭ്യാസം" : "Education"}</option>
-                      <option value="health">{lang === "ml" ? "ആരോഗ്യം" : "Health"}</option>
-                      <option value="housing">{lang === "ml" ? "ഭവനം" : "Housing"}</option>
-                      <option value="welfare">{lang === "ml" ? "പെൻഷൻ / ക്ഷേമം" : "Pension & Welfare"}</option>
-                      <option value="women">{lang === "ml" ? "വനിതാ ക്ഷേമം" : "Women Welfare"}</option>
-                      <option value="employment">{lang === "ml" ? "തൊഴിൽ" : "Employment"}</option>
-                      <option value="msme">{lang === "ml" ? "MSME / സംരംഭകം" : "MSME & Business"}</option>
-                    </select>
-                  </div>
-
-                  {/* Application Date Filter Dropdown */}
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-muted-foreground block">
-                      {lang === "ml" ? "അപേക്ഷാ തീയതി" : "Application Date"}
-                    </label>
-                    <select
-                      value={dateFilter}
-                      onChange={(e) => setDateFilter(e.target.value)}
-                      className="w-full h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold outline-none"
-                    >
-                      <option value="all">{lang === "ml" ? "എല്ലാ തീയതികളും" : "All Dates"}</option>
-                      <option value="today">{lang === "ml" ? "ഇന്ന്" : "Today"}</option>
-                      <option value="7days">{lang === "ml" ? "കഴിഞ്ഞ 7 ദിവസങ്ങൾ" : "Last 7 Days"}</option>
-                      <option value="30days">{lang === "ml" ? "കഴിഞ്ഞ 30 ദിവസങ്ങൾ" : "Last 30 Days"}</option>
-                      <option value="custom">{lang === "ml" ? "കസ്റ്റം റേഞ്ച്" : "Custom Range"}</option>
-                    </select>
-                    {dateFilter === "custom" && (
-                      <div className="grid grid-cols-2 gap-2 pt-1.5">
-                        <div>
-                          <span className="text-[10px] text-muted-foreground block mb-0.5">From</span>
-                          <input
-                            type="date"
-                            value={customStartDate}
-                            onChange={(e) => setCustomRangeStart(e.target.value)}
-                            className="w-full h-7 text-[11px] rounded border border-border bg-background px-1.5 font-medium"
-                          />
-                        </div>
-                        <div>
-                          <span className="text-[10px] text-muted-foreground block mb-0.5">To</span>
-                          <input
-                            type="date"
-                            value={customEndDate}
-                            onChange={(e) => setCustomRangeEnd(e.target.value)}
-                            className="w-full h-7 text-[11px] rounded border border-border bg-background px-1.5 font-medium"
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                      {tr("Reset All", "എല്ലാം റീസെറ്റ് ചെയ്യുക")}
+                    </button>
+                  )}
                 </div>
-              )}
-            </div>
+
+                {/* Status Filter */}
+                <FilterDropdownSelector
+                  title={tr("STATUS", "സ്റ്റാറ്റസ്")}
+                  placeholder={tr("Select Status", "സ്റ്റാറ്റസ് തിരഞ്ഞെടുക്കുക")}
+                  options={availableStatuses}
+                  selectedValues={selectedStatuses}
+                  onChange={setSelectedStatuses}
+                  tr={tr}
+                />
+
+                {/* Scheme Filter */}
+                <FilterDropdownSelector
+                  title={tr("SCHEME", "പദ്ധതി")}
+                  placeholder={tr("Select Scheme", "പദ്ധതി തിരഞ്ഞെടുക്കുക")}
+                  options={availableSchemes}
+                  selectedValues={selectedSchemes}
+                  onChange={setSelectedSchemes}
+                  tr={tr}
+                />
+
+                {/* Scheme Category Filter */}
+                <FilterDropdownSelector
+                  title={tr("SCHEME CATEGORY", "പദ്ധതി വിഭാഗം")}
+                  placeholder={tr("Select Category", "വിഭാഗം തിരഞ്ഞെടുക്കുക")}
+                  options={availableCategories}
+                  selectedValues={selectedCategories}
+                  onChange={setSelectedCategories}
+                  tr={tr}
+                />
+
+                {/* District / Org District Filter */}
+                <FilterDropdownSelector
+                  title={tr("ORG DISTRICT", "സംഘടനാ ജില്ല")}
+                  placeholder={tr("Select District", "ജില്ല തിരഞ്ഞെടുക്കുക")}
+                  options={availableDistricts}
+                  selectedValues={selectedDistricts}
+                  onChange={setSelectedDistricts}
+                  tr={tr}
+                />
+
+                {/* Area Filter */}
+                <FilterDropdownSelector
+                  title={tr("AREA", "പ്രദേശം")}
+                  placeholder={tr("Select Area", "പ്രദേശം തിരഞ്ഞെടുക്കുക")}
+                  options={availableAreas}
+                  selectedValues={selectedAreas}
+                  onChange={setSelectedAreas}
+                  tr={tr}
+                />
+
+                {/* Created By Filter */}
+                <FilterDropdownSelector
+                  title={tr("CREATED BY", "സൃഷ്ടിച്ചത്")}
+                  placeholder={tr("Select Officer", "ഉദ്യോഗസ്ഥനെ തിരഞ്ഞെടുക്കുക")}
+                  options={availableCreatedBys}
+                  selectedValues={selectedCreatedBys}
+                  onChange={setSelectedCreatedBys}
+                  tr={tr}
+                />
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {/* New Application Button + 3-Dot Menu (Import / Export) */}
             <div className="flex items-center gap-1 shrink-0">
