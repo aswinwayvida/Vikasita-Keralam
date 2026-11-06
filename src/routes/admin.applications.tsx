@@ -859,7 +859,7 @@ function ApplicationsPage() {
 
         {/* Data Table View */}
         {viewMode === "table" && (
-          <div className="overflow-x-auto rounded-xl border border-border">
+          <div className="overflow-x-auto rounded-xl">
             <table className="w-full text-left text-xs">
               <thead className="bg-muted/50 font-bold text-muted-foreground border-b border-border">
                 <tr>
