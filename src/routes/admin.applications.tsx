@@ -2,11 +2,9 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   ChevronRight,
-  Clock3,
-  FileCheck2,
-  FileText,
   Filter,
   Download,
+  Upload,
   LayoutGrid,
   List,
   Mail,
@@ -14,144 +12,391 @@ import {
   MessageCircle,
   Plus,
   UserRoundCheck,
-  Search,
-  X,
-  ChevronDown,
+  Columns3,
+  GripVertical,
+  MoreVertical,
+  Eye,
+  Pencil,
+  RefreshCw,
+  UserCheck,
+  Trash2,
+  ExternalLink,
+  Link as LinkIcon,
+  Clock,
+  Clock3,
+  AlertCircle,
+  FileCheck2,
+  Send,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
-  adminApplicationMetrics,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
+import {
   adminApplications,
-  applicationStages,
+  applicationReviewers,
   type QueueStage,
+  type AdminApplication,
 } from "@/data/admin-applications";
 import { districts, getDistrictName } from "@/data/geo";
 import { schemes } from "@/data/schemes";
-import { loadHelpdeskRequests, type HelpdeskRequest } from "@/lib/helpdesk-requests";
 import { useLang } from "@/i18n/LanguageProvider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { useAdminTopSearch } from "@/lib/admin-search-store";
 
 export const Route = createFileRoute("/admin/applications")({
   validateSearch: (search: Record<string, unknown>) => ({
-    stage:
-      typeof search.stage === "string" && applicationStages.includes(search.stage as QueueStage)
-        ? (search.stage as QueueStage)
-        : undefined,
+    stage: typeof search.stage === "string" ? search.stage : undefined,
     filter: typeof search.filter === "string" ? search.filter : undefined,
   }),
-  head: () => ({ meta: [{ title: "Applications · Admin" }] }),
+  head: () => ({ meta: [{ title: "Applications List · Admin" }] }),
   component: ApplicationsPage,
 });
 
-export function StagePill({ stage }: { stage: QueueStage }) {
-  if (stage === "New") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-extrabold text-primary border border-primary/20">
-        New
-      </span>
-    );
+export type ApplicationStatus =
+  | "Received"
+  | "Follow Up Required"
+  | "Document Verified"
+  | "Applied"
+  | "Approved"
+  | "Rejected"
+  | "Pending";
+
+export const applicationStatuses: ApplicationStatus[] = [
+  "Received",
+  "Follow Up Required",
+  "Document Verified",
+  "Applied",
+  "Approved",
+  "Rejected",
+  "Pending",
+];
+
+const mlToEnNames: Record<string, string> = {
+  "രമേശ് കുമാർ": "Ramesh Kumar",
+  "സന്ധ്യ നായർ": "Sandhya Nair",
+  "അനിൽ മേനോൻ": "Anil Menon",
+  "ലത ജോസഫ്": "Latha Joseph",
+  "സുരേഷ് കുമാർ": "Suresh Kumar",
+  "ദീപ നായർ": "Deepa Nair",
+  "ബിജു മേനോൻ": "Biju Menon",
+  "ശ്രീലത ജോസഫ്": "Sreelatha Joseph",
+  "ജയൻ കുമാർ": "Jayan Kumar",
+  "നിത്യ നായർ": "Nithya Nair",
+  "വിനോദ് മേനോൻ": "Vinod Menon",
+};
+
+export function getApplicantName(applicant: string, lang: string): string {
+  if (lang === "ml") return applicant;
+  return mlToEnNames[applicant] || applicant;
+}
+
+const reviewerDesignations: Record<string, string> = {
+  "Not assigned": "Unassigned Officer",
+  "Anitha K.": "Senior Superintendent",
+  "Rahul M.": "District Coordinator",
+  "Nithya S.": "Junior Assistant",
+  "District desk": "Helpdesk Officer",
+};
+
+export function StatusPill({ status }: { status: ApplicationStatus | string }) {
+  let badgeClass = "bg-muted text-muted-foreground border-border";
+  let Icon = Clock;
+
+  if (status === "Received") {
+    badgeClass = "bg-sky-500/10 text-sky-600 border-sky-500/20";
+    Icon = Clock;
+  } else if (status === "Follow Up Required" || status === "Follow-up needed") {
+    badgeClass = "bg-destructive/10 text-destructive border-destructive/20";
+    Icon = AlertCircle;
+  } else if (status === "Document Verified" || status === "Checking documents") {
+    badgeClass = "bg-purple-500/10 text-purple-600 border-purple-500/20";
+    Icon = FileCheck2;
+  } else if (status === "Applied" || status === "Ready to submit" || status === "New") {
+    badgeClass = "bg-blue-500/10 text-blue-600 border-blue-500/20";
+    Icon = Send;
+  } else if (status === "Approved" || status === "Completed") {
+    badgeClass = "bg-emerald-500/10 text-emerald-600 border-emerald-500/20";
+    Icon = CheckCircle2;
+  } else if (status === "Rejected") {
+    badgeClass = "bg-red-500/10 text-red-600 border-red-500/20";
+    Icon = XCircle;
+  } else if (status === "Pending") {
+    badgeClass = "bg-amber-500/10 text-amber-600 border-amber-500/20";
+    Icon = Clock3;
   }
-  if (stage === "Checking documents") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-extrabold text-amber-700 border border-amber-500/20">
-        Checking documents
-      </span>
-    );
-  }
-  if (stage === "Follow-up needed") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2.5 py-0.5 text-[10px] font-extrabold text-destructive border border-destructive/20">
-        Follow-up needed
-      </span>
-    );
-  }
-  if (stage === "Ready to submit") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 px-2.5 py-0.5 text-[10px] font-extrabold text-sky-600 border border-sky-500/20">
-        Ready to submit
-      </span>
-    );
-  }
+
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-600 border border-emerald-500/20">
-      Completed
+    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold border ${badgeClass}`}>
+      <Icon className="h-3 w-3 shrink-0" />
+      {status}
     </span>
   );
 }
 
-export function formatWaitingTime(hours: number) {
-  if (hours < 24) return `${hours}h`;
-  const days = Math.floor(hours / 24);
-  const rem = hours % 24;
-  return rem > 0 ? `${days}d ${rem}h` : `${days}d`;
+export function StagePill({ stage }: { stage: QueueStage | string }) {
+  return <StatusPill status={stage} />;
 }
 
-import { useAdminTopSearch } from "@/lib/admin-search-store";
+type ApplicationColumnKey =
+  | "appDate"
+  | "applicant"
+  | "trackingId"
+  | "scheme"
+  | "areaOrgDistrict"
+  | "createdBy"
+  | "status"
+  | "applyLink"
+  | "actions";
+
+const APPLICATION_COLUMNS: { key: ApplicationColumnKey; en: string; ml: string }[] = [
+  { key: "appDate", en: "Application date", ml: "അപേക്ഷാ തീയതി" },
+  { key: "applicant", en: "Applicant Name", ml: "അപേക്ഷകന്റെ പേര്" },
+  { key: "trackingId", en: "Tracking ID", ml: "ട്രാക്കിംഗ് ഐഡി" },
+  { key: "scheme", en: "Scheme and Scheme Category", ml: "പദ്ധതിയും വിഭാഗവും" },
+  { key: "areaOrgDistrict", en: "Area & Org District", ml: "പ്രദേശവും ഓർഗ് ജില്ലയും" },
+  { key: "createdBy", en: "Created By", ml: "സൃഷ്ടിച്ചത്" },
+  { key: "status", en: "Status", ml: "സ്റ്റാറ്റസ്" },
+  { key: "applyLink", en: "Apply Link", ml: "അപേക്ഷാ ലിങ്ക്" },
+  { key: "actions", en: "Actions", ml: "നടപടികൾ" },
+];
+
+const areaNames = [
+  "Thiruvananthapuram Urban",
+  "Kollam East",
+  "Alappuzha North",
+  "Kottayam West",
+  "Idukki Central",
+  "Ernakulam Metro",
+  "Thrissur North",
+  "Palakkad Rural",
+];
+
+type RichApplicationRecord = AdminApplication & {
+  appStatus?: ApplicationStatus;
+  area: string;
+  orgDistrict: string;
+  trackingId: string;
+  reviewerDesignation: string;
+  applyUrl: string;
+};
 
 function ApplicationsPage() {
   const { lang } = useLang();
   const navigate = useNavigate();
-  const routeSearch = Route.useSearch();
   const topSearchQuery = useAdminTopSearch();
-  const [stage, setStage] = useState<"All" | QueueStage>(routeSearch.stage ?? "All");
-  const [district, setDistrict] = useState("All");
+
+  // Application Record state mapped to rich fields
+  const [applicationsList, setApplicationsList] = useState<RichApplicationRecord[]>(() =>
+    adminApplications.map((app, index) => {
+      const distObj = districts.find((d) => d.id === app.districtId);
+      const orgDistName = distObj ? distObj.en : "Thiruvananthapuram";
+      const areaName = areaNames[index % areaNames.length];
+      const trackingId = `TRK-${String(880000 + index * 137).slice(0, 6)}`;
+      const reviewerDesig = reviewerDesignations[app.reviewer] || "Desk Officer";
+
+      return {
+        ...app,
+        appStatus: applicationStatuses[index % applicationStatuses.length],
+        area: areaName,
+        orgDistrict: orgDistName,
+        trackingId,
+        reviewerDesignation: reviewerDesig,
+        applyUrl: `https://services.kerala.gov.in/scheme/${app.schemeId}/apply`,
+      };
+    })
+  );
+
+  const [editingRecord, setEditingRecord] = useState<RichApplicationRecord | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>("All");
+  const [districtFilter, setDistrictFilter] = useState("All");
   const [schemeCategoryFilter, setSchemeCategoryFilter] = useState("all");
-  const [assistanceStatusFilter, setAssistanceStatusFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
   const [customStartDate, setCustomRangeStart] = useState("");
   const [customEndDate, setCustomRangeEnd] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [, setHelpdeskRequests] = useState<HelpdeskRequest[]>([]);
+
+  const [visibleColumns, setVisibleColumns] = useState<Set<ApplicationColumnKey>>(
+    () => new Set(APPLICATION_COLUMNS.map((c) => c.key).filter((k) => k !== "trackingId"))
+  );
+  const [columnOrder, setColumnOrder] = useState<ApplicationColumnKey[]>(() =>
+    APPLICATION_COLUMNS.map((c) => c.key)
+  );
+  const [draggedColumnIndex, setDraggedColumnIndex] = useState<number | null>(null);
+
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
+  const [viewMode, setViewMode] = useState<"table" | "cards">(() => {
+    if (typeof window !== "undefined" && window.innerWidth >= 768) {
+      return "table";
+    }
+    return "cards";
+  });
 
   useEffect(() => {
-    const refresh = () => setHelpdeskRequests(loadHelpdeskRequests());
-    refresh();
-    window.addEventListener("storage", refresh);
-    window.addEventListener("vk-helpdesk-requests-changed", refresh);
-    return () => {
-      window.removeEventListener("storage", refresh);
-      window.removeEventListener("vk-helpdesk-requests-changed", refresh);
-    };
+    if (typeof window !== "undefined") {
+      setViewMode(window.innerWidth >= 768 ? "table" : "cards");
+    }
   }, []);
 
-  const activeSearch = searchQuery || topSearchQuery;
+  const handleDeleteRecord = (id: string) => {
+    setApplicationsList((prev) => prev.filter((item) => item.id !== id));
+    toast.success(lang === "ml" ? "അപേക്ഷ നീക്കം ചെയ്തു." : "Application deleted successfully.");
+  };
 
-  const filtered = useMemo(
-    () =>
-      adminApplications.filter((record) => {
-        const filterMatch =
-          !routeSearch.filter ||
-          (routeSearch.filter === "action" && record.queueStage !== "Completed") ||
-          (routeSearch.filter === "due" &&
-            record.queueStage !== "Completed" &&
-            record.ageHours >= 24) ||
-          (routeSearch.filter === "documents" &&
-            record.queueStage !== "Completed" &&
-            record.documentCount < 5) ||
-          (routeSearch.filter === "delayed" &&
-            record.queueStage !== "Completed" &&
-            record.ageHours > 48) ||
-          (routeSearch.filter === "unassigned" && record.reviewer === "Not assigned");
+  const handleBulkExport = () => {
+    toast.success(
+      lang === "ml"
+        ? `${selectedIds.size} അപേക്ഷകളുടെ ഡാറ്റ എക്സ്പോർട്ട് ചെയ്തു.`
+        : `Exported ${selectedIds.size} selected application(s).`
+    );
+  };
 
-        const q = activeSearch.trim().toLowerCase();
-        const searchMatch =
-          !q ||
-          record.applicantName.toLowerCase().includes(q) ||
-          record.id.toLowerCase().includes(q) ||
-          record.schemeName.en.toLowerCase().includes(q) ||
-          record.schemeName.ml.toLowerCase().includes(q);
+  const handleBulkDelete = () => {
+    const count = selectedIds.size;
+    setApplicationsList((prev) => prev.filter((item) => !selectedIds.has(item.id)));
+    setSelectedIds(new Set());
+    toast.success(
+      lang === "ml"
+        ? `${count} അപേക്ഷകൾ നീക്കം ചെയ്തു.`
+        : `Deleted ${count} selected application(s).`
+    );
+  };
 
-        return (
-          filterMatch &&
-          searchMatch &&
-          (stage === "All" || record.queueStage === stage) &&
-          (district === "All" || record.districtId === district)
-        );
-      }),
-    [district, routeSearch.filter, activeSearch, stage, schemeCategoryFilter, assistanceStatusFilter, dateFilter, customStartDate, customEndDate],
-  );
-  const visible = filtered.slice(0, 40);
+  const handleUpdateStatus = (id: string, newStatus: ApplicationStatus) => {
+    setApplicationsList((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? { ...item, appStatus: newStatus, queueStage: newStatus === "Approved" ? "Completed" : ("New" as QueueStage) }
+          : item
+      )
+    );
+    toast.success(
+      lang === "ml"
+        ? `സ്റ്റാറ്റസ് '${newStatus}' എന്ന് മാറ്റി.`
+        : `Status updated to '${newStatus}'.`
+    );
+  };
+
+  const handleAssignUser = (id: string, newUser: string) => {
+    setApplicationsList((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              reviewer: newUser,
+              reviewerDesignation: reviewerDesignations[newUser] || "Desk Officer",
+            }
+          : item
+      )
+    );
+    toast.success(
+      lang === "ml"
+        ? `'${newUser}' ബാധ്യസ്ഥനാക്കി അസൈൻ ചെയ്തു.`
+        : `Assigned application to ${newUser}.`
+    );
+  };
+
+  const toggleColumn = (key: ApplicationColumnKey) => {
+    setVisibleColumns((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        if (next.size > 1) next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
+
+  const handleDragStartColumn = (index: number) => {
+    setDraggedColumnIndex(index);
+  };
+
+  const handleDragOverColumn = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDropColumn = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (draggedColumnIndex === null || draggedColumnIndex === dropIndex) return;
+    const nextOrder = [...columnOrder];
+    const [moved] = nextOrder.splice(draggedColumnIndex, 1);
+    nextOrder.splice(dropIndex, 0, moved);
+    setColumnOrder(nextOrder);
+    setDraggedColumnIndex(null);
+  };
+
+  const filtered = useMemo(() => {
+    return applicationsList.filter((record) => {
+      const q = topSearchQuery.trim().toLowerCase();
+      const nameEn = getApplicantName(record.applicant, "en").toLowerCase();
+      const nameMl = record.applicant.toLowerCase();
+
+      const searchMatch =
+        !q ||
+        nameEn.includes(q) ||
+        nameMl.includes(q) ||
+        record.id.toLowerCase().includes(q) ||
+        record.reference.toLowerCase().includes(q) ||
+        record.trackingId.toLowerCase().includes(q) ||
+        record.area.toLowerCase().includes(q) ||
+        record.orgDistrict.toLowerCase().includes(q) ||
+        record.schemeId.toLowerCase().includes(q);
+
+      const statusMatch =
+        statusFilter === "All" ||
+        record.appStatus === statusFilter ||
+        record.queueStage === statusFilter;
+
+      const districtMatch = districtFilter === "All" || record.districtId === districtFilter;
+
+      let dateMatch = true;
+      if (dateFilter !== "all") {
+        const recordDate = new Date(record.submittedAt || record.createdAt || Date.now()).getTime();
+        const now = Date.now();
+        const oneDay = 24 * 60 * 60 * 1000;
+        if (dateFilter === "today") {
+          dateMatch = now - recordDate <= oneDay;
+        } else if (dateFilter === "week" || dateFilter === "7days") {
+          dateMatch = now - recordDate <= 7 * oneDay;
+        } else if (dateFilter === "month" || dateFilter === "30days") {
+          dateMatch = now - recordDate <= 30 * oneDay;
+        } else if (dateFilter === "6months") {
+          dateMatch = now - recordDate <= 180 * oneDay;
+        } else if (dateFilter === "year") {
+          dateMatch = now - recordDate <= 365 * oneDay;
+        }
+      }
+
+      let categoryMatch = true;
+      if (schemeCategoryFilter !== "all") {
+        const sch = schemes.find((s) => s.id === record.schemeId);
+        categoryMatch = sch ? sch.category.toLowerCase() === schemeCategoryFilter.toLowerCase() : true;
+      }
+
+      return searchMatch && statusMatch && districtMatch && dateMatch && categoryMatch;
+    });
+  }, [applicationsList, topSearchQuery, statusFilter, districtFilter, dateFilter, schemeCategoryFilter]);
+
+  const visible = filtered.slice(0, 50);
   const allVisibleSelected =
     visible.length > 0 && visible.every((record) => selectedIds.has(record.id));
 
@@ -173,40 +418,26 @@ function ApplicationsPage() {
     });
   }
 
-  const [timeRange, setTimeRange] = useState("30days");
-  const [showFilterMenu, setShowFilterMenu] = useState(false);
-  const [viewMode, setViewMode] = useState<"table" | "cards">(() => {
-    if (typeof window !== "undefined" && window.innerWidth >= 768) {
-      return "table";
-    }
-    return "cards";
-  });
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setViewMode(window.innerWidth >= 768 ? "table" : "cards");
-    }
-  }, []);
-
-  const activeFilterCount = (stage !== "All" ? 1 : 0) + (district !== "All" ? 1 : 0) + (schemeCategoryFilter !== "all" ? 1 : 0) + (assistanceStatusFilter !== "all" ? 1 : 0) + (dateFilter !== "all" ? 1 : 0);
+  const activeFilterCount =
+    (statusFilter !== "All" ? 1 : 0) +
+    (districtFilter !== "All" ? 1 : 0) +
+    (schemeCategoryFilter !== "all" ? 1 : 0) +
+    (dateFilter !== "all" ? 1 : 0);
 
   return (
     <div className="space-y-6 pb-8">
       {/* Merged Single Section Container */}
       <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-5">
         
-        {/* Top Header Row with Title & Filter / Export / New Application Buttons */}
+        {/* Top Header Row with Title & Filter / Actions */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 pb-4">
           <div>
             <h2 className="font-display text-base font-bold text-foreground">
-              {lang === "ml" ? "അപേക്ഷകളുടെ പട്ടിക & അവലോകനം" : "Applications Directory & Overview"}
+              {lang === "ml" ? "അപേക്ഷകളുടെ ലിസ്റ്റ്" : "Applications List"}
             </h2>
-            <p className="text-[11px] text-muted-foreground">
-              {lang === "ml" ? "അപേക്ഷ പരിശോധന, ട്രാക്കിംഗ്, റിവ്യൂ പ്രോസസ്സിംഗ്" : "View, assign, check, submit and track applications from one place"}
-            </p>
           </div>
 
-          {/* Filter, Export & New Application Controls on the Right */}
+          {/* Filter, View Mode, Columns & Actions on the Right */}
           <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar pb-0.5 max-w-full sm:ml-auto shrink-0">
             {/* View Mode Toggle Switch */}
             <div className="flex items-center rounded-xl border border-border bg-background p-0.5 shrink-0">
@@ -238,338 +469,303 @@ function ApplicationsPage() {
               </button>
             </div>
 
-            {/* Time Range Selector Dropdown */}
-            <select
-              value={timeRange}
-              onChange={(e) => setTimeRange(e.target.value)}
-              className="h-8 rounded-xl border border-border bg-background px-2.5 py-1 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer shrink-0"
-            >
-              <option value="today">{lang === "ml" ? "ഇന്ന്" : "Today"}</option>
-              <option value="7days">{lang === "ml" ? "7 ദിവസങ്ങൾ" : "7 Days"}</option>
-              <option value="30days">{lang === "ml" ? "30 ദിവസങ്ങൾ" : "30 Days"}</option>
-              <option value="60days">{lang === "ml" ? "60 ദിവസങ്ങൾ" : "60 Days"}</option>
-              <option value="1year">{lang === "ml" ? "1 വർഷം" : "1 Year"}</option>
-            </select>
-
-            {/* Filter and Export Actions Pair */}
-            <div className="flex items-center gap-2 shrink-0">
-              {/* Filter Button with Popover Menu */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowFilterMenu(!showFilterMenu)}
-                  className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors shrink-0 ${
-                    activeFilterCount > 0 || showFilterMenu
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border bg-background text-foreground hover:bg-muted"
-                  }`}
-                >
-                  <Filter className="h-3.5 w-3.5" />
-                  {lang === "ml" ? "ഫിൽട്ടറുകൾ" : "Filter"}
-                  {activeFilterCount > 0 && (
-                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                      {activeFilterCount}
-                    </span>
-                  )}
-                </button>
-
-                {showFilterMenu && (
-                  <div className="absolute right-0 top-full mt-2 z-30 w-72 rounded-xl border border-border bg-card p-4 shadow-lg space-y-3.5">
-                    <div className="flex items-center justify-between border-b border-border pb-2">
-                      <h4 className="text-xs font-bold text-foreground">
-                        {lang === "ml" ? "അപേക്ഷ ഫിൽട്ടറുകൾ" : "Filter Applications"}
-                      </h4>
-                      {activeFilterCount > 0 && (
-                        <button
-                          onClick={() => {
-                            setStage("All");
-                            setDistrict("All");
-                          }}
-                          className="text-[11px] font-semibold text-primary hover:underline"
-                        >
-                          {lang === "ml" ? "റീസെറ്റ്" : "Reset all"}
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Status / Stage Filter */}
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-semibold text-muted-foreground block">
-                        {lang === "ml" ? "സ്റ്റാറ്റസ് / ഘട്ടം" : "Status / Stage"}
-                      </label>
-                      <select
-                        value={stage}
-                        onChange={(event) => setStage(event.target.value as "All" | QueueStage)}
-                        className="w-full h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold outline-none"
-                      >
-                        <option value="All">{lang === "ml" ? "എല്ലാ സ്റ്റാറ്റസുകളും" : "All Statuses"}</option>
-                        {applicationStages.map((item) => (
-                          <option key={item} value={item}>{item}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* District Filter */}
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-semibold text-muted-foreground block">
-                        {lang === "ml" ? "ജില്ല" : "District"}
-                      </label>
-                      <select
-                        value={district}
-                        onChange={(event) => setDistrict(event.target.value)}
-                        className="w-full h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold outline-none"
-                      >
-                        <option value="All">{lang === "ml" ? "എല്ലാ ജില്ലകളും" : "All Districts"}</option>
-                        {districts.map((item) => (
-                          <option key={item.id} value={item.id}>
-                            {item[lang]}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Scheme Category Filter */}
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-semibold text-muted-foreground block">
-                        {lang === "ml" ? "പദ്ധതി വിഭാഗം" : "Scheme Category"}
-                      </label>
-                      <select
-                        value={schemeCategoryFilter}
-                        onChange={(e) => setSchemeCategoryFilter(e.target.value)}
-                        className="w-full h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold outline-none"
-                      >
-                        <option value="all">{lang === "ml" ? "എല്ലാ വിഭാഗങ്ങളും" : "All Categories"}</option>
-                        <option value="agriculture">{lang === "ml" ? "കൃഷി" : "Agriculture"}</option>
-                        <option value="education">{lang === "ml" ? "വിദ്യാഭ്യാസം" : "Education"}</option>
-                        <option value="health">{lang === "ml" ? "ആരോഗ്യം" : "Health"}</option>
-                        <option value="housing">{lang === "ml" ? "ഭവനം" : "Housing"}</option>
-                        <option value="welfare">{lang === "ml" ? "പെൻഷൻ / ക്ഷേമം" : "Pension & Welfare"}</option>
-                        <option value="women">{lang === "ml" ? "വനിതാ ക്ഷേമം" : "Women Welfare"}</option>
-                        <option value="employment">{lang === "ml" ? "തൊഴിൽ" : "Employment"}</option>
-                        <option value="msme">{lang === "ml" ? "MSME / സംരംഭകം" : "MSME & Business"}</option>
-                      </select>
-                    </div>
-
-                    {/* Application Date Filter */}
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-semibold text-muted-foreground block">
-                        {lang === "ml" ? "അപേക്ഷാ തീയതി" : "Application Date"}
-                      </label>
-                      <select
-                        value={dateFilter}
-                        onChange={(e) => setDateFilter(e.target.value)}
-                        className="w-full h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold outline-none"
-                      >
-                        <option value="all">{lang === "ml" ? "എല്ലാ തീയതികളും" : "All Dates"}</option>
-                        <option value="today">{lang === "ml" ? "ഇന്ന്" : "Today"}</option>
-                        <option value="7days">{lang === "ml" ? "കഴിഞ്ഞ 7 ദിവസങ്ങൾ" : "Last 7 Days"}</option>
-                        <option value="30days">{lang === "ml" ? "കഴിഞ്ഞ 30 ദിവസങ്ങൾ" : "Last 30 Days"}</option>
-                        <option value="custom">{lang === "ml" ? "കസ്റ്റം റേഞ്ച്" : "Custom Range"}</option>
-                      </select>
-                      {dateFilter === "custom" && (
-                        <div className="grid grid-cols-2 gap-2 pt-1.5">
-                          <div>
-                            <span className="text-[10px] text-muted-foreground block mb-0.5">From</span>
-                            <input
-                              type="date"
-                              value={customStartDate}
-                              onChange={(e) => setCustomRangeStart(e.target.value)}
-                              className="w-full h-7 text-[11px] rounded border border-border bg-background px-1.5 font-medium"
-                            />
-                          </div>
-                          <div>
-                            <span className="text-[10px] text-muted-foreground block mb-0.5">To</span>
-                            <input
-                              type="date"
-                              value={customEndDate}
-                              onChange={(e) => setCustomRangeEnd(e.target.value)}
-                              className="w-full h-7 text-[11px] rounded border border-border bg-background px-1.5 font-medium"
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <button
-                className="flex items-center gap-1.5 rounded-xl border border-border bg-background px-2.5 sm:px-3.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors shrink-0"
-                title={lang === "ml" ? "എക്സ്പോർട്ട്" : "Export"}
-              >
-                <Download className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="hidden sm:inline">{lang === "ml" ? "എക്സ്പോർട്ട്" : "Export"}</span>
-              </button>
-            </div>
-
-            <Button asChild className="hidden sm:inline-flex h-8 rounded-xl px-3.5 text-xs font-semibold shrink-0">
-              <Link to="/admin/applications/new" search={{ stage: undefined, filter: undefined }}>
-                <Plus className="h-3.5 w-3.5" /> {lang === "ml" ? "പുതിയ അപേക്ഷ" : "New Application"}
-              </Link>
-            </Button>
-          </div>
-        </div>
-
-        
-        {/* Search & Status Filter Controls Row */}
-        <div className="flex flex-col gap-2.5 pt-1 pb-1">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-            {/* Search Input for Application Name, ID, Type */}
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400 pointer-events-none" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={lang === "ml" ? "പേര്, അപേക്ഷാ ഐഡി, തരം എന്നിവ നൽകി തിരയുക..." : "Search applications by name, ID, type..."}
-                className="w-full h-7 pl-7 pr-6 text-[11px] font-semibold rounded-full border border-amber-200/80 dark:border-border bg-[#fffcfa] dark:bg-slate-900 text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs"
-              />
-              {searchQuery && (
+            {/* Manage Columns Popover (Desktop) */}
+            <Popover>
+              <PopoverTrigger asChild>
                 <button
                   type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-foreground p-0.5"
+                  title={lang === "ml" ? "കോളങ്ങൾ ക്രമീകരിക്കുക" : "Manage columns"}
+                  className="hidden md:flex h-8 w-8 items-center justify-center rounded-xl border border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer shrink-0"
                 >
-                  <X className="h-3.5 w-3.5" />
+                  <Columns3 className="h-4 w-4" />
                 </button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-64 p-3 space-y-2.5 shadow-xl border-border">
+                <div className="flex items-center justify-between border-b border-border/80 pb-2">
+                  <h4 className="text-xs font-bold text-foreground">
+                    {lang === "ml" ? "കോളങ്ങൾ കാണിക്കുക / മാറ്റുക" : "Manage Columns"}
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setVisibleColumns(new Set(APPLICATION_COLUMNS.map((c) => c.key)));
+                      setColumnOrder(APPLICATION_COLUMNS.map((c) => c.key));
+                    }}
+                    className="text-[10px] font-bold text-primary hover:underline cursor-pointer"
+                  >
+                    {lang === "ml" ? "എല്ലാം കാണിക്കുക" : "Show All"}
+                  </button>
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  {lang === "ml"
+                    ? "കോളങ്ങൾ ചെക്ക്/അൺചെക്ക് ചെയ്യുക. പൊസിഷൻ മാറ്റാൻ ഡ്രാഗ് ചെയ്യുക."
+                    : "Check to show/hide. Drag handle to reorder columns."}
+                </p>
+                <div className="space-y-1 max-h-64 overflow-y-auto pr-1">
+                  {columnOrder.map((colKey, index) => {
+                    const meta = APPLICATION_COLUMNS.find((c) => c.key === colKey);
+                    if (!meta) return null;
+                    const isChecked = visibleColumns.has(colKey);
+                    return (
+                      <div
+                        key={colKey}
+                        draggable
+                        onDragStart={() => handleDragStartColumn(index)}
+                        onDragOver={handleDragOverColumn}
+                        onDrop={(e) => handleDropColumn(e, index)}
+                        className={`flex items-center gap-2 rounded-lg p-1.5 text-xs transition-colors hover:bg-muted/60 ${
+                          draggedColumnIndex === index ? "opacity-40 bg-muted" : ""
+                        }`}
+                      >
+                        <GripVertical className="h-3.5 w-3.5 text-muted-foreground cursor-grab active:cursor-grabbing shrink-0" />
+                        <Checkbox
+                          id={`col-app-${colKey}`}
+                          checked={isChecked}
+                          onCheckedChange={() => toggleColumn(colKey)}
+                        />
+                        <label
+                          htmlFor={`col-app-${colKey}`}
+                          className="flex-1 text-xs font-semibold text-foreground cursor-pointer select-none truncate"
+                        >
+                          {lang === "ml" ? meta.ml : meta.en}
+                        </label>
+                      </div>
+                    );
+                  })}
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            {/* Date Range Dropdown near Filter Button */}
+            <select
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="h-8 rounded-xl border border-border bg-background px-3 text-xs font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer shrink-0"
+              title={lang === "ml" ? "തീയതി ക്രമീകരണം" : "Date Range"}
+            >
+              <option value="all">{lang === "ml" ? "എല്ലാ തീയതികളും" : "All Time"}</option>
+              <option value="today">{lang === "ml" ? "ഇന്ന്" : "Today"}</option>
+              <option value="week">{lang === "ml" ? "കഴിഞ്ഞ 1 ആഴ്ച" : "Last Week"}</option>
+              <option value="month">{lang === "ml" ? "കഴിഞ്ഞ 1 മാസം" : "Last Month"}</option>
+              <option value="6months">{lang === "ml" ? "കഴിഞ്ഞ 6 മാസം" : "Last 6 Months"}</option>
+              <option value="year">{lang === "ml" ? "കഴിഞ്ഞ 1 വർഷം" : "Last Year"}</option>
+            </select>
+
+            {/* Filter Button with Dropdowns Inside Filter Popover */}
+            <div className="relative shrink-0">
+              <button
+                onClick={() => setShowFilterMenu(!showFilterMenu)}
+                className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors shrink-0 ${
+                  activeFilterCount > 0 || showFilterMenu
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-background text-foreground hover:bg-muted"
+                }`}
+              >
+                <Filter className="h-3.5 w-3.5" />
+                {lang === "ml" ? "ഫിൽട്ടറുകൾ" : "Filter"}
+                {activeFilterCount > 0 && (
+                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
+
+              {showFilterMenu && (
+                <div className="absolute right-0 top-full mt-2 z-30 w-72 rounded-xl border border-border bg-card p-4 shadow-lg space-y-3.5">
+                  <div className="flex items-center justify-between border-b border-border pb-2">
+                    <h4 className="text-xs font-bold text-foreground">
+                      {lang === "ml" ? "അപേക്ഷ ഫിൽട്ടറുകൾ" : "Filter Applications"}
+                    </h4>
+                    {activeFilterCount > 0 && (
+                      <button
+                        onClick={() => {
+                          setStatusFilter("All");
+                          setDistrictFilter("All");
+                          setSchemeCategoryFilter("all");
+                          setDateFilter("all");
+                        }}
+                        className="text-[11px] font-semibold text-primary hover:underline"
+                      >
+                        {lang === "ml" ? "റീസെറ്റ്" : "Reset all"}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Status / Stage Filter Dropdown */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-muted-foreground block">
+                      {lang === "ml" ? "സ്റ്റാറ്റസ്" : "Status"}
+                    </label>
+                    <select
+                      value={statusFilter}
+                      onChange={(event) => setStatusFilter(event.target.value)}
+                      className="w-full h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold outline-none"
+                    >
+                      <option value="All">{lang === "ml" ? "എല്ലാ സ്റ്റാറ്റസുകളും" : "All Statuses"}</option>
+                      {applicationStatuses.map((item) => (
+                        <option key={item} value={item}>{item}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* District Filter Dropdown */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-muted-foreground block">
+                      {lang === "ml" ? "ജില്ല" : "District"}
+                    </label>
+                    <select
+                      value={districtFilter}
+                      onChange={(event) => setDistrictFilter(event.target.value)}
+                      className="w-full h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold outline-none"
+                    >
+                      <option value="All">{lang === "ml" ? "എല്ലാ ജില്ലകളും" : "All Districts"}</option>
+                      {districts.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item[lang]}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Scheme Category Filter Dropdown */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-muted-foreground block">
+                      {lang === "ml" ? "പദ്ധതി വിഭാഗം" : "Scheme Category"}
+                    </label>
+                    <select
+                      value={schemeCategoryFilter}
+                      onChange={(e) => setSchemeCategoryFilter(e.target.value)}
+                      className="w-full h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold outline-none"
+                    >
+                      <option value="all">{lang === "ml" ? "എല്ലാ വിഭാഗങ്ങളും" : "All Categories"}</option>
+                      <option value="agriculture">{lang === "ml" ? "കൃഷി" : "Agriculture"}</option>
+                      <option value="education">{lang === "ml" ? "വിദ്യാഭ്യാസം" : "Education"}</option>
+                      <option value="health">{lang === "ml" ? "ആരോഗ്യം" : "Health"}</option>
+                      <option value="housing">{lang === "ml" ? "ഭവനം" : "Housing"}</option>
+                      <option value="welfare">{lang === "ml" ? "പെൻഷൻ / ക്ഷേമം" : "Pension & Welfare"}</option>
+                      <option value="women">{lang === "ml" ? "വനിതാ ക്ഷേമം" : "Women Welfare"}</option>
+                      <option value="employment">{lang === "ml" ? "തൊഴിൽ" : "Employment"}</option>
+                      <option value="msme">{lang === "ml" ? "MSME / സംരംഭകം" : "MSME & Business"}</option>
+                    </select>
+                  </div>
+
+                  {/* Application Date Filter Dropdown */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-muted-foreground block">
+                      {lang === "ml" ? "അപേക്ഷാ തീയതി" : "Application Date"}
+                    </label>
+                    <select
+                      value={dateFilter}
+                      onChange={(e) => setDateFilter(e.target.value)}
+                      className="w-full h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold outline-none"
+                    >
+                      <option value="all">{lang === "ml" ? "എല്ലാ തീയതികളും" : "All Dates"}</option>
+                      <option value="today">{lang === "ml" ? "ഇന്ന്" : "Today"}</option>
+                      <option value="7days">{lang === "ml" ? "കഴിഞ്ഞ 7 ദിവസങ്ങൾ" : "Last 7 Days"}</option>
+                      <option value="30days">{lang === "ml" ? "കഴിഞ്ഞ 30 ദിവസങ്ങൾ" : "Last 30 Days"}</option>
+                      <option value="custom">{lang === "ml" ? "കസ്റ്റം റേഞ്ച്" : "Custom Range"}</option>
+                    </select>
+                    {dateFilter === "custom" && (
+                      <div className="grid grid-cols-2 gap-2 pt-1.5">
+                        <div>
+                          <span className="text-[10px] text-muted-foreground block mb-0.5">From</span>
+                          <input
+                            type="date"
+                            value={customStartDate}
+                            onChange={(e) => setCustomRangeStart(e.target.value)}
+                            className="w-full h-7 text-[11px] rounded border border-border bg-background px-1.5 font-medium"
+                          />
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-muted-foreground block mb-0.5">To</span>
+                          <input
+                            type="date"
+                            value={customEndDate}
+                            onChange={(e) => setCustomRangeEnd(e.target.value)}
+                            className="w-full h-7 text-[11px] rounded border border-border bg-background px-1.5 font-medium"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
 
-            {/* Status Select Dropdown Pill */}
-            <div className="relative shrink-0">
-              <select
-                value={stage}
-                onChange={(e) => setStage(e.target.value as "All" | QueueStage)}
-                className="h-7 pl-3 pr-7 text-[11px] font-bold rounded-full border border-amber-200/80 dark:border-amber-800/80 bg-[#fffcf0] dark:bg-slate-900 text-[#0a0f1d] dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-amber-500 shadow-2xs cursor-pointer appearance-none"
-              >
-                <option value="All">{lang === "ml" ? "എല്ലാ അപേക്ഷകളും" : "All Applications"}</option>
-                {applicationStages.map((item) => (
-                  <option key={item} value={item}>{item}</option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-[#0a0f1d] dark:text-slate-300 pointer-events-none" />
-            </div>
-          </div>
+            {/* New Application Button + 3-Dot Menu (Import / Export) */}
+            <div className="flex items-center gap-1 shrink-0">
+              <Button asChild className="hidden sm:inline-flex h-8 rounded-xl px-3.5 text-xs font-semibold shrink-0">
+                <Link to="/admin/applications/new" search={{ stage: undefined, filter: undefined }}>
+                  <Plus className="h-3.5 w-3.5" /> {lang === "ml" ? "പുതിയ അപേക്ഷ" : "New Application"}
+                </Link>
+              </Button>
 
-          {/* Quick Filter Bar: Scheme Category, Assistance Status, Application Date */}
-          <div className="flex flex-wrap items-center gap-2 overflow-x-auto no-scrollbar pb-1 text-xs">
-            {/* Scheme Category Dropdown */}
-            <div className="relative shrink-0">
-              <select
-                value={schemeCategoryFilter}
-                onChange={(e) => setSchemeCategoryFilter(e.target.value)}
-                className="h-7.5 pl-2.5 pr-7 text-[11px] font-semibold rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs cursor-pointer appearance-none"
-              >
-                <option value="all">{lang === "ml" ? "വിഭാഗം: എല്ലാം" : "Category: All Categories"}</option>
-                <option value="agriculture">{lang === "ml" ? "കൃഷി" : "Agriculture"}</option>
-                <option value="education">{lang === "ml" ? "വിദ്യാഭ്യാസം" : "Education"}</option>
-                <option value="health">{lang === "ml" ? "ആരോഗ്യം" : "Health"}</option>
-                <option value="housing">{lang === "ml" ? "ഭവനം" : "Housing"}</option>
-                <option value="welfare">{lang === "ml" ? "പെൻഷൻ & ക്ഷേമം" : "Pension & Welfare"}</option>
-                <option value="women">{lang === "ml" ? "വനിതാ ക്ഷേമം" : "Women Welfare"}</option>
-                <option value="employment">{lang === "ml" ? "തൊഴിൽ" : "Employment"}</option>
-                <option value="msme">{lang === "ml" ? "MSME & സംരംഭകം" : "MSME & Business"}</option>
-              </select>
-              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
+              {/* 3-Dot Menu for Import & Export Near New Application Button */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="h-8 w-8 inline-flex items-center justify-center rounded-xl border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer shrink-0"
+                    title={lang === "ml" ? "കൂടുതൽ" : "Import & Export"}
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44 p-1 space-y-0.5 shadow-xl border-border">
+                  <DropdownMenuItem
+                    onClick={() => toast.info(lang === "ml" ? "ഇംപോർട്ട് ഫീച്ചർ തയ്യാറാകുന്നു" : "Import feature triggered")}
+                    className="cursor-pointer text-xs font-semibold"
+                  >
+                    <Upload className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+                    {lang === "ml" ? "ഇംപോർട്ട്" : "Import"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => toast.success(lang === "ml" ? "ഡാറ്റ എക്സ്പോർട്ട് ചെയ്തു" : "Data exported successfully")}
+                    className="cursor-pointer text-xs font-semibold"
+                  >
+                    <Download className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+                    {lang === "ml" ? "എക്സ്പോർട്ട്" : "Export"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-
-            {/* Application Date Dropdown */}
-            <div className="relative shrink-0">
-              <select
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-                className="h-7.5 pl-2.5 pr-7 text-[11px] font-semibold rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs cursor-pointer appearance-none"
-              >
-                <option value="all">{lang === "ml" ? "തീയതി: എല്ലാ തീയതികളും" : "Date: All Dates"}</option>
-                <option value="today">{lang === "ml" ? "ഇന്ന്" : "Today"}</option>
-                <option value="7days">{lang === "ml" ? "കഴിഞ്ഞ 7 ദിവസങ്ങൾ" : "Last 7 Days"}</option>
-                <option value="30days">{lang === "ml" ? "കഴിഞ്ഞ 30 ദിവസങ്ങൾ" : "Last 30 Days"}</option>
-                <option value="custom">{lang === "ml" ? "കസ്റ്റം റേഞ്ച്" : "Custom Range"}</option>
-              </select>
-              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
-            </div>
-
-            {dateFilter === "custom" && (
-              <div className="flex items-center gap-1.5 shrink-0">
-                <input
-                  type="date"
-                  value={customStartDate}
-                  onChange={(e) => setCustomRangeStart(e.target.value)}
-                  className="h-7.5 text-[11px] rounded-lg border border-border bg-background px-2 font-medium"
-                />
-                <span className="text-[10px] text-muted-foreground font-semibold">to</span>
-                <input
-                  type="date"
-                  value={customEndDate}
-                  onChange={(e) => setCustomRangeEnd(e.target.value)}
-                  className="h-7.5 text-[11px] rounded-lg border border-border bg-background px-2 font-medium"
-                />
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Embedded Status KPI Summary Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
-          {/* Card 1: Open Applications */}
-          <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 sm:p-3.5 space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] sm:text-[11px] font-bold text-muted-foreground uppercase">{lang === "ml" ? "തുറന്ന അപേക്ഷകൾ" : "OPEN APPLICATIONS"}</span>
-              <FileText className="h-4 w-4 text-primary" />
-            </div>
-            <p className="text-lg sm:text-xl font-mono font-extrabold text-foreground">{adminApplicationMetrics.open}</p>
-            <span className="text-[10px] text-emerald-600 font-semibold block">{lang === "ml" ? "പ്രവർത്തനം ആവശ്യമാണ്" : "Action required"}</span>
-          </div>
-
-          {/* Card 2: Waiting over 24 hours */}
-          <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 sm:p-3.5 space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] sm:text-[11px] font-bold text-muted-foreground uppercase">{lang === "ml" ? "24 മണിക്കൂറിലധികം വൈകിയവ" : "WAITING OVER 24H"}</span>
-              <Clock3 className="h-4 w-4 text-destructive" />
-            </div>
-            <p className="text-lg sm:text-xl font-mono font-extrabold text-destructive">{adminApplicationMetrics.waitingOver24Hours}</p>
-            <span className="text-[10px] text-destructive font-semibold block">{lang === "ml" ? "മുൻഗണന നൽകുക" : "High priority queue"}</span>
-          </div>
-
-          {/* Card 3: Documents needed */}
-          <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 sm:p-3.5 space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] sm:text-[11px] font-bold text-muted-foreground uppercase">{lang === "ml" ? "രേഖകൾ വേണം" : "DOCUMENTS NEEDED"}</span>
-              <FileCheck2 className="h-4 w-4 text-amber-600" />
-            </div>
-            <p className="text-lg sm:text-xl font-mono font-extrabold text-amber-600">{adminApplicationMetrics.documentsNeeded}</p>
-            <span className="text-[10px] text-amber-600 font-semibold block">{lang === "ml" ? "രേഖകൾ അപ്‌ലോഡ് ചെയ്യാൻ ബാക്കി" : "Pending citizen upload"}</span>
-          </div>
-
-          {/* Card 4: Unassigned applications */}
-          <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 sm:p-3.5 space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] sm:text-[11px] font-bold text-muted-foreground uppercase">{lang === "ml" ? "അസൈൻ ചെയ്യാത്തവ" : "UNASSIGNED"}</span>
-              <UserRoundCheck className="h-4 w-4 text-sky-600" />
-            </div>
-            <p className="text-lg sm:text-xl font-mono font-extrabold text-foreground">{adminApplicationMetrics.unassigned}</p>
-            <span className="text-[10px] text-sky-600 font-semibold block">{lang === "ml" ? "ഓഫീസറെ വേണം" : "Needs reviewer"}</span>
           </div>
         </div>
 
         {/* Selected Applications Action Bar */}
         {selectedIds.size > 0 && (
           <div className="flex flex-wrap items-center gap-2 rounded-xl border border-primary/20 bg-primary/[0.06] p-2.5">
-            <span className="mr-1 text-xs font-semibold">{selectedIds.size} selected</span>
-            <Button type="button" size="sm" variant="outline">
-              <UserRoundCheck className="h-3.5 w-3.5 mr-1" /> Assign
+            <span className="mr-1 text-xs font-bold text-foreground">
+              {lang === "ml"
+                ? `${selectedIds.size} / ${filtered.length} തിരഞ്ഞെടുത്തു`
+                : `${selectedIds.size} of ${filtered.length} selected`}
+            </span>
+            <Button type="button" size="sm" variant="outline" className="cursor-pointer">
+              <UserRoundCheck className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
+              {lang === "ml" ? "അസൈൻ ചെയ്യുക" : "Assign"}
             </Button>
-            <Button type="button" size="sm" variant="outline">
-              <MessageCircle className="h-3.5 w-3.5 mr-1" /> WhatsApp
+            <Button type="button" size="sm" variant="outline" onClick={handleBulkExport} className="cursor-pointer">
+              <Download className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
+              {lang === "ml" ? "എക്സ്പോർട്ട്" : "Export"}
             </Button>
-            <Button type="button" size="sm" variant="outline">
-              <Mail className="h-3.5 w-3.5 mr-1" /> Email
+            <Button type="button" size="sm" variant="outline" className="cursor-pointer">
+              <MessageCircle className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
+              WhatsApp
+            </Button>
+            <Button type="button" size="sm" variant="outline" className="cursor-pointer">
+              <Mail className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
+              Email
+            </Button>
+            <Button type="button" size="sm" variant="destructive" onClick={handleBulkDelete} className="cursor-pointer">
+              <Trash2 className="h-3.5 w-3.5 mr-1" />
+              {lang === "ml" ? "ഡിലീറ്റ്" : "Delete"}
             </Button>
             <button
               type="button"
               onClick={() => setSelectedIds(new Set())}
-              className="ml-auto px-2 text-xs font-semibold text-muted-foreground hover:text-foreground"
+              className="ml-auto px-2 text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer"
             >
-              Clear
+              {lang === "ml" ? "ക്ലിയർ ചെയ്യുക" : "Clear"}
             </button>
           </div>
         )}
@@ -579,6 +775,8 @@ function ApplicationsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
             {visible.map((record) => {
               const isSelected = selectedIds.has(record.id);
+              const sch = schemes.find((s) => s.id === record.schemeId);
+              const displayName = getApplicantName(record.applicant, lang);
               return (
                 <div
                   key={record.id}
@@ -592,7 +790,6 @@ function ApplicationsPage() {
                     isSelected ? "border-primary/50 bg-primary/[0.04]" : ""
                   }`}
                 >
-                  {/* Top Header Row: Selection + Reference & Stage */}
                   <div className="flex items-center justify-between gap-2 border-b border-border/40 pb-2.5">
                     <div className="flex items-center gap-2 min-w-0">
                       <div onClick={(e) => e.stopPropagation()}>
@@ -603,31 +800,52 @@ function ApplicationsPage() {
                         />
                       </div>
                       <span className="font-mono font-bold text-xs text-foreground truncate">
-                        {record.reference}
+                        {record.trackingId}
                       </span>
                     </div>
-                    <StagePill stage={record.queueStage} />
+                    <StatusPill status={record.appStatus || record.queueStage} />
                   </div>
 
-                  {/* Applicant Details */}
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className="font-bold text-sm text-foreground">{record.applicant}</p>
+                      <Link
+                        to="/admin/beneficiaries"
+                        onClick={(e) => e.stopPropagation()}
+                        className="font-bold text-sm text-foreground hover:text-primary hover:underline block"
+                      >
+                        {displayName}
+                      </Link>
                       <p className="text-xs text-muted-foreground font-medium">{record.mobile}</p>
                     </div>
-                    <span className="text-xs font-bold text-primary shrink-0 bg-primary/10 px-2.5 py-0.5 rounded-md">
-                      {record.schemeId}
-                    </span>
+                    <div className="text-right">
+                      <Link
+                        to="/admin/schemes"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-xs font-bold text-primary hover:underline block"
+                      >
+                        {sch ? (lang === "ml" ? sch.ml : sch.en) : record.schemeId}
+                      </Link>
+                      <span className="text-[10px] text-muted-foreground font-semibold block capitalize">
+                        {sch ? sch.category : ""}
+                      </span>
+                    </div>
                   </div>
 
-                  {/* Footer Meta Row: Location, Age, Action */}
+                  <div className="grid grid-cols-2 gap-2 text-[11px] text-muted-foreground pt-2 border-t border-border/40">
+                    <div>
+                      <span className="text-[10px] block font-semibold text-muted-foreground/70">Area</span>
+                      <span className="font-semibold text-foreground">{record.area}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] block font-semibold text-muted-foreground/70">Org District</span>
+                      <span className="font-semibold text-foreground">{record.orgDistrict}</span>
+                    </div>
+                  </div>
+
                   <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border/40">
                     <span className="flex items-center gap-1 font-medium">
                       <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                       {getDistrictName(record.districtId, lang)}
-                    </span>
-                    <span className="font-mono font-medium text-[11px]">
-                      Wait: {formatWaitingTime(record.ageHours)}
                     </span>
                     <span className="font-semibold text-primary flex items-center gap-0.5">
                       Details <ChevronRight className="h-3.5 w-3.5" />
@@ -652,19 +870,27 @@ function ApplicationsPage() {
                       aria-label="Select all visible applications"
                     />
                   </th>
-                  <th className="p-3">{lang === "ml" ? "റഫറൻസ് നമ്പർ" : "APPLICATION / REF"}</th>
-                  <th className="p-3">{lang === "ml" ? "അപേക്ഷകൻ" : "APPLICANT"}</th>
-                  <th className="p-3">{lang === "ml" ? "പദ്ധതി" : "SCHEME"}</th>
-                  <th className="p-3">{lang === "ml" ? "ജില്ല" : "DISTRICT"}</th>
-                  <th className="p-3">{lang === "ml" ? "ഘട്ടം" : "STAGE"}</th>
-                  <th className="p-3">{lang === "ml" ? "പരിശോധകൻ" : "REVIEWER"}</th>
-                  <th className="p-3 text-right">{lang === "ml" ? "കാത്തിരിപ്പ് സമയം" : "WAITING TIME"}</th>
-                  <th className="p-3" />
+                  {columnOrder.map((colKey) => {
+                    if (!visibleColumns.has(colKey)) return null;
+                    const meta = APPLICATION_COLUMNS.find((c) => c.key === colKey);
+                    if (!meta) return null;
+                    return (
+                      <th
+                        key={colKey}
+                        className={`p-3 ${colKey === "actions" ? "text-right" : ""}`}
+                      >
+                        {lang === "ml" ? meta.ml : meta.en.toUpperCase()}
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60 font-semibold">
                 {visible.map((record) => {
                   const isSelected = selectedIds.has(record.id);
+                  const sch = schemes.find((s) => s.id === record.schemeId);
+                  const displayName = getApplicantName(record.applicant, lang);
+
                   return (
                     <tr
                       key={record.id}
@@ -683,32 +909,296 @@ function ApplicationsPage() {
                           aria-label={`Select application ${record.reference}`}
                         />
                       </td>
-                      <td className="p-3 font-mono font-bold text-foreground">
-                        <p>{record.reference}</p>
-                        <p className="text-[10px] text-muted-foreground font-normal">ID: {record.id}</p>
-                      </td>
-                      <td className="p-3">
-                        <p className="font-bold text-foreground">{record.applicant}</p>
-                        <p className="text-[10px] text-muted-foreground font-normal">{record.mobile}</p>
-                      </td>
-                      <td className="p-3 text-primary font-bold">{record.schemeId}</td>
-                      <td className="p-3 text-muted-foreground">{getDistrictName(record.districtId, lang)}</td>
-                      <td className="p-3">
-                        <StagePill stage={record.queueStage} />
-                      </td>
-                      <td className="p-3 text-muted-foreground">{record.reviewer}</td>
-                      <td className="p-3 text-right font-mono text-muted-foreground">
-                        {formatWaitingTime(record.ageHours)}
-                      </td>
-                      <td className="p-3 text-right">
-                        <ChevronRight className="h-4 w-4 text-muted-foreground inline-block" />
-                      </td>
+                      {columnOrder.map((colKey) => {
+                        if (!visibleColumns.has(colKey)) return null;
+                        switch (colKey) {
+                          case "appDate":
+                            return (
+                              <td key="appDate" className="p-3 font-mono font-bold text-foreground">
+                                {new Date(record.submittedAt || record.createdAt).toLocaleDateString("en-GB", {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                })}
+                              </td>
+                            );
+                          case "applicant":
+                            return (
+                              <td key="applicant" className="p-3" onClick={(e) => e.stopPropagation()}>
+                                <Link
+                                  to="/admin/beneficiaries"
+                                  className="font-bold text-foreground hover:text-primary hover:underline block"
+                                >
+                                  {displayName}
+                                </Link>
+                                <p className="text-[10px] font-mono text-muted-foreground">{record.mobile}</p>
+                              </td>
+                            );
+                          case "trackingId":
+                            return (
+                              <td key="trackingId" className="p-3 font-mono font-bold text-foreground">
+                                {record.trackingId}
+                              </td>
+                            );
+                          case "scheme":
+                            return (
+                              <td key="scheme" className="p-3" onClick={(e) => e.stopPropagation()}>
+                                <Link
+                                  to="/admin/schemes"
+                                  className="font-bold text-primary hover:underline block"
+                                >
+                                  {sch ? (lang === "ml" ? sch.ml : sch.en) : record.schemeId}
+                                </Link>
+                                <p className="text-[10px] text-muted-foreground font-semibold capitalize">
+                                  {sch ? sch.category : record.schemeId}
+                                </p>
+                              </td>
+                            );
+                          case "areaOrgDistrict":
+                            return (
+                              <td key="areaOrgDistrict" className="p-3">
+                                <p className="font-bold text-foreground">{record.area}</p>
+                                <p className="text-[10px] text-muted-foreground font-semibold">{record.orgDistrict}</p>
+                              </td>
+                            );
+                          case "createdBy":
+                            return (
+                              <td key="createdBy" className="p-3">
+                                <p className="font-bold text-foreground">{record.reviewer || "Not assigned"}</p>
+                                <p className="text-[10px] text-muted-foreground font-medium">{record.reviewerDesignation}</p>
+                              </td>
+                            );
+                          case "status":
+                            return (
+                              <td key="status" className="p-3">
+                                <StatusPill status={record.appStatus || record.queueStage} />
+                              </td>
+                            );
+                          case "applyLink":
+                            return (
+                              <td key="applyLink" className="p-3" onClick={(e) => e.stopPropagation()}>
+                                <a
+                                  href={record.applyUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/10 text-primary text-[11px] font-bold hover:bg-primary/20 transition-colors"
+                                >
+                                  <ExternalLink className="h-3 w-3" /> Apply
+                                </a>
+                              </td>
+                            );
+                          case "actions":
+                            return (
+                              <td key="actions" className="p-3 text-right" onClick={(e) => e.stopPropagation()}>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <button
+                                      type="button"
+                                      className="h-7 w-7 inline-flex items-center justify-center rounded-lg border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                                      title={lang === "ml" ? "നടപടികൾ" : "Actions"}
+                                    >
+                                      <MoreVertical className="h-4 w-4" />
+                                    </button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-56 p-1 space-y-0.5 shadow-xl border-border">
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        navigate({
+                                          to: "/admin/applications/$applicationId",
+                                          params: { applicationId: record.id },
+                                        })
+                                      }
+                                      className="cursor-pointer text-xs font-semibold"
+                                    >
+                                      <Eye className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+                                      {lang === "ml" ? "കാണുക" : "View Details"}
+                                    </DropdownMenuItem>
+
+                                    <DropdownMenuItem
+                                      onClick={() => setEditingRecord(record)}
+                                      className="cursor-pointer text-xs font-semibold"
+                                    >
+                                      <Pencil className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+                                      {lang === "ml" ? "തിരുത്തുക" : "Edit"}
+                                    </DropdownMenuItem>
+
+                                    <DropdownMenuItem
+                                      onClick={() => window.open("https://kerala.gov.in", "_blank")}
+                                      className="cursor-pointer text-xs font-semibold"
+                                    >
+                                      <ExternalLink className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+                                      {lang === "ml" ? "ഔദ്യോഗിക വെബ്‌സൈറ്റ്" : "Official Website"}
+                                    </DropdownMenuItem>
+
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        navigator.clipboard.writeText(`https://vikasita.kerala.gov.in/track/${record.trackingId}`);
+                                        toast.success(
+                                          lang === "ml"
+                                            ? "ട്രാക്കിംഗ് ലിങ്ക് കോപ്പി ചെയ്തു!"
+                                            : "Tracking link copied to clipboard!"
+                                        );
+                                      }}
+                                      className="cursor-pointer text-xs font-semibold"
+                                    >
+                                      <LinkIcon className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+                                      {lang === "ml" ? "ട്രാക്കിംഗ് ലിങ്ക്" : "Tracking Link"}
+                                    </DropdownMenuItem>
+
+                                    <DropdownMenuSub>
+                                      <DropdownMenuSubTrigger className="cursor-pointer text-xs font-semibold">
+                                        <RefreshCw className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+                                        {lang === "ml" ? "സ്റ്റാറ്റസ് മാറ്റുക" : "Change Status"}
+                                      </DropdownMenuSubTrigger>
+                                      <DropdownMenuSubContent className="w-52 p-1">
+                                        {applicationStatuses.map((stg) => (
+                                          <DropdownMenuItem
+                                            key={stg}
+                                            onClick={() => handleUpdateStatus(record.id, stg)}
+                                            className={`cursor-pointer text-xs font-semibold ${record.appStatus === stg ? "bg-accent font-bold" : ""}`}
+                                          >
+                                            {stg}
+                                          </DropdownMenuItem>
+                                        ))}
+                                      </DropdownMenuSubContent>
+                                    </DropdownMenuSub>
+
+                                    <DropdownMenuSub>
+                                      <DropdownMenuSubTrigger className="cursor-pointer text-xs font-semibold">
+                                        <UserCheck className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+                                        {lang === "ml" ? "മറ്റൊരാൾക്ക് അസൈൻ ചെയ്യുക" : "Assign to Other User"}
+                                      </DropdownMenuSubTrigger>
+                                      <DropdownMenuSubContent className="w-56 p-1">
+                                        {applicationReviewers.map((rev) => (
+                                          <DropdownMenuItem
+                                            key={rev}
+                                            onClick={() => handleAssignUser(record.id, rev)}
+                                            className={`cursor-pointer text-xs font-semibold ${record.reviewer === rev ? "bg-accent font-bold" : ""}`}
+                                          >
+                                            {rev}
+                                          </DropdownMenuItem>
+                                        ))}
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                          onClick={() => navigate({ to: "/admin/settings_/new-role", search: { returnTo: "/admin/applications" } })}
+                                          className="cursor-pointer text-xs font-bold text-primary"
+                                        >
+                                          <Plus className="h-3.5 w-3.5 mr-2 text-primary" />
+                                          {lang === "ml" ? "+ പുതിയ റോൾ സൃഷ്ടിക്കുക..." : "+ Create New Role..."}
+                                        </DropdownMenuItem>
+                                      </DropdownMenuSubContent>
+                                    </DropdownMenuSub>
+
+                                    <DropdownMenuSeparator />
+
+                                    <DropdownMenuItem
+                                      onClick={() => handleDeleteRecord(record.id)}
+                                      className="cursor-pointer text-xs font-semibold text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5 mr-2 text-destructive" />
+                                      {lang === "ml" ? "നീക്കം ചെയ്യുക" : "Delete"}
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </td>
+                            );
+                          default:
+                            return null;
+                        }
+                      })}
                     </tr>
                   );
                 })}
               </tbody>
             </table>
           </div>
+        )}
+
+        {/* Edit Application Modal */}
+        {editingRecord && (
+          <Dialog open={!!editingRecord} onOpenChange={() => setEditingRecord(null)}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle className="text-base font-bold">
+                  {lang === "ml" ? "അപേക്ഷ തിരുത്തുക" : "Edit Application"} ({editingRecord.reference})
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3 py-2 text-xs">
+                <div>
+                  <label className="font-semibold block mb-1">
+                    {lang === "ml" ? "അപേക്ഷകന്റെ പേര്" : "Applicant Name"}
+                  </label>
+                  <input
+                    type="text"
+                    value={editingRecord.applicant}
+                    onChange={(e) => setEditingRecord({ ...editingRecord, applicant: e.target.value })}
+                    className="w-full h-8 px-2.5 rounded-lg border border-border bg-background font-semibold outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="font-semibold block mb-1">
+                    {lang === "ml" ? "ഫോൺ നമ്പർ" : "Mobile Number"}
+                  </label>
+                  <input
+                    type="text"
+                    value={editingRecord.mobile}
+                    onChange={(e) => setEditingRecord({ ...editingRecord, mobile: e.target.value })}
+                    className="w-full h-8 px-2.5 rounded-lg border border-border bg-background font-semibold outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="font-semibold block mb-1">
+                    {lang === "ml" ? "സ്റ്റാറ്റസ്" : "Status"}
+                  </label>
+                  <select
+                    value={editingRecord.appStatus || "Pending"}
+                    onChange={(e) =>
+                      setEditingRecord({
+                        ...editingRecord,
+                        appStatus: e.target.value as ApplicationStatus,
+                      })
+                    }
+                    className="w-full h-8 px-2.5 rounded-lg border border-border bg-background font-semibold outline-none focus:ring-1 focus:ring-primary"
+                  >
+                    {applicationStatuses.map((stg) => (
+                      <option key={stg} value={stg}>{stg}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="font-semibold block mb-1">
+                    {lang === "ml" ? "അസൈൻ ചെയ്തയാൾ" : "Assigned Reviewer"}
+                  </label>
+                  <select
+                    value={editingRecord.reviewer}
+                    onChange={(e) => setEditingRecord({ ...editingRecord, reviewer: e.target.value })}
+                    className="w-full h-8 px-2.5 rounded-lg border border-border bg-background font-semibold outline-none focus:ring-1 focus:ring-primary"
+                  >
+                    {applicationReviewers.map((rev) => (
+                      <option key={rev} value={rev}>{rev}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <DialogFooter className="gap-2">
+                <Button variant="outline" size="sm" onClick={() => setEditingRecord(null)}>
+                  {lang === "ml" ? "റദ്ദാക്കുക" : "Cancel"}
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setApplicationsList((prev) =>
+                      prev.map((item) => (item.id === editingRecord.id ? editingRecord : item))
+                    );
+                    setEditingRecord(null);
+                    toast.success(lang === "ml" ? "അപേക്ഷ അപ്‌ഡേറ്റ് ചെയ്തു" : "Application updated");
+                  }}
+                >
+                  {lang === "ml" ? "സേവ് ചെയ്യുക" : "Save Changes"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         )}
 
       </div>

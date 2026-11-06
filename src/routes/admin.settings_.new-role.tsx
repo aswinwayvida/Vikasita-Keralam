@@ -68,6 +68,7 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/admin/settings_/new-role")({
   validateSearch: (search: Record<string, unknown>) => ({
     editRoleId: typeof search.editRoleId === "string" ? search.editRoleId : undefined,
+    returnTo: typeof search.returnTo === "string" ? search.returnTo : undefined,
   }),
   head: () => ({
     meta: [{ title: "Create / Edit Role · Admin · Vikasita Keralam" }],
@@ -176,10 +177,20 @@ function getMatrixColumnActionIds(row: MatrixRow, columnId: MatrixColumnId) {
 
 function CreateRolePage() {
   const { lang } = useLang();
-  const { isMobile, state: sidebarState } = useSidebar();
   const tr = (en: string, ml: string) => (lang === "ml" ? ml : en);
-  const navigate = useNavigate();
-  const { editRoleId } = Route.useSearch();
+  const { editRoleId, returnTo } = Route.useSearch();
+
+  const navigateBackAfterRoleCreate = () => {
+    const roleName = targetSavedRoleName || name;
+    if (typeof window !== "undefined" && roleName) {
+      sessionStorage.setItem("vk_newly_created_role", roleName.trim());
+    }
+    if (returnTo) {
+      void navigate({ to: returnTo });
+    } else {
+      void navigate({ to: "/admin/settings", search: { tab: "roles" } });
+    }
+  };
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -344,12 +355,12 @@ function CreateRolePage() {
       ),
     );
     setShowAssignUsersSheet(false);
-    void navigate({ to: "/admin/settings", search: { tab: "roles" } });
+    navigateBackAfterRoleCreate();
   };
 
   const handleSkipUserAssignment = () => {
     setShowAssignUsersSheet(false);
-    void navigate({ to: "/admin/settings", search: { tab: "roles" } });
+    navigateBackAfterRoleCreate();
   };
 
   useEffect(() => {

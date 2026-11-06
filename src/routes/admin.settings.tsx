@@ -19,6 +19,8 @@ export const Route = createFileRoute("/admin/settings")({
             : search.tab === "location"
               ? ("location" as const)
               : undefined,
+    openCreate: typeof search.openCreate === "string" ? search.openCreate : undefined,
+    returnTo: typeof search.returnTo === "string" ? search.returnTo : undefined,
   }),
   head: () => ({ meta: [{ title: "Settings · Admin" }] }),
   component: SettingsPage,
@@ -73,6 +75,8 @@ function SettingsPage() {
                 ? "location"
                 : "roles"
         }
+        autoOpenCreateModal={search.openCreate === "true"}
+        returnTo={search.returnTo}
       />
     </div>
   );

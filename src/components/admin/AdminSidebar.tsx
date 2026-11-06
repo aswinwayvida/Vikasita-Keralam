@@ -71,7 +71,7 @@ export function AdminSidebar() {
         {
           to: "/admin/settings",
           icon: MapPin,
-          label: "Location",
+          label: "Organisational Charts",
           search: { tab: "location" },
         },
       ],
@@ -116,7 +116,7 @@ export function AdminSidebar() {
                   const exact = "exact" in item && item.exact;
                   const isRolesLink = item.label === "Roles and Control";
                   const isDesignationsLink = item.label === "Designations";
-                  const isLocationLink = item.label === "Location";
+                  const isLocationLink = item.label === "Organisational Charts";
                   const active = isRolesLink
                     ? (path === item.to ||
                         path === "/admin/settings/new-role" ||

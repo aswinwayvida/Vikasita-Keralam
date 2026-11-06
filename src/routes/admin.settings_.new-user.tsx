@@ -23,6 +23,7 @@ import { useSidebar } from "@/components/ui/sidebar";
 import { permissionModules, type PermissionModuleId } from "@/data/party-workers";
 import {
   dataAccessOptions,
+  loadCustomOrganisationLevels,
   loadManagedRoles,
   scopedPermissionKey,
   type DataAccessScope,
@@ -334,6 +335,82 @@ function CreateUserPage() {
   const [selectedRoleName, setSelectedRoleName] = useState("None");
   const [roleLevel, setRoleLevel] = useState("State");
 
+  // Custom organisation levels loaded from local storage/data
+  const [customOrgLevels, setCustomOrgLevels] = useState(() => loadCustomOrganisationLevels());
+
+  const saveFormDraftToSession = () => {
+    if (typeof window === "undefined") return;
+    const draftData = {
+      fullName,
+      mobile,
+      orgLevel,
+      designation,
+      selectedRoleName,
+      roleLevel,
+      selectedRegion,
+      selectedOrgDistrict,
+      selectedMandalam,
+      selectedArea,
+      selectedBooth,
+    };
+    sessionStorage.setItem("vk_user_form_draft", JSON.stringify(draftData));
+  };
+
+  // Restoration effect after returning from creation pages
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const savedDraft = sessionStorage.getItem("vk_user_form_draft");
+    if (savedDraft) {
+      try {
+        const parsed = JSON.parse(savedDraft);
+        if (parsed.fullName) setFullName(parsed.fullName);
+        if (parsed.mobile) setMobile(parsed.mobile);
+        if (parsed.orgLevel) setOrgLevel(parsed.orgLevel);
+        if (parsed.designation) setDesignation(parsed.designation);
+        if (parsed.selectedRoleName) setSelectedRoleName(parsed.selectedRoleName);
+        if (parsed.roleLevel) setRoleLevel(parsed.roleLevel);
+        if (parsed.selectedRegion) setSelectedRegion(parsed.selectedRegion);
+        if (parsed.selectedOrgDistrict) setSelectedOrgDistrict(parsed.selectedOrgDistrict);
+        if (parsed.selectedMandalam) setSelectedMandalam(parsed.selectedMandalam);
+        if (parsed.selectedArea) setSelectedArea(parsed.selectedArea);
+        if (parsed.selectedBooth) setSelectedBooth(parsed.selectedBooth);
+      } catch {
+        // ignore
+      }
+      sessionStorage.removeItem("vk_user_form_draft");
+    }
+
+    const newRole = sessionStorage.getItem("vk_newly_created_role");
+    if (newRole) {
+      setSelectedRoleName(newRole);
+      sessionStorage.removeItem("vk_newly_created_role");
+      toast.success(tr(`Role "${newRole}" created and selected.`, `"${newRole}" റോൾ സൃഷ്ടിച്ച് തിരഞ്ഞെടുത്തു.`));
+    }
+
+    const newDesignation = sessionStorage.getItem("vk_newly_created_designation");
+    if (newDesignation) {
+      setDesignation(newDesignation);
+      sessionStorage.removeItem("vk_newly_created_designation");
+      toast.success(
+        tr(`Designation "${newDesignation}" created and selected.`, `"${newDesignation}" തസ്തിക സൃഷ്ടിച്ച് തിരഞ്ഞെടുത്തു.`),
+      );
+    }
+
+    const newOrgLevel = sessionStorage.getItem("vk_newly_created_org_level");
+    if (newOrgLevel) {
+      setOrgLevel(newOrgLevel);
+      setCustomOrgLevels(loadCustomOrganisationLevels());
+      sessionStorage.removeItem("vk_newly_created_org_level");
+      toast.success(
+        tr(
+          `Organisation Level "${newOrgLevel}" created and selected.`,
+          `"${newOrgLevel}" സംഘടനാ തലം സൃഷ്ടിച്ച് തിരഞ്ഞെടുത്തു.`,
+        ),
+      );
+    }
+  }, []);
+
   // Custom designations state
   const [customDesignations, setCustomDesignations] = useState<Record<string, string[]>>({});
   const [newDesignationInput, setNewDesignationInput] = useState("");
@@ -458,8 +535,15 @@ function CreateUserPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const availableRoleNames = useMemo(() => {
-    return DEFAULT_ROLE_SELECTIONS;
-  }, []);
+    const customRoles = loadManagedRoles()
+      .filter((r) => !r.system)
+      .map((r) => r.name);
+    const combined = [...DEFAULT_ROLE_SELECTIONS, ...customRoles];
+    if (selectedRoleName && !combined.includes(selectedRoleName)) {
+      combined.push(selectedRoleName);
+    }
+    return Array.from(new Set(combined.filter(Boolean)));
+  }, [selectedRoleName]);
 
   // Pre-populate when editing an existing user
   useEffect(() => {
@@ -879,7 +963,18 @@ function CreateUserPage() {
               </label>
               <select
                 value={orgLevel}
-                onChange={(e) => handleOrgLevelChange(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "__CREATE_NEW_ORG_LEVEL__") {
+                    saveFormDraftToSession();
+                    void navigate({
+                      to: "/admin/settings",
+                      search: { tab: "location", openCreate: "true", returnTo: "/admin/settings/new-user" },
+                    });
+                  } else {
+                    handleOrgLevelChange(val);
+                  }
+                }}
                 className="h-10 w-full rounded-lg border border-border bg-white px-3 text-xs font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer"
               >
                 <option value="">{tr("Select Organisation Level", "സംഘടനാ തലം തിരഞ്ഞെടുക്കുക")}</option>
@@ -888,6 +983,14 @@ function CreateUserPage() {
                     {tr(opt.en, opt.ml)}
                   </option>
                 ))}
+                {customOrgLevels.map((lvl) => (
+                  <option key={lvl.id} value={lvl.name}>
+                    {lvl.name}
+                  </option>
+                ))}
+                <option value="__CREATE_NEW_ORG_LEVEL__">
+                  + {tr("Create New Organisation Level...", "പുതിയ സംഘടനാ തലം സൃഷ്ടിക്കുക...")}
+                </option>
               </select>
               {errors.orgLevel && <p className="text-[11px] font-bold text-destructive">{errors.orgLevel}</p>}
             </div>
@@ -897,33 +1000,25 @@ function CreateUserPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Designation Dropdown */}
             <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="block text-xs font-bold text-foreground">
-                  {tr("Designation", "തസ്തിക")} <span className="text-destructive">*</span>
-                </label>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!orgLevel) {
-                      toast.error(tr("Please select Organisation Level first.", "ആദ്യം സംഘടനാ തലം തിരഞ്ഞെടുക്കുക."));
-                      return;
-                    }
-                    setShowAddDesignationPopover((prev) => !prev);
-                  }}
-                  className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:text-primary/80 transition-colors cursor-pointer"
-                  title={tr("Create Designation", "തസ്തിക സൃഷ്ടിക്കുക")}
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  <span>{tr("Create Designation", "തസ്തിക സൃഷ്ടിക്കുക")}</span>
-                </button>
-              </div>
+              <label className="block text-xs font-bold text-foreground">
+                {tr("Designation", "തസ്തിക")} <span className="text-destructive">*</span>
+              </label>
 
               <select
                 value={designation}
                 disabled={!orgLevel}
                 onChange={(e) => {
-                  setDesignation(e.target.value);
-                  if (errors.designation) setErrors((prev) => ({ ...prev, designation: "" }));
+                  const val = e.target.value;
+                  if (val === "__CREATE_NEW_DESIGNATION__") {
+                    saveFormDraftToSession();
+                    void navigate({
+                      to: "/admin/settings",
+                      search: { tab: "designations", openCreate: "true", returnTo: "/admin/settings/new-user" },
+                    });
+                  } else {
+                    setDesignation(val);
+                    if (errors.designation) setErrors((prev) => ({ ...prev, designation: "" }));
+                  }
                 }}
                 className="h-10 w-full rounded-lg border border-border bg-white px-3 text-xs font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer disabled:bg-slate-100 disabled:text-muted-foreground disabled:cursor-not-allowed"
               >
@@ -937,6 +1032,9 @@ function CreateUserPage() {
                         {desig}
                       </option>
                     ))}
+                    <option value="__CREATE_NEW_DESIGNATION__">
+                      + {tr("Create New Designation...", "പുതിയ തസ്തിക സൃഷ്ടിക്കുക...")}
+                    </option>
                   </>
                 )}
               </select>
@@ -986,23 +1084,23 @@ function CreateUserPage() {
 
             {/* Role Selection */}
             <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="block text-xs font-bold text-foreground">
-                  {tr("Role Selection", "റോൾ തിരഞ്ഞെടുക്കൽ")}
-                </label>
-                <button
-                  type="button"
-                  onClick={() => void navigate({ to: "/admin/settings", search: { tab: "roles" } })}
-                  className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:text-primary/80 transition-colors cursor-pointer"
-                  title={tr("Create Role", "റോൾ സൃഷ്ടിക്കുക")}
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  <span>{tr("Create Role", "റോൾ സൃഷ്ടിക്കുക")}</span>
-                </button>
-              </div>
+              <label className="block text-xs font-bold text-foreground">
+                {tr("Role Selection", "റോൾ തിരഞ്ഞെടുക്കൽ")}
+              </label>
               <select
                 value={selectedRoleName}
-                onChange={(e) => setSelectedRoleName(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "__CREATE_NEW_ROLE__") {
+                    saveFormDraftToSession();
+                    void navigate({
+                      to: "/admin/settings_/new-role",
+                      search: { returnTo: "/admin/settings/new-user" },
+                    });
+                  } else {
+                    setSelectedRoleName(val);
+                  }
+                }}
                 className="h-10 w-full rounded-lg border border-border bg-white px-3 text-xs font-bold text-foreground focus:border-primary focus:outline-none cursor-pointer"
               >
                 {availableRoleNames.map((roleName) => (
@@ -1010,6 +1108,9 @@ function CreateUserPage() {
                     {roleName === "None" ? tr("None", "ഒന്നുമില്ല") : roleName}
                   </option>
                 ))}
+                <option value="__CREATE_NEW_ROLE__">
+                  + {tr("Create New Role...", "പുതിയ റോൾ സൃഷ്ടിക്കുക...")}
+                </option>
               </select>
             </div>
 

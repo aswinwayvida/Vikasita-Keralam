@@ -10,7 +10,7 @@ import {
   List,
   Plus,
   Power,
-  MoreHorizontal,
+  MoreVertical,
   Pencil,
   Share2,
   Trash2,
@@ -23,6 +23,7 @@ import {
   HandHeart,
   Building2,
   Columns3,
+  GripVertical,
   Search,
   ChevronDown,
   Check,
@@ -30,6 +31,7 @@ import {
 import { schemes, type Scheme } from "@/data/schemes";
 import { useLang } from "@/i18n/LanguageProvider";
 import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -80,20 +82,28 @@ const categoryIcons: Record<Scheme["category"], typeof Sprout> = {
 
 type SchemeColumnKey =
   | "scheme"
-  | "department"
   | "category"
   | "portal"
+  | "website"
   | "status"
   | "applications"
+  | "approved"
+  | "rejected"
+  | "pending"
+  | "inProgress"
   | "actions";
 
 const SCHEME_COLUMNS: { key: SchemeColumnKey; en: string; ml: string }[] = [
   { key: "scheme", en: "Scheme Name", ml: "പദ്ധതിയുടെ പേര്" },
-  { key: "department", en: "Department (Ministry)", ml: "വകുപ്പ് (മന്ത്രാലയം)" },
   { key: "category", en: "Category", ml: "വിഭാഗം" },
-  { key: "portal", en: "Open Portal", ml: "പോർട്ടൽ തുറക്കുക" },
+  { key: "portal", en: "Apply Link", ml: "പോർട്ടൽ തുറക്കുക" },
+  { key: "website", en: "Official Website", ml: "ഔദ്യോഗിക വെബ്‌സൈറ്റ്" },
   { key: "status", en: "Status", ml: "സ്റ്റാറ്റസ്" },
   { key: "applications", en: "Applications", ml: "അപേക്ഷകൾ" },
+  { key: "approved", en: "Approved", ml: "അംഗീകരിച്ചത്" },
+  { key: "rejected", en: "Rejected", ml: "നിരസിച്ചത്" },
+  { key: "pending", en: "Pending", ml: "തീർപ്പുകൽപ്പിക്കാത്തത്" },
+  { key: "inProgress", en: "In Progress", ml: "പുരോഗതിയിൽ" },
   { key: "actions", en: "Actions", ml: "നടപടികൾ" },
 ];
 
@@ -379,9 +389,32 @@ function SchemesPage() {
   const topSearchQuery = useAdminTopSearch();
   const [disabledSchemeIds, setDisabledSchemeIds] = useState<Set<string>>(() => new Set());
   const [deletedSchemeIds, setDeletedSchemeIds] = useState<Set<string>>(() => new Set());
+  const [selectedSchemeIds, setSelectedSchemeIds] = useState<Set<string>>(() => new Set());
   const [visibleColumns, setVisibleColumns] = useState<Set<SchemeColumnKey>>(
     () => new Set(SCHEME_COLUMNS.map((column) => column.key)),
   );
+  const [columnOrder, setColumnOrder] = useState<SchemeColumnKey[]>(() =>
+    SCHEME_COLUMNS.map((column) => column.key),
+  );
+  const [draggedColumnIndex, setDraggedColumnIndex] = useState<number | null>(null);
+
+  const handleDragStartColumn = (index: number) => {
+    setDraggedColumnIndex(index);
+  };
+
+  const handleDragOverColumn = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDropColumn = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (draggedColumnIndex === null || draggedColumnIndex === dropIndex) return;
+    const nextOrder = [...columnOrder];
+    const [moved] = nextOrder.splice(draggedColumnIndex, 1);
+    nextOrder.splice(dropIndex, 0, moved);
+    setColumnOrder(nextOrder);
+    setDraggedColumnIndex(null);
+  };
 
   // Filter states matching User Filter approach
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -411,6 +444,12 @@ function SchemesPage() {
               ? "Archived"
               : "Active";
 
+        const totalApps = 38 + ((index * 17) % 148);
+        const approved = Math.floor(totalApps * 0.55);
+        const rejected = Math.floor(totalApps * 0.12);
+        const inProgress = Math.floor(totalApps * 0.18);
+        const pending = totalApps - approved - rejected - inProgress;
+
         return {
           ...scheme,
           mode: modes[index % modes.length],
@@ -421,7 +460,11 @@ function SchemesPage() {
                 ? "myScheme reference"
                 : "Department portal",
           verifiedDays: index % 6,
-          applications: 38 + ((index * 17) % 148),
+          applications: totalApps,
+          approved,
+          rejected,
+          pending,
+          inProgress,
           sync: index % 7 === 0 ? "Needs checking" : "Up to date",
           categoryDisplay,
           ministryDisplay: scheme.ministry.en,
@@ -527,6 +570,54 @@ function SchemesPage() {
     );
   };
 
+  const handleBulkEnable = () => {
+    setDisabledSchemeIds((prev) => {
+      const next = new Set(prev);
+      selectedSchemeIds.forEach((id) => next.delete(id));
+      return next;
+    });
+    toast.success(
+      lang === "ml"
+        ? `${selectedSchemeIds.size} പദ്ധതികൾ സജീവമാക്കി`
+        : `Enabled ${selectedSchemeIds.size} scheme(s)`,
+    );
+    setSelectedSchemeIds(new Set());
+  };
+
+  const handleBulkDisable = () => {
+    setDisabledSchemeIds((prev) => {
+      const next = new Set(prev);
+      selectedSchemeIds.forEach((id) => next.add(id));
+      return next;
+    });
+    toast.success(
+      lang === "ml"
+        ? `${selectedSchemeIds.size} പദ്ധതികൾ നിർജ്ജീവമാക്കി`
+        : `Disabled ${selectedSchemeIds.size} scheme(s)`,
+    );
+    setSelectedSchemeIds(new Set());
+  };
+
+  const handleBulkDelete = () => {
+    const confirmed = window.confirm(
+      lang === "ml"
+        ? `തിരഞ്ഞെടുത്ത ${selectedSchemeIds.size} പദ്ധതികൾ ഡിലീറ്റ് ചെയ്യണോ?`
+        : `Delete ${selectedSchemeIds.size} selected scheme(s)?`,
+    );
+    if (!confirmed) return;
+    setDeletedSchemeIds((prev) => {
+      const next = new Set(prev);
+      selectedSchemeIds.forEach((id) => next.add(id));
+      return next;
+    });
+    toast.success(
+      lang === "ml"
+        ? `${selectedSchemeIds.size} പദ്ധതികൾ ഡിലീറ്റ് ചെയ്തു`
+        : `Deleted ${selectedSchemeIds.size} scheme(s)`,
+    );
+    setSelectedSchemeIds(new Set());
+  };
+
   const toggleColumn = (key: SchemeColumnKey) => {
     setVisibleColumns((current) => {
       const next = new Set(current);
@@ -608,47 +699,79 @@ function SchemesPage() {
           {/* Controls on the Right */}
           <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar desktop-hide-scrollbar pb-0.5 max-w-full sm:ml-auto shrink-0">
             {/* Column Management */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+            <Popover>
+              <PopoverTrigger asChild>
                 <button
                   type="button"
                   aria-label={lang === "ml" ? "നിരകൾ കൈകാര്യം ചെയ്യുക" : "Manage columns"}
                   title={lang === "ml" ? "നിരകൾ കൈകാര്യം ചെയ്യുക" : "Manage columns"}
-                  className="hidden md:inline-flex h-8 w-8 items-center justify-center rounded-xl sm:rounded-lg border border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground transition-colors shrink-0"
+                  className="hidden md:inline-flex h-8 w-8 items-center justify-center rounded-xl sm:rounded-lg border border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground transition-colors shrink-0 cursor-pointer"
                 >
                   <Columns3 className="h-4 w-4" />
                 </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel className="text-xs">
-                  {lang === "ml" ? "നിരകൾ കൈകാര്യം ചെയ്യുക" : "Manage Columns"}
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {SCHEME_COLUMNS.map((column) => (
-                  <DropdownMenuCheckboxItem
-                    key={column.key}
-                    checked={visibleColumns.has(column.key)}
-                    onCheckedChange={() => toggleColumn(column.key)}
-                    onSelect={(event) => event.preventDefault()}
-                    className="text-xs"
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-64 p-3 shadow-lg">
+                <div className="flex items-center justify-between border-b pb-2 mb-2">
+                  <span className="text-xs font-bold text-foreground">
+                    {lang === "ml" ? "നിരകൾ കൈകാര്യം ചെയ്യുക" : "Manage Columns"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setVisibleColumns(new Set(SCHEME_COLUMNS.map((column) => column.key)))
+                    }
+                    className="text-[11px] font-semibold text-primary hover:underline cursor-pointer"
                   >
-                    {lang === "ml" ? column.ml : column.en}
-                  </DropdownMenuCheckboxItem>
-                ))}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onSelect={() =>
-                    setVisibleColumns(new Set(SCHEME_COLUMNS.map((column) => column.key)))
-                  }
-                  className="text-xs font-semibold text-primary"
-                >
-                  {lang === "ml" ? "എല്ലാ നിരകളും കാണിക്കുക" : "Show all columns"}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                    {lang === "ml" ? "എല്ലാം കാണിക്കുക" : "Show All"}
+                  </button>
+                </div>
+                <p className="text-[10px] text-muted-foreground mb-2">
+                  {lang === "ml"
+                    ? "സ്ഥാനം മാറ്റാൻ ഡ്രാഗ് ചെയ്യുക, കാണിക്കാൻ/മറയ്ക്കാൻ ടിക്ക് ചെയ്യുക"
+                    : "Drag to reorder, check to show/hide"}
+                </p>
+                <div className="space-y-1.5 max-h-72 overflow-y-auto pr-0.5">
+                  {columnOrder.map((colKey, index) => {
+                    const colDef = SCHEME_COLUMNS.find((c) => c.key === colKey);
+                    if (!colDef) return null;
+                    const isChecked = visibleColumns.has(colKey);
+                    return (
+                      <div
+                        key={colKey}
+                        draggable
+                        onDragStart={() => handleDragStartColumn(index)}
+                        onDragOver={handleDragOverColumn}
+                        onDrop={(e) => handleDropColumn(e, index)}
+                        className={cn(
+                          "flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-xs font-medium bg-background transition-colors cursor-grab active:cursor-grabbing select-none",
+                          draggedColumnIndex === index
+                            ? "opacity-40 border-primary bg-primary/5"
+                            : "border-border hover:bg-muted/50",
+                        )}
+                      >
+                        <GripVertical className="h-3.5 w-3.5 text-muted-foreground shrink-0 cursor-grab active:cursor-grabbing" />
+                        <Checkbox
+                          id={`col-toggle-${colKey}`}
+                          checked={isChecked}
+                          onCheckedChange={() => toggleColumn(colKey)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <label
+                          htmlFor={`col-toggle-${colKey}`}
+                          className="flex-1 cursor-pointer truncate text-foreground"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {lang === "ml" ? colDef.ml : colDef.en}
+                        </label>
+                      </div>
+                    );
+                  })}
+                </div>
+              </PopoverContent>
+            </Popover>
 
-            {/* View Mode Toggle Switch */}
-            <div className="flex items-center rounded-xl sm:rounded-lg border border-border bg-background p-0.5 shrink-0">
+            {/* View Mode Toggle Switch (Hidden on Desktop) */}
+            <div className="hidden flex items-center rounded-xl sm:rounded-lg border border-border bg-background p-0.5 shrink-0 md:hidden">
               <button
                 type="button"
                 onClick={() => setViewMode("table")}
@@ -758,97 +881,185 @@ function SchemesPage() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Import Button */}
-              <button
-                type="button"
-                onClick={() =>
-                  toast.info(lang === "ml" ? "ഇമ്പോർട്ട് സൗകര്യം ലഭ്യമാണ്" : "Import feature ready")
-                }
-                className="flex items-center gap-1.5 rounded-xl sm:rounded-lg border border-border bg-background px-3 sm:px-4 py-1.5 text-[13px] leading-tight font-semibold text-foreground hover:bg-muted transition-colors shrink-0 cursor-pointer"
-                title={lang === "ml" ? "ഇമ്പോർട്ട്" : "Import"}
-              >
-                <Upload className="h-4 w-4 text-muted-foreground" />
-                <span className="hidden sm:inline">{lang === "ml" ? "ഇമ്പോർട്ട്" : "Import"}</span>
-              </button>
+            </div>
 
-              {/* Export Button */}
+            <div className="flex items-center gap-2 shrink-0">
+              <Link
+                to="/admin/schemes/new"
+                className="hidden sm:inline-flex items-center gap-1.5 rounded-xl sm:rounded-lg bg-primary px-4 py-1.5 text-[13px] leading-tight font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shrink-0"
+              >
+                <Plus className="h-4 w-4" />
+                {lang === "ml" ? "പുതിയ പദ്ധതി ചേർക്കുക" : "Add scheme"}
+              </Link>
+
+              {/* 3-dot menu near Add scheme for Import / Export */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label={tr("More Options", "കൂടുതൽ ഓപ്ഷനുകൾ")}
+                    className="flex h-8 w-8 items-center justify-center rounded-xl sm:rounded-lg border border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer shrink-0"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem
+                    onSelect={() =>
+                      toast.info(lang === "ml" ? "ഇമ്പോർട്ട് സൗകര്യം ലഭ്യമാണ്" : "Import feature ready")
+                    }
+                    className="gap-2 cursor-pointer"
+                  >
+                    <Upload className="h-4 w-4" />
+                    {lang === "ml" ? "ഇമ്പോർട്ട്" : "Import"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() =>
+                      toast.success(
+                        lang === "ml" ? "എല്ലാ പദ്ധതി വിവരങ്ങളും എക്സ്പോർട്ട് ചെയ്തു" : "All schemes exported",
+                      )
+                    }
+                    className="gap-2 cursor-pointer"
+                  >
+                    <Download className="h-4 w-4" />
+                    {lang === "ml" ? "എക്സ്പോർട്ട്" : "Export"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </div>
+
+        {/* Selected Schemes Action Bar */}
+        {selectedSchemeIds.size > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/80 bg-primary/[0.04] px-4 py-2.5 sm:px-5">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-foreground">
+                {selectedSchemeIds.size} {tr("selected", "തിരഞ്ഞെടുത്തു")}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() =>
                   toast.success(
-                    lang === "ml" ? "പദ്ധതി വിവരങ്ങൾ എക്സ്പോർട്ട് ചെയ്തു" : "Schemes exported",
+                    lang === "ml"
+                      ? `തിരഞ്ഞെടുത്ത ${selectedSchemeIds.size} പദ്ധതി വിവരങ്ങൾ എക്സ്പോർട്ട് ചെയ്തു`
+                      : `Exported ${selectedSchemeIds.size} scheme(s)`,
                   )
                 }
-                className="flex items-center gap-1.5 rounded-xl sm:rounded-lg border border-border bg-background px-3 sm:px-4 py-1.5 text-[13px] leading-tight font-semibold text-foreground hover:bg-muted transition-colors shrink-0 cursor-pointer"
-                title={lang === "ml" ? "എക്സ്പോർട്ട്" : "Export"}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-bold text-foreground hover:bg-muted transition-colors cursor-pointer"
               >
-                <Download className="h-4 w-4 text-muted-foreground" />
-                <span className="hidden sm:inline">{lang === "ml" ? "എക്സ്പോർട്ട്" : "Export"}</span>
+                <Download className="h-3.5 w-3.5 text-muted-foreground" />
+                {tr("Export Selected", "എക്സ്പോർട്ട്")}
+              </button>
+              <button
+                type="button"
+                onClick={handleBulkEnable}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 transition-colors cursor-pointer"
+              >
+                <Power className="h-3.5 w-3.5" />
+                {tr("Enable Selected", "സജീവമാക്കുക")}
+              </button>
+              <button
+                type="button"
+                onClick={handleBulkDisable}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 transition-colors cursor-pointer"
+              >
+                <Power className="h-3.5 w-3.5" />
+                {tr("Disable Selected", "നിർജ്ജീവമാക്കുക")}
+              </button>
+              <button
+                type="button"
+                onClick={handleBulkDelete}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs font-bold text-rose-700 dark:text-rose-300 hover:bg-rose-500/20 transition-colors cursor-pointer"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {tr("Delete Selected", "ഡിലീറ്റ് ചെയ്യുക")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedSchemeIds(new Set())}
+                className="text-xs font-semibold text-muted-foreground hover:text-foreground px-2 py-1 cursor-pointer"
+              >
+                {tr("Clear", "നീക്കം ചെയ്യുക")}
               </button>
             </div>
-
-            <Link
-              to="/admin/schemes/new"
-              className="hidden sm:inline-flex items-center gap-1.5 rounded-xl sm:rounded-lg bg-primary px-4 py-1.5 text-[13px] leading-tight font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shrink-0"
-            >
-              <Plus className="h-4 w-4" />
-              {lang === "ml" ? "പുതിയ പദ്ധതി ചേർക്കുക" : "Add scheme"}
-            </Link>
           </div>
-        </div>
+        )}
 
         {/* Cards View */}
         {viewMode === "cards" && (
           <div className="p-4 sm:p-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            {paginatedFiltered.map((record) => (
-              <div
-                key={record.id}
-                onClick={() =>
-                  navigate({ to: "/admin/schemes/$schemeId", params: { schemeId: record.id } })
-                }
-                className="rounded-xl border border-border/80 bg-card p-4 space-y-3 shadow-2xs hover:border-primary/40 hover:shadow-xs transition-all cursor-pointer"
-              >
-                <div className="flex items-start justify-between gap-2 border-b border-border/40 pb-2.5">
-                  <div className="space-y-0.5 min-w-0">
-                    <h4 className="font-bold text-sm text-foreground leading-snug">
-                      {record[lang]}
-                    </h4>
-                    <p className="text-[11px] text-muted-foreground font-medium truncate">
-                      {record.ministry[lang]} · {record.categoryDisplay}
-                    </p>
+            {paginatedFiltered.map((record) => {
+              const isSelected = selectedSchemeIds.has(record.id);
+              return (
+                <div
+                  key={record.id}
+                  onClick={() =>
+                    navigate({ to: "/admin/schemes/$schemeId", params: { schemeId: record.id } })
+                  }
+                  className={`rounded-xl border bg-card p-4 space-y-3 shadow-2xs hover:border-primary/40 hover:shadow-xs transition-all cursor-pointer ${
+                    isSelected ? "border-primary/50 bg-primary/[0.04]" : "border-border/80"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2 border-b border-border/40 pb-2.5">
+                    <div className="flex items-start gap-2.5 min-w-0">
+                      <div onClick={(e) => e.stopPropagation()} className="pt-0.5">
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={(checked) => {
+                            setSelectedSchemeIds((prev) => {
+                              const next = new Set(prev);
+                              if (checked) next.add(record.id);
+                              else next.delete(record.id);
+                              return next;
+                            });
+                          }}
+                        />
+                      </div>
+                      <div className="space-y-0.5 min-w-0">
+                        <h4 className="font-bold text-sm text-foreground leading-snug">
+                          {record[lang]}
+                        </h4>
+                        <p className="text-[11px] text-muted-foreground font-medium truncate">
+                          {record.ministry[lang]} · {record.categoryDisplay}
+                        </p>
+                      </div>
+                    </div>
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-extrabold border shrink-0 ${
+                        record.status === "Active"
+                          ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                          : record.status === "Inactive"
+                            ? "bg-rose-500/10 text-rose-600 border-rose-500/20"
+                            : "bg-amber-500/10 text-amber-700 border-amber-500/20"
+                      }`}
+                    >
+                      {record.status}
+                    </span>
                   </div>
-                  <span
-                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-extrabold border shrink-0 ${
-                      record.status === "Active"
-                        ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                        : record.status === "Inactive"
-                          ? "bg-rose-500/10 text-rose-600 border-rose-500/20"
-                          : "bg-amber-500/10 text-amber-700 border-amber-500/20"
-                    }`}
-                  >
-                    {record.status}
-                  </span>
-                </div>
 
-                <div className="flex items-center justify-between gap-2">
-                  <ModePill mode={record.mode} />
-                  <span className="font-mono font-bold text-xs text-foreground bg-muted px-2 py-0.5 rounded-md">
-                    {record.applications} apps
-                  </span>
-                </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <ModePill mode={record.mode} />
+                    <span className="font-mono font-bold text-xs text-foreground bg-muted px-2 py-0.5 rounded-md">
+                      {record.applications} apps
+                    </span>
+                  </div>
 
-                <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border/40">
-                  <span className="text-[11px]">
-                    {record.verifiedDays === 0
-                      ? "Verified today"
-                      : `Verified ${record.verifiedDays}d ago`}
-                  </span>
-                  <span className="font-semibold text-primary flex items-center gap-0.5">
-                    Manage scheme <ChevronRight className="h-3.5 w-3.5" />
-                  </span>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border/40">
+                    <span className="text-[11px]">
+                      {record.verifiedDays === 0
+                        ? "Verified today"
+                        : `Verified ${record.verifiedDays}d ago`}
+                    </span>
+                    <span className="font-semibold text-primary flex items-center gap-0.5">
+                      Manage scheme <ChevronRight className="h-3.5 w-3.5" />
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -858,183 +1069,329 @@ function SchemesPage() {
             <table className="w-full text-left text-xs">
               <thead className="bg-muted/50 font-bold text-muted-foreground border-b border-border">
                 <tr>
-                  {visibleColumns.has("scheme") && (
-                    <th className="py-3.5 pl-4 sm:pl-5 pr-3 whitespace-nowrap">
-                      {lang === "ml" ? "പദ്ധതിയുടെ പേര്" : "SCHEME NAME"}
-                    </th>
-                  )}
-                  {visibleColumns.has("department") && (
-                    <th className="p-3.5">
-                      {lang === "ml" ? "വകുപ്പ് (മന്ത്രാലയം)" : "DEPARTMENT (MINISTRY)"}
-                    </th>
-                  )}
-                  {visibleColumns.has("category") && (
-                    <th className="p-3.5 whitespace-nowrap">
-                      {lang === "ml" ? "വിഭാഗം" : "CATEGORY"}
-                    </th>
-                  )}
-                  {visibleColumns.has("portal") && (
-                    <th className="p-3.5 whitespace-nowrap">
-                      {lang === "ml" ? "പോർട്ടൽ തുറക്കുക" : "OPEN PORTAL"}
-                    </th>
-                  )}
-                  {visibleColumns.has("status") && (
-                    <th className="p-3.5 whitespace-nowrap">
-                      {lang === "ml" ? "സ്റ്റാറ്റസ്" : "STATUS"}
-                    </th>
-                  )}
-                  {visibleColumns.has("applications") && (
-                    <th className="p-3.5 text-right">
-                      {lang === "ml" ? "അപേക്ഷകൾ" : "APPLICATIONS"}
-                    </th>
-                  )}
-                  {visibleColumns.has("actions") && (
-                    <th className="py-3.5 pl-3 pr-4 sm:pr-5 text-right whitespace-nowrap">
-                      {lang === "ml" ? "നടപടികൾ" : "ACTIONS"}
-                    </th>
-                  )}
+                  <th className="py-3.5 pl-4 sm:pl-5 pr-2 w-10 text-center">
+                    <Checkbox
+                      checked={
+                        paginatedFiltered.length > 0 &&
+                        paginatedFiltered.every((record) => selectedSchemeIds.has(record.id))
+                      }
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedSchemeIds((prev) => {
+                            const next = new Set(prev);
+                            paginatedFiltered.forEach((r) => next.add(r.id));
+                            return next;
+                          });
+                        } else {
+                          setSelectedSchemeIds((prev) => {
+                            const next = new Set(prev);
+                            paginatedFiltered.forEach((r) => next.delete(r.id));
+                            return next;
+                          });
+                        }
+                      }}
+                    />
+                  </th>
+                  {columnOrder.map((colKey) => {
+                    if (!visibleColumns.has(colKey)) return null;
+                    switch (colKey) {
+                      case "scheme":
+                        return (
+                          <th key="scheme" className="py-3.5 pl-2 pr-3 whitespace-nowrap">
+                            {lang === "ml" ? "പദ്ധതിയുടെ പേര്" : "SCHEME NAME"}
+                          </th>
+                        );
+                      case "category":
+                        return (
+                          <th key="category" className="p-3.5 whitespace-nowrap">
+                            {lang === "ml" ? "വിഭാഗം" : "CATEGORY"}
+                          </th>
+                        );
+                      case "portal":
+                        return (
+                          <th key="portal" className="p-3.5 whitespace-nowrap">
+                            {lang === "ml" ? "പോർട്ടൽ തുറക്കുക" : "APPLY LINK"}
+                          </th>
+                        );
+                      case "website":
+                        return (
+                          <th key="website" className="p-3.5 whitespace-nowrap">
+                            {lang === "ml" ? "ഔദ്യോഗിക വെബ്‌സൈറ്റ്" : "OFFICIAL WEBSITE"}
+                          </th>
+                        );
+                      case "status":
+                        return (
+                          <th key="status" className="p-3.5 whitespace-nowrap">
+                            {lang === "ml" ? "സ്റ്റാറ്റസ്" : "STATUS"}
+                          </th>
+                        );
+                      case "applications":
+                        return (
+                          <th key="applications" className="p-3.5 text-right whitespace-nowrap">
+                            {lang === "ml" ? "അപേക്ഷകൾ" : "APPLICATIONS"}
+                          </th>
+                        );
+                      case "approved":
+                        return (
+                          <th key="approved" className="p-3.5 text-right whitespace-nowrap">
+                            {lang === "ml" ? "അംഗീകരിച്ചത്" : "APPROVED"}
+                          </th>
+                        );
+                      case "rejected":
+                        return (
+                          <th key="rejected" className="p-3.5 text-right whitespace-nowrap">
+                            {lang === "ml" ? "നിരസിച്ചത്" : "REJECTED"}
+                          </th>
+                        );
+                      case "pending":
+                        return (
+                          <th key="pending" className="p-3.5 text-right whitespace-nowrap">
+                            {lang === "ml" ? "തീർപ്പുകൽപ്പിക്കാത്തത്" : "PENDING"}
+                          </th>
+                        );
+                      case "inProgress":
+                        return (
+                          <th key="inProgress" className="p-3.5 text-right whitespace-nowrap">
+                            {lang === "ml" ? "പുരോഗതിയിൽ" : "IN PROGRESS"}
+                          </th>
+                        );
+                      case "actions":
+                        return (
+                          <th key="actions" className="py-3.5 pl-3 pr-4 sm:pr-5 text-right whitespace-nowrap">
+                            {lang === "ml" ? "നടപടികൾ" : "ACTIONS"}
+                          </th>
+                        );
+                      default:
+                        return null;
+                    }
+                  })}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60 font-semibold">
-                {paginatedFiltered.map((record) => (
-                  <tr
-                    key={record.id}
-                    onClick={() =>
-                      navigate({ to: "/admin/schemes/$schemeId", params: { schemeId: record.id } })
-                    }
-                    className="cursor-pointer hover:bg-muted/40 transition-colors"
-                  >
-                    {visibleColumns.has("scheme") && (
-                      <td className="py-3.5 pl-4 sm:pl-5 pr-3 min-w-44 max-w-80">
-                        <div className="flex items-center gap-2.5">
-                          <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-white p-1 shadow-2xs">
-                            <img
-                              src={schemeLogoUrls[record.id] ?? schemeLogoFallback}
-                              alt=""
-                              className="h-full w-full object-contain"
-                              loading="lazy"
-                              onError={(event) => {
-                                event.currentTarget.onerror = null;
-                                event.currentTarget.src = schemeLogoFallback;
-                              }}
-                            />
-                          </span>
-                          <p className="font-bold text-foreground">{record[lang]}</p>
-                        </div>
-                      </td>
-                    )}
-                    {visibleColumns.has("department") && (
-                      <td className="p-3.5 min-w-36 text-muted-foreground">
-                        {record.ministry[lang]}
-                      </td>
-                    )}
-                    {visibleColumns.has("category") && (
-                      <td className="p-3.5">
-                        <CategoryTag category={record.category} lang={lang} />
-                      </td>
-                    )}
-                    {visibleColumns.has("portal") && (
-                      <td className="p-3.5 whitespace-nowrap">
-                        <a
-                          href={`https://www.myscheme.gov.in/search?q=${encodeURIComponent(record.en)}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(event) => event.stopPropagation()}
-                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline"
-                        >
-                          {lang === "ml" ? "പോർട്ടൽ തുറക്കുക" : "Open portal"}
-                          <ExternalLink className="h-3 w-3" />
-                        </a>
-                      </td>
-                    )}
-                    {visibleColumns.has("status") && (
-                      <td className="p-3.5">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-extrabold border ${
-                            record.status === "Active"
-                              ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                              : record.status === "Inactive"
-                                ? "bg-rose-500/10 text-rose-600 border-rose-500/20"
-                                : "bg-amber-500/10 text-amber-700 border-amber-500/20"
-                          }`}
-                        >
-                          {record.status}
-                        </span>
-                      </td>
-                    )}
-                    {visibleColumns.has("applications") && (
-                      <td className="p-3.5 text-right font-mono text-foreground font-bold whitespace-nowrap">
-                        {record.applications.toLocaleString()}
-                      </td>
-                    )}
-                    {visibleColumns.has("actions") && (
+                {paginatedFiltered.map((record) => {
+                  const isSelected = selectedSchemeIds.has(record.id);
+                  return (
+                    <tr
+                      key={record.id}
+                      onClick={() =>
+                        navigate({ to: "/admin/schemes/$schemeId", params: { schemeId: record.id } })
+                      }
+                      className={`cursor-pointer transition-colors ${
+                        isSelected ? "bg-primary/[0.04] hover:bg-primary/[0.08]" : "hover:bg-muted/40"
+                      }`}
+                    >
                       <td
-                        className="py-3.5 pl-3 pr-4 sm:pr-5 text-right"
-                        onClick={(event) => event.stopPropagation()}
+                        className="py-3.5 pl-4 sm:pl-5 pr-2 w-10 text-center"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              navigate({
-                                to: "/admin/schemes/new",
-                                search: { edit: record.id },
-                              })
-                            }
-                            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-[11px] font-semibold text-foreground hover:border-primary/30 hover:bg-primary/5 hover:text-primary transition-colors cursor-pointer"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                            {lang === "ml" ? "തിരുത്തുക" : "Edit"}
-                          </button>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <button
-                                type="button"
-                                aria-label={lang === "ml" ? "കൂടുതൽ നടപടികൾ" : "More actions"}
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-primary/5 hover:text-primary transition-colors cursor-pointer"
-                              >
-                                <MoreHorizontal className="h-4 w-4" />
-                              </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48">
-                              <DropdownMenuItem
-                                onSelect={() => toggleSchemeEnabled(record)}
-                                className="gap-2 cursor-pointer"
-                              >
-                                <Power className="h-4 w-4" />
-                                {disabledSchemeIds.has(record.id)
-                                  ? lang === "ml"
-                                    ? "സജീവമാക്കുക"
-                                    : "Enable scheme"
-                                  : lang === "ml"
-                                    ? "നിർജ്ജീവമാക്കുക"
-                                    : "Disable scheme"}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onSelect={() => void shareScheme(record)}
-                                className="gap-2 cursor-pointer"
-                              >
-                                <Share2 className="h-4 w-4" />
-                                {lang === "ml" ? "പങ്കിടുക" : "Share"}
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onSelect={() => deleteScheme(record)}
-                                className="gap-2 cursor-pointer text-destructive focus:text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                {lang === "ml" ? "ഡിലീറ്റ് ചെയ്യുക" : "Delete"}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={(checked) => {
+                            setSelectedSchemeIds((prev) => {
+                              const next = new Set(prev);
+                              if (checked) next.add(record.id);
+                              else next.delete(record.id);
+                              return next;
+                            });
+                          }}
+                        />
                       </td>
-                    )}
-                  </tr>
-                ))}
+                      {columnOrder.map((colKey) => {
+                        if (!visibleColumns.has(colKey)) return null;
+                        switch (colKey) {
+                          case "scheme":
+                            return (
+                              <td key="scheme" className="py-3.5 pl-2 pr-3 min-w-44 max-w-80">
+                                <div className="flex items-center gap-2.5">
+                                  <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-white p-1 shadow-2xs">
+                                    <img
+                                      src={schemeLogoUrls[record.id] ?? schemeLogoFallback}
+                                      alt=""
+                                      className="h-full w-full object-contain"
+                                      loading="lazy"
+                                      onError={(event) => {
+                                        event.currentTarget.onerror = null;
+                                        event.currentTarget.src = schemeLogoFallback;
+                                      }}
+                                    />
+                                  </span>
+                                  <div className="space-y-0.5">
+                                    <p className="font-bold text-foreground leading-snug">{record[lang]}</p>
+                                    <p className="text-[11px] font-medium text-muted-foreground">
+                                      {record.ministry[lang]}
+                                    </p>
+                                  </div>
+                                </div>
+                              </td>
+                            );
+                          case "category":
+                            return (
+                              <td key="category" className="p-3.5">
+                                <CategoryTag category={record.category} lang={lang} />
+                              </td>
+                            );
+                          case "portal":
+                            return (
+                              <td key="portal" className="p-3.5 whitespace-nowrap">
+                                <a
+                                  href={`https://www.myscheme.gov.in/search?q=${encodeURIComponent(record.en)}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  onClick={(event) => event.stopPropagation()}
+                                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline"
+                                >
+                                  {lang === "ml" ? "പോർട്ടൽ തുറക്കുക" : "Apply Link"}
+                                  <ExternalLink className="h-3 w-3" />
+                                </a>
+                              </td>
+                            );
+                          case "website":
+                            return (
+                              <td key="website" className="p-3.5 whitespace-nowrap">
+                                <a
+                                  href={
+                                    record.id === "pmkisan"
+                                      ? "https://pmkisan.gov.in"
+                                      : record.id === "pmjjby" || record.id === "pmsby" || record.id === "apy"
+                                        ? "https://financialservices.gov.in"
+                                        : record.id === "pmay"
+                                          ? "https://pmaymis.gov.in"
+                                          : record.id === "ujjwala"
+                                            ? "https://pmuy.gov.in"
+                                            : record.id === "mudra"
+                                              ? "https://www.mudra.org.in"
+                                              : `https://www.india.gov.in/search?title=${encodeURIComponent(record.en)}`
+                                  }
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  onClick={(event) => event.stopPropagation()}
+                                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline"
+                                >
+                                  {lang === "ml" ? "ഔദ്യോഗിക വെബ്‌സൈറ്റ്" : "Official Website"}
+                                  <ExternalLink className="h-3 w-3" />
+                                </a>
+                              </td>
+                            );
+                          case "status":
+                            return (
+                              <td key="status" className="p-3.5">
+                                <span
+                                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-extrabold border ${
+                                    record.status === "Active"
+                                      ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                                      : record.status === "Inactive"
+                                        ? "bg-rose-500/10 text-rose-600 border-rose-500/20"
+                                        : "bg-amber-500/10 text-amber-700 border-amber-500/20"
+                                  }`}
+                                >
+                                  {record.status}
+                                </span>
+                              </td>
+                            );
+                          case "applications":
+                            return (
+                              <td key="applications" className="p-3.5 text-right font-mono text-foreground font-bold whitespace-nowrap">
+                                {record.applications.toLocaleString()}
+                              </td>
+                            );
+                          case "approved":
+                            return (
+                              <td key="approved" className="p-3.5 text-right font-mono text-emerald-600 font-bold whitespace-nowrap">
+                                {record.approved.toLocaleString()}
+                              </td>
+                            );
+                          case "rejected":
+                            return (
+                              <td key="rejected" className="p-3.5 text-right font-mono text-rose-600 font-bold whitespace-nowrap">
+                                {record.rejected.toLocaleString()}
+                              </td>
+                            );
+                          case "pending":
+                            return (
+                              <td key="pending" className="p-3.5 text-right font-mono text-amber-600 font-bold whitespace-nowrap">
+                                {record.pending.toLocaleString()}
+                              </td>
+                            );
+                          case "inProgress":
+                            return (
+                              <td key="inProgress" className="p-3.5 text-right font-mono text-sky-600 font-bold whitespace-nowrap">
+                                {record.inProgress.toLocaleString()}
+                              </td>
+                            );
+                          case "actions":
+                            return (
+                              <td
+                                key="actions"
+                                className="py-3.5 pl-3 pr-4 sm:pr-5 text-right"
+                                onClick={(event) => event.stopPropagation()}
+                              >
+                                <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <button
+                                        type="button"
+                                        aria-label={lang === "ml" ? "കൂടുതൽ നടപടികൾ" : "More actions"}
+                                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-primary/5 hover:text-primary transition-colors cursor-pointer"
+                                      >
+                                        <MoreVertical className="h-4 w-4" />
+                                      </button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-48">
+                                      <DropdownMenuItem
+                                        onSelect={() =>
+                                          navigate({
+                                            to: "/admin/schemes/new",
+                                            search: { edit: record.id },
+                                          })
+                                        }
+                                        className="gap-2 cursor-pointer"
+                                      >
+                                        <Pencil className="h-4 w-4" />
+                                        {lang === "ml" ? "തിരുത്തുക" : "Edit"}
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onSelect={() => toggleSchemeEnabled(record)}
+                                        className="gap-2 cursor-pointer"
+                                      >
+                                        <Power className="h-4 w-4" />
+                                        {disabledSchemeIds.has(record.id)
+                                          ? lang === "ml"
+                                            ? "സജീവമാക്കുക"
+                                            : "Enable scheme"
+                                          : lang === "ml"
+                                            ? "നിർജ്ജീവമാക്കുക"
+                                            : "Disable scheme"}
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onSelect={() => void shareScheme(record)}
+                                        className="gap-2 cursor-pointer"
+                                      >
+                                        <Share2 className="h-4 w-4" />
+                                        {lang === "ml" ? "പങ്കിടുക" : "Share"}
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem
+                                        onSelect={() => deleteScheme(record)}
+                                        className="gap-2 cursor-pointer text-destructive focus:text-destructive"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                        {lang === "ml" ? "ഡിലീറ്റ് ചെയ്യുക" : "Delete"}
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
+                              </td>
+                            );
+                          default:
+                            return null;
+                        }
+                      })}
+                    </tr>
+                  );
+                })}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                    <td colSpan={12} className="p-8 text-center text-muted-foreground">
                       {lang === "ml"
                         ? "തിരഞ്ഞെടുത്ത ഫിൽട്ടറുകൾക്ക് അനുയോജ്യമായ പദ്ധതികളില്ല."
                         : "No schemes match the selected filters."}

@@ -11,10 +11,13 @@ import {
   Download,
   Eye,
   Filter,
+  GripVertical,
   Info,
   Layers,
   Lock,
-  MoreHorizontal,
+  ListFilter,
+  Network,
+  MoreVertical,
   Pencil,
   Plus,
   Power,
@@ -30,6 +33,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { OrganisationalChart } from "./OrganisationalChart";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -76,6 +80,9 @@ import {
   loadManagedRoles,
   loadDeletedManagedRoleIds,
   markManagedRoleDeleted,
+  createCustomOrganisationLevelId,
+  loadCustomOrganisationLevels,
+  saveCustomOrganisationLevels,
   nextRoleCopyName,
   rolesPageAdminRoleId,
   rolesPageSubAdminRoleId,
@@ -511,7 +518,15 @@ function FilterDropdownSelector({
   );
 }
 
-export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "roles" | "users" | "designations" | "location" } = {}) {
+export function RoleAccessSettings({
+  defaultTab = "roles",
+  autoOpenCreateModal = false,
+  returnTo,
+}: {
+  defaultTab?: "roles" | "users" | "designations" | "location";
+  autoOpenCreateModal?: boolean;
+  returnTo?: string;
+} = {}) {
   const navigate = useNavigate();
   const { lang } = useLang();
   const tr = (en: string, ml: string) => (lang === "ml" ? ml : en);
@@ -539,10 +554,21 @@ export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "rol
   const [locationSubTab, setLocationSubTab] = useState<
     "org-levels" | "region" | "org-district" | "mandalam" | "area" | "booth"
   >("org-levels");
+  const [locationViewMode, setLocationViewMode] = useState<"list" | "chart">("list");
 
   useEffect(() => {
     setActiveTab(defaultTab);
   }, [defaultTab]);
+
+  useEffect(() => {
+    if (autoOpenCreateModal) {
+      if (defaultTab === "designations") {
+        handleOpenCreateDesignation();
+      } else if (defaultTab === "location") {
+        handleOpenLocationModal("org-levels");
+      }
+    }
+  }, [autoOpenCreateModal, defaultTab]);
 
   // Designations management state
   const [designationsList, setDesignationsList] = useState<ManagedDesignation[]>(() => loadManagedDesignations());
@@ -596,6 +622,12 @@ export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "rol
       toast.success(tr("Designation created successfully.", "തസ്തിക വിജയകരമായി സൃഷ്ടിച്ചു."));
     }
     setDesignationDialogOpen(false);
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("vk_newly_created_designation", trimmed);
+    }
+    if (returnTo) {
+      void navigate({ to: returnTo });
+    }
   };
 
   const handleToggleDesignationStatus = (desig: ManagedDesignation) => {
@@ -619,6 +651,69 @@ export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "rol
     const updated = designationsList.filter((d) => d.id !== desig.id);
     commitDesignations(updated);
     toast.success(tr("Designation deleted.", "തസ്തിക നീക്കം ചെയ്തു."));
+  };
+
+  // Bulk designation selection & operations state
+  const [selectedDesignationIds, setSelectedDesignationIds] = useState<string[]>([]);
+
+  const handleSelectAllDesignations = (checked: boolean) => {
+    if (checked) {
+      setSelectedDesignationIds(filteredDesignations.map((d) => d.id));
+    } else {
+      setSelectedDesignationIds([]);
+    }
+  };
+
+  const handleToggleSingleDesignationSelect = (id: string, checked: boolean) => {
+    if (checked) {
+      setSelectedDesignationIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+    } else {
+      setSelectedDesignationIds((prev) => prev.filter((i) => i !== id));
+    }
+  };
+
+  const handleBulkEnableDesignations = () => {
+    if (selectedDesignationIds.length === 0) return;
+    const updated = designationsList.map((d) =>
+      selectedDesignationIds.includes(d.id) ? { ...d, status: "Active" as const } : d
+    );
+    commitDesignations(updated);
+    toast.success(
+      lang === "ml"
+        ? `${selectedDesignationIds.length} തസ്തികകൾ സജീവമാക്കി`
+        : `Enabled ${selectedDesignationIds.length} designation(s)`
+    );
+  };
+
+  const handleBulkDisableDesignations = () => {
+    if (selectedDesignationIds.length === 0) return;
+    const updated = designationsList.map((d) =>
+      selectedDesignationIds.includes(d.id) ? { ...d, status: "Disabled" as const } : d
+    );
+    commitDesignations(updated);
+    toast.info(
+      lang === "ml"
+        ? `${selectedDesignationIds.length} തസ്തികകൾ നിർജ്ജീവമാക്കി`
+        : `Disabled ${selectedDesignationIds.length} designation(s)`
+    );
+  };
+
+  const handleBulkDeleteDesignations = () => {
+    if (selectedDesignationIds.length === 0) return;
+    const confirmed = window.confirm(
+      lang === "ml"
+        ? `തിരഞ്ഞെടുത്ത ${selectedDesignationIds.length} തസ്തികകൾ നീക്കം ചെയ്യണോ?`
+        : `Are you sure you want to delete ${selectedDesignationIds.length} selected designation(s)?`
+    );
+    if (!confirmed) return;
+    const updated = designationsList.filter((d) => !selectedDesignationIds.includes(d.id));
+    commitDesignations(updated);
+    toast.success(
+      lang === "ml"
+        ? `${selectedDesignationIds.length} തസ്തികകൾ നീക്കം ചെയ്തു`
+        : `Deleted ${selectedDesignationIds.length} designation(s)`
+    );
+    setSelectedDesignationIds([]);
   };
 
   const filteredDesignations = useMemo(() => {
@@ -1186,7 +1281,24 @@ export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "rol
       }
     }
 
+    if (locationModalType === "org-levels" && locationForm.name.trim()) {
+      const levelName = locationForm.name.trim();
+      const newCustomLevel = {
+        id: createCustomOrganisationLevelId(levelName),
+        name: levelName,
+        under: "state" as const,
+      };
+      const existing = loadCustomOrganisationLevels();
+      saveCustomOrganisationLevels([...existing, newCustomLevel]);
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("vk_newly_created_org_level", levelName);
+      }
+    }
+
     setLocationModalOpen(false);
+    if (returnTo) {
+      void navigate({ to: returnTo });
+    }
   };
 
   const handleToggleDisableLocationItem = (item: any, type: "org-levels" | "region" | "org-district" | "mandalam" | "area" | "booth") => {
@@ -1401,6 +1513,46 @@ export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "rol
     actions: true,
   });
 
+  const USER_COLUMNS_META: { key: keyof typeof visibleColumns; en: string; ml: string }[] = [
+    { key: "user", en: "User", ml: "ഉപയോക്താവ്" },
+    { key: "role", en: "Role", ml: "റോൾ" },
+    { key: "localBody", en: "Area", ml: "ഏരിയ" },
+    { key: "orgDistrict", en: "Organisational District", ml: "സംഘടനാ ജില്ല" },
+    { key: "contact", en: "Contact", ml: "ബന്ധപ്പെടുക" },
+    { key: "status", en: "Status", ml: "സ്റ്റാറ്റസ്" },
+    { key: "actions", en: "Actions", ml: "നടപടികൾ" },
+  ];
+
+  const [userColumnOrder, setUserColumnOrder] = useState<(keyof typeof visibleColumns)[]>([
+    "user",
+    "role",
+    "localBody",
+    "orgDistrict",
+    "contact",
+    "status",
+    "actions",
+  ]);
+
+  const [draggedUserColumnIndex, setDraggedUserColumnIndex] = useState<number | null>(null);
+
+  const handleDragStartUserColumn = (index: number) => {
+    setDraggedUserColumnIndex(index);
+  };
+
+  const handleDragOverUserColumn = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDropUserColumn = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (draggedUserColumnIndex === null || draggedUserColumnIndex === dropIndex) return;
+    const nextOrder = [...userColumnOrder];
+    const [moved] = nextOrder.splice(draggedUserColumnIndex, 1);
+    nextOrder.splice(dropIndex, 0, moved);
+    setUserColumnOrder(nextOrder);
+    setDraggedUserColumnIndex(null);
+  };
+
   const [visibleRoleColumns, setVisibleRoleColumns] = useState({
     role: true,
     description: true,
@@ -1408,6 +1560,42 @@ export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "rol
     status: true,
     actions: true,
   });
+
+  const ROLE_COLUMNS_META: { key: keyof typeof visibleRoleColumns; en: string; ml: string }[] = [
+    { key: "role", en: "Role Name", ml: "റോൾ പേര്" },
+    { key: "description", en: "Description", ml: "വിവരണം" },
+    { key: "users", en: "Users Count", ml: "ഉപയോക്താക്കളുടെ എണ്ണം" },
+    { key: "status", en: "Status", ml: "സ്റ്റാറ്റസ്" },
+    { key: "actions", en: "Actions", ml: "നടപടികൾ" },
+  ];
+
+  const [roleColumnOrder, setRoleColumnOrder] = useState<(keyof typeof visibleRoleColumns)[]>([
+    "role",
+    "description",
+    "users",
+    "status",
+    "actions",
+  ]);
+
+  const [draggedRoleColumnIndex, setDraggedRoleColumnIndex] = useState<number | null>(null);
+
+  const handleDragStartRoleColumn = (index: number) => {
+    setDraggedRoleColumnIndex(index);
+  };
+
+  const handleDragOverRoleColumn = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDropRoleColumn = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (draggedRoleColumnIndex === null || draggedRoleColumnIndex === dropIndex) return;
+    const nextOrder = [...roleColumnOrder];
+    const [moved] = nextOrder.splice(draggedRoleColumnIndex, 1);
+    nextOrder.splice(dropIndex, 0, moved);
+    setRoleColumnOrder(nextOrder);
+    setDraggedRoleColumnIndex(null);
+  };
 
   const availableDistricts = useMemo(() => {
     const set = new Set<string>();
@@ -2039,10 +2227,38 @@ export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "rol
       <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 px-4 py-2.5 sm:px-5">
           {activeTab === "location" ? (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
               <h2 className="text-sm font-extrabold text-foreground px-1">
                 {tr("Location Management", "സ്ഥല നിർവ്വഹണം")}
               </h2>
+              <div className="inline-flex items-center gap-1 rounded-xl border border-border/80 bg-muted/20 p-1 shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => setLocationViewMode("list")}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition-all cursor-pointer",
+                    locationViewMode === "list"
+                      ? "bg-primary text-primary-foreground font-extrabold shadow-2xs"
+                      : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                  )}
+                >
+                  <ListFilter className="h-3.5 w-3.5" />
+                  <span>{tr("List View", "ലിസ്റ്റ് കാഴ്ച")}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLocationViewMode("chart")}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition-all cursor-pointer",
+                    locationViewMode === "chart"
+                      ? "bg-primary text-primary-foreground font-extrabold shadow-2xs"
+                      : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                  )}
+                >
+                  <Network className="h-3.5 w-3.5" />
+                  <span>{tr("Organisational Chart", "സംഘടനാ ചാർട്ട്")}</span>
+                </button>
+              </div>
             </div>
           ) : activeTab === "designations" ? (
             <div className="flex items-center gap-2">
@@ -2093,23 +2309,7 @@ export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "rol
                 ))}
               </select>
             )}
-            <button
-              type="button"
-              onClick={handleExportData}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-muted cursor-pointer"
-            >
-              <Download className="h-3.5 w-3.5 text-muted-foreground" />
-              <span>{tr("Export", "എക്സ്പോർട്ട്")}</span>
-            </button>
 
-            <button
-              type="button"
-              onClick={handleImportData}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-muted cursor-pointer"
-            >
-              <Upload className="h-3.5 w-3.5 text-muted-foreground" />
-              <span>{tr("Import", "ഇമ്പോർട്ട്")}</span>
-            </button>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -2128,118 +2328,118 @@ export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "rol
                 </p>
                 <DropdownMenuSeparator />
                 {activeTab === "users" ? (
-                  <div className="space-y-1 py-1">
-                    <label className="flex items-center gap-2.5 px-2 py-1.5 font-medium hover:bg-muted/50 rounded-md cursor-pointer select-none">
-                      <Checkbox
-                        checked={visibleColumns.user}
-                        onCheckedChange={(c) =>
-                          setVisibleColumns((prev) => ({ ...prev, user: Boolean(c) }))
-                        }
-                      />
-                      <span>{tr("User", "ഉപയോക്താവ്")}</span>
-                    </label>
-                    <label className="flex items-center gap-2.5 px-2 py-1.5 font-medium hover:bg-muted/50 rounded-md cursor-pointer select-none">
-                      <Checkbox
-                        checked={visibleColumns.role}
-                        onCheckedChange={(c) =>
-                          setVisibleColumns((prev) => ({ ...prev, role: Boolean(c) }))
-                        }
-                      />
-                      <span>{tr("Role", "റോൾ")}</span>
-                    </label>
-                    <label className="flex items-center gap-2.5 px-2 py-1.5 font-medium hover:bg-muted/50 rounded-md cursor-pointer select-none">
-                      <Checkbox
-                        checked={visibleColumns.localBody}
-                        onCheckedChange={(c) =>
-                          setVisibleColumns((prev) => ({ ...prev, localBody: Boolean(c) }))
-                        }
-                      />
-                      <span>{tr("Local Body", "തദ്ദേശ സ്ഥാപനം")}</span>
-                    </label>
-                    <label className="flex items-center gap-2.5 px-2 py-1.5 font-medium hover:bg-muted/50 rounded-md cursor-pointer select-none">
-                      <Checkbox
-                        checked={visibleColumns.orgDistrict}
-                        onCheckedChange={(c) =>
-                          setVisibleColumns((prev) => ({ ...prev, orgDistrict: Boolean(c) }))
-                        }
-                      />
-                      <span>{tr("Organisational District", "സംഘടനാ ജില്ല")}</span>
-                    </label>
-                    <label className="flex items-center gap-2.5 px-2 py-1.5 font-medium hover:bg-muted/50 rounded-md cursor-pointer select-none">
-                      <Checkbox
-                        checked={visibleColumns.contact}
-                        onCheckedChange={(c) =>
-                          setVisibleColumns((prev) => ({ ...prev, contact: Boolean(c) }))
-                        }
-                      />
-                      <span>{tr("Contact", "ബന്ധപ്പെടുക")}</span>
-                    </label>
-                    <label className="flex items-center gap-2.5 px-2 py-1.5 font-medium hover:bg-muted/50 rounded-md cursor-pointer select-none">
-                      <Checkbox
-                        checked={visibleColumns.status}
-                        onCheckedChange={(c) =>
-                          setVisibleColumns((prev) => ({ ...prev, status: Boolean(c) }))
-                        }
-                      />
-                      <span>{tr("Status", "സ്റ്റാറ്റസ്")}</span>
-                    </label>
-                    <label className="flex items-center gap-2.5 px-2 py-1.5 font-medium hover:bg-muted/50 rounded-md cursor-pointer select-none">
-                      <Checkbox
-                        checked={visibleColumns.actions}
-                        onCheckedChange={(c) =>
-                          setVisibleColumns((prev) => ({ ...prev, actions: Boolean(c) }))
-                        }
-                      />
-                      <span>{tr("Actions", "നടപടികൾ")}</span>
-                    </label>
+                  <div className="space-y-1 py-1 max-h-64 overflow-y-auto pr-1">
+                    <div className="flex items-center justify-between pb-1.5 px-1 border-b border-border/60 mb-1">
+                      <span className="text-[10px] text-muted-foreground font-medium">
+                        {tr("Drag to reorder columns", "വലിച്ച് മാറ്റുക")}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setVisibleColumns({
+                            user: true,
+                            role: true,
+                            localBody: true,
+                            orgDistrict: true,
+                            contact: true,
+                            status: true,
+                            actions: true,
+                          });
+                          setUserColumnOrder(USER_COLUMNS_META.map((c) => c.key));
+                        }}
+                        className="text-[10px] font-bold text-primary hover:underline cursor-pointer"
+                      >
+                        {tr("Show All", "എല്ലാം കാണിക്കുക")}
+                      </button>
+                    </div>
+                    {userColumnOrder.map((colKey, index) => {
+                      const meta = USER_COLUMNS_META.find((c) => c.key === colKey);
+                      if (!meta) return null;
+                      const isChecked = visibleColumns[colKey];
+                      return (
+                        <div
+                          key={colKey}
+                          draggable
+                          onDragStart={() => handleDragStartUserColumn(index)}
+                          onDragOver={handleDragOverUserColumn}
+                          onDrop={(e) => handleDropUserColumn(e, index)}
+                          className={`flex items-center gap-2 rounded-lg p-1.5 text-xs transition-colors hover:bg-muted/60 ${
+                            draggedUserColumnIndex === index ? "opacity-40 bg-muted" : ""
+                          }`}
+                        >
+                          <GripVertical className="h-3.5 w-3.5 text-muted-foreground cursor-grab active:cursor-grabbing shrink-0" />
+                          <Checkbox
+                            id={`col-user-${colKey}`}
+                            checked={isChecked}
+                            onCheckedChange={(c) =>
+                              setVisibleColumns((prev) => ({ ...prev, [colKey]: Boolean(c) }))
+                            }
+                          />
+                          <label
+                            htmlFor={`col-user-${colKey}`}
+                            className="flex-1 text-xs font-semibold text-foreground cursor-pointer select-none truncate"
+                          >
+                            {tr(meta.en, meta.ml)}
+                          </label>
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
-                  <div className="space-y-1 py-1">
-                    <label className="flex items-center gap-2.5 px-2 py-1.5 font-medium hover:bg-muted/50 rounded-md cursor-pointer select-none">
-                      <Checkbox
-                        checked={visibleRoleColumns.role}
-                        onCheckedChange={(c) =>
-                          setVisibleRoleColumns((prev) => ({ ...prev, role: Boolean(c) }))
-                        }
-                      />
-                      <span>{tr("Role Name", "റോൾ പേര്")}</span>
-                    </label>
-                    <label className="flex items-center gap-2.5 px-2 py-1.5 font-medium hover:bg-muted/50 rounded-md cursor-pointer select-none">
-                      <Checkbox
-                        checked={visibleRoleColumns.description}
-                        onCheckedChange={(c) =>
-                          setVisibleRoleColumns((prev) => ({ ...prev, description: Boolean(c) }))
-                        }
-                      />
-                      <span>{tr("Description", "വിവരണം")}</span>
-                    </label>
-                    <label className="flex items-center gap-2.5 px-2 py-1.5 font-medium hover:bg-muted/50 rounded-md cursor-pointer select-none">
-                      <Checkbox
-                        checked={visibleRoleColumns.users}
-                        onCheckedChange={(c) =>
-                          setVisibleRoleColumns((prev) => ({ ...prev, users: Boolean(c) }))
-                        }
-                      />
-                      <span>{tr("Users Count", "ഉപയോക്താക്കളുടെ എണ്ണം")}</span>
-                    </label>
-                    <label className="flex items-center gap-2.5 px-2 py-1.5 font-medium hover:bg-muted/50 rounded-md cursor-pointer select-none">
-                      <Checkbox
-                        checked={visibleRoleColumns.status}
-                        onCheckedChange={(c) =>
-                          setVisibleRoleColumns((prev) => ({ ...prev, status: Boolean(c) }))
-                        }
-                      />
-                      <span>{tr("Status", "സ്റ്റാറ്റസ്")}</span>
-                    </label>
-                    <label className="flex items-center gap-2.5 px-2 py-1.5 font-medium hover:bg-muted/50 rounded-md cursor-pointer select-none">
-                      <Checkbox
-                        checked={visibleRoleColumns.actions}
-                        onCheckedChange={(c) =>
-                          setVisibleRoleColumns((prev) => ({ ...prev, actions: Boolean(c) }))
-                        }
-                      />
-                      <span>{tr("Actions", "നടപടികൾ")}</span>
-                    </label>
+                  <div className="space-y-1 py-1 max-h-64 overflow-y-auto pr-1">
+                    <div className="flex items-center justify-between pb-1.5 px-1 border-b border-border/60 mb-1">
+                      <span className="text-[10px] text-muted-foreground font-medium">
+                        {tr("Drag to reorder columns", "വലിച്ച് മാറ്റുക")}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setVisibleRoleColumns({
+                            role: true,
+                            description: true,
+                            users: true,
+                            status: true,
+                            actions: true,
+                          });
+                          setRoleColumnOrder(ROLE_COLUMNS_META.map((c) => c.key));
+                        }}
+                        className="text-[10px] font-bold text-primary hover:underline cursor-pointer"
+                      >
+                        {tr("Show All", "എല്ലാം കാണിക്കുക")}
+                      </button>
+                    </div>
+                    {roleColumnOrder.map((colKey, index) => {
+                      const meta = ROLE_COLUMNS_META.find((c) => c.key === colKey);
+                      if (!meta) return null;
+                      const isChecked = visibleRoleColumns[colKey];
+                      return (
+                        <div
+                          key={colKey}
+                          draggable
+                          onDragStart={() => handleDragStartRoleColumn(index)}
+                          onDragOver={handleDragOverRoleColumn}
+                          onDrop={(e) => handleDropRoleColumn(e, index)}
+                          className={`flex items-center gap-2 rounded-lg p-1.5 text-xs transition-colors hover:bg-muted/60 ${
+                            draggedRoleColumnIndex === index ? "opacity-40 bg-muted" : ""
+                          }`}
+                        >
+                          <GripVertical className="h-3.5 w-3.5 text-muted-foreground cursor-grab active:cursor-grabbing shrink-0" />
+                          <Checkbox
+                            id={`col-role-${colKey}`}
+                            checked={isChecked}
+                            onCheckedChange={(c) =>
+                              setVisibleRoleColumns((prev) => ({ ...prev, [colKey]: Boolean(c) }))
+                            }
+                          />
+                          <label
+                            htmlFor={`col-role-${colKey}`}
+                            className="flex-1 text-xs font-semibold text-foreground cursor-pointer select-none truncate"
+                          >
+                            {tr(meta.en, meta.ml)}
+                          </label>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </DropdownMenuContent>
@@ -2397,32 +2597,107 @@ export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "rol
             )}
 
             {activeTab === "roles" ? (
-              <Link
-                to="/admin/settings/new-role"
-                search={{ editRoleId: undefined }}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 text-[12px] font-semibold leading-tight text-primary-foreground transition-colors hover:bg-primary/90"
-              >
-                <Plus className="h-4 w-4" />
-                {tr("Create New Role", "പുതിയ റോൾ സൃഷ്ടിക്കുക")}
-              </Link>
+              <div className="flex items-center gap-1.5">
+                <Link
+                  to="/admin/settings/new-role"
+                  search={{ editRoleId: undefined }}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 text-[12px] font-semibold leading-tight text-primary-foreground transition-colors hover:bg-primary/90"
+                >
+                  <Plus className="h-4 w-4" />
+                  {tr("Create New Role", "പുതിയ റോൾ സൃഷ്ടിക്കുക")}
+                </Link>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      title={tr("More Actions", "കൂടുതൽ പ്രവർത്തനങ്ങൾ")}
+                      aria-label={tr("More Actions", "കൂടുതൽ പ്രവർത്തനങ്ങൾ")}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:border-primary/30 hover:bg-muted hover:text-foreground cursor-pointer shrink-0"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40 text-xs font-semibold">
+                    <DropdownMenuItem onClick={handleExportData} className="gap-2 cursor-pointer">
+                      <Download className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span>{tr("Export", "എക്സ്പോർട്ട്")}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleImportData} className="gap-2 cursor-pointer">
+                      <Upload className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span>{tr("Import", "ഇമ്പോർട്ട്")}</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             ) : activeTab === "users" ? (
-              <button
-                type="button"
-                onClick={openCreateUser}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 text-[12px] font-semibold leading-tight text-primary-foreground transition-colors hover:bg-primary/90 cursor-pointer"
-              >
-                <Plus className="h-4 w-4" />
-                {tr("Create User", "ഉപയോക്താവിനെ ചേർക്കുക")}
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={openCreateUser}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 text-[12px] font-semibold leading-tight text-primary-foreground transition-colors hover:bg-primary/90 cursor-pointer"
+                >
+                  <Plus className="h-4 w-4" />
+                  {tr("Create User", "ഉപയോക്താവിനെ ചേർക്കുക")}
+                </button>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      title={tr("More Actions", "കൂടുതൽ പ്രവർത്തനങ്ങൾ")}
+                      aria-label={tr("More Actions", "കൂടുതൽ പ്രവർത്തനങ്ങൾ")}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:border-primary/30 hover:bg-muted hover:text-foreground cursor-pointer shrink-0"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40 text-xs font-semibold">
+                    <DropdownMenuItem onClick={handleExportData} className="gap-2 cursor-pointer">
+                      <Download className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span>{tr("Export", "എക്സ്പോർട്ട്")}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleImportData} className="gap-2 cursor-pointer">
+                      <Upload className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span>{tr("Import", "ഇമ്പോർട്ട്")}</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             ) : activeTab === "designations" ? (
-              <button
-                type="button"
-                onClick={handleOpenCreateDesignation}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 text-[12px] font-semibold leading-tight text-primary-foreground transition-colors hover:bg-primary/90 cursor-pointer"
-              >
-                <Plus className="h-4 w-4" />
-                {tr("Create New Designation", "പുതിയ തസ്തിക സൃഷ്ടിക്കുക")}
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={handleOpenCreateDesignation}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 text-[12px] font-semibold leading-tight text-primary-foreground transition-colors hover:bg-primary/90 cursor-pointer"
+                >
+                  <Plus className="h-4 w-4" />
+                  {tr("Create New Designation", "പുതിയ തസ്തിക സൃഷ്ടിക്കുക")}
+                </button>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      title={tr("More Actions", "കൂടുതൽ പ്രവർത്തനങ്ങൾ")}
+                      aria-label={tr("More Actions", "കൂടുതൽ പ്രവർത്തനങ്ങൾ")}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:border-primary/30 hover:bg-muted hover:text-foreground cursor-pointer shrink-0"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40 text-xs font-semibold">
+                    <DropdownMenuItem onClick={handleExportData} className="gap-2 cursor-pointer">
+                      <Download className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span>{tr("Export", "എക്സ്പോർട്ട്")}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleImportData} className="gap-2 cursor-pointer">
+                      <Upload className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span>{tr("Import", "ഇമ്പോർട്ട്")}</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             ) : activeTab === "location" ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -2525,37 +2800,43 @@ export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "rol
           </div>
         )}
 
-        {activeTab === "location" && (
-          <div className="border-b border-border bg-muted/20 p-2.5 sm:px-4">
-            <div className="flex flex-wrap items-center gap-1.5">
-              {[
-                { id: "org-levels", en: `Organisation Levels (${filteredLocationOrgLevels.length})`, ml: `സംഘടനാ തലങ്ങൾ (${filteredLocationOrgLevels.length})` },
-                { id: "region", en: `Region (${filteredLocationRegions.length})`, ml: `മേഖല (${filteredLocationRegions.length})` },
-                { id: "org-district", en: `Organisation District (${filteredLocationOrgDistricts.length})`, ml: `സംഘടനാ ജില്ല (${filteredLocationOrgDistricts.length})` },
-                { id: "mandalam", en: `Mandalam (${filteredLocationMandalams.length})`, ml: `മണ്ഡലം (${filteredLocationMandalams.length})` },
-                { id: "area", en: `Area (${filteredLocationAreas.length})`, ml: `ഏരിയ / കേന്ദ്രം (${filteredLocationAreas.length})` },
-                { id: "booth", en: `Booth (${filteredLocationBooths.length})`, ml: `ബൂത്ത് (${filteredLocationBooths.length})` },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setLocationSubTab(tab.id as any)}
-                  className={cn(
-                    "rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer",
-                    locationSubTab === tab.id
-                      ? "bg-primary text-primary-foreground shadow-2xs font-extrabold"
-                      : "bg-background text-muted-foreground border border-border/80 hover:bg-muted hover:text-foreground",
-                  )}
-                >
-                  {tr(tab.en, tab.ml)}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
         {activeTab === "location" ? (
-          <div className="overflow-x-auto desktop-hide-scrollbar">
+          locationViewMode === "chart" ? (
+            <OrganisationalChart
+              tr={tr}
+              lang={lang}
+              onEditLocation={(type, item) => handleOpenLocationModal(type as any, item)}
+            />
+          ) : (
+            <div>
+              <div className="border-b border-border bg-muted/20 p-2.5 sm:px-4">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {[
+                    { id: "org-levels", en: `Organisation Levels (${filteredLocationOrgLevels.length})`, ml: `സംഘടനാ തലങ്ങൾ (${filteredLocationOrgLevels.length})` },
+                    { id: "region", en: `Region (${filteredLocationRegions.length})`, ml: `മേഖല (${filteredLocationRegions.length})` },
+                    { id: "org-district", en: `Organisation District (${filteredLocationOrgDistricts.length})`, ml: `സംഘടനാ ജില്ല (${filteredLocationOrgDistricts.length})` },
+                    { id: "mandalam", en: `Mandalam (${filteredLocationMandalams.length})`, ml: `മണ്ഡലം (${filteredLocationMandalams.length})` },
+                    { id: "area", en: `Area (${filteredLocationAreas.length})`, ml: `ഏരിയ / കേന്ദ്രം (${filteredLocationAreas.length})` },
+                    { id: "booth", en: `Booth (${filteredLocationBooths.length})`, ml: `ബൂത്ത് (${filteredLocationBooths.length})` },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setLocationSubTab(tab.id as any)}
+                      className={cn(
+                        "rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer",
+                        locationSubTab === tab.id
+                          ? "bg-primary text-primary-foreground shadow-2xs font-extrabold"
+                          : "bg-background text-muted-foreground border border-border/80 hover:bg-muted hover:text-foreground",
+                      )}
+                    >
+                      {tr(tab.en, tab.ml)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="overflow-x-auto desktop-hide-scrollbar">
             {locationSubTab === "org-levels" && (
               <table className="w-full text-left text-xs">
                 <thead className="border-b border-border bg-muted/50 font-bold text-muted-foreground">
@@ -2610,7 +2891,7 @@ export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "rol
                                   aria-label={tr("More actions", "കൂടുതൽ നടപടികൾ")}
                                   className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary cursor-pointer"
                                 >
-                                  <MoreHorizontal className="h-4 w-4" />
+                                  <MoreVertical className="h-4 w-4" />
                                 </button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-40">
@@ -2703,7 +2984,7 @@ export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "rol
                                   aria-label={tr("More actions", "കൂടുതൽ നടപടികൾ")}
                                   className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary cursor-pointer"
                                 >
-                                  <MoreHorizontal className="h-4 w-4" />
+                                  <MoreVertical className="h-4 w-4" />
                                 </button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-40">
@@ -2802,7 +3083,7 @@ export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "rol
                                   aria-label={tr("More actions", "കൂടുതൽ നടപടികൾ")}
                                   className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary cursor-pointer"
                                 >
-                                  <MoreHorizontal className="h-4 w-4" />
+                                  <MoreVertical className="h-4 w-4" />
                                 </button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-40">
@@ -2905,7 +3186,7 @@ export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "rol
                                   aria-label={tr("More actions", "കൂടുതൽ നടപടികൾ")}
                                   className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary cursor-pointer"
                                 >
-                                  <MoreHorizontal className="h-4 w-4" />
+                                  <MoreVertical className="h-4 w-4" />
                                 </button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-40">
@@ -3004,7 +3285,7 @@ export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "rol
                                   aria-label={tr("More actions", "കൂടുതൽ നടപടികൾ")}
                                   className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary cursor-pointer"
                                 >
-                                  <MoreHorizontal className="h-4 w-4" />
+                                  <MoreVertical className="h-4 w-4" />
                                 </button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-40">
@@ -3103,7 +3384,7 @@ export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "rol
                                   aria-label={tr("More actions", "കൂടുതൽ നടപടികൾ")}
                                   className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary cursor-pointer"
                                 >
-                                  <MoreHorizontal className="h-4 w-4" />
+                                  <MoreVertical className="h-4 w-4" />
                                 </button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-40">
@@ -3142,117 +3423,141 @@ export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "rol
               </table>
             )}
           </div>
-        ) : activeTab === "roles" ? (
+        </div>
+      )
+    ) : activeTab === "roles" ? (
           <div className="overflow-x-auto desktop-hide-scrollbar">
             <table className="w-full text-left text-xs">
               <thead className="border-b border-border bg-muted/50 font-bold text-muted-foreground">
                 <tr>
-                  {visibleRoleColumns.role && <th className="p-3">{tr("ROLE", "റോൾ")}</th>}
-                  {visibleRoleColumns.description && <th className="p-3">{tr("DESCRIPTION", "വിവരണം")}</th>}
-                  {visibleRoleColumns.users && <th className="p-3 text-right">{tr("USERS", "ഉപയോക്താക്കൾ")}</th>}
-                  {visibleRoleColumns.status && <th className="p-3">{tr("STATUS", "സ്റ്റാറ്റസ്")}</th>}
-                  {visibleRoleColumns.actions && <th className="p-3 text-right">{tr("ACTIONS", "നടപടികൾ")}</th>}
+                  {roleColumnOrder.map((colKey) => {
+                    if (!visibleRoleColumns[colKey]) return null;
+                    const meta = ROLE_COLUMNS_META.find((c) => c.key === colKey);
+                    if (!meta) return null;
+                    return (
+                      <th
+                        key={colKey}
+                        className={`p-3 ${colKey === "users" || colKey === "actions" ? "text-right" : ""}`}
+                      >
+                        {tr(meta.en.toUpperCase(), meta.ml)}
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60 font-semibold">
                 {displayedRoles.map((role) => (
                   <tr key={role.id} className="transition-colors hover:bg-muted/40">
-                    {visibleRoleColumns.role && (
-                      <td className="min-w-40 p-3">
-                        <div className="flex items-center gap-2.5">
-                          <span
-                            className={cn(
-                              "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
-                              role.system
-                                ? "bg-primary/10 text-primary"
-                                : "bg-sky-50 text-sky-600 dark:bg-sky-950/40 dark:text-sky-300",
-                            )}
-                          >
-                            {role.system ? (
-                              <ShieldCheck className="h-4 w-4" />
-                            ) : (
-                              <UserCog className="h-4 w-4" />
-                            )}
-                          </span>
-                          <div className="min-w-0">
-                            <p className="font-bold text-foreground">{displayRoleName(role)}</p>
-                          </div>
-                        </div>
-                      </td>
-                    )}
-                    {visibleRoleColumns.description && (
-                      <td className="max-w-md p-3 text-muted-foreground">{role.description || "—"}</td>
-                    )}
-                    {visibleRoleColumns.users && (
-                      <td className="whitespace-nowrap p-3 text-right font-mono text-foreground">
-                        {role.assignedUsers.toLocaleString("en-IN")}
-                      </td>
-                    )}
-                    {visibleRoleColumns.status && (
-                      <td className="p-3">
-                        <span
-                          className={cn(
-                            "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-extrabold",
-                            role.status === "Active"
-                              ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600"
-                              : "border-rose-500/20 bg-rose-500/10 text-rose-600",
-                          )}
-                        >
-                          {role.status === "Active"
-                            ? tr("Active", "സജീവം")
-                            : tr("Inactive", "നിർജ്ജീവം")}
-                        </span>
-                      </td>
-                    )}
-                    {visibleRoleColumns.actions && (
-                      <td className="p-3 text-right">
-                        <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
-                          <button
-                            type="button"
-                            onClick={() => openEdit(role)}
-                            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-[11px] font-semibold text-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                            {tr("Edit", "തിരുത്തുക")}
-                          </button>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <button
-                                type="button"
-                                aria-label={tr("More actions", "കൂടുതൽ നടപടികൾ")}
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+                    {roleColumnOrder.map((colKey) => {
+                      if (!visibleRoleColumns[colKey]) return null;
+                      switch (colKey) {
+                        case "role":
+                          return (
+                            <td key="role" className="min-w-40 p-3">
+                              <div className="flex items-center gap-2.5">
+                                <span
+                                  className={cn(
+                                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+                                    role.system
+                                      ? "bg-primary/10 text-primary"
+                                      : "bg-sky-50 text-sky-600 dark:bg-sky-950/40 dark:text-sky-300",
+                                  )}
+                                >
+                                  {role.system ? (
+                                    <ShieldCheck className="h-4 w-4" />
+                                  ) : (
+                                    <UserCog className="h-4 w-4" />
+                                  )}
+                                </span>
+                                <div className="min-w-0">
+                                  <p className="font-bold text-foreground">{displayRoleName(role)}</p>
+                                </div>
+                              </div>
+                            </td>
+                          );
+                        case "description":
+                          return (
+                            <td key="description" className="max-w-md p-3 text-muted-foreground">
+                              {role.description || "—"}
+                            </td>
+                          );
+                        case "users":
+                          return (
+                            <td key="users" className="whitespace-nowrap p-3 text-right font-mono text-foreground">
+                              {role.assignedUsers.toLocaleString("en-IN")}
+                            </td>
+                          );
+                        case "status":
+                          return (
+                            <td key="status" className="p-3">
+                              <span
+                                className={cn(
+                                  "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-extrabold",
+                                  role.status === "Active"
+                                    ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600"
+                                    : "border-rose-500/20 bg-rose-500/10 text-rose-600",
+                                )}
                               >
-                                <MoreHorizontal className="h-4 w-4" />
-                              </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-44">
-                              <DropdownMenuItem
-                                onClick={() => setAssignTarget(role)}
-                                className="cursor-pointer gap-2 text-xs font-medium"
-                              >
-                                <UserPlus className="h-3.5 w-3.5 text-primary" />
-                                {tr("Assign", "അസൈൻ ചെയ്യുക")}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => openDuplicate(role)}
-                                className="cursor-pointer gap-2 text-xs font-medium"
-                              >
-                                <Copy className="h-3.5 w-3.5" />
-                                {tr("Duplicate", "പകർത്തുക")}
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => handleDeleteRole(role)}
-                                className="cursor-pointer gap-2 text-xs font-medium text-destructive focus:text-destructive"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                                {tr("Delete", "ഡിലീറ്റ് ചെയ്യുക")}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </td>
-                    )}
+                                {role.status === "Active"
+                                  ? tr("Active", "സജീവം")
+                                  : tr("Inactive", "നിർജ്ജീവം")}
+                              </span>
+                            </td>
+                          );
+                        case "actions":
+                          return (
+                            <td key="actions" className="p-3 text-right">
+                              <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
+                                <button
+                                  type="button"
+                                  onClick={() => openEdit(role)}
+                                  className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-[11px] font-semibold text-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                  {tr("Edit", "തിരുത്തുക")}
+                                </button>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <button
+                                      type="button"
+                                      aria-label={tr("More actions", "കൂടുതൽ നടപടികൾ")}
+                                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+                                    >
+                                      <MoreVertical className="h-4 w-4" />
+                                    </button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-44">
+                                    <DropdownMenuItem
+                                      onClick={() => setAssignTarget(role)}
+                                      className="cursor-pointer gap-2 text-xs font-medium"
+                                    >
+                                      <UserPlus className="h-3.5 w-3.5 text-primary" />
+                                      {tr("Assign", "അസൈൻ ചെയ്യുക")}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => openDuplicate(role)}
+                                      className="cursor-pointer gap-2 text-xs font-medium"
+                                    >
+                                      <Copy className="h-3.5 w-3.5" />
+                                      {tr("Duplicate", "പകർത്തുക")}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      onClick={() => handleDeleteRole(role)}
+                                      className="cursor-pointer gap-2 text-xs font-medium text-destructive focus:text-destructive"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                      {tr("Delete", "ഡിലീറ്റ് ചെയ്യുക")}
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            </td>
+                          );
+                        default:
+                          return null;
+                      }
+                    })}
                   </tr>
                 ))}
               </tbody>
@@ -3269,19 +3574,19 @@ export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "rol
                       onCheckedChange={toggleSelectAllUsers}
                     />
                   </th>
-                  {visibleColumns.user && <th className="p-3">{tr("USER", "ഉപയോക്താവ്")}</th>}
-                  {visibleColumns.role && <th className="p-3">{tr("ROLE", "റോൾ")}</th>}
-                  {visibleColumns.localBody && (
-                    <th className="p-3">{tr("AREA", "ഏരിയ")}</th>
-                  )}
-                  {visibleColumns.orgDistrict && (
-                    <th className="p-3">{tr("ORGANISATIONAL DISTRICT", "സംഘടനാ ജില്ല")}</th>
-                  )}
-                  {visibleColumns.contact && <th className="p-3">{tr("CONTACT", "ബന്ധപ്പെടുക")}</th>}
-                  {visibleColumns.status && <th className="p-3">{tr("STATUS", "സ്റ്റാറ്റസ്")}</th>}
-                  {visibleColumns.actions && (
-                    <th className="p-3 text-right">{tr("ACTIONS", "നടപടികൾ")}</th>
-                  )}
+                  {userColumnOrder.map((colKey) => {
+                    if (!visibleColumns[colKey]) return null;
+                    const meta = USER_COLUMNS_META.find((c) => c.key === colKey);
+                    if (!meta) return null;
+                    return (
+                      <th
+                        key={colKey}
+                        className={`p-3 ${colKey === "actions" ? "text-right" : ""}`}
+                      >
+                        {tr(meta.en.toUpperCase(), meta.ml)}
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60 font-semibold">
@@ -3293,105 +3598,115 @@ export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "rol
                       selectedTableUserIds.includes(user.id) && "bg-primary/5",
                     )}
                   >
-                      <td className="p-3">
-                        <Checkbox
-                          checked={selectedTableUserIds.includes(user.id)}
-                          onCheckedChange={() => toggleSelectUser(user.id)}
-                        />
-                      </td>
-                      {visibleColumns.user && (
-                        <td
-                          className="p-3 cursor-pointer group"
-                          onClick={() =>
-                            void navigate({
-                              to: "/admin/settings/user-details",
-                              search: { userId: user.id },
-                            })
-                          }
-                        >
-                          <div className="flex items-center gap-2.5">
-                            <img
-                              src={getUserAvatarUrl(user)}
-                              alt={user.name}
-                              className="h-8 w-8 rounded-full object-cover shrink-0 border border-border/40 group-hover:border-primary/50 transition-colors"
-                            />
-                            <div className="min-w-0">
-                              <p className="font-bold text-foreground truncate group-hover:text-primary transition-colors">
-                                {lang === "ml" ? user.nameMl || user.name : user.name}
-                              </p>
-                              <p className="text-[11px] text-muted-foreground truncate">
-                                {lang === "ml" ? user.designationMl : user.designationEn}
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-                      )}
-                      {visibleColumns.role && (
-                        <td className="p-3 whitespace-nowrap">
-                          {user.assignedRole && user.assignedRole !== "Unassigned" && user.assignedRole !== "Not Assigned" ? (
-                            <span className="inline-flex items-center rounded-md border border-border/80 bg-background px-2.5 py-0.5 text-[11px] font-semibold text-foreground shadow-2xs">
-                              {user.assignedRole}
-                            </span>
-                          ) : (
-                            <span className="text-foreground font-semibold text-xs px-2">
-                              _
-                            </span>
-                          )}
-                        </td>
-                      )}
-                      {visibleColumns.localBody && (
-                        <td className="p-3 text-foreground whitespace-nowrap font-medium">
-                          {getUserArea(user)}
-                        </td>
-                      )}
-                      {visibleColumns.orgDistrict && (
-                        <td className="p-3 text-muted-foreground whitespace-nowrap">
-                          {getUserOrgDistrict(user)}
-                        </td>
-                      )}
-                      {visibleColumns.contact && (
-                        <td className="p-3 text-muted-foreground whitespace-nowrap">
-                          <p className="font-mono text-foreground">{user.mobile}</p>
-                        </td>
-                      )}
-                      {visibleColumns.status && (
-                        <td className="p-3 whitespace-nowrap">
-                          <span
-                            className={cn(
-                              "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-extrabold",
-                              user.status === "Active" || user.status === "Verified"
-                                ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600"
-                                : "border-rose-500/20 bg-rose-500/10 text-rose-600",
-                            )}
-                          >
-                            {user.status === "Active" || user.status === "Verified"
-                              ? tr("Active", "സജീവം")
-                              : tr("Inactive", "നിർജ്ജീവം")}
-                          </span>
-                        </td>
-                      )}
-                      {visibleColumns.actions && (
-                        <td className="p-3 text-right whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => openEditUser(user)}
-                              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-[11px] font-semibold text-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary cursor-pointer"
+                    <td className="p-3">
+                      <Checkbox
+                        checked={selectedTableUserIds.includes(user.id)}
+                        onCheckedChange={() => toggleSelectUser(user.id)}
+                      />
+                    </td>
+                    {userColumnOrder.map((colKey) => {
+                      if (!visibleColumns[colKey]) return null;
+                      switch (colKey) {
+                        case "user":
+                          return (
+                            <td
+                              key="user"
+                              className="p-3 cursor-pointer group"
+                              onClick={() =>
+                                void navigate({
+                                  to: "/admin/settings/user-details",
+                                  search: { userId: user.id },
+                                })
+                              }
                             >
-                              <Pencil className="h-3.5 w-3.5" />
-                              {tr("Edit", "തിരുത്തുക")}
-                            </button>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <button
-                                  type="button"
-                                  aria-label={tr("More actions", "കൂടുതൽ നടപടികൾ")}
-                                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary cursor-pointer"
+                              <div className="flex items-center gap-2.5">
+                                <img
+                                  src={getUserAvatarUrl(user)}
+                                  alt={user.name}
+                                  className="h-8 w-8 rounded-full object-cover shrink-0 border border-border/40 group-hover:border-primary/50 transition-colors"
+                                />
+                                <div className="min-w-0">
+                                  <p className="font-bold text-foreground truncate group-hover:text-primary transition-colors">
+                                    {lang === "ml" ? user.nameMl || user.name : user.name}
+                                  </p>
+                                  <p className="text-[11px] text-muted-foreground truncate">
+                                    {lang === "ml" ? user.designationMl : user.designationEn}
+                                  </p>
+                                </div>
+                              </div>
+                            </td>
+                          );
+                        case "role":
+                          return (
+                            <td key="role" className="p-3 whitespace-nowrap">
+                              {user.assignedRole && user.assignedRole !== "Unassigned" && user.assignedRole !== "Not Assigned" ? (
+                                <span className="inline-flex items-center rounded-md border border-border/80 bg-background px-2.5 py-0.5 text-[11px] font-semibold text-foreground shadow-2xs">
+                                  {user.assignedRole}
+                                </span>
+                              ) : (
+                                <span className="text-foreground font-semibold text-xs px-2">
+                                  _
+                                </span>
+                              )}
+                            </td>
+                          );
+                        case "localBody":
+                          return (
+                            <td key="localBody" className="p-3 text-foreground whitespace-nowrap font-medium">
+                              {getUserArea(user)}
+                            </td>
+                          );
+                        case "orgDistrict":
+                          return (
+                            <td key="orgDistrict" className="p-3 text-muted-foreground whitespace-nowrap">
+                              {getUserOrgDistrict(user)}
+                            </td>
+                          );
+                        case "contact":
+                          return (
+                            <td key="contact" className="p-3 text-muted-foreground whitespace-nowrap">
+                              <p className="font-mono text-foreground">{user.mobile}</p>
+                            </td>
+                          );
+                        case "status":
+                          return (
+                            <td key="status" className="p-3 whitespace-nowrap">
+                              <span
+                                className={cn(
+                                  "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-extrabold",
+                                  user.status === "Active" || user.status === "Verified"
+                                    ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600"
+                                    : "border-rose-500/20 bg-rose-500/10 text-rose-600",
+                                )}
+                              >
+                                {user.status === "Active" || user.status === "Verified"
+                                  ? tr("Active", "സജീവം")
+                                  : tr("Inactive", "നിർജ്ജീവം")}
+                              </span>
+                            </td>
+                          );
+                        case "actions":
+                          return (
+                            <td key="actions" className="p-3 text-right whitespace-nowrap">
+                              <div className="flex items-center justify-end">
+                                 <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <button
+                                      type="button"
+                                      aria-label={tr("More actions", "കൂടുതൽ നടപടികൾ")}
+                                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary cursor-pointer"
+                                    >
+                                      <MoreVertical className="h-4 w-4" />
+                                    </button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-44">
+                                <DropdownMenuItem
+                                  onClick={() => openEditUser(user)}
+                                  className="cursor-pointer gap-2 text-xs font-medium"
                                 >
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-44">
+                                  <Pencil className="h-3.5 w-3.5" />
+                                  {tr("Edit", "തിരുത്തുക")}
+                                </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() =>
                                     void navigate({
@@ -3437,40 +3752,117 @@ export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "rol
                         </DropdownMenu>
                       </div>
                     </td>
-                  )}
-                </tr>
-              ))}
+                  );
+                default:
+                  return null;
+              }
+            })}
+          </tr>
+        ))}
               </tbody>
             </table>
           </div>
         ) : (
-          <div className="overflow-x-auto desktop-hide-scrollbar">
-            <table className="w-full text-left text-xs">
-              <thead className="border-b border-border bg-muted/50 font-bold text-muted-foreground">
-                <tr>
-                  <th className="p-3">{tr("DESIGNATION", "തസ്തിക")}</th>
-                  <th className="p-3">{tr("ORGANISATION LEVEL", "സംഘടനാ തലം")}</th>
-                  <th className="p-3">{tr("STATUS", "സ്റ്റാറ്റസ്")}</th>
-                  <th className="p-3 text-right">{tr("ACTIONS", "നടപടികൾ")}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/60 font-semibold">
-                {filteredDesignations.length === 0 ? (
+          <div className="space-y-3">
+            {selectedDesignationIds.length > 0 && (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs">
+                <span className="font-bold text-primary">
+                  {tr(
+                    `${selectedDesignationIds.length} designation(s) selected`,
+                    `${selectedDesignationIds.length} തസ്തികകൾ തിരഞ്ഞെടുത്തു`
+                  )}
+                </span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={handleBulkEnableDesignations}
+                    className="h-8 text-xs font-bold gap-1.5 border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 cursor-pointer"
+                  >
+                    <Power className="h-3.5 w-3.5 text-emerald-600" />
+                    <span>{tr("Enable Selected", "സജീവമാക്കുക")}</span>
+                  </Button>
+
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={handleBulkDisableDesignations}
+                    className="h-8 text-xs font-bold gap-1.5 border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 cursor-pointer"
+                  >
+                    <Power className="h-3.5 w-3.5 text-amber-600" />
+                    <span>{tr("Disable Selected", "നിർജ്ജീവമാക്കുക")}</span>
+                  </Button>
+
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="destructive"
+                    onClick={handleBulkDeleteDesignations}
+                    className="h-8 text-xs font-bold gap-1.5 cursor-pointer"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span>{tr("Delete Selected", "നീക്കം ചെയ്യുക")}</span>
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <div className="overflow-x-auto desktop-hide-scrollbar">
+              <table className="w-full text-left text-xs">
+                <thead className="border-b border-border bg-muted/50 font-bold text-muted-foreground">
                   <tr>
-                    <td colSpan={4} className="py-8 text-center text-muted-foreground text-xs font-semibold">
-                      {tr("No designations found.", "തസ്തികകൾ ഒന്നും കണ്ടെത്തിയില്ല.")}
-                    </td>
+                    <th className="p-3 w-10">
+                      <Checkbox
+                        checked={
+                          filteredDesignations.length > 0 &&
+                          selectedDesignationIds.length === filteredDesignations.length
+                        }
+                        onCheckedChange={(checked) => handleSelectAllDesignations(!!checked)}
+                        aria-label="Select all designations"
+                      />
+                    </th>
+                    <th className="p-3">{tr("DESIGNATION", "തസ്തിക")}</th>
+                    <th className="p-3">{tr("ORGANISATION LEVEL", "സംഘടനാ തലം")}</th>
+                    <th className="p-3">{tr("STATUS", "സ്റ്റാറ്റസ്")}</th>
+                    <th className="p-3 text-right">{tr("ACTIONS", "നടപടികൾ")}</th>
                   </tr>
-                ) : (
-                  filteredDesignations.map((desig) => (
-                    <tr key={desig.id} className="hover:bg-muted/30 transition-colors">
-                      <td className="p-3 font-bold text-foreground">{desig.name}</td>
-                      <td className="p-3">
-                        <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-900 border border-amber-200">
-                          {desig.orgLevel}
-                        </span>
+                </thead>
+                <tbody className="divide-y divide-border/60 font-semibold">
+                  {filteredDesignations.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-muted-foreground text-xs font-semibold">
+                        {tr("No designations found.", "തസ്തികകൾ ഒന്നും കണ്ടെത്തിയില്ല.")}
                       </td>
-                      <td className="p-3">
+                    </tr>
+                  ) : (
+                    filteredDesignations.map((desig) => {
+                      const isSelected = selectedDesignationIds.includes(desig.id);
+                      return (
+                        <tr
+                          key={desig.id}
+                          className={cn(
+                            "hover:bg-muted/30 transition-colors",
+                            isSelected && "bg-primary/[0.04]"
+                          )}
+                        >
+                          <td className="p-3 w-10">
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={(checked) =>
+                                handleToggleSingleDesignationSelect(desig.id, !!checked)
+                              }
+                              aria-label={`Select ${desig.name}`}
+                            />
+                          </td>
+                          <td className="p-3 font-bold text-foreground">{desig.name}</td>
+                          <td className="p-3">
+                            <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-900 border border-amber-200">
+                              {desig.orgLevel}
+                            </span>
+                          </td>
+                          <td className="p-3">
                         <span
                           className={cn(
                             "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-bold",
@@ -3510,7 +3902,7 @@ export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "rol
                                 variant="ghost"
                                 className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
                               >
-                                <MoreHorizontal className="h-4 w-4" />
+                                <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-40 text-xs">
@@ -3538,12 +3930,14 @@ export function RoleAccessSettings({ defaultTab = "roles" }: { defaultTab?: "rol
                         </div>
                       </td>
                     </tr>
-                  ))
+                    );
+                  })
                 )}
               </tbody>
             </table>
           </div>
-        )}
+        </div>
+      )}
       </div>
 
 
@@ -4742,7 +5136,7 @@ function RoleRow({
               title={tr("More options", "കൂടുതൽ ഓപ്ഷനുകൾ")}
               aria-label={tr("More options", "കൂടുതൽ ഓപ്ഷനുകൾ")}
             >
-              <MoreHorizontal className="h-4 w-4" />
+              <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">

@@ -15,7 +15,7 @@ import {
   Phone,
   Calendar,
   Building2,
-  MoreHorizontal,
+  MoreVertical,
   Power,
   Trash2,
 } from "lucide-react";
@@ -346,7 +346,7 @@ function UserDetailsPage() {
                       size="icon"
                       className="h-8 w-8 rounded-lg border-border text-slate-600 hover:text-foreground cursor-pointer"
                     >
-                      <MoreHorizontal className="h-4 w-4" />
+                      <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
