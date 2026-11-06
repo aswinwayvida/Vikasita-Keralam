@@ -161,6 +161,7 @@ export interface ManagedDesignation {
   id: string;
   name: string;
   orgLevel: string;
+  rank?: number;
   status: "Active" | "Disabled";
 }
 
@@ -249,14 +250,15 @@ function getDefaultDesignations(): ManagedDesignation[] {
   const defaults: ManagedDesignation[] = [];
   let count = 1;
   for (const [level, list] of Object.entries(DEFAULT_DESIGNATIONS_BY_LEVEL)) {
-    for (const name of list) {
+    list.forEach((name, idx) => {
       defaults.push({
         id: `DESIG-${String(count++).padStart(3, "0")}`,
         name,
         orgLevel: level,
+        rank: idx + 1,
         status: "Active",
       });
-    }
+    });
   }
   return defaults;
 }
@@ -574,9 +576,14 @@ export function RoleAccessSettings({
   const [designationsList, setDesignationsList] = useState<ManagedDesignation[]>(() => loadManagedDesignations());
   const [designationDialogOpen, setDesignationDialogOpen] = useState(false);
   const [editingDesignation, setEditingDesignation] = useState<ManagedDesignation | null>(null);
-  const [designationForm, setDesignationForm] = useState({
+  const [designationForm, setDesignationForm] = useState<{
+    name: string;
+    orgLevel: string;
+    rank: number;
+  }>({
     name: "",
     orgLevel: "State",
+    rank: 1,
   });
   const [designationSearch, setDesignationSearch] = useState("");
   const [selectedOrgLevelFilter, setSelectedOrgLevelFilter] = useState("All");
@@ -588,13 +595,13 @@ export function RoleAccessSettings({
 
   const handleOpenCreateDesignation = () => {
     setEditingDesignation(null);
-    setDesignationForm({ name: "", orgLevel: "State" });
+    setDesignationForm({ name: "", orgLevel: "State", rank: 1 });
     setDesignationDialogOpen(true);
   };
 
   const handleOpenEditDesignation = (desig: ManagedDesignation) => {
     setEditingDesignation(desig);
-    setDesignationForm({ name: desig.name, orgLevel: desig.orgLevel });
+    setDesignationForm({ name: desig.name, orgLevel: desig.orgLevel, rank: desig.rank ?? 1 });
     setDesignationDialogOpen(true);
   };
 
@@ -605,9 +612,13 @@ export function RoleAccessSettings({
       return;
     }
 
+    const selectedRank = Number(designationForm.rank) || 1;
+
     if (editingDesignation) {
       const updated = designationsList.map((d) =>
-        d.id === editingDesignation.id ? { ...d, name: trimmed, orgLevel: designationForm.orgLevel } : d,
+        d.id === editingDesignation.id
+          ? { ...d, name: trimmed, orgLevel: designationForm.orgLevel, rank: selectedRank }
+          : d,
       );
       commitDesignations(updated);
       toast.success(tr("Designation updated successfully.", "തസ്തിക വിജയകരമായി അപ്‌ഡേറ്റ് ചെയ്തു."));
@@ -616,6 +627,7 @@ export function RoleAccessSettings({
         id: `DESIG-${Date.now()}`,
         name: trimmed,
         orgLevel: designationForm.orgLevel,
+        rank: selectedRank,
         status: "Active",
       };
       commitDesignations([newDesig, ...designationsList]);
@@ -1428,8 +1440,85 @@ export function RoleAccessSettings({
   });
 
   const [selectedTableUserIds, setSelectedTableUserIds] = useState<string[]>([]);
+  const [selectedTableRoleIds, setSelectedTableRoleIds] = useState<string[]>([]);
   const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
   const [bulkRoleSelected, setBulkRoleSelected] = useState("Sub Admin");
+
+  const toggleSelectAllRoles = () => {
+    if (selectedTableRoleIds.length === displayedRoles.length) {
+      setSelectedTableRoleIds([]);
+    } else {
+      setSelectedTableRoleIds(displayedRoles.map((r) => r.id));
+    }
+  };
+
+  const toggleSelectRole = (id: string) => {
+    if (selectedTableRoleIds.includes(id)) {
+      setSelectedTableRoleIds(selectedTableRoleIds.filter((item) => item !== id));
+    } else {
+      setSelectedTableRoleIds([...selectedTableRoleIds, id]);
+    }
+  };
+
+  const handleBulkEnableRoles = () => {
+    if (selectedTableRoleIds.length === 0) return;
+    const updatedRoles = roles.map((r) =>
+      selectedTableRoleIds.includes(r.id)
+        ? { ...r, status: "Active" as ManagedRoleStatus, updatedAt: new Date().toISOString() }
+        : r,
+    );
+    commitRoles(updatedRoles);
+    toast.success(
+      tr(
+        `Enabled ${selectedTableRoleIds.length} selected role(s).`,
+        `${selectedTableRoleIds.length} തിരഞ്ഞെടുത്ത റോളുകൾ സജീവമാക്കി.`,
+      ),
+    );
+    setSelectedTableRoleIds([]);
+  };
+
+  const handleBulkDisableRoles = () => {
+    if (selectedTableRoleIds.length === 0) return;
+    const updatedRoles = roles.map((r) =>
+      selectedTableRoleIds.includes(r.id)
+        ? { ...r, status: "Inactive" as ManagedRoleStatus, updatedAt: new Date().toISOString() }
+        : r,
+    );
+    commitRoles(updatedRoles);
+    toast.success(
+      tr(
+        `Disabled ${selectedTableRoleIds.length} selected role(s).`,
+        `${selectedTableRoleIds.length} തിരഞ്ഞെടുത്ത റോളുകൾ നിർജ്ജീവമാക്കി.`,
+      ),
+    );
+    setSelectedTableRoleIds([]);
+  };
+
+  const handleBulkDeleteRoles = () => {
+    if (selectedTableRoleIds.length === 0) return;
+    const count = selectedTableRoleIds.length;
+    const confirmed = window.confirm(
+      lang === "ml"
+        ? `തിരഞ്ഞെടുത്ത ${count} റോളുകൾ ശാശ്വതമായി നീക്കം ചെയ്യണോ?`
+        : `Are you sure you want to delete ${count} selected role(s) permanently?`,
+    );
+    if (!confirmed) return;
+
+    const targetRoles = roles.filter((r) => selectedTableRoleIds.includes(r.id));
+    targetRoles.forEach((r) => {
+      if (r.system) markManagedRoleDeleted(r.id);
+    });
+
+    const updatedRoles = roles.filter((r) => !selectedTableRoleIds.includes(r.id));
+    commitRoles(updatedRoles);
+    toast.success(
+      tr(
+        `${count} role(s) deleted successfully.`,
+        `${count} റോളുകൾ വിജയകരമായി നീക്കം ചെയ്തു.`,
+      ),
+    );
+    setSelectedTableRoleIds([]);
+  };
 
   const handleActionAssignRole = () => {
     if (selectedTableUserIds.length === 0) return;
@@ -2759,6 +2848,52 @@ export function RoleAccessSettings({
           </div>
         </div>
 
+        {activeTab === "roles" && selectedTableRoleIds.length > 0 && (
+          <div className="flex items-center justify-between border-y border-border/80 bg-primary/5 px-4 py-2.5 transition-all">
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-bold text-foreground">
+                {tr(
+                  `${selectedTableRoleIds.length} of ${displayedRoles.length} selected`,
+                  `${selectedTableRoleIds.length} / ${displayedRoles.length} തിരഞ്ഞെടുത്തു`,
+                )}
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedTableRoleIds([])}
+                className="text-[11px] font-bold text-primary hover:underline cursor-pointer"
+              >
+                {tr("Deselect All", "എല്ലാം ഒഴിവാക്കുക")}
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleBulkEnableRoles}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-500/20 cursor-pointer transition-colors shadow-2xs dark:text-emerald-300"
+              >
+                <Check className="h-3.5 w-3.5 text-emerald-600" />
+                <span>{tr("Enable", "സജീവമാക്കുക")}</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleBulkDisableRoles}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-700 hover:bg-amber-500/20 cursor-pointer transition-colors shadow-2xs dark:text-amber-300"
+              >
+                <X className="h-3.5 w-3.5 text-amber-600" />
+                <span>{tr("Disable", "നിർജ്ജീവമാക്കുക")}</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleBulkDeleteRoles}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-1.5 text-xs font-bold text-destructive hover:bg-destructive/20 cursor-pointer transition-colors shadow-2xs"
+              >
+                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                <span>{tr("Delete", "ഡിലീറ്റ് ചെയ്യുക")}</span>
+              </button>
+            </div>
+          </div>
+        )}
+
         {activeTab === "users" && selectedTableUserIds.length > 0 && (
           <div className="flex items-center justify-between border-y border-border/80 bg-primary/5 px-4 py-2.5 transition-all">
             <div className="flex items-center gap-3">
@@ -2876,14 +3011,6 @@ export function RoleAccessSettings({
                         </td>
                         <td className="p-3 text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenLocationModal("org-levels", lvl)}
-                              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-[11px] font-semibold text-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary cursor-pointer"
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                              {tr("Edit", "തിരുത്തുക")}
-                            </button>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <button
@@ -2895,6 +3022,13 @@ export function RoleAccessSettings({
                                 </button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-40">
+                                <DropdownMenuItem
+                                  onClick={() => handleOpenLocationModal("org-levels", lvl)}
+                                  className="cursor-pointer gap-2 text-xs font-medium"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                  {tr("Edit", "തിരുത്തുക")}
+                                </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => handleToggleDisableLocationItem(lvl, "org-levels")}
                                   className="cursor-pointer gap-2 text-xs font-medium"
@@ -2969,14 +3103,6 @@ export function RoleAccessSettings({
                         </td>
                         <td className="p-3 text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenLocationModal("region", reg)}
-                              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-[11px] font-semibold text-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary cursor-pointer"
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                              {tr("Edit", "തിരുത്തുക")}
-                            </button>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <button
@@ -2988,6 +3114,13 @@ export function RoleAccessSettings({
                                 </button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-40">
+                                <DropdownMenuItem
+                                  onClick={() => handleOpenLocationModal("region", reg)}
+                                  className="cursor-pointer gap-2 text-xs font-medium"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                  {tr("Edit", "തിരുത്തുക")}
+                                </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => handleToggleDisableLocationItem(reg, "region")}
                                   className="cursor-pointer gap-2 text-xs font-medium"
@@ -3068,14 +3201,6 @@ export function RoleAccessSettings({
                         </td>
                         <td className="p-3 text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenLocationModal("org-district", od)}
-                              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-[11px] font-semibold text-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary cursor-pointer"
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                              {tr("Edit", "തിരുത്തുക")}
-                            </button>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <button
@@ -3087,6 +3212,13 @@ export function RoleAccessSettings({
                                 </button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-40">
+                                <DropdownMenuItem
+                                  onClick={() => handleOpenLocationModal("org-district", od)}
+                                  className="cursor-pointer gap-2 text-xs font-medium"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                  {tr("Edit", "തിരുത്തുക")}
+                                </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => handleToggleDisableLocationItem(od, "org-district")}
                                   className="cursor-pointer gap-2 text-xs font-medium"
@@ -3171,14 +3303,6 @@ export function RoleAccessSettings({
                         </td>
                         <td className="p-3 text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenLocationModal("mandalam", m)}
-                              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-[11px] font-semibold text-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary cursor-pointer"
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                              {tr("Edit", "തിരുത്തുക")}
-                            </button>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <button
@@ -3190,6 +3314,13 @@ export function RoleAccessSettings({
                                 </button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-40">
+                                <DropdownMenuItem
+                                  onClick={() => handleOpenLocationModal("mandalam", m)}
+                                  className="cursor-pointer gap-2 text-xs font-medium"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                  {tr("Edit", "തിരുത്തുക")}
+                                </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => handleToggleDisableLocationItem(m, "mandalam")}
                                   className="cursor-pointer gap-2 text-xs font-medium"
@@ -3270,14 +3401,6 @@ export function RoleAccessSettings({
                         </td>
                         <td className="p-3 text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenLocationModal("area", a)}
-                              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-[11px] font-semibold text-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary cursor-pointer"
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                              {tr("Edit", "തിരുത്തുക")}
-                            </button>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <button
@@ -3289,6 +3412,13 @@ export function RoleAccessSettings({
                                 </button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-40">
+                                <DropdownMenuItem
+                                  onClick={() => handleOpenLocationModal("area", a)}
+                                  className="cursor-pointer gap-2 text-xs font-medium"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                  {tr("Edit", "തിരുത്തുക")}
+                                </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => handleToggleDisableLocationItem(a, "area")}
                                   className="cursor-pointer gap-2 text-xs font-medium"
@@ -3369,14 +3499,6 @@ export function RoleAccessSettings({
                         </td>
                         <td className="p-3 text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenLocationModal("booth", b)}
-                              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-[11px] font-semibold text-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary cursor-pointer"
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                              {tr("Edit", "തിരുത്തുക")}
-                            </button>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <button
@@ -3388,6 +3510,13 @@ export function RoleAccessSettings({
                                 </button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-40">
+                                <DropdownMenuItem
+                                  onClick={() => handleOpenLocationModal("booth", b)}
+                                  className="cursor-pointer gap-2 text-xs font-medium"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                  {tr("Edit", "തിരുത്തുക")}
+                                </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => handleToggleDisableLocationItem(b, "booth")}
                                   className="cursor-pointer gap-2 text-xs font-medium"
@@ -3430,6 +3559,12 @@ export function RoleAccessSettings({
             <table className="w-full text-left text-xs">
               <thead className="border-b border-border bg-muted/50 font-bold text-muted-foreground">
                 <tr>
+                  <th className="p-3 w-10">
+                    <Checkbox
+                      checked={displayedRoles.length > 0 && selectedTableRoleIds.length === displayedRoles.length}
+                      onCheckedChange={toggleSelectAllRoles}
+                    />
+                  </th>
                   {roleColumnOrder.map((colKey) => {
                     if (!visibleRoleColumns[colKey]) return null;
                     const meta = ROLE_COLUMNS_META.find((c) => c.key === colKey);
@@ -3447,7 +3582,19 @@ export function RoleAccessSettings({
               </thead>
               <tbody className="divide-y divide-border/60 font-semibold">
                 {displayedRoles.map((role) => (
-                  <tr key={role.id} className="transition-colors hover:bg-muted/40">
+                  <tr
+                    key={role.id}
+                    className={cn(
+                      "transition-colors hover:bg-muted/40",
+                      selectedTableRoleIds.includes(role.id) && "bg-primary/5",
+                    )}
+                  >
+                    <td className="p-3">
+                      <Checkbox
+                        checked={selectedTableRoleIds.includes(role.id)}
+                        onCheckedChange={() => toggleSelectRole(role.id)}
+                      />
+                    </td>
                     {roleColumnOrder.map((colKey) => {
                       if (!visibleRoleColumns[colKey]) return null;
                       switch (colKey) {
@@ -3508,25 +3655,24 @@ export function RoleAccessSettings({
                           return (
                             <td key="actions" className="p-3 text-right">
                               <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
-                                <button
-                                  type="button"
-                                  onClick={() => openEdit(role)}
-                                  className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-[11px] font-semibold text-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
-                                >
-                                  <Pencil className="h-3.5 w-3.5" />
-                                  {tr("Edit", "തിരുത്തുക")}
-                                </button>
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
                                     <button
                                       type="button"
                                       aria-label={tr("More actions", "കൂടുതൽ നടപടികൾ")}
-                                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+                                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary cursor-pointer"
                                     >
                                       <MoreVertical className="h-4 w-4" />
                                     </button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end" className="w-44">
+                                    <DropdownMenuItem
+                                      onClick={() => openEdit(role)}
+                                      className="cursor-pointer gap-2 text-xs font-medium"
+                                    >
+                                      <Pencil className="h-3.5 w-3.5" />
+                                      {tr("Edit", "തിരുത്തുക")}
+                                    </DropdownMenuItem>
                                     <DropdownMenuItem
                                       onClick={() => setAssignTarget(role)}
                                       className="cursor-pointer gap-2 text-xs font-medium"
@@ -3858,9 +4004,16 @@ export function RoleAccessSettings({
                           </td>
                           <td className="p-3 font-bold text-foreground">{desig.name}</td>
                           <td className="p-3">
-                            <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-900 border border-amber-200">
-                              {desig.orgLevel}
-                            </span>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-900 border border-amber-200">
+                                {desig.orgLevel}
+                              </span>
+                              {desig.rank ? (
+                                <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[10.5px] font-extrabold text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
+                                  {tr(`Rank ${desig.rank}`, `റാങ്ക് ${desig.rank}`)}
+                                </span>
+                              ) : null}
+                            </div>
                           </td>
                           <td className="p-3">
                         <span
@@ -3882,18 +4035,6 @@ export function RoleAccessSettings({
                       </td>
                       <td className="p-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleOpenEditDesignation(desig)}
-                            className="h-8 px-2.5 text-xs font-bold gap-1 border-border hover:bg-muted cursor-pointer"
-                            title={tr("Edit Designation", "തസ്തിക തിരുത്തുക")}
-                          >
-                            <Pencil className="h-3.5 w-3.5 text-slate-600" />
-                            <span>{tr("Edit", "തിരുത്തുക")}</span>
-                          </Button>
-
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button
@@ -3906,6 +4047,13 @@ export function RoleAccessSettings({
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-40 text-xs">
+                              <DropdownMenuItem
+                                onClick={() => handleOpenEditDesignation(desig)}
+                                className="gap-2 font-semibold cursor-pointer"
+                              >
+                                <Pencil className="h-3.5 w-3.5 text-slate-500" />
+                                <span>{tr("Edit", "തിരുത്തുക")}</span>
+                              </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => handleToggleDesignationStatus(desig)}
                                 className="gap-2 font-semibold cursor-pointer"
@@ -3944,7 +4092,7 @@ export function RoleAccessSettings({
 
       {/* Create / Edit Designation Dialog */}
       <Dialog open={designationDialogOpen} onOpenChange={setDesignationDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-white text-zinc-900 border-border dark:bg-zinc-900 dark:text-zinc-100">
           <DialogHeader>
             <DialogTitle className="text-base font-bold text-foreground">
               {editingDesignation
@@ -3953,8 +4101,8 @@ export function RoleAccessSettings({
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
               {tr(
-                "Provide a designation name and assign its organisation level.",
-                "തസ്തികയുടെ നാമവും സംഘടനാ തലവും നൽകുക."
+                "Provide a designation name, organisation level, and hierarchy rank.",
+                "തസ്തികയുടെ നാമവും സംഘടനാ തലവും അധികാര ശ്രേണിയും നൽകുക."
               )}
             </DialogDescription>
           </DialogHeader>
@@ -3969,7 +4117,7 @@ export function RoleAccessSettings({
                 value={designationForm.name}
                 onChange={(e) => setDesignationForm((prev) => ({ ...prev, name: e.target.value }))}
                 placeholder={tr("e.g. President", "ഉദാ. പ്രസിഡന്റ്")}
-                className="h-9 w-full rounded-lg border border-border bg-background px-3 font-semibold text-foreground focus:border-primary focus:outline-none"
+                className="h-9 w-full rounded-lg border border-border bg-white px-3 font-semibold text-foreground focus:border-primary focus:outline-none dark:bg-zinc-800"
               />
             </div>
 
@@ -3980,13 +4128,38 @@ export function RoleAccessSettings({
               <select
                 value={designationForm.orgLevel}
                 onChange={(e) => setDesignationForm((prev) => ({ ...prev, orgLevel: e.target.value }))}
-                className="h-9 w-full rounded-lg border border-border bg-background px-3 font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer"
+                className="h-9 w-full rounded-lg border border-border bg-white px-3 font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer dark:bg-zinc-800"
               >
                 {ORG_LEVEL_OPTIONS_LIST.map((opt) => (
                   <option key={opt.id} value={opt.id}>
                     {tr(opt.en, opt.ml)}
                   </option>
                 ))}
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block font-bold text-foreground">
+                {tr("Hierarchy Rank", "അധികാര ശ്രേണി (റാങ്ക്)")}{" "}
+                <span className="text-[10px] font-normal text-muted-foreground">
+                  ({tr("Order of authority within the level", "അധികാര ശ്രേണിയുടെ മുൻഗണന")})
+                </span>
+              </label>
+              <select
+                value={designationForm.rank}
+                onChange={(e) => setDesignationForm((prev) => ({ ...prev, rank: Number(e.target.value) }))}
+                className="h-9 w-full rounded-lg border border-border bg-white px-3 font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer dark:bg-zinc-800"
+              >
+                <option value={1}>{tr("Rank 1 (Top / Highest Authority)", "റാങ്ക് 1 (പരമോന്നത അധികാരം)")}</option>
+                <option value={2}>{tr("Rank 2 (Vice / Senior Leader)", "റാങ്ക് 2 (സീനിയർ നേതാവ്)")}</option>
+                <option value={3}>{tr("Rank 3 (General Secretary / Exec)", "റാങ്ക് 3 (ജനറൽ സെക്രട്ടറി / എക്സിക്യൂട്ടീവ്)")}</option>
+                <option value={4}>{tr("Rank 4 (Secretary / Convener)", "റാങ്ക് 4 (സെക്രട്ടറി / കൺവീനർ)")}</option>
+                <option value={5}>{tr("Rank 5 (Treasurer / Officer)", "റാങ്ക് 5 (ട്രഷറർ / ഓഫീസർ)")}</option>
+                <option value={6}>{tr("Rank 6 (Committee Member)", "റാങ്ക് 6 (കമ്മിറ്റി അംഗം)")}</option>
+                <option value={7}>{tr("Rank 7 (Executive Member)", "റാങ്ക് 7 (എക്സിക്യൂട്ടീവ് അംഗം)")}</option>
+                <option value={8}>{tr("Rank 8 (Coordinator / In-charge)", "റാങ്ക് 8 (കോർഡിനേറ്റർ / ഇൻ-ചാർജ്ജ്)")}</option>
+                <option value={9}>{tr("Rank 9 (Worker / Volunteer)", "റാങ്ക് 9 (പ്രവർത്തകൻ / വോളന്റിയർ)")}</option>
+                <option value={10}>{tr("Rank 10 (Base Authority)", "റാങ്ക് 10 (അടിസ്ഥാന തലം)")}</option>
               </select>
             </div>
           </div>
@@ -5339,10 +5512,30 @@ function AssignRoleDialog({
       if (selectedUserIds.includes(u.id)) {
         return { ...u, assignedRole: roleDisplayName };
       }
+      if (u.assignedRole === roleDisplayName && !selectedUserIds.includes(u.id)) {
+        return { ...u, assignedRole: "Sub Admin" };
+      }
       return u;
     });
     saveManagedDesktopUsers(updatedUsers);
     onSave(selectedUserIds.length);
+    onClose();
+  };
+
+  const handleSkipAssignment = () => {
+    const allUsers = loadManagedDesktopUsers();
+    let changed = false;
+    const updatedUsers = allUsers.map((u) => {
+      if (u.assignedRole === roleDisplayName) {
+        changed = true;
+        return { ...u, assignedRole: "Sub Admin" };
+      }
+      return u;
+    });
+    if (changed) {
+      saveManagedDesktopUsers(updatedUsers);
+    }
+    onSave(0);
     onClose();
   };
 
@@ -5565,7 +5758,7 @@ function AssignRoleDialog({
           <Button
             type="button"
             variant="outline"
-            onClick={onClose}
+            onClick={handleSkipAssignment}
             className="h-9 px-3.5 text-xs font-semibold cursor-pointer bg-white"
           >
             {tr("Skip", "ഒഴിവാക്കുക")}

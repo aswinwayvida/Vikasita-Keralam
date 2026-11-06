@@ -176,6 +176,8 @@ function getMatrixColumnActionIds(row: MatrixRow, columnId: MatrixColumnId) {
 }
 
 function CreateRolePage() {
+  const navigate = useNavigate();
+  const { isMobile, state: sidebarState } = useSidebar();
   const { lang } = useLang();
   const tr = (en: string, ml: string) => (lang === "ml" ? ml : en);
   const { editRoleId, returnTo } = Route.useSearch();
@@ -185,11 +187,7 @@ function CreateRolePage() {
     if (typeof window !== "undefined" && roleName) {
       sessionStorage.setItem("vk_newly_created_role", roleName.trim());
     }
-    if (returnTo) {
-      void navigate({ to: returnTo });
-    } else {
-      void navigate({ to: "/admin/settings", search: { tab: "roles" } });
-    }
+    void navigate({ to: "/admin/settings", search: { tab: "roles" } });
   };
 
   const [name, setName] = useState("");
@@ -359,6 +357,35 @@ function CreateRolePage() {
   };
 
   const handleSkipUserAssignment = () => {
+    const allUsers = loadManagedDesktopUsers();
+    let changed = false;
+    const updatedUsers = allUsers.map((u) => {
+      if (u.assignedRole === targetSavedRoleName) {
+        changed = true;
+        return { ...u, assignedRole: "Sub Admin" };
+      }
+      return u;
+    });
+    if (changed) {
+      saveManagedDesktopUsers(updatedUsers);
+    }
+
+    // Update assignedUsers count in ManagedRole list to 0
+    const allRoles = loadManagedRoles();
+    const updatedRoles = allRoles.map((r) =>
+      r.name.trim().toLowerCase() === targetSavedRoleName.trim().toLowerCase()
+        ? { ...r, assignedUsers: 0, updatedAt: new Date().toISOString() }
+        : r,
+    );
+    saveManagedRoles(updatedRoles);
+
+    toast.info(
+      tr(
+        "Role saved without assigned users.",
+        "ഉപയോക്താക്കളെ അസൈൻ ചെയ്യാതെ റോൾ സംരക്ഷിച്ചു.",
+      ),
+    );
+
     setShowAssignUsersSheet(false);
     navigateBackAfterRoleCreate();
   };

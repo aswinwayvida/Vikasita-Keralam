@@ -31,6 +31,7 @@ import {
 import {
   loadManagedDesktopUsers,
   saveManagedDesktopUsers,
+  loadManagedDesignations,
   type ManagedUser,
 } from "@/components/admin/RoleAccessSettings";
 import { useLang } from "@/i18n/LanguageProvider";
@@ -320,6 +321,124 @@ const DEFAULT_BOOTHS = [
   "Booth 10",
 ];
 
+function MultiSelectPopover({
+  label,
+  options,
+  selectedValues,
+  onChange,
+  placeholder,
+  tr,
+}: {
+  label: string;
+  options: { id: string; name: string }[] | string[];
+  selectedValues: string[];
+  onChange: (vals: string[]) => void;
+  placeholder: string;
+  tr: (en: string, ml: string) => string;
+}) {
+  const [open, setOpen] = useState(false);
+  const normalizedOptions = options.map((opt) =>
+    typeof opt === "string" ? { id: opt, name: opt } : opt,
+  );
+
+  const toggleOption = (id: string) => {
+    if (selectedValues.includes(id)) {
+      onChange(selectedValues.filter((v) => v !== id));
+    } else {
+      onChange([...selectedValues, id]);
+    }
+  };
+
+  const selectAll = () => {
+    if (selectedValues.length === normalizedOptions.length) {
+      onChange([]);
+    } else {
+      onChange(normalizedOptions.map((o) => o.id));
+    }
+  };
+
+  return (
+    <div className="space-y-1.5">
+      <label className="block text-xs font-bold text-foreground">
+        {label}
+      </label>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className="flex min-h-10 w-full items-center justify-between rounded-lg border border-border bg-white px-3 py-2 text-xs font-semibold text-foreground hover:border-primary focus:outline-none cursor-pointer"
+          >
+            <div className="flex flex-wrap gap-1 items-center min-w-0 flex-1 pr-2">
+              {selectedValues.length === 0 ? (
+                <span className="text-muted-foreground">{placeholder}</span>
+              ) : selectedValues.length === normalizedOptions.length ? (
+                <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
+                  {tr("All Selected", "എല്ലാം തിരഞ്ഞെടുത്തു")} ({selectedValues.length})
+                </span>
+              ) : (
+                selectedValues.map((val) => (
+                  <span
+                    key={val}
+                    className="inline-flex items-center gap-1 rounded-md bg-slate-100 border border-slate-200 px-2 py-0.5 text-[11px] font-bold text-slate-800 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
+                  >
+                    <span>{val}</span>
+                    <span
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleOption(val);
+                      }}
+                      className="hover:text-destructive cursor-pointer font-extrabold text-[12px] leading-none"
+                    >
+                      ×
+                    </span>
+                  </span>
+                ))
+              )}
+            </div>
+            <ChevronDown className="h-4 w-4 shrink-0 opacity-60 ml-1" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-72 p-2 max-h-64 overflow-y-auto">
+          <div className="flex items-center justify-between px-2 py-1 border-b border-border/80 mb-1">
+            <span className="text-[11px] font-bold text-muted-foreground uppercase">
+              {tr("Select Options", "ഓപ്ഷനുകൾ തിരഞ്ഞെടുക്കുക")}
+            </span>
+            <button
+              type="button"
+              onClick={selectAll}
+              className="text-[11px] font-bold text-primary hover:underline cursor-pointer"
+            >
+              {selectedValues.length === normalizedOptions.length
+                ? tr("Deselect All", "എല്ലാം ഒഴിവാക്കുക")
+                : tr("Select All", "എല്ലാം തിരഞ്ഞെടുക്കുക")}
+            </button>
+          </div>
+          <div className="space-y-1">
+            {normalizedOptions.map((opt) => {
+              const checked = selectedValues.includes(opt.id);
+              return (
+                <div
+                  key={opt.id}
+                  onClick={() => toggleOption(opt.id)}
+                  className={cn(
+                    "flex items-center gap-2.5 p-2 rounded-md transition-colors cursor-pointer select-none text-xs font-semibold",
+                    checked
+                      ? "bg-primary/10 text-primary font-bold"
+                      : "hover:bg-muted/50 text-foreground",
+                  )}
+                >
+                  <Checkbox checked={checked} className="pointer-events-none" />
+                  <span className="truncate">{opt.name}</span>
+                </div>
+              );
+            })}
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
 function CreateUserPage() {
   const { lang } = useLang();
   const { isMobile, state: sidebarState } = useSidebar();
@@ -347,11 +466,11 @@ function CreateUserPage() {
       designation,
       selectedRoleName,
       roleLevel,
-      selectedRegion,
-      selectedOrgDistrict,
-      selectedMandalam,
-      selectedArea,
-      selectedBooth,
+      selectedRegions,
+      selectedOrgDistricts,
+      selectedMandalams,
+      selectedAreas,
+      selectedBooths,
     };
     sessionStorage.setItem("vk_user_form_draft", JSON.stringify(draftData));
   };
@@ -370,11 +489,11 @@ function CreateUserPage() {
         if (parsed.designation) setDesignation(parsed.designation);
         if (parsed.selectedRoleName) setSelectedRoleName(parsed.selectedRoleName);
         if (parsed.roleLevel) setRoleLevel(parsed.roleLevel);
-        if (parsed.selectedRegion) setSelectedRegion(parsed.selectedRegion);
-        if (parsed.selectedOrgDistrict) setSelectedOrgDistrict(parsed.selectedOrgDistrict);
-        if (parsed.selectedMandalam) setSelectedMandalam(parsed.selectedMandalam);
-        if (parsed.selectedArea) setSelectedArea(parsed.selectedArea);
-        if (parsed.selectedBooth) setSelectedBooth(parsed.selectedBooth);
+        if (Array.isArray(parsed.selectedRegions)) setSelectedRegions(parsed.selectedRegions);
+        if (Array.isArray(parsed.selectedOrgDistricts)) setSelectedOrgDistricts(parsed.selectedOrgDistricts);
+        if (Array.isArray(parsed.selectedMandalams)) setSelectedMandalams(parsed.selectedMandalams);
+        if (Array.isArray(parsed.selectedAreas)) setSelectedAreas(parsed.selectedAreas);
+        if (Array.isArray(parsed.selectedBooths)) setSelectedBooths(parsed.selectedBooths);
       } catch {
         // ignore
       }
@@ -416,11 +535,17 @@ function CreateUserPage() {
   const [newDesignationInput, setNewDesignationInput] = useState("");
   const [showAddDesignationPopover, setShowAddDesignationPopover] = useState(false);
 
+  // Active designations derived from default list + stored managed designations + custom
   const activeDesignations = useMemo(() => {
     if (!orgLevel) return [];
+    const managedFromStore = loadManagedDesignations()
+      .filter((d) => d.status === "Active")
+      .filter((d) => !orgLevel || d.orgLevel.toLowerCase() === orgLevel.toLowerCase())
+      .map((d) => d.name);
+
     const base = DESIGNATIONS_BY_ORG_LEVEL[orgLevel] || [];
     const custom = customDesignations[orgLevel] || [];
-    return Array.from(new Set([...base, ...custom]));
+    return Array.from(new Set([...managedFromStore, ...base, ...custom]));
   }, [orgLevel, customDesignations]);
 
   const handleAddCustomDesignation = () => {
@@ -449,75 +574,65 @@ function CreateUserPage() {
     if (errors.designation) setErrors((prev) => ({ ...prev, designation: "" }));
   };
 
-  // Organisation Hierarchy dependent state
-  const [selectedRegion, setSelectedRegion] = useState("South Region");
-  const [selectedOrgDistrict, setSelectedOrgDistrict] = useState("Thiruvananthapuram City");
-  const [selectedMandalam, setSelectedMandalam] = useState("Trivandrum Central Mandalam");
-  const [selectedArea, setSelectedArea] = useState("Pattom");
-  const [selectedBooth, setSelectedBooth] = useState("Booth 01");
+  // Organisation Hierarchy multi-selection state
+  const [selectedRegions, setSelectedRegions] = useState<string[]>(["South Region"]);
+  const [selectedOrgDistricts, setSelectedOrgDistricts] = useState<string[]>(["Thiruvananthapuram City"]);
+  const [selectedMandalams, setSelectedMandalams] = useState<string[]>(["Trivandrum Central Mandalam"]);
+  const [selectedAreas, setSelectedAreas] = useState<string[]>(["Pattom"]);
+  const [selectedBooths, setSelectedBooths] = useState<string[]>(["Booth 01"]);
 
-  // Options derived dynamically for dependent hierarchy
-  const regionOptions = REGION_OPTIONS;
+  // Dynamic Multi-Select options
+  const allRegionOptions = useMemo(
+    () => REGION_OPTIONS.map((r) => ({ id: r.id, name: tr(r.en, r.ml) })),
+    [lang],
+  );
 
-  const orgDistrictOptions = useMemo(() => {
-    return ORG_DISTRICTS_BY_REGION[selectedRegion] || ORG_DISTRICTS_BY_REGION["South Region"];
-  }, [selectedRegion]);
-
-  const mandalamOptions = useMemo(() => {
-    return MANDALAMS_BY_ORG_DISTRICT[selectedOrgDistrict] || [`${selectedOrgDistrict} Mandalam`];
-  }, [selectedOrgDistrict]);
-
-  const areaOptions = useMemo(() => {
-    if (AREAS_BY_MANDALAM[selectedMandalam]) {
-      return AREAS_BY_MANDALAM[selectedMandalam];
+  const allOrgDistrictOptions = useMemo(() => {
+    const list: { id: string; name: string }[] = [];
+    if (selectedRegions.length > 0) {
+      selectedRegions.forEach((reg) => {
+        const districts = ORG_DISTRICTS_BY_REGION[reg] || [];
+        districts.forEach((d) => list.push({ id: d.id, name: tr(d.en, d.ml) }));
+      });
+    } else {
+      Object.values(ORG_DISTRICTS_BY_REGION).forEach((districts) => {
+        districts.forEach((d) => list.push({ id: d.id, name: tr(d.en, d.ml) }));
+      });
     }
-    const cleanBase = selectedMandalam.replace(/\s+Mandalam$/i, "");
-    return [`${cleanBase} Central`, `${cleanBase} North`, `${cleanBase} South`];
-  }, [selectedMandalam]);
+    return Array.from(new Map(list.map((item) => [item.id, item])).values());
+  }, [selectedRegions, lang]);
 
-  const boothOptions = DEFAULT_BOOTHS;
+  const allMandalamOptions = useMemo(() => {
+    const list: string[] = [];
+    if (selectedOrgDistricts.length > 0) {
+      selectedOrgDistricts.forEach((dist) => {
+        const mandalams = MANDALAMS_BY_ORG_DISTRICT[dist] || [`${dist} Mandalam`];
+        mandalams.forEach((m) => list.push(m));
+      });
+    } else {
+      Object.values(MANDALAMS_BY_ORG_DISTRICT).forEach((mandalams) => {
+        mandalams.forEach((m) => list.push(m));
+      });
+    }
+    return Array.from(new Set(list));
+  }, [selectedOrgDistricts]);
 
-  // Handlers for dependent dropdown changes
-  const handleRegionChange = (regionVal: string) => {
-    setSelectedRegion(regionVal);
-    const orgDists = ORG_DISTRICTS_BY_REGION[regionVal] || [];
-    const nextOrgDistrict = orgDists[0]?.id || "Thiruvananthapuram City";
-    setSelectedOrgDistrict(nextOrgDistrict);
+  const allAreaOptions = useMemo(() => {
+    const list: string[] = [];
+    if (selectedMandalams.length > 0) {
+      selectedMandalams.forEach((mand) => {
+        const areas = AREAS_BY_MANDALAM[mand] || [`${mand.replace(/\s+Mandalam$/i, "")} Central`];
+        areas.forEach((a) => list.push(a));
+      });
+    } else {
+      Object.values(AREAS_BY_MANDALAM).forEach((areas) => {
+        areas.forEach((a) => list.push(a));
+      });
+    }
+    return Array.from(new Set(list));
+  }, [selectedMandalams]);
 
-    const mandalams = MANDALAMS_BY_ORG_DISTRICT[nextOrgDistrict] || [`${nextOrgDistrict} Mandalam`];
-    const nextMandalam = mandalams[0];
-    setSelectedMandalam(nextMandalam);
-
-    const areas = AREAS_BY_MANDALAM[nextMandalam] || [`${nextMandalam.replace(/\s+Mandalam$/i, "")} Central`];
-    setSelectedArea(areas[0]);
-    setSelectedBooth("Booth 01");
-  };
-
-  const handleOrgDistrictChange = (orgDistVal: string) => {
-    setSelectedOrgDistrict(orgDistVal);
-    const mandalams = MANDALAMS_BY_ORG_DISTRICT[orgDistVal] || [`${orgDistVal} Mandalam`];
-    const nextMandalam = mandalams[0];
-    setSelectedMandalam(nextMandalam);
-
-    const areas = AREAS_BY_MANDALAM[nextMandalam] || [`${nextMandalam.replace(/\s+Mandalam$/i, "")} Central`];
-    setSelectedArea(areas[0]);
-    setSelectedBooth("Booth 01");
-  };
-
-  const handleMandalamChange = (mandalamVal: string) => {
-    setSelectedMandalam(mandalamVal);
-    const areas = AREAS_BY_MANDALAM[mandalamVal] || [`${mandalamVal.replace(/\s+Mandalam$/i, "")} Central`];
-    setSelectedArea(areas[0]);
-    setSelectedBooth("Booth 01");
-  };
-
-  const handleAreaChange = (areaVal: string) => {
-    setSelectedArea(areaVal);
-    setSelectedBooth("Booth 01");
-  };
-
-  // Visibility logic based on Organisation Level
-  const showRegion = ["Region", "Organisational District", "Mandalam", "Area", "Booth"].includes(orgLevel);
+  const allBoothOptions = DEFAULT_BOOTHS;
   const showOrgDistrict = ["Organisational District", "Mandalam", "Area", "Booth"].includes(orgLevel);
   const showMandalam = ["Mandalam", "Area", "Booth"].includes(orgLevel);
   const showArea = ["Area", "Booth"].includes(orgLevel);
@@ -562,11 +677,11 @@ function CreateUserPage() {
     setSelectedRoleName(
       existing.assignedRole === "Unassigned" || !existing.assignedRole ? "None" : existing.assignedRole,
     );
-    if (existing.regionEn) setSelectedRegion(existing.regionEn);
-    if (existing.districtNameEn) setSelectedOrgDistrict(existing.districtNameEn);
-    if (existing.mandalamEn) setSelectedMandalam(existing.mandalamEn);
-    if (existing.areaEn) setSelectedArea(existing.areaEn);
-    if (existing.boothEn) setSelectedBooth(existing.boothEn);
+    if (existing.regionEn) setSelectedRegions(existing.regionEn.split(", ").filter(Boolean));
+    if (existing.districtNameEn) setSelectedOrgDistricts(existing.districtNameEn.split(", ").filter(Boolean));
+    if (existing.mandalamEn) setSelectedMandalams(existing.mandalamEn.split(", ").filter(Boolean));
+    if (existing.areaEn) setSelectedAreas(existing.areaEn.split(", ").filter(Boolean));
+    if (existing.boothEn) setSelectedBooths(existing.boothEn.split(", ").filter(Boolean));
   }, [editUserId]);
 
   // When role selection changes
@@ -738,12 +853,12 @@ function CreateUserPage() {
               designationEn: designation,
               designationMl: designation,
               assignedRole: finalRole,
-              districtNameEn: selectedOrgDistrict,
-              regionEn: selectedRegion,
-              mandalamEn: selectedMandalam,
-              areaEn: selectedArea,
-              boothEn: selectedBooth,
-              orgDistrictEn: selectedOrgDistrict,
+              districtNameEn: selectedOrgDistricts.join(", "),
+              regionEn: selectedRegions.join(", "),
+              mandalamEn: selectedMandalams.join(", "),
+              areaEn: selectedAreas.join(", "),
+              boothEn: selectedBooths.join(", "),
+              orgDistrictEn: selectedOrgDistricts.join(", "),
             }
           : u,
       );
@@ -763,18 +878,18 @@ function CreateUserPage() {
         mobile: mobile.trim() || "9447000000",
         email: `${fullName.toLowerCase().replace(/\s+/g, ".")}@bjpkerala.org`,
         districtId: "tvm",
-        districtNameEn: selectedOrgDistrict,
-        districtNameMl: selectedOrgDistrict,
-        constituencyEn: selectedMandalam,
-        constituencyMl: selectedMandalam,
+        districtNameEn: selectedOrgDistricts.join(", "),
+        districtNameMl: selectedOrgDistricts.join(", "),
+        constituencyEn: selectedMandalams.join(", "),
+        constituencyMl: selectedMandalams.join(", "),
         status: "Active",
         joinedDate: now,
         assignedRole: finalRole,
-        regionEn: selectedRegion,
-        mandalamEn: selectedMandalam,
-        areaEn: selectedArea,
-        boothEn: selectedBooth,
-        orgDistrictEn: selectedOrgDistrict,
+        regionEn: selectedRegions.join(", "),
+        mandalamEn: selectedMandalams.join(", "),
+        areaEn: selectedAreas.join(", "),
+        boothEn: selectedBooths.join(", "),
+        orgDistrictEn: selectedOrgDistricts.join(", "),
       };
       saveManagedDesktopUsers([newUser, ...desktopUsers]);
       toast.success(tr("User created successfully.", "ഉപയോക്താവ് വിജയകരമായി ചേർത്തു."));
@@ -1133,105 +1248,73 @@ function CreateUserPage() {
             </div>
           </div>
 
-          {/* Dynamic Organisation Hierarchy Dropdowns */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
-            {/* Region */}
-            {showRegion && (
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-foreground">
-                  {tr("Region", "റീജിയൻ")}
-                </label>
-                <select
-                  value={selectedRegion}
-                  onChange={(e) => handleRegionChange(e.target.value)}
-                  className="h-10 w-full rounded-lg border border-border bg-white px-3 text-xs font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer"
-                >
-                  {regionOptions.map((reg) => (
-                    <option key={reg.id} value={reg.id}>
-                      {tr(reg.en, reg.ml)}
-                    </option>
-                  ))}
-                </select>
+          {/* Dynamic Organisation Hierarchy Multi-Select Dropdowns based on Role Level */}
+          <div className="pt-2">
+            {roleLevel === "State" ? (
+              <div className="p-3.5 rounded-xl border border-sky-200 bg-sky-50/70 text-sky-900 dark:border-sky-900/60 dark:bg-sky-950/30 dark:text-sky-200 space-y-1">
+                <div className="flex items-center gap-2 text-xs font-bold">
+                  <ShieldCheck className="h-4 w-4 text-sky-600" />
+                  <span>{tr("State Wide Role", "സംസ്ഥാന തല റോൾ")}</span>
+                </div>
+                <p className="text-[11px] leading-relaxed text-sky-800 dark:text-sky-300">
+                  {tr(
+                    "This user has State level authority and will operate across all regions, districts, mandalams, and booths statewide.",
+                    "ഈ ഉപയോക്താവിന് സംസ്ഥാന തല അധികാരമുണ്ട്, എല്ലാ റീജിയണുകളിലും ജില്ലകളിലും മണ്ഡലങ്ങളിലും പ്രവർത്തിക്കും.",
+                  )}
+                </p>
               </div>
-            )}
-
-            {/* Organisational District */}
-            {showOrgDistrict && (
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-foreground">
-                  {tr("Organisational District", "സംഘടനാ ജില്ല")}
-                </label>
-                <select
-                  value={selectedOrgDistrict}
-                  onChange={(e) => handleOrgDistrictChange(e.target.value)}
-                  className="h-10 w-full rounded-lg border border-border bg-white px-3 text-xs font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer"
-                >
-                  {orgDistrictOptions.map((od) => (
-                    <option key={od.id} value={od.id}>
-                      {tr(od.en, od.ml)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {/* Mandalam */}
-            {showMandalam && (
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-foreground">
-                  {tr("Mandalam", "മണ്ഡലം")}
-                </label>
-                <select
-                  value={selectedMandalam}
-                  onChange={(e) => handleMandalamChange(e.target.value)}
-                  className="h-10 w-full rounded-lg border border-border bg-white px-3 text-xs font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer"
-                >
-                  {mandalamOptions.map((man) => (
-                    <option key={man} value={man}>
-                      {man}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {/* Area */}
-            {showArea && (
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-foreground">
-                  {tr("Area", "ഏരിയ")}
-                </label>
-                <select
-                  value={selectedArea}
-                  onChange={(e) => handleAreaChange(e.target.value)}
-                  className="h-10 w-full rounded-lg border border-border bg-white px-3 text-xs font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer"
-                >
-                  {areaOptions.map((ar) => (
-                    <option key={ar} value={ar}>
-                      {ar}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {/* Booth */}
-            {showBooth && (
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-foreground">
-                  {tr("Booth", "ബൂത്ത്")}
-                </label>
-                <select
-                  value={selectedBooth}
-                  onChange={(e) => setSelectedBooth(e.target.value)}
-                  className="h-10 w-full rounded-lg border border-border bg-white px-3 text-xs font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer"
-                >
-                  {boothOptions.map((b) => (
-                    <option key={b} value={b}>
-                      {b}
-                    </option>
-                  ))}
-                </select>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {["Region", "Organisational District", "Mandalam", "Area", "Booth"].includes(roleLevel) && (
+                  <MultiSelectPopover
+                    label={tr("Select Region(s)", "റീജിയൻ തിരഞ്ഞെടുക്കുക")}
+                    options={allRegionOptions}
+                    selectedValues={selectedRegions}
+                    onChange={setSelectedRegions}
+                    placeholder={tr("Select Region(s)", "റീജിയൻ തിരഞ്ഞെടുക്കുക")}
+                    tr={tr}
+                  />
+                )}
+                {["Organisational District", "Mandalam", "Area", "Booth"].includes(roleLevel) && (
+                  <MultiSelectPopover
+                    label={tr("Select Organisational District(s)", "സംഘടനാ ജില്ല തിരഞ്ഞെടുക്കുക")}
+                    options={allOrgDistrictOptions}
+                    selectedValues={selectedOrgDistricts}
+                    onChange={setSelectedOrgDistricts}
+                    placeholder={tr("Select Organisational District(s)", "സംഘടനാ ജില്ല തിരഞ്ഞെടുക്കുക")}
+                    tr={tr}
+                  />
+                )}
+                {["Mandalam", "Area", "Booth"].includes(roleLevel) && (
+                  <MultiSelectPopover
+                    label={tr("Select Mandalam(s)", "മണ്ഡലം തിരഞ്ഞെടുക്കുക")}
+                    options={allMandalamOptions}
+                    selectedValues={selectedMandalams}
+                    onChange={setSelectedMandalams}
+                    placeholder={tr("Select Mandalam(s)", "മണ്ഡലം തിരഞ്ഞെടുക്കുക")}
+                    tr={tr}
+                  />
+                )}
+                {["Area", "Booth"].includes(roleLevel) && (
+                  <MultiSelectPopover
+                    label={tr("Select Area(s)", "ഏരിയ തിരഞ്ഞെടുക്കുക")}
+                    options={allAreaOptions}
+                    selectedValues={selectedAreas}
+                    onChange={setSelectedAreas}
+                    placeholder={tr("Select Area(s)", "ഏരിയ തിരഞ്ഞെടുക്കുക")}
+                    tr={tr}
+                  />
+                )}
+                {["Booth"].includes(roleLevel) && (
+                  <MultiSelectPopover
+                    label={tr("Select Booth(s)", "ബൂത്ത് തിരഞ്ഞെടുക്കുക")}
+                    options={allBoothOptions}
+                    selectedValues={selectedBooths}
+                    onChange={setSelectedBooths}
+                    placeholder={tr("Select Booth(s)", "ബൂത്ത് തിരഞ്ഞെടുക്കുക")}
+                    tr={tr}
+                  />
+                )}
               </div>
             )}
           </div>
