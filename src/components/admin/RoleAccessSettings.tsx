@@ -162,6 +162,7 @@ export interface ManagedDesignation {
   id: string;
   name: string;
   orgLevel: string;
+  parentDesignation?: string;
   rank?: number;
   status: "Active" | "Disabled";
 }
@@ -583,11 +584,11 @@ export function RoleAccessSettings({
   const [designationForm, setDesignationForm] = useState<{
     name: string;
     orgLevel: string;
-    rank: number;
+    parentDesignation: string;
   }>({
     name: "",
     orgLevel: "State",
-    rank: 1,
+    parentDesignation: "",
   });
   const [designationSearch, setDesignationSearch] = useState("");
   const [selectedOrgLevelFilter, setSelectedOrgLevelFilter] = useState("All");
@@ -599,13 +600,17 @@ export function RoleAccessSettings({
 
   const handleOpenCreateDesignation = () => {
     setEditingDesignation(null);
-    setDesignationForm({ name: "", orgLevel: "State", rank: 1 });
+    setDesignationForm({ name: "", orgLevel: "State", parentDesignation: "" });
     setDesignationDialogOpen(true);
   };
 
   const handleOpenEditDesignation = (desig: ManagedDesignation) => {
     setEditingDesignation(desig);
-    setDesignationForm({ name: desig.name, orgLevel: desig.orgLevel, rank: desig.rank ?? 1 });
+    setDesignationForm({
+      name: desig.name,
+      orgLevel: desig.orgLevel,
+      parentDesignation: desig.parentDesignation || "",
+    });
     setDesignationDialogOpen(true);
   };
 
@@ -616,12 +621,29 @@ export function RoleAccessSettings({
       return;
     }
 
-    const selectedRank = Number(designationForm.rank) || 1;
+    // Determine logical rank behind the scenes based on parent designation
+    let calculatedRank = 1;
+    if (designationForm.parentDesignation) {
+      const parentDesig = designationsList.find(
+        (d) => d.name === designationForm.parentDesignation && d.orgLevel === designationForm.orgLevel
+      );
+      if (parentDesig && parentDesig.rank) {
+        calculatedRank = parentDesig.rank + 1;
+      } else {
+        calculatedRank = 2;
+      }
+    }
 
     if (editingDesignation) {
       const updated = designationsList.map((d) =>
         d.id === editingDesignation.id
-          ? { ...d, name: trimmed, orgLevel: designationForm.orgLevel, rank: selectedRank }
+          ? {
+              ...d,
+              name: trimmed,
+              orgLevel: designationForm.orgLevel,
+              parentDesignation: designationForm.parentDesignation || undefined,
+              rank: calculatedRank,
+            }
           : d,
       );
       commitDesignations(updated);
@@ -631,7 +653,8 @@ export function RoleAccessSettings({
         id: `DESIG-${Date.now()}`,
         name: trimmed,
         orgLevel: designationForm.orgLevel,
-        rank: selectedRank,
+        parentDesignation: designationForm.parentDesignation || undefined,
+        rank: calculatedRank,
         status: "Active",
       };
       commitDesignations([newDesig, ...designationsList]);
@@ -4110,8 +4133,8 @@ export function RoleAccessSettings({
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
               {tr(
-                "Provide a designation name, organisation level, and hierarchy rank.",
-                "തസ്തികയുടെ നാമവും സംഘടനാ തലവും അധികാര ശ്രേണിയും നൽകുക."
+                "Provide a designation name, organisation level, and parent designation.",
+                "തസ്തികയുടെ നാമവും സംഘടനാ തലവും രക്ഷാ തസ്തികയും നൽകുക."
               )}
             </DialogDescription>
           </DialogHeader>
@@ -4136,7 +4159,13 @@ export function RoleAccessSettings({
               </label>
               <select
                 value={designationForm.orgLevel}
-                onChange={(e) => setDesignationForm((prev) => ({ ...prev, orgLevel: e.target.value }))}
+                onChange={(e) =>
+                  setDesignationForm((prev) => ({
+                    ...prev,
+                    orgLevel: e.target.value,
+                    parentDesignation: "",
+                  }))
+                }
                 className="h-9 w-full rounded-lg border border-border bg-white px-3 font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer dark:bg-zinc-800"
               >
                 {ORG_LEVEL_OPTIONS_LIST.map((opt) => (
@@ -4149,26 +4178,25 @@ export function RoleAccessSettings({
 
             <div className="space-y-1.5">
               <label className="block font-bold text-foreground">
-                {tr("Hierarchy Rank", "അധികാര ശ്രേണി (റാങ്ക്)")}{" "}
-                <span className="text-[10px] font-normal text-muted-foreground">
-                  ({tr("Order of authority within the level", "അധികാര ശ്രേണിയുടെ മുൻഗണന")})
-                </span>
+                {tr("Parent Designation", "രക്ഷാ തസ്തിക (Parent Designation)")}
               </label>
               <select
-                value={designationForm.rank}
-                onChange={(e) => setDesignationForm((prev) => ({ ...prev, rank: Number(e.target.value) }))}
+                value={designationForm.parentDesignation}
+                onChange={(e) => setDesignationForm((prev) => ({ ...prev, parentDesignation: e.target.value }))}
                 className="h-9 w-full rounded-lg border border-border bg-white px-3 font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer dark:bg-zinc-800"
               >
-                <option value={1}>{tr("Rank 1 (Top / Highest Authority)", "റാങ്ക് 1 (പരമോന്നത അധികാരം)")}</option>
-                <option value={2}>{tr("Rank 2 (Vice / Senior Leader)", "റാങ്ക് 2 (സീനിയർ നേതാവ്)")}</option>
-                <option value={3}>{tr("Rank 3 (General Secretary / Exec)", "റാങ്ക് 3 (ജനറൽ സെക്രട്ടറി / എക്സിക്യൂട്ടീവ്)")}</option>
-                <option value={4}>{tr("Rank 4 (Secretary / Convener)", "റാങ്ക് 4 (സെക്രട്ടറി / കൺവീനർ)")}</option>
-                <option value={5}>{tr("Rank 5 (Treasurer / Officer)", "റാങ്ക് 5 (ട്രഷറർ / ഓഫീസർ)")}</option>
-                <option value={6}>{tr("Rank 6 (Committee Member)", "റാങ്ക് 6 (കമ്മിറ്റി അംഗം)")}</option>
-                <option value={7}>{tr("Rank 7 (Executive Member)", "റാങ്ക് 7 (എക്സിക്യൂട്ടീവ് അംഗം)")}</option>
-                <option value={8}>{tr("Rank 8 (Coordinator / In-charge)", "റാങ്ക് 8 (കോർഡിനേറ്റർ / ഇൻ-ചാർജ്ജ്)")}</option>
-                <option value={9}>{tr("Rank 9 (Worker / Volunteer)", "റാങ്ക് 9 (പ്രവർത്തകൻ / വോളന്റിയർ)")}</option>
-                <option value={10}>{tr("Rank 10 (Base Authority)", "റാങ്ക് 10 (അടിസ്ഥാന തലം)")}</option>
+                <option value="">{tr("None (Top Level Designation)", "ഒന്നുമില്ല (പരമോന്നത തസ്തിക)")}</option>
+                {designationsList
+                  .filter(
+                    (d) =>
+                      d.orgLevel === designationForm.orgLevel &&
+                      (!editingDesignation || d.id !== editingDesignation.id),
+                  )
+                  .map((d) => (
+                    <option key={d.id} value={d.name}>
+                      {d.name}
+                    </option>
+                  ))}
               </select>
             </div>
           </div>
