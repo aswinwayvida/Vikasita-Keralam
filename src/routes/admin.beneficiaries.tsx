@@ -27,6 +27,7 @@ import {
   Search,
   ChevronDown,
   Check,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -48,6 +49,14 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import { toast } from "sonner";
 
 export type BeneficiaryColumnKey =
@@ -292,6 +301,7 @@ function BeneficiariesPage() {
     BENEFICIARY_COLUMNS.map((c) => c.key),
   );
   const [draggedColumnIndex, setDraggedColumnIndex] = useState<number | null>(null);
+  const [isManageColumnsOpen, setIsManageColumnsOpen] = useState(false);
 
   const toggleColumn = (key: BeneficiaryColumnKey) => {
     setVisibleColumns((prev) => {
@@ -344,6 +354,46 @@ function BeneficiariesPage() {
       lang === "ml"
         ? `${count} അപേക്ഷകരുടെ വിവരങ്ങൾ നീക്കം ചെയ്തു.`
         : `Deleted ${count} selected applicant profile(s).`
+    );
+  };
+
+  const handleBulkEnable = () => {
+    const count = selectedIds.size;
+    setBeneficiariesList((prev) =>
+      prev.map((item) => (selectedIds.has(item.id) ? { ...item, status: "Active" } : item))
+    );
+    toast.success(
+      lang === "ml"
+        ? `${count} അപേക്ഷകരുടെ സ്റ്റാറ്റസ് 'Active' എന്ന് മാറ്റി.`
+        : `Enabled ${count} selected applicant profile(s).`
+    );
+  };
+
+  const handleBulkDisable = () => {
+    const count = selectedIds.size;
+    setBeneficiariesList((prev) =>
+      prev.map((item) => (selectedIds.has(item.id) ? { ...item, status: "Pending" } : item))
+    );
+    toast.success(
+      lang === "ml"
+        ? `${count} അപേക്ഷകരുടെ സ്റ്റാറ്റസ് 'Pending' എന്ന് മാറ്റി.`
+        : `Disabled ${count} selected applicant profile(s).`
+    );
+  };
+
+  const handleBulkAssign = () => {
+    toast.info(
+      lang === "ml"
+        ? `${selectedIds.size} അപേക്ഷകരെ യൂസർക്ക് അസൈൻ ചെയ്യുന്നു.`
+        : `Assigning ${selectedIds.size} applicant profile(s) to user.`
+    );
+  };
+
+  const handleBulkMessage = () => {
+    toast.info(
+      lang === "ml"
+        ? `${selectedIds.size} അപേക്ഷകർക്ക് സന്ദേശം അയയ്ക്കുന്നു.`
+        : `Sending message to ${selectedIds.size} selected applicant profile(s).`
     );
   };
 
@@ -463,93 +513,129 @@ function BeneficiariesPage() {
         
         {/* Top Header Row with Filter & Create New Applicant Buttons on the Right */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 p-4 sm:p-5">
-          <div>
+          <div className="flex flex-wrap items-center gap-3">
             <h2 className="font-display text-base font-bold text-foreground">
               {lang === "ml" ? "അപേക്ഷകരുടെ പട്ടിക" : "Applicants List"}
             </h2>
+
+            {selectedIds.size > 0 && (
+              <div className="flex flex-wrap items-center gap-2.5 bg-white dark:bg-card border border-border/80 rounded-full px-3 py-1 text-xs shadow-2xs animate-in fade-in transition-all">
+                <span className="font-extrabold text-foreground text-[11px]">
+                  {tr(
+                    `${selectedIds.size} of ${filteredBeneficiaries.length} selected`,
+                    `${selectedIds.size} / ${filteredBeneficiaries.length} തിരഞ്ഞെടുത്തു`,
+                  )}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedIds(new Set())}
+                  className="font-bold text-orange-600 dark:text-orange-400 hover:underline cursor-pointer text-[11px]"
+                >
+                  {tr("Deselect All", "എല്ലാം ഒഴിവാക്കുക")}
+                </button>
+                <div className="h-3.5 w-px bg-border mx-0.5" />
+                <button
+                  type="button"
+                  onClick={handleBulkMessage}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-card px-2.5 py-0.5 text-[11px] font-bold text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors"
+                >
+                  <MessageCircle className="h-3.5 w-3.5 text-slate-900 dark:text-slate-100" />
+                  <span>{tr("Message", "സന്ദേശം")}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBulkEnable}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 dark:border-emerald-800 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 cursor-pointer transition-colors"
+                >
+                  <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span>{tr("Enable", "സജീവമാക്കുക")}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBulkDisable}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-800 px-2.5 py-0.5 text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-100 cursor-pointer transition-colors"
+                >
+                  <X className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                  <span>{tr("Disable", "നിർജ്ജീവമാക്കുക")}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBulkExport}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-card px-2.5 py-0.5 text-[11px] font-bold text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors"
+                >
+                  <Download className="h-3.5 w-3.5 text-slate-900 dark:text-slate-100" />
+                  <span>{tr("Export", "എക്സ്പോർട്ട്")}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBulkDelete}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-rose-300 bg-rose-50 dark:bg-rose-950/40 dark:border-rose-800 px-2.5 py-0.5 text-[11px] font-bold text-rose-700 dark:text-rose-300 hover:bg-rose-100 cursor-pointer transition-colors"
+                >
+                  <Trash2 className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
+                  <span>{tr("Delete", "ഡിലീറ്റ് ചെയ്യുക")}</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Action Buttons Row */}
           <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar pb-0.5 max-w-full sm:ml-auto shrink-0">
-            {/* Manage Columns Popover (Desktop) */}
-            <Popover>
-              <PopoverTrigger asChild>
+            {/* Manage Columns Button (Desktop) */}
+            <button
+              type="button"
+              onClick={() => setIsManageColumnsOpen(true)}
+              title={lang === "ml" ? "കോളങ്ങൾ ക്രമീകരിക്കുക" : "Manage columns"}
+              className="hidden md:flex h-8 w-8 items-center justify-center rounded-xl border border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer shrink-0"
+            >
+              <Columns3 className="h-4 w-4" />
+            </button>
+
+            {/* 30 Days Dropdown side by side with Filter Button */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  title={lang === "ml" ? "കോളങ്ങൾ ക്രമീകരിക്കുക" : "Manage columns"}
-                  className="hidden md:flex h-8 w-8 items-center justify-center rounded-xl border border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer shrink-0"
+                  className="flex items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors shrink-0 cursor-pointer shadow-2xs"
                 >
-                  <Columns3 className="h-4 w-4" />
+                  <span>
+                    {timeRange === "today"
+                      ? tr("Today", "ഇന്ന്")
+                      : timeRange === "7days"
+                      ? tr("7 Days", "7 ദിവസങ്ങൾ")
+                      : timeRange === "30days"
+                      ? tr("30 Days", "30 ദിവസങ്ങൾ")
+                      : timeRange === "60days"
+                      ? tr("60 Days", "60 ദിവസങ്ങൾ")
+                      : timeRange === "1year"
+                      ? tr("1 Year", "1 വർഷം")
+                      : tr("All Time", "എല്ലാ സമയവും")}
+                  </span>
+                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
                 </button>
-              </PopoverTrigger>
-              <PopoverContent align="end" className="w-64 p-3 space-y-2.5 shadow-xl border-border">
-                <div className="flex items-center justify-between border-b border-border/80 pb-2">
-                  <h4 className="text-xs font-bold text-foreground">
-                    {lang === "ml" ? "കോളങ്ങൾ കാണിക്കുക / മാറ്റുക" : "Manage Columns"}
-                  </h4>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setVisibleColumns(new Set(BENEFICIARY_COLUMNS.map((c) => c.key)));
-                      setColumnOrder(BENEFICIARY_COLUMNS.map((c) => c.key));
-                    }}
-                    className="text-[10px] font-bold text-primary hover:underline cursor-pointer"
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-36 p-1 text-xs bg-white dark:bg-card border border-border shadow-md rounded-xl z-50">
+                {[
+                  { value: "today", labelEn: "Today", labelMl: "ഇന്ന്" },
+                  { value: "7days", labelEn: "7 Days", labelMl: "7 ദിവസങ്ങൾ" },
+                  { value: "30days", labelEn: "30 Days", labelMl: "30 ദിവസങ്ങൾ" },
+                  { value: "60days", labelEn: "60 Days", labelMl: "60 ദിവസങ്ങൾ" },
+                  { value: "1year", labelEn: "1 Year", labelMl: "1 വർഷം" },
+                  { value: "all", labelEn: "All Time", labelMl: "എല്ലാ സമയവും" },
+                ].map((item) => (
+                  <DropdownMenuItem
+                    key={item.value}
+                    onClick={() => setTimeRange(item.value)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer flex items-center justify-between",
+                      timeRange === item.value ? "bg-primary/10 text-primary font-bold" : "text-foreground hover:bg-muted"
+                    )}
                   >
-                    {lang === "ml" ? "എല്ലാം കാണിക്കുക" : "Show All"}
-                  </button>
-                </div>
-                <p className="text-[10px] text-muted-foreground">
-                  {lang === "ml"
-                    ? "കോളങ്ങൾ ചെക്ക്/അൺചെക്ക് ചെയ്യുക. പൊസിഷൻ മാറ്റാൻ ഡ്രാഗ് ചെയ്യുക."
-                    : "Check to show/hide. Drag handle to reorder columns."}
-                </p>
-                <div className="space-y-1 max-h-64 overflow-y-auto pr-1">
-                  {columnOrder.map((colKey, index) => {
-                    const meta = BENEFICIARY_COLUMNS.find((c) => c.key === colKey);
-                    if (!meta) return null;
-                    const isChecked = visibleColumns.has(colKey);
-                    return (
-                      <div
-                        key={colKey}
-                        draggable
-                        onDragStart={() => handleDragStartColumn(index)}
-                        onDragOver={handleDragOverColumn}
-                        onDrop={(e) => handleDropColumn(e, index)}
-                        className={`flex items-center gap-2 rounded-lg p-1.5 text-xs transition-colors hover:bg-muted/60 ${
-                          draggedColumnIndex === index ? "opacity-40 bg-muted" : ""
-                        }`}
-                      >
-                        <GripVertical className="h-3.5 w-3.5 text-muted-foreground cursor-grab active:cursor-grabbing shrink-0" />
-                        <Checkbox
-                          id={`col-ben-${colKey}`}
-                          checked={isChecked}
-                          onCheckedChange={() => toggleColumn(colKey)}
-                        />
-                        <label
-                          htmlFor={`col-ben-${colKey}`}
-                          className="flex-1 text-xs font-semibold text-foreground cursor-pointer select-none truncate"
-                        >
-                          {lang === "ml" ? meta.ml : meta.en}
-                        </label>
-                      </div>
-                    );
-                  })}
-                </div>
-              </PopoverContent>
-            </Popover>
-
-            <select
-              value={timeRange}
-              onChange={(e) => setTimeRange(e.target.value)}
-              className="h-8 rounded-xl border border-border bg-background px-2.5 py-1 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer shrink-0"
-            >
-              <option value="today">{lang === "ml" ? "ഇന്ന്" : "Today"}</option>
-              <option value="7days">{lang === "ml" ? "7 ദിവസങ്ങൾ" : "7 Days"}</option>
-              <option value="30days">{lang === "ml" ? "30 ദിവസങ്ങൾ" : "30 Days"}</option>
-              <option value="60days">{lang === "ml" ? "60 ദിവസങ്ങൾ" : "60 Days"}</option>
-              <option value="1year">{lang === "ml" ? "1 വർഷം" : "1 Year"}</option>
-              <option value="all">{lang === "ml" ? "എല്ലാ സമയവും" : "All Time"}</option>
-            </select>
+                    <span>{tr(item.labelEn, item.labelMl)}</span>
+                    {timeRange === item.value && <Check className="h-3.5 w-3.5 text-primary" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {/* Filter Dropdown Popover */}
             <DropdownMenu>
@@ -670,44 +756,6 @@ function BeneficiariesPage() {
             </DropdownMenu>
           </div>
         </div>
-
-        {/* Selected Beneficiaries Action Bar */}
-        {selectedIds.size > 0 && (
-          <div className="flex flex-wrap items-center gap-2 border-b border-border/80 bg-primary/[0.06] px-4 py-2.5 sm:px-5">
-            <span className="mr-1 text-xs font-bold text-foreground">
-              {lang === "ml"
-                ? `${selectedIds.size} / ${filteredBeneficiaries.length} തിരഞ്ഞെടുത്തു`
-                : `${selectedIds.size} of ${filteredBeneficiaries.length} selected`}
-            </span>
-            <Button type="button" size="sm" variant="outline" className="cursor-pointer">
-              <UserRoundCheck className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
-              {lang === "ml" ? "അസൈൻ ചെയ്യുക" : "Assign"}
-            </Button>
-            <Button type="button" size="sm" variant="outline" onClick={handleBulkExport} className="cursor-pointer">
-              <Download className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
-              {lang === "ml" ? "എക്സ്പോർട്ട്" : "Export"}
-            </Button>
-            <Button type="button" size="sm" variant="outline" className="cursor-pointer">
-              <MessageCircle className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
-              WhatsApp
-            </Button>
-            <Button type="button" size="sm" variant="outline" className="cursor-pointer">
-              <Mail className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
-              Email
-            </Button>
-            <Button type="button" size="sm" variant="destructive" onClick={handleBulkDelete} className="cursor-pointer">
-              <Trash2 className="h-3.5 w-3.5 mr-1" />
-              {lang === "ml" ? "ഡിലീറ്റ്" : "Delete"}
-            </Button>
-            <button
-              type="button"
-              onClick={() => setSelectedIds(new Set())}
-              className="ml-auto px-2 text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer"
-            >
-              {lang === "ml" ? "ക്ലിയർ ചെയ്യുക" : "Clear"}
-            </button>
-          </div>
-        )}
 
         {/* Data Table View */}
         <div className="overflow-x-auto desktop-hide-scrollbar">
@@ -1062,6 +1110,85 @@ function BeneficiariesPage() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Right Side Popup Sheet for Manage Columns */}
+      <Sheet open={isManageColumnsOpen} onOpenChange={setIsManageColumnsOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-md flex flex-col h-full p-0 gap-0 bg-white border-l border-border z-50">
+          <SheetHeader className="p-5 border-b border-border bg-white text-left space-y-1">
+            <SheetTitle className="text-base font-bold flex items-center gap-2 text-foreground">
+              <Columns3 className="h-5 w-5 text-primary" />
+              <span>{tr("Manage Columns", "കോളങ്ങൾ കൈകാര്യം ചെയ്യുക")}</span>
+            </SheetTitle>
+            <SheetDescription className="text-xs text-muted-foreground">
+              {tr(
+                "Check to show or hide columns. Drag handle to reorder columns in the table.",
+                "കോളങ്ങൾ കാണിക്കുക / മറയ്ക്കുക. പട്ടികയിലെ കോളങ്ങളുടെ ക്രമം മാറ്റാൻ ഡ്രാഗ് ചെയ്യുക."
+              )}
+            </SheetDescription>
+            <div className="pt-2 flex items-center justify-between">
+              <span className="text-xs font-semibold text-muted-foreground">
+                {tr(
+                  `${visibleColumns.size} of ${BENEFICIARY_COLUMNS.length} visible`,
+                  `${visibleColumns.size} / ${BENEFICIARY_COLUMNS.length} കാണിക്കുന്നു`
+                )}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setVisibleColumns(new Set(BENEFICIARY_COLUMNS.map((c) => c.key)));
+                  setColumnOrder(BENEFICIARY_COLUMNS.map((c) => c.key));
+                }}
+                className="text-xs font-bold text-primary hover:underline cursor-pointer"
+              >
+                {tr("Show All", "എല്ലാം കാണിക്കുക")}
+              </button>
+            </div>
+          </SheetHeader>
+
+          <div className="flex-1 overflow-y-auto p-5 space-y-2">
+            {columnOrder.map((colKey, index) => {
+              const meta = BENEFICIARY_COLUMNS.find((c) => c.key === colKey);
+              if (!meta) return null;
+              const isChecked = visibleColumns.has(colKey);
+              return (
+                <div
+                  key={colKey}
+                  draggable
+                  onDragStart={() => handleDragStartColumn(index)}
+                  onDragOver={handleDragOverColumn}
+                  onDrop={(e) => handleDropColumn(e, index)}
+                  className={`flex items-center gap-3 rounded-xl border border-border/70 p-3 text-xs bg-white transition-all hover:border-primary/40 hover:shadow-2xs ${
+                    draggedColumnIndex === index ? "opacity-40 bg-muted" : ""
+                  }`}
+                >
+                  <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab active:cursor-grabbing shrink-0" />
+                  <Checkbox
+                    id={`sheet-col-ben-${colKey}`}
+                    checked={isChecked}
+                    onCheckedChange={() => toggleColumn(colKey)}
+                  />
+                  <label
+                    htmlFor={`sheet-col-ben-${colKey}`}
+                    className="flex-1 text-xs font-bold text-foreground cursor-pointer select-none truncate"
+                  >
+                    {lang === "ml" ? meta.ml : meta.en}
+                  </label>
+                </div>
+              );
+            })}
+          </div>
+
+          <SheetFooter className="p-4 border-t border-border bg-slate-50 flex items-center justify-end gap-2 shrink-0">
+            <Button
+              type="button"
+              onClick={() => setIsManageColumnsOpen(false)}
+              className="w-full sm:w-auto h-9 px-5 text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+            >
+              {tr("Done", "ശരി")}
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

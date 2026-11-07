@@ -15,6 +15,7 @@ import {
   MessageCircle,
   Plus,
   UserRoundCheck,
+  UserPlus,
   Columns3,
   GripVertical,
   MoreVertical,
@@ -32,6 +33,7 @@ import {
   Send,
   CheckCircle2,
   XCircle,
+  X,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -51,6 +53,14 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import { toast } from "sonner";
 import {
   adminApplications,
@@ -419,6 +429,7 @@ function ApplicationsPage() {
     APPLICATION_COLUMNS.map((c) => c.key)
   );
   const [draggedColumnIndex, setDraggedColumnIndex] = useState<number | null>(null);
+  const [isManageColumnsOpen, setIsManageColumnsOpen] = useState(false);
 
   const [viewMode, setViewMode] = useState<"table" | "cards">(() => {
     if (typeof window !== "undefined" && window.innerWidth >= 768) {
@@ -454,6 +465,163 @@ function ApplicationsPage() {
       lang === "ml"
         ? `${count} അപേക്ഷകൾ നീക്കം ചെയ്തു.`
         : `Deleted ${count} selected application(s).`
+    );
+  };
+
+  const handleBulkEnable = () => {
+    const count = selectedIds.size;
+    setApplicationsList((prev) =>
+      prev.map((item) => (selectedIds.has(item.id) ? { ...item, appStatus: "Approved" as ApplicationStatus } : item))
+    );
+    toast.success(
+      lang === "ml"
+        ? `${count} അപേക്ഷകൾ 'Approved' ആക്കി.`
+        : `Enabled ${count} selected application(s).`
+    );
+  };
+
+  const handleBulkDisable = () => {
+    const count = selectedIds.size;
+    setApplicationsList((prev) =>
+      prev.map((item) => (selectedIds.has(item.id) ? { ...item, appStatus: "Rejected" as ApplicationStatus } : item))
+    );
+    toast.success(
+      lang === "ml"
+        ? `${count} അപേക്ഷകൾ 'Rejected' ആക്കി.`
+        : `Disabled ${count} selected application(s).`
+    );
+  };
+
+  const assignableUsersList = useMemo(() => [
+    { id: "u1", name: "Anand V. Nair", nameMl: "ആനന്ദ് വി. നായർ", role: "Booth President", roleMl: "ബൂത്ത് പ്രസിഡന്റ്", location: "Balaramapuram Booth 44, Thiruvananthapuram", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80" },
+    { id: "u2", name: "Neethu R. Menon", nameMl: "നീതു ആർ. മേനോൻ", role: "Secretary", roleMl: "സെക്രട്ടറി", location: "Chathannoor Mandalam, Kollam", avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80" },
+    { id: "u3", name: "Reshma S. Pillai", nameMl: "രേഷ്മ എസ്. പിള്ള", role: "Treasurer", roleMl: "ട്രഷറർ", location: "Thrissur Central, Thrissur", avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80" },
+    { id: "u4", name: "C. Gokuldas", nameMl: "സി. ഗോകുൽദാസ്", role: "Area President", roleMl: "മേഖലാ പ്രസിഡന്റ്", location: "Palakkad, Palakkad", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80" },
+    { id: "u5", name: "Nimisha Subramanian", nameMl: "നിമിഷ സുബ്രഹ്മണ്യൻ", role: "General Secretary", roleMl: "ജനറൽ സെക്രട്ടറി", location: "Ponnani, Malappuram", avatar: "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=150&auto=format&fit=crop&q=80" },
+    { id: "u6", name: "Pranav Krishna", nameMl: "പ്രണവ് കൃഷ്ണ", role: "Karyakarta", roleMl: "കാര്യകർത്താവ്", location: "Vadakara, Kozhikode", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80" },
+    { id: "u7", name: "C. Radhakrishnan", nameMl: "സി. രാധാകൃഷ്ണൻ", role: "District President", roleMl: "ജില്ലാ പ്രസിഡന്റ്", location: "Kannur, Kannur", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80" },
+    { id: "u8", name: "M. L. Anjana", nameMl: "എം. എൽ. അഞ്ജന", role: "Vice President", roleMl: "വൈസ് പ്രസിഡന്റ്", location: "Alappuzha, Alappuzha", avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80" },
+    { id: "u9", name: "Anitha K.", nameMl: "അനിത കെ.", role: "Senior Superintendent", roleMl: "സീനിയർ സൂപ്പർവൈസർ", location: "District Office, Thiruvananthapuram", avatar: "https://images.unsplash.com/photo-1548142813-c348350df52b?w=150&auto=format&fit=crop&q=80" },
+    { id: "u10", name: "Rahul M.", nameMl: "രാഹുൽ എം.", role: "District Coordinator", roleMl: "ഡിസ്ട്രിക്റ്റ് കോർഡിനേറ്റർ", location: "Welfare Cell, Ernakulam", avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80" },
+  ], []);
+
+  const [isAssignDrawerOpen, setIsAssignDrawerOpen] = useState(false);
+  const [selectedAssignUserIds, setSelectedAssignUserIds] = useState<Set<string>>(
+    new Set(["u1", "u2", "u3"])
+  );
+  const [assignUserSearch, setAssignUserSearch] = useState<string>("");
+  const [assignTargetAppId, setAssignTargetAppId] = useState<string | null>(null);
+
+  const [drawerSelectedDesignations, setDrawerSelectedDesignations] = useState<string[]>([]);
+  const [drawerSelectedRegions, setDrawerSelectedRegions] = useState<string[]>([]);
+  const [drawerSelectedOrgDistricts, setDrawerSelectedOrgDistricts] = useState<string[]>([]);
+  const [drawerSelectedMandalams, setDrawerSelectedMandalams] = useState<string[]>([]);
+  const [drawerSelectedAreas, setDrawerSelectedAreas] = useState<string[]>([]);
+  const [drawerSelectedBooths, setDrawerSelectedBooths] = useState<string[]>([]);
+
+  const drawerActiveFilterCount =
+    drawerSelectedDesignations.length +
+    drawerSelectedRegions.length +
+    drawerSelectedOrgDistricts.length +
+    drawerSelectedMandalams.length +
+    drawerSelectedAreas.length +
+    drawerSelectedBooths.length;
+
+  const availDesignations = useMemo(() => ["Booth President", "Secretary", "Treasurer", "Area President", "General Secretary", "Karyakarta", "District President", "Vice President"], []);
+  const availRegions = useMemo(() => ["South Zone", "Central Zone", "North Zone"], []);
+  const availOrgDistricts = useMemo(() => ["Thiruvananthapuram", "Kollam", "Thrissur", "Palakkad", "Malappuram", "Kozhikode", "Kannur", "Alappuzha"], []);
+  const availMandalams = useMemo(() => ["Balaramapuram", "Chathannoor", "Thrissur Central", "Palakkad City", "Ponnani", "Vadakara", "Kannur Urban"], []);
+  const availAreas = useMemo(() => ["Area 1", "Area 2", "Area 3"], []);
+  const availBooths = useMemo(() => ["Booth 44", "Booth 12", "Booth 88"], []);
+
+  const filteredAssignableUsers = useMemo(() => {
+    let list = assignableUsersList;
+    if (drawerSelectedDesignations.length > 0) {
+      list = list.filter((u) => drawerSelectedDesignations.includes(u.role));
+    }
+    if (assignUserSearch.trim()) {
+      const q = assignUserSearch.toLowerCase();
+      list = list.filter(
+        (u) =>
+          u.name.toLowerCase().includes(q) ||
+          u.role.toLowerCase().includes(q) ||
+          u.location.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [assignableUsersList, assignUserSearch, drawerSelectedDesignations]);
+
+  const toggleSelectUser = (id: string) => {
+    setSelectedAssignUserIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleToggleSelectAllUsers = () => {
+    if (selectedAssignUserIds.size === filteredAssignableUsers.length) {
+      setSelectedAssignUserIds(new Set());
+    } else {
+      setSelectedAssignUserIds(new Set(filteredAssignableUsers.map((u) => u.id)));
+    }
+  };
+
+  const handleBulkAssign = () => {
+    setAssignTargetAppId(null);
+    setAssignUserSearch("");
+    setSelectedAssignUserIds(new Set(["u1", "u2", "u3"]));
+    setIsAssignDrawerOpen(true);
+  };
+
+  const handleConfirmAssign = () => {
+    if (selectedAssignUserIds.size === 0) {
+      toast.error(lang === "ml" ? "ദയവായി കുറഞ്ഞത് ഒരു ഉപയോക്താവിനെ തിരഞ്ഞെടുക്കുക." : "Please select at least one user.");
+      return;
+    }
+
+    const assignedUsers = assignableUsersList.filter((u) => selectedAssignUserIds.has(u.id));
+    const primaryUser = assignedUsers[0]?.name || "Assigned User";
+    const primaryDesig = assignedUsers[0]?.role || "Officer";
+
+    if (assignTargetAppId) {
+      setApplicationsList((prev) =>
+        prev.map((item) =>
+          item.id === assignTargetAppId
+            ? { ...item, reviewer: primaryUser, reviewerDesignation: primaryDesig }
+            : item
+        )
+      );
+      toast.success(
+        lang === "ml"
+          ? `'${primaryUser}' അപേക്ഷയ്ക്ക് അസൈൻ ചെയ്തു.`
+          : `Assigned application to ${primaryUser}.`
+      );
+    } else {
+      const count = selectedIds.size > 0 ? selectedIds.size : applicationsList.length;
+      setApplicationsList((prev) =>
+        prev.map((item) =>
+          selectedIds.has(item.id) || selectedIds.size === 0
+            ? { ...item, reviewer: primaryUser, reviewerDesignation: primaryDesig }
+            : item
+        )
+      );
+      toast.success(
+        lang === "ml"
+          ? `${count} അപേക്ഷകൾ '${primaryUser}' ന് അസൈൻ ചെയ്തു.`
+          : `Assigned ${count} application(s) to ${primaryUser}.`
+      );
+    }
+
+    setIsAssignDrawerOpen(false);
+  };
+
+  const handleBulkMessage = () => {
+    toast.info(
+      lang === "ml"
+        ? `${selectedIds.size} അപേക്ഷകർക്ക് സന്ദേശം അയയ്ക്കുന്നു.`
+        : `Sending message to ${selectedIds.size} selected applicant(s).`
     );
   };
 
@@ -665,127 +833,93 @@ function ApplicationsPage() {
         
         {/* Top Header Row with Title & Filter / Actions */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 pb-4">
-          <div>
+          <div className="flex flex-wrap items-center gap-3">
             <h2 className="font-display text-base font-bold text-foreground">
               {lang === "ml" ? "അപേക്ഷകളുടെ ലിസ്റ്റ്" : "Applications List"}
             </h2>
+
+            {selectedIds.size > 0 && (
+              <div className="flex flex-wrap items-center gap-2.5 bg-white dark:bg-card border border-border/80 rounded-full px-3 py-1 text-xs shadow-2xs animate-in fade-in transition-all">
+                <span className="font-extrabold text-foreground text-[11px]">
+                  {tr(
+                    `${selectedIds.size} of ${filtered.length} selected`,
+                    `${selectedIds.size} / ${filtered.length} തിരഞ്ഞെടുത്തു`,
+                  )}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedIds(new Set())}
+                  className="font-bold text-orange-600 dark:text-orange-400 hover:underline cursor-pointer text-[11px]"
+                >
+                  {tr("Deselect All", "എല്ലാം ഒഴിവാക്കുക")}
+                </button>
+                <div className="h-3.5 w-px bg-border mx-0.5" />
+                <button
+                  type="button"
+                  onClick={handleBulkAssign}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-card px-2.5 py-0.5 text-[11px] font-bold text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors"
+                >
+                  <UserRoundCheck className="h-3.5 w-3.5 text-slate-900 dark:text-slate-100" />
+                  <span>{tr("Assign To User", "അസൈൻ ചെയ്യുക")}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBulkMessage}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-card px-2.5 py-0.5 text-[11px] font-bold text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors"
+                >
+                  <MessageCircle className="h-3.5 w-3.5 text-slate-900 dark:text-slate-100" />
+                  <span>{tr("Message", "സന്ദേശം")}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBulkEnable}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 dark:border-emerald-800 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 cursor-pointer transition-colors"
+                >
+                  <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span>{tr("Enable", "സജീവമാക്കുക")}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBulkDisable}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-800 px-2.5 py-0.5 text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-100 cursor-pointer transition-colors"
+                >
+                  <X className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                  <span>{tr("Disable", "നിർജ്ജീവമാക്കുക")}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBulkExport}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-card px-2.5 py-0.5 text-[11px] font-bold text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors"
+                >
+                  <Download className="h-3.5 w-3.5 text-slate-900 dark:text-slate-100" />
+                  <span>{tr("Export", "എക്സ്പോർട്ട്")}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBulkDelete}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-rose-300 bg-rose-50 dark:bg-rose-950/40 dark:border-rose-800 px-2.5 py-0.5 text-[11px] font-bold text-rose-700 dark:text-rose-300 hover:bg-rose-100 cursor-pointer transition-colors"
+                >
+                  <Trash2 className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
+                  <span>{tr("Delete", "ഡിലീറ്റ് ചെയ്യുക")}</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Filter, View Mode, Columns & Actions on the Right */}
           <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar pb-0.5 max-w-full sm:ml-auto shrink-0">
-            {/* View Mode Toggle Switch */}
-            <div className="flex items-center rounded-xl border border-border bg-background p-0.5 shrink-0">
-              <button
-                type="button"
-                onClick={() => setViewMode("table")}
-                className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
-                  viewMode === "table"
-                    ? "bg-primary text-primary-foreground shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                title={lang === "ml" ? "പട്ടിക വ്യൂ" : "Table View"}
-              >
-                <List className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">{lang === "ml" ? "പട്ടിക" : "List"}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("cards")}
-                className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
-                  viewMode === "cards"
-                    ? "bg-primary text-primary-foreground shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                title={lang === "ml" ? "കാർഡ് വ്യൂ" : "Card View"}
-              >
-                <LayoutGrid className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">{lang === "ml" ? "കാർഡ്" : "Cards"}</span>
-              </button>
-            </div>
 
-            {/* Manage Columns Popover (Desktop) */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  title={lang === "ml" ? "കോളങ്ങൾ ക്രമീകരിക്കുക" : "Manage columns"}
-                  className="hidden md:flex h-8 w-8 items-center justify-center rounded-xl border border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer shrink-0"
-                >
-                  <Columns3 className="h-4 w-4" />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent align="end" className="w-64 p-3 space-y-2.5 shadow-xl border-border">
-                <div className="flex items-center justify-between border-b border-border/80 pb-2">
-                  <h4 className="text-xs font-bold text-foreground">
-                    {lang === "ml" ? "കോളങ്ങൾ കാണിക്കുക / മാറ്റുക" : "Manage Columns"}
-                  </h4>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setVisibleColumns(new Set(APPLICATION_COLUMNS.map((c) => c.key)));
-                      setColumnOrder(APPLICATION_COLUMNS.map((c) => c.key));
-                    }}
-                    className="text-[10px] font-bold text-primary hover:underline cursor-pointer"
-                  >
-                    {lang === "ml" ? "എല്ലാം കാണിക്കുക" : "Show All"}
-                  </button>
-                </div>
-                <p className="text-[10px] text-muted-foreground">
-                  {lang === "ml"
-                    ? "കോളങ്ങൾ ചെക്ക്/അൺചെക്ക് ചെയ്യുക. പൊസിഷൻ മാറ്റാൻ ഡ്രാഗ് ചെയ്യുക."
-                    : "Check to show/hide. Drag handle to reorder columns."}
-                </p>
-                <div className="space-y-1 max-h-64 overflow-y-auto pr-1">
-                  {columnOrder.map((colKey, index) => {
-                    const meta = APPLICATION_COLUMNS.find((c) => c.key === colKey);
-                    if (!meta) return null;
-                    const isChecked = visibleColumns.has(colKey);
-                    return (
-                      <div
-                        key={colKey}
-                        draggable
-                        onDragStart={() => handleDragStartColumn(index)}
-                        onDragOver={handleDragOverColumn}
-                        onDrop={(e) => handleDropColumn(e, index)}
-                        className={`flex items-center gap-2 rounded-lg p-1.5 text-xs transition-colors hover:bg-muted/60 ${
-                          draggedColumnIndex === index ? "opacity-40 bg-muted" : ""
-                        }`}
-                      >
-                        <GripVertical className="h-3.5 w-3.5 text-muted-foreground cursor-grab active:cursor-grabbing shrink-0" />
-                        <Checkbox
-                          id={`col-app-${colKey}`}
-                          checked={isChecked}
-                          onCheckedChange={() => toggleColumn(colKey)}
-                        />
-                        <label
-                          htmlFor={`col-app-${colKey}`}
-                          className="flex-1 text-xs font-semibold text-foreground cursor-pointer select-none truncate"
-                        >
-                          {lang === "ml" ? meta.ml : meta.en}
-                        </label>
-                      </div>
-                    );
-                  })}
-                </div>
-              </PopoverContent>
-            </Popover>
-
-            {/* Date Range Dropdown near Filter Button */}
-            <select
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-              className="h-8 rounded-xl border border-border bg-background px-3 text-xs font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer shrink-0"
-              title={lang === "ml" ? "തീയതി ക്രമീകരണം" : "Date Range"}
+            {/* Manage Columns Button (Desktop) */}
+            <button
+              type="button"
+              onClick={() => setIsManageColumnsOpen(true)}
+              title={lang === "ml" ? "കോളങ്ങൾ ക്രമീകരിക്കുക" : "Manage columns"}
+              className="hidden md:flex h-8 w-8 items-center justify-center rounded-xl border border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer shrink-0"
             >
-              <option value="all">{lang === "ml" ? "എല്ലാ തീയതികളും" : "All Time"}</option>
-              <option value="today">{lang === "ml" ? "ഇന്ന്" : "Today"}</option>
-              <option value="week">{lang === "ml" ? "കഴിഞ്ഞ 1 ആഴ്ച" : "Last Week"}</option>
-              <option value="month">{lang === "ml" ? "കഴിഞ്ഞ 1 മാസം" : "Last Month"}</option>
-              <option value="6months">{lang === "ml" ? "കഴിഞ്ഞ 6 മാസം" : "Last 6 Months"}</option>
-              <option value="year">{lang === "ml" ? "കഴിഞ്ഞ 1 വർഷം" : "Last Year"}</option>
-            </select>
+              <Columns3 className="h-4 w-4" />
+            </button>
 
-            {/* Filter Button with Multi-Select Dropdowns Inside Filter Popover */}
+            {/* Filter Button with Multi-Select Dropdowns & Date Range Inside Filter Popover */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
@@ -831,6 +965,25 @@ function ApplicationsPage() {
                       {tr("Reset All", "എല്ലാം റീസെറ്റ് ചെയ്യുക")}
                     </button>
                   )}
+                </div>
+
+                {/* Date Range Filter */}
+                <div className="space-y-1">
+                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                    {tr("DATE RANGE", "തീയതി")}
+                  </div>
+                  <select
+                    value={dateFilter}
+                    onChange={(e) => setDateFilter(e.target.value)}
+                    className="w-full h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer"
+                  >
+                    <option value="all">{lang === "ml" ? "എല്ലാ തീയതികളും (All Time)" : "All Time"}</option>
+                    <option value="today">{lang === "ml" ? "ഇന്ന്" : "Today"}</option>
+                    <option value="week">{lang === "ml" ? "കഴിഞ്ഞ 1 ആഴ്ച" : "Last Week"}</option>
+                    <option value="month">{lang === "ml" ? "കഴിഞ്ഞ 1 മാസം" : "Last Month"}</option>
+                    <option value="6months">{lang === "ml" ? "കഴിഞ്ഞ 6 മാസം" : "Last 6 Months"}</option>
+                    <option value="year">{lang === "ml" ? "കഴിഞ്ഞ 1 വർഷം" : "Last Year"}</option>
+                  </select>
                 </div>
 
                 {/* Status Filter */}
@@ -903,18 +1056,33 @@ function ApplicationsPage() {
                 </Link>
               </Button>
 
-              {/* 3-Dot Menu for Import & Export Near New Application Button */}
+              {/* 3-Dot Menu for View Mode, Import & Export Near New Application Button */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
                     className="h-8 w-8 inline-flex items-center justify-center rounded-xl border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer shrink-0"
-                    title={lang === "ml" ? "കൂടുതൽ" : "Import & Export"}
+                    title={lang === "ml" ? "കൂടുതൽ ഓപ്ഷനുകൾ" : "More options"}
                   >
                     <MoreVertical className="h-4 w-4" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-44 p-1 space-y-0.5 shadow-xl border-border">
+                <DropdownMenuContent align="end" className="w-48 p-1 space-y-0.5 shadow-xl border-border">
+                  <DropdownMenuItem
+                    onClick={() => setViewMode("table")}
+                    className={cn("cursor-pointer text-xs font-semibold", viewMode === "table" && "bg-muted font-bold text-primary")}
+                  >
+                    <List className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+                    {lang === "ml" ? "ലിസ്റ്റ് വ്യൂ" : "List View"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setViewMode("cards")}
+                    className={cn("cursor-pointer text-xs font-semibold", viewMode === "cards" && "bg-muted font-bold text-primary")}
+                  >
+                    <LayoutGrid className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+                    {lang === "ml" ? "കാർഡ് വ്യൂ" : "Card View"}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={() => toast.info(lang === "ml" ? "ഇംപോർട്ട് ഫീച്ചർ തയ്യാറാകുന്നു" : "Import feature triggered")}
                     className="cursor-pointer text-xs font-semibold"
@@ -934,44 +1102,6 @@ function ApplicationsPage() {
             </div>
           </div>
         </div>
-
-        {/* Selected Applications Action Bar */}
-        {selectedIds.size > 0 && (
-          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-primary/20 bg-primary/[0.06] p-2.5">
-            <span className="mr-1 text-xs font-bold text-foreground">
-              {lang === "ml"
-                ? `${selectedIds.size} / ${filtered.length} തിരഞ്ഞെടുത്തു`
-                : `${selectedIds.size} of ${filtered.length} selected`}
-            </span>
-            <Button type="button" size="sm" variant="outline" className="cursor-pointer">
-              <UserRoundCheck className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
-              {lang === "ml" ? "അസൈൻ ചെയ്യുക" : "Assign"}
-            </Button>
-            <Button type="button" size="sm" variant="outline" onClick={handleBulkExport} className="cursor-pointer">
-              <Download className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
-              {lang === "ml" ? "എക്സ്പോർട്ട്" : "Export"}
-            </Button>
-            <Button type="button" size="sm" variant="outline" className="cursor-pointer">
-              <MessageCircle className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
-              WhatsApp
-            </Button>
-            <Button type="button" size="sm" variant="outline" className="cursor-pointer">
-              <Mail className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
-              Email
-            </Button>
-            <Button type="button" size="sm" variant="destructive" onClick={handleBulkDelete} className="cursor-pointer">
-              <Trash2 className="h-3.5 w-3.5 mr-1" />
-              {lang === "ml" ? "ഡിലീറ്റ്" : "Delete"}
-            </Button>
-            <button
-              type="button"
-              onClick={() => setSelectedIds(new Set())}
-              className="ml-auto px-2 text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer"
-            >
-              {lang === "ml" ? "ക്ലിയർ ചെയ്യുക" : "Clear"}
-            </button>
-          </div>
-        )}
 
         {/* Cards View */}
         {viewMode === "cards" && (
@@ -1269,13 +1399,13 @@ function ApplicationsPage() {
                                     <DropdownMenuSub>
                                       <DropdownMenuSubTrigger className="cursor-pointer text-xs font-semibold">
                                         <UserCheck className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-                                        {lang === "ml" ? "മറ്റൊരാൾക്ക് അസൈൻ ചെയ്യുക" : "Assign to Other User"}
+                                        {lang === "ml" ? "മറ്റൊരാൾക്ക് അസൈൻ ചെയ്യുക" : "Assign to User"}
                                       </DropdownMenuSubTrigger>
                                       <DropdownMenuSubContent className="w-56 p-1">
                                         {applicationReviewers.map((rev) => (
                                           <DropdownMenuItem
                                             key={rev}
-                                            onClick={() => handleAssignUser(record.id, rev)}
+                                            onClick={() => { setAssignTargetAppId(record.id); setSelectedAssignOfficer(rev); setAssignUserSearch(""); setIsAssignDrawerOpen(true); }}
                                             className={`cursor-pointer text-xs font-semibold ${record.reviewer === rev ? "bg-accent font-bold" : ""}`}
                                           >
                                             {rev}
@@ -1404,6 +1534,313 @@ function ApplicationsPage() {
           </Dialog>
         )}
 
+        {/* Right Side Popup Sheet for Assigning User */}
+        <Sheet open={isAssignDrawerOpen} onOpenChange={setIsAssignDrawerOpen}>
+          <SheetContent side="right" className="w-full sm:max-w-md flex flex-col h-full p-0 gap-0 bg-white border-l border-border z-50">
+            <SheetHeader className="p-5 border-b border-border bg-white text-left space-y-1">
+              <SheetTitle className="text-base font-bold flex items-center gap-2 text-foreground">
+                <UserPlus className="h-5 w-5 text-primary" />
+                <span>
+                  {tr(
+                    'Assign Users to "Admin"',
+                    '"Admin" റോളിലേക്ക് ഉപയോക്താക്കളെ അസൈൻ ചെയ്യുക'
+                  )}
+                </span>
+              </SheetTitle>
+              <SheetDescription className="text-xs text-muted-foreground">
+                {tr(
+                  "Select desktop users to assign this role. Multi-selection enabled.",
+                  "ഈ റോൾ നൽകാനായി ഉപയോക്താക്കളെ തിരഞ്ഞെടുക്കുക (ഒന്നിലധികം പേരെ തിരഞ്ഞെടുക്കാം)."
+                )}
+              </SheetDescription>
+
+              <div className="relative mt-3 flex items-center gap-2 pt-1">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    type="text"
+                    value={assignUserSearch}
+                    onChange={(e) => setAssignUserSearch(e.target.value)}
+                    placeholder={tr(
+                      "Search users by name or designation...",
+                      "പേരിലോ തസ്തികയിലോ തിരയുക..."
+                    )}
+                    className="h-9 w-full rounded-lg border border-border bg-white pl-9 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+                  />
+                </div>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className={cn(
+                        "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border px-3 text-xs font-semibold transition-colors cursor-pointer",
+                        drawerActiveFilterCount > 0
+                          ? "border-primary bg-primary/10 text-primary font-bold"
+                          : "border-border bg-background text-foreground hover:bg-muted"
+                      )}
+                    >
+                      <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span>{tr("Filter", "ഫിൽട്ടർ")}</span>
+                      {drawerActiveFilterCount > 0 && (
+                        <span className="ml-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
+                          {drawerActiveFilterCount}
+                        </span>
+                      )}
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-72 p-3 text-xs space-y-3 max-h-96 overflow-y-auto z-50 bg-white border border-border shadow-xl rounded-xl">
+                    <div className="flex items-center justify-between pb-1.5 border-b border-border">
+                      <span className="font-bold text-foreground text-xs">{tr("Filter Users", "ഉപയോക്താക്കളെ ഫിൽട്ടർ ചെയ്യുക")}</span>
+                      {drawerActiveFilterCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDrawerSelectedDesignations([]);
+                            setDrawerSelectedRegions([]);
+                            setDrawerSelectedOrgDistricts([]);
+                            setDrawerSelectedMandalams([]);
+                            setDrawerSelectedAreas([]);
+                            setDrawerSelectedBooths([]);
+                          }}
+                          className="text-[11px] font-semibold text-primary hover:underline cursor-pointer"
+                        >
+                          {tr("Reset All", "റീസെറ്റ് ചെയ്യുക")}
+                        </button>
+                      )}
+                    </div>
+
+                    <FilterDropdownSelector
+                      title={tr("Designation", "തസ്തിക")}
+                      placeholder={tr("Select Designation", "തസ്തിക തിരഞ്ഞെടുക്കുക")}
+                      options={availDesignations}
+                      selectedValues={drawerSelectedDesignations}
+                      onChange={setDrawerSelectedDesignations}
+                      tr={tr}
+                    />
+
+                    <FilterDropdownSelector
+                      title={tr("Region", "മേഖല")}
+                      placeholder={tr("Select Region", "മേഖല തിരഞ്ഞെടുക്കുക")}
+                      options={availRegions}
+                      selectedValues={drawerSelectedRegions}
+                      onChange={setDrawerSelectedRegions}
+                      tr={tr}
+                    />
+
+                    <FilterDropdownSelector
+                      title={tr("Org District", "സംഘടനാ ജില്ല")}
+                      placeholder={tr("Select Org District", "സംഘടനാ ജില്ല തിരഞ്ഞെടുക്കുക")}
+                      options={availOrgDistricts}
+                      selectedValues={drawerSelectedOrgDistricts}
+                      onChange={setDrawerSelectedOrgDistricts}
+                      tr={tr}
+                    />
+
+                    <FilterDropdownSelector
+                      title={tr("Mandalam", "മണ്ഡലം")}
+                      placeholder={tr("Select Mandalam", "മണ്ഡലം തിരഞ്ഞെടുക്കുക")}
+                      options={availMandalams}
+                      selectedValues={drawerSelectedMandalams}
+                      onChange={setDrawerSelectedMandalams}
+                      tr={tr}
+                    />
+
+                    <FilterDropdownSelector
+                      title={tr("Area", "ഏരിയ")}
+                      placeholder={tr("Select Area", "ഏരിയ തിരഞ്ഞെടുക്കുക")}
+                      options={availAreas}
+                      selectedValues={drawerSelectedAreas}
+                      onChange={setDrawerSelectedAreas}
+                      tr={tr}
+                    />
+
+                    <FilterDropdownSelector
+                      title={tr("Booth", "ബൂത്ത്")}
+                      placeholder={tr("Select Booth", "ബൂത്ത് തിരഞ്ഞെടുക്കുക")}
+                      options={availBooths}
+                      selectedValues={drawerSelectedBooths}
+                      onChange={setDrawerSelectedBooths}
+                      tr={tr}
+                    />
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </SheetHeader>
+
+            <div className="flex items-center justify-between px-5 py-2.5 bg-white border-b border-border text-xs shrink-0">
+              <span className="font-semibold text-muted-foreground">
+                {tr(
+                  `${selectedAssignUserIds.size} of ${filteredAssignableUsers.length} users selected`,
+                  `${selectedAssignUserIds.size} / ${filteredAssignableUsers.length} ഉപയോക്താക്കൾ`
+                )}
+              </span>
+              <button
+                type="button"
+                onClick={handleToggleSelectAllUsers}
+                className="text-primary font-bold hover:underline cursor-pointer text-xs"
+              >
+                {selectedAssignUserIds.size === filteredAssignableUsers.length
+                  ? tr("Deselect All", "എല്ലാം ഒഴിവാക്കുക")
+                  : tr("Select All", "എല്ലാം തിരഞ്ഞെടുക്കുക")}
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-white">
+              {filteredAssignableUsers.length === 0 ? (
+                <div className="py-10 text-center text-xs text-muted-foreground">
+                  {tr("No matching users found.", "ഉപയോക്താക്കളെ കണ്ടെത്തിയില്ല.")}
+                </div>
+              ) : (
+                filteredAssignableUsers.map((user) => {
+                  const isChecked = selectedAssignUserIds.has(user.id);
+                  return (
+                    <div
+                      key={user.id}
+                      onClick={() => toggleSelectUser(user.id)}
+                      className={cn(
+                        "flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer select-none",
+                        isChecked
+                          ? "border-primary/50 bg-white shadow-2xs ring-1 ring-primary/20"
+                          : "border-border/60 bg-white hover:bg-slate-50/60"
+                      )}
+                    >
+                      <Checkbox
+                        checked={isChecked}
+                        onCheckedChange={() => toggleSelectUser(user.id)}
+                        className="pointer-events-none"
+                      />
+                      {user.avatar ? (
+                        <img
+                          src={user.avatar}
+                          alt={user.name}
+                          className="h-8 w-8 rounded-full object-cover shrink-0"
+                        />
+                      ) : (
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 font-bold text-slate-700 text-xs">
+                          {user.name.charAt(0)}
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-xs text-foreground truncate">
+                          {lang === "ml" ? user.nameMl || user.name : user.name}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          {lang === "ml" ? user.roleMl || user.role : user.role}
+                          {user.location && (
+                            <span className="text-muted-foreground/80 font-medium">
+                              {" • "}
+                              {user.location}
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            <div className="p-4 border-t border-border bg-white flex items-center justify-end gap-2 shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsAssignDrawerOpen(false)}
+                className="h-9 px-3.5 text-xs font-semibold cursor-pointer bg-white"
+              >
+                {tr("Skip", "ഒഴിവാക്കുക")}
+              </Button>
+              <Button
+                type="button"
+                onClick={handleConfirmAssign}
+                disabled={selectedAssignUserIds.size === 0}
+                className="h-9 px-4 text-xs font-bold gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer disabled:opacity-50"
+              >
+                <Check className="h-3.5 w-3.5" />
+                {tr("Assign & Save", "അസൈൻ ചെയ്ത് സേവ് ചെയ്യുക")}
+              </Button>
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        {/* Right Side Popup Sheet for Manage Columns */}
+        <Sheet open={isManageColumnsOpen} onOpenChange={setIsManageColumnsOpen}>
+          <SheetContent side="right" className="w-full sm:max-w-md flex flex-col h-full p-0 gap-0 bg-white border-l border-border z-50">
+            <SheetHeader className="p-5 border-b border-border bg-white text-left space-y-1">
+              <SheetTitle className="text-base font-bold flex items-center gap-2 text-foreground">
+                <Columns3 className="h-5 w-5 text-primary" />
+                <span>{tr("Manage Columns", "കോളങ്ങൾ കൈകാര്യം ചെയ്യുക")}</span>
+              </SheetTitle>
+              <SheetDescription className="text-xs text-muted-foreground">
+                {tr(
+                  "Check to show or hide columns. Drag handle to reorder columns in the table.",
+                  "കോളങ്ങൾ കാണിക്കുക / മറയ്ക്കുക. പട്ടികയിലെ കോളങ്ങളുടെ ക്രമം മാറ്റാൻ ഡ്രാഗ് ചെയ്യുക."
+                )}
+              </SheetDescription>
+              <div className="pt-2 flex items-center justify-between">
+                <span className="text-xs font-semibold text-muted-foreground">
+                  {tr(
+                    `${visibleColumns.size} of ${APPLICATION_COLUMNS.length} visible`,
+                    `${visibleColumns.size} / ${APPLICATION_COLUMNS.length} കാണിക്കുന്നു`
+                  )}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setVisibleColumns(new Set(APPLICATION_COLUMNS.map((c) => c.key)));
+                    setColumnOrder(APPLICATION_COLUMNS.map((c) => c.key));
+                  }}
+                  className="text-xs font-bold text-primary hover:underline cursor-pointer"
+                >
+                  {tr("Show All", "എല്ലാം കാണിക്കുക")}
+                </button>
+              </div>
+            </SheetHeader>
+
+            <div className="flex-1 overflow-y-auto p-5 space-y-2">
+              {columnOrder.map((colKey, index) => {
+                const meta = APPLICATION_COLUMNS.find((c) => c.key === colKey);
+                if (!meta) return null;
+                const isChecked = visibleColumns.has(colKey);
+                return (
+                  <div
+                    key={colKey}
+                    draggable
+                    onDragStart={() => handleDragStartColumn(index)}
+                    onDragOver={handleDragOverColumn}
+                    onDrop={(e) => handleDropColumn(e, index)}
+                    className={`flex items-center gap-3 rounded-xl border border-border/70 p-3 text-xs bg-white transition-all hover:border-primary/40 hover:shadow-2xs ${
+                      draggedColumnIndex === index ? "opacity-40 bg-muted" : ""
+                    }`}
+                  >
+                    <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab active:cursor-grabbing shrink-0" />
+                    <Checkbox
+                      id={`sheet-col-app-${colKey}`}
+                      checked={isChecked}
+                      onCheckedChange={() => toggleColumn(colKey)}
+                    />
+                    <label
+                      htmlFor={`sheet-col-app-${colKey}`}
+                      className="flex-1 text-xs font-bold text-foreground cursor-pointer select-none truncate"
+                    >
+                      {lang === "ml" ? meta.ml : meta.en}
+                    </label>
+                  </div>
+                );
+              })}
+            </div>
+
+            <SheetFooter className="p-4 border-t border-border bg-slate-50 flex items-center justify-end gap-2 shrink-0">
+              <Button
+                type="button"
+                onClick={() => setIsManageColumnsOpen(false)}
+                className="w-full sm:w-auto h-9 px-5 text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+              >
+                {tr("Done", "ശരി")}
+              </Button>
+            </SheetFooter>
+          </SheetContent>
+        </Sheet>
       </div>
 
       {/* Mobile Sticky Floating Plus Button */}

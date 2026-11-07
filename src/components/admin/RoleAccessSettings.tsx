@@ -27,6 +27,7 @@ import {
   SlidersHorizontal,
   Trash2,
   Upload,
+  UserCheck,
   UserCog,
   UserPlus,
   Users,
@@ -34,6 +35,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { OrganisationalChart } from "./OrganisationalChart";
+import { UserChart } from "./UserChart";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -51,6 +53,7 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
+  SheetFooter,
 } from "@/components/ui/sheet";
 import {
   DropdownMenu,
@@ -561,7 +564,7 @@ export function RoleAccessSettings({
   const [locationSubTab, setLocationSubTab] = useState<
     "org-levels" | "region" | "org-district" | "mandalam" | "area" | "booth"
   >("org-levels");
-  const [locationViewMode, setLocationViewMode] = useState<"list" | "chart">("list");
+  const [locationViewMode, setLocationViewMode] = useState<"list" | "chart" | "user-chart">("list");
 
   useEffect(() => {
     setActiveTab(defaultTab);
@@ -1698,6 +1701,7 @@ export function RoleAccessSettings({
   ]);
 
   const [draggedRoleColumnIndex, setDraggedRoleColumnIndex] = useState<number | null>(null);
+  const [isManageColumnsOpen, setIsManageColumnsOpen] = useState(false);
 
   const handleDragStartRoleColumn = (index: number) => {
     setDraggedRoleColumnIndex(index);
@@ -2378,40 +2382,204 @@ export function RoleAccessSettings({
                   <Network className="h-3.5 w-3.5" />
                   <span>{tr("Organisational Chart", "സംഘടനാ ചാർട്ട്")}</span>
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setLocationViewMode("user-chart")}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition-all cursor-pointer",
+                    locationViewMode === "user-chart"
+                      ? "bg-primary text-primary-foreground font-extrabold shadow-2xs"
+                      : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                  )}
+                >
+                  <UserCheck className="h-3.5 w-3.5" />
+                  <span>{tr("User Chart", "യൂസർ ചാർട്ട്")}</span>
+                </button>
               </div>
             </div>
           ) : activeTab === "designations" ? (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-3">
               <h2 className="text-sm font-extrabold text-foreground px-1">
                 {tr(`Designations (${designationsList.length})`, `തസ്തികകൾ (${designationsList.length})`)}
               </h2>
+
+              {selectedDesignationIds.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2.5 bg-white dark:bg-card border border-border/80 rounded-full px-3 py-1 text-xs shadow-2xs animate-in fade-in transition-all">
+                  <span className="font-extrabold text-foreground text-[11px]">
+                    {tr(
+                      `${selectedDesignationIds.length} of ${filteredDesignations.length} selected`,
+                      `${selectedDesignationIds.length} / ${filteredDesignations.length} തിരഞ്ഞെടുത്തു`,
+                    )}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDesignationIds([])}
+                    className="font-bold text-orange-600 dark:text-orange-400 hover:underline cursor-pointer text-[11px]"
+                  >
+                    {tr("Deselect All", "എല്ലാം ഒഴിവാക്കുക")}
+                  </button>
+                  <div className="h-3.5 w-px bg-border mx-0.5" />
+                  <button
+                    type="button"
+                    onClick={handleBulkEnableDesignations}
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 dark:border-emerald-800 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 cursor-pointer transition-colors"
+                  >
+                    <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span>{tr("Enable", "സജീവമാക്കുക")}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleBulkDisableDesignations}
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-800 px-2.5 py-0.5 text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-100 cursor-pointer transition-colors"
+                  >
+                    <X className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                    <span>{tr("Disable", "നിർജ്ജീവമാക്കുക")}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleBulkDeleteDesignations}
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-rose-300 bg-rose-50 dark:bg-rose-950/40 dark:border-rose-800 px-2.5 py-0.5 text-[11px] font-bold text-rose-700 dark:text-rose-300 hover:bg-rose-100 cursor-pointer transition-colors"
+                  >
+                    <Trash2 className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
+                    <span>{tr("Delete", "ഡിലീറ്റ് ചെയ്യുക")}</span>
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
-            <div className="inline-flex items-center gap-1 rounded-xl border border-border/80 bg-muted/20 p-1 shadow-2xs">
-              <button
-                type="button"
-                onClick={() => setActiveTab("roles")}
-                className={cn(
-                  "rounded-lg px-3 py-1.5 text-xs font-bold transition-colors cursor-pointer",
-                  activeTab === "roles"
-                    ? "bg-primary/10 text-primary font-extrabold shadow-2xs"
-                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-                )}
-              >
-                {tr(`Roles (${pageRoles.length})`, `റോളുകൾ (${pageRoles.length})`)}
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab("users")}
-                className={cn(
-                  "rounded-lg px-3 py-1.5 text-xs font-bold transition-colors cursor-pointer",
-                  activeTab === "users"
-                    ? "bg-primary/10 text-primary font-extrabold shadow-2xs"
-                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-                )}
-              >
-                {tr(`Users (${usersList.length})`, `ഉപയോക്താക്കൾ (${usersList.length})`)}
-              </button>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="inline-flex items-center gap-1 rounded-xl border border-border/80 bg-muted/20 p-1 shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("roles")}
+                  className={cn(
+                    "rounded-lg px-3 py-1.5 text-xs font-bold transition-colors cursor-pointer",
+                    activeTab === "roles"
+                      ? "bg-primary/10 text-primary font-extrabold shadow-2xs"
+                      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                  )}
+                >
+                  {tr(`Roles (${pageRoles.length})`, `റോളുകൾ (${pageRoles.length})`)}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("users")}
+                  className={cn(
+                    "rounded-lg px-3 py-1.5 text-xs font-bold transition-colors cursor-pointer",
+                    activeTab === "users"
+                      ? "bg-primary/10 text-primary font-extrabold shadow-2xs"
+                      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                  )}
+                >
+                  {tr(`Users (${usersList.length})`, `ഉപയോക്താക്കൾ (${usersList.length})`)}
+                </button>
+              </div>
+
+              {activeTab === "roles" && selectedTableRoleIds.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2.5 bg-white dark:bg-card border border-border/80 rounded-full px-3 py-1 text-xs shadow-2xs animate-in fade-in transition-all">
+                  <span className="font-extrabold text-foreground text-[11px]">
+                    {tr(
+                      `${selectedTableRoleIds.length} of ${displayedRoles.length} selected`,
+                      `${selectedTableRoleIds.length} / ${displayedRoles.length} തിരഞ്ഞെടുത്തു`,
+                    )}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTableRoleIds([])}
+                    className="font-bold text-orange-600 dark:text-orange-400 hover:underline cursor-pointer text-[11px]"
+                  >
+                    {tr("Deselect All", "എല്ലാം ഒഴിവാക്കുക")}
+                  </button>
+                  <div className="h-3.5 w-px bg-border mx-0.5" />
+                  <button
+                    type="button"
+                    onClick={handleBulkEnableRoles}
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 dark:border-emerald-800 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 cursor-pointer transition-colors"
+                  >
+                    <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span>{tr("Enable", "സജീവമാക്കുക")}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleBulkDisableRoles}
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-800 px-2.5 py-0.5 text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-100 cursor-pointer transition-colors"
+                  >
+                    <X className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                    <span>{tr("Disable", "നിർജ്ജീവമാക്കുക")}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      toast.success(
+                        lang === "ml"
+                          ? `തിരഞ്ഞെടുത്ത ${selectedTableRoleIds.length} റോളുകൾ എക്സ്പോർട്ട് ചെയ്തു`
+                          : `Exported ${selectedTableRoleIds.length} role(s)`,
+                      )
+                    }
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-card px-2.5 py-0.5 text-[11px] font-bold text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors"
+                  >
+                    <Download className="h-3.5 w-3.5 text-slate-900 dark:text-slate-100" />
+                    <span>{tr("Export", "എക്സ്പോർട്ട്")}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleBulkDeleteRoles}
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-rose-300 bg-rose-50 dark:bg-rose-950/40 dark:border-rose-800 px-2.5 py-0.5 text-[11px] font-bold text-rose-700 dark:text-rose-300 hover:bg-rose-100 cursor-pointer transition-colors"
+                  >
+                    <Trash2 className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
+                    <span>{tr("Delete", "ഡിലീറ്റ് ചെയ്യുക")}</span>
+                  </button>
+                </div>
+              )}
+
+              {activeTab === "users" && selectedTableUserIds.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2.5 bg-white dark:bg-card border border-border/80 rounded-full px-3 py-1 text-xs shadow-2xs animate-in fade-in transition-all">
+                  <span className="font-extrabold text-foreground text-[11px]">
+                    {tr(
+                      `${selectedTableUserIds.length} of ${filteredUsers.length} selected`,
+                      `${selectedTableUserIds.length} / ${filteredUsers.length} തിരഞ്ഞെടുത്തു`,
+                    )}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTableUserIds([])}
+                    className="font-bold text-orange-600 dark:text-orange-400 hover:underline cursor-pointer text-[11px]"
+                  >
+                    {tr("Deselect All", "എല്ലാം ഒഴിവാക്കുക")}
+                  </button>
+                  <div className="h-3.5 w-px bg-border mx-0.5" />
+                  <button
+                    type="button"
+                    onClick={handleActionAssignRole}
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-card px-2.5 py-0.5 text-[11px] font-bold text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors"
+                  >
+                    <UserPlus className="h-3.5 w-3.5 text-slate-900 dark:text-slate-100" />
+                    <span>{tr("Assign Role", "റോൾ നൽകുക")}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      toast.success(
+                        lang === "ml"
+                          ? `തിരഞ്ഞെടുത്ത ${selectedTableUserIds.length} ഉപയോക്താക്കളുടെ വിവരങ്ങൾ എക്സ്പോർട്ട് ചെയ്തു`
+                          : `Exported ${selectedTableUserIds.length} user(s)`,
+                      )
+                    }
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-card px-2.5 py-0.5 text-[11px] font-bold text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors"
+                  >
+                    <Download className="h-3.5 w-3.5 text-slate-900 dark:text-slate-100" />
+                    <span>{tr("Export", "എക്സ്പോർട്ട്")}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleBulkDeleteUsers}
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-rose-300 bg-rose-50 dark:bg-rose-950/40 dark:border-rose-800 px-2.5 py-0.5 text-[11px] font-bold text-rose-700 dark:text-rose-300 hover:bg-rose-100 cursor-pointer transition-colors"
+                  >
+                    <Trash2 className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
+                    <span>{tr("Delete", "ഡിലീറ്റ് ചെയ്യുക")}</span>
+                  </button>
+                </div>
+              )}
             </div>
           )}
           <div className="flex flex-wrap items-center gap-2">
@@ -2431,139 +2599,16 @@ export function RoleAccessSettings({
             )}
 
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  title={tr("Column Settings", "കോളം സെറ്റിംഗ്സ്")}
-                  aria-label={tr("Column Settings", "കോളം സെറ്റിംഗ്സ്")}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:border-primary/30 hover:bg-muted hover:text-foreground cursor-pointer"
-                >
-                  <Columns3 className="h-4 w-4" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52 p-2 text-xs">
-                <p className="px-2 py-1 font-bold text-muted-foreground text-[10px] uppercase tracking-wider">
-                  {tr("Hide / Show Columns", "കോളങ്ങൾ ഒളിപ്പിക്കുക / കാണിക്കുക")}
-                </p>
-                <DropdownMenuSeparator />
-                {activeTab === "users" ? (
-                  <div className="space-y-1 py-1 max-h-64 overflow-y-auto pr-1">
-                    <div className="flex items-center justify-between pb-1.5 px-1 border-b border-border/60 mb-1">
-                      <span className="text-[10px] text-muted-foreground font-medium">
-                        {tr("Drag to reorder columns", "വലിച്ച് മാറ്റുക")}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setVisibleColumns({
-                            user: true,
-                            role: true,
-                            localBody: true,
-                            orgDistrict: true,
-                            contact: true,
-                            status: true,
-                            actions: true,
-                          });
-                          setUserColumnOrder(USER_COLUMNS_META.map((c) => c.key));
-                        }}
-                        className="text-[10px] font-bold text-primary hover:underline cursor-pointer"
-                      >
-                        {tr("Show All", "എല്ലാം കാണിക്കുക")}
-                      </button>
-                    </div>
-                    {userColumnOrder.map((colKey, index) => {
-                      const meta = USER_COLUMNS_META.find((c) => c.key === colKey);
-                      if (!meta) return null;
-                      const isChecked = visibleColumns[colKey];
-                      return (
-                        <div
-                          key={colKey}
-                          draggable
-                          onDragStart={() => handleDragStartUserColumn(index)}
-                          onDragOver={handleDragOverUserColumn}
-                          onDrop={(e) => handleDropUserColumn(e, index)}
-                          className={`flex items-center gap-2 rounded-lg p-1.5 text-xs transition-colors hover:bg-muted/60 ${
-                            draggedUserColumnIndex === index ? "opacity-40 bg-muted" : ""
-                          }`}
-                        >
-                          <GripVertical className="h-3.5 w-3.5 text-muted-foreground cursor-grab active:cursor-grabbing shrink-0" />
-                          <Checkbox
-                            id={`col-user-${colKey}`}
-                            checked={isChecked}
-                            onCheckedChange={(c) =>
-                              setVisibleColumns((prev) => ({ ...prev, [colKey]: Boolean(c) }))
-                            }
-                          />
-                          <label
-                            htmlFor={`col-user-${colKey}`}
-                            className="flex-1 text-xs font-semibold text-foreground cursor-pointer select-none truncate"
-                          >
-                            {tr(meta.en, meta.ml)}
-                          </label>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="space-y-1 py-1 max-h-64 overflow-y-auto pr-1">
-                    <div className="flex items-center justify-between pb-1.5 px-1 border-b border-border/60 mb-1">
-                      <span className="text-[10px] text-muted-foreground font-medium">
-                        {tr("Drag to reorder columns", "വലിച്ച് മാറ്റുക")}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setVisibleRoleColumns({
-                            role: true,
-                            description: true,
-                            users: true,
-                            status: true,
-                            actions: true,
-                          });
-                          setRoleColumnOrder(ROLE_COLUMNS_META.map((c) => c.key));
-                        }}
-                        className="text-[10px] font-bold text-primary hover:underline cursor-pointer"
-                      >
-                        {tr("Show All", "എല്ലാം കാണിക്കുക")}
-                      </button>
-                    </div>
-                    {roleColumnOrder.map((colKey, index) => {
-                      const meta = ROLE_COLUMNS_META.find((c) => c.key === colKey);
-                      if (!meta) return null;
-                      const isChecked = visibleRoleColumns[colKey];
-                      return (
-                        <div
-                          key={colKey}
-                          draggable
-                          onDragStart={() => handleDragStartRoleColumn(index)}
-                          onDragOver={handleDragOverRoleColumn}
-                          onDrop={(e) => handleDropRoleColumn(e, index)}
-                          className={`flex items-center gap-2 rounded-lg p-1.5 text-xs transition-colors hover:bg-muted/60 ${
-                            draggedRoleColumnIndex === index ? "opacity-40 bg-muted" : ""
-                          }`}
-                        >
-                          <GripVertical className="h-3.5 w-3.5 text-muted-foreground cursor-grab active:cursor-grabbing shrink-0" />
-                          <Checkbox
-                            id={`col-role-${colKey}`}
-                            checked={isChecked}
-                            onCheckedChange={(c) =>
-                              setVisibleRoleColumns((prev) => ({ ...prev, [colKey]: Boolean(c) }))
-                            }
-                          />
-                          <label
-                            htmlFor={`col-role-${colKey}`}
-                            className="flex-1 text-xs font-semibold text-foreground cursor-pointer select-none truncate"
-                          >
-                            {tr(meta.en, meta.ml)}
-                          </label>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* Manage Columns Button */}
+            <button
+              type="button"
+              onClick={() => setIsManageColumnsOpen(true)}
+              title={tr("Column Settings", "കോളം സെറ്റിംഗ്സ്")}
+              aria-label={tr("Column Settings", "കോളം സെറ്റിംഗ്സ്")}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:border-primary/30 hover:bg-muted hover:text-foreground cursor-pointer shrink-0"
+            >
+              <Columns3 className="h-4 w-4" />
+            </button>
 
             {activeTab === "users" && (
               <DropdownMenu>
@@ -2879,93 +2924,6 @@ export function RoleAccessSettings({
           </div>
         </div>
 
-        {activeTab === "roles" && selectedTableRoleIds.length > 0 && (
-          <div className="flex items-center justify-between border-y border-border/80 bg-primary/5 px-4 py-2.5 transition-all">
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-bold text-foreground">
-                {tr(
-                  `${selectedTableRoleIds.length} of ${displayedRoles.length} selected`,
-                  `${selectedTableRoleIds.length} / ${displayedRoles.length} തിരഞ്ഞെടുത്തു`,
-                )}
-              </span>
-              <button
-                type="button"
-                onClick={() => setSelectedTableRoleIds([])}
-                className="text-[11px] font-bold text-primary hover:underline cursor-pointer"
-              >
-                {tr("Deselect All", "എല്ലാം ഒഴിവാക്കുക")}
-              </button>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleBulkEnableRoles}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-500/20 cursor-pointer transition-colors shadow-2xs dark:text-emerald-300"
-              >
-                <Check className="h-3.5 w-3.5 text-emerald-600" />
-                <span>{tr("Enable", "സജീവമാക്കുക")}</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleBulkDisableRoles}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-700 hover:bg-amber-500/20 cursor-pointer transition-colors shadow-2xs dark:text-amber-300"
-              >
-                <X className="h-3.5 w-3.5 text-amber-600" />
-                <span>{tr("Disable", "നിർജ്ജീവമാക്കുക")}</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleBulkDeleteRoles}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-1.5 text-xs font-bold text-destructive hover:bg-destructive/20 cursor-pointer transition-colors shadow-2xs"
-              >
-                <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                <span>{tr("Delete", "ഡിലീറ്റ് ചെയ്യുക")}</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {activeTab === "users" && selectedTableUserIds.length > 0 && (
-          <div className="flex items-center justify-between border-y border-border/80 bg-primary/5 px-4 py-2.5 transition-all">
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-bold text-foreground">
-                {tr(
-                  `${selectedTableUserIds.length} of ${filteredUsers.length} selected`,
-                  `${selectedTableUserIds.length} / ${filteredUsers.length} തിരഞ്ഞെടുത്തു`,
-                )}
-              </span>
-              <button
-                type="button"
-                onClick={() => setSelectedTableUserIds([])}
-                className="text-[11px] font-bold text-primary hover:underline cursor-pointer"
-              >
-                {tr("Deselect All", "എല്ലാം ഒഴിവാക്കുക")}
-              </button>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleActionAssignRole}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/20 cursor-pointer transition-colors shadow-2xs"
-              >
-                <UserPlus className="h-3.5 w-3.5 text-primary" />
-                <span>{tr("Assign Role", "റോൾ നൽകുക")}</span>
-                <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] text-white font-extrabold">
-                  {selectedTableUserIds.length}
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={handleBulkDeleteUsers}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-1.5 text-xs font-bold text-destructive hover:bg-destructive/20 cursor-pointer transition-colors shadow-2xs"
-              >
-                <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                <span>{tr("Delete", "ഡിലീറ്റ് ചെയ്യുക")}</span>
-              </button>
-            </div>
-          </div>
-        )}
-
         {activeTab === "location" ? (
           locationViewMode === "chart" ? (
             <OrganisationalChart
@@ -2973,6 +2931,8 @@ export function RoleAccessSettings({
               lang={lang}
               onEditLocation={(type, item) => handleOpenLocationModal(type as any, item)}
             />
+          ) : locationViewMode === "user-chart" ? (
+            <UserChart tr={tr} lang={lang} />
           ) : (
             <div>
               <div className="border-b border-border bg-muted/20 p-2.5 sm:px-4">
@@ -3942,51 +3902,6 @@ export function RoleAccessSettings({
           </div>
         ) : (
           <div className="space-y-3">
-            {selectedDesignationIds.length > 0 && (
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs">
-                <span className="font-bold text-primary">
-                  {tr(
-                    `${selectedDesignationIds.length} designation(s) selected`,
-                    `${selectedDesignationIds.length} തസ്തികകൾ തിരഞ്ഞെടുത്തു`
-                  )}
-                </span>
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={handleBulkEnableDesignations}
-                    className="h-8 text-xs font-bold gap-1.5 border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 cursor-pointer"
-                  >
-                    <Power className="h-3.5 w-3.5 text-emerald-600" />
-                    <span>{tr("Enable Selected", "സജീവമാക്കുക")}</span>
-                  </Button>
-
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={handleBulkDisableDesignations}
-                    className="h-8 text-xs font-bold gap-1.5 border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 cursor-pointer"
-                  >
-                    <Power className="h-3.5 w-3.5 text-amber-600" />
-                    <span>{tr("Disable Selected", "നിർജ്ജീവമാക്കുക")}</span>
-                  </Button>
-
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="destructive"
-                    onClick={handleBulkDeleteDesignations}
-                    className="h-8 text-xs font-bold gap-1.5 cursor-pointer"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    <span>{tr("Delete Selected", "നീക്കം ചെയ്യുക")}</span>
-                  </Button>
-                </div>
-              </div>
-            )}
-
             <div className="overflow-x-auto desktop-hide-scrollbar">
               <table className="w-full text-left text-xs">
                 <thead className="border-b border-border bg-muted/50 font-bold text-muted-foreground">
@@ -5162,6 +5077,136 @@ export function RoleAccessSettings({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Right Side Popup Sheet for Manage Columns */}
+      <Sheet open={isManageColumnsOpen} onOpenChange={setIsManageColumnsOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-md flex flex-col h-full p-0 gap-0 bg-white border-l border-border z-50">
+          <SheetHeader className="p-5 border-b border-border bg-white text-left space-y-1">
+            <SheetTitle className="text-base font-bold flex items-center gap-2 text-foreground">
+              <Columns3 className="h-5 w-5 text-primary" />
+              <span>{tr("Manage Columns", "കോളങ്ങൾ കൈകാര്യം ചെയ്യുക")}</span>
+            </SheetTitle>
+            <SheetDescription className="text-xs text-muted-foreground">
+              {tr(
+                "Check to show or hide columns. Drag handle to reorder columns in the table.",
+                "കോളങ്ങൾ കാണിക്കുക / മറയ്ക്കുക. പട്ടികയിലെ കോളങ്ങളുടെ ക്രമം മാറ്റാൻ ഡ്രാഗ് ചെയ്യുക."
+              )}
+            </SheetDescription>
+            <div className="pt-2 flex items-center justify-between">
+              <span className="text-xs font-semibold text-muted-foreground">
+                {activeTab === "users" ? tr("Users Table Columns", "യൂസർ ടേബിൾ കോളങ്ങൾ") : tr("Roles Table Columns", "റോൾ ടേബിൾ കോളങ്ങൾ")}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  if (activeTab === "users") {
+                    setVisibleColumns({
+                      user: true,
+                      role: true,
+                      localBody: true,
+                      orgDistrict: true,
+                      contact: true,
+                      status: true,
+                      actions: true,
+                    });
+                    setUserColumnOrder(USER_COLUMNS_META.map((c) => c.key));
+                  } else {
+                    setVisibleRoleColumns({
+                      role: true,
+                      description: true,
+                      users: true,
+                      status: true,
+                      actions: true,
+                    });
+                    setRoleColumnOrder(ROLE_COLUMNS_META.map((c) => c.key));
+                  }
+                }}
+                className="text-xs font-bold text-primary hover:underline cursor-pointer"
+              >
+                {tr("Show All", "എല്ലാം കാണിക്കുക")}
+              </button>
+            </div>
+          </SheetHeader>
+
+          <div className="flex-1 overflow-y-auto p-5 space-y-2">
+            {activeTab === "users"
+              ? userColumnOrder.map((colKey, index) => {
+                  const meta = USER_COLUMNS_META.find((c) => c.key === colKey);
+                  if (!meta) return null;
+                  const isChecked = visibleColumns[colKey];
+                  return (
+                    <div
+                      key={colKey}
+                      draggable
+                      onDragStart={() => handleDragStartUserColumn(index)}
+                      onDragOver={handleDragOverUserColumn}
+                      onDrop={(e) => handleDropUserColumn(e, index)}
+                      className={`flex items-center gap-3 rounded-xl border border-border/70 p-3 text-xs bg-white transition-all hover:border-primary/40 hover:shadow-2xs ${
+                        draggedUserColumnIndex === index ? "opacity-40 bg-muted" : ""
+                      }`}
+                    >
+                      <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab active:cursor-grabbing shrink-0" />
+                      <Checkbox
+                        id={`sheet-col-user-${colKey}`}
+                        checked={isChecked}
+                        onCheckedChange={(c) =>
+                          setVisibleColumns((prev) => ({ ...prev, [colKey]: Boolean(c) }))
+                        }
+                      />
+                      <label
+                        htmlFor={`sheet-col-user-${colKey}`}
+                        className="flex-1 text-xs font-bold text-foreground cursor-pointer select-none truncate"
+                      >
+                        {tr(meta.en, meta.ml)}
+                      </label>
+                    </div>
+                  );
+                })
+              : roleColumnOrder.map((colKey, index) => {
+                  const meta = ROLE_COLUMNS_META.find((c) => c.key === colKey);
+                  if (!meta) return null;
+                  const isChecked = visibleRoleColumns[colKey];
+                  return (
+                    <div
+                      key={colKey}
+                      draggable
+                      onDragStart={() => handleDragStartRoleColumn(index)}
+                      onDragOver={handleDragOverRoleColumn}
+                      onDrop={(e) => handleDropRoleColumn(e, index)}
+                      className={`flex items-center gap-3 rounded-xl border border-border/70 p-3 text-xs bg-white transition-all hover:border-primary/40 hover:shadow-2xs ${
+                        draggedRoleColumnIndex === index ? "opacity-40 bg-muted" : ""
+                      }`}
+                    >
+                      <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab active:cursor-grabbing shrink-0" />
+                      <Checkbox
+                        id={`sheet-col-role-${colKey}`}
+                        checked={isChecked}
+                        onCheckedChange={(c) =>
+                          setVisibleRoleColumns((prev) => ({ ...prev, [colKey]: Boolean(c) }))
+                        }
+                      />
+                      <label
+                        htmlFor={`sheet-col-role-${colKey}`}
+                        className="flex-1 text-xs font-bold text-foreground cursor-pointer select-none truncate"
+                      >
+                        {tr(meta.en, meta.ml)}
+                      </label>
+                    </div>
+                  );
+                })}
+          </div>
+
+          <SheetFooter className="p-4 border-t border-border bg-slate-50 flex items-center justify-end gap-2 shrink-0">
+            <Button
+              type="button"
+              onClick={() => setIsManageColumnsOpen(false)}
+              className="w-full sm:w-auto h-9 px-5 text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+            >
+              {tr("Done", "ശരി")}
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
