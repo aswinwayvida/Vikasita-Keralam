@@ -160,7 +160,7 @@ function getMatrixColumnActionIds(row: MatrixRow, columnId: MatrixColumnId): str
     .map((a) => a.id);
 }
 
-const ROLE_OPTIONS = ["Admin", "Sub Admin", "Support Admin", "Other Specific Role"];
+const ROLE_OPTIONS = ["Admin", "Sub Admin", "Support Admin", "Specific Role"];
 
 function FilterDropdownSelector({
   title,
@@ -521,7 +521,7 @@ function AssignRoleToUserPage() {
             {} as Record<PermissionModuleId, DataAccessScope[]>,
           ),
         );
-      } else if (roleName === "Other Specific Role" || roleName === "Other Role" || roleName === "Other") {
+      } else if (roleName === "Specific Role" || roleName === "Other Specific Role" || roleName === "Other Role" || roleName === "Other") {
         setScopedPermissions([]);
         setModuleDataAccess(
           permissionModules.reduce(

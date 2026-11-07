@@ -151,7 +151,7 @@ const DEFAULT_ROLE_SELECTIONS = [
   "Admin",
   "Sub Admin",
   "Support Admin",
-  "Other Specific Role",
+  "Specific Role",
 ];
 
 export const DESIGNATIONS_BY_ORG_LEVEL: Record<string, string[]> = {
@@ -689,6 +689,7 @@ function CreateUserPage() {
     if (!selectedRoleName) return;
     if (
       selectedRoleName === "None" ||
+      selectedRoleName === "Specific Role" ||
       selectedRoleName === "Other Specific Role" ||
       selectedRoleName === "Unassigned"
     ) {

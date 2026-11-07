@@ -300,7 +300,7 @@ export function getUserAvatarUrl(user: { name?: string; avatarUrl?: string }): s
 }
 
 const MANAGED_USERS_KEY = "vk-managed-desktop-users";
-const DESKTOP_ROLES = ["Admin", "Sub Admin", "Support Admin"];
+const DESKTOP_ROLES = ["Specific Role", "Sub Admin", "Support Admin"];
 
 export function loadManagedDesktopUsers(): ManagedUser[] {
   const sanitizeUsers = (list: (AppUser | ManagedUser)[]): ManagedUser[] => {
@@ -317,7 +317,10 @@ export function loadManagedDesktopUsers(): ManagedUser[] {
         );
       })
       .map((u, index) => {
-        const existingRole = (u as ManagedUser).assignedRole;
+        let existingRole = (u as ManagedUser).assignedRole;
+        if (existingRole === "Other Specific Role") {
+          existingRole = "Specific Role";
+        }
         const isUnassignedTarget = index === 2 || index === 5 || index === 7;
         let assignedRole = existingRole;
         if (isUnassignedTarget && (!existingRole || existingRole === "Support Admin" || existingRole === "Sub Admin" || existingRole === "Not Assigned")) {
@@ -3783,11 +3786,12 @@ export function RoleAccessSettings({
                             </td>
                           );
                         case "role":
+                          const displayRole = user.assignedRole === "Other Specific Role" ? "Specific Role" : user.assignedRole;
                           return (
                             <td key="role" className="p-3 whitespace-nowrap">
-                              {user.assignedRole && user.assignedRole !== "Unassigned" && user.assignedRole !== "Not Assigned" ? (
+                              {displayRole && displayRole !== "Unassigned" && displayRole !== "Not Assigned" ? (
                                 <span className="inline-flex items-center rounded-md border border-border/80 bg-background px-2.5 py-0.5 text-[11px] font-semibold text-foreground shadow-2xs">
-                                  {user.assignedRole}
+                                  {displayRole}
                                 </span>
                               ) : (
                                 <span className="text-foreground font-semibold text-xs px-2">

@@ -820,12 +820,12 @@ export function NewApplicationPage() {
                   </div>
                 </div>
 
-                {/* Bottom Action for Step 1 */}
-                <div className="flex justify-end pt-4 border-t border-border/80">
+                {/* Bottom Action for Step 1 — Sticky on Desktop */}
+                <div className="flex justify-end pt-4 border-t border-border/80 sm:sticky sm:bottom-0 sm:z-30 sm:bg-card/95 sm:backdrop-blur-md sm:border-t sm:border-border/80 sm:py-3.5 sm:px-6 sm:shadow-lg sm:-mx-8 sm:-mb-8 sm:mt-6 sm:rounded-b-3xl">
                   <Button
                     type="button"
                     onClick={handleProceedToStep2}
-                    className="h-11 px-6 rounded-xl font-bold text-xs shadow-xs flex items-center gap-2 cursor-pointer"
+                    className="h-11 px-6 rounded-xl font-bold text-xs shadow-xs flex items-center gap-2 cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
                   >
                     <span>{lang === "ml" ? "തുടരുക (ഘട്ടം 2)" : "Continue to Step 2"}</span>
                     <ChevronRight className="h-4 w-4" />
@@ -1116,8 +1116,8 @@ export function NewApplicationPage() {
               </div>
             </div>
 
-            {/* Bottom Actions for Step 2 */}
-            <div className="flex items-center justify-between pt-6 border-t border-border/80">
+            {/* Bottom Actions for Step 2 — Sticky on Desktop */}
+            <div className="flex items-center justify-between pt-6 border-t border-border/80 sm:sticky sm:bottom-0 sm:z-30 sm:bg-card/95 sm:backdrop-blur-md sm:border-t sm:border-border/80 sm:py-3.5 sm:px-6 sm:shadow-lg sm:-mx-8 sm:-mb-8 sm:mt-6 sm:rounded-b-3xl">
               <Button
                 type="button"
                 variant="outline"
@@ -1320,8 +1320,8 @@ export function NewApplicationPage() {
                 })}
             </div>
 
-            {/* Bottom Actions for Step 3 */}
-            <div className="flex items-center justify-between pt-6 border-t border-border/80">
+            {/* Bottom Actions for Step 3 — Sticky on Desktop */}
+            <div className="flex items-center justify-between pt-6 border-t border-border/80 sm:sticky sm:bottom-0 sm:z-30 sm:bg-card/95 sm:backdrop-blur-md sm:border-t sm:border-border/80 sm:py-3.5 sm:px-6 sm:shadow-lg sm:-mx-8 sm:-mb-8 sm:mt-6 sm:rounded-b-3xl">
               <Button
                 type="button"
                 variant="outline"
