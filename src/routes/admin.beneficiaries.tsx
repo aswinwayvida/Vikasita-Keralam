@@ -888,7 +888,7 @@ function BeneficiariesPage() {
                                         ))}
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem
-                                          onClick={() => navigate({ to: "/admin/settings_/new-role", search: { returnTo: "/admin/beneficiaries" } })}
+                                          onClick={() => navigate({ to: "/admin/settings/new-role", search: { returnTo: "/admin/beneficiaries" } })}
                                           className="cursor-pointer text-xs font-bold text-primary"
                                         >
                                           <Plus className="h-3.5 w-3.5 mr-2 text-primary" />

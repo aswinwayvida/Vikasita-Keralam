@@ -187,7 +187,11 @@ function CreateRolePage() {
     if (typeof window !== "undefined" && roleName) {
       sessionStorage.setItem("vk_newly_created_role", roleName.trim());
     }
-    void navigate({ to: "/admin/settings", search: { tab: "roles" } });
+    if (returnTo) {
+      void navigate({ to: returnTo as any });
+    } else {
+      void navigate({ to: "/admin/settings", search: { tab: "roles" } });
+    }
   };
 
   const [name, setName] = useState("");
@@ -867,7 +871,13 @@ function CreateRolePage() {
           <div className="flex items-center gap-3 sm:gap-2.5">
             <button
               type="button"
-              onClick={() => void navigate({ to: "/admin/settings", search: { tab: "roles" } })}
+              onClick={() => {
+                if (returnTo) {
+                  void navigate({ to: returnTo as any });
+                } else {
+                  void navigate({ to: "/admin/settings", search: { tab: "roles" } });
+                }
+              }}
               className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-2xs transition-all hover:bg-muted hover:text-primary group cursor-pointer sm:h-8 sm:w-8"
               title={tr("Back to Roles and Control", "റോളുകളിലേക്ക് തിരികെ പോകുക")}
             >
@@ -998,7 +1008,13 @@ function CreateRolePage() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => void navigate({ to: "/admin/settings", search: { tab: "roles" } })}
+              onClick={() => {
+                if (returnTo) {
+                  void navigate({ to: returnTo as any });
+                } else {
+                  void navigate({ to: "/admin/settings", search: { tab: "roles" } });
+                }
+              }}
               className="shrink-0 md:h-10 md:rounded-lg md:border-border md:bg-card md:px-5 md:py-2 md:text-xs md:font-bold md:shadow-2xs md:transition-all md:hover:bg-muted md:hover:text-foreground"
             >
               {tr("Cancel", "റദ്ദാക്കുക")}

@@ -115,9 +115,10 @@ const LOCATION_ORG_LEVELS_DATA = [
 ];
 
 const LOCATION_REGIONS_DATA = [
-  { id: "REG-N", name: "Northern Region", nameMl: "വടക്കൻ മേഖല", scope: "10 Organisational Districts (48 Mandalams)", districts: "Kasaragod, Kannur, Wayanad, Kozhikode, Malappuram", status: "Active" },
-  { id: "REG-C", name: "Central Region", nameMl: "മധ്യ മേഖല", scope: "12 Organisational Districts (53 Mandalams)", districts: "Palakkad, Thrissur, Ernakulam, Idukki, Kottayam", status: "Active" },
-  { id: "REG-S", name: "Southern Region", nameMl: "തെക്കൻ മേഖല", scope: "8 Organisational Districts (39 Mandalams)", districts: "Alappuzha, Pathanamthitta, Kollam, Thiruvananthapuram", status: "Active" },
+  { id: "REG-N", name: "Northern Region", nameMl: "വടക്കൻ മേഖല", scope: "10 Organisational Districts (48 Mandalams)", districts: "Kasaragod, Kannur North, Kannur South, Wayanad, Kozhikode City, Kozhikode North, Kozhikode Rural, Malappuram Central, Malappuram East, Malappuram West", status: "Active" },
+  { id: "REG-C", name: "Central Region", nameMl: "മധ്യ മേഖല", scope: "8 Organisational Districts (39 Mandalams)", districts: "Palakkad East, Palakkad West, Thrissur City, Thrissur North, Thrissur South, Ernakulam City, Ernakulam North, Ernakulam East", status: "Active" },
+  { id: "REG-S", name: "Southern Region", nameMl: "തെക്കൻ മേഖല", scope: "7 Organisational Districts (28 Mandalams)", districts: "Idukki North, Idukki South, Kottayam East, Kottayam West, Alappuzha North, Alappuzha South, Pathanamthitta", status: "Active" },
+  { id: "REG-FS", name: "Far Southern Region", nameMl: "തീവ്ര തെക്കൻ മേഖല", scope: "5 Organisational Districts (25 Mandalams)", districts: "Kollam East, Kollam West, Thiruvananthapuram City, Thiruvananthapuram North, Thiruvananthapuram South", status: "Active" },
 ];
 
 const getLocationRegionName = (districtName: string): string => {
@@ -761,7 +762,7 @@ export function RoleAccessSettings({
       { id: "OD-09", name: "Malappuram East", nameMl: "മലപ്പുറം ഈസ്റ്റ്", region: "North", revDistrict: "Malappuram", status: "Active" as const },
       { id: "OD-10", name: "Malappuram West", nameMl: "മലപ്പുറം വെസ്റ്റ്", region: "North", revDistrict: "Malappuram", status: "Active" as const },
 
-      // Central Region (12)
+      // Central Region (8)
       { id: "OD-11", name: "Palakkad East", nameMl: "പാലക്കാട് ഈസ്റ്റ്", region: "Central", revDistrict: "Palakkad", status: "Active" as const },
       { id: "OD-12", name: "Palakkad West", nameMl: "പാലക്കാട് വെസ്റ്റ്", region: "Central", revDistrict: "Palakkad", status: "Active" as const },
       { id: "OD-13", name: "Thrissur City", nameMl: "തൃശ്ശൂർ സിറ്റി", region: "Central", revDistrict: "Thrissur", status: "Active" as const },
@@ -770,20 +771,22 @@ export function RoleAccessSettings({
       { id: "OD-16", name: "Ernakulam City", nameMl: "എറണാകുളം സിറ്റി", region: "Central", revDistrict: "Ernakulam", status: "Active" as const },
       { id: "OD-17", name: "Ernakulam North", nameMl: "എറണാകുളം നോർത്ത്", region: "Central", revDistrict: "Ernakulam", status: "Active" as const },
       { id: "OD-18", name: "Ernakulam East", nameMl: "എറണാകുളം ഈസ്റ്റ്", region: "Central", revDistrict: "Ernakulam", status: "Active" as const },
-      { id: "OD-19", name: "Idukki North", nameMl: "ഇടുക്കി നോർത്ത്", region: "Central", revDistrict: "Idukki", status: "Active" as const },
-      { id: "OD-20", name: "Idukki South", nameMl: "ഇടുക്കി സൗത്ത്", region: "Central", revDistrict: "Idukki", status: "Active" as const },
-      { id: "OD-21", name: "Kottayam East", nameMl: "കോട്ടയം ഈസ്റ്റ്", region: "Central", revDistrict: "Kottayam", status: "Active" as const },
-      { id: "OD-22", name: "Kottayam West", nameMl: "കോട്ടയം വെസ്റ്റ്", region: "Central", revDistrict: "Kottayam", status: "Active" as const },
 
-      // Southern Region (8)
+      // Southern Region (7)
+      { id: "OD-19", name: "Idukki North", nameMl: "ഇടുക്കി നോർത്ത്", region: "South", revDistrict: "Idukki", status: "Active" as const },
+      { id: "OD-20", name: "Idukki South", nameMl: "ഇടുക്കി സൗത്ത്", region: "South", revDistrict: "Idukki", status: "Active" as const },
+      { id: "OD-21", name: "Kottayam East", nameMl: "കോട്ടയം ഈസ്റ്റ്", region: "South", revDistrict: "Kottayam", status: "Active" as const },
+      { id: "OD-22", name: "Kottayam West", nameMl: "കോട്ടയം വെസ്റ്റ്", region: "South", revDistrict: "Kottayam", status: "Active" as const },
       { id: "OD-23", name: "Alappuzha North", nameMl: "ആലപ്പുഴ നോർത്ത്", region: "South", revDistrict: "Alappuzha", status: "Active" as const },
       { id: "OD-24", name: "Alappuzha South", nameMl: "ആലപ്പുഴ സൗത്ത്", region: "South", revDistrict: "Alappuzha", status: "Active" as const },
       { id: "OD-25", name: "Pathanamthitta", nameMl: "പത്തനംതിട്ട", region: "South", revDistrict: "Pathanamthitta", status: "Active" as const },
-      { id: "OD-26", name: "Kollam East", nameMl: "കൊല്ലം ഈസ്റ്റ്", region: "South", revDistrict: "Kollam", status: "Active" as const },
-      { id: "OD-27", name: "Kollam West", nameMl: "കൊല്ലം വെസ്റ്റ്", region: "South", revDistrict: "Kollam", status: "Active" as const },
-      { id: "OD-28", name: "Thiruvananthapuram City", nameMl: "തിരുവനന്തപുരം സിറ്റി", region: "South", revDistrict: "Thiruvananthapuram", status: "Active" as const },
-      { id: "OD-29", name: "Thiruvananthapuram North", nameMl: "തിരുവനന്തപുരം നോർത്ത്", region: "South", revDistrict: "Thiruvananthapuram", status: "Active" as const },
-      { id: "OD-30", name: "Thiruvananthapuram South", nameMl: "തിരുവനന്തപുരം സൗത്ത്", region: "South", revDistrict: "Thiruvananthapuram", status: "Active" as const },
+
+      // Far Southern Region (5)
+      { id: "OD-26", name: "Kollam East", nameMl: "കൊല്ലം ഈസ്റ്റ്", region: "Far South", revDistrict: "Kollam", status: "Active" as const },
+      { id: "OD-27", name: "Kollam West", nameMl: "കൊല്ലം വെസ്റ്റ്", region: "Far South", revDistrict: "Kollam", status: "Active" as const },
+      { id: "OD-28", name: "Thiruvananthapuram City", nameMl: "തിരുവനന്തപുരം സിറ്റി", region: "Far South", revDistrict: "Thiruvananthapuram", status: "Active" as const },
+      { id: "OD-29", name: "Thiruvananthapuram North", nameMl: "തിരുവനന്തപുരം നോർത്ത്", region: "Far South", revDistrict: "Thiruvananthapuram", status: "Active" as const },
+      { id: "OD-30", name: "Thiruvananthapuram South", nameMl: "തിരുവനന്തപുരം സൗത്ത്", region: "Far South", revDistrict: "Thiruvananthapuram", status: "Active" as const },
     ];
   }, []);
   const [locationOrgDistrictsState, setLocationOrgDistrictsState] = useState(initialOrgDistricts);
@@ -899,25 +902,25 @@ export function RoleAccessSettings({
       { id: "MAN-086", name: "Muvattupuzha", nameMl: "മൂവാറ്റുപുഴ", region: "Central", orgDistrict: "Ernakulam East", status: "Active" as const },
       { id: "MAN-087", name: "Kothamangalam", nameMl: "കോതമംഗലം", region: "Central", orgDistrict: "Ernakulam East", status: "Active" as const },
       // Idukki North (2)
-      { id: "MAN-088", name: "Thodupuzha", nameMl: "തൊടുപുഴ", region: "Central", orgDistrict: "Idukki North", status: "Active" as const },
-      { id: "MAN-089", name: "Idukki", nameMl: "ഇടുക്കി", region: "Central", orgDistrict: "Idukki North", status: "Active" as const },
+      { id: "MAN-088", name: "Thodupuzha", nameMl: "തൊടുപുഴ", region: "South", orgDistrict: "Idukki North", status: "Active" as const },
+      { id: "MAN-089", name: "Idukki", nameMl: "ഇടുക്കി", region: "South", orgDistrict: "Idukki North", status: "Active" as const },
       // Idukki South (3)
-      { id: "MAN-090", name: "Devikulam", nameMl: "ദേവികുളം", region: "Central", orgDistrict: "Idukki South", status: "Active" as const },
-      { id: "MAN-091", name: "Udumbanchola", nameMl: "ഉടുമ്പൻചോല", region: "Central", orgDistrict: "Idukki South", status: "Active" as const },
-      { id: "MAN-092", name: "Peerumade", nameMl: "പീരുമേട്", region: "Central", orgDistrict: "Idukki South", status: "Active" as const },
+      { id: "MAN-090", name: "Devikulam", nameMl: "ദേവികുളം", region: "South", orgDistrict: "Idukki South", status: "Active" as const },
+      { id: "MAN-091", name: "Udumbanchola", nameMl: "ഉടുമ്പൻചോല", region: "South", orgDistrict: "Idukki South", status: "Active" as const },
+      { id: "MAN-092", name: "Peerumade", nameMl: "പീരുമേട്", region: "South", orgDistrict: "Idukki South", status: "Active" as const },
       // Kottayam East (4)
-      { id: "MAN-093", name: "Pala", nameMl: "പാലാ", region: "Central", orgDistrict: "Kottayam East", status: "Active" as const },
-      { id: "MAN-094", name: "Kanjirappally", nameMl: "കാഞ്ഞിരപ്പള്ളി", region: "Central", orgDistrict: "Kottayam East", status: "Active" as const },
-      { id: "MAN-095", name: "Poonjar", nameMl: "പൂഞ്ഞാർ", region: "Central", orgDistrict: "Kottayam East", status: "Active" as const },
-      { id: "MAN-096", name: "Puthuppally", nameMl: "പുതുപ്പള്ളി", region: "Central", orgDistrict: "Kottayam East", status: "Active" as const },
+      { id: "MAN-093", name: "Pala", nameMl: "പാലാ", region: "South", orgDistrict: "Kottayam East", status: "Active" as const },
+      { id: "MAN-094", name: "Kanjirappally", nameMl: "കാഞ്ഞിരപ്പള്ളി", region: "South", orgDistrict: "Kottayam East", status: "Active" as const },
+      { id: "MAN-095", name: "Poonjar", nameMl: "പൂഞ്ഞാർ", region: "South", orgDistrict: "Kottayam East", status: "Active" as const },
+      { id: "MAN-096", name: "Puthuppally", nameMl: "പുതുപ്പള്ളി", region: "South", orgDistrict: "Kottayam East", status: "Active" as const },
       // Kottayam West (5)
-      { id: "MAN-097", name: "Kaduthuruthy", nameMl: "കടുത്തുരുത്തി", region: "Central", orgDistrict: "Kottayam West", status: "Active" as const },
-      { id: "MAN-098", name: "Vaikom", nameMl: "വൈക്കം", region: "Central", orgDistrict: "Kottayam West", status: "Active" as const },
-      { id: "MAN-099", name: "Ettumanoor", nameMl: "ഏറ്റുമാനൂർ", region: "Central", orgDistrict: "Kottayam West", status: "Active" as const },
-      { id: "MAN-100", name: "Kottayam", nameMl: "കോട്ടയം", region: "Central", orgDistrict: "Kottayam West", status: "Active" as const },
-      { id: "MAN-101", name: "Changanassery", nameMl: "ചങ്ങനാശ്ശേരി", region: "Central", orgDistrict: "Kottayam West", status: "Active" as const },
+      { id: "MAN-097", name: "Kaduthuruthy", nameMl: "കടുത്തുരുത്തി", region: "South", orgDistrict: "Kottayam West", status: "Active" as const },
+      { id: "MAN-098", name: "Vaikom", nameMl: "വൈക്കം", region: "South", orgDistrict: "Kottayam West", status: "Active" as const },
+      { id: "MAN-099", name: "Ettumanoor", nameMl: "ഏറ്റുമാനൂർ", region: "South", orgDistrict: "Kottayam West", status: "Active" as const },
+      { id: "MAN-100", name: "Kottayam", nameMl: "കോട്ടയം", region: "South", orgDistrict: "Kottayam West", status: "Active" as const },
+      { id: "MAN-101", name: "Changanassery", nameMl: "ചങ്ങനാശ്ശേരി", region: "South", orgDistrict: "Kottayam West", status: "Active" as const },
 
-      // 3. Southern Region (39 Mandalams)
+      // 3. Southern Region (28 Mandalams)
       // Alappuzha North (5)
       { id: "MAN-102", name: "Aroor", nameMl: "അരൂർ", region: "South", orgDistrict: "Alappuzha North", status: "Active" as const },
       { id: "MAN-103", name: "Cherthala", nameMl: "ചേർത്തല", region: "South", orgDistrict: "Alappuzha North", status: "Active" as const },
@@ -935,36 +938,38 @@ export function RoleAccessSettings({
       { id: "MAN-113", name: "Aranmula", nameMl: "ആറന്മുള", region: "South", orgDistrict: "Pathanamthitta", status: "Active" as const },
       { id: "MAN-114", name: "Konni", nameMl: "കോന്നി", region: "South", orgDistrict: "Pathanamthitta", status: "Active" as const },
       { id: "MAN-115", name: "Adoor", nameMl: "അടൂർ", region: "South", orgDistrict: "Pathanamthitta", status: "Active" as const },
+
+      // 4. Far Southern Region (25 Mandalams)
       // Kollam East (5)
-      { id: "MAN-116", name: "Kunnathur", nameMl: "കുന്നത്തൂർ", region: "South", orgDistrict: "Kollam East", status: "Active" as const },
-      { id: "MAN-117", name: "Kottarakkara", nameMl: "കൊട്ടാരക്കര", region: "South", orgDistrict: "Kollam East", status: "Active" as const },
-      { id: "MAN-118", name: "Pathanapuram", nameMl: "പത്തനാപുരം", region: "South", orgDistrict: "Kollam East", status: "Active" as const },
-      { id: "MAN-119", name: "Punalur", nameMl: "പുനലൂർ", region: "South", orgDistrict: "Kollam East", status: "Active" as const },
-      { id: "MAN-120", name: "Chadayamangalam", nameMl: "ചടയമംഗലം", region: "South", orgDistrict: "Kollam East", status: "Active" as const },
+      { id: "MAN-116", name: "Kunnathur", nameMl: "കുന്നത്തൂർ", region: "Far South", orgDistrict: "Kollam East", status: "Active" as const },
+      { id: "MAN-117", name: "Kottarakkara", nameMl: "കൊട്ടാരക്കര", region: "Far South", orgDistrict: "Kollam East", status: "Active" as const },
+      { id: "MAN-118", name: "Pathanapuram", nameMl: "പത്തനാപുരം", region: "Far South", orgDistrict: "Kollam East", status: "Active" as const },
+      { id: "MAN-119", name: "Punalur", nameMl: "പുനലൂർ", region: "Far South", orgDistrict: "Kollam East", status: "Active" as const },
+      { id: "MAN-120", name: "Chadayamangalam", nameMl: "ചടയമംഗലം", region: "Far South", orgDistrict: "Kollam East", status: "Active" as const },
       // Kollam West (6)
-      { id: "MAN-121", name: "Karunagappally", nameMl: "കരുനാഗപ്പള്ളി", region: "South", orgDistrict: "Kollam West", status: "Active" as const },
-      { id: "MAN-122", name: "Chavara", nameMl: "ചവറ", region: "South", orgDistrict: "Kollam West", status: "Active" as const },
-      { id: "MAN-123", name: "Kundara", nameMl: "കുണ്ടറ", region: "South", orgDistrict: "Kollam West", status: "Active" as const },
-      { id: "MAN-124", name: "Kollam", nameMl: "കൊല്ലം", region: "South", orgDistrict: "Kollam West", status: "Active" as const },
-      { id: "MAN-125", name: "Eravipuram", nameMl: "ഇരവിപുരം", region: "South", orgDistrict: "Kollam West", status: "Active" as const },
-      { id: "MAN-126", name: "Chathannur", nameMl: "ചാത്തന്നൂർ", region: "South", orgDistrict: "Kollam West", status: "Active" as const },
+      { id: "MAN-121", name: "Karunagappally", nameMl: "കരുനാഗപ്പള്ളി", region: "Far South", orgDistrict: "Kollam West", status: "Active" as const },
+      { id: "MAN-122", name: "Chavara", nameMl: "ചവറ", region: "Far South", orgDistrict: "Kollam West", status: "Active" as const },
+      { id: "MAN-123", name: "Kundara", nameMl: "കുണ്ടറ", region: "Far South", orgDistrict: "Kollam West", status: "Active" as const },
+      { id: "MAN-124", name: "Kollam", nameMl: "കൊല്ലം", region: "Far South", orgDistrict: "Kollam West", status: "Active" as const },
+      { id: "MAN-125", name: "Eravipuram", nameMl: "ഇരവിപുരം", region: "Far South", orgDistrict: "Kollam West", status: "Active" as const },
+      { id: "MAN-126", name: "Chathannur", nameMl: "ചാത്തന്നൂർ", region: "Far South", orgDistrict: "Kollam West", status: "Active" as const },
       // Thiruvananthapuram North (5)
-      { id: "MAN-127", name: "Varkala", nameMl: "വർക്കല", region: "South", orgDistrict: "Thiruvananthapuram North", status: "Active" as const },
-      { id: "MAN-128", name: "Attingal", nameMl: "ആറ്റിങ്ങൽ", region: "South", orgDistrict: "Thiruvananthapuram North", status: "Active" as const },
-      { id: "MAN-129", name: "Chirayinkeezhu", nameMl: "ചിറയിൻകീഴ്", region: "South", orgDistrict: "Thiruvananthapuram North", status: "Active" as const },
-      { id: "MAN-130", name: "Nedumangad", nameMl: "നെടുമങ്ങാട്", region: "South", orgDistrict: "Thiruvananthapuram North", status: "Active" as const },
-      { id: "MAN-131", name: "Vamanapuram", nameMl: "വാമനപുരം", region: "South", orgDistrict: "Thiruvananthapuram North", status: "Active" as const },
+      { id: "MAN-127", name: "Varkala", nameMl: "വർക്കല", region: "Far South", orgDistrict: "Thiruvananthapuram North", status: "Active" as const },
+      { id: "MAN-128", name: "Attingal", nameMl: "ആറ്റിങ്ങൽ", region: "Far South", orgDistrict: "Thiruvananthapuram North", status: "Active" as const },
+      { id: "MAN-129", name: "Chirayinkeezhu", nameMl: "ചിറയിൻകീഴ്", region: "Far South", orgDistrict: "Thiruvananthapuram North", status: "Active" as const },
+      { id: "MAN-130", name: "Nedumangad", nameMl: "നെടുമങ്ങാട്", region: "Far South", orgDistrict: "Thiruvananthapuram North", status: "Active" as const },
+      { id: "MAN-131", name: "Vamanapuram", nameMl: "വാമനപുരം", region: "Far South", orgDistrict: "Thiruvananthapuram North", status: "Active" as const },
       // Thiruvananthapuram City (4)
-      { id: "MAN-132", name: "Kazhakkoottam", nameMl: "കഴക്കൂട്ടം", region: "South", orgDistrict: "Thiruvananthapuram City", status: "Active" as const },
-      { id: "MAN-133", name: "Vattiyoorkavu", nameMl: "വട്ടിയൂർക്കാവ്", region: "South", orgDistrict: "Thiruvananthapuram City", status: "Active" as const },
-      { id: "MAN-134", name: "Thiruvananthapuram", nameMl: "തിരുവനന്തപുരം", region: "South", orgDistrict: "Thiruvananthapuram City", status: "Active" as const },
-      { id: "MAN-135", name: "Nemom", nameMl: "നേമം", region: "South", orgDistrict: "Thiruvananthapuram City", status: "Active" as const },
+      { id: "MAN-132", name: "Kazhakkoottam", nameMl: "കഴക്കൂട്ടം", region: "Far South", orgDistrict: "Thiruvananthapuram City", status: "Active" as const },
+      { id: "MAN-133", name: "Vattiyoorkavu", nameMl: "വട്ടിയൂർക്കാവ്", region: "Far South", orgDistrict: "Thiruvananthapuram City", status: "Active" as const },
+      { id: "MAN-134", name: "Thiruvananthapuram", nameMl: "തിരുവനന്തപുരം", region: "Far South", orgDistrict: "Thiruvananthapuram City", status: "Active" as const },
+      { id: "MAN-135", name: "Nemom", nameMl: "നേമം", region: "Far South", orgDistrict: "Thiruvananthapuram City", status: "Active" as const },
       // Thiruvananthapuram South (5)
-      { id: "MAN-136", name: "Aruvikkara", nameMl: "അരുവിക്കര", region: "South", orgDistrict: "Thiruvananthapuram South", status: "Active" as const },
-      { id: "MAN-137", name: "Parassala", nameMl: "പാറശ്ശാല", region: "South", orgDistrict: "Parassala", status: "Active" as const },
-      { id: "MAN-138", name: "Kattakkada", nameMl: "കാട്ടാക്കട", region: "South", orgDistrict: "Thiruvananthapuram South", status: "Active" as const },
-      { id: "MAN-139", name: "Kovalam", nameMl: "കോവളം", region: "South", orgDistrict: "Thiruvananthapuram South", status: "Active" as const },
-      { id: "MAN-140", name: "Neyyattinkara", nameMl: "നെയ്യാറ്റിൻകര", region: "South", orgDistrict: "Thiruvananthapuram South", status: "Active" as const },
+      { id: "MAN-136", name: "Aruvikkara", nameMl: "അരുവിക്കര", region: "Far South", orgDistrict: "Thiruvananthapuram South", status: "Active" as const },
+      { id: "MAN-137", name: "Parassala", nameMl: "പാറശ്ശാല", region: "Far South", orgDistrict: "Thiruvananthapuram South", status: "Active" as const },
+      { id: "MAN-138", name: "Kattakkada", nameMl: "കാട്ടാക്കട", region: "Far South", orgDistrict: "Thiruvananthapuram South", status: "Active" as const },
+      { id: "MAN-139", name: "Kovalam", nameMl: "കോവളം", region: "Far South", orgDistrict: "Thiruvananthapuram South", status: "Active" as const },
+      { id: "MAN-140", name: "Neyyattinkara", nameMl: "നെയ്യാറ്റിൻകര", region: "Far South", orgDistrict: "Thiruvananthapuram South", status: "Active" as const },
     ];
   }, []);
   const [locationMandalamsState, setLocationMandalamsState] = useState(initialMandalams);

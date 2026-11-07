@@ -1210,7 +1210,7 @@ function CreateUserPage() {
                   if (val === "__CREATE_NEW_ROLE__") {
                     saveFormDraftToSession();
                     void navigate({
-                      to: "/admin/settings_/new-role",
+                      to: "/admin/settings/new-role" as any,
                       search: { returnTo: "/admin/settings/new-user" },
                     });
                   } else {
