@@ -332,15 +332,15 @@ export function MobileAuthFlow({
             </div>
 
             {/* Powered By Wayvida */}
-            <div className="mt-6 pb-1 flex items-center justify-center text-center">
+            <div className="mt-4 pb-1 flex items-center justify-center text-center">
               <a
                 href="https://wayvida.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors inline-flex items-center gap-1 cursor-pointer"
+                className="text-[9px] font-medium tracking-wide text-[#243D95] dark:text-[#243D95] hover:underline inline-flex items-center gap-1 cursor-pointer uppercase"
               >
-                <span>Powered by</span>
-                <strong className="font-bold text-slate-700 hover:text-orange-600 dark:text-slate-200">Wayvida</strong>
+                <span>POWERED BY</span>
+                <strong className="font-extrabold text-[#243D95]">WAYVIDA</strong>
               </a>
             </div>
           </div>
@@ -472,15 +472,15 @@ export function MobileAuthFlow({
             </div>
 
             {/* Powered By Wayvida */}
-            <div className="mt-6 pb-1 flex items-center justify-center text-center">
+            <div className="mt-4 pb-1 flex items-center justify-center text-center">
               <a
                 href="https://wayvida.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors inline-flex items-center gap-1 cursor-pointer"
+                className="text-[9px] font-medium tracking-wide text-[#243D95] dark:text-[#243D95] hover:underline inline-flex items-center gap-1 cursor-pointer uppercase"
               >
-                <span>Powered by</span>
-                <strong className="font-bold text-slate-700 hover:text-orange-600 dark:text-slate-200">Wayvida</strong>
+                <span>POWERED BY</span>
+                <strong className="font-extrabold text-[#243D95]">WAYVIDA</strong>
               </a>
             </div>
           </div>

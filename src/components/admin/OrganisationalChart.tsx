@@ -1,8 +1,10 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import {
+  ArrowUpDown,
   Building2,
   ChevronDown,
   ChevronRight,
+  ChevronUp,
   Layers,
   MapPin,
   Search,
@@ -27,6 +29,8 @@ import {
   Network,
   Landmark,
   Eye,
+  Shield,
+  GripVertical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,8 +38,14 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import {
+  loadManagedDesignations,
+  saveManagedDesignations,
+  ManagedDesignation,
+} from "./RoleAccessSettings";
 
 interface OrganisationalChartProps {
   tr: (en: string, ml: string) => string;
@@ -86,8 +96,8 @@ export interface OrgHierarchyNode {
 // Complete 6-Level Hierarchical Structure: State -> 3 Regions -> 14 Revenue Districts -> 30 Organisational Districts -> 140 Mandalams -> Areas -> Booths
 const COMPLETE_ORG_HIERARCHY: OrgHierarchyNode = {
   id: "STATE-KL",
-  nameEn: "Kerala State Committee",
-  nameMl: "കേരള സംസ്ഥാന കമ്മിറ്റി",
+  nameEn: "Kerala",
+  nameMl: "കേരളം",
   level: "State",
   code: "STATE-01",
   officeBearers: [
@@ -1000,6 +1010,217 @@ export function OrganisationalChart({ tr, lang, onEditLocation }: Organisational
   const [viewMode, setViewMode] = useState<"tree" | "list">("tree");
   const [zoomScale, setZoomScale] = useState<number>(1.0);
 
+  // Bi-directional designation ranking state & listener
+  const [designationsList, setDesignationsList] = useState<ManagedDesignation[]>(() =>
+    loadManagedDesignations()
+  );
+  const [reorderDialogOpen, setReorderDialogOpen] = useState(false);
+
+  useEffect(() => {
+    const handleSync = () => {
+      setDesignationsList(loadManagedDesignations());
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("vk_designations_updated", handleSync);
+      window.addEventListener("storage", handleSync);
+    }
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("vk_designations_updated", handleSync);
+        window.removeEventListener("storage", handleSync);
+      }
+    };
+  }, []);
+
+  const designationRankMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    designationsList.forEach((item, idx) => {
+      const nameKey = item.name.trim().toLowerCase();
+      map[nameKey] = item.rank ?? idx + 1;
+    });
+    return map;
+  }, [designationsList]);
+
+  const getDesignationRank = (desigName: string): number => {
+    if (!desigName) return 999;
+    const cleanKey = desigName.trim().toLowerCase();
+    if (designationRankMap[cleanKey] !== undefined) {
+      return designationRankMap[cleanKey];
+    }
+    const match = designationsList.find((d) => {
+      const dName = d.name.trim().toLowerCase();
+      return cleanKey.includes(dName) || dName.includes(cleanKey);
+    });
+    return match?.rank ?? 999;
+  };
+
+  const sortOfficeBearers = (officeBearers: OrgUserCard[]): OrgUserCard[] => {
+    return [...officeBearers].sort((a, b) => {
+      const rankA = getDesignationRank(a.designationEn);
+      const rankB = getDesignationRank(b.designationEn);
+      return rankA - rankB;
+    });
+  };
+
+  const sortVacantDesignations = (
+    vacants?: { designationEn: string; designationMl: string }[]
+  ): { designationEn: string; designationMl: string }[] => {
+    if (!vacants) return [];
+    return [...vacants].sort((a, b) => {
+      const rankA = getDesignationRank(a.designationEn);
+      const rankB = getDesignationRank(b.designationEn);
+      return rankA - rankB;
+    });
+  };
+
+  const getNodeRoles = (node: OrgHierarchyNode) => {
+    const rolesList: { key: string; designationEn: string; designationMl: string; rank: number }[] = [];
+    const seen = new Set<string>();
+
+    node.officeBearers?.forEach((u) => {
+      const key = u.designationEn.trim().toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        rolesList.push({
+          key,
+          designationEn: u.designationEn,
+          designationMl: u.designationMl || u.designationEn,
+          rank: getDesignationRank(u.designationEn),
+        });
+      }
+    });
+
+    node.vacantDesignations?.forEach((v) => {
+      const key = v.designationEn.trim().toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        rolesList.push({
+          key,
+          designationEn: v.designationEn,
+          designationMl: v.designationMl || v.designationEn,
+          rank: getDesignationRank(v.designationEn),
+        });
+      }
+    });
+
+    if (rolesList.length === 0) {
+      const matchingDesignations = designationsList.filter(
+        (d) => d.orgLevel.toLowerCase() === node.level.toLowerCase()
+      );
+      matchingDesignations.forEach((d) => {
+        const key = d.name.trim().toLowerCase();
+        if (!seen.has(key)) {
+          seen.add(key);
+          rolesList.push({
+            key,
+            designationEn: d.name,
+            designationMl: d.name,
+            rank: d.rank ?? getDesignationRank(d.name),
+          });
+        }
+      });
+    }
+
+    return rolesList.sort((a, b) => a.rank - b.rank);
+  };
+
+  const [draggedRoleItem, setDraggedRoleItem] = useState<{ designationEn: string } | null>(null);
+
+  const handleDragStartRole = (e: React.DragEvent, roleItem: { designationEn: string }) => {
+    setDraggedRoleItem(roleItem);
+    e.dataTransfer.setData("text/plain", roleItem.designationEn);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOverRole = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDropRole = (e: React.DragEvent, targetRole: { designationEn: string }) => {
+    e.preventDefault();
+    if (!draggedRoleItem || draggedRoleItem.designationEn === targetRole.designationEn) {
+      setDraggedRoleItem(null);
+      return;
+    }
+
+    const draggedIndex = designationsList.findIndex(
+      (d) => d.name.trim().toLowerCase() === draggedRoleItem.designationEn.trim().toLowerCase()
+    );
+    const targetIndex = designationsList.findIndex(
+      (d) => d.name.trim().toLowerCase() === targetRole.designationEn.trim().toLowerCase()
+    );
+
+    if (draggedIndex !== -1 && targetIndex !== -1) {
+      const next = [...designationsList];
+      const temp = next[draggedIndex];
+      next[draggedIndex] = next[targetIndex];
+      next[targetIndex] = temp;
+      const reRanked = next.map((item, i) => ({ ...item, rank: i + 1 }));
+      setDesignationsList(reRanked);
+      saveManagedDesignations(reRanked);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("vk_designations_updated", { detail: reRanked }));
+      }
+    }
+
+    setDraggedRoleItem(null);
+  };
+
+  const handleMoveDesignationRankUp = (index: number) => {
+    if (index <= 0 || index >= designationsList.length) return;
+    const current = designationsList[index];
+    if (!current) return;
+
+    let prevIndex = -1;
+    for (let i = index - 1; i >= 0; i--) {
+      if (designationsList[i].orgLevel === current.orgLevel) {
+        prevIndex = i;
+        break;
+      }
+    }
+
+    if (prevIndex === -1) return;
+
+    const next = [...designationsList];
+    const temp = next[index];
+    next[index] = next[prevIndex];
+    next[prevIndex] = temp;
+    const reRanked = next.map((item, i) => ({ ...item, rank: i + 1 }));
+    setDesignationsList(reRanked);
+    saveManagedDesignations(reRanked);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("vk_designations_updated", { detail: reRanked }));
+    }
+  };
+
+  const handleMoveDesignationRankDown = (index: number) => {
+    if (index < 0 || index >= designationsList.length - 1) return;
+    const current = designationsList[index];
+    if (!current) return;
+
+    let nextIndex = -1;
+    for (let i = index + 1; i < designationsList.length; i++) {
+      if (designationsList[i].orgLevel === current.orgLevel) {
+        nextIndex = i;
+        break;
+      }
+    }
+
+    if (nextIndex === -1) return;
+
+    const next = [...designationsList];
+    const temp = next[index];
+    next[index] = next[nextIndex];
+    next[nextIndex] = temp;
+    const reRanked = next.map((item, i) => ({ ...item, rank: i + 1 }));
+    setDesignationsList(reRanked);
+    saveManagedDesignations(reRanked);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("vk_designations_updated", { detail: reRanked }));
+    }
+  };
+
   // State for expanded node collapse tracking
   const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({
     "STATE-KL": true,
@@ -1123,9 +1344,6 @@ export function OrganisationalChart({ tr, lang, onEditLocation }: Organisational
                 {tr(node.level, node.level)}
               </span>
             </div>
-            <span className="text-[10px] font-extrabold font-mono text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded border border-border/80">
-              {node.code}
-            </span>
           </div>
 
           {/* Unit Name Title */}
@@ -1140,53 +1358,39 @@ export function OrganisationalChart({ tr, lang, onEditLocation }: Organisational
             </p>
           )}
 
-          {/* Office Bearers User List */}
+          {/* Roles list sorted by designation rank with drag & drop support */}
           <div className="space-y-1.5 mt-2">
-            {node.officeBearers.length > 0 ? (
-              node.officeBearers.map((user) => (
-                <div
-                  key={user.id}
-                  className="flex items-center gap-2.5 rounded-lg border border-border/80 bg-background/90 p-2 shadow-2xs hover:border-orange-400 transition-colors"
-                >
-                  <img
-                    src={user.avatarUrl}
-                    alt={user.nameEn}
-                    className="h-8 w-8 rounded-full object-cover shrink-0 border border-border"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold text-foreground truncate leading-tight">
-                      {isMalayalam ? user.nameMl : user.nameEn}
-                    </p>
-                    <p className="text-[10.5px] font-bold text-orange-600 dark:text-orange-400 truncate">
-                      {isMalayalam ? user.designationMl : user.designationEn}
-                    </p>
+            {getNodeRoles(node).length > 0 ? (
+              getNodeRoles(node).map((roleItem, idx) => {
+                const isDragging = draggedRoleItem?.designationEn === roleItem.designationEn;
+                return (
+                  <div
+                    key={`${roleItem.key}-${idx}`}
+                    draggable
+                    onDragStart={(e) => handleDragStartRole(e, roleItem)}
+                    onDragOver={handleDragOverRole}
+                    onDrop={(e) => handleDropRole(e, roleItem)}
+                    className={cn(
+                      "flex items-center justify-between gap-2 rounded-lg border border-border/80 bg-background/90 px-2 py-1.5 shadow-2xs hover:border-orange-400 transition-colors cursor-grab active:cursor-grabbing",
+                      isDragging && "opacity-50 border-orange-500 bg-orange-50/50"
+                    )}
+                    title={tr("Drag to reorder designation rank", "തസ്തിക റാങ്ക് ക്രമം മാറ്റാൻ ഡ്രാഗ് ചെയ്യുക")}
+                  >
+                    <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                      <GripVertical className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
+                      <Shield className="h-3.5 w-3.5 text-orange-500 shrink-0" />
+                      <span className="text-xs font-bold text-foreground truncate">
+                        {isMalayalam ? roleItem.designationMl : roleItem.designationEn}
+                      </span>
+                    </div>
                   </div>
-                  <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-black text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">
-                    {tr("Active", "സജീവം")}
-                  </span>
-                </div>
-              ))
+                );
+              })
             ) : (
               <div className="rounded-lg border border-dashed border-border/80 p-2 text-center text-[11px] font-medium text-muted-foreground bg-muted/20">
-                {tr("No direct office bearers assigned", "ഭാരവാഹികൾ നിയമിച്ചിട്ടില്ല")}
+                {tr("No designations assigned", "തസ്തികകൾ ലഭ്യമല്ല")}
               </div>
             )}
-
-            {/* Vacant slots */}
-            {showVacant &&
-              node.vacantDesignations?.map((vac, idx) => (
-                <div
-                  key={`vac-${idx}`}
-                  className="flex items-center gap-2 rounded-lg border border-dashed border-amber-300 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/30 p-1.5 text-xs"
-                >
-                  <UserX className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[11px] font-bold text-amber-800 dark:text-amber-300 truncate">
-                      {tr("Vacant", "ഒഴിവ്")} — {isMalayalam ? vac.designationMl : vac.designationEn}
-                    </p>
-                  </div>
-                </div>
-              ))}
           </div>
 
           {/* Action Row: Details Popup & Expand Toggle */}
@@ -1297,8 +1501,6 @@ export function OrganisationalChart({ tr, lang, onEditLocation }: Organisational
             <span className="font-bold text-xs text-foreground truncate">
               {isMalayalam ? node.nameMl : node.nameEn}
             </span>
-
-            <span className="text-[10px] font-mono text-muted-foreground">({node.code})</span>
 
             {node.officeBearers.length > 0 && (
               <span className="text-[11px] font-semibold text-orange-600 dark:text-orange-400">
@@ -1529,6 +1731,17 @@ export function OrganisationalChart({ tr, lang, onEditLocation }: Organisational
             type="button"
             variant="outline"
             size="sm"
+            onClick={() => setReorderDialogOpen(true)}
+            className="h-8 text-xs font-bold border-orange-300 dark:border-orange-700 bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300 hover:bg-orange-100 cursor-pointer"
+          >
+            <ArrowUpDown className="h-3.5 w-3.5 mr-1" />
+            <span>{tr("Designation Order", "തസ്തിക ക്രമം")}</span>
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
             onClick={handleExportChart}
             className="h-8 text-xs font-bold border-orange-300 text-orange-700 dark:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-950/40 cursor-pointer"
           >
@@ -1559,19 +1772,100 @@ export function OrganisationalChart({ tr, lang, onEditLocation }: Organisational
         </div>
       )}
 
+      {/* Designation Reorder Modal */}
+      <Dialog open={reorderDialogOpen} onOpenChange={setReorderDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-2">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-orange-500/10 text-orange-600 dark:text-orange-400 font-bold border border-orange-500/20">
+                <ArrowUpDown className="h-4 w-4" />
+              </span>
+              <DialogTitle className="text-base font-bold">
+                {tr("Reorder Designation Hierarchy", "തസ്തിക മുൻഗണനാ ക്രമം ക്രമീകരിക്കുക")}
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-xs text-muted-foreground pt-1">
+              {tr(
+                "Change rank order of designations. Top designations appear first in organizational chart cards and directory listings.",
+                "തസ്തികകളുടെ മുൻഗണനാ ക്രമം മാറ്റുക. മുകളിലുള്ള തസ്തികകൾ ഓർഗനൈസേഷണൽ ചാർട്ടിൽ ആദ്യം കാണിക്കും."
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2 max-h-80 overflow-y-auto pr-1 py-2">
+            {designationsList.map((item, idx) => {
+              const canMoveUp =
+                idx > 0 && designationsList.slice(0, idx).some((d) => d.orgLevel === item.orgLevel);
+              const canMoveDown =
+                idx >= 0 &&
+                idx < designationsList.length - 1 &&
+                designationsList.slice(idx + 1).some((d) => d.orgLevel === item.orgLevel);
+
+              return (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-muted/20 hover:bg-muted/50 transition-colors text-xs"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="flex h-5 w-5 items-center justify-center rounded bg-slate-200 dark:bg-slate-800 text-[10px] font-black text-slate-700 dark:text-slate-300">
+                      {idx + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="font-bold text-foreground truncate">{item.name}</p>
+                      <p className="text-[10px] text-muted-foreground">{item.orgLevel}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      disabled={!canMoveUp}
+                      onClick={() => handleMoveDesignationRankUp(idx)}
+                      title={tr("Move Up", "മുകളിലേക്ക്")}
+                      className="h-7 w-7 text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer"
+                    >
+                      <ChevronUp className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      disabled={!canMoveDown}
+                      onClick={() => handleMoveDesignationRankDown(idx)}
+                      title={tr("Move Down", "താഴേക്ക്")}
+                      className="h-7 w-7 text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer"
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="pt-2 flex justify-end gap-2 border-t border-border">
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => setReorderDialogOpen(false)}
+              className="cursor-pointer bg-orange-500 hover:bg-orange-600 text-white font-bold"
+            >
+              {tr("Done", "പൂർത്തിയായി")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Unit Details Modal */}
       {selectedNode && (
         <Dialog open={Boolean(selectedNode)} onOpenChange={() => setSelectedNode(null)}>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <div className="flex items-center gap-2">
-                <span className="rounded-md bg-orange-500/10 px-2 py-0.5 text-xs font-black text-orange-600 dark:text-orange-400 border border-orange-500/20">
-                  {selectedNode.code}
-                </span>
-                <DialogTitle className="text-base font-bold">
-                  {isMalayalam ? selectedNode.nameMl : selectedNode.nameEn}
-                </DialogTitle>
-              </div>
+              <DialogTitle className="text-base font-bold">
+                {isMalayalam ? selectedNode.nameMl : selectedNode.nameEn}
+              </DialogTitle>
             </DialogHeader>
 
             <div className="space-y-4 pt-2 text-xs">
@@ -1594,71 +1888,34 @@ export function OrganisationalChart({ tr, lang, onEditLocation }: Organisational
                 )}
               </div>
 
-              {/* Office Bearers List */}
+              {/* Roles List */}
               <div className="space-y-2 border-t border-border pt-3">
                 <h4 className="font-black text-foreground text-xs uppercase tracking-wider flex items-center justify-between">
-                  <span>{tr("Assigned Office Bearers", "നിയമിതരായ ഭാരവാഹികൾ")}</span>
+                  <span>{tr("Designations & Roles", "തസ്തികകളും ചുമതലകളും")}</span>
                 </h4>
 
                 <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                  {selectedNode.officeBearers.length > 0 ? (
-                    selectedNode.officeBearers.map((user) => (
+                  {getNodeRoles(selectedNode).length > 0 ? (
+                    getNodeRoles(selectedNode).map((roleItem, idx) => (
                       <div
-                        key={user.id}
-                        className="flex items-center gap-3 rounded-lg border border-border bg-card p-2.5 shadow-2xs"
+                        key={`${roleItem.key}-${idx}`}
+                        className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card p-2.5 shadow-2xs"
                       >
-                        <img
-                          src={user.avatarUrl}
-                          alt={user.nameEn}
-                          className="h-10 w-10 rounded-full object-cover shrink-0 border border-border"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-foreground text-sm truncate">
-                            {isMalayalam ? user.nameMl : user.nameEn}
-                          </p>
-                          <p className="text-xs font-bold text-orange-600 dark:text-orange-400 truncate">
-                            {isMalayalam ? user.designationMl : user.designationEn}
-                          </p>
-                          <p className="text-[11px] text-muted-foreground truncate">
-                            {isMalayalam ? user.locationMl : user.locationEn} • {user.mobile || "+91 98470 XXXXX"}
-                          </p>
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                          <Shield className="h-4 w-4 text-orange-500 shrink-0" />
+                          <span className="font-bold text-foreground text-sm truncate">
+                            {isMalayalam ? roleItem.designationMl : roleItem.designationEn}
+                          </span>
                         </div>
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                          <CheckCircle2 className="h-3 w-3" /> {tr("Active", "സജീവം")}
-                        </span>
                       </div>
                     ))
                   ) : (
                     <p className="text-xs text-muted-foreground italic text-center py-2">
-                      {tr("No office bearers assigned to this unit yet.", "ഭാരവാഹികൾ ഒന്നുമില്ല.")}
+                      {tr("No designations assigned to this unit yet.", "തസ്തികകൾ ലഭ്യമല്ല.")}
                     </p>
                   )}
                 </div>
               </div>
-
-              {/* Vacant Designations List if any */}
-              {selectedNode.vacantDesignations && selectedNode.vacantDesignations.length > 0 && (
-                <div className="space-y-2 border-t border-border pt-3">
-                  <h4 className="font-bold text-amber-700 dark:text-amber-400 text-xs uppercase tracking-wider">
-                    {tr("Vacant Positions", "ഒഴിവുള്ള തസ്തികകൾ")}
-                  </h4>
-                  <div className="space-y-1.5">
-                    {selectedNode.vacantDesignations.map((vac, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center justify-between rounded-lg border border-dashed border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-950/20 p-2 text-xs"
-                      >
-                        <span className="font-bold text-foreground">
-                          {isMalayalam ? vac.designationMl : vac.designationEn}
-                        </span>
-                        <span className="rounded bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300">
-                          {tr("Vacant", "ഒഴിവ്")}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               <div className="pt-2 flex justify-end gap-2">
                 <Button

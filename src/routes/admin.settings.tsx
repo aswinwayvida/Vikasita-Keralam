@@ -19,6 +19,7 @@ export const Route = createFileRoute("/admin/settings")({
             : search.tab === "location"
               ? ("location" as const)
               : undefined,
+    mode: typeof search.mode === "string" ? search.mode : undefined,
     openCreate: typeof search.openCreate === "string" ? search.openCreate : undefined,
     returnTo: typeof search.returnTo === "string" ? search.returnTo : undefined,
   }),

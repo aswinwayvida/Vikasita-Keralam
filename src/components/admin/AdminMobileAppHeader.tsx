@@ -329,10 +329,10 @@ export function AdminMobileAppHeader({
                     setMenuOpen(false);
                     if (onNavigateTab) onNavigateTab("overview");
                   }}
-                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-orange-50 dark:hover:bg-slate-800/80 font-bold text-xs transition-all cursor-pointer group"
+                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-[#243D95]/10 dark:hover:bg-slate-800/80 font-bold text-xs transition-all cursor-pointer group"
                 >
                   <span className="flex items-center gap-3">
-                    <Home className="h-4.5 w-4.5 text-orange-500 stroke-[2]" />
+                    <Home className="h-4.5 w-4.5 text-[#243D95] stroke-[2]" />
                     <span>{lang === "ml" ? "ഹോം" : "Home"}</span>
                   </span>
                   <ChevronRight className="h-3.5 w-3.5 text-slate-300 dark:text-slate-600 group-hover:translate-x-0.5 transition-transform" />
@@ -345,10 +345,10 @@ export function AdminMobileAppHeader({
                     setMenuOpen(false);
                     if (onOpenAbout) onOpenAbout();
                   }}
-                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-orange-50 dark:hover:bg-slate-800/80 font-bold text-xs transition-all cursor-pointer group"
+                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-[#243D95]/10 dark:hover:bg-slate-800/80 font-bold text-xs transition-all cursor-pointer group"
                 >
                   <span className="flex items-center gap-3">
-                    <Info className="h-4.5 w-4.5 text-orange-500 stroke-[2]" />
+                    <Info className="h-4.5 w-4.5 text-[#243D95] stroke-[2]" />
                     <span>{lang === "ml" ? "ഞങ്ങളെക്കുറിച്ച്" : "About Us"}</span>
                   </span>
                   <ChevronRight className="h-3.5 w-3.5 text-slate-300 dark:text-slate-600 group-hover:translate-x-0.5 transition-transform" />
@@ -361,10 +361,10 @@ export function AdminMobileAppHeader({
                     setMenuOpen(false);
                     if (onOpenContact) onOpenContact();
                   }}
-                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-orange-50 dark:hover:bg-slate-800/80 font-bold text-xs transition-all cursor-pointer group"
+                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-[#243D95]/10 dark:hover:bg-slate-800/80 font-bold text-xs transition-all cursor-pointer group"
                 >
                   <span className="flex items-center gap-3">
-                    <PhoneCall className="h-4.5 w-4.5 text-orange-500 stroke-[2]" />
+                    <PhoneCall className="h-4.5 w-4.5 text-[#243D95] stroke-[2]" />
                     <span>{lang === "ml" ? "ബന്ധപ്പെടുക" : "Contact Us"}</span>
                   </span>
                   <ChevronRight className="h-3.5 w-3.5 text-slate-300 dark:text-slate-600 group-hover:translate-x-0.5 transition-transform" />
@@ -383,10 +383,10 @@ export function AdminMobileAppHeader({
                     setMenuOpen(false);
                     if (onNavigateTab) onNavigateTab("schemes");
                   }}
-                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-orange-50 dark:hover:bg-slate-800/80 font-bold text-xs transition-all cursor-pointer group"
+                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-[#243D95]/10 dark:hover:bg-slate-800/80 font-bold text-xs transition-all cursor-pointer group"
                 >
                   <span className="flex items-center gap-3">
-                    <Layers className="h-4.5 w-4.5 text-orange-500 stroke-[2]" />
+                    <Layers className="h-4.5 w-4.5 text-[#243D95] stroke-[2]" />
                     <span>{lang === "ml" ? "പദ്ധതികൾ കാണുക" : "Explore Schemes"}</span>
                   </span>
                   <ChevronRight className="h-3.5 w-3.5 text-slate-300 dark:text-slate-600 group-hover:translate-x-0.5 transition-transform" />
@@ -444,10 +444,10 @@ export function AdminMobileAppHeader({
                     setMenuOpen(false);
                     if (onNavigateTab) onNavigateTab("overview");
                   }}
-                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-orange-50 dark:hover:bg-slate-800 font-bold transition-all cursor-pointer"
+                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-[#243D95]/10 dark:hover:bg-slate-800 font-bold transition-all cursor-pointer"
                 >
                   <span className="flex items-center gap-3">
-                    <Home className="h-4 w-4 text-orange-500" />{" "}
+                    <Home className="h-4 w-4 text-[#243D95]" />{" "}
                     {lang === "ml" ? "ഡാഷ്‌ബോർഡ്" : "Dashboard"}
                   </span>
                   <ChevronRight className="h-4 w-4 text-slate-400" />
@@ -459,10 +459,10 @@ export function AdminMobileAppHeader({
                     setMenuOpen(false);
                     if (onOpenApplicants) onOpenApplicants();
                   }}
-                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-orange-50 dark:hover:bg-slate-800 font-bold transition-all cursor-pointer"
+                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-[#243D95]/10 dark:hover:bg-slate-800 font-bold transition-all cursor-pointer"
                 >
                   <span className="flex items-center gap-3">
-                    <Users className="h-4 w-4 text-orange-500" />{" "}
+                    <Users className="h-4 w-4 text-[#243D95]" />{" "}
                     {lang === "ml" ? "അപേക്ഷകർ" : "Applicants"}
                   </span>
                   <ChevronRight className="h-4 w-4 text-slate-400" />
@@ -474,10 +474,10 @@ export function AdminMobileAppHeader({
                     setMenuOpen(false);
                     if (onOpenPartyWorkers) onOpenPartyWorkers();
                   }}
-                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-orange-50 dark:hover:bg-slate-800 font-bold transition-all cursor-pointer"
+                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-[#243D95]/10 dark:hover:bg-slate-800 font-bold transition-all cursor-pointer"
                 >
                   <span className="flex items-center gap-3">
-                    <Users2 className="h-4 w-4 text-orange-500" />{" "}
+                    <Users2 className="h-4 w-4 text-[#243D95]" />{" "}
                     {lang === "ml" ? "ഉപയോക്താക്കൾ" : "Users"}
                   </span>
                   <ChevronRight className="h-4 w-4 text-slate-400" />
@@ -489,10 +489,10 @@ export function AdminMobileAppHeader({
                     setMenuOpen(false);
                     if (onNavigateTab) onNavigateTab("schemes");
                   }}
-                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-orange-50 dark:hover:bg-slate-800 font-bold transition-all cursor-pointer"
+                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-[#243D95]/10 dark:hover:bg-slate-800 font-bold transition-all cursor-pointer"
                 >
                   <span className="flex items-center gap-3">
-                    <Layers className="h-4 w-4 text-orange-500" />{" "}
+                    <Layers className="h-4 w-4 text-[#243D95]" />{" "}
                     {lang === "ml" ? "പദ്ധതികൾ" : "Schemes"}
                   </span>
                   <ChevronRight className="h-4 w-4 text-slate-400" />
@@ -504,10 +504,10 @@ export function AdminMobileAppHeader({
                     setMenuOpen(false);
                     if (onNavigateTab) onNavigateTab("applications");
                   }}
-                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-orange-50 dark:hover:bg-slate-800 font-bold transition-all cursor-pointer"
+                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-[#243D95]/10 dark:hover:bg-slate-800 font-bold transition-all cursor-pointer"
                 >
                   <span className="flex items-center gap-3">
-                    <FileText className="h-4 w-4 text-orange-500" />{" "}
+                    <FileText className="h-4 w-4 text-[#243D95]" />{" "}
                     {lang === "ml" ? "അപേക്ഷകൾ" : "Applications"}
                   </span>
                   <ChevronRight className="h-4 w-4 text-slate-400" />
@@ -519,10 +519,10 @@ export function AdminMobileAppHeader({
                     setMenuOpen(false);
                     if (onNavigateTab) onNavigateTab("helpdesk");
                   }}
-                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-orange-50 dark:hover:bg-slate-800 font-bold transition-all cursor-pointer"
+                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-[#243D95]/10 dark:hover:bg-slate-800 font-bold transition-all cursor-pointer"
                 >
                   <span className="flex items-center gap-3">
-                    <Headphones className="h-4 w-4 text-orange-500" />{" "}
+                    <Headphones className="h-4 w-4 text-[#243D95]" />{" "}
                     {lang === "ml" ? "ഹെൽപ്പ്ഡെസ്ക്" : "Help Desk"}
                   </span>
                   <ChevronRight className="h-4 w-4 text-slate-400" />
@@ -534,10 +534,10 @@ export function AdminMobileAppHeader({
                     setMenuOpen(false);
                     if (onOpenSettings) onOpenSettings();
                   }}
-                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-orange-50 dark:hover:bg-slate-800 font-bold transition-all cursor-pointer"
+                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-[#243D95]/10 dark:hover:bg-slate-800 font-bold transition-all cursor-pointer"
                 >
                   <span className="flex items-center gap-3">
-                    <Settings className="h-4 w-4 text-orange-500" />{" "}
+                    <Settings className="h-4 w-4 text-[#243D95]" />{" "}
                     {lang === "ml" ? "ക്രമീകരണങ്ങൾ" : "Settings"}
                   </span>
                   <ChevronRight className="h-4 w-4 text-slate-400" />

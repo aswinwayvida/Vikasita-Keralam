@@ -582,11 +582,11 @@ function Eligibility() {
               </span>
             </div>
             <div
-              className="h-2 overflow-hidden rounded-full bg-muted"
+              className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"
               aria-label={`${progress}% ${text.progress}`}
             >
               <div
-                className="h-full rounded-full bg-gradient-to-r from-primary to-secondary transition-all duration-500"
+                className="h-full rounded-full bg-[#243D95] transition-all duration-500"
                 style={{ width: `${progress}%` }}
               />
             </div>

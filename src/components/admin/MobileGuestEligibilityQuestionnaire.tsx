@@ -44,12 +44,15 @@ export type GuestEligibilityAnswers = {
   dob: string;
   age: number | null;
   socialCategory: string;
+  religion: string;
   minorityStatus: string;
   disabilityStatus: string;
   disabilityPercentage: string;
   studentStatus: string;
   employmentStatus: string;
+  maritalStatus: string;
   occupation: string;
+  currentSituation: string;
   bplStatus: string;
   annualFamilyIncome: string;
   districtId: string;
@@ -76,12 +79,15 @@ const EMPTY: GuestEligibilityAnswers = {
   dob: "",
   age: null,
   socialCategory: "",
+  religion: "",
   minorityStatus: "",
   disabilityStatus: "",
   disabilityPercentage: "",
   studentStatus: "",
   employmentStatus: "",
+  maritalStatus: "",
   occupation: "",
+  currentSituation: "",
   bplStatus: "",
   annualFamilyIncome: "",
   districtId: "",
@@ -91,7 +97,7 @@ const EMPTY: GuestEligibilityAnswers = {
   mandalamId: "",
 };
 
-const TOTAL_STEPS = 10;
+const TOTAL_STEPS = 12;
 
 const INCOME_OPTIONS = [
   { value: "under1", en: "Below ₹1 lakh", ml: "₹1 ലക്ഷത്തിൽ താഴെ" },
@@ -104,31 +110,27 @@ const INCOME_OPTIONS = [
 
 const OCCUPATION_OPTIONS = [
   { value: "farmer", canonical: "farmer", en: "Farmer / Agriculture", ml: "കർഷകൻ / കൃഷി" },
-  { value: "dailyWage", canonical: "unorganised", en: "Daily wage worker", ml: "ദിനബത്ത തൊഴിലാളി" },
-  {
-    value: "salariedPrivate",
-    canonical: "employee",
-    en: "Salaried (private)",
-    ml: "സ്വകാര്യ മേഖല ഉദ്യോഗസ്ഥൻ",
-  },
-  {
-    value: "salariedGovernment",
-    canonical: "employee",
-    en: "Salaried (government)",
-    ml: "സർക്കാർ ഉദ്യോഗസ്ഥൻ",
-  },
-  {
-    value: "selfEmployed",
-    canonical: "selfEmployed",
-    en: "Self-employed / Business",
-    ml: "സ്വയംതൊഴിൽ / ബിസിനസ്സ്",
-  },
+  { value: "dailyWage", canonical: "unorganised", en: "Daily Wage Worker", ml: "ദിനബത്ത തൊഴിലാളി" },
+  { value: "construction", canonical: "unorganised", en: "Construction Worker", ml: "നിർമ്മാണ തൊഴിലാളി" },
+  { value: "salariedPrivate", canonical: "employee", en: "Salaried Employee — Private", ml: "സ്വകാര്യ മേഖല ഉദ്യോഗസ്ഥൻ" },
+  { value: "salariedGovernment", canonical: "employee", en: "Salaried Employee — Government", ml: "സർക്കാർ ഉദ്യോഗസ്ഥൻ" },
+  { value: "selfEmployed", canonical: "selfEmployed", en: "Self-Employed / Business", ml: "സ്വയംതൊഴിൽ / ബിസിനസ്സ്" },
   { value: "homemaker", canonical: "homemaker", en: "Homemaker", ml: "ഗൃഹനാഥ / വീട്ടമ്മ" },
   { value: "student", canonical: "student", en: "Student", ml: "വിദ്യാർത്ഥി" },
   { value: "unemployed", canonical: "unemployed", en: "Unemployed", ml: "തൊഴിൽ രഹിതൻ" },
   { value: "retired", canonical: "retired", en: "Retired", ml: "വിരമിച്ച വ്യക്തി" },
   { value: "other", canonical: "", en: "Other", ml: "മറ്റുള്ളവ" },
   { value: "notApplicable", canonical: "", en: "Not applicable", ml: "ബാധകമല്ല" },
+];
+
+const PRIMARY_OCCUPATION_KEYS = [
+  "farmer",
+  "dailyWage",
+  "construction",
+  "salariedPrivate",
+  "salariedGovernment",
+  "selfEmployed",
+  "homemaker",
 ];
 
 const CATEGORY_META: Record<Scheme["category"], { en: string; ml: string; Icon: LucideIcon }> = {
@@ -163,6 +165,7 @@ const toEligibilityAnswers = (a: GuestEligibilityAnswers): EligibilityAnswers =>
   if (a.gender) result.gender = a.gender;
   if (a.age !== null && Number.isFinite(a.age)) result.age = String(a.age);
   if (a.socialCategory) result.socialCategory = a.socialCategory;
+  if (a.maritalStatus) result.maritalStatus = a.maritalStatus;
   if (a.minorityStatus) result.minorityStatus = a.minorityStatus;
   if (a.disabilityStatus) result.disabilityStatus = a.disabilityStatus;
   if (a.disabilityStatus === "yes" && a.disabilityPercentage)
@@ -180,11 +183,11 @@ const toEligibilityAnswers = (a: GuestEligibilityAnswers): EligibilityAnswers =>
     a.studentStatus === "yes"
       ? "student"
       : a.employmentStatus === "employed"
-        ? "employee"
+        ? (a.occupation || "employee")
         : a.employmentStatus === "self_employed"
-          ? "selfEmployed"
+          ? (a.occupation || "selfEmployed")
           : a.employmentStatus === "unemployed"
-            ? "unemployed"
+            ? (a.currentSituation === "homemaker" ? "homemaker" : a.currentSituation === "retired" ? "retired" : "unemployed")
             : "";
   const occupation = selected?.canonical || fallback;
   if (occupation) result.occupation = occupation;
@@ -209,14 +212,14 @@ function ChoiceCard({
       onClick={onClick}
       className={`flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-all active:scale-[0.995] ${
         selected
-          ? "border-orange-500 bg-orange-50 shadow-[0_0_0_1px_rgba(249,115,22,0.08)]"
-          : "border-slate-200 bg-white hover:border-orange-200 hover:bg-orange-50/40"
+          ? "border-[#243D95] bg-blue-50/70 shadow-[0_0_0_1px_rgba(36,61,149,0.12)]"
+          : "border-slate-200 bg-white hover:border-blue-200 hover:bg-blue-50/30"
       }`}
     >
       <span
         className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${
           selected
-            ? "border-orange-500 bg-orange-500 text-white"
+            ? "border-[#243D95] bg-[#243D95] text-white"
             : "border-slate-300 bg-white text-transparent"
         }`}
       >
@@ -224,13 +227,13 @@ function ChoiceCard({
       </span>
       <span className="min-w-0">
         <span
-          className={`block text-[12.5px] font-extrabold ${selected ? "text-orange-900" : "text-slate-800"}`}
+          className={`block text-[12.5px] font-extrabold ${selected ? "text-[#243D95]" : "text-slate-800"}`}
         >
           {label}
         </span>
         {helper ? (
           <span
-            className={`mt-0.5 block text-[10px] font-medium leading-snug ${selected ? "text-orange-700" : "text-slate-500"}`}
+            className={`mt-0.5 block text-[10px] font-medium leading-snug ${selected ? "text-blue-900" : "text-slate-500"}`}
           >
             {helper}
           </span>
@@ -370,6 +373,8 @@ export function MobileGuestEligibilityQuestionnaire({
   const [resultError, setResultError] = useState("");
   const [dobError, setDobError] = useState("");
   const [occupationQuery, setOccupationQuery] = useState("");
+  const [showAllOccupations, setShowAllOccupations] = useState(false);
+  const [customOccupationText, setCustomOccupationText] = useState("");
   const [browseQuery, setBrowseQuery] = useState("");
   const [browseCategory, setBrowseCategory] = useState("all");
   const [selectedSchemeIds, setSelectedSchemeIds] = useState<string[]>([]);
@@ -484,17 +489,27 @@ export function MobileGuestEligibilityQuestionnaire({
     }
   };
 
+  const activeTotalSteps = answers.studentStatus === "yes" ? 10 : 12;
+  const currentDisplayStep = (() => {
+    if (answers.studentStatus === "yes" && step >= 11) {
+      return step - 2;
+    }
+    return step;
+  })();
+
   const canContinue = (() => {
     if (step === 1) return Boolean(answers.gender);
     if (step === 2) return Boolean(answers.dob && answers.age !== null && !dobError);
     if (step === 3) return Boolean(answers.socialCategory);
-    if (step === 4) return Boolean(answers.minorityStatus);
-    if (step === 5) return Boolean(answers.disabilityStatus);
-    if (step === 6) return Boolean(answers.studentStatus);
-    if (step === 7) return Boolean(answers.employmentStatus);
-    if (step === 8) return Boolean(answers.occupation);
-    if (step === 9) return Boolean(answers.bplStatus);
-    if (step === 10) return Boolean(answers.annualFamilyIncome);
+    if (step === 4) return Boolean(answers.religion);
+    if (step === 5) return Boolean(answers.minorityStatus);
+    if (step === 6) return Boolean(answers.disabilityStatus);
+    if (step === 7) return Boolean(answers.studentStatus);
+    if (step === 8) return Boolean(answers.employmentStatus);
+    if (step === 9) return Boolean(answers.occupation || answers.currentSituation);
+    if (step === 10) return Boolean(answers.maritalStatus);
+    if (step === 11) return Boolean(answers.bplStatus);
+    if (step === 12) return Boolean(answers.annualFamilyIncome);
     return true;
   })();
 
@@ -508,17 +523,21 @@ export function MobileGuestEligibilityQuestionnaire({
     }
     if (view === "browse") {
       setView(matchedResults.length ? "results" : "questions");
-      if (!matchedResults.length) setStep(10);
+      if (!matchedResults.length) setStep(TOTAL_STEPS);
       return;
     }
     if (view === "results" || view === "error") {
       setView("questions");
-      setStep(10);
+      setStep(TOTAL_STEPS);
       return;
     }
     if (view === "loading") return;
     if (step === 1) {
       onClose();
+      return;
+    }
+    if (step === 11 && answers.studentStatus === "yes") {
+      setStep(7);
       return;
     }
     setStep((current) => Math.max(1, current - 1));
@@ -600,10 +619,23 @@ export function MobileGuestEligibilityQuestionnaire({
       runCheck();
       return;
     }
+    if (step === 7 && answers.studentStatus === "yes") {
+      setStep(11);
+      return;
+    }
     setStep((current) => Math.min(TOTAL_STEPS, current + 1));
   };
-  const skip = () =>
-    step === TOTAL_STEPS ? runCheck() : setStep((current) => Math.min(TOTAL_STEPS, current + 1));
+  const skip = () => {
+    if (step === TOTAL_STEPS) {
+      runCheck();
+      return;
+    }
+    if (step === 7 && answers.studentStatus === "yes") {
+      setStep(11);
+      return;
+    }
+    setStep((current) => Math.min(TOTAL_STEPS, current + 1));
+  };
 
   const toggleScheme = (schemeId: string) => {
     setSelectedSchemeIds((current) =>
@@ -740,30 +772,44 @@ export function MobileGuestEligibilityQuestionnaire({
   };
 
   const renderStepIcon = () => {
-    const icons: Record<number, LucideIcon> = {
-      1: User,
-      2: CalendarDays,
-      3: Users,
-      4: HeartHandshake,
-      5: Accessibility,
-      6: GraduationCap,
-      7: Briefcase,
-      8: Sparkles,
-      9: Landmark,
-      10: IndianRupee,
+    const iconImages: Record<number, { src: string; alt: string }> = {
+      1: { src: "/images/eligibility_3d/step1_gender.png", alt: "Gender" },
+      2: { src: "/images/eligibility_3d/step2_dob.png", alt: "Date of Birth" },
+      3: { src: "/images/eligibility_3d/step3_social_category.png", alt: "Social Category" },
+      4: { src: "/images/eligibility_3d/step4_minority.png", alt: "Religion" },
+      5: { src: "/images/eligibility_3d/step4_minority.png", alt: "Minority Status" },
+      6: { src: "/images/eligibility_3d/step5_disability.png", alt: "Disability Status" },
+      7: { src: "/images/eligibility_3d/step6_student.png", alt: "Student Status" },
+      8: { src: "/images/eligibility_3d/step7_employment.png", alt: "Employment Status" },
+      9: { src: "/images/eligibility_3d/step8_occupation.png", alt: "Occupation" },
+      10: { src: "/images/eligibility_3d/step1_gender.png", alt: "Marital Status" },
+      11: { src: "/images/eligibility_3d/step9_bpl.png", alt: "BPL Status" },
+      12: { src: "/images/eligibility_3d/step10_income.png", alt: "Annual Family Income" },
     };
-    const Icon = icons[step];
+    const icon = iconImages[step];
     return (
-      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-orange-50 text-orange-500 ring-1 ring-orange-100">
-        <Icon className="h-8 w-8 stroke-[1.8]" />
+      <div className="relative mx-auto flex h-16 w-16 items-center justify-center">
+        {/* Subtle background aura */}
+        <div className="absolute inset-0 rounded-full bg-[#243D95]/10 blur-xs" />
+        {/* Decorative subtle dashed ring */}
+        <div className="absolute inset-0 rounded-full border border-dashed border-[#243D95]/30 dark:border-blue-400/30" />
+        {/* 3D Icon Container */}
+        <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-blue-50/80 p-1.5 ring-1 ring-[#243D95]/15 shadow-xs">
+          {icon ? (
+            <img
+              src={icon.src}
+              alt={icon.alt}
+              className="h-full w-full object-contain drop-shadow-sm"
+            />
+          ) : null}
+        </div>
       </div>
     );
   };
 
-  const QuestionHeader = ({ title, helper }: { title: string; helper: string }) => (
-    <div className="space-y-1 text-center">
+  const QuestionHeader = ({ title }: { title: string; helper?: string }) => (
+    <div className="text-center">
       <h2 className="text-[17px] font-extrabold leading-snug text-slate-900">{title}</h2>
-      <p className="text-[11px] font-medium leading-relaxed text-slate-500">{helper}</p>
     </div>
   );
 
@@ -819,28 +865,28 @@ export function MobileGuestEligibilityQuestionnaire({
                 value={answers.dob}
                 max={today}
                 onChange={(event) => handleDobChange(event.target.value)}
-                className={`w-full rounded-xl border bg-white px-3 py-3 pr-10 text-[12px] font-bold text-slate-800 outline-none focus:border-orange-400 ${dobError ? "border-rose-400" : "border-slate-200"}`}
+                className={`w-full rounded-xl border bg-white px-3 py-3 pr-10 text-[12px] font-bold text-slate-800 outline-none focus:border-[#243D95] [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer ${dobError ? "border-rose-400" : "border-slate-200"}`}
               />
-              <CalendarDays className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <CalendarDays className="pointer-events-none absolute right-3 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-slate-400" />
             </div>
             {dobError ? (
               <p className="text-[10px] font-semibold text-rose-600">{dobError}</p>
             ) : null}
           </div>
-          <div className="rounded-xl border border-orange-100 bg-orange-50/60 px-3.5 py-3">
-            <p className="text-[10.5px] font-bold text-orange-700">{t("Age", "പ്രായം")}</p>
-            <p className="mt-0.5 text-[13px] font-extrabold text-slate-900">
-              {answers.age === null
-                ? t("Enter a date of birth", "ജനന തീയതി നൽകുക")
-                : t(`${answers.age} years`, `${answers.age} വയസ്സ്`)}
-            </p>
-            <p className="mt-1 text-[9.5px] font-medium text-slate-500">
-              {t(
-                "Age is calculated automatically. Future dates are not allowed.",
-                "പ്രായം സ്വയം കണക്കാക്കും. ഭാവി തീയതികൾ അനുവദനീയമല്ല.",
-              )}
-            </p>
-          </div>
+          {answers.age !== null ? (
+            <div className="rounded-xl border border-blue-100 bg-blue-50/60 px-3.5 py-3 animate-in fade-in duration-200">
+              <p className="text-[10.5px] font-bold text-[#243D95]">{t("Age", "പ്രായം")}</p>
+              <p className="mt-0.5 text-[13px] font-extrabold text-slate-900">
+                {t(`${answers.age} years`, `${answers.age} വയസ്സ്`)}
+              </p>
+              <p className="mt-1 text-[9.5px] font-medium text-slate-500">
+                {t(
+                  "Age is calculated automatically based on your date of birth.",
+                  "നിങ്ങളുടെ ജനന തീയതിയെ അടിസ്ഥാനമാക്കി പ്രായം കണക്കാക്കി.",
+                )}
+              </p>
+            </div>
+          ) : null}
         </>
       );
     }
@@ -881,6 +927,39 @@ export function MobileGuestEligibilityQuestionnaire({
         <>
           {renderStepIcon()}
           <QuestionHeader
+            title={t("What is your religion?", "നിങ്ങളുടെ മതം ഏതാണ്?")}
+            helper={t(
+              "Used only to identify religious minority scholarships and targeted welfare programs.",
+              "ന്യൂനപക്ഷ സ്കോളർഷിപ്പുകളും പദ്ധതികളും കണ്ടെത്താൻ മാത്രം.",
+            )}
+          />
+          <div className="space-y-2">
+            {[
+              { value: "hinduism", en: "Hinduism", ml: "ഹിന്ദു" },
+              { value: "islam", en: "Islam", ml: "ഇസ്ലാം" },
+              { value: "christianity", en: "Christianity", ml: "ക്രിസ്ത്യൻ" },
+              { value: "sikhism", en: "Sikhism", ml: "സിഖ്" },
+              { value: "buddhism", en: "Buddhism", ml: "ബുദ്ധ" },
+              { value: "jainism", en: "Jainism", ml: "ജൈന" },
+              { value: "other", en: "Other / Prefer not to say", ml: "മറ്റുള്ളവ / പറയാൻ താൽപര്യമില്ല" },
+            ].map((option) => (
+              <ChoiceCard
+                key={option.value}
+                selected={answers.religion === option.value}
+                label={t(option.en, option.ml)}
+                onClick={() => update({ religion: option.value })}
+              />
+            ))}
+          </div>
+        </>
+      );
+    }
+
+    if (step === 5) {
+      return (
+        <>
+          {renderStepIcon()}
+          <QuestionHeader
             title={t(
               "Do you belong to a minority community?",
               "ന്യൂനപക്ഷ വിഭാഗത്തിൽ ഉൾപ്പെടുന്നുണ്ടോ?",
@@ -890,14 +969,6 @@ export function MobileGuestEligibilityQuestionnaire({
               "ന്യൂനപക്ഷ സ്കോളർഷിപ്പുകളും സഹായങ്ങളും കണ്ടെത്താൻ മാത്രം.",
             )}
           />
-          <div className="rounded-xl border border-sky-100 bg-sky-50 px-3 py-2.5">
-            <p className="text-[10px] font-medium leading-relaxed text-sky-800">
-              {t(
-                "This refers to communities notified as minorities by the Government of India. Not sure is treated as missing information, not as a negative answer.",
-                "ഭാരത സർക്കാർ ന്യൂനപക്ഷമായി വിജ്ഞാപനം ചെയ്ത വിഭാഗങ്ങളെയാണ് ഇത് സൂചിപ്പിക്കുന്നത്. 'അറിയില്ല' വിവരം ലഭ്യമല്ല എന്നാണ് പരിഗണിക്കുന്നത്.",
-              )}
-            </p>
-          </div>
           <div className="space-y-2">
             {[
               { value: "yes", en: "Yes", ml: "അതെ" },
@@ -916,7 +987,7 @@ export function MobileGuestEligibilityQuestionnaire({
       );
     }
 
-    if (step === 5) {
+    if (step === 6) {
       return (
         <>
           {renderStepIcon()}
@@ -979,7 +1050,7 @@ export function MobileGuestEligibilityQuestionnaire({
       );
     }
 
-    if (step === 6) {
+    if (step === 7) {
       return (
         <>
           {renderStepIcon()}
@@ -999,36 +1070,12 @@ export function MobileGuestEligibilityQuestionnaire({
                 key={option.value}
                 selected={answers.studentStatus === option.value}
                 label={t(option.en, option.ml)}
-                onClick={() => update({ studentStatus: option.value })}
-              />
-            ))}
-          </div>
-        </>
-      );
-    }
-
-    if (step === 7) {
-      return (
-        <>
-          {renderStepIcon()}
-          <QuestionHeader
-            title={t("What is your employment status?", "നിങ്ങളുടെ തൊഴിൽ നില എന്താണ്?")}
-            helper={t(
-              "Choose your current situation. This is stored separately from student status.",
-              "നിലവിലെ സ്ഥിതി തിരഞ്ഞെടുക്കുക. ഇത് വിദ്യാർത്ഥി നിലയിൽ നിന്ന് വെവ്വേറെ സൂക്ഷിക്കും.",
-            )}
-          />
-          <div className="space-y-2">
-            {[
-              { value: "employed", en: "Employed", ml: "തൊഴിലുള്ളവർ" },
-              { value: "self_employed", en: "Self-employed", ml: "സ്വയംതൊഴിൽ / സംരംഭകൻ" },
-              { value: "unemployed", en: "Unemployed", ml: "തൊഴിലില്ലാത്തവർ" },
-            ].map((option) => (
-              <ChoiceCard
-                key={option.value}
-                selected={answers.employmentStatus === option.value}
-                label={t(option.en, option.ml)}
-                onClick={() => update({ employmentStatus: option.value })}
+                onClick={() =>
+                  update({
+                    studentStatus: option.value,
+                    ...(option.value === "yes" ? { employmentStatus: "", occupation: "" } : {}),
+                  })
+                }
               />
             ))}
           </div>
@@ -1041,61 +1088,144 @@ export function MobileGuestEligibilityQuestionnaire({
         <>
           {renderStepIcon()}
           <QuestionHeader
-            title={t("What is your occupation?", "നിങ്ങളുടെ തൊഴിൽ എന്താണ്?")}
-            helper={t(
-              "Search the list and choose the closest option. Select Not applicable if none apply.",
-              "പട്ടികയിൽ തിരഞ്ഞ് ഏറ്റവും അടുത്ത ഓപ്ഷൻ തിരഞ്ഞെടുക്കുക. ബാധകമല്ലെങ്കിൽ 'ബാധകമല്ല' തിരഞ്ഞെടുക്കുക.",
-            )}
+            title={t("What is your employment status?", "നിങ്ങളുടെ തൊഴിൽ നില എന്താണ്?")}
           />
           <div className="space-y-2">
-            <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5">
-              <Search className="h-4 w-4 shrink-0 text-slate-400" />
-              <input
-                value={occupationQuery}
-                onChange={(event) => setOccupationQuery(event.target.value)}
-                placeholder={t("Search occupations", "തൊഴിലുകൾ തിരയുക")}
-                className="min-w-0 flex-1 bg-transparent text-[11.5px] font-medium text-slate-800 outline-none placeholder:text-slate-400"
+            {[
+              { value: "employed", en: "Employed", ml: "തൊഴിലുള്ളവർ" },
+              { value: "self_employed", en: "Self-Employed", ml: "സ്വയംതൊഴിൽ / സംരംഭകൻ" },
+              { value: "unemployed", en: "Unemployed", ml: "തൊഴിലില്ലാത്തവർ" },
+            ].map((option) => (
+              <ChoiceCard
+                key={option.value}
+                selected={answers.employmentStatus === option.value}
+                label={t(option.en, option.ml)}
+                onClick={() => {
+                  if (answers.employmentStatus !== option.value) {
+                    update({
+                      employmentStatus: option.value,
+                      occupation: "",
+                      currentSituation: "",
+                    });
+                  }
+                }}
               />
-              {occupationQuery ? (
-                <button
-                  type="button"
-                  onClick={() => setOccupationQuery("")}
-                  className="text-[9.5px] font-bold text-orange-600"
-                >
-                  {t("Clear", "മായ്ക്കുക")}
-                </button>
-              ) : null}
-            </div>
-            {selectedOccupation ? (
-              <p className="rounded-xl border border-orange-100 bg-orange-50/70 px-3 py-2 text-[9.5px] font-bold text-orange-700">
-                {t("Selected", "തിരഞ്ഞെടുത്തത്")}: {t(selectedOccupation.en, selectedOccupation.ml)}
-              </p>
-            ) : null}
-            <div className="max-h-64 space-y-2 overflow-y-auto pr-0.5">
-              {filteredOccupations.length === 0 ? (
-                <p className="rounded-xl border border-dashed border-slate-200 px-3 py-5 text-center text-[10.5px] font-medium text-slate-500">
-                  {t(
-                    "No occupation matches your search.",
-                    "തിരയലുമായി പൊരുത്തപ്പെടുന്ന തൊഴിൽ ഇല്ല.",
-                  )}
-                </p>
-              ) : (
-                filteredOccupations.map((option) => (
-                  <ChoiceCard
-                    key={option.value}
-                    selected={answers.occupation === option.value}
-                    label={t(option.en, option.ml)}
-                    onClick={() => update({ occupation: option.value })}
-                  />
-                ))
-              )}
-            </div>
+            ))}
           </div>
         </>
       );
     }
 
     if (step === 9) {
+      const isEmployed = answers.employmentStatus === "employed";
+      const isSelfEmployed = answers.employmentStatus === "self_employed";
+      const isUnemployed = answers.employmentStatus === "unemployed";
+
+      const title = isEmployed
+        ? t("What type of work do you do?", "നിങ്ങൾ ഏത് തരം ജോലിയാണ് ചെയ്യുന്നത്?")
+        : isSelfEmployed
+          ? t("What is your occupation or business?", "നിങ്ങളുടെ തൊഴിൽ അല്ലെങ്കിൽ ബിസിനസ്സ് എന്താണ്?")
+          : t("What best describes your current situation?", "നിങ്ങളുടെ നിലവിലെ സ്ഥിതി എന്താണ്?");
+
+      const options = isEmployed
+        ? [
+            { value: "salariedGovernment", en: "Government Employee", ml: "സർക്കാർ ഉദ്യോഗസ്ഥൻ" },
+            { value: "salariedPrivate", en: "Private Sector Employee", ml: "സ്വകാര്യ മേഖല ഉദ്യോഗസ്ഥൻ" },
+            { value: "contract", en: "Contract Employee", ml: "കരാർ തൊഴിലാളി" },
+            { value: "dailyWage", en: "Daily Wage Worker", ml: "ദിനബത്ത തൊഴിലാളി" },
+            { value: "construction", en: "Construction Worker", ml: "നിർമ്മാണ തൊഴിലാളി" },
+            { value: "other", en: "Other", ml: "മറ്റുള്ളവ" },
+          ]
+        : isSelfEmployed
+          ? [
+              { value: "farmer", en: "Farmer / Agriculture", ml: "കർഷകൻ / കൃഷി" },
+              { value: "businessOwner", en: "Business Owner / Shopkeeper", ml: "ബിസിനസ്സ് ഉടമ / കടയുടമ" },
+              { value: "freelancer", en: "Freelancer / Professional", ml: "ഫ്രീലാൻസർ / പ്രൊഫഷണൽ" },
+              { value: "driver", en: "Driver / Transport", ml: "ഡ്രൈവർ / ഗതാഗതം" },
+              { value: "artisan", en: "Skilled Worker / Artisan", ml: "വിദഗ്ദ്ധ തൊഴിലാളി / കൈவினைജ്ഞൻ" },
+              { value: "other", en: "Other", ml: "മറ്റുള്ളവ" },
+            ]
+          : [
+              { value: "lookingForWork", en: "Looking for Work", ml: "ജോലി അന്വേഷിക്കുന്നു" },
+              { value: "notSeekingWork", en: "Not Currently Seeking Work", ml: "നിലവിൽ ജോലി അന്വേഷിക്കുന്നില്ല" },
+              { value: "homemaker", en: "Homemaker", ml: "ഗൃഹനാഥ / വീട്ടമ്മ" },
+              { value: "retired", en: "Retired", ml: "വിരമിച്ച വ്യക്തി" },
+              { value: "unableToWork", en: "Unable to Work", ml: "ജോലി ചെയ്യാൻ സാധിക്കാത്തവർ" },
+              { value: "other", en: "Other", ml: "മറ്റുള്ളവ" },
+            ];
+
+      const currentSelection = isUnemployed ? answers.currentSituation : answers.occupation;
+
+      return (
+        <>
+          {renderStepIcon()}
+          <QuestionHeader title={title} />
+          <div className="space-y-2">
+            {options.map((option) => {
+              const selected = currentSelection === option.value;
+              return (
+                <ChoiceCard
+                  key={option.value}
+                  selected={selected}
+                  label={t(option.en, option.ml)}
+                  onClick={() => {
+                    if (isUnemployed) {
+                      update({ currentSituation: option.value, occupation: "" });
+                    } else {
+                      update({ occupation: option.value, currentSituation: "" });
+                    }
+                  }}
+                />
+              );
+            })}
+          </div>
+
+          {currentSelection === "other" ? (
+            <div className="mt-2.5 space-y-1.5 rounded-xl border border-blue-200 bg-blue-50/50 p-3">
+              <label htmlFor="specify-details-input" className="block text-[10.5px] font-extrabold text-[#243D95]">
+                {t("Specify Details", "വിശദാംശങ്ങൾ വ്യക്തമാക്കുക")}
+              </label>
+              <input
+                id="specify-details-input"
+                type="text"
+                value={customOccupationText}
+                onChange={(e) => setCustomOccupationText(e.target.value)}
+                placeholder={t("Enter specific details...", "വിശദാംശങ്ങൾ ഇവിടെ നൽകുക...")}
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-medium text-slate-800 outline-none focus:border-[#243D95]"
+              />
+            </div>
+          ) : null}
+        </>
+      );
+    }
+
+    if (step === 10) {
+      return (
+        <>
+          {renderStepIcon()}
+          <QuestionHeader
+            title={t("What is your marital status?", "നിങ്ങളുടെ വൈവാഹിക നില എന്താണ്?")}
+          />
+          <div className="space-y-2">
+            {[
+              { value: "never_married", en: "Single / Never Married", ml: "അവിവാഹിതൻ / അവിവാഹിത" },
+              { value: "married", en: "Married", ml: "വിവാഹിതൻ / വിവാഹിത" },
+              { value: "widowed", en: "Widowed", ml: "വിധവ / ഭർത്താവ് മരിച്ചവർ" },
+              { value: "divorced", en: "Divorced / Separated", ml: "വിവാഹബന്ധം വേർപെടുത്തിയവർ" },
+            ].map((option) => (
+              <ChoiceCard
+                key={option.value}
+                selected={answers.maritalStatus === option.value}
+                label={t(option.en, option.ml)}
+                onClick={() => update({ maritalStatus: option.value })}
+              />
+            ))}
+          </div>
+        </>
+      );
+    }
+
+    if (step === 11) {
       return (
         <>
           {renderStepIcon()}
@@ -1109,14 +1239,6 @@ export function MobileGuestEligibilityQuestionnaire({
               "BPL എന്നാൽ ദാരിദ്ര്യരേഖയ്ക്ക് താഴെ എന്നാണ്. പദ്ധതി പരിശോധനയ്ക്ക് മാത്രം.",
             )}
           />
-          <div className="rounded-xl border border-sky-100 bg-sky-50 px-3 py-2.5">
-            <p className="text-[10px] font-medium leading-relaxed text-sky-800">
-              {t(
-                "BPL status usually refers to households included in the priority or Below Poverty Line list. If you are unsure, select Not sure.",
-                "BPL നില സാധാരണയായി മുൻഗണനാ അല്ലെങ്കിൽ ദാരിദ്ര്യരേഖയ്ക്ക് താഴെയുള്ള പട്ടികയിൽ ഉള്ള കുടുംബങ്ങളെ സൂചിപ്പിക്കുന്നു. ഉറപ്പില്ലെങ്കിൽ 'അറിയില്ല' തിരഞ്ഞെടുക്കുക.",
-              )}
-            </p>
-          </div>
           <div className="space-y-2">
             {[
               { value: "yes", en: "Yes", ml: "അതെ" },
@@ -1135,7 +1257,7 @@ export function MobileGuestEligibilityQuestionnaire({
       );
     }
 
-    if (step === 10) {
+    if (step === 12) {
       return (
         <>
           {renderStepIcon()}
@@ -1281,13 +1403,15 @@ export function MobileGuestEligibilityQuestionnaire({
           type="button"
           onClick={goBack}
           disabled={view === "loading"}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-700 transition-colors hover:bg-orange-50 disabled:opacity-40"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-700 transition-colors hover:bg-slate-100 disabled:opacity-40"
           aria-label={t("Back", "തിരികെ")}
         >
           <ArrowLeft className="h-4.5 w-4.5 stroke-[2.2]" />
         </button>
         <div className="min-w-0 flex-1 text-center">
-          <h1 className="truncate text-[12.5px] font-extrabold text-slate-900">{title}</h1>
+          <h1 className="truncate text-[12.5px] font-extrabold text-slate-900">
+            {view === "questions" ? `${title} (${currentDisplayStep}/${activeTotalSteps})` : title}
+          </h1>
         </div>
         <div className="flex items-center gap-1 shrink-0">
           {(view === "results" || view === "browse") && (
@@ -1296,7 +1420,7 @@ export function MobileGuestEligibilityQuestionnaire({
               onClick={() => setShowHeaderSearch((prev) => !prev)}
               className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors ${
                 showHeaderSearch || resultQuery
-                  ? "bg-orange-100 text-orange-600"
+                  ? "bg-blue-100 text-[#243D95]"
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               }`}
               aria-label={t("Search schemes", "പദ്ധതികൾ തിരയുക")}
@@ -1328,33 +1452,13 @@ export function MobileGuestEligibilityQuestionnaire({
             <button
               type="button"
               onClick={() => setResultQuery("")}
-              className="text-[9.5px] font-bold text-orange-600"
+              className="text-[9.5px] font-bold text-[#243D95]"
             >
               {t("Clear", "മായ്ക്കുക")}
             </button>
           ) : null}
         </div>
       )}
-      {progress ? (
-        <div className="mt-2">
-          <div className="mb-1 flex items-center justify-between text-[9px] font-extrabold text-slate-500">
-            <span>{t(`Step ${step} of ${TOTAL_STEPS}`, `ഘട്ടം ${step} / ${TOTAL_STEPS}`)}</span>
-            <span>{Math.round((step / TOTAL_STEPS) * 100)}%</span>
-          </div>
-          <div
-            className="h-1.5 w-full overflow-hidden rounded-full bg-orange-100"
-            role="progressbar"
-            aria-valuemin={1}
-            aria-valuemax={TOTAL_STEPS}
-            aria-valuenow={step}
-          >
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-500 transition-all duration-300"
-              style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
-            />
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 
@@ -2182,8 +2286,8 @@ export function MobileGuestEligibilityQuestionnaire({
             view === "success"
               ? t("Help request sent", "സഹായ അഭ്യർത്ഥന അയച്ചു")
               : view === "browse"
-                ? t("All Schemes", "എല്ലാ പദ്ധതികളും")
-                : t("Your scheme matches", "നിങ്ങളുടെ പദ്ധതി പൊരുത്തങ്ങൾ"),
+                ? t(`Scheme list(${browsedSchemes.length})`, `പദ്ധതി പട്ടിക(${browsedSchemes.length})`)
+                : t(`Scheme list(${matchedResults.length})`, `പദ്ധതി പട്ടിക(${matchedResults.length})`),
             false,
           )}
       <div
@@ -2208,15 +2312,15 @@ export function MobileGuestEligibilityQuestionnaire({
       </div>
       {view === "results" || view === "browse" ? renderSelectionFooter() : null}
       {view === "questions" ? (
-        <div className="relative z-30 shrink-0 border-t border-slate-200 bg-white px-4 pb-3 pt-2.5 shadow-[0_-6px_18px_rgba(15,23,42,0.07)]">
+        <div className="relative z-30 shrink-0 border-t border-slate-200 bg-white px-4 pb-3 pt-2.5">
           <button
             type="button"
             disabled={!canContinue}
             onClick={next}
-            className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[12px] font-extrabold text-white shadow-md transition-all ${
+            className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[12px] font-extrabold text-white transition-all ${
               canContinue
                 ? "bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-[0.99]"
-                : "cursor-not-allowed bg-slate-300 shadow-none"
+                : "cursor-not-allowed bg-slate-300"
             }`}
           >
             {step === TOTAL_STEPS ? <SearchCheck className="h-4 w-4 stroke-[2.5]" /> : null}

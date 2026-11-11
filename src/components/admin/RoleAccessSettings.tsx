@@ -564,10 +564,29 @@ export function RoleAccessSettings({
   const [locationSubTab, setLocationSubTab] = useState<
     "org-levels" | "region" | "org-district" | "mandalam" | "area" | "booth"
   >("org-levels");
-  const [locationViewMode, setLocationViewMode] = useState<"list" | "chart" | "user-chart">("list");
+  const [locationViewMode, setLocationViewMode] = useState<"list" | "chart" | "user-chart">(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const mode = params.get("mode") || params.get("view");
+      if (mode === "chart" || mode === "org-chart" || mode === "organisational-chart") {
+        return "chart";
+      }
+      if (mode === "user-chart") {
+        return "user-chart";
+      }
+    }
+    return "list";
+  });
 
   useEffect(() => {
     setActiveTab(defaultTab);
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const mode = params.get("mode") || params.get("view");
+      if (mode === "chart" || mode === "org-chart" || mode === "organisational-chart") {
+        setLocationViewMode("chart");
+      }
+    }
   }, [defaultTab]);
 
   useEffect(() => {
@@ -597,8 +616,75 @@ export function RoleAccessSettings({
   const [selectedOrgLevelFilter, setSelectedOrgLevelFilter] = useState("All");
 
   const commitDesignations = (next: ManagedDesignation[]) => {
-    setDesignationsList(next);
-    saveManagedDesignations(next);
+    // Ensure rank corresponds to index + 1
+    const reRanked = next.map((item, idx) => ({ ...item, rank: idx + 1 }));
+    setDesignationsList(reRanked);
+    saveManagedDesignations(reRanked);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("vk_designations_updated", { detail: reRanked }));
+    }
+  };
+
+  useEffect(() => {
+    const handleSync = () => {
+      setDesignationsList(loadManagedDesignations());
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("vk_designations_updated", handleSync);
+      window.addEventListener("storage", handleSync);
+    }
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("vk_designations_updated", handleSync);
+        window.removeEventListener("storage", handleSync);
+      }
+    };
+  }, []);
+
+  const handleMoveDesignationUp = (index: number) => {
+    if (index <= 0 || index >= designationsList.length) return;
+    const current = designationsList[index];
+    if (!current) return;
+
+    let prevIndex = -1;
+    for (let i = index - 1; i >= 0; i--) {
+      if (designationsList[i].orgLevel === current.orgLevel) {
+        prevIndex = i;
+        break;
+      }
+    }
+
+    if (prevIndex === -1) return;
+
+    const next = [...designationsList];
+    const temp = next[index];
+    next[index] = next[prevIndex];
+    next[prevIndex] = temp;
+    commitDesignations(next);
+    toast.success(tr("Designation order updated.", "തസ്തിക മുൻഗണനാ ക്രമം പുതുക്കി."));
+  };
+
+  const handleMoveDesignationDown = (index: number) => {
+    if (index < 0 || index >= designationsList.length - 1) return;
+    const current = designationsList[index];
+    if (!current) return;
+
+    let nextIndex = -1;
+    for (let i = index + 1; i < designationsList.length; i++) {
+      if (designationsList[i].orgLevel === current.orgLevel) {
+        nextIndex = i;
+        break;
+      }
+    }
+
+    if (nextIndex === -1) return;
+
+    const next = [...designationsList];
+    const temp = next[index];
+    next[index] = next[nextIndex];
+    next[nextIndex] = temp;
+    commitDesignations(next);
+    toast.success(tr("Designation order updated.", "തസ്തിക മുൻഗണനാ ക്രമം പുതുക്കി."));
   };
 
   const handleOpenCreateDesignation = () => {
@@ -769,6 +855,17 @@ export function RoleAccessSettings({
       return matchesSearch && matchesLevel;
     });
   }, [designationsList, topSearchQuery, selectedOrgLevelFilter]);
+
+  const getDesignationUserCount = (desigName: string): number => {
+    if (!desigName) return 0;
+    const target = desigName.trim().toLowerCase();
+    const allUsers = loadManagedDesktopUsers();
+    return allUsers.filter((u) => {
+      const dEn = (u.designationEn || "").trim().toLowerCase();
+      const dMl = (u.designationMl || "").trim().toLowerCase();
+      return dEn === target || dMl === target || (dEn && target.includes(dEn)) || (dEn && dEn.includes(target));
+    }).length;
+  };
 
   // Location datasets state
   const [locationOrgLevels, setLocationOrgLevels] = useState(LOCATION_ORG_LEVELS_DATA);
@@ -1719,6 +1816,50 @@ export function RoleAccessSettings({
     nextOrder.splice(dropIndex, 0, moved);
     setRoleColumnOrder(nextOrder);
     setDraggedRoleColumnIndex(null);
+  };
+
+  const [visibleDesignationColumns, setVisibleDesignationColumns] = useState({
+    designation: true,
+    orgLevel: true,
+    users: false,
+    status: true,
+    actions: true,
+  });
+
+  const DESIGNATION_COLUMNS_META: { key: keyof typeof visibleDesignationColumns; en: string; ml: string }[] = [
+    { key: "designation", en: "Designation", ml: "തസ്തിക" },
+    { key: "orgLevel", en: "Organisation Level", ml: "സംഘടനാ തലം" },
+    { key: "users", en: "Assigned Users", ml: "ഉപയോക്താക്കൾ" },
+    { key: "status", en: "Status", ml: "സ്റ്റാറ്റസ്" },
+    { key: "actions", en: "Actions", ml: "നടപടികൾ" },
+  ];
+
+  const [designationColumnOrder, setDesignationColumnOrder] = useState<(keyof typeof visibleDesignationColumns)[]>([
+    "designation",
+    "orgLevel",
+    "users",
+    "status",
+    "actions",
+  ]);
+
+  const [draggedDesignationColumnIndex, setDraggedDesignationColumnIndex] = useState<number | null>(null);
+
+  const handleDragStartDesignationColumn = (index: number) => {
+    setDraggedDesignationColumnIndex(index);
+  };
+
+  const handleDragOverDesignationColumn = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDropDesignationColumn = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (draggedDesignationColumnIndex === null || draggedDesignationColumnIndex === dropIndex) return;
+    const nextOrder = [...designationColumnOrder];
+    const [moved] = nextOrder.splice(draggedDesignationColumnIndex, 1);
+    nextOrder.splice(dropIndex, 0, moved);
+    setDesignationColumnOrder(nextOrder);
+    setDraggedDesignationColumnIndex(null);
   };
 
   const availableDistricts = useMemo(() => {
@@ -3916,22 +4057,43 @@ export function RoleAccessSettings({
                         aria-label="Select all designations"
                       />
                     </th>
-                    <th className="p-3">{tr("DESIGNATION", "തസ്തിക")}</th>
-                    <th className="p-3">{tr("ORGANISATION LEVEL", "സംഘടനാ തലം")}</th>
-                    <th className="p-3">{tr("STATUS", "സ്റ്റാറ്റസ്")}</th>
-                    <th className="p-3 text-right">{tr("ACTIONS", "നടപടികൾ")}</th>
+                    {designationColumnOrder.map((colKey) => {
+                      if (!visibleDesignationColumns[colKey]) return null;
+                      const meta = DESIGNATION_COLUMNS_META.find((c) => c.key === colKey);
+                      if (!meta) return null;
+                      return (
+                        <th
+                          key={colKey}
+                          className={`p-3 ${colKey === "actions" ? "text-right" : ""}`}
+                        >
+                          {tr(meta.en.toUpperCase(), meta.ml)}
+                        </th>
+                      );
+                    })}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/60 font-semibold">
                   {filteredDesignations.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-8 text-center text-muted-foreground text-xs font-semibold">
+                      <td
+                        colSpan={1 + designationColumnOrder.filter((c) => visibleDesignationColumns[c]).length}
+                        className="py-8 text-center text-muted-foreground text-xs font-semibold"
+                      >
                         {tr("No designations found.", "തസ്തികകൾ ഒന്നും കണ്ടെത്തിയില്ല.")}
                       </td>
                     </tr>
                   ) : (
-                    filteredDesignations.map((desig) => {
+                    filteredDesignations.map((desig, desigIdx) => {
                       const isSelected = selectedDesignationIds.includes(desig.id);
+                      const realIndex = designationsList.findIndex((d) => d.id === desig.id);
+                      const userCount = getDesignationUserCount(desig.name);
+                      const canMoveUp =
+                        realIndex > 0 &&
+                        designationsList.slice(0, realIndex).some((d) => d.orgLevel === desig.orgLevel);
+                      const canMoveDown =
+                        realIndex >= 0 &&
+                        realIndex < designationsList.length - 1 &&
+                        designationsList.slice(realIndex + 1).some((d) => d.orgLevel === desig.orgLevel);
                       return (
                         <tr
                           key={desig.id}
@@ -3949,86 +4111,153 @@ export function RoleAccessSettings({
                               aria-label={`Select ${desig.name}`}
                             />
                           </td>
-                          <td className="p-3 font-bold text-foreground">{desig.name}</td>
-                          <td className="p-3">
-                            <div className="flex flex-wrap items-center gap-1.5">
-                              <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-900 border border-amber-200">
-                                {desig.orgLevel}
-                              </span>
-                              {desig.rank ? (
-                                <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[10.5px] font-extrabold text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
-                                  {tr(`Rank ${desig.rank}`, `റാങ്ക് ${desig.rank}`)}
-                                </span>
-                              ) : null}
-                            </div>
-                          </td>
-                          <td className="p-3">
-                        <span
-                          className={cn(
-                            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-bold",
-                            desig.status === "Active"
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                              : "bg-slate-100 text-slate-600 border border-slate-200",
-                          )}
-                        >
-                          <span
-                            className={cn(
-                              "h-1.5 w-1.5 rounded-full",
-                              desig.status === "Active" ? "bg-emerald-500" : "bg-slate-400",
-                            )}
-                          />
-                          {desig.status === "Active" ? tr("Active", "സജീവം") : tr("Disabled", "നിർജ്ജീവം")}
-                        </span>
-                      </td>
-                      <td className="p-3 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                type="button"
-                                size="icon"
-                                variant="ghost"
-                                className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
-                              >
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40 text-xs">
-                              <DropdownMenuItem
-                                onClick={() => handleOpenEditDesignation(desig)}
-                                className="gap-2 font-semibold cursor-pointer"
-                              >
-                                <Pencil className="h-3.5 w-3.5 text-slate-500" />
-                                <span>{tr("Edit", "തിരുത്തുക")}</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleToggleDesignationStatus(desig)}
-                                className="gap-2 font-semibold cursor-pointer"
-                              >
-                                <Power className="h-3.5 w-3.5 text-slate-500" />
-                                <span>
-                                  {desig.status === "Active"
-                                    ? tr("Disable", "നിർജ്ജീവമാക്കുക")
-                                    : tr("Enable", "സജീവമാക്കുക")}
-                                </span>
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => handleDeleteDesignation(desig)}
-                                className="gap-2 font-semibold text-destructive focus:text-destructive cursor-pointer"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                                <span>{tr("Delete", "നീക്കം ചെയ്യുക")}</span>
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </td>
-                    </tr>
-                    );
-                  })
-                )}
-              </tbody>
+                          {designationColumnOrder.map((colKey) => {
+                            if (!visibleDesignationColumns[colKey]) return null;
+                            switch (colKey) {
+                              case "designation":
+                                return (
+                                  <td key="designation" className="p-3 font-bold text-foreground">
+                                    {desig.name}
+                                  </td>
+                                );
+                              case "orgLevel":
+                                return (
+                                  <td key="orgLevel" className="p-3">
+                                    <div className="flex flex-wrap items-center gap-1.5">
+                                      <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-900 border border-amber-200">
+                                        {desig.orgLevel}
+                                      </span>
+                                    </div>
+                                  </td>
+                                );
+                              case "users":
+                                return (
+                                  <td key="users" className="p-3">
+                                    <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-100 px-2.5 py-0.5 text-xs font-extrabold text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
+                                      <Users className="h-3.5 w-3.5 text-slate-500" />
+                                      <span>{userCount.toLocaleString("en-IN")}</span>
+                                    </span>
+                                  </td>
+                                );
+                              case "status":
+                                return (
+                                  <td key="status" className="p-3">
+                                    <span
+                                      className={cn(
+                                        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-bold",
+                                        desig.status === "Active"
+                                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                          : "bg-slate-100 text-slate-600 border border-slate-200",
+                                      )}
+                                    >
+                                      <span
+                                        className={cn(
+                                          "h-1.5 w-1.5 rounded-full",
+                                          desig.status === "Active" ? "bg-emerald-500" : "bg-slate-400",
+                                        )}
+                                      />
+                                      {desig.status === "Active" ? tr("Active", "സജീവം") : tr("Disabled", "നിർജ്ജീവം")}
+                                    </span>
+                                  </td>
+                                );
+                              case "actions":
+                                return (
+                                  <td key="actions" className="p-3 text-right">
+                                    <div className="flex items-center justify-end gap-1.5">
+                                      <div className="inline-flex items-center gap-0.5 border border-border/70 rounded-md p-0.5 bg-background">
+                                        <Button
+                                          type="button"
+                                          size="icon"
+                                          variant="ghost"
+                                          disabled={!canMoveUp}
+                                          onClick={() => handleMoveDesignationUp(realIndex)}
+                                          title={tr("Move Up in Rank", "മുകളിലേക്ക് നീക്കുക")}
+                                          className="h-6 w-6 text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer"
+                                        >
+                                          <ChevronUp className="h-3.5 w-3.5" />
+                                        </Button>
+                                        <Button
+                                          type="button"
+                                          size="icon"
+                                          variant="ghost"
+                                          disabled={!canMoveDown}
+                                          onClick={() => handleMoveDesignationDown(realIndex)}
+                                          title={tr("Move Down in Rank", "താഴേക്ക് നീക്കുക")}
+                                          className="h-6 w-6 text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer"
+                                        >
+                                          <ChevronDown className="h-3.5 w-3.5" />
+                                        </Button>
+                                      </div>
+
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                          <Button
+                                            type="button"
+                                            size="icon"
+                                            variant="ghost"
+                                            className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
+                                          >
+                                            <MoreVertical className="h-4 w-4" />
+                                          </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="w-44 text-xs">
+                                          <DropdownMenuItem
+                                            disabled={!canMoveUp}
+                                            onClick={() => handleMoveDesignationUp(realIndex)}
+                                            className="gap-2 font-semibold cursor-pointer"
+                                          >
+                                            <ChevronUp className="h-3.5 w-3.5 text-slate-500" />
+                                            <span>{tr("Move Up in Rank", "മുകളിലേക്ക് നീക്കുക")}</span>
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem
+                                            disabled={!canMoveDown}
+                                            onClick={() => handleMoveDesignationDown(realIndex)}
+                                            className="gap-2 font-semibold cursor-pointer"
+                                          >
+                                            <ChevronDown className="h-3.5 w-3.5 text-slate-500" />
+                                            <span>{tr("Move Down in Rank", "താഴേക്ക് നീക്കുക")}</span>
+                                          </DropdownMenuItem>
+                                          <DropdownMenuSeparator />
+                                          <DropdownMenuItem
+                                            onClick={() => handleOpenEditDesignation(desig)}
+                                            className="gap-2 font-semibold cursor-pointer"
+                                          >
+                                            <Pencil className="h-3.5 w-3.5 text-slate-500" />
+                                            <span>{tr("Edit", "തിരുത്തുക")}</span>
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem
+                                            onClick={() => handleToggleDesignationStatus(desig)}
+                                            className="gap-2 font-semibold cursor-pointer"
+                                          >
+                                            <Power className="h-3.5 w-3.5 text-slate-500" />
+                                            <span>
+                                              {desig.status === "Active"
+                                                ? tr("Disable", "നിർജ്ജീവമാക്കുക")
+                                                : tr("Enable", "സജീവമാക്കുക")}
+                                            </span>
+                                          </DropdownMenuItem>
+                                          <DropdownMenuSeparator />
+                                          <DropdownMenuItem
+                                            onClick={() => handleDeleteDesignation(desig)}
+                                            className="gap-2 font-semibold text-destructive focus:text-destructive cursor-pointer"
+                                          >
+                                            <Trash2 className="h-3.5 w-3.5" />
+                                            <span>{tr("Delete", "നീക്കം ചെയ്യുക")}</span>
+                                          </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                    </div>
+                                  </td>
+                                );
+                              default:
+                                return null;
+                            }
+                          })}
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
             </table>
           </div>
         </div>
@@ -5094,7 +5323,11 @@ export function RoleAccessSettings({
             </SheetDescription>
             <div className="pt-2 flex items-center justify-between">
               <span className="text-xs font-semibold text-muted-foreground">
-                {activeTab === "users" ? tr("Users Table Columns", "യൂസർ ടേബിൾ കോളങ്ങൾ") : tr("Roles Table Columns", "റോൾ ടേബിൾ കോളങ്ങൾ")}
+                {activeTab === "users"
+                  ? tr("Users Table Columns", "യൂസർ ടേബിൾ കോളങ്ങൾ")
+                  : activeTab === "designations"
+                  ? tr("Designations Table Columns", "തസ്തിക ടേബിൾ കോളങ്ങൾ")
+                  : tr("Roles Table Columns", "റോൾ ടേബിൾ കോളങ്ങൾ")}
               </span>
               <button
                 type="button"
@@ -5110,6 +5343,15 @@ export function RoleAccessSettings({
                       actions: true,
                     });
                     setUserColumnOrder(USER_COLUMNS_META.map((c) => c.key));
+                  } else if (activeTab === "designations") {
+                    setVisibleDesignationColumns({
+                      designation: true,
+                      orgLevel: true,
+                      users: true,
+                      status: true,
+                      actions: true,
+                    });
+                    setDesignationColumnOrder(DESIGNATION_COLUMNS_META.map((c) => c.key));
                   } else {
                     setVisibleRoleColumns({
                       role: true,
@@ -5155,6 +5397,39 @@ export function RoleAccessSettings({
                       />
                       <label
                         htmlFor={`sheet-col-user-${colKey}`}
+                        className="flex-1 text-xs font-bold text-foreground cursor-pointer select-none truncate"
+                      >
+                        {tr(meta.en, meta.ml)}
+                      </label>
+                    </div>
+                  );
+                })
+              : activeTab === "designations"
+              ? designationColumnOrder.map((colKey, index) => {
+                  const meta = DESIGNATION_COLUMNS_META.find((c) => c.key === colKey);
+                  if (!meta) return null;
+                  const isChecked = visibleDesignationColumns[colKey];
+                  return (
+                    <div
+                      key={colKey}
+                      draggable
+                      onDragStart={() => handleDragStartDesignationColumn(index)}
+                      onDragOver={handleDragOverDesignationColumn}
+                      onDrop={(e) => handleDropDesignationColumn(e, index)}
+                      className={`flex items-center gap-3 rounded-xl border border-border/70 p-3 text-xs bg-white transition-all hover:border-primary/40 hover:shadow-2xs ${
+                        draggedDesignationColumnIndex === index ? "opacity-40 bg-muted" : ""
+                      }`}
+                    >
+                      <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab active:cursor-grabbing shrink-0" />
+                      <Checkbox
+                        id={`sheet-col-desig-${colKey}`}
+                        checked={isChecked}
+                        onCheckedChange={(c) =>
+                          setVisibleDesignationColumns((prev) => ({ ...prev, [colKey]: Boolean(c) }))
+                        }
+                      />
+                      <label
+                        htmlFor={`sheet-col-desig-${colKey}`}
                         className="flex-1 text-xs font-bold text-foreground cursor-pointer select-none truncate"
                       >
                         {tr(meta.en, meta.ml)}

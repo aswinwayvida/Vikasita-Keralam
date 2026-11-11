@@ -27,24 +27,24 @@ const mergedSlides = [
     subtitleMl: "സംസ്ഥാനതല മെഗാ ബൂത്ത് സമ്മേളനം",
     ctaText: "REGISTER NOW",
     ctaTextMl: "രജിസ്റ്റർ ചെയ്യുക",
-    rightGradient: "from-[#800f13] via-[#a3161a] to-[#4f080b]",
-    accentBorder: "border-[#800f13]",
-    dateBadgeBg: "bg-white text-[#800f13]",
-    yearTagBg: "bg-red-50 text-[#800f13] border-red-200/80",
+    rightGradient: "from-[#1d3178] via-[#243D95] to-[#122061]",
+    accentBorder: "border-[#243D95]",
+    dateBadgeBg: "bg-white text-[#243D95]",
+    yearTagBg: "bg-blue-50 text-[#243D95] border-blue-200/80",
     isUnread: true,
   },
   {
     type: "announcement",
     ribbon: "MODI'S GUARANTEE",
     ribbonMl: "മോദിയുടെ ഗ്യാരണ്ടി",
-    ribbonBg: "bg-red-500 text-white font-black",
+    ribbonBg: "bg-[#243D95] text-white font-black",
     title: "SABKA SAATH · SABKA VIKAS",
     subtitle: "Sabka Vishwas · Sabka Prayaas (2047 Vision)",
     subtitleMl: "സബ്കാ സാഥ്, സബ്കാ വികാസ്, സബ്കാ വിശ്വാസ്",
-    cardStyle: "bg-gradient-to-r from-[#800f13] via-[#a3161a] to-[#590a0d] text-white shadow-md border border-red-900/50",
-    titleColor: "text-white font-extrabold",
-    subTitleColor: "text-red-100/95 font-medium",
-    rightGraphicBg: "bg-red-950/70 border-red-400/40",
+    cardStyle: "bg-gradient-to-r from-blue-50/90 via-sky-50 to-blue-100/80 text-slate-900 shadow-xs border border-blue-200/80",
+    titleColor: "text-slate-900 font-extrabold",
+    subTitleColor: "text-[#243D95] font-semibold",
+    rightGraphicBg: "bg-white border-blue-200",
     isUnread: true,
   },
   {
@@ -59,10 +59,10 @@ const mergedSlides = [
     subtitleMl: "തിരുവനന്തപുരത്ത് 50,000+ യുവ പ്രതിനിധികൾ",
     ctaText: "JOIN YATRA",
     ctaTextMl: "പങ്കെടുക്കുക",
-    rightGradient: "from-[#ea580c] via-[#c2410c] to-[#9a3412]",
-    accentBorder: "border-[#ea580c]",
-    dateBadgeBg: "bg-white text-[#c2410c]",
-    yearTagBg: "bg-orange-50 text-[#c2410c] border-orange-200/80",
+    rightGradient: "from-[#243D95] via-[#1e337d] to-[#152456]",
+    accentBorder: "border-[#243D95]",
+    dateBadgeBg: "bg-white text-[#243D95]",
+    yearTagBg: "bg-blue-50 text-[#243D95] border-blue-200/80",
     isUnread: true,
   },
 ] as const;
@@ -79,7 +79,7 @@ export function MobileGuestEventsSection({
     <div className="space-y-1.5 pt-1">
       <div className="flex items-center justify-between px-0.5 pb-0.5">
         <div className="flex items-center gap-1.5 min-w-0">
-          <span className="flex h-5 w-5 items-center justify-center rounded-md bg-orange-500/10 dark:bg-orange-950/30 text-[#ff5500] shrink-0">
+          <span className="flex h-5 w-5 items-center justify-center rounded-md bg-[#243D95]/10 dark:bg-[#243D95]/30 text-[#243D95] dark:text-blue-300 shrink-0">
             <Megaphone className="h-3.5 w-3.5 stroke-[2.2]" />
           </span>
           <h3 className="font-display text-xs sm:text-[13px] font-black text-[#0a0f1d] dark:text-white tracking-tight truncate">
@@ -89,13 +89,13 @@ export function MobileGuestEventsSection({
         <button
           type="button"
           onClick={onViewAll}
-          className="flex items-center gap-1 text-[11px] font-bold text-[#ff5500] hover:text-orange-600 transition-colors cursor-pointer shrink-0"
+          className="flex items-center gap-1 text-[11px] font-bold text-[#243D95] dark:text-blue-300 hover:text-blue-800 transition-colors cursor-pointer shrink-0"
         >
           <span>{lang === "ml" ? "എല്ലാം" : "View All"}</span>
-          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#ff3b30] text-white text-[9.5px] font-black shadow-2xs">
+          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#243D95] text-white text-[9.5px] font-black shadow-2xs">
             3
           </span>
-          <ChevronRight className="h-3.5 w-3.5 text-[#ff5500] stroke-[2.5]" />
+          <ChevronRight className="h-3.5 w-3.5 text-[#243D95] dark:text-blue-300 stroke-[2.5]" />
         </button>
       </div>
 
@@ -117,17 +117,14 @@ export function MobileGuestEventsSection({
         </div>
       ) : slide.type === "event" ? (
         <div className="relative overflow-hidden rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm h-[80px] flex items-center justify-between transition-all duration-500">
-          <div className="flex-1 min-w-0 h-full p-2.5 pl-3 pr-3 flex flex-col justify-between z-10">
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <h4 className="font-display text-[11.5px] sm:text-[12px] font-black text-slate-900 dark:text-white leading-tight tracking-tight truncate">
+          <div className="flex-1 min-w-0 h-full p-2 pl-2.5 pr-1.5 flex flex-col justify-between z-10">
+            <div className="space-y-0.5 min-w-0">
+              <div className="flex items-center gap-1 min-w-0">
+                <h4 className="font-display text-[10.5px] sm:text-[11px] font-black text-slate-900 dark:text-white leading-snug tracking-tight line-clamp-2">
                   {slide.title}
                 </h4>
-                {slide.isUnread && (
-                  <span className="h-2 w-2 rounded-full bg-[#ff3b30] shrink-0 inline-block" />
-                )}
               </div>
-              <p className="text-[9.5px] font-medium text-slate-600 dark:text-slate-300 leading-tight line-clamp-1">
+              <p className="text-[9px] font-medium text-slate-600 dark:text-slate-300 leading-tight line-clamp-1">
                 {lang === "ml" ? slide.subtitleMl : slide.subtitle}
               </p>
             </div>
@@ -135,14 +132,14 @@ export function MobileGuestEventsSection({
               <button
                 type="button"
                 onClick={onSlideAction}
-                className="inline-block rounded-full bg-slate-950 dark:bg-slate-100 text-white dark:text-slate-950 px-2.5 py-0.5 text-[8px] font-black tracking-wider uppercase shadow-xs transition-transform active:scale-95 cursor-pointer"
+                className="inline-block rounded-full bg-slate-950 dark:bg-slate-100 text-white dark:text-slate-950 px-2 py-0.5 text-[7.5px] font-black tracking-wider uppercase shadow-xs transition-transform active:scale-95 cursor-pointer"
               >
                 {lang === "ml" ? slide.ctaTextMl : slide.ctaText}
               </button>
             </div>
           </div>
 
-          <div className="relative h-full w-[38%] shrink-0 flex items-center justify-center overflow-hidden pr-0.5">
+          <div className="relative h-full w-[33%] shrink-0 flex items-center justify-center overflow-hidden pr-0.5">
             <div className={`absolute inset-0 bg-gradient-to-br ${slide.rightGradient} [clip-path:polygon(20%_0%,100%_0%,100%_100%,0%_100%,15%_50%)]`} />
             <div className={`absolute inset-0 border-l-2 ${slide.accentBorder} opacity-80 [clip-path:polygon(20%_0%,25%_0%,20%_50%,25%_100%,20%_100%,15%_50%)]`} />
 
@@ -177,9 +174,6 @@ export function MobileGuestEventsSection({
                 <h4 className={`font-display text-[12px] sm:text-[12.5px] font-extrabold leading-tight tracking-tight truncate ${slide.titleColor}`}>
                   {slide.title}
                 </h4>
-                {slide.isUnread && (
-                  <span className="h-2 w-2 rounded-full bg-[#ff3b30] shrink-0 inline-block" />
-                )}
               </div>
               <p className={`text-[9.5px] leading-tight line-clamp-2 ${slide.subTitleColor}`}>
                 {lang === "ml" ? slide.subtitleMl : slide.subtitle}
@@ -190,15 +184,15 @@ export function MobileGuestEventsSection({
       )}
 
       {/* Powered By Wayvida */}
-      <div className="mt-6 mb-3 flex items-center justify-center text-center">
+      <div className="mt-4 mb-2 flex items-center justify-center text-center">
         <a
           href="https://wayvida.com"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors inline-flex items-center gap-1 cursor-pointer"
+          className="text-[10px] text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300 transition-colors inline-flex items-center gap-1 cursor-pointer"
         >
           <span>Powered by</span>
-          <strong className="font-bold text-slate-700 hover:text-orange-600 dark:text-slate-200">Wayvida</strong>
+          <strong className="font-semibold text-[#243D95] dark:text-blue-300 hover:text-[#1d3178]">Wayvida</strong>
         </a>
       </div>
     </div>
