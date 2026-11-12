@@ -830,7 +830,6 @@ export function MobileGuestEligibilityQuestionnaire({
               { value: "male", en: "Male", ml: "പുരുഷൻ" },
               { value: "female", en: "Female", ml: "സ്ത്രീ" },
               { value: "transgender", en: "Other", ml: "മറ്റുള്ളവർ" },
-              { value: "prefer_not", en: "Prefer not to say", ml: "പറയാൻ താൽപര്യമില്ല" },
             ].map((option) => (
               <ChoiceCard
                 key={option.value}
@@ -1464,7 +1463,7 @@ export function MobileGuestEligibilityQuestionnaire({
       {matchedResults.length > 0 ? (
         filteredResults.length > 0 ? (
           <>
-            <div className="flex items-center justify-between pb-0.5 pt-0.5">
+            <div className="flex items-center justify-between gap-2 pb-0.5 pr-3 pt-0.5">
               <p className="text-[12px] font-semibold text-slate-500">
                 {t(
                   `${filteredResults.length} eligible scheme${filteredResults.length === 1 ? "" : "s"}`,
@@ -1474,7 +1473,7 @@ export function MobileGuestEligibilityQuestionnaire({
               <button
                 type="button"
                 onClick={toggleSelectAllResults}
-                className="flex items-center gap-1.5 cursor-pointer text-[12px] font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300"
+                className="flex shrink-0 items-center gap-1.5 cursor-pointer text-[12px] font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300"
               >
                 <span>{t("Select all", "എല്ലാം തിരഞ്ഞെടുക്കുക")}</span>
                 <span
@@ -1629,14 +1628,14 @@ export function MobileGuestEligibilityQuestionnaire({
             );
           })}
         </div>
-        <div className="flex items-center justify-between py-1">
+        <div className="flex items-center justify-between gap-2 py-1 pr-3">
           <p className="text-[12px] font-semibold text-slate-500">
             {t(`${browsedSchemes.length} schemes`, `${browsedSchemes.length} പദ്ധതികൾ`)}
           </p>
           <button
             type="button"
             onClick={toggleSelectAllBrowsed}
-            className="flex items-center gap-1.5 cursor-pointer text-[12px] font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300"
+            className="flex shrink-0 items-center gap-1.5 cursor-pointer text-[12px] font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300"
           >
             <span>{t("Select all", "എല്ലാം തിരഞ്ഞെടുക്കുക")}</span>
             <span

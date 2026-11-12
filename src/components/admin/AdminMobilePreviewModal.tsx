@@ -10,7 +10,6 @@ import raiseIssue3dIcon from "@/assets/raise-issue-3d.png";
 import aboutVikasitaIcon from "@/assets/about-vikasita-keralam-icon.png";
 import pmKisanLogoImg from "/pm-kisan-logo.png";
 import createSchemeAvatar from "@/assets/create-scheme-3d-avatar.jpg";
-import createApplicantAvatar from "@/assets/create-applicant-3d-avatar.jpg";
 import createPartyWorkerAvatar from "@/assets/create-partyworker-3d-avatar.jpg";
 import users3dIcon from "@/assets/kpi-3d/users.png";
 import inReview3dIcon from "@/assets/kpi-3d/in-review.png";
@@ -2834,8 +2833,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [isMobileAuthOpen, setIsMobileAuthOpen] = useState<boolean>(false);
   const [isSideMenuOpen, setIsSideMenuOpen] = useState<boolean>(false);
 
-  // State Admin Create Actions Modals/Sheets
-  const [isStateAdminCreateMenuOpen, setIsStateAdminCreateMenuOpen] = useState<boolean>(false);
+  // Create flows and modals
   const [isCreateSchemeModalOpen, setIsCreateSchemeModalOpen] = useState<boolean>(false);
   const [createSchemeInitialData, setCreateSchemeInitialData] = useState<CreatedSchemePayload | null>(null);
   const [isCreatePartyWorkerModalOpen, setIsCreatePartyWorkerModalOpen] = useState<boolean>(false);
@@ -3313,24 +3311,24 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     subtitleMl: "സംസ്ഥാനതല മെഗാ ബൂത്ത് സമ്മേളനം",
                     ctaText: "REGISTER NOW",
                     ctaTextMl: "രജിസ്റ്റർ ചെയ്യുക",
-                    rightGradient: "from-blue-600 via-sky-600 to-orange-500",
-                    accentBorder: "border-blue-400",
-                    dateBadgeBg: "bg-white text-blue-900",
-                    yearTagBg: "bg-blue-50 text-blue-800 border-blue-200/80",
+                    rightGradient: "from-[#3B57B5] via-[#243D95] to-[#1B2E73]",
+                    accentBorder: "border-[#5B74C4]",
+                    dateBadgeBg: "bg-white text-[#243D95]",
+                    yearTagBg: "bg-[#EEF2FC] text-[#243D95] border-[#B9C6E8]",
                     isUnread: true,
                   },
                   {
                     type: "announcement",
                     ribbon: "MODI'S GUARANTEE",
                     ribbonMl: "മോദിയുടെ ഗ്യാരണ്ടി",
-                    ribbonBg: "bg-blue-600 text-white font-black",
+                    ribbonBg: "bg-[#243D95] text-white font-black",
                     title: "SABKA SAATH · SABKA VIKAS",
                     subtitle: "Sabka Vishwas · Sabka Prayaas (2047 Vision)",
                     subtitleMl: "സബ്കാ സാഥ്, സബ്കാ വികാസ്, സബ്കാ വിശ്വാസ്",
-                    cardStyle: "bg-gradient-to-r from-blue-50 via-sky-50 to-orange-50 dark:from-slate-800 dark:via-blue-950/40 dark:to-orange-950/40 text-slate-900 dark:text-white shadow-xs border border-blue-200/80 dark:border-blue-900/50",
+                    cardStyle: "bg-gradient-to-r from-[#F5F7FD] via-[#EEF2FC] to-[#E8EDFA] dark:from-slate-800 dark:via-[#243D95]/25 dark:to-[#243D95]/10 text-slate-900 dark:text-white shadow-xs border border-[#B9C6E8]/80 dark:border-[#243D95]/50",
                     titleColor: "text-slate-900 dark:text-white font-extrabold",
-                    subTitleColor: "text-slate-600 dark:text-slate-300 font-medium",
-                    rightGraphicBg: "bg-blue-100/80 dark:bg-blue-950/70 border-blue-300/60",
+                    subTitleColor: "text-[#5B74C4] dark:text-[#C9D4F5] font-medium",
+                    rightGraphicBg: "bg-[#E3E9F8] dark:bg-[#243D95]/40 border-[#B9C6E8]",
                     isUnread: true,
                   },
                   {
@@ -3345,24 +3343,24 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     subtitleMl: "തിരുവനന്തപുരത്ത് 50,000+ യുവ പ്രതിനിധികൾ",
                     ctaText: "JOIN YATRA",
                     ctaTextMl: "പങ്കെടുക്കുക",
-                    rightGradient: "from-[#ea580c] via-[#c2410c] to-[#9a3412]",
-                    accentBorder: "border-[#ea580c]",
-                    dateBadgeBg: "bg-white text-[#c2410c]",
-                    yearTagBg: "bg-orange-50 text-[#c2410c] border-orange-200/80",
+                    rightGradient: "from-[#4A66C2] via-[#243D95] to-[#16265F]",
+                    accentBorder: "border-[#5B74C4]",
+                    dateBadgeBg: "bg-white text-[#243D95]",
+                    yearTagBg: "bg-[#EEF2FC] text-[#243D95] border-[#B9C6E8]",
                     isUnread: true,
                   },
                   {
                     type: "announcement",
                     ribbon: "PM KISAN SAMMAN",
                     ribbonMl: "പി.എം കിസാൻ",
-                    ribbonBg: "bg-amber-400 text-amber-950 font-black",
+                    ribbonBg: "bg-[#3B57B5] text-white font-black",
                     title: "DIRECT BENEFIT TRANSFER ₹6,000",
                     subtitle: "Empowering 35 Lakh Farmers Across Kerala",
                     subtitleMl: "കേരളത്തിലെ 35 ലക്ഷം കർഷകർക്ക് നേട്ടങ്ങൾ",
-                    cardStyle: "bg-gradient-to-r from-[#15803d] via-emerald-700 to-[#065f46] text-white shadow-md border border-emerald-600/50",
+                    cardStyle: "bg-gradient-to-r from-[#3B57B5] via-[#243D95] to-[#16265F] text-white shadow-md border border-[#243D95]/60",
                     titleColor: "text-white font-extrabold",
-                    subTitleColor: "text-emerald-100/95 font-medium",
-                    rightGraphicBg: "bg-emerald-950/70 border-amber-300/40",
+                    subTitleColor: "text-[#DCE4F8] font-medium",
+                    rightGraphicBg: "bg-[#16265F]/70 border-[#8FA5E3]/40",
                     isUnread: false,
                   },
                   {
@@ -3377,24 +3375,24 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     subtitleMl: "കേന്ദ്ര മന്ത്രിമാരുമായുള്ള ഗുണഭോക്തൃ സംവാദം",
                     ctaText: "ATTEND EXPO",
                     ctaTextMl: "സന്ദർശിക്കുക",
-                    rightGradient: "from-[#0d9488] via-[#0f766e] to-[#115e59]",
-                    accentBorder: "border-[#0d9488]",
-                    dateBadgeBg: "bg-white text-[#0f766e]",
-                    yearTagBg: "bg-teal-50 text-[#0f766e] border-teal-200/80",
+                    rightGradient: "from-[#5B74C4] via-[#324CA8] to-[#243D95]",
+                    accentBorder: "border-[#5B74C4]",
+                    dateBadgeBg: "bg-white text-[#243D95]",
+                    yearTagBg: "bg-[#EEF2FC] text-[#243D95] border-[#B9C6E8]",
                     isUnread: false,
                   },
                   {
                     type: "announcement",
                     ribbon: "AYUSHMAN BHARAT",
                     ribbonMl: "ആയുഷ്മാൻ ഭാരത്",
-                    ribbonBg: "bg-[#ff5500] text-white font-black",
+                    ribbonBg: "bg-[#243D95] text-white font-black",
                     title: "FREE HEALTH COVERAGE UP TO ₹5 LAKH",
                     subtitle: "Cashless Medical Treatment for All Families",
                     subtitleMl: "സൗജന്യ സമഗ്ര കുടുംബ ആരോഗ്യ സുരക്ഷാ പദ്ധതി",
-                    cardStyle: "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm border border-slate-200/90 dark:border-slate-800",
+                    cardStyle: "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm border border-[#B9C6E8] dark:border-[#243D95]/50",
                     titleColor: "text-slate-900 dark:text-white font-extrabold",
-                    subTitleColor: "text-slate-700 dark:text-slate-200 font-medium",
-                    rightGraphicBg: "bg-orange-50 dark:bg-slate-800 border-orange-200 dark:border-slate-700",
+                    subTitleColor: "text-[#5B74C4] dark:text-[#C9D4F5] font-medium",
+                    rightGraphicBg: "bg-[#EEF2FC] dark:bg-[#243D95]/30 border-[#B9C6E8] dark:border-[#243D95]",
                     isUnread: false,
                   },
                   {
@@ -3409,10 +3407,10 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     subtitleMl: "വനിതാ സംരംഭകത്വ സംസ്ഥാന സമ്മേളനം",
                     ctaText: "GET PASS",
                     ctaTextMl: "പാസ് നേടുക",
-                    rightGradient: "from-[#15803d] via-[#166534] to-[#14532d]",
-                    accentBorder: "border-[#15803d]",
-                    dateBadgeBg: "bg-white text-[#166534]",
-                    yearTagBg: "bg-emerald-50 text-[#166534] border-emerald-200/80",
+                    rightGradient: "from-[#243D95] via-[#1F3480] to-[#16265F]",
+                    accentBorder: "border-[#5B74C4]",
+                    dateBadgeBg: "bg-white text-[#243D95]",
+                    yearTagBg: "bg-[#EEF2FC] text-[#243D95] border-[#B9C6E8]",
                     isUnread: false,
                   },
                 ];
@@ -3441,7 +3439,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
                 if (slide.type === "event") {
                   return (
-                    <div className="relative overflow-hidden rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm h-[80px] flex items-center justify-between transition-all duration-500">
+                    <div className="relative overflow-hidden rounded-xl bg-white dark:bg-slate-900 border border-[#B9C6E8]/80 dark:border-[#243D95]/50 shadow-sm h-[80px] flex items-center justify-between transition-all duration-500">
                       {/* Left Content Area (White background with black pill CTA) */}
                       <div className="flex-1 min-w-0 h-full p-2.5 pl-3 pr-3 flex flex-col justify-between z-10">
                         <div className="space-y-0.5">
@@ -3461,7 +3459,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           <button
                             type="button"
                             onClick={() => setMobileSubPage("recent_activity")}
-                            className="inline-block rounded-full bg-slate-950 dark:bg-slate-100 text-white dark:text-slate-950 px-2.5 py-0.5 text-[8px] font-black tracking-wider uppercase shadow-xs transition-transform active:scale-95 cursor-pointer"
+                            className="inline-block rounded-full bg-[#243D95] dark:bg-[#5B74C4] text-white px-2.5 py-0.5 text-[8px] font-black tracking-wider uppercase shadow-xs transition-transform active:scale-95 cursor-pointer"
                           >
                             {lang === "ml" ? slide.ctaTextMl : slide.ctaText}
                           </button>
@@ -5338,7 +5336,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     const genderMap: Record<string, string> = {
       male: "Male",
       female: "Female",
-      transgender: "Transgender / Other",
+      transgender: "Others",
     };
     if (genderMap[guestAnswers.gender]) setCreateGender(genderMap[guestAnswers.gender]);
     if (guestAnswers.dob) setCreateDob(guestAnswers.dob);
@@ -5420,10 +5418,11 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     const genderMap: Record<string, string> = {
       male: "Male",
       female: "Female",
-      transgender: "Transgender / Other",
+      transgender: "Others",
     };
-    const gender = genderMap[(eligibility?.gender || "").toLowerCase()] || eligibility?.gender || "";
-    if (["Male", "Female", "Transgender / Other"].includes(gender)) {
+    const rawGender = genderMap[(eligibility?.gender || "").toLowerCase()] || eligibility?.gender || "";
+    const gender = rawGender === "Transgender / Other" || rawGender === "Other" ? "Others" : rawGender;
+    if (["Male", "Female", "Others"].includes(gender)) {
       setCreateGender(gender);
     }
 
@@ -6306,7 +6305,12 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     setCreatePhone(phoneDigits.length > 10 ? phoneDigits.slice(-10) : phoneDigits);
     setCreateEmail(details?.email ?? "");
     setCreateDob(toIsoDate(details?.dateOfBirth));
-    setCreateGender(pickOption(details?.gender, ["Male", "Female", "Transgender / Other"]));
+    setCreateGender(
+      pickOption(details?.gender, ["Male", "Female", "Others"], {
+        "Transgender / Other": "Others",
+        Other: "Others",
+      }),
+    );
     setCreateReligion(
       pickOption(details?.religion, ["Hinduism", "Islam", "Christianity", "Sikhism", "Buddhism", "Jainism", "Other"], {
         Hindu: "Hinduism",
@@ -8450,6 +8454,75 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       )
     : [];
 
+  type MobileApplicationApplicantGroup = {
+    key: string;
+    nameEn: string;
+    nameMl: string;
+    locationEn: string;
+    locationMl: string;
+    applications: MobileApplicationRecord[];
+  };
+
+  const groupMobileApplicationsByApplicant = (records: MobileApplicationRecord[]) => {
+    const groups: MobileApplicationApplicantGroup[] = [];
+    const groupsByKey = new Map<string, MobileApplicationApplicantGroup>();
+
+    records.forEach((application) => {
+      const nameEn = application.applicantNameEn || "";
+      const nameMl = application.applicantNameMl || "";
+      const identity = `${(nameEn || nameMl).trim().toLowerCase()}|${(application.phone || application.locationEn || "").trim().toLowerCase()}`;
+      let group = groupsByKey.get(identity);
+
+      if (!group) {
+        group = {
+          key: identity,
+          nameEn,
+          nameMl,
+          locationEn: application.locationEn,
+          locationMl: application.locationMl,
+          applications: [],
+        };
+        groupsByKey.set(identity, group);
+        groups.push(group);
+      }
+
+      group.applications.push(application);
+    });
+
+    return groups;
+  };
+
+  const getMobileApplicationDisplayCategory = (application: MobileApplicationRecord) => {
+    const catEn = application.categoryEn || "";
+    const catMl = application.categoryMl || "";
+    const isGovt = !catEn || catEn === "Central Government" || catEn === "State Government";
+
+    let displayEn = catEn || "Social Welfare";
+    let displayMl = catMl || "സാമൂഹിക ക്ഷേമം";
+    let iconKey = catEn || "Social Welfare";
+
+    if (isGovt) {
+      const sName = (application.schemeNameEn || "").toLowerCase();
+      if (/(kisan|fasal|agriculture|krishi|crop)/.test(sName)) {
+        displayEn = "Agriculture"; displayMl = "കൃഷി"; iconKey = "Agriculture";
+      } else if (/(ayushman|health|swasthya|hospital|medical)/.test(sName)) {
+        displayEn = "Health & Wellness"; displayMl = "ആരോഗ്യം"; iconKey = "Health & Wellness";
+      } else if (/(awas|housing|gramin|house)/.test(sName)) {
+        displayEn = "Housing"; displayMl = "ഭവനം"; iconKey = "Housing";
+      } else if (/(pension|ignoaps|old age|vayo)/.test(sName)) {
+        displayEn = "Social Welfare"; displayMl = "സാമൂഹിക ക്ഷേമം"; iconKey = "Social Welfare";
+      } else if (/(mudra|jan dhan|pmjdy|bank|credit|kcc|loan)/.test(sName)) {
+        displayEn = "Banking & Credit"; displayMl = "ബാങ്കിംഗ് & ക്രെഡിറ്റ്"; iconKey = "Banking";
+      } else if (/(vishwakarma|svanidhi|skill|msme|business)/.test(sName)) {
+        displayEn = "Business & Skills"; displayMl = "ബിസിനസ്സ് & നൈപുണ്യം"; iconKey = "Business";
+      } else {
+        displayEn = "Social Welfare"; displayMl = "സാമൂഹിക ക്ഷേമം"; iconKey = "Social Welfare";
+      }
+    }
+
+    return { displayEn, displayMl, iconKey };
+  };
+
 
 
   const renderMobileApplicationListCard = (application: MobileApplicationRecord) => {
@@ -8466,8 +8539,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         }}
         className="group p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:shadow-xs transition-all cursor-pointer space-y-1.5"
       >
-        {/* Top Section: User Avatar Circle + Applicant Name & Location on left, Status Badge on right */}
-        <div className="flex items-center justify-between gap-2">
+        {/* Top Section: User Avatar Circle + Applicant Name & Location */}
+        <div className="flex items-center gap-2 min-w-0">
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <div className={`flex h-7 w-7 items-center justify-center rounded-full font-extrabold text-[11px] shrink-0 ${avatar.colorStyle}`}>
               {avatar.initials}
@@ -8481,15 +8554,11 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               </p>
             </div>
           </div>
-          <MobileApplicationStatusBadge
-            status={application.workflowStatus ?? "application_received"}
-            lang={lang}
-          />
         </div>
 
-        {/* Bottom Section: Category & Scheme Name on left, Arrow icon right-aligned */}
-        <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100/70 dark:border-slate-800/40">
-          <div className="min-w-0 flex-1 space-y-0.5">
+        {/* Bottom Section: Category, Status Badge & Scheme Name */}
+        <div className="space-y-0.5 pt-1 border-t border-slate-100/70 dark:border-slate-800/40">
+          <div className="flex items-center justify-between gap-2">
             {(() => {
               const catEn = application.categoryEn;
               const catMl = application.categoryMl;
@@ -8519,7 +8588,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               }
 
               return (
-                <div className="flex items-center gap-1.5 text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
+                <div className="flex min-w-0 flex-1 items-center gap-1.5 text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
                   <img
                     src={getMobileCategoryIconSrc(iconKey)}
                     alt=""
@@ -8531,15 +8600,89 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 </div>
               );
             })()}
-            <h5 className="font-bold text-[12px] text-[#0a0f1d] dark:text-white leading-tight truncate">
+            <MobileApplicationStatusBadge
+              status={application.workflowStatus ?? "application_received"}
+              lang={lang}
+            />
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <h5 className="min-w-0 flex-1 font-bold text-[12px] text-[#0a0f1d] dark:text-white leading-tight truncate">
+              {lang === "ml" ? application.schemeNameMl : application.schemeNameEn}
+            </h5>
+            <div className="shrink-0 flex items-center justify-center p-1 text-slate-400 group-hover:text-[#f15a0a] transition-colors">
+              <ChevronRight className="h-4 w-4 stroke-[2]" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderMobileApplicationSchemeRows = (applications: MobileApplicationRecord[]) => (
+    <div className="mt-1 border-t border-slate-100/70 dark:border-slate-800/40">
+      {applications.map((application, index) => {
+        const category = getMobileApplicationDisplayCategory(application);
+        return (
+          <div
+            key={application.ref}
+            onClick={(event) => {
+              event.stopPropagation();
+              openMobileApplicationDetail(application);
+            }}
+            className={`cursor-pointer py-1 ${index > 0 ? "border-t border-slate-100/60 dark:border-slate-800/40" : ""}`}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex min-w-0 flex-1 items-center gap-1.5 text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                <img
+                  src={getMobileCategoryIconSrc(category.iconKey)}
+                  alt=""
+                  className="h-3.5 w-3.5 shrink-0 object-contain"
+                />
+                <span className="truncate">
+                  {lang === "ml" ? category.displayMl : category.displayEn}
+                </span>
+              </div>
+              <div className="flex shrink-0 items-center gap-1">
+                <MobileApplicationStatusBadge
+                  status={application.workflowStatus ?? "application_received"}
+                  lang={lang}
+                />
+                <ChevronRight className="h-3.5 w-3.5 text-slate-400 transition-colors group-hover:text-[#f15a0a]" />
+              </div>
+            </div>
+            <h5 className="mt-0.5 truncate font-bold text-[11.5px] text-[#0a0f1d] leading-tight dark:text-white">
               {lang === "ml" ? application.schemeNameMl : application.schemeNameEn}
             </h5>
           </div>
+        );
+      })}
+    </div>
+  );
 
-          <div className="shrink-0 flex items-center justify-center p-1 text-slate-400 group-hover:text-[#f15a0a] transition-colors">
-            <ChevronRight className="h-4 w-4 stroke-[2]" />
+  const renderMobileApplicationApplicantCard = (group: MobileApplicationApplicantGroup) => {
+    const nameToUse = group.nameEn || group.nameMl || "";
+    const avatar = getApplicantAvatarInfo(nameToUse);
+
+    return (
+      <div
+        key={group.key}
+        onClick={() => openMobileApplicationDetail(group.applications[0])}
+        className="group cursor-pointer rounded-xl border border-slate-100 bg-white p-2.5 shadow-2xs transition-all hover:shadow-xs dark:border-slate-800/80 dark:bg-slate-900"
+      >
+        <div className="flex min-w-0 items-center gap-2">
+          <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-extrabold ${avatar.colorStyle}`}>
+            {avatar.initials}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-extrabold text-[12px] leading-tight text-[#0a0f1d] dark:text-white">
+              {lang === "ml" ? group.nameMl || group.nameEn : group.nameEn || group.nameMl}
+            </p>
+            <p className="mt-0.5 truncate text-[10px] font-medium leading-tight text-slate-500 dark:text-slate-400">
+              {lang === "ml" ? group.locationMl : group.locationEn}
+            </p>
           </div>
         </div>
+        {renderMobileApplicationSchemeRows(group.applications)}
       </div>
     );
   };
@@ -8586,60 +8729,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         </div>
 
         <div className="space-y-2">
-          {latestSavedApplications.map((application) => {
-            const nameToUse = application.applicantNameEn || application.applicantNameMl || "";
-            const avatar = getApplicantAvatarInfo(nameToUse);
-
-            return (
-              <div
-                key={application.ref}
-                onClick={() => openMobileApplicationDetail(application)}
-                className="group p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:shadow-xs transition-all cursor-pointer space-y-2"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    <div className={`flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full font-extrabold text-xs shrink-0 ${avatar.colorStyle}`}>
-                      {avatar.initials}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-extrabold text-[13.5px] text-[#0a0f1d] dark:text-white leading-tight truncate">
-                        {lang === "ml" ? application.applicantNameMl : application.applicantNameEn}
-                      </p>
-                      <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 leading-tight truncate mt-0.5">
-                        {lang === "ml" ? application.locationMl : application.locationEn}
-                      </p>
-                    </div>
-                  </div>
-                  <MobileApplicationStatusBadge
-                    status={application.workflowStatus ?? "application_received"}
-                    lang={lang}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100/70 dark:border-slate-800/40">
-                  <div className="min-w-0 flex-1 space-y-0.5">
-                    <div className="flex items-center gap-1.5 text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
-                      <img
-                        src={getMobileCategoryIconSrc(application.categoryEn)}
-                        alt=""
-                        className="h-3.5 w-3.5 shrink-0 object-contain"
-                      />
-                      <span className="truncate">
-                        {lang === "ml" ? application.categoryMl : application.categoryEn}
-                      </span>
-                    </div>
-                    <h5 className="font-bold text-[12px] text-[#0a0f1d] dark:text-white leading-tight truncate">
-                      {lang === "ml" ? application.schemeNameMl : application.schemeNameEn}
-                    </h5>
-                  </div>
-
-                  <div className="shrink-0 flex items-center justify-center p-1 text-slate-400 group-hover:text-[#f15a0a] transition-colors">
-                    <ChevronRight className="h-4 w-4 stroke-[2]" />
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          {groupMobileApplicationsByApplicant(latestSavedApplications).map((group) =>
+            renderMobileApplicationApplicantCard(group),
+          )}
         </div>
       </div>
     );
@@ -9730,7 +9822,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   {/* Right side action or search button */}
                   <div className="relative z-10 flex items-center gap-1">
                     {activeTab === "create" && createFlowStep === "form" ? (
-                      <span className="shrink-0 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300 border border-orange-200 dark:border-orange-800">
+                      <span className="shrink-0 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#E8ECF9] text-[#243D95] dark:bg-[#243D95]/25 dark:text-[#C9D4F5] border border-[#243D95]/25 dark:border-[#243D95]/60">
                         {lang === "ml"
                           ? (createProfileStep === 1 ? "ഘട്ടം 1 / 2" : "ഘട്ടം 2 / 2")
                           : (createProfileStep === 1 ? "Step 1 of 2" : "Step 2 of 2")}
@@ -10273,24 +10365,24 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             subtitleMl: "സംസ്ഥാനതല മെഗാ ബൂത്ത് സമ്മേളനം",
                             ctaText: "REGISTER NOW",
                             ctaTextMl: "രജിസ്റ്റർ ചെയ്യുക",
-                            rightGradient: "from-blue-600 via-sky-600 to-orange-500",
-                            accentBorder: "border-blue-400",
-                            dateBadgeBg: "bg-white text-blue-900",
-                            yearTagBg: "bg-blue-50 text-blue-800 border-blue-200/80",
+                            rightGradient: "from-[#3B57B5] via-[#243D95] to-[#1B2E73]",
+                            accentBorder: "border-[#5B74C4]",
+                            dateBadgeBg: "bg-white text-[#243D95]",
+                            yearTagBg: "bg-[#EEF2FC] text-[#243D95] border-[#B9C6E8]",
                             isUnread: true,
                           },
                           {
                             type: "announcement",
                             ribbon: "MODI'S GUARANTEE",
                             ribbonMl: "മോദിയുടെ ഗ്യാരണ്ടി",
-                            ribbonBg: "bg-blue-600 text-white font-black",
+                            ribbonBg: "bg-[#243D95] text-white font-black",
                             title: "SABKA SAATH · SABKA VIKAS",
                             subtitle: "Sabka Vishwas · Sabka Prayaas (2047 Vision)",
                             subtitleMl: "സബ്കാ സാഥ്, സബ്കാ വികാസ്, സബ്കാ വിശ്വാസ്",
-                            cardStyle: "bg-gradient-to-r from-blue-50 via-sky-50 to-orange-50 dark:from-slate-800 dark:via-blue-950/40 dark:to-orange-950/40 text-slate-900 dark:text-white shadow-xs border border-blue-200/80 dark:border-blue-900/50",
+                            cardStyle: "bg-gradient-to-r from-[#F5F7FD] via-[#EEF2FC] to-[#E8EDFA] dark:from-slate-800 dark:via-[#243D95]/25 dark:to-[#243D95]/10 text-slate-900 dark:text-white shadow-xs border border-[#B9C6E8]/80 dark:border-[#243D95]/50",
                             titleColor: "text-slate-900 dark:text-white font-extrabold",
-                            subTitleColor: "text-slate-600 dark:text-slate-300 font-medium",
-                            rightGraphicBg: "bg-blue-100/80 dark:bg-blue-950/70 border-blue-300/60",
+                            subTitleColor: "text-[#5B74C4] dark:text-[#C9D4F5] font-medium",
+                            rightGraphicBg: "bg-[#E3E9F8] dark:bg-[#243D95]/40 border-[#B9C6E8]",
                             isUnread: true,
                           },
                           {
@@ -10305,24 +10397,24 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             subtitleMl: "തിരുവനന്തപുരത്ത് 50,000+ യുവ പ്രതിനിധികൾ",
                             ctaText: "JOIN YATRA",
                             ctaTextMl: "പങ്കെടുക്കുക",
-                            rightGradient: "from-[#ea580c] via-[#c2410c] to-[#9a3412]",
-                            accentBorder: "border-[#ea580c]",
-                            dateBadgeBg: "bg-white text-[#c2410c]",
-                            yearTagBg: "bg-orange-50 text-[#c2410c] border-orange-200/80",
+                            rightGradient: "from-[#4A66C2] via-[#243D95] to-[#16265F]",
+                            accentBorder: "border-[#5B74C4]",
+                            dateBadgeBg: "bg-white text-[#243D95]",
+                            yearTagBg: "bg-[#EEF2FC] text-[#243D95] border-[#B9C6E8]",
                             isUnread: true,
                           },
                           {
                             type: "announcement",
                             ribbon: "PM KISAN SAMMAN",
                             ribbonMl: "പി.എം കിസാൻ",
-                            ribbonBg: "bg-amber-400 text-amber-950 font-black",
+                            ribbonBg: "bg-[#3B57B5] text-white font-black",
                             title: "DIRECT BENEFIT TRANSFER ₹6,000",
                             subtitle: "Empowering 35 Lakh Farmers Across Kerala",
                             subtitleMl: "കേരളത്തിലെ 35 ലക്ഷം കർഷകർക്ക് നേട്ടങ്ങൾ",
-                            cardStyle: "bg-gradient-to-r from-[#15803d] via-emerald-700 to-[#065f46] text-white shadow-md border border-emerald-600/50",
+                            cardStyle: "bg-gradient-to-r from-[#3B57B5] via-[#243D95] to-[#16265F] text-white shadow-md border border-[#243D95]/60",
                             titleColor: "text-white font-extrabold",
-                            subTitleColor: "text-emerald-100/95 font-medium",
-                            rightGraphicBg: "bg-emerald-950/70 border-amber-300/40",
+                            subTitleColor: "text-[#DCE4F8] font-medium",
+                            rightGraphicBg: "bg-[#16265F]/70 border-[#8FA5E3]/40",
                             isUnread: false,
                           },
                           {
@@ -10337,24 +10429,24 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             subtitleMl: "കേന്ദ്ര മന്ത്രിമാരുമായുള്ള ഗുണഭോക്തൃ സംവാദം",
                             ctaText: "ATTEND EXPO",
                             ctaTextMl: "സന്ദർശിക്കുക",
-                            rightGradient: "from-[#0d9488] via-[#0f766e] to-[#115e59]",
-                            accentBorder: "border-[#0d9488]",
-                            dateBadgeBg: "bg-white text-[#0f766e]",
-                            yearTagBg: "bg-teal-50 text-[#0f766e] border-teal-200/80",
+                            rightGradient: "from-[#5B74C4] via-[#324CA8] to-[#243D95]",
+                            accentBorder: "border-[#5B74C4]",
+                            dateBadgeBg: "bg-white text-[#243D95]",
+                            yearTagBg: "bg-[#EEF2FC] text-[#243D95] border-[#B9C6E8]",
                             isUnread: false,
                           },
                           {
                             type: "announcement",
                             ribbon: "AYUSHMAN BHARAT",
                             ribbonMl: "ആയുഷ്മാൻ ഭാരത്",
-                            ribbonBg: "bg-[#ff5500] text-white font-black",
+                            ribbonBg: "bg-[#243D95] text-white font-black",
                             title: "FREE HEALTH COVERAGE UP TO ₹5 LAKH",
                             subtitle: "Cashless Medical Treatment for All Families",
                             subtitleMl: "സൗജന്യ സമഗ്ര കുടുംബ ആരോഗ്യ സുരക്ഷാ പദ്ധതി",
-                            cardStyle: "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm border border-slate-200/90 dark:border-slate-800",
+                            cardStyle: "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm border border-[#B9C6E8] dark:border-[#243D95]/50",
                             titleColor: "text-slate-900 dark:text-white font-extrabold",
-                            subTitleColor: "text-slate-700 dark:text-slate-200 font-medium",
-                            rightGraphicBg: "bg-orange-50 dark:bg-slate-800 border-orange-200 dark:border-slate-700",
+                            subTitleColor: "text-[#5B74C4] dark:text-[#C9D4F5] font-medium",
+                            rightGraphicBg: "bg-[#EEF2FC] dark:bg-[#243D95]/30 border-[#B9C6E8] dark:border-[#243D95]",
                             isUnread: false,
                           },
                           {
@@ -10369,10 +10461,10 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             subtitleMl: "വനിതാ സംരംഭകത്വ സംസ്ഥാന സമ്മേളനം",
                             ctaText: "GET PASS",
                             ctaTextMl: "പാസ് നേടുക",
-                            rightGradient: "from-[#15803d] via-[#166534] to-[#14532d]",
-                            accentBorder: "border-[#15803d]",
-                            dateBadgeBg: "bg-white text-[#166534]",
-                            yearTagBg: "bg-emerald-50 text-[#166534] border-emerald-200/80",
+                            rightGradient: "from-[#243D95] via-[#1F3480] to-[#16265F]",
+                            accentBorder: "border-[#5B74C4]",
+                            dateBadgeBg: "bg-white text-[#243D95]",
+                            yearTagBg: "bg-[#EEF2FC] text-[#243D95] border-[#B9C6E8]",
                             isUnread: false,
                           },
                         ];
@@ -10401,7 +10493,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
                         if (slide.type === "event") {
                           return (
-                            <div className="relative overflow-hidden rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm h-[80px] flex items-center justify-between transition-all duration-500">
+                            <div className="relative overflow-hidden rounded-xl bg-white dark:bg-slate-900 border border-[#B9C6E8]/80 dark:border-[#243D95]/50 shadow-sm h-[80px] flex items-center justify-between transition-all duration-500">
                               {/* Left Content Area (White background with black pill CTA) */}
                               <div className="flex-1 min-w-0 h-full p-2.5 pl-3 pr-3 flex flex-col justify-between z-10">
                                 <div className="space-y-0.5">
@@ -10421,7 +10513,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                   <button
                                     type="button"
                                     onClick={() => setMobileSubPage("recent_activity")}
-                                    className="inline-block rounded-full bg-slate-950 dark:bg-slate-100 text-white dark:text-slate-950 px-2.5 py-0.5 text-[8px] font-black tracking-wider uppercase shadow-xs transition-transform active:scale-95 cursor-pointer"
+                                    className="inline-block rounded-full bg-[#243D95] dark:bg-[#5B74C4] text-white px-2.5 py-0.5 text-[8px] font-black tracking-wider uppercase shadow-xs transition-transform active:scale-95 cursor-pointer"
                                   >
                                     {lang === "ml" ? slide.ctaTextMl : slide.ctaText}
                                   </button>
@@ -13548,32 +13640,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 )}
                               </div>
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const appToEdit = selectedApplicationUserApplications[0];
-                                if (appToEdit) {
-                                  handleEditApplicationDetails(appToEdit);
-                                } else {
-                                  handleAddAnotherApplicant();
-                                  setCreateFullName(selectedApplicationUser.nameEn);
-                                  const phoneDigits = selectedApplicationUser.phone.replace(/\D/g, "");
-                                  setCreatePhone(
-                                    phoneDigits.length === 12 && phoneDigits.startsWith("91")
-                                      ? phoneDigits.slice(2)
-                                      : phoneDigits,
-                                  );
-                                  setCreateFlowStep("form");
-                                  setActiveTab("create");
-                                  setMobileSubPage("none");
-                                }
-                              }}
-                              className="inline-flex h-8 items-center gap-1 rounded-full border border-[#f1ddc7] bg-[#fff7ec] px-3 text-[11.5px] font-extrabold text-[#ff5500] transition-colors hover:border-orange-300 hover:bg-[#ffefdd] dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300 cursor-pointer shrink-0 shadow-2xs"
-                              title={lang === "ml" ? "അപേക്ഷ തിരുത്തുക" : "Edit Application"}
-                            >
-                              <Pencil className="h-3 w-3 stroke-[2.5]" />
-                              <span>{lang === "ml" ? "തിരുത്തുക" : "Edit"}</span>
-                            </button>
                           </div>
                         </div>
 
@@ -13595,6 +13661,137 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           <Plus className="h-3.5 w-3.5 stroke-[2.6]" />
                           {lang === "ml" ? "പുതിയ അപേക്ഷ" : "Apply New"}
                         </button>
+
+                        {/* Applicant Information Section */}
+                        {(() => {
+                          const matchingApp = selectedApplicationUserApplications[0];
+                          const appRef = matchingApp?.ref;
+                          const collected = appRef ? applicationCollectedDetails[appRef] : undefined;
+                          const matchingHelpdesk = helpdeskRequests.find(
+                            (r) =>
+                              (r.applicant && r.applicant.toLowerCase() === selectedApplicationUser.nameEn.toLowerCase()) ||
+                              (r.contactMobile && selectedApplicationUser.phone && r.contactMobile.replace(/\D/g, "") === selectedApplicationUser.phone.replace(/\D/g, ""))
+                          );
+                          const helpdeskEligibility = matchingHelpdesk?.eligibility;
+
+                          const locParts = (selectedApplicationUser.locationEn || "").split(",").map((s) => s.trim());
+                          const mandalamFallback = locParts.length > 1 ? locParts[locParts.length - 1] : locParts[0] || "Kazhakoottam";
+                          const districtFallback = locParts.length > 1 ? locParts[0] : (matchingHelpdesk?.district || "Thiruvananthapuram");
+
+                          const fullName = selectedApplicationUser.nameEn || matchingHelpdesk?.applicant || "Anand V S";
+                          const mobileNumber = selectedApplicationUser.phone || matchingHelpdesk?.contactMobile || "9847123456";
+                          const email = collected?.email || matchingHelpdesk?.email || "Not provided";
+                          const district = collected?.district || matchingHelpdesk?.location?.districtName || matchingHelpdesk?.district || districtFallback || "Thiruvananthapuram";
+                          const mandalam = collected?.mandalam || matchingHelpdesk?.location?.mandalamName || mandalamFallback || "Kazhakoottam";
+                          const localBodyType = collected?.localBodyType || "Not provided";
+                          const localBody = collected?.localBody || matchingHelpdesk?.location?.localBodyName || "Not provided";
+                          const ward = collected?.ward || matchingHelpdesk?.location?.wardName || "Not provided";
+
+                          const genderVal = collected?.gender || (helpdeskEligibility?.gender === "male" ? "Male" : helpdeskEligibility?.gender === "female" ? "Female" : "Female");
+                          const ageVal = (() => {
+                            if (helpdeskEligibility?.age) return `${helpdeskEligibility.age} years`;
+                            if (collected?.dateOfBirth) {
+                              const parts = collected.dateOfBirth.split("/");
+                              if (parts.length === 3) {
+                                const yr = parseInt(parts[2], 10);
+                                if (!isNaN(yr)) return `${Math.max(18, 2026 - yr)} years`;
+                              }
+                            }
+                            return "27 years";
+                          })();
+                          const socialCategoryVal = collected?.caste || (helpdeskEligibility?.socialCategory === "obc" ? "OBC / SEBC" : helpdeskEligibility?.socialCategory === "sc" ? "SC" : helpdeskEligibility?.socialCategory === "st" ? "ST" : "OBC / SEBC");
+                          const minorityVal = collected?.minorityStatus || (helpdeskEligibility?.minorityStatus === "yes" ? "Yes" : "No");
+                          const disabilityVal = collected?.disabilityStatus || (helpdeskEligibility?.disabilityStatus === "yes" ? "Yes" : "No");
+                          const studentVal = collected?.studentStatus || (helpdeskEligibility?.studentStatus === "yes" ? "Yes" : "No");
+                          const employmentVal = collected?.employmentStatus || (helpdeskEligibility?.employmentStatus === "self_employed" ? "Self-employed" : helpdeskEligibility?.employmentStatus === "employed" ? "Employed" : "Self-employed");
+                          const occupationVal = collected?.occupation || (helpdeskEligibility?.occupation === "selfEmployed" ? "Self-employed / Business" : collected?.occupation || "Self-employed / Business");
+                          const bplVal = collected?.bplStatus || (helpdeskEligibility?.bplStatus === "yes" ? "Yes" : "No");
+                          const incomeVal = collected?.annualFamilyIncome || (helpdeskEligibility?.annualFamilyIncome === "oneToTwoFive" ? "₹1–2.5 lakh" : "₹1–2.5 lakh");
+                          const maritalVal = collected?.maritalStatus || helpdeskEligibility?.maritalStatus || "Single";
+                          const religionVal = collected?.religion || helpdeskEligibility?.religion || "Hindu";
+                          const casteVal = collected?.caste || helpdeskEligibility?.casteCommunity || "OBC";
+
+                          const contactLocationRows = [
+                            { icon: UserRound, label: "Full name", value: fullName },
+                            { icon: Phone, label: "Mobile number", value: mobileNumber },
+                            { icon: Mail, label: "Email", value: email },
+                            { icon: MapPin, label: "District", value: district },
+                            { icon: Network, label: "Mandalam", value: mandalam },
+                            { icon: Building2, label: "Local body type", value: localBodyType },
+                            { icon: MapIcon, label: "Local body", value: localBody },
+                            { icon: Home, label: "Ward", value: ward },
+                          ];
+
+                          const profileDetailRows = [
+                            { icon: UserRound, label: "Gender", value: genderVal },
+                            { icon: CalendarDays, label: "Age", value: ageVal },
+                            { icon: Users, label: "Social Category", value: socialCategoryVal },
+                            { icon: Users2, label: "Minority Status", value: minorityVal },
+                            { icon: Accessibility, label: "Disability Status", value: disabilityVal },
+                            { icon: GraduationCap, label: "Student Status", value: studentVal },
+                            { icon: Briefcase, label: "Employment Status", value: employmentVal },
+                            { icon: Store, label: "Occupation", value: occupationVal },
+                            { icon: Home, label: "Household BPL Status", value: bplVal },
+                            { icon: HandCoins, label: "Annual Family Income", value: incomeVal },
+                            { icon: HeartHandshake, label: "Marital Status", value: maritalVal },
+                            { icon: BookOpen, label: "Religion", value: religionVal },
+                            { icon: Network, label: "Caste / Community", value: casteVal },
+                          ];
+
+                          return (
+                            <div className="space-y-3">
+                              {/* Contact & Location Details Card */}
+                              <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
+                                <h4 className="text-[11px] font-extrabold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                                  {lang === "ml" ? "ബന്ധപ്പെടാനുള്ള വിവരങ്ങൾ & പ്രദേശം" : "CONTACT & LOCATION DETAILS"}
+                                </h4>
+                                <div className="mt-2 divide-y divide-slate-100 dark:divide-slate-800/70">
+                                  {contactLocationRows.map((row) => {
+                                    const RowIcon = row.icon;
+                                    return (
+                                      <div
+                                        key={row.label}
+                                        className="flex items-center justify-between py-2 text-[11.5px]"
+                                      >
+                                        <div className="flex items-center gap-2.5 text-slate-600 dark:text-slate-400">
+                                          <RowIcon className="h-3.5 w-3.5 text-orange-500 stroke-[2.2] shrink-0" />
+                                          <span className="font-semibold">{row.label}</span>
+                                        </div>
+                                        <span className="font-extrabold text-slate-900 dark:text-white text-right max-w-[55%] truncate">
+                                          {row.value}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+
+                              {/* Personal & Demographic Details Card */}
+                              <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
+                                <div className="divide-y divide-slate-100 dark:divide-slate-800/70">
+                                  {profileDetailRows.map((row) => {
+                                    const RowIcon = row.icon;
+                                    return (
+                                      <div
+                                        key={row.label}
+                                        className="flex items-center py-2 text-[11.5px]"
+                                      >
+                                        <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                                          <RowIcon className="h-3.5 w-3.5 text-orange-500 stroke-[2.2] shrink-0" />
+                                          <span className="font-semibold">{row.label}</span>
+                                          <span className="text-slate-400 font-normal">:</span>
+                                        </div>
+                                        <span className="ml-1.5 font-extrabold text-slate-900 dark:text-white">
+                                          {row.value}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()}
 
                         <div className="flex items-center justify-between gap-2 px-0.5">
                           <h4 className="text-[12px] font-extrabold text-foreground">
@@ -14462,7 +14659,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
                 {/* List of Applications */}
                 <div className="space-y-2">
-                  {displayedMobileApplicationRecords.map(renderMobileApplicationListCard)}
+                  {groupMobileApplicationsByApplicant(displayedMobileApplicationRecords).map((group) =>
+                    renderMobileApplicationApplicantCard(group),
+                  )}
                   {displayedMobileApplicationRecords.length === 0 && (
                     <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-8 text-center dark:border-slate-800 dark:bg-slate-900">
                       <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400">
@@ -14633,7 +14832,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 )}
                               </h3>
                               {activeTab === "create" && createFlowStep === "form" && (
-                                <span className="shrink-0 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300 border border-orange-200 dark:border-orange-800 ml-1.5">
+                                <span className="shrink-0 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#E8ECF9] text-[#243D95] dark:bg-[#243D95]/25 dark:text-[#C9D4F5] border border-[#243D95]/25 dark:border-[#243D95]/60 ml-1.5">
                                   {lang === "ml"
                                     ? (createProfileStep === 1 ? "ഘട്ടം 1 / 2" : "ഘട്ടം 2 / 2")
                                     : (createProfileStep === 1 ? "Step 1 of 2" : "Step 2 of 2")}
@@ -14669,7 +14868,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           <div className="bg-card p-3 rounded-2xl border border-border shadow-2xs space-y-2.5">
                             <div className="flex items-center justify-between pb-1 border-b border-border/60">
                               <div className="flex items-center gap-1.5">
-                                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-[10px] font-extrabold text-white">
+                                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#243D95] text-[10px] font-extrabold text-white shadow-2xs">
                                   1
                                 </span>
                                 <h4 className="text-xs font-extrabold text-foreground">
@@ -14698,7 +14897,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       }
                                     }}
                                     placeholder="10-digit phone number"
-                                    className="w-full text-xs h-9 px-2.5 rounded-lg border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
+                                    className="w-full text-xs h-9 px-2.5 rounded-lg border border-border bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
                                   />
                                 </div>
 
@@ -14711,7 +14910,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     value={createFullName}
                                     onChange={(e) => setCreateFullName(e.target.value)}
                                     placeholder={lang === "ml" ? "ഉദാ: സോമൻ പി" : "Enter Full Name"}
-                                    className="w-full text-xs h-9 px-2.5 rounded-lg border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
+                                    className="w-full text-xs h-9 px-2.5 rounded-lg border border-border bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
                                   />
                                 </div>
                               </div>
@@ -14732,7 +14931,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                         <select
                                           value={activeSelectedApplicant?.name || ""}
                                           onChange={(e) => setSelectedExistingApplicantName(e.target.value)}
-                                          className="w-full text-xs h-9 px-2.5 rounded-lg border border-border bg-background focus:ring-1 focus:ring-orange-500 outline-none text-foreground font-bold cursor-pointer"
+                                          className="w-full text-xs h-9 px-2.5 rounded-lg border border-border bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 outline-none text-foreground font-bold cursor-pointer"
                                         >
                                           {existingApplicantsList.map((app) => (
                                             <option key={app.name} value={app.name}>
@@ -14874,10 +15073,10 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                           key={idx}
                                           className={`h-10 flex items-center justify-center rounded-lg border text-sm font-black transition-all ${
                                             isActive
-                                              ? "border-orange-500 ring-2 ring-orange-500/20 bg-orange-50/20 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400"
+                                              ? "border-orange-500 ring-2 ring-orange-500/20 bg-white dark:bg-slate-900/50 text-orange-600 dark:text-orange-400"
                                               : char
-                                              ? "border-slate-400 dark:border-slate-600 bg-background text-foreground"
-                                              : "border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-slate-400"
+                                              ? "border-slate-400 dark:border-slate-600 bg-white text-foreground"
+                                              : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 text-slate-400"
                                           }`}
                                         >
                                           {char || (isActive ? <span className="h-4 w-0.5 bg-orange-500 animate-pulse rounded-full" /> : "")}
@@ -15015,34 +15214,35 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                               {/* STEP 1: Personal Details */}
                               {createProfileStep === 1 ? (
                                 <div className="space-y-2.5">
-                                  {/* 1. Date of Birth */}
-                                  <div>
-                                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 block mb-1 leading-snug">
-                                      {lang === "ml" ? "ജനന തീയതി *" : "Date of Birth *"}
-                                    </label>
-                                    <input 
-                                      type="date" 
-                                      value={createDob}
-                                      onChange={(e) => setCreateDob(e.target.value)}
-                                      className="w-full text-xs h-9 px-2.5 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-amber-50/40 dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 font-normal transition-colors" 
-                                    />
-                                  </div>
+                                  {/* 1. Date of Birth & 2. Gender in a single row */}
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div className="min-w-0">
+                                      <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 block mb-1 leading-snug">
+                                        {lang === "ml" ? "ജനന തീയതി *" : "Date of Birth *"}
+                                      </label>
+                                      <input 
+                                        type="date" 
+                                        value={createDob}
+                                        onChange={(e) => setCreateDob(e.target.value)}
+                                        className="w-full min-w-0 text-xs h-9 px-2 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 font-normal transition-colors" 
+                                      />
+                                    </div>
 
-                                  {/* 2. Gender */}
-                                  <div>
-                                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 block mb-1 leading-snug">
-                                      {lang === "ml" ? "ലിംഗഭേദം *" : "Gender *"}
-                                    </label>
-                                    <select 
-                                      value={createGender}
-                                      onChange={(e) => setCreateGender(e.target.value)}
-                                      className="w-full text-xs h-9 px-2.5 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-amber-50/40 dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
-                                    >
-                                      <option value="">{lang === "ml" ? "-- ലിംഗഭേദം തിരഞ്ഞെടുക്കുക --" : "-- Select Gender --"}</option>
-                                      <option value="Male">{lang === "ml" ? "പുരുഷൻ" : "Male"}</option>
-                                      <option value="Female">{lang === "ml" ? "സ്ത്രീ" : "Female"}</option>
-                                      <option value="Transgender / Other">{lang === "ml" ? "ട്രാൻസ്‌ജെൻഡർ / മറ്റുള്ളവ" : "Transgender / Other"}</option>
-                                    </select>
+                                    <div className="min-w-0">
+                                      <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 block mb-1 leading-snug">
+                                        {lang === "ml" ? "ലിംഗഭേദം *" : "Gender *"}
+                                      </label>
+                                      <select 
+                                        value={createGender}
+                                        onChange={(e) => setCreateGender(e.target.value)}
+                                        className="w-full min-w-0 text-xs h-9 px-2 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
+                                      >
+                                        <option value="">{lang === "ml" ? "-- ലിംഗഭേദം തിരഞ്ഞെടുക്കുക --" : "-- Select Gender --"}</option>
+                                        <option value="Male">{lang === "ml" ? "പുരുഷൻ" : "Male"}</option>
+                                        <option value="Female">{lang === "ml" ? "സ്ത്രീ" : "Female"}</option>
+                                        <option value="Others">{lang === "ml" ? "മറ്റുള്ളവർ" : "Others"}</option>
+                                      </select>
+                                    </div>
                                   </div>
 
                                   {/* 3. Marital Status */}
@@ -15053,7 +15253,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     <select 
                                       value={createMaritalStatus}
                                       onChange={(e) => setCreateMaritalStatus(e.target.value)}
-                                      className="w-full text-xs h-9 px-2.5 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-amber-50/40 dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
+                                      className="w-full text-xs h-9 px-2.5 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
                                     >
                                       <option value="">{lang === "ml" ? "-- വൈവാഹിക അവസ്ഥ --" : "-- Select Marital Status --"}</option>
                                       <option value="Single / Unmarried">{lang === "ml" ? "അവിവാഹിതൻ / അവിവാഹിത" : "Single / Unmarried"}</option>
@@ -15074,7 +15274,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       <select 
                                         value={createReligion}
                                         onChange={(e) => setCreateReligion(e.target.value)}
-                                        className="w-full text-xs h-9 px-2 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-amber-50/40 dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
+                                        className="w-full text-xs h-9 px-2 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
                                       >
                                         <option value="">{lang === "ml" ? "-- മതം --" : "-- Select Religion --"}</option>
                                         <option value="Hindu">Hindu</option>
@@ -15095,7 +15295,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       <select 
                                         value={createCaste}
                                         onChange={(e) => setCreateCaste(e.target.value)}
-                                        className="w-full text-xs h-9 px-2 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-amber-50/40 dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
+                                        className="w-full text-xs h-9 px-2 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
                                       >
                                         <option value="">{lang === "ml" ? "-- വിഭാഗം --" : "-- Select Caste --"}</option>
                                         <option value="General">General</option>
@@ -15116,7 +15316,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     <select 
                                       value={createOccupation}
                                       onChange={(e) => setCreateOccupation(e.target.value)}
-                                      className="w-full text-xs h-9 px-2.5 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-amber-50/40 dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
+                                      className="w-full text-xs h-9 px-2.5 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
                                     >
                                       <option value="">{lang === "ml" ? "-- തൊഴിൽ തിരഞ്ഞെടുക്കുക --" : "-- Select Occupation --"}</option>
                                       <option value="Farmer / Agriculture">{lang === "ml" ? "കർഷകൻ / കൃഷി (Farmer/Agriculture)" : "Farmer/Agriculture"}</option>
@@ -15139,7 +15339,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     <select 
                                       value={createIncomeRange}
                                       onChange={(e) => setCreateIncomeRange(e.target.value)}
-                                      className="w-full text-xs h-9 px-2.5 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-amber-50/40 dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
+                                      className="w-full text-xs h-9 px-2.5 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
                                     >
                                       <option value="">{lang === "ml" ? "-- വരുമാന പരിധി --" : "-- Select Income Range --"}</option>
                                       <option value="Below ₹50,000">Below ₹50,000</option>
@@ -15161,7 +15361,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       value={createAadhaar}
                                       onChange={(e) => setCreateAadhaar(e.target.value.replace(/\D/g, ''))}
                                       placeholder="12-digit Aadhaar number"
-                                      className="w-full text-xs h-9 px-2.5 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-amber-50/40 dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 font-normal transition-colors" 
+                                      className="w-full text-xs h-9 px-2.5 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 font-normal transition-colors" 
                                     />
                                   </div>
                                 </div>
@@ -15182,7 +15382,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                           value={createPin}
                                           onChange={(e) => setCreatePin(e.target.value.replace(/\D/g, ''))}
                                           placeholder={lang === "ml" ? "പിൻകോഡ് നൽകുക / തിരയുക" : "Search or enter PIN"}
-                                          className="w-full text-xs h-9 pl-8 pr-2.5 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-amber-50/40 dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 font-normal transition-colors"
+                                          className="w-full text-xs h-9 pl-8 pr-2.5 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 font-normal transition-colors"
                                         />
                                       </div>
                                       <button
@@ -15207,7 +15407,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                         setActiveAddressSheet("district");
                                         setAddressSheetSearch("");
                                       }}
-                                      className="w-full text-xs h-9 px-2.5 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-amber-50/40 dark:bg-slate-800/60 hover:bg-amber-100/50 dark:hover:bg-slate-800 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none flex items-center justify-between transition-colors cursor-pointer text-left font-normal"
+                                      className="w-full text-xs h-9 px-2.5 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none flex items-center justify-between transition-colors cursor-pointer text-left font-normal"
                                     >
                                       <span className={createDistrict ? "text-slate-800 dark:text-slate-100 font-normal" : "text-muted-foreground font-normal"}>
                                         {createDistrict
@@ -15242,7 +15442,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       className={`w-full text-xs h-9 px-2.5 rounded-lg border outline-none flex items-center justify-between transition-colors text-left font-normal ${
                                         !createDistrict
                                           ? "bg-muted/50 border-border text-muted-foreground cursor-not-allowed opacity-70"
-                                          : "border-amber-200/70 dark:border-slate-700 bg-amber-50/40 dark:bg-slate-800/60 hover:bg-amber-100/50 dark:hover:bg-slate-800 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 text-slate-800 dark:text-slate-100 cursor-pointer"
+                                          : "border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 text-slate-800 dark:text-slate-100 cursor-pointer"
                                       }`}
                                     >
                                       <span className={createMandalam ? "text-slate-800 dark:text-slate-100 font-normal" : "text-muted-foreground font-normal"}>
@@ -15263,7 +15463,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       <select
                                         value={createLocalBodyType}
                                         onChange={(e) => handleLocalBodyTypeSelect(e.target.value as LocalBodyType)}
-                                        className="w-full text-xs h-9 px-2 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-amber-50/40 dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
+                                        className="w-full text-xs h-9 px-2 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
                                       >
                                         <option value="">{lang === "ml" ? "-- തരം --" : "-- Select Type --"}</option>
                                         <option value="panchayat">{lang === "ml" ? "ഗ്രാമ പഞ്ചായത്ത് (Grama Panchayat)" : "Grama Panchayat"}</option>
@@ -15288,7 +15488,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                         className={`w-full text-xs h-9 px-2 rounded-lg border outline-none flex items-center justify-between transition-colors text-left font-normal ${
                                           !createDistrict || !createLocalBodyType
                                             ? "bg-muted/50 border-border text-muted-foreground cursor-not-allowed opacity-70"
-                                            : "border-amber-200/70 dark:border-slate-700 bg-amber-50/40 dark:bg-slate-800/60 hover:bg-amber-100/50 dark:hover:bg-slate-800 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 text-slate-800 dark:text-slate-100 cursor-pointer"
+                                            : "border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 text-slate-800 dark:text-slate-100 cursor-pointer"
                                         }`}
                                       >
                                         <span className={`truncate ${createLocalBody ? "text-slate-800 dark:text-slate-100 font-normal" : "text-muted-foreground font-normal"}`}>
@@ -15318,7 +15518,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       className={`w-full text-xs h-9 px-2.5 rounded-lg border outline-none flex items-center justify-between transition-colors text-left font-normal ${
                                         !createLocalBody
                                           ? "bg-muted/50 border-border text-muted-foreground cursor-not-allowed opacity-70"
-                                          : "border-amber-200/70 dark:border-slate-700 bg-amber-50/40 dark:bg-slate-800/60 hover:bg-amber-100/50 dark:hover:bg-slate-800 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 text-slate-800 dark:text-slate-100 cursor-pointer"
+                                          : "border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 text-slate-800 dark:text-slate-100 cursor-pointer"
                                       }`}
                                     >
                                       <span className={createWard ? "text-slate-800 dark:text-slate-100 font-normal" : "text-muted-foreground font-normal"}>
@@ -15377,7 +15577,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                             ? "e.g. 12/345-A"
                                             : "e.g. 12/345 or VII/234"
                                         }
-                                        className="w-full text-xs h-9 px-2 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-amber-50/40 dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 font-normal transition-colors" 
+                                        className="w-full text-xs h-9 px-2 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 font-normal transition-colors" 
                                       />
                                     </div>
                                     <div>
@@ -15389,7 +15589,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                         value={createHouseName}
                                         onChange={(e) => setCreateHouseName(e.target.value)}
                                         placeholder={lang === "ml" ? "ഉദാ: കൃഷ്ണകൃപ" : "e.g. Krishnakripa"}
-                                        className="w-full text-xs h-9 px-2 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-amber-50/40 dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 font-normal transition-colors" 
+                                        className="w-full text-xs h-9 px-2 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 font-normal transition-colors" 
                                       />
                                     </div>
                                   </div>
@@ -15404,7 +15604,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       value={createStreetLocality}
                                       onChange={(e) => setCreateStreetLocality(e.target.value)}
                                       placeholder={lang === "ml" ? "റോഡ് / പ്രദേശം / അടയാളം" : "Street / Locality / Landmark"}
-                                      className="w-full text-xs h-9 px-2.5 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-amber-50/40 dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 font-normal transition-colors" 
+                                      className="w-full text-xs h-9 px-2.5 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 font-normal transition-colors" 
                                     />
                                   </div>
                                 </div>
@@ -15458,26 +15658,26 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       <div className="py-6 px-2 flex flex-col items-center justify-center text-center space-y-6 animate-in fade-in duration-300 min-h-[440px]">
                         {/* Center Graphic: Glowing Halo + Orbiting Dot + Scanning Document Icon */}
                         <div className="relative flex items-center justify-center py-2">
-                          {/* Outer Orange Orbit Ring */}
-                          <div className="absolute h-36 w-36 rounded-full border border-orange-300/60 dark:border-orange-700/40 animate-spin" style={{ animationDuration: '8s' }}>
-                            <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 h-3 w-3 rounded-full bg-orange-500 shadow-md" />
+                          {/* Outer Blue Orbit Ring */}
+                          <div className="absolute h-36 w-36 rounded-full border border-[#243D95]/30 dark:border-[#243D95]/60 animate-spin" style={{ animationDuration: '8s' }}>
+                            <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 h-3 w-3 rounded-full bg-[#243D95] dark:bg-[#8FA5E3] shadow-md" />
                           </div>
                           {/* Soft Inner Glowing Circular Gradient Background */}
-                          <div className="h-28 w-28 rounded-full bg-gradient-to-b from-orange-100/90 via-orange-50/60 to-orange-100/30 dark:from-orange-950/60 dark:via-orange-900/30 dark:to-orange-950/10 border border-orange-200/80 dark:border-orange-800/60 flex items-center justify-center shadow-inner">
-                            <div className="relative h-14 w-14 rounded-xl bg-orange-100/80 dark:bg-orange-900/60 border border-orange-300 dark:border-orange-700 flex flex-col items-center justify-center shadow-xs overflow-hidden">
-                              <FileText className="h-9 w-9 text-orange-500 stroke-[1.8]" />
+                          <div className="h-28 w-28 rounded-full bg-gradient-to-b from-[#E8EDFA]/90 via-[#EEF2FC]/60 to-[#E8EDFA]/30 dark:from-[#243D95]/40 dark:via-[#243D95]/20 dark:to-[#243D95]/5 border border-[#B9C6E8]/80 dark:border-[#243D95]/60 flex items-center justify-center shadow-inner">
+                            <div className="relative h-14 w-14 rounded-xl bg-[#DDE5F7]/80 dark:bg-[#243D95]/50 border border-[#8FA5E3] dark:border-[#243D95] flex flex-col items-center justify-center shadow-xs overflow-hidden">
+                              <FileText className="h-9 w-9 text-[#243D95] dark:text-[#C9D4F5] stroke-[1.8]" />
                               {/* Horizontal Scan Beam Line */}
-                              <div className="absolute inset-x-0 h-0.5 bg-orange-500 shadow-[0_0_8px_#f97316] animate-pulse top-1/2 -translate-y-1/2" />
+                              <div className="absolute inset-x-0 h-0.5 bg-[#243D95] dark:bg-[#8FA5E3] shadow-[0_0_8px_#243D95] animate-pulse top-1/2 -translate-y-1/2" />
                             </div>
                           </div>
                         </div>
 
                         {/* Title & Description */}
                         <div className="space-y-1.5 max-w-xs">
-                          <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+                          <h3 className="text-xl font-black text-[#243D95] dark:text-[#C9D4F5] tracking-tight">
                             {lang === "ml" ? "യോഗ്യത പരിശോധിക്കുന്നു..." : "Checking eligibility..."}
                           </h3>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed px-2">
+                          <p className="text-xs text-[#5B74C4] dark:text-[#8FA5E3] font-medium leading-relaxed px-2">
                             {lang === "ml"
                               ? "നിങ്ങളുടെ വിവരങ്ങളുമായി പദ്ധതിയുടെ മാനദണ്ഡങ്ങൾ പൊരുത്തപ്പെടുത്തുന്നു."
                               : "Matching your details with the scheme requirements."}
@@ -15486,22 +15686,22 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
                         {/* Animated Progress Bar */}
                         <div className="w-full max-w-sm space-y-2">
-                          <div className="h-2 w-full bg-orange-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                            <div className="h-full bg-gradient-to-r from-orange-400 via-orange-500 to-amber-500 rounded-full animate-pulse w-3/4 transition-all duration-1000" />
+                          <div className="h-2 w-full bg-[#E3E9F8] dark:bg-slate-800 rounded-full overflow-hidden">
+                            <div className="h-full bg-gradient-to-r from-[#5B74C4] via-[#243D95] to-[#1B2E73] rounded-full animate-pulse w-3/4 transition-all duration-1000" />
                           </div>
-                          <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 text-center">
+                          <p className="text-xs font-semibold text-[#5B74C4] dark:text-[#8FA5E3] text-center">
                             {lang === "ml" ? "പദ്ധതി മാനദണ്ഡങ്ങൾ പരിശോധിക്കുന്നു..." : "Checking scheme criteria..."}
                           </p>
                         </div>
 
                         {/* Bottom Security / Keep Open Note */}
                         <div className="pt-2 flex items-start justify-center gap-2 text-left max-w-xs mx-auto">
-                          <Lock className="h-4 w-4 text-slate-400 shrink-0 mt-0.5" />
+                          <Lock className="h-4 w-4 text-[#5B74C4] dark:text-[#8FA5E3] shrink-0 mt-0.5" />
                           <div className="text-[11px] leading-snug">
-                            <span className="font-bold text-slate-700 dark:text-slate-300 block">
+                            <span className="font-bold text-[#243D95] dark:text-[#C9D4F5] block">
                               {lang === "ml" ? "നിങ്ങൾ നൽകിയ വിവരങ്ങൾ സൂക്ഷിച്ചിരിക്കുന്നു." : "Your entered details are saved."}
                             </span>
-                            <span className="text-slate-400 dark:text-slate-500 block">
+                            <span className="text-[#5B74C4] dark:text-[#8FA5E3] block">
                               {lang === "ml" ? "ദയവായി ഈ സ്ക്രീൻ ഓപ്പണായി നിർത്തുക." : "Please keep this screen open."}
                             </span>
                           </div>
@@ -15684,9 +15884,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     {/* Step 3: Eligible Schemes View */}
                     {createFlowStep === "eligible_schemes" && (
                       <div className="space-y-2.5 pt-2.5 animate-in fade-in duration-200">
-                        <div className="flex items-center justify-between gap-2 px-0.5">
+                        <div className="flex items-center justify-between gap-2 pl-0.5 pr-3">
                           <div className="flex min-w-0 items-center gap-1.5">
-                            <span className="shrink-0 text-[11px] font-semibold text-orange-600 dark:text-orange-400">
+                            <span className="shrink-0 whitespace-nowrap text-[11px] font-semibold text-orange-600 dark:text-orange-400">
                               {lang === "ml"
                                 ? `${mockEligibleSchemesList.length} യോഗ്യമായ പദ്ധതികൾ`
                                 : `${mockEligibleSchemesList.length} Eligible Schemes for`}
@@ -15702,7 +15902,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
                             return (
                               <label className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 text-[10.5px] font-semibold text-muted-foreground">
-                                <span>{lang === "ml" ? "എല്ലാം" : "All"}</span>
+                                <span className="whitespace-nowrap">{lang === "ml" ? "എല്ലാം" : "All"}</span>
                                 <input
                                   type="checkbox"
                                   checked={isAllSelected}
@@ -17637,7 +17837,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 <button
                   type="button"
                   disabled
-                  className="w-full py-3 rounded-xl font-bold text-xs shadow-md bg-orange-500/80 text-white flex items-center justify-center gap-2 cursor-wait"
+                  className="w-full py-3 rounded-xl font-bold text-xs shadow-md bg-gradient-to-r from-[#243D95] to-[#3B57B5] text-white flex items-center justify-center gap-2 cursor-wait"
                 >
                   <Loader2 className="h-4 w-4 animate-spin text-white" />
                   <span>{lang === "ml" ? "യോഗ്യത പരിശോധിക്കുന്നു..." : "Checking eligibility…"}</span>
@@ -17836,81 +18036,17 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     : activeTab
                 }
                 onTabChange={(tab) => {
-                  if (tab === "create" && userRole === "state_admin") {
-                    setIsStateAdminCreateMenuOpen(true);
-                  } else {
-                    setActiveTab(tab);
-                    setMobileSubPage("none");
-                    setShowMoreMenu(false);
+                  setActiveTab(tab);
+                  setMobileSubPage("none");
+                  setShowMoreMenu(false);
+
+                  if (tab === "create") {
+                    setCreateFlowStep("form");
+                    setCreateProfileStep(1);
                   }
                 }}
               />
             )}
-
-          {/* State Admin Create Actions Sheet (3 Create Actions: Scheme, Applicant, Party Worker) */}
-          {isStateAdminCreateMenuOpen && (
-            <div
-              className="absolute inset-0 z-[70] flex items-end bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 rounded-[36px]"
-              onClick={() => setIsStateAdminCreateMenuOpen(false)}
-            >
-              <div
-                className="w-full rounded-t-3xl border-t border-amber-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 pb-6 shadow-2xl animate-in slide-in-from-bottom duration-300 space-y-3.5"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {/* Header */}
-                <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-                  <div>
-                    <h3 className="font-extrabold text-sm text-slate-900 dark:text-white">
-                      {lang === "ml" ? "പുതിയത് സൃഷ്ടിക്കുക" : "Create Action"}
-                    </h3>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                      {lang === "ml"
-                        ? "നിങ്ങൾ സൃഷ്ടിക്കാൻ ആഗ്രഹിക്കുന്ന ഇനം തിരഞ്ഞെടുക്കുക"
-                        : "Select an option to create new record"}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setIsStateAdminCreateMenuOpen(false)}
-                    className="p-1 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                  >
-                    <X className="h-5 w-5 stroke-[2.2]" />
-                  </button>
-                </div>
-
-                {/* Create Action Options */}
-                <div className="space-y-2 pt-1">
-                  {/* Applicant */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsStateAdminCreateMenuOpen(false);
-                      setActiveTab("create");
-                      setCreateFlowStep("form");
-                      setCreateProfileStep(1);
-                      setMobileSubPage("none");
-                    }}
-                    className="flex w-full items-center gap-3 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-left shadow-2xs group cursor-pointer"
-                  >
-                    <div className="relative h-12 w-12 rounded-full overflow-hidden shrink-0 group-hover:scale-105 transition-transform bg-emerald-50">
-                      <img src={createApplicantAvatar} alt="Applicant" className="h-full w-full object-cover scale-[1.22]" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h4 className="font-extrabold text-xs sm:text-[13px] text-slate-900 dark:text-white">
-                        {lang === "ml" ? "അപേക്ഷകൻ (Applicant)" : "Applicant"}
-                      </h4>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-tight mt-0.5">
-                        {lang === "ml"
-                          ? "അപേക്ഷകന്റെ വിവരങ്ങൾ ചേർക്കുക, യോഗ്യത പരിശോധിക്കുക"
-                          : "Create applicant profile & check scheme eligibility"}
-                      </p>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0 group-hover:translate-x-0.5 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-all" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Scheme Details Edit Sheet */}
           {isSchemeEditSheetOpen && (
