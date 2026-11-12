@@ -8878,20 +8878,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
     return (
       <div className="animate-in fade-in duration-200 space-y-3 pb-8 pt-1">
-        <div className="rounded-xl border border-orange-100 bg-gradient-to-b from-orange-50/90 to-white p-3.5 text-center dark:border-slate-800 dark:from-slate-900 dark:to-slate-900">
-          <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-orange-100 text-orange-600 dark:bg-orange-950/50 dark:text-orange-400">
-            <Headset className="h-5 w-5 stroke-[2]" />
-          </span>
-          <h2 className="mt-2 font-display text-[15px] font-extrabold tracking-tight text-[#0F172A] dark:text-white">
-            {lang === "ml" ? "ഞങ്ങളുമായി ബന്ധപ്പെടുക" : "Contact Us"}
-          </h2>
-          <p className="mx-auto mt-1 max-w-[265px] text-[11px] font-medium leading-relaxed text-slate-600 dark:text-slate-300">
-            {lang === "ml"
-              ? "പദ്ധതികൾ, യോഗ്യത അല്ലെങ്കിൽ അപേക്ഷ സംബന്ധിച്ച സംശയങ്ങൾക്ക് ഞങ്ങളെ ബന്ധപ്പെടുക."
-              : "Have a question about schemes, eligibility or your application? Our team is here to help."}
-          </p>
-        </div>
-
         <div className="space-y-1.5">
           {contactItems.map((item) => {
             const body = (
