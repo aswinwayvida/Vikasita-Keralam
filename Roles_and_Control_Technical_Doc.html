@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Roles and Control Technical Documentation - Vikasita Keralam</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 40px; color: #1e293b; line-height: 1.6; max-width: 900px; margin: 0 auto; }
+    h1 { color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; font-size: 26px; margin-top: 0; }
+    h2 { color: #1e293b; margin-top: 28px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; font-size: 20px; }
+    h3 { color: #334155; margin-top: 20px; font-size: 16px; }
+    code { background: #f1f5f9; color: #0f172a; padding: 3px 6px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13px; }
+    pre { background: #0f172a; color: #f8fafc; padding: 16px; border-radius: 8px; overflow-x: auto; font-size: 12.5px; line-height: 1.5; }
+    table { border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 13.5px; }
+    th, td { border: 1px solid #cbd5e1; padding: 10px 14px; text-align: left; }
+    th { background: #f8fafc; font-weight: bold; color: #0f172a; }
+    tr:nth-child(even) { background: #f8fafc; }
+    hr { border: none; border-top: 1px solid #e2e8f0; margin: 24px 0; }
+    ol, ul { padding-left: 24px; }
+    li { margin-bottom: 6px; }
+    @media print {
+      body { padding: 0; }
+      pre { white-space: pre-wrap; word-wrap: break-word; }
+    }
+  </style>
+</head>
+<body>
+
+<h1>Technical & Architecture Documentation: Roles & Access Control Module</h1>
+<p><strong>System</strong>: Vikasita Keralam Platform (Admin Web & Mobile App Preview)<br/>
+<strong>Document Version</strong>: 1.0.0<br/>
+<strong>Author</strong>: Development Team<br/>
+<strong>Last Updated</strong>: November 12, 2026</p>
+
+<hr/>
+
+<h2>1. Executive Summary & Overview</h2>
+<p>The <strong>Roles and Access Control Module</strong> (RBAC & ABAC Architecture) provides granular, hierarchy-aware authorization across all organizational levels of the Vikasita Keralam platform. It enables administrators to create, configure, clone, and assign customizable roles, set module-level permissions (CRUD actions + view scopes), define administrative control privileges, and enforce strict organizational boundaries (State, District, Mandalam, Area, Booth).</p>
+
+<h2>2. Technical Architecture & File Directory Structure</h2>
+
+<h3>Core File Reference</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Module / File Path</th>
+      <th>Purpose / Description</th>
+      <th>Key Symbols & Handlers</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>src/data/role-management.ts</code></td>
+      <td>State management engine, storage keys, fallback presets, and custom organizational level handlers.</td>
+      <td><code>loadManagedRoles()</code>, <code>saveManagedRoles()</code>, <code>ManagedRole</code>, <code>AdministrativePermissionId</code></td>
+    </tr>
+    <tr>
+      <td><code>src/data/party-workers.ts</code></td>
+      <td>Defines baseline permission modules, prerequisites, designations, and preset templates.</td>
+      <td><code>permissionModules</code>, <code>rolePresets</code>, <code>permissionPrerequisites</code>, <code>roleOrganisationLevels</code></td>
+    </tr>
+    <tr>
+      <td><code>src/components/admin/RoleAccessSettings.tsx</code></td>
+      <td>Desktop Admin Roles Management table view, filter bar, preset quick-adds, status toggles, and action dropdowns.</td>
+      <td><code>RoleAccessSettings</code>, <code>handleToggleRoleStatus</code>, <code>handleDeleteRole</code></td>
+    </tr>
+    <tr>
+      <td><code>src/components/admin/RoleEditorDialog.tsx</code></td>
+      <td>Dialog component for inline creation/editing of roles with real-time permission toggles.</td>
+      <td><code>RoleEditorDialog</code>, <code>validateRoleForm</code>, <code>handleSaveRole</code></td>
+    </tr>
+    <tr>
+      <td><code>src/components/admin/RoleViewDialog.tsx</code></td>
+      <td>Read-only details viewer detailing administrative privileges, user count, and module matrix.</td>
+      <td><code>RoleViewDialog</code></td>
+    </tr>
+    <tr>
+      <td><code>src/components/admin/MobileRolesPage.tsx</code></td>
+      <td>Mobile App Preview Roles Hub, listing active roles, assignment levels, and permission summaries.</td>
+      <td><code>MobileRolesPage</code></td>
+    </tr>
+    <tr>
+      <td><code>src/components/admin/MobileRolePermissionMatrix.tsx</code></td>
+      <td>Interactive mobile permission matrix viewer and editor.</td>
+      <td><code>MobileRolePermissionMatrix</code></td>
+    </tr>
+    <tr>
+      <td><code>src/routes/admin.settings_.new-role.tsx</code></td>
+      <td>Full page route for creating and customizing new system roles.</td>
+      <td><code>NewRolePage</code></td>
+    </tr>
+    <tr>
+      <td><code>src/routes/admin.settings_.assign-role.tsx</code></td>
+      <td>Full page route for assigning roles to party workers & volunteers with boundary scoping.</td>
+      <td><code>AssignRolePage</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>3. Data Models & Schemas</h2>
+
+<h3>3.1 Managed Role Definition (<code>ManagedRole</code>)</h3>
+<pre><code>export interface ManagedRole {
+  id: string;                                  // Unique identifier (slug or UUID)
+  nameEn: string;                              // English Role Title
+  nameMl: string;                              // Malayalam Role Title
+  descriptionEn: string;                       // Role Description (English)
+  descriptionMl: string;                       // Role Description (Malayalam)
+  organisationLevel: AssignmentLevel;          // Org Boundary: 'state' | 'district' | 'mandalam' | 'area' | 'booth'
+  designationScope?: PartyDesignation;         // Optional specific party designation binding
+  presetId?: RolePresetId;                     // Linked preset template ID
+  status: ManagedRoleStatus;                  // 'Active' | 'Inactive'
+  assignedUserCount: number;                   // Dynamically calculated user count
+  isSystemRole?: boolean;                      // Protects core system roles from deletion
+  permissions: Record&lt;PermissionModuleId, ModulePermissions&gt;; // Permission matrix
+  administrativePermissions?: AdministrativePermissionId[]; // ['manage_roles', 'assign_access', 'delegate_access']
+  updatedAt: string;                           // ISO 8601 Timestamp
+}</code></pre>
+
+<h3>3.2 Module Permissions (<code>ModulePermissions</code>)</h3>
+<pre><code>export interface ModulePermissions {
+  view: boolean;     // Read access to module assets
+  create: boolean;   // Create new records
+  edit: boolean;     // Edit existing records
+  delete: boolean;   // Delete records
+  export: boolean;   // Export reports/CSV
+  approve: boolean;  // Approve workflows/applications
+  scope: "all" | "assigned_only" | "district_only" | "mandalam_only" | "booth_only"; // Data boundary
+}</code></pre>
+
+<h2>4. Organizational Hierarchy & Permission Prerequisites</h2>
+
+<h3>4.1 Organizational Levels</h3>
+<p>Roles are bounded to specific administrative tiers:</p>
+<ol>
+  <li><strong>State Level (<code>state</code>)</strong>: Full state-wide visibility and administrative authority.</li>
+  <li><strong>District Level (<code>district</code>)</strong>: Scoped to designated District boundaries (e.g. Thiruvananthapuram, Ernakulam).</li>
+  <li><strong>Mandalam Level (<code>mandalam</code>)</strong>: Assembly constituency level scoping.</li>
+  <li><strong>Area / Local Level (<code>area</code>)</strong>: Panchayat / Municipality / Corporation ward tier.</li>
+  <li><strong>Booth Level (<code>booth</code>)</strong>: Polling booth level hyper-local scoping.</li>
+</ol>
+
+<h3>4.2 Permission Dependency Rules</h3>
+<ul>
+  <li>Toggling off <code>View</code> automatically revokes <code>Create</code>, <code>Edit</code>, <code>Delete</code>, <code>Export</code>, and <code>Approve</code>.</li>
+  <li>Enabling <code>Create</code>, <code>Edit</code>, or <code>Approve</code> automatically forces <code>View</code> to <code>true</code>.</li>
+</ul>
+
+<h2>5. Storage & Persistence Protocol</h2>
+<ul>
+  <li><strong>Primary Storage Key</strong>: <code>vk-managed-roles</code> (Browser <code>localStorage</code>)</li>
+  <li><strong>Custom Org Levels Key</strong>: <code>vk-custom-organisation-levels</code></li>
+  <li><strong>Fallback Strategy</strong>: On fresh session or missing storage, <code>loadManagedRoles()</code> automatically seeds the system with 8 core pre-configured templates.</li>
+</ul>
+
+<h2>6. Security & Governance Rules</h2>
+<ol>
+  <li><strong>System Protected Roles</strong>: Roles flagged with <code>isSystemRole: true</code> cannot be deleted.</li>
+  <li><strong>Administrative Access Scoping</strong>:
+    <ul>
+      <li><code>manage_roles</code>: Create & edit system roles.</li>
+      <li><code>assign_access</code>: Assign existing roles to workers within scope.</li>
+      <li><code>delegate_access</code>: Delegate temporary privileges to subordinate officers.</li>
+    </ul>
+  </li>
+  <li><strong>Data Isolation</strong>: API requests and database queries MUST respect the <code>scope</code> property (<code>district_only</code>, <code>mandalam_only</code>, <code>booth_only</code>).</li>
+</ol>
+
+</body>
+</html>

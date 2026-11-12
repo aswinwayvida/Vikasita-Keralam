@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
-import { X, Smartphone, Wifi, Battery, Signal, ChevronRight, ChevronLeft, ArrowLeft, ArrowRight, Users, Users2, HeartHandshake, Database, Layers, Sparkles, MessageSquare, Clock3, Clock, UserCheck, LayoutDashboard, Sliders, SlidersHorizontal, Calendar, FileText, XCircle, CheckCircle2, Hourglass, MapPin, Mail, PhoneCall, Trophy, AlertTriangle, Activity, Globe, Map as MapIcon, Network, Store, ShieldCheck, ChevronDown, Filter, Search, SearchCheck, Megaphone, CalendarDays, BellRing, Phone, RotateCcw, GraduationCap, Sprout, LayoutGrid, MoreVertical, AlertCircle, Star, Zap, Headphones, Edit, Upload, FileCheck, Loader2, SearchX, RefreshCw, Check, Lock, User, Eye, Send, Info, Plus, Inbox, FileSearch, HandCoins, UserRound, Paperclip, ClipboardList, Headset, Copy, Pencil, Download, FileImage, ExternalLink, CloudUpload, Home, Building2, Flame, HelpCircle, UserPlus, Trash2, Accessibility, Briefcase, Percent, BookOpen, Share2, Navigation } from "lucide-react";
+import { X, Smartphone, Wifi, Battery, Signal, ChevronRight, ChevronLeft, ArrowLeft, ArrowRight, Users, Users2, HeartHandshake, Database, Layers, Sparkles, MessageSquare, Clock3, Clock, UserCheck, LayoutDashboard, Sliders, SlidersHorizontal, Calendar, FileText, XCircle, CheckCircle2, Hourglass, MapPin, Mail, PhoneCall, Trophy, AlertTriangle, Activity, Globe, Map as MapIcon, Network, Store, ShieldCheck, ChevronDown, Filter, Search, SearchCheck, Megaphone, CalendarDays, BellRing, Phone, RotateCcw, GraduationCap, Sprout, LayoutGrid, MoreVertical, AlertCircle, Star, Zap, Headphones, Edit, Upload, FileCheck, Loader2, SearchX, RefreshCw, Check, Minus, Lock, User, Eye, Send, Info, Plus, Inbox, FileSearch, HandCoins, UserRound, Paperclip, ClipboardList, Headset, Copy, Pencil, Download, FileImage, ExternalLink, CloudUpload, Home, Building2, Flame, HelpCircle, UserPlus, Trash2, Accessibility, Briefcase, Percent, BookOpen, Share2, Navigation } from "lucide-react";
 import { useLang } from "@/i18n/LanguageProvider";
 import { helpdeskLocations, helpdeskDistricts } from "@/data/helpdesk-locations";
 import officialLotus from "@/assets/bjp-official-lotus.png";
@@ -2874,6 +2874,13 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [helpdeskSelectedLocalBody, setHelpdeskSelectedLocalBody] = useState<string>("all");
   const [helpdeskSelectedWard, setHelpdeskSelectedWard] = useState<string>("all");
   const [helpdeskSelectedScheme, setHelpdeskSelectedScheme] = useState<string>("all");
+  const helpdeskActiveFilterCount = [
+    helpdeskSelectedDistrict,
+    helpdeskSelectedMandalam,
+    helpdeskSelectedLocalBody,
+    helpdeskSelectedWard,
+    helpdeskSelectedScheme,
+  ].filter((val) => val !== "all").length;
   const [isHelpdeskSearchExpanded, setIsHelpdeskSearchExpanded] = useState<boolean>(false);
   const [isUserSearchExpanded, setIsUserSearchExpanded] = useState<boolean>(false);
   const [isAppSearchExpanded, setIsAppSearchExpanded] = useState<boolean>(false);
@@ -3306,24 +3313,24 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     subtitleMl: "സംസ്ഥാനതല മെഗാ ബൂത്ത് സമ്മേളനം",
                     ctaText: "REGISTER NOW",
                     ctaTextMl: "രജിസ്റ്റർ ചെയ്യുക",
-                    rightGradient: "from-[#800f13] via-[#a3161a] to-[#4f080b]",
-                    accentBorder: "border-[#800f13]",
-                    dateBadgeBg: "bg-white text-[#800f13]",
-                    yearTagBg: "bg-red-50 text-[#800f13] border-red-200/80",
+                    rightGradient: "from-blue-600 via-sky-600 to-orange-500",
+                    accentBorder: "border-blue-400",
+                    dateBadgeBg: "bg-white text-blue-900",
+                    yearTagBg: "bg-blue-50 text-blue-800 border-blue-200/80",
                     isUnread: true,
                   },
                   {
                     type: "announcement",
                     ribbon: "MODI'S GUARANTEE",
                     ribbonMl: "മോദിയുടെ ഗ്യാരണ്ടി",
-                    ribbonBg: "bg-red-500 text-white font-black",
+                    ribbonBg: "bg-blue-600 text-white font-black",
                     title: "SABKA SAATH · SABKA VIKAS",
                     subtitle: "Sabka Vishwas · Sabka Prayaas (2047 Vision)",
                     subtitleMl: "സബ്കാ സാഥ്, സബ്കാ വികാസ്, സബ്കാ വിശ്വാസ്",
-                    cardStyle: "bg-gradient-to-r from-[#800f13] via-[#a3161a] to-[#590a0d] text-white shadow-md border border-red-900/50",
-                    titleColor: "text-white font-extrabold",
-                    subTitleColor: "text-red-100/95 font-medium",
-                    rightGraphicBg: "bg-red-950/70 border-red-400/40",
+                    cardStyle: "bg-gradient-to-r from-blue-50 via-sky-50 to-orange-50 dark:from-slate-800 dark:via-blue-950/40 dark:to-orange-950/40 text-slate-900 dark:text-white shadow-xs border border-blue-200/80 dark:border-blue-900/50",
+                    titleColor: "text-slate-900 dark:text-white font-extrabold",
+                    subTitleColor: "text-slate-600 dark:text-slate-300 font-medium",
+                    rightGraphicBg: "bg-blue-100/80 dark:bg-blue-950/70 border-blue-300/60",
                     isUnread: true,
                   },
                   {
@@ -7277,7 +7284,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
         {/* Application Details Card (Merged) */}
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-2xs p-3 space-y-2.5">
-          {/* Applicant Info with Right Aligned Status Badge */}
+          {/* Applicant Info */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-3 min-w-0">
               {(() => {
@@ -7293,85 +7300,115 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 <p className="mt-0.5 text-[12px] font-medium text-slate-500 dark:text-slate-400 truncate">{applicantLocation}</p>
               </div>
             </div>
-            <div className="shrink-0">
-              <MobileApplicationStatusBadge
-                status={workflowStatus}
-                lang={lang}
-                size="medium"
-                labelEn={statusLabelEn}
-                labelMl={statusLabelMl}
-              />
-            </div>
           </div>
 
+          {/* Scheme Card */}
+          {(() => {
+            const getTitleEn = (s: any) => s?.titleEn || s?.en || s?.nameEn || "";
+            const getTitleMl = (s: any) => s?.titleMl || s?.ml || s?.nameMl || "";
+            const recSchemeEn = (record?.schemeNameEn || "").toLowerCase();
+            const recSchemeMl = record?.schemeNameMl || "";
 
-            {/* Scheme Card */}
-            {(() => {
-              const getTitleEn = (s: any) => s?.titleEn || s?.en || s?.nameEn || "";
-              const getTitleMl = (s: any) => s?.titleMl || s?.ml || s?.nameMl || "";
-              const recSchemeEn = (record?.schemeNameEn || "").toLowerCase();
-              const recSchemeMl = record?.schemeNameMl || "";
+            const matchedSchemeForDetail = schemes.find(
+              (s) =>
+                (getTitleEn(s) && getTitleEn(s).toLowerCase() === recSchemeEn) ||
+                (getTitleMl(s) && getTitleMl(s) === recSchemeMl)
+            ) || mockEligibleSchemesList.find(
+              (s) =>
+                (getTitleEn(s) && getTitleEn(s).toLowerCase() === recSchemeEn) ||
+                (getTitleMl(s) && getTitleMl(s) === recSchemeMl)
+            );
+            const detailedScheme = getDetailedSchemeData(matchedSchemeForDetail || ({ en: record.schemeNameEn, ml: record.schemeNameMl } as any));
 
-              const matchedSchemeForDetail = schemes.find(
-                (s) =>
-                  (getTitleEn(s) && getTitleEn(s).toLowerCase() === recSchemeEn) ||
-                  (getTitleMl(s) && getTitleMl(s) === recSchemeMl)
-              ) || mockEligibleSchemesList.find(
-                (s) =>
-                  (getTitleEn(s) && getTitleEn(s).toLowerCase() === recSchemeEn) ||
-                  (getTitleMl(s) && getTitleMl(s) === recSchemeMl)
-              );
-              const detailedScheme = getDetailedSchemeData(matchedSchemeForDetail || ({ en: record.schemeNameEn, ml: record.schemeNameMl } as any));
-              return (
-                <div className="px-3 py-2.5 rounded-2xl bg-orange-50/70 dark:bg-orange-950/40 border border-orange-200/60 dark:border-orange-900/40 shadow-2xs">
+            const catEn = record.categoryEn || (matchedSchemeForDetail as any)?.categoryEn || "Social Welfare";
+            const catMl = record.categoryMl || (matchedSchemeForDetail as any)?.categoryMl || "സാമൂഹിക ക്ഷേമം";
+            const isGovt = !catEn || catEn === "Central Government" || catEn === "State Government";
+            let displayCatEn = catEn;
+            let displayCatMl = catMl;
+            let iconKey = catEn;
+            if (isGovt) {
+              const sName = (record.schemeNameEn || "").toLowerCase();
+              if (/(kisan|fasal|agriculture|krishi|crop)/.test(sName)) {
+                displayCatEn = "Agriculture"; displayCatMl = "കൃഷി"; iconKey = "Agriculture";
+              } else if (/(ayushman|health|swasthya|hospital|medical)/.test(sName)) {
+                displayCatEn = "Health & Wellness"; displayCatMl = "ആരോഗ്യം"; iconKey = "Health & Wellness";
+              } else if (/(awas|housing|gramin|house)/.test(sName)) {
+                displayCatEn = "Housing"; displayCatMl = "ഭവനം"; iconKey = "Housing";
+              } else if (/(pension|ignoaps|old age|vayo|atal)/.test(sName)) {
+                displayCatEn = "Banking & Pension"; displayCatMl = "ബാങ്കിംഗ് & പെൻഷൻ"; iconKey = "Banking";
+              } else if (/(mudra|jan dhan|pmjdy|bank|credit|kcc|loan)/.test(sName)) {
+                displayCatEn = "Banking & Pension"; displayCatMl = "ബാങ്കിംഗ് & പെൻഷൻ"; iconKey = "Banking";
+              } else if (/(vishwakarma|svanidhi|skill|msme|business)/.test(sName)) {
+                displayCatEn = "Business & Skills"; displayCatMl = "ബിസിനസ്സ് & നൈപുണ്യം"; iconKey = "Business";
+              } else {
+                displayCatEn = "Social Welfare"; displayCatMl = "സാമൂഹിക ക്ഷേമം"; iconKey = "Social Welfare";
+              }
+            } else if (catEn === "Banking" || catEn === "Pension" || catEn.includes("Pension")) {
+              displayCatEn = "Banking & Pension";
+              displayCatMl = "ബാങ്കിംഗ് & പെൻഷൻ";
+              iconKey = "Banking";
+            }
 
-                  {/* Logo + Stacked Scheme Name & Ministry */}
-                  <div className="flex items-center gap-3">
-                    <div className="h-11 w-11 rounded-full border border-slate-200/90 dark:border-slate-700/80 p-1 bg-white shrink-0 shadow-2xs flex items-center justify-center overflow-hidden">
-                      <img
-                        src={
-                          detailedScheme?.logo ||
-                          getEligibleSchemeLogo({
-                            titleEn: record.schemeNameEn || record.schemeNameMl || "",
-                            categoryEn: record.categoryEn || record.categoryMl || "",
-                          } as any)
-                        }
-                        alt=""
-                        aria-hidden
-                        className="h-full w-full object-contain"
-                      />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const matched = schemes.find(
-                            (s) =>
-                              (getTitleEn(s) && getTitleEn(s).toLowerCase() === recSchemeEn) ||
-                              (getTitleMl(s) && getTitleMl(s) === recSchemeMl)
-                          ) || schemes[0];
-                          setSelectedScheme(matched);
-                          setMobileSubPage("scheme_details");
-                        }}
-                        className="min-w-0 text-left cursor-pointer hover:underline focus:outline-none block w-full"
-                      >
-                        <h3
-                          className="font-extrabold text-xs sm:text-[13.5px] text-[#0a0f1d] dark:text-white leading-snug hover:text-orange-600 dark:hover:text-orange-400 cursor-pointer transition-colors"
-                          title={schemeName}
-                        >
-                          {schemeName}
-                        </h3>
-                      </button>
-                      <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium truncate">
-                        {lang === "ml"
-                          ? (detailedScheme?.ministryMl || (matchedSchemeForDetail as any)?.deptMl || "കൃഷി വികസന കർഷകക്ഷേമ മന്ത്രാലയം, ഭാരത സർക്കാർ")
-                          : (detailedScheme?.ministryEn || (matchedSchemeForDetail as any)?.deptEn || "Ministry of Agriculture & Farmers Welfare, Govt of India")}
-                      </p>
-                    </div>
+            const ministryText = (lang === "ml"
+              ? (detailedScheme?.ministryMl || (matchedSchemeForDetail as any)?.deptMl || "കാർഷിക കർഷകക്ഷേമ മന്ത്രാലയം")
+              : (detailedScheme?.ministryEn || (matchedSchemeForDetail as any)?.deptEn || "Ministry of Agriculture & Farmers Welfare"))
+              .replace(/,\s*(Govt of India|ഭാരത സർക്കാർ|Central Government|State Government)/gi, "");
+
+            return (
+              <div className="p-2.5 rounded-lg bg-transparent border border-slate-200/80 dark:border-slate-800 space-y-1.5">
+                {/* Row 1: Left Scheme Category with Icon, Right Application Status Badge */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                    <img
+                      src={getMobileCategoryIconSrc(iconKey)}
+                      alt=""
+                      aria-hidden
+                      className="h-3.5 w-3.5 shrink-0 object-contain"
+                    />
+                    <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 truncate">
+                      {lang === "ml" ? displayCatMl : displayCatEn}
+                    </span>
+                  </div>
+                  <div className="shrink-0">
+                    <MobileApplicationStatusBadge
+                      status={workflowStatus}
+                      lang={lang}
+                      size="medium"
+                      labelEn={statusLabelEn}
+                      labelMl={statusLabelMl}
+                    />
                   </div>
                 </div>
-              );
-            })()}
+
+                {/* Row 2: Scheme Name */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const matched = schemes.find(
+                      (s) =>
+                        (getTitleEn(s) && getTitleEn(s).toLowerCase() === recSchemeEn) ||
+                        (getTitleMl(s) && getTitleMl(s) === recSchemeMl)
+                    ) || schemes[0];
+                    setSelectedScheme(matched);
+                    setMobileSubPage("scheme_details");
+                  }}
+                  className="min-w-0 text-left cursor-pointer hover:underline focus:outline-none block w-full"
+                >
+                  <h3
+                    className="font-extrabold text-[13px] sm:text-[14px] text-[#0a0f1d] dark:text-white leading-snug hover:text-orange-600 dark:hover:text-orange-400 cursor-pointer transition-colors"
+                    title={schemeName}
+                  >
+                    {schemeName}
+                  </h3>
+                </button>
+
+                {/* Row 3: Department / Ministry */}
+                <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-medium truncate">
+                  {ministryText}
+                </p>
+              </div>
+            );
+          })()}
 
             {/* Action buttons directly below Scheme */}
             <div>
@@ -8341,19 +8378,19 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           setSelectedApplicationRecord(application);
           setMobileSubPage("app_detail");
         }}
-        className="group p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:shadow-xs transition-all cursor-pointer space-y-2"
+        className="group p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:shadow-xs transition-all cursor-pointer space-y-1.5"
       >
         {/* Top Section: User Avatar Circle + Applicant Name & Location on left, Status Badge on right */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2.5 min-w-0 flex-1">
-            <div className={`flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full font-extrabold text-xs shrink-0 ${avatar.colorStyle}`}>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <div className={`flex h-7 w-7 items-center justify-center rounded-full font-extrabold text-[11px] shrink-0 ${avatar.colorStyle}`}>
               {avatar.initials}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="font-extrabold text-[13.5px] text-[#0a0f1d] dark:text-white leading-tight truncate">
+              <p className="font-extrabold text-[12.5px] text-[#0a0f1d] dark:text-white leading-tight truncate">
                 {lang === "ml" ? application.applicantNameMl : application.applicantNameEn}
               </p>
-              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 leading-tight truncate mt-0.5">
+              <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 leading-tight truncate mt-0.5">
                 {lang === "ml" ? application.locationMl : application.locationEn}
               </p>
             </div>
@@ -8367,16 +8404,47 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         {/* Bottom Section: Category & Scheme Name on left, Arrow icon right-aligned */}
         <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100/70 dark:border-slate-800/40">
           <div className="min-w-0 flex-1 space-y-0.5">
-            <div className="flex items-center gap-1.5 text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
-              <img
-                src={getMobileCategoryIconSrc(application.categoryEn)}
-                alt=""
-                className="h-3.5 w-3.5 shrink-0 object-contain"
-              />
-              <span className="truncate">
-                {lang === "ml" ? application.categoryMl : application.categoryEn}
-              </span>
-            </div>
+            {(() => {
+              const catEn = application.categoryEn;
+              const catMl = application.categoryMl;
+              const isGovt = !catEn || catEn === "Central Government" || catEn === "State Government";
+
+              let displayEn = catEn;
+              let displayMl = catMl;
+              let iconKey = catEn;
+
+              if (isGovt) {
+                const sName = (application.schemeNameEn || "").toLowerCase();
+                if (/(kisan|fasal|agriculture|krishi|crop)/.test(sName)) {
+                  displayEn = "Agriculture"; displayMl = "കൃഷി"; iconKey = "Agriculture";
+                } else if (/(ayushman|health|swasthya|hospital|medical)/.test(sName)) {
+                  displayEn = "Health & Wellness"; displayMl = "ആരോഗ്യം"; iconKey = "Health & Wellness";
+                } else if (/(awas|housing|gramin|house)/.test(sName)) {
+                  displayEn = "Housing"; displayMl = "ഭവനം"; iconKey = "Housing";
+                } else if (/(pension|ignoaps|old age|vayo)/.test(sName)) {
+                  displayEn = "Social Welfare"; displayMl = "സാമൂഹിക ക്ഷേമം"; iconKey = "Social Welfare";
+                } else if (/(mudra|jan dhan|pmjdy|bank|credit|kcc|loan)/.test(sName)) {
+                  displayEn = "Banking & Credit"; displayMl = "ബാങ്കിംഗ് & ക്രഡിറ്റ്"; iconKey = "Banking";
+                } else if (/(vishwakarma|svanidhi|skill|msme|business)/.test(sName)) {
+                  displayEn = "Business & Skills"; displayMl = "ബിസിനസ്സ് & നൈപുണ്യം"; iconKey = "Business";
+                } else {
+                  displayEn = "Social Welfare"; displayMl = "സാമൂഹിക ക്ഷേമം"; iconKey = "Social Welfare";
+                }
+              }
+
+              return (
+                <div className="flex items-center gap-1.5 text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
+                  <img
+                    src={getMobileCategoryIconSrc(iconKey)}
+                    alt=""
+                    className="h-3.5 w-3.5 shrink-0 object-contain"
+                  />
+                  <span className="truncate">
+                    {lang === "ml" ? displayMl : displayEn}
+                  </span>
+                </div>
+              );
+            })()}
             <h5 className="font-bold text-[12px] text-[#0a0f1d] dark:text-white leading-tight truncate">
               {lang === "ml" ? application.schemeNameMl : application.schemeNameEn}
             </h5>
@@ -9129,9 +9197,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   onClick={() => {
                     openMobileSchemeDetailsView(scheme.nameEn);
                   }}
-                  className="group bg-white dark:bg-slate-900 rounded-xl py-1.5 px-2.5 border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:shadow-xs hover:border-orange-300 dark:hover:border-slate-700 transition-all cursor-pointer flex items-center gap-2 active:scale-[0.995]"
+                  className="group bg-white dark:bg-slate-900 rounded-2xl py-2.5 px-3 border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:shadow-xs hover:border-orange-300 dark:hover:border-slate-700 transition-all cursor-pointer flex items-center gap-2.5 active:scale-[0.995]"
                 >
-                  <div className="h-8.5 w-8.5 rounded-lg bg-orange-50/60 dark:bg-slate-800 border border-orange-100/70 dark:border-slate-700 flex items-center justify-center p-0.5 shrink-0 overflow-hidden shadow-2xs">
+                  <div className="h-10 w-10 rounded-xl bg-orange-50/60 dark:bg-slate-800 border border-orange-100/70 dark:border-slate-700 flex items-center justify-center p-1 shrink-0 overflow-hidden shadow-2xs">
                     <img
                       src={getEligibleSchemeLogo({ titleEn: scheme.nameEn, categoryEn: scheme.categoryEn } as any)}
                       alt={scheme.nameEn}
@@ -9139,10 +9207,10 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h5 className="text-[11.5px] font-bold text-slate-900 dark:text-slate-100 leading-tight tracking-tight truncate">
+                    <h5 className="text-[12px] font-bold text-slate-900 dark:text-slate-100 leading-snug tracking-tight truncate">
                       {lang === "ml" ? scheme.nameMl : scheme.nameEn}
                     </h5>
-                    <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                    <p className="text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 truncate">
                       {lang === "ml" ? scheme.ministryMl : scheme.ministryEn}
                     </p>
                   </div>
@@ -9409,9 +9477,26 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         <ArrowLeft className="h-3.5 w-3.5 stroke-[2.2]" />
                       </button>
 
-                      {/* Center Title: Scheme list(25) centered */}
+                      {/* Center Title: Schemes List (N) centered with dynamic scheme count */}
                       <h3 className="absolute inset-x-0 text-center text-[13.5px] font-extrabold text-[#0f172a] dark:text-slate-100 pointer-events-none px-16 truncate">
-                        {lang === "ml" ? "പദ്ധതികളുടെ പട്ടിക (25)" : "Scheme list(25)"}
+                        {(() => {
+                          const q = guestSchemeSearchQuery.toLowerCase().trim();
+                          const count = q
+                            ? guestSchemesFullList.filter((s) =>
+                                s.nameEn.toLowerCase().includes(q) ||
+                                s.nameMl.toLowerCase().includes(q) ||
+                                s.ministryEn.toLowerCase().includes(q) ||
+                                s.ministryMl.toLowerCase().includes(q) ||
+                                s.descEn.toLowerCase().includes(q) ||
+                                s.descMl.toLowerCase().includes(q) ||
+                                s.categoryEn.toLowerCase().includes(q) ||
+                                s.categoryMl.toLowerCase().includes(q)
+                              ).length
+                            : guestSchemesFullList.length;
+                          return lang === "ml"
+                            ? `പദ്ധതികളുടെ പട്ടിക (${count})`
+                            : `Schemes List (${count})`;
+                        })()}
                       </h3>
 
                       {/* Right Action Icons: Filter + Search */}
@@ -10102,24 +10187,24 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             subtitleMl: "സംസ്ഥാനതല മെഗാ ബൂത്ത് സമ്മേളനം",
                             ctaText: "REGISTER NOW",
                             ctaTextMl: "രജിസ്റ്റർ ചെയ്യുക",
-                            rightGradient: "from-[#800f13] via-[#a3161a] to-[#4f080b]",
-                            accentBorder: "border-[#800f13]",
-                            dateBadgeBg: "bg-white text-[#800f13]",
-                            yearTagBg: "bg-red-50 text-[#800f13] border-red-200/80",
+                            rightGradient: "from-blue-600 via-sky-600 to-orange-500",
+                            accentBorder: "border-blue-400",
+                            dateBadgeBg: "bg-white text-blue-900",
+                            yearTagBg: "bg-blue-50 text-blue-800 border-blue-200/80",
                             isUnread: true,
                           },
                           {
                             type: "announcement",
                             ribbon: "MODI'S GUARANTEE",
                             ribbonMl: "മോദിയുടെ ഗ്യാരണ്ടി",
-                            ribbonBg: "bg-red-500 text-white font-black",
+                            ribbonBg: "bg-blue-600 text-white font-black",
                             title: "SABKA SAATH · SABKA VIKAS",
                             subtitle: "Sabka Vishwas · Sabka Prayaas (2047 Vision)",
                             subtitleMl: "സബ്കാ സാഥ്, സബ്കാ വികാസ്, സബ്കാ വിശ്വാസ്",
-                            cardStyle: "bg-gradient-to-r from-[#800f13] via-[#a3161a] to-[#590a0d] text-white shadow-md border border-red-900/50",
-                            titleColor: "text-white font-extrabold",
-                            subTitleColor: "text-red-100/95 font-medium",
-                            rightGraphicBg: "bg-red-950/70 border-red-400/40",
+                            cardStyle: "bg-gradient-to-r from-blue-50 via-sky-50 to-orange-50 dark:from-slate-800 dark:via-blue-950/40 dark:to-orange-950/40 text-slate-900 dark:text-white shadow-xs border border-blue-200/80 dark:border-blue-900/50",
+                            titleColor: "text-slate-900 dark:text-white font-extrabold",
+                            subTitleColor: "text-slate-600 dark:text-slate-300 font-medium",
+                            rightGraphicBg: "bg-blue-100/80 dark:bg-blue-950/70 border-blue-300/60",
                             isUnread: true,
                           },
                           {
@@ -13413,7 +13498,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                               <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs p-3.5 flex items-center justify-between transition-all">
                                 <div className="flex-1 min-w-0 pr-3 space-y-1">
                                   <div className="flex items-center gap-1.5">
-                                    <span className="text-[8.5px] font-black text-[#800f13] bg-red-50 dark:bg-red-950/80 border border-red-200/80 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                    <span className="text-[8.5px] font-black text-[#243d95] bg-blue-50 dark:bg-blue-950/80 border border-blue-200/80 px-2 py-0.5 rounded-full uppercase tracking-wider">
                                       {lang === "ml" ? "ബൂത്ത് സമ്മേളനം" : "BOOTH CONVENTION"}
                                     </span>
                                   </div>
@@ -13429,7 +13514,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     </span>
                                   </div>
                                 </div>
-                                <div className="shrink-0 rounded-lg p-2 bg-[#800f13] text-white flex flex-col items-center justify-center min-w-[50px] text-center shadow-xs">
+                                <div className="shrink-0 rounded-lg p-2 bg-[#243d95] text-white flex flex-col items-center justify-center min-w-[50px] text-center shadow-xs">
                                   <span className="text-[8px] font-black uppercase">OCT</span>
                                   <span className="text-base font-black leading-none my-0.5">15</span>
                                   <span className="text-[7px] font-bold opacity-90">2026</span>
@@ -13467,7 +13552,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                               <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs p-3.5 flex items-center justify-between transition-all">
                                 <div className="flex-1 min-w-0 pr-3 space-y-1">
                                   <div className="flex items-center gap-1.5">
-                                    <span className="text-[8.5px] font-black text-teal-700 bg-teal-50 dark:bg-teal-950/80 border border-teal-200/80 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                    <span className="text-[8.5px] font-black text-blue-700 bg-blue-50 dark:bg-blue-950/80 border border-blue-200/80 px-2 py-0.5 rounded-full uppercase tracking-wider">
                                       {lang === "ml" ? "ഗുണഭോക്തൃ സംഗമം" : "BENEFICIARY MEET"}
                                     </span>
                                   </div>
@@ -13483,7 +13568,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     </span>
                                   </div>
                                 </div>
-                                <div className="shrink-0 rounded-lg p-2 bg-[#0d9488] text-white flex flex-col items-center justify-center min-w-[50px] text-center shadow-xs">
+                                <div className="shrink-0 rounded-lg p-2 bg-[#1d4ed8] text-white flex flex-col items-center justify-center min-w-[50px] text-center shadow-xs">
                                   <span className="text-[8px] font-black uppercase">NOV</span>
                                   <span className="text-base font-black leading-none my-0.5">20</span>
                                   <span className="text-[7px] font-bold opacity-90">2026</span>
@@ -13494,7 +13579,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                               <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs p-3.5 flex items-center justify-between transition-all">
                                 <div className="flex-1 min-w-0 pr-3 space-y-1">
                                   <div className="flex items-center gap-1.5">
-                                    <span className="text-[8.5px] font-black text-emerald-700 bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-200/80 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                    <span className="text-[8.5px] font-black text-amber-700 bg-amber-50 dark:bg-amber-950/80 border border-amber-200/80 px-2 py-0.5 rounded-full uppercase tracking-wider">
                                       {lang === "ml" ? "മഹിളാ സമ്മേളനം" : "MAHILA SAMMELAN"}
                                     </span>
                                   </div>
@@ -13510,7 +13595,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     </span>
                                   </div>
                                 </div>
-                                <div className="shrink-0 rounded-lg p-2 bg-[#15803d] text-white flex flex-col items-center justify-center min-w-[50px] text-center shadow-xs">
+                                <div className="shrink-0 rounded-lg p-2 bg-[#d97706] text-white flex flex-col items-center justify-center min-w-[50px] text-center shadow-xs">
                                   <span className="text-[8px] font-black uppercase">DEC</span>
                                   <span className="text-base font-black leading-none my-0.5">10</span>
                                   <span className="text-[7px] font-bold opacity-90">2026</span>
@@ -13530,45 +13615,45 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                               </div>
 
                               {/* Announcement Banner 2: Sabka Saath Sabka Vikas */}
-                              <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-[#800f13] via-[#a3161a] to-[#590a0d] text-white shadow-xs border border-red-900/50 p-3 flex items-center justify-between">
+                              <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-blue-50 via-sky-50 to-orange-50 dark:from-slate-800 dark:via-blue-950/40 dark:to-orange-950/40 text-slate-900 dark:text-white shadow-xs border border-blue-200/80 dark:border-blue-900/50 p-3 flex items-center justify-between">
                                 <div className="flex-1 min-w-0 pr-2 space-y-1">
-                                  <span className="inline-block rounded-md bg-red-500 text-white px-2 py-0.2 text-[8px] font-black uppercase tracking-wider">
+                                  <span className="inline-block rounded-md bg-blue-600 text-white px-2 py-0.2 text-[8px] font-black uppercase tracking-wider">
                                     {lang === "ml" ? "മോദിയുടെ ഗ്യാരണ്ടി" : "MODI'S GUARANTEE"}
                                   </span>
-                                  <h4 className="font-display text-xs font-black text-white leading-tight">
+                                  <h4 className="font-display text-xs font-black text-slate-900 dark:text-white leading-tight">
                                     SABKA SAATH · SABKA VIKAS
                                   </h4>
-                                  <p className="text-[10px] text-[#ffffff] font-semibold">
+                                  <p className="text-[10px] text-slate-600 dark:text-slate-300 font-semibold">
                                     {lang === "ml" ? "സബ്കാ സാഥ്, സബ്കാ വികാസ്, സബ്കാ വിശ്വാസ്" : "Sabka Vishwas · Sabka Prayaas (2047 Vision)"}
                                   </p>
                                 </div>
-                                <div className="shrink-0 h-10 w-10 rounded-full bg-red-950/70 border border-red-400/40 p-1 flex items-center justify-center shadow-xs">
+                                <div className="shrink-0 h-10 w-10 rounded-full bg-blue-100/80 dark:bg-blue-950/70 border border-blue-300/60 p-1 flex items-center justify-center shadow-xs">
                                   <img src={officialLotus} alt="Lotus" className="h-6 w-6 object-contain" />
                                 </div>
                               </div>
 
                               {/* Announcement Banner 3: Direct Benefit Transfer */}
-                              <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-[#15803d] via-emerald-700 to-[#065f46] text-white shadow-xs border border-emerald-600/50 p-3 flex items-center justify-between">
+                              <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-sky-50 via-blue-50 to-orange-50 dark:from-slate-800 dark:via-sky-950/40 dark:to-orange-950/40 text-slate-900 dark:text-white shadow-xs border border-sky-200/80 dark:border-sky-900/50 p-3 flex items-center justify-between">
                                 <div className="flex-1 min-w-0 pr-2 space-y-1">
-                                  <span className="inline-block rounded-md bg-amber-400 text-amber-950 px-2 py-0.2 text-[8px] font-black uppercase tracking-wider">
+                                  <span className="inline-block rounded-md bg-[#ff5500] text-white px-2 py-0.2 text-[8px] font-black uppercase tracking-wider">
                                     {lang === "ml" ? "പി.എം കിസാൻ" : "PM KISAN SAMMAN"}
                                   </span>
-                                  <h4 className="font-display text-xs font-black text-white leading-tight">
+                                  <h4 className="font-display text-xs font-black text-slate-900 dark:text-white leading-tight">
                                     DIRECT BENEFIT TRANSFER ₹6,000
                                   </h4>
-                                  <p className="text-[10px] text-emerald-100/90">
+                                  <p className="text-[10px] text-slate-600 dark:text-slate-300">
                                     {lang === "ml" ? "കേരളത്തിലെ 35 ലക്ഷം കർഷകർക്ക് നേട്ടങ്ങൾ" : "Empowering 35 Lakh Farmers Across Kerala"}
                                   </p>
                                 </div>
-                                <div className="shrink-0 h-10 w-10 rounded-full bg-emerald-950/70 border border-amber-300/40 p-1 flex items-center justify-center shadow-xs">
+                                <div className="shrink-0 h-10 w-10 rounded-full bg-orange-100/80 dark:bg-orange-950/70 border border-orange-300/60 p-1 flex items-center justify-center shadow-xs">
                                   <img src={officialLotus} alt="Lotus" className="h-6 w-6 object-contain" />
                                 </div>
                               </div>
 
                               {/* Announcement Banner 4: Ayushman Bharat */}
-                              <div className="relative overflow-hidden rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs border border-slate-200/90 dark:border-slate-800 p-3 flex items-center justify-between">
+                              <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-orange-50 via-amber-50 to-blue-50 dark:from-slate-800 dark:via-orange-950/30 dark:to-blue-950/30 text-slate-900 dark:text-white shadow-xs border border-orange-200/80 dark:border-orange-900/50 p-3 flex items-center justify-between">
                                 <div className="flex-1 min-w-0 pr-2 space-y-1">
-                                  <span className="inline-block rounded-md bg-[#ff5500] text-white px-2 py-0.2 text-[8px] font-black uppercase tracking-wider">
+                                  <span className="inline-block rounded-md bg-blue-600 text-white px-2 py-0.2 text-[8px] font-black uppercase tracking-wider">
                                     {lang === "ml" ? "ആയുഷ്മാൻ ഭാരത്" : "AYUSHMAN BHARAT"}
                                   </span>
                                   <h4 className="font-display text-xs font-black text-slate-900 dark:text-white leading-tight">
@@ -13578,7 +13663,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     {lang === "ml" ? "സൗജന്യ സമഗ്ര കുടുംബ ആരോഗ്യ സുരക്ഷാ പദ്ധതി" : "Cashless Medical Treatment for All Families"}
                                   </p>
                                 </div>
-                                <div className="shrink-0 h-10 w-10 rounded-full bg-orange-50 dark:bg-slate-800 border border-orange-200 dark:border-slate-700 p-1 flex items-center justify-center shadow-xs">
+                                <div className="shrink-0 h-10 w-10 rounded-full bg-amber-100/80 dark:bg-slate-800 border border-amber-300/60 dark:border-slate-700 p-1 flex items-center justify-center shadow-xs">
                                   <img src={officialLotus} alt="Lotus" className="h-6 w-6 object-contain" />
                                 </div>
                               </div>
@@ -13598,188 +13683,139 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   renderSchemeDetailsSubpage()
                 ) : mobileSubPage === "category_schemes" && selectedSchemeCategoryDetail ? (
                   /* Separate Category Schemes Page view */
-                  <div className="space-y-2 animate-in fade-in slide-in-from-right-2 duration-200 pt-0.5">
-                    {/* Clean Header matching Application Details Header (No solid background card) */}
-                    <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-slate-800 pb-2 px-0.5 pt-0.5">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMobileSubPage("none");
-                          setSelectedSchemeCategoryDetail(null);
-                          setCategorySchemeQuery("");
-                          setShowCategorySearch(false);
-                          setIsCategoryFilterOpen(false);
-                        }}
-                        className="flex items-center gap-2 text-slate-900 dark:text-white hover:text-orange-600 transition-colors cursor-pointer group shrink-0"
-                      >
-                        <div className="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 group-hover:bg-orange-50 dark:group-hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors">
-                          <ArrowLeft className="h-4 w-4" />
+                  <div className="space-y-2 animate-in fade-in slide-in-from-right-2 duration-200 -mt-3 -mx-3">
+                    {/* Header matching Scheme Details & Application Details Header style */}
+                    <div className="w-full bg-[#FFFDF9] dark:bg-slate-900 border-b border-slate-200/60 dark:border-slate-800/60 shadow-2xs px-3.5 py-2 transition-all">
+                      {showCategorySearch ? (
+                        <div className="flex h-8 items-center justify-between gap-2 w-full animate-in fade-in duration-150">
+                          <div className="relative flex-1 flex items-center">
+                            <Search className="absolute left-2.5 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                            <input
+                              type="text"
+                              autoFocus
+                              value={categorySchemeQuery}
+                              onChange={(e) => setCategorySchemeQuery(e.target.value)}
+                              placeholder={lang === "ml" ? "പദ്ധതികൾ തിരയുക..." : "Search schemes..."}
+                              className="w-full h-7.5 pl-8 pr-7 text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-full border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                            />
+                            {categorySchemeQuery && (
+                              <button
+                                type="button"
+                                onClick={() => setCategorySchemeQuery("")}
+                                className="absolute right-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowCategorySearch(false);
+                              setCategorySchemeQuery("");
+                            }}
+                            className="text-xs font-bold text-orange-600 hover:text-orange-700 dark:text-orange-400 shrink-0 px-1 cursor-pointer"
+                          >
+                            {lang === "ml" ? "റദ്ദാക്കുക" : "Cancel"}
+                          </button>
                         </div>
-                      </button>
+                      ) : (
+                        <div className="relative flex h-8 items-center justify-between w-full">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMobileSubPage("none");
+                              setSelectedSchemeCategoryDetail(null);
+                              setCategorySchemeQuery("");
+                              setShowCategorySearch(false);
+                              setIsCategoryFilterOpen(false);
+                            }}
+                            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FFF7EC] text-[#1b255a] hover:bg-orange-100 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 transition-colors cursor-pointer shadow-2xs z-10 border border-orange-100/80 dark:border-slate-700"
+                            title={lang === "ml" ? "തിരികെ" : "Back"}
+                          >
+                            <ArrowLeft className="h-3.5 w-3.5 stroke-[2.2]" />
+                          </button>
 
-                      <h3 className="font-extrabold text-[15px] sm:text-[16px] text-slate-900 dark:text-white text-center flex-1 truncate px-2">
-                        {lang === "ml"
-                          ? `പദ്ധതികളുടെ പട്ടിക (${
-                              getMobileCentralSchemeCards(selectedSchemeCategoryDetail.id).filter((scheme) => {
-                                if (selectedMinistryFilter !== "all") {
-                                  const ministryMatch =
-                                    scheme.deptEn.toLowerCase().includes(selectedMinistryFilter.toLowerCase()) ||
-                                    scheme.deptMl.toLowerCase().includes(selectedMinistryFilter.toLowerCase());
-                                  if (!ministryMatch) return false;
-                                }
-                                if (selectedCategoryFilter !== "all") {
-                                  const cat = ((scheme as any).categoryEn || "").toLowerCase();
-                                  if (!cat.includes(selectedCategoryFilter.toLowerCase())) return false;
-                                }
-                                if (!categorySchemeQuery.trim()) return true;
-                                const q = categorySchemeQuery.toLowerCase();
-                                return (
-                                  scheme.titleEn.toLowerCase().includes(q) ||
-                                  scheme.titleMl.toLowerCase().includes(q) ||
-                                  scheme.deptEn.toLowerCase().includes(q) ||
-                                  scheme.deptMl.toLowerCase().includes(q)
-                                );
-                              }).length
-                            })`
-                          : `Schemes List (${
-                              getMobileCentralSchemeCards(selectedSchemeCategoryDetail.id).filter((scheme) => {
-                                if (selectedMinistryFilter !== "all") {
-                                  const ministryMatch =
-                                    scheme.deptEn.toLowerCase().includes(selectedMinistryFilter.toLowerCase()) ||
-                                    scheme.deptMl.toLowerCase().includes(selectedMinistryFilter.toLowerCase());
-                                  if (!ministryMatch) return false;
-                                }
-                                if (selectedCategoryFilter !== "all") {
-                                  const cat = ((scheme as any).categoryEn || "").toLowerCase();
-                                  if (!cat.includes(selectedCategoryFilter.toLowerCase())) return false;
-                                }
-                                if (!categorySchemeQuery.trim()) return true;
-                                const q = categorySchemeQuery.toLowerCase();
-                                return (
-                                  scheme.titleEn.toLowerCase().includes(q) ||
-                                  scheme.titleMl.toLowerCase().includes(q) ||
-                                  scheme.deptEn.toLowerCase().includes(q) ||
-                                  scheme.deptMl.toLowerCase().includes(q)
-                                );
-                              }).length
-                            })`}
-                      </h3>
+                          <h3 className="absolute inset-x-0 text-center text-[13.5px] font-extrabold text-[#0f172a] dark:text-slate-100 pointer-events-none px-16 truncate">
+                            {lang === "ml"
+                              ? `പദ്ധതികളുടെ പട്ടിക (${
+                                  getMobileCentralSchemeCards(selectedSchemeCategoryDetail.id).filter((scheme) => {
+                                    if (selectedMinistryFilter !== "all") {
+                                      const ministryMatch =
+                                        scheme.deptEn.toLowerCase().includes(selectedMinistryFilter.toLowerCase()) ||
+                                        scheme.deptMl.toLowerCase().includes(selectedMinistryFilter.toLowerCase());
+                                      if (!ministryMatch) return false;
+                                    }
+                                    if (selectedCategoryFilter !== "all") {
+                                      const cat = ((scheme as any).categoryEn || "").toLowerCase();
+                                      if (!cat.includes(selectedCategoryFilter.toLowerCase())) return false;
+                                    }
+                                    if (!categorySchemeQuery.trim()) return true;
+                                    const q = categorySchemeQuery.toLowerCase();
+                                    return (
+                                      scheme.titleEn.toLowerCase().includes(q) ||
+                                      scheme.titleMl.toLowerCase().includes(q) ||
+                                      scheme.deptEn.toLowerCase().includes(q) ||
+                                      scheme.deptMl.toLowerCase().includes(q)
+                                    );
+                                  }).length
+                                })`
+                              : `Schemes List (${
+                                  getMobileCentralSchemeCards(selectedSchemeCategoryDetail.id).filter((scheme) => {
+                                    if (selectedMinistryFilter !== "all") {
+                                      const ministryMatch =
+                                        scheme.deptEn.toLowerCase().includes(selectedMinistryFilter.toLowerCase()) ||
+                                        scheme.deptMl.toLowerCase().includes(selectedMinistryFilter.toLowerCase());
+                                      if (!ministryMatch) return false;
+                                    }
+                                    if (selectedCategoryFilter !== "all") {
+                                      const cat = ((scheme as any).categoryEn || "").toLowerCase();
+                                      if (!cat.includes(selectedCategoryFilter.toLowerCase())) return false;
+                                    }
+                                    if (!categorySchemeQuery.trim()) return true;
+                                    const q = categorySchemeQuery.toLowerCase();
+                                    return (
+                                      scheme.titleEn.toLowerCase().includes(q) ||
+                                      scheme.titleMl.toLowerCase().includes(q) ||
+                                      scheme.deptEn.toLowerCase().includes(q) ||
+                                      scheme.deptMl.toLowerCase().includes(q)
+                                    );
+                                  }).length
+                                })`}
+                          </h3>
 
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => setShowCategorySearch(!showCategorySearch)}
-                          className={`p-1.5 rounded-full text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer ${
-                            showCategorySearch || categorySchemeQuery ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white" : ""
-                          }`}
-                        >
-                          <Search className="h-4.5 w-4.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setIsCategoryFilterOpen(!isCategoryFilterOpen)}
-                          className={`p-1.5 rounded-full text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer ${
-                            isCategoryFilterOpen || selectedMinistryFilter !== "all" || selectedCategoryFilter !== "all"
-                              ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white"
-                              : ""
-                          }`}
-                        >
-                          <Filter className="h-4.5 w-4.5" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Expandable Search Input */}
-                    {showCategorySearch && (
-                      <div className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 shadow-2xs animate-in fade-in slide-in-from-top-1 duration-150">
-                        <Search className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                        <input
-                          value={categorySchemeQuery}
-                          onChange={(e) => setCategorySchemeQuery(e.target.value)}
-                          placeholder={lang === "ml" ? "പദ്ധതികൾ തിരയുക..." : "Search schemes..."}
-                          className="min-w-0 flex-1 bg-transparent text-xs font-medium text-slate-800 dark:text-slate-100 outline-none placeholder:text-slate-400"
-                          autoFocus
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setCategorySchemeQuery("");
-                            setShowCategorySearch(false);
-                          }}
-                          className="p-1 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    )}
-
-                    {/* Expandable Filter Popup (Category + Department) */}
-                    {isCategoryFilterOpen && (
-                      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-md space-y-2.5 animate-in fade-in slide-in-from-top-1 duration-150">
-                        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-1.5">
-                          <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                            <Filter className="h-3.5 w-3.5 text-[#243D95]" />
-                            {lang === "ml" ? "ഫിൽട്ടറുകൾ" : "Scheme Filters"}
-                          </h4>
-                          {(selectedMinistryFilter !== "all" || selectedCategoryFilter !== "all") && (
+                          <div className="relative z-10 flex items-center gap-1 shrink-0">
                             <button
                               type="button"
-                              onClick={() => {
-                                setSelectedMinistryFilter("all");
-                                setSelectedCategoryFilter("all");
-                              }}
-                              className="text-[10px] font-bold text-orange-600 dark:text-orange-400 cursor-pointer hover:underline"
+                              onClick={() => setShowCategorySearch(true)}
+                              className={`flex h-7 w-7 items-center justify-center rounded-full transition-colors cursor-pointer border shadow-2xs ${
+                                categorySchemeQuery
+                                  ? "bg-[#ff5500] text-white border-orange-600"
+                                  : "bg-[#FFF7EC] text-[#1b255a] border-orange-100/80 hover:bg-orange-100 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700"
+                              }`}
+                              title={lang === "ml" ? "തിരയുക" : "Search"}
                             >
-                              {lang === "ml" ? "റീസെറ്റ്" : "Reset All"}
+                              <Search className="h-3.5 w-3.5 stroke-[2.2]" />
                             </button>
-                          )}
-                        </div>
-
-                        <div className="space-y-2">
-                          <div>
-                            <label className="block text-[10.5px] font-bold text-slate-600 dark:text-slate-400 mb-1">
-                              {lang === "ml" ? "വിഭാഗം" : "Category"}
-                            </label>
-                            <select
-                              value={selectedCategoryFilter}
-                              onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-                              className="w-full text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2 outline-none"
+                            <button
+                              type="button"
+                              onClick={() => setSchemeFilterSheetOpen((prev) => !prev)}
+                              className={`flex h-7 w-7 items-center justify-center rounded-full transition-colors cursor-pointer border shadow-2xs ${
+                                schemeFilterSheetOpen || selectedMinistryFilter !== "all" || selectedCategoryFilter !== "all"
+                                  ? "bg-[#ff5500] text-white border-orange-600"
+                                  : "bg-[#FFF7EC] text-[#1b255a] border-orange-100/80 hover:bg-orange-100 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700"
+                              }`}
+                              title={lang === "ml" ? "ഫിൽട്ടർ ചെയ്യുക" : "Filter Schemes"}
                             >
-                              <option value="all">{lang === "ml" ? "എല്ലാ വിഭാഗങ്ങളും" : "All Categories"}</option>
-                              <option value="agriculture">{lang === "ml" ? "കാർഷികം" : "Agriculture"}</option>
-                              <option value="health">{lang === "ml" ? "ആരോഗ്യം" : "Health & Healthcare"}</option>
-                              <option value="housing">{lang === "ml" ? "ഭവന നിർമ്മാണം" : "Housing & Infrastructure"}</option>
-                              <option value="pension">{lang === "ml" ? "പെൻഷൻ & സാമൂഹിക ക്ഷേമം" : "Pension & Social Welfare"}</option>
-                              <option value="financial">{lang === "ml" ? "സാമ്പത്തിക സേവനങ്ങൾ" : "Financial Services & Inclusion"}</option>
-                              <option value="msme">{lang === "ml" ? "MSME & സംരംഭകത്വം" : "MSME & Self-Employment"}</option>
-                              <option value="energy">{lang === "ml" ? "ഊർജ്ജം & പുനരുപയോഗ ഊർജ്ജം" : "Renewable Energy & Power"}</option>
-                            </select>
-                          </div>
-
-                          <div>
-                            <label className="block text-[10.5px] font-bold text-slate-600 dark:text-slate-400 mb-1">
-                              {lang === "ml" ? "മന്ത്രാലയം / വകുപ്പ്" : "Department / Ministry"}
-                            </label>
-                            <select
-                              value={selectedMinistryFilter}
-                              onChange={(e) => setSelectedMinistryFilter(e.target.value)}
-                              className="w-full text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2 outline-none"
-                            >
-                              <option value="all">{lang === "ml" ? "എല്ലാ വകുപ്പുകളും" : "All Departments"}</option>
-                              <option value="agriculture">{lang === "ml" ? "കാർഷിക മന്ത്രാലയം" : "Ministry of Agriculture & Farmers Welfare"}</option>
-                              <option value="health">{lang === "ml" ? "ആരോഗ്യ മന്ത്രാലയം / NHA" : "National Health Authority / Health Ministry"}</option>
-                              <option value="housing">{lang === "ml" ? "ഭവന നിർമ്മാണ മന്ത്രാലയം" : "Ministry of Housing & Urban Affairs"}</option>
-                              <option value="finance">{lang === "ml" ? "ധനകാര്യ മന്ത്രാലയം" : "Ministry of Finance"}</option>
-                              <option value="energy">{lang === "ml" ? "പുതിയതും പുനരുപയോഗിക്കാവുന്നതുമായ ഊർജ്ജ മന്ത്രാലയം" : "Ministry of New & Renewable Energy"}</option>
-                              <option value="msme">{lang === "ml" ? "MSME മന്ത്രാലയം" : "Ministry of MSME"}</option>
-                            </select>
+                              <Filter className="h-3.5 w-3.5 stroke-[2.2]" />
+                            </button>
                           </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
 
                     {/* Scheme Cards List matching user mockup */}
-                    <div className="space-y-1.5 pt-0.5">
+                    <div className="space-y-1.5 pt-0.5 px-3">
                       {getMobileCentralSchemeCards(selectedSchemeCategoryDetail.id)
                         .filter((scheme) => {
                           if (selectedMinistryFilter !== "all") {
@@ -13805,10 +13841,10 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           <div
                             key={scheme.titleEn}
                             onClick={() => openMobileSchemeDetailsView(scheme.titleEn, "category_schemes")}
-                            className="py-1.5 px-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:shadow-md transition-all cursor-pointer flex items-center justify-between gap-2 group"
+                            className="py-2 px-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:shadow-md transition-all cursor-pointer flex items-center justify-between gap-2.5 group"
                           >
-                            <div className="flex items-center gap-2 min-w-0 flex-1">
-                              <div className="h-8.5 w-8.5 rounded-lg bg-orange-50/70 dark:bg-slate-800 border border-orange-100/80 dark:border-slate-700 flex items-center justify-center shrink-0 p-0.5 shadow-2xs overflow-hidden">
+                            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                              <div className="h-9 w-9 rounded-xl bg-orange-50/70 dark:bg-slate-800 border border-orange-100/80 dark:border-slate-700 flex items-center justify-center shrink-0 p-1 shadow-2xs overflow-hidden">
                                 <img
                                   src={getEligibleSchemeLogo({
                                     titleEn: scheme.titleEn,
@@ -13819,15 +13855,15 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 />
                               </div>
                               <div className="min-w-0 flex-1">
-                                <h4 className="font-extrabold text-[11.5px] text-[#0a0f1d] dark:text-white leading-tight group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors truncate">
+                                <h4 className="font-extrabold text-[12.5px] sm:text-[13px] text-[#0a0f1d] dark:text-white leading-snug group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors truncate">
                                   {lang === "ml" ? scheme.titleMl : scheme.titleEn}
                                 </h4>
-                                <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                                <p className="text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 truncate">
                                   {lang === "ml" ? scheme.deptMl : scheme.deptEn}
                                 </p>
                               </div>
                             </div>
-                            <div className="h-6 w-6 rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center shrink-0 text-slate-400 group-hover:text-orange-600 group-hover:bg-orange-50 dark:group-hover:bg-slate-700 transition-all">
+                            <div className="h-6.5 w-6.5 rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center shrink-0 text-slate-400 group-hover:text-orange-600 group-hover:bg-orange-50 dark:group-hover:bg-slate-700 transition-all">
                               <ChevronRight className="h-3.5 w-3.5 stroke-[2.2]" />
                             </div>
                           </div>
@@ -13853,11 +13889,11 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           onClick={() => {
                             setSelectedSchemeCategoryDetail({
                               id: "all",
-                              count: 128,
+                              count: 35,
                               categoryLabelEn: "All Categories",
                               categoryLabelMl: "എല്ലാ വിഭാഗങ്ങളും",
-                              titleEn: "All Central Government Schemes",
-                              titleMl: "എല്ലാ കേന്ദ്ര സർക്കാർ ക്ഷേമപദ്ധതികൾ",
+                              titleEn: "Schemes List",
+                              titleMl: "പദ്ധതികളുടെ പട്ടിക",
                             });
                             setSchemeCategoryFilter("all");
                             setMobileSubPage("category_schemes");
@@ -13951,11 +13987,11 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           onClick={() => {
                             setSelectedSchemeCategoryDetail({
                               id: "all",
-                              count: 128,
+                              count: 35,
                               categoryLabelEn: "All Categories",
                               categoryLabelMl: "എല്ലാ വിഭാഗങ്ങളും",
-                              titleEn: "All Central Government Schemes",
-                              titleMl: "എല്ലാ കേന്ദ്ര സർക്കാർ ക്ഷേമപദ്ധതികൾ",
+                              titleEn: "Schemes List",
+                              titleMl: "പദ്ധതികളുടെ പട്ടിക",
                             });
                             setSchemeCategoryFilter("all");
                             setMobileSubPage("category_schemes");
@@ -15482,32 +15518,43 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                               {createFullName || "Soman P"}
                             </span>
                           </div>
-                          <label className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 text-[10.5px] font-semibold text-muted-foreground">
-                            <input
-                              type="checkbox"
-                              checked={mockEligibleSchemesList.every((scheme) =>
-                                selectedEligibleSchemeIds.includes(scheme.id)
-                              )}
-                              onChange={() => {
-                                const allSchemeIds = mockEligibleSchemesList.map((scheme) => scheme.id);
-                                setSelectedEligibleSchemeIds((current) =>
-                                  mockEligibleSchemesList.every((scheme) => current.includes(scheme.id))
-                                    ? []
-                                    : allSchemeIds
-                                );
-                              }}
-                              className="peer sr-only"
-                            />
-                            <span
-                              aria-hidden="true"
-                              className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border-2 border-orange-300 bg-white text-white transition-all hover:border-orange-500 peer-checked:border-orange-500 peer-checked:bg-orange-500 peer-checked:shadow-xs dark:border-orange-900 dark:bg-slate-900"
-                            >
-                              {mockEligibleSchemesList.every((scheme) =>
-                                selectedEligibleSchemeIds.includes(scheme.id)
-                              ) && <Check className="h-2.5 w-2.5 stroke-[4]" />}
-                            </span>
-                            <span>{lang === "ml" ? "എല്ലാം" : "All"}</span>
-                          </label>
+                          {(() => {
+                            const allSchemeIds = mockEligibleSchemesList.map((scheme) => scheme.id);
+                            const isAllSelected = mockEligibleSchemesList.length > 0 && mockEligibleSchemesList.every((scheme) => selectedEligibleSchemeIds.includes(scheme.id));
+                            const isSomeSelected = selectedEligibleSchemeIds.length > 0 && !isAllSelected;
+
+                            return (
+                              <label className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 text-[10.5px] font-semibold text-muted-foreground">
+                                <span>{lang === "ml" ? "എല്ലാം" : "All"}</span>
+                                <input
+                                  type="checkbox"
+                                  checked={isAllSelected}
+                                  onChange={() => {
+                                    setSelectedEligibleSchemeIds((current) =>
+                                      mockEligibleSchemesList.every((scheme) => current.includes(scheme.id))
+                                        ? []
+                                        : allSchemeIds
+                                    );
+                                  }}
+                                  className="peer sr-only"
+                                />
+                                <span
+                                  aria-hidden="true"
+                                  className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border-2 transition-all ${
+                                    isAllSelected || isSomeSelected
+                                      ? "border-orange-500 bg-orange-500 text-white shadow-xs"
+                                      : "border-orange-300 bg-white hover:border-orange-500 dark:border-orange-900 dark:bg-slate-900"
+                                  }`}
+                                >
+                                  {isAllSelected ? (
+                                    <Check className="h-2.5 w-2.5 stroke-[4]" />
+                                  ) : isSomeSelected ? (
+                                    <Minus className="h-2.5 w-2.5 stroke-[4]" />
+                                  ) : null}
+                                </span>
+                              </label>
+                            );
+                          })()}
                         </div>
 
                         {/* Eligible Scheme Cards or Empty State */}
@@ -16894,7 +16941,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             <button
                               type="button"
                               onClick={() => setIsHelpdeskSearchExpanded(true)}
-                              className="flex h-7 w-7 items-center justify-center rounded-full border border-amber-200/60 dark:border-slate-800 bg-[#fffcf0] dark:bg-slate-900 text-[#0a0f1d] dark:text-slate-200 hover:bg-amber-100/50 transition-all shadow-2xs cursor-pointer shrink-0"
+                              className="flex h-7 w-7 items-center justify-center rounded-full border border-[#f1ddc7] bg-[#fff7ec] text-[#ff5500] hover:bg-orange-100/60 transition-all shadow-2xs cursor-pointer shrink-0"
                               title="Search Help Requests"
                             >
                               <Search className="h-3.5 w-3.5 stroke-[2.2] text-[#ff5500]" />
@@ -16906,151 +16953,27 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             type="button"
                             onClick={() => setIsHelpdeskFilterOpen(!isHelpdeskFilterOpen)}
                             className={`relative flex h-7 w-7 items-center justify-center rounded-full border transition-all shadow-2xs cursor-pointer shrink-0 ${
-                              isHelpdeskFilterOpen ||
-                              helpdeskSelectedDistrict !== "all" ||
-                              helpdeskSelectedMandalam !== "all" ||
-                              helpdeskSelectedLocalBody !== "all" ||
-                              helpdeskSelectedWard !== "all" ||
-                              helpdeskSelectedScheme !== "all"
+                              isHelpdeskFilterOpen || helpdeskActiveFilterCount > 0
                                 ? "border-orange-500 bg-orange-500 text-white ring-2 ring-orange-500/30 shadow-xs"
-                                : "border-amber-200/60 dark:border-slate-800 bg-[#fffcf0] dark:bg-slate-900 text-[#0a0f1d] dark:text-slate-200 hover:bg-amber-100/50"
+                                : "border-[#f1ddc7] bg-[#fff7ec] text-[#ff5500] hover:bg-orange-100/60"
                             }`}
                             title={lang === "ml" ? "ഫിൽട്ടർ" : "Filter"}
                           >
                             <Filter className={`h-3.5 w-3.5 stroke-[2.2] shrink-0 ${
-                              isHelpdeskFilterOpen ||
-                              helpdeskSelectedDistrict !== "all" ||
-                              helpdeskSelectedMandalam !== "all" ||
-                              helpdeskSelectedLocalBody !== "all" ||
-                              helpdeskSelectedWard !== "all" ||
-                              helpdeskSelectedScheme !== "all"
+                              isHelpdeskFilterOpen || helpdeskActiveFilterCount > 0
                                 ? "text-white"
                                 : "text-[#ff5500]"
                             }`} />
+                            {helpdeskActiveFilterCount > 0 && (
+                              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[9px] font-black text-white ring-1.5 ring-white dark:ring-slate-900 shadow-xs">
+                                {helpdeskActiveFilterCount}
+                              </span>
+                            )}
                           </button>
                         </div>
                       </div>
 
-                      {/* Interactive Helpdesk Filter Card / Popup Panel below header */}
-                      {isHelpdeskFilterOpen && (
-                        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-md space-y-2.5 animate-in fade-in slide-in-from-top-1 duration-200">
-                          <div className="flex items-center justify-between pb-1.5 border-b border-slate-100 dark:border-slate-800">
-                            <span className="text-[11px] font-extrabold text-foreground uppercase tracking-wider">
-                              {lang === "ml" ? "ഫിൽട്ടറുകൾ (Filter Help Requests)" : "Help Request Filters"}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setHelpdeskSelectedDistrict("all");
-                                setHelpdeskSelectedMandalam("all");
-                                setHelpdeskSelectedLocalBody("all");
-                                setHelpdeskSelectedWard("all");
-                                setHelpdeskSelectedScheme("all");
-                              }}
-                              className="text-[10px] font-bold text-orange-600 hover:underline cursor-pointer"
-                            >
-                              {lang === "ml" ? "പുനഃസജ്ജമാക്കുക" : "Reset All"}
-                            </button>
-                          </div>
-
-                          <div className="space-y-2 text-xs">
-                            {/* District Dropdown */}
-                            <div>
-                              <label className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 block mb-0.5">
-                                {lang === "ml" ? "ജില്ല (District)" : "District"}
-                              </label>
-                              <select
-                                value={helpdeskSelectedDistrict}
-                                onChange={(e) => setHelpdeskSelectedDistrict(e.target.value)}
-                                className="w-full h-8 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-foreground font-semibold outline-none focus:border-orange-500 cursor-pointer"
-                              >
-                                <option value="all">{lang === "ml" ? "എല്ലാ ജില്ലകളും" : "All Districts"}</option>
-                                <option value="Kollam">Kollam</option>
-                                <option value="Thiruvananthapuram">Thiruvananthapuram</option>
-                                <option value="Ernakulam">Ernakulam</option>
-                                <option value="Alappuzha">Alappuzha</option>
-                                <option value="Thrissur">Thrissur</option>
-                                <option value="Kozhikode">Kozhikode</option>
-                              </select>
-                            </div>
-
-                            {/* Mandalam Dropdown */}
-                            <div>
-                              <label className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 block mb-0.5">
-                                {lang === "ml" ? "മണ്ഡലം (Mandalam)" : "Mandalam"}
-                              </label>
-                              <select
-                                value={helpdeskSelectedMandalam}
-                                onChange={(e) => setHelpdeskSelectedMandalam(e.target.value)}
-                                className="w-full h-8 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-foreground font-semibold outline-none focus:border-orange-500 cursor-pointer"
-                              >
-                                <option value="all">{lang === "ml" ? "എല്ലാ മണ്ഡലങ്ങളും" : "All Mandalams"}</option>
-                                <option value="Chavara">Chavara</option>
-                                <option value="Kazhakoottam">Kazhakoottam</option>
-                                <option value="Nemom">Nemom</option>
-                                <option value="Vattiyoorkavu">Vattiyoorkavu</option>
-                                <option value="Kottarakkara">Kottarakkara</option>
-                                <option value="Cherthala">Cherthala</option>
-                              </select>
-                            </div>
-
-                            {/* Local Body Dropdown */}
-                            <div>
-                              <label className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 block mb-0.5">
-                                {lang === "ml" ? "തദ്ദേശ സ്ഥാപനം (Local Body)" : "Local Body"}
-                              </label>
-                              <select
-                                value={helpdeskSelectedLocalBody}
-                                onChange={(e) => setHelpdeskSelectedLocalBody(e.target.value)}
-                                className="w-full h-8 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-foreground font-semibold outline-none focus:border-orange-500 cursor-pointer"
-                              >
-                                <option value="all">{lang === "ml" ? "എല്ലാ തദ്ദേശ സ്ഥാപനങ്ങളും" : "All Local Bodies"}</option>
-                                <option value="Chavara Grama Panchayat">Chavara Grama Panchayat</option>
-                                <option value="Kazhakoottam Ward">Kazhakoottam Zone</option>
-                                <option value="Nemom Zone">Nemom Zone</option>
-                                <option value="Kottarakkara Municipality">Kottarakkara Municipality</option>
-                              </select>
-                            </div>
-
-                            {/* Ward Dropdown */}
-                            <div>
-                              <label className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 block mb-0.5">
-                                {lang === "ml" ? "വാർഡ് (Ward)" : "Ward"}
-                              </label>
-                              <select
-                                value={helpdeskSelectedWard}
-                                onChange={(e) => setHelpdeskSelectedWard(e.target.value)}
-                                className="w-full h-8 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-foreground font-semibold outline-none focus:border-orange-500 cursor-pointer"
-                              >
-                                <option value="all">{lang === "ml" ? "എല്ലാ വാർഡുകളും" : "All Wards"}</option>
-                                <option value="Ward 1">Ward 1</option>
-                                <option value="Ward 2">Ward 2</option>
-                                <option value="Ward 3">Ward 3</option>
-                                <option value="Ward 4">Ward 4</option>
-                              </select>
-                            </div>
-
-                            {/* Scheme Dropdown */}
-                            <div>
-                              <label className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 block mb-0.5">
-                                {lang === "ml" ? "പദ്ധതി (Scheme)" : "Scheme Filter"}
-                              </label>
-                              <select
-                                value={helpdeskSelectedScheme}
-                                onChange={(e) => setHelpdeskSelectedScheme(e.target.value)}
-                                className="w-full h-8 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-foreground font-semibold outline-none focus:border-orange-500 cursor-pointer"
-                              >
-                                <option value="all">{lang === "ml" ? "എല്ലാ പദ്ധതികളും" : "All Schemes"}</option>
-                                <option value="pm-kisan">PM Kisan Samman Nidhi</option>
-                                <option value="pm-surya-ghar">PM Surya Ghar</option>
-                                <option value="pm-matru-vandana">PM Matru Vandana</option>
-                                <option value="pm-awas">PM Awas Yojana</option>
-                                <option value="pm-vishwakarma">PM Vishwakarma</option>
-                              </select>
-                            </div>
-                          </div>
-                        </div>
-                      )}
+                      {/* Inline filter panel removed in favor of bottom sheet modal */}
 
                       {helpdeskRequests.length === 0 ? (
                         <div className="p-6 text-center bg-card rounded-2xl border border-border">
@@ -17210,7 +17133,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       return (
                                         <span
                                           key={sId}
-                                          className="px-2.5 py-0.5 rounded-full bg-orange-100/80 dark:bg-orange-950/60 text-orange-800 dark:text-orange-300 text-[10.5px] font-bold border border-orange-200/80"
+                                          className="px-2.5 py-0.5 rounded-full bg-[#243D95]/10 dark:bg-[#243D95]/25 text-[#243D95] dark:text-blue-300 text-[10.5px] font-bold border border-[#243D95]/20 dark:border-[#243D95]/40"
                                         >
                                           {foundScheme ? (lang === "ml" ? foundScheme.ml : foundScheme.en) : sId}
                                         </span>
@@ -18733,6 +18656,174 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             }}
             inlineInApp={true}
           />
+
+          {/* Helpdesk filter bottom sheet */}
+          {isHelpdeskFilterOpen && (
+            <div
+              className="absolute inset-0 z-50 flex items-end rounded-[36px] bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+              onClick={() => setIsHelpdeskFilterOpen(false)}
+            >
+              <div
+                className="w-full max-h-[85%] overflow-y-auto rounded-t-[24px] border-t border-slate-100 bg-white px-4 pb-5 pt-3 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-slate-200 dark:bg-slate-700" />
+
+                <div className="mb-3 flex items-center justify-between gap-2 pb-2.5 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#FFF2E6] text-[#ff5500] dark:bg-orange-950/40 dark:text-orange-300">
+                      <Filter className="h-3.5 w-3.5 stroke-[2.2]" />
+                    </span>
+                    <p className="text-[13px] font-extrabold text-[#0F172A] dark:text-white uppercase tracking-wider leading-none">
+                      {lang === "ml" ? "സഹായ അഭ്യർത്ഥനകൾ ഫിൽട്ടർ" : "HELP REQUEST FILTERS"}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsHelpdeskFilterOpen(false)}
+                    className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 cursor-pointer"
+                  >
+                    <X className="h-3.5 w-3.5 stroke-[2.2]" />
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {/* Scheme Dropdown */}
+                  <div>
+                    <p className="mb-1 text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
+                      {lang === "ml" ? "പദ്ധതി (Scheme)" : "Scheme"}
+                    </p>
+                    <div className="relative">
+                      <select
+                        value={helpdeskSelectedScheme}
+                        onChange={(e) => setHelpdeskSelectedScheme(e.target.value)}
+                        className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2 pr-8 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white cursor-pointer"
+                      >
+                        <option value="all">{lang === "ml" ? "എല്ലാ പദ്ധതികളും" : "All Schemes"}</option>
+                        <option value="pm-kisan">PM Kisan Samman Nidhi</option>
+                        <option value="pm-surya-ghar">PM Surya Ghar</option>
+                        <option value="pm-matru-vandana">PM Matru Vandana</option>
+                        <option value="pm-awas">PM Awas Yojana</option>
+                        <option value="pm-vishwakarma">PM Vishwakarma</option>
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                    </div>
+                  </div>
+
+                  {/* District Dropdown */}
+                  <div>
+                    <p className="mb-1 text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
+                      {lang === "ml" ? "ജില്ല (District)" : "District"}
+                    </p>
+                    <div className="relative">
+                      <select
+                        value={helpdeskSelectedDistrict}
+                        onChange={(e) => setHelpdeskSelectedDistrict(e.target.value)}
+                        className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2 pr-8 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white cursor-pointer"
+                      >
+                        <option value="all">{lang === "ml" ? "എല്ലാ ജില്ലകളും" : "All Districts"}</option>
+                        <option value="Kollam">Kollam</option>
+                        <option value="Thiruvananthapuram">Thiruvananthapuram</option>
+                        <option value="Ernakulam">Ernakulam</option>
+                        <option value="Alappuzha">Alappuzha</option>
+                        <option value="Thrissur">Thrissur</option>
+                        <option value="Kozhikode">Kozhikode</option>
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                    </div>
+                  </div>
+
+                  {/* Mandalam Dropdown */}
+                  <div>
+                    <p className="mb-1 text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
+                      {lang === "ml" ? "മണ്ഡലം (Mandalam)" : "Mandalam"}
+                    </p>
+                    <div className="relative">
+                      <select
+                        value={helpdeskSelectedMandalam}
+                        onChange={(e) => setHelpdeskSelectedMandalam(e.target.value)}
+                        className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2 pr-8 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white cursor-pointer"
+                      >
+                        <option value="all">{lang === "ml" ? "എല്ലാ മണ്ഡലങ്ങളും" : "All Mandalams"}</option>
+                        <option value="Chavara">Chavara</option>
+                        <option value="Kazhakoottam">Kazhakoottam</option>
+                        <option value="Nemom">Nemom</option>
+                        <option value="Vattiyoorkavu">Vattiyoorkavu</option>
+                        <option value="Kottarakkara">Kottarakkara</option>
+                        <option value="Cherthala">Cherthala</option>
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                    </div>
+                  </div>
+
+                  {/* Local Body Dropdown */}
+                  <div>
+                    <p className="mb-1 text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
+                      {lang === "ml" ? "തദ്ദേശ സ്ഥാപനം (Local Body)" : "Local Body"}
+                    </p>
+                    <div className="relative">
+                      <select
+                        value={helpdeskSelectedLocalBody}
+                        onChange={(e) => setHelpdeskSelectedLocalBody(e.target.value)}
+                        className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2 pr-8 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white cursor-pointer"
+                      >
+                        <option value="all">{lang === "ml" ? "എല്ലാ തദ്ദേശ സ്ഥാപനങ്ങളും" : "All Local Bodies"}</option>
+                        <option value="Chavara Grama Panchayat">Chavara Grama Panchayat</option>
+                        <option value="Kazhakoottam Ward">Kazhakoottam Zone</option>
+                        <option value="Nemom Zone">Nemom Zone</option>
+                        <option value="Kottarakkara Municipality">Kottarakkara Municipality</option>
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                    </div>
+                  </div>
+
+                  {/* Ward Dropdown */}
+                  <div>
+                    <p className="mb-1 text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
+                      {lang === "ml" ? "വാർഡ് (Ward)" : "Ward"}
+                    </p>
+                    <div className="relative">
+                      <select
+                        value={helpdeskSelectedWard}
+                        onChange={(e) => setHelpdeskSelectedWard(e.target.value)}
+                        className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2 pr-8 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white cursor-pointer"
+                      >
+                        <option value="all">{lang === "ml" ? "എല്ലാ വാർഡുകളും" : "All Wards"}</option>
+                        <option value="Ward 1">Ward 1</option>
+                        <option value="Ward 2">Ward 2</option>
+                        <option value="Ward 3">Ward 3</option>
+                        <option value="Ward 4">Ward 4</option>
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                    </div>
+                  </div>
+
+                  <div className="pt-2 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHelpdeskSelectedDistrict("all");
+                        setHelpdeskSelectedMandalam("all");
+                        setHelpdeskSelectedLocalBody("all");
+                        setHelpdeskSelectedWard("all");
+                        setHelpdeskSelectedScheme("all");
+                      }}
+                      className="w-1/3 rounded-xl border border-slate-200 bg-slate-50 py-2.5 text-xs font-bold text-slate-600 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 cursor-pointer text-center"
+                    >
+                      {lang === "ml" ? "പുനഃസജ്ജമാക്കുക" : "Reset All"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsHelpdeskFilterOpen(false)}
+                      className="w-2/3 rounded-xl bg-[#ff5500] py-2.5 text-xs font-extrabold text-white transition-colors hover:bg-orange-600 cursor-pointer text-center"
+                    >
+                      {lang === "ml" ? "ഫിൽട്ടർ ഉപയോഗിക്കുക" : "Apply Filters"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Applicants filter bottom sheet */}
           {isApplicantFilterOpen && (mobileSubPage === "users" || mobileSubPage === "applicants") && (

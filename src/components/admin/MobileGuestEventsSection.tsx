@@ -27,24 +27,24 @@ const mergedSlides = [
     subtitleMl: "സംസ്ഥാനതല മെഗാ ബൂത്ത് സമ്മേളനം",
     ctaText: "REGISTER NOW",
     ctaTextMl: "രജിസ്റ്റർ ചെയ്യുക",
-    rightGradient: "from-[#1d3178] via-[#243D95] to-[#122061]",
-    accentBorder: "border-[#243D95]",
+    rightGradient: "from-[#243D95] via-[#1d3178] to-[#EA580C]",
+    accentBorder: "border-orange-400",
     dateBadgeBg: "bg-white text-[#243D95]",
-    yearTagBg: "bg-blue-50 text-[#243D95] border-blue-200/80",
+    yearTagBg: "bg-orange-50 text-[#EA580C] border-orange-200",
     isUnread: true,
   },
   {
     type: "announcement",
     ribbon: "MODI'S GUARANTEE",
     ribbonMl: "മോദിയുടെ ഗ്യാരണ്ടി",
-    ribbonBg: "bg-[#243D95] text-white font-black",
+    ribbonBg: "bg-gradient-to-r from-[#243D95] to-orange-500 text-white font-black",
     title: "SABKA SAATH · SABKA VIKAS",
     subtitle: "Sabka Vishwas · Sabka Prayaas (2047 Vision)",
     subtitleMl: "സബ്കാ സാഥ്, സബ്കാ വികാസ്, സബ്കാ വിശ്വാസ്",
-    cardStyle: "bg-gradient-to-r from-blue-50/90 via-sky-50 to-blue-100/80 text-slate-900 shadow-xs border border-blue-200/80",
-    titleColor: "text-slate-900 font-extrabold",
+    cardStyle: "bg-gradient-to-r from-blue-50/90 via-orange-50/50 to-white text-slate-900 shadow-xs border border-orange-200/80",
+    titleColor: "text-[#0F172A] font-extrabold",
     subTitleColor: "text-[#243D95] font-semibold",
-    rightGraphicBg: "bg-white border-blue-200",
+    rightGraphicBg: "bg-white border-orange-400",
     isUnread: true,
   },
   {
@@ -59,10 +59,10 @@ const mergedSlides = [
     subtitleMl: "തിരുവനന്തപുരത്ത് 50,000+ യുവ പ്രതിനിധികൾ",
     ctaText: "JOIN YATRA",
     ctaTextMl: "പങ്കെടുക്കുക",
-    rightGradient: "from-[#243D95] via-[#1e337d] to-[#152456]",
-    accentBorder: "border-[#243D95]",
+    rightGradient: "from-[#243D95] via-[#1e337d] to-[#EA580C]",
+    accentBorder: "border-orange-400",
     dateBadgeBg: "bg-white text-[#243D95]",
-    yearTagBg: "bg-blue-50 text-[#243D95] border-blue-200/80",
+    yearTagBg: "bg-orange-50 text-[#EA580C] border-orange-200",
     isUnread: true,
   },
 ] as const;
@@ -116,7 +116,7 @@ export function MobileGuestEventsSection({
           )}
         </div>
       ) : slide.type === "event" ? (
-        <div className="relative overflow-hidden rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm h-[80px] flex items-center justify-between transition-all duration-500">
+        <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-blue-50/70 via-orange-50/40 to-white dark:from-slate-900 dark:to-slate-900 border border-blue-200/80 dark:border-slate-800 shadow-sm h-[80px] flex items-center justify-between transition-all duration-500">
           <div className="flex-1 min-w-0 h-full p-2 pl-2.5 pr-1.5 flex flex-col justify-between z-10">
             <div className="space-y-0.5 min-w-0">
               <div className="flex items-center gap-1 min-w-0">
