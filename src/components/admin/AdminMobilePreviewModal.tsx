@@ -15245,26 +15245,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     </div>
                                   </div>
 
-                                  {/* 3. Marital Status */}
-                                  <div>
-                                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 block mb-1 leading-snug">
-                                      {lang === "ml" ? "വൈവാഹിക അവസ്ഥ *" : "Marital Status *"}
-                                    </label>
-                                    <select 
-                                      value={createMaritalStatus}
-                                      onChange={(e) => setCreateMaritalStatus(e.target.value)}
-                                      className="w-full text-xs h-9 px-2.5 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
-                                    >
-                                      <option value="">{lang === "ml" ? "-- വൈവാഹിക അവസ്ഥ --" : "-- Select Marital Status --"}</option>
-                                      <option value="Single / Unmarried">{lang === "ml" ? "അവിവാഹിതൻ / അവിവാഹിത" : "Single / Unmarried"}</option>
-                                      <option value="Married">{lang === "ml" ? "വിവാഹിതൻ / വിവാഹിത" : "Married"}</option>
-                                      <option value="Widowed">{lang === "ml" ? "വിധവ / വിധവൻ" : "Widowed"}</option>
-                                      <option value="Divorcee">{lang === "ml" ? "വിവാഹബന്ധം വേർപെടുത്തിയ വ്യക്തി" : "Divorcee"}</option>
-                                      <option value="Separated">{lang === "ml" ? "വേർപിരിഞ്ഞു കഴിയുന്ന വ്യക്തി" : "Separated"}</option>
-                                    </select>
-                                  </div>
-
-                                  {/* 4. Religion & 5. Caste in a single row */}
+                                  {/* 3. Religion & 4. Caste in a single row */}
                                   <div className="grid grid-cols-2 gap-2">
                                     {/* Religion */}
                                     <div>
@@ -15306,6 +15287,25 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                         <option value="EWS">EWS</option>
                                       </select>
                                     </div>
+                                  </div>
+
+                                  {/* 5. Marital Status */}
+                                  <div>
+                                    <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 block mb-1 leading-snug">
+                                      {lang === "ml" ? "വൈവാഹിക അവസ്ഥ *" : "Marital Status *"}
+                                    </label>
+                                    <select 
+                                      value={createMaritalStatus}
+                                      onChange={(e) => setCreateMaritalStatus(e.target.value)}
+                                      className="w-full text-xs h-9 px-2.5 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
+                                    >
+                                      <option value="">{lang === "ml" ? "-- വൈവാഹിക അവസ്ഥ --" : "-- Select Marital Status --"}</option>
+                                      <option value="Single / Unmarried">{lang === "ml" ? "അവിവാഹിതൻ / അവിവാഹിത" : "Single / Unmarried"}</option>
+                                      <option value="Married">{lang === "ml" ? "വിവാഹിതൻ / വിവാഹിത" : "Married"}</option>
+                                      <option value="Widowed">{lang === "ml" ? "വിധവ / വിധവൻ" : "Widowed"}</option>
+                                      <option value="Divorcee">{lang === "ml" ? "വിവാഹബന്ധം വേർപെടുത്തിയ വ്യക്തി" : "Divorcee"}</option>
+                                      <option value="Separated">{lang === "ml" ? "വേർപിരിഞ്ഞു കഴിയുന്ന വ്യക്തി" : "Separated"}</option>
+                                    </select>
                                   </div>
 
                                   {/* 6. Occupation */}
