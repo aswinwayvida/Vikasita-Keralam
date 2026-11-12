@@ -3479,7 +3479,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           </span>
                         </div>
 
-                        <div className="absolute top-1 right-1 z-20 h-5 w-5 rounded-full bg-amber-400 border border-white/80 p-0.5 flex items-center justify-center shadow-xs">
+                        <div className="absolute top-1 right-1 z-20 h-5 w-5 rounded-full bg-white border border-[#B9C6E8]/80 p-0.5 flex items-center justify-center shadow-xs">
                           <img src={officialLotus} alt="Lotus" className="h-3.5 w-3.5 object-contain" />
                         </div>
                       </div>
@@ -10533,7 +10533,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                   </span>
                                 </div>
 
-                                <div className="absolute top-1 right-1 z-20 h-5 w-5 rounded-full bg-amber-400 border border-white/80 p-0.5 flex items-center justify-center shadow-xs">
+                                <div className="absolute top-1 right-1 z-20 h-5 w-5 rounded-full bg-white border border-[#B9C6E8]/80 p-0.5 flex items-center justify-center shadow-xs">
                                   <img src={officialLotus} alt="Lotus" className="h-3.5 w-3.5 object-contain" />
                                 </div>
                               </div>
