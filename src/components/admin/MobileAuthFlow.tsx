@@ -333,15 +333,10 @@ export function MobileAuthFlow({
 
             {/* Powered By Wayvida */}
             <div className="mt-4 pb-1 flex items-center justify-center text-center">
-              <a
-                href="https://wayvida.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[9px] font-medium tracking-wide text-[#243D95] dark:text-[#243D95] hover:underline inline-flex items-center gap-1 cursor-pointer uppercase"
-              >
-                <span>POWERED BY</span>
-                <strong className="font-extrabold text-[#243D95]">WAYVIDA</strong>
-              </a>
+              <span className="text-[11.5px] font-medium tracking-wide text-[#243D95] dark:text-[#243D95] inline-flex items-center gap-1">
+                <span>Powered by</span>
+                <strong className="font-bold text-[#243D95]">Wayvida</strong>
+              </span>
             </div>
           </div>
         ) : (
@@ -473,15 +468,10 @@ export function MobileAuthFlow({
 
             {/* Powered By Wayvida */}
             <div className="mt-4 pb-1 flex items-center justify-center text-center">
-              <a
-                href="https://wayvida.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[9px] font-medium tracking-wide text-[#243D95] dark:text-[#243D95] hover:underline inline-flex items-center gap-1 cursor-pointer uppercase"
-              >
-                <span>POWERED BY</span>
-                <strong className="font-extrabold text-[#243D95]">WAYVIDA</strong>
-              </a>
+              <span className="text-[11.5px] font-medium tracking-wide text-[#243D95] dark:text-[#243D95] inline-flex items-center gap-1">
+                <span>Powered by</span>
+                <strong className="font-bold text-[#243D95]">Wayvida</strong>
+              </span>
             </div>
           </div>
         )}

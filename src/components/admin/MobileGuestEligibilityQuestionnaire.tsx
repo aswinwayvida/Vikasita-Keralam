@@ -491,7 +491,7 @@ export function MobileGuestEligibilityQuestionnaire({
 
   const activeTotalSteps = answers.studentStatus === "yes" ? 10 : 12;
   const currentDisplayStep = (() => {
-    if (answers.studentStatus === "yes" && step >= 11) {
+    if (answers.studentStatus === "yes" && step >= 10) {
       return step - 2;
     }
     return step;
@@ -536,7 +536,7 @@ export function MobileGuestEligibilityQuestionnaire({
       onClose();
       return;
     }
-    if (step === 11 && answers.studentStatus === "yes") {
+    if (step === 10 && answers.studentStatus === "yes") {
       setStep(7);
       return;
     }
@@ -620,7 +620,7 @@ export function MobileGuestEligibilityQuestionnaire({
       return;
     }
     if (step === 7 && answers.studentStatus === "yes") {
-      setStep(11);
+      setStep(10);
       return;
     }
     setStep((current) => Math.min(TOTAL_STEPS, current + 1));
@@ -631,7 +631,7 @@ export function MobileGuestEligibilityQuestionnaire({
       return;
     }
     if (step === 7 && answers.studentStatus === "yes") {
-      setStep(11);
+      setStep(10);
       return;
     }
     setStep((current) => Math.min(TOTAL_STEPS, current + 1));
@@ -775,7 +775,7 @@ export function MobileGuestEligibilityQuestionnaire({
     const iconImages: Record<number, { src: string; alt: string }> = {
       1: { src: "/images/eligibility_3d/step1_gender.png", alt: "Gender" },
       2: { src: "/images/eligibility_3d/step2_dob.png", alt: "Date of Birth" },
-      3: { src: "/images/eligibility_3d/step3_social_category.png", alt: "Social Category" },
+      3: { src: "/images/eligibility_3d/step3_social_category.png", alt: "Category" },
       4: { src: "/images/eligibility_3d/step4_minority.png", alt: "Religion" },
       5: { src: "/images/eligibility_3d/step4_minority.png", alt: "Minority Status" },
       6: { src: "/images/eligibility_3d/step5_disability.png", alt: "Disability Status" },
@@ -856,18 +856,16 @@ export function MobileGuestEligibilityQuestionnaire({
             )}
           />
           <div className="space-y-1.5">
-            <label className="block text-[10.5px] font-extrabold text-slate-700">
-              {t("Date of birth", "ജനന തീയതി")}
-            </label>
             <div className="relative">
               <input
                 type="date"
                 value={answers.dob}
                 max={today}
                 onChange={(event) => handleDobChange(event.target.value)}
-                className={`w-full rounded-xl border bg-white px-3 py-3 pr-10 text-[12px] font-bold text-slate-800 outline-none focus:border-[#243D95] [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer ${dobError ? "border-rose-400" : "border-slate-200"}`}
+                className={`w-full rounded-xl border bg-white px-3.5 py-3 text-[13px] font-medium text-slate-800 outline-none transition-all focus:border-[#243D95] focus:ring-2 focus:ring-[#243D95]/15 cursor-pointer ${
+                  dobError ? "border-rose-400" : "border-slate-200"
+                }`}
               />
-              <CalendarDays className="pointer-events-none absolute right-3 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-slate-400" />
             </div>
             {dobError ? (
               <p className="text-[10px] font-semibold text-rose-600">{dobError}</p>
@@ -896,7 +894,7 @@ export function MobileGuestEligibilityQuestionnaire({
         <>
           {renderStepIcon()}
           <QuestionHeader
-            title={t("What is your social category?", "നിങ്ങളുടെ സാമൂഹിക വിഭാഗം ഏതാണ്?")}
+            title={t("What is your category?", "നിങ്ങളുടെ വിഭാഗം ഏതാണ്?")}
             helper={t(
               "Choose the category shown in your records. Used only to find category-linked benefits.",
               "രേഖകളിൽ കാണുന്ന വിഭാഗം തിരഞ്ഞെടുക്കുക. വിഭാഗാധിഷ്ഠിത ആനുകൂല്യങ്ങൾക്ക് മാത്രം.",
@@ -935,13 +933,12 @@ export function MobileGuestEligibilityQuestionnaire({
           />
           <div className="space-y-2">
             {[
-              { value: "hinduism", en: "Hinduism", ml: "ഹിന്ദു" },
-              { value: "islam", en: "Islam", ml: "ഇസ്ലാം" },
-              { value: "christianity", en: "Christianity", ml: "ക്രിസ്ത്യൻ" },
-              { value: "sikhism", en: "Sikhism", ml: "സിഖ്" },
-              { value: "buddhism", en: "Buddhism", ml: "ബുദ്ധ" },
-              { value: "jainism", en: "Jainism", ml: "ജൈന" },
-              { value: "other", en: "Other / Prefer not to say", ml: "മറ്റുള്ളവ / പറയാൻ താൽപര്യമില്ല" },
+              { value: "hindu", en: "Hindu", ml: "ഹിന്ദു" },
+              { value: "muslim", en: "Muslim", ml: "മുസ്ലിം" },
+              { value: "christian", en: "Christian", ml: "ക്രിസ്ത്യൻ" },
+              { value: "sikh", en: "Sikh", ml: "സിഖ്" },
+              { value: "buddhist", en: "Buddhist", ml: "ബുദ്ധ" },
+              { value: "other_religion", en: "Other Religion", ml: "മറ്റു മതങ്ങൾ" },
             ].map((option) => (
               <ChoiceCard
                 key={option.value}
@@ -1479,6 +1476,7 @@ export function MobileGuestEligibilityQuestionnaire({
                 onClick={toggleSelectAllResults}
                 className="flex items-center gap-1.5 cursor-pointer text-[12px] font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300"
               >
+                <span>{t("Select all", "എല്ലാം തിരഞ്ഞെടുക്കുക")}</span>
                 <span
                   aria-hidden="true"
                   className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border-2 transition-all active:scale-95 ${
@@ -1489,7 +1487,6 @@ export function MobileGuestEligibilityQuestionnaire({
                 >
                   {isAllResultsSelected && <Check className="h-2.5 w-2.5 stroke-[4]" />}
                 </span>
-                <span>{t("Select all", "എല്ലാം തിരഞ്ഞെടുക്കുക")}</span>
               </button>
             </div>
             <div className="space-y-2">
@@ -1641,6 +1638,7 @@ export function MobileGuestEligibilityQuestionnaire({
             onClick={toggleSelectAllBrowsed}
             className="flex items-center gap-1.5 cursor-pointer text-[12px] font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300"
           >
+            <span>{t("Select all", "എല്ലാം തിരഞ്ഞെടുക്കുക")}</span>
             <span
               aria-hidden="true"
               className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border-2 transition-all active:scale-95 ${
@@ -1651,7 +1649,6 @@ export function MobileGuestEligibilityQuestionnaire({
             >
               {isAllBrowsedSelected && <Check className="h-2.5 w-2.5 stroke-[4]" />}
             </span>
-            <span>{t("Select all", "എല്ലാം തിരഞ്ഞെടുക്കുക")}</span>
           </button>
         </div>
       </div>

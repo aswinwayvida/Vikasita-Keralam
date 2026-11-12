@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
-import { X, Smartphone, Wifi, Battery, Signal, ChevronRight, ChevronLeft, ArrowLeft, ArrowRight, Users, Users2, HeartHandshake, Database, Layers, Sparkles, MessageSquare, Clock3, Clock, UserCheck, LayoutDashboard, Sliders, SlidersHorizontal, Calendar, FileText, XCircle, CheckCircle2, Hourglass, MapPin, Mail, PhoneCall, Trophy, AlertTriangle, Activity, Globe, Map as MapIcon, Network, Store, ShieldCheck, ChevronDown, Filter, Search, SearchCheck, Megaphone, CalendarDays, BellRing, Phone, RotateCcw, GraduationCap, Sprout, LayoutGrid, MoreVertical, AlertCircle, Star, Zap, Headphones, Edit, Upload, FileCheck, Loader2, SearchX, RefreshCw, Check, Lock, User, Eye, Send, Info, Plus, Inbox, FileSearch, HandCoins, UserRound, Paperclip, ClipboardList, Headset, Copy, Pencil, Download, FileImage, ExternalLink, CloudUpload, Home, Building2, Flame, HelpCircle, UserPlus, Trash2, Accessibility, Briefcase, Percent, BookOpen, Share2 } from "lucide-react";
+import { X, Smartphone, Wifi, Battery, Signal, ChevronRight, ChevronLeft, ArrowLeft, ArrowRight, Users, Users2, HeartHandshake, Database, Layers, Sparkles, MessageSquare, Clock3, Clock, UserCheck, LayoutDashboard, Sliders, SlidersHorizontal, Calendar, FileText, XCircle, CheckCircle2, Hourglass, MapPin, Mail, PhoneCall, Trophy, AlertTriangle, Activity, Globe, Map as MapIcon, Network, Store, ShieldCheck, ChevronDown, Filter, Search, SearchCheck, Megaphone, CalendarDays, BellRing, Phone, RotateCcw, GraduationCap, Sprout, LayoutGrid, MoreVertical, AlertCircle, Star, Zap, Headphones, Edit, Upload, FileCheck, Loader2, SearchX, RefreshCw, Check, Lock, User, Eye, Send, Info, Plus, Inbox, FileSearch, HandCoins, UserRound, Paperclip, ClipboardList, Headset, Copy, Pencil, Download, FileImage, ExternalLink, CloudUpload, Home, Building2, Flame, HelpCircle, UserPlus, Trash2, Accessibility, Briefcase, Percent, BookOpen, Share2, Navigation } from "lucide-react";
 import { useLang } from "@/i18n/LanguageProvider";
+import { helpdeskLocations, helpdeskDistricts } from "@/data/helpdesk-locations";
 import officialLotus from "@/assets/bjp-official-lotus.png";
 import vikasitaMlLogo from "@/assets/logo-vikasita-ml-official.png";
 import raiseIssue3dIcon from "@/assets/raise-issue-3d.png";
@@ -5545,6 +5546,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   };
 
     const [mobileSubPage, setMobileSubPage] = useState<"none" | "leaderboard" | "needs_attention" | "recent_activity" | "beneficiaries" | "users" | "applicants" | "user_detail" | "notifications" | "applications" | "events_announcements" | "app_detail" | "category_schemes" | "scheme_details" | "guest_popular_schemes" | "guest_schemes" | "about" | "contact" | "create_scheme" | "settings">("none");
+  const [contactDistrictQuery, setContactDistrictQuery] = useState("");
+  const [contactSelectedDistrict, setContactSelectedDistrict] = useState("all");
+  const [copiedLocationId, setCopiedLocationId] = useState<string | null>(null);
   const [isMobileSettingsFormOpen, setIsMobileSettingsFormOpen] = useState(false);
   const [showSupportModal, setShowSupportModal] = useState(false);
   const [supportModalSubmitted, setSupportModalSubmitted] = useState(false);
@@ -8822,8 +8826,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     }> = [
       {
         icon: MapPin,
-        labelEn: "Address",
-        labelMl: "വിലാസം",
+        labelEn: "State Office Address",
+        labelMl: "സംസ്ഥാന ഓഫീസ് വിലാസം",
         value:
           "BJP Kerala\nMararji Smrithi Mandiram,\nThycaud P.O,\nTrivandrum, Kerala 695014,\nIndia",
       },
@@ -8850,8 +8854,30 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       },
     ];
 
+    const filteredLocations = helpdeskLocations.filter((loc) => {
+      if (contactSelectedDistrict !== "all" && loc.district !== contactSelectedDistrict) return false;
+      if (!contactDistrictQuery.trim()) return true;
+      const q = contactDistrictQuery.toLowerCase().trim();
+      return (
+        loc.name.toLowerCase().includes(q) ||
+        loc.district.toLowerCase().includes(q) ||
+        loc.districtMl.includes(q) ||
+        loc.address.toLowerCase().includes(q) ||
+        loc.phones.some((p) => p.includes(q))
+      );
+    });
+
+    const handleCopyAddress = (locId: string, address: string) => {
+      if (typeof navigator !== "undefined" && navigator.clipboard) {
+        navigator.clipboard.writeText(address);
+        setCopiedLocationId(locId);
+        toast.success(lang === "ml" ? "വിലാസം പകർത്തി" : "Address copied to clipboard");
+        setTimeout(() => setCopiedLocationId(null), 2500);
+      }
+    };
+
     return (
-      <div className="animate-in fade-in duration-200 space-y-2.5 pb-8 pt-1">
+      <div className="animate-in fade-in duration-200 space-y-3 pb-8 pt-1">
         <div className="rounded-xl border border-orange-100 bg-gradient-to-b from-orange-50/90 to-white p-3.5 text-center dark:border-slate-800 dark:from-slate-900 dark:to-slate-900">
           <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-orange-100 text-orange-600 dark:bg-orange-950/50 dark:text-orange-400">
             <Headset className="h-5 w-5 stroke-[2]" />
@@ -8906,6 +8932,150 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           })}
         </div>
 
+        {/* 30 Organizational District Helpdesks */}
+        <div className="pt-2">
+          <div className="px-0.5 mb-2">
+            <h3 className="text-[13px] font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+              <Building2 className="h-4 w-4 text-orange-500" />
+              {lang === "ml" ? "സംഘടനാ ജില്ലാ ഓഫീസുകൾ (30)" : "District Offices (30)"}
+            </h3>
+            <p className="text-[10px] text-amber-700 dark:text-amber-400 font-medium mt-0.5">
+              {lang === "ml"
+                ? "സന്ദർശിക്കുന്നതിന് മുമ്പ് ഫോൺ ചെയ്ത് സമയം സ്ഥിരീകരിക്കുക."
+                : "Please call and confirm the visiting time before travelling."}
+            </p>
+          </div>
+
+          {/* Search & District Filter Controls */}
+          <div className="space-y-1.5 mb-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+              <input
+                type="text"
+                value={contactDistrictQuery}
+                onChange={(e) => setContactDistrictQuery(e.target.value)}
+                placeholder={lang === "ml" ? "ഓഫീസ് അല്ലെങ്കിൽ സ്ഥലം തിരയുക..." : "Search office or location..."}
+                className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-8 py-2 text-[11.5px] font-medium text-slate-800 outline-none focus:border-orange-500 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+              />
+              {contactDistrictQuery && (
+                <button
+                  type="button"
+                  onClick={() => setContactDistrictQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 hover:text-slate-600"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            <select
+              value={contactSelectedDistrict}
+              onChange={(e) => setContactSelectedDistrict(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-700 outline-none focus:border-orange-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
+            >
+              <option value="all">
+                {lang === "ml" ? "എല്ലാ ജില്ലകളും (All 30 Offices)" : "All Districts (All 30 Offices)"}
+              </option>
+              {helpdeskDistricts.map((d) => (
+                <option key={d.name} value={d.name}>
+                  {lang === "ml" ? d.nameMl : d.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* District Office List Cards */}
+          <div className="space-y-2.5">
+            {filteredLocations.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-slate-200 bg-white p-4 text-center dark:border-slate-800 dark:bg-slate-900">
+                <p className="text-[11px] font-semibold text-slate-500">
+                  {lang === "ml" ? "ഓഫീസുകളൊന്നും കണ്ടെത്തിയില്ല" : "No office found matching search"}
+                </p>
+              </div>
+            ) : (
+              filteredLocations.map((loc) => (
+                <div
+                  key={loc.id}
+                  className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-2xs transition-all dark:border-slate-800 dark:bg-slate-900 space-y-2"
+                >
+                  {/* Name + District Subtitle */}
+                  <div className="flex items-start gap-2 min-w-0">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400 mt-0.5">
+                      <MapPin className="h-3.5 w-3.5 stroke-[2.2]" />
+                    </span>
+                    <div className="min-w-0">
+                      <h4 className="text-[13px] font-extrabold text-[#0F172A] dark:text-white leading-tight">
+                        {loc.name}
+                      </h4>
+                      <span className="inline-block text-[10.5px] font-bold text-orange-600 dark:text-orange-400 mt-0.5">
+                        {lang === "ml" ? loc.districtMl : loc.district}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Address */}
+                  <div className="bg-slate-50/80 dark:bg-slate-800/40 rounded-lg p-2 text-[10.5px]">
+                    <span className="block text-[9px] font-extrabold uppercase tracking-wider text-slate-400 mb-0.5">
+                      {lang === "ml" ? "വിലാസം" : "ADDRESS"}
+                    </span>
+                    <p className="font-medium text-slate-700 dark:text-slate-300 leading-relaxed">
+                      {loc.address}
+                    </p>
+                  </div>
+
+                  {/* Mobile Call Buttons */}
+                  <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                    {loc.phones.map((phone) => (
+                      <a
+                        key={phone}
+                        href={`tel:${phone}`}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 active:scale-95 text-white px-2.5 py-1.5 text-[11px] font-bold shadow-xs transition-all"
+                      >
+                        <Phone className="h-3 w-3 stroke-[2.5]" />
+                        <span>{phone}</span>
+                      </a>
+                    ))}
+                  </div>
+
+                  {/* Actions Row: Copy Address & Directions */}
+                  <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800/80 text-[10.5px]">
+                    <button
+                      type="button"
+                      onClick={() => handleCopyAddress(loc.id, loc.address)}
+                      className="inline-flex items-center gap-1 font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors cursor-pointer"
+                    >
+                      {copiedLocationId === loc.id ? (
+                        <>
+                          <Check className="h-3 w-3 text-emerald-600 stroke-[2.5]" />
+                          <span className="text-emerald-600 font-bold">
+                            {lang === "ml" ? "വിലാസം പകർത്തി" : "Copied"}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-3 w-3 stroke-[2]" />
+                          <span>{lang === "ml" ? "വിലാസം പകർത്തൂ" : "Copy address"}</span>
+                        </>
+                      )}
+                    </button>
+
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc.address)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400 transition-colors"
+                    >
+                      <Navigation className="h-3 w-3 stroke-[2]" />
+                      <span>{lang === "ml" ? "വഴികാട്ടി" : "Directions"}</span>
+                    </a>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Instant Assistance / SahAI Box */}
         <div className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
           <div className="flex items-center gap-2">
             <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400">
@@ -9669,6 +9839,10 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   alt="Vikasita Keralam Splash Screen"
                   className="h-full w-full object-cover object-center"
                 />
+                <div className="absolute bottom-0 left-0 right-0 h-10 bg-[#f9e1cb] flex items-center justify-center text-[11.5px] font-medium tracking-wide text-[#243D95]">
+                  <span>Powered by</span>
+                  <strong className="font-bold text-[#243D95] ml-1">Wayvida</strong>
+                </div>
               </div>
             ) : isMobileAuthOpen ? (
               <MobileAuthFlow

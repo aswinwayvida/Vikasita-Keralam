@@ -396,9 +396,6 @@ export function AdminMobileAppHeader({
 
             {/* Sidebar Footer */}
             <div className="border-t border-slate-100 dark:border-slate-800 pt-3 text-center space-y-1">
-              <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
-                Vikasita Keralam Portal
-              </p>
               <a
                 href="https://wayvida.com"
                 target="_blank"
@@ -590,9 +587,6 @@ export function AdminMobileAppHeader({
                 </div>
               </div>
               <div className="border-t border-slate-200/80 dark:border-slate-800 pt-2.5 pb-1.5 text-center space-y-1">
-                <p className="text-[12.5px] font-extrabold text-slate-700 dark:text-slate-300">
-                  Vikasita Keralam Portal
-                </p>
                 <div className="text-[11.5px] text-slate-400 dark:text-slate-500 font-medium flex items-center justify-center gap-1">
                   <span>Powered by</span>
                   <a
