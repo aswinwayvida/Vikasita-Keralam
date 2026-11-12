@@ -1151,62 +1151,6 @@ export function MobileSettingsPage({
 
         <button
           type="button"
-          onClick={() => setActiveView("roles")}
-          className="flex w-full items-center justify-between gap-3 border-b border-border/70 px-4 py-3 text-left transition-colors hover:bg-orange-50/60 dark:hover:bg-slate-800/70 cursor-pointer"
-        >
-          <span className="flex min-w-0 items-center gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-100 dark:bg-orange-950/60">
-              <img
-                src="/images/settings/roles-access.png"
-                alt=""
-                aria-hidden="true"
-                className="h-6 w-6 object-contain"
-              />
-            </span>
-            <span className="min-w-0">
-              <span className="block text-[11.5px] font-extrabold text-foreground">
-                {isMalayalam ? "റോളുകളും നിയന്ത്രണവും" : "Roles and Control"}
-              </span>
-              <span className="block text-[9.5px] text-muted-foreground">
-                {isMalayalam
-                  ? "റോളുകൾ, അനുമതികൾ, ആക്സസ് എന്നിവ നിയന്ത്രിക്കുക"
-                  : "Manage roles, permissions and access"}
-              </span>
-            </span>
-          </span>
-          <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveView("designations")}
-          className="flex w-full items-center justify-between gap-3 border-b border-border/70 px-4 py-3 text-left transition-colors hover:bg-orange-50/60 dark:hover:bg-slate-800/70 cursor-pointer"
-        >
-          <span className="flex min-w-0 items-center gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-100 dark:bg-orange-950/60">
-              <img
-                src="/images/settings/designations.png"
-                alt=""
-                aria-hidden="true"
-                className="h-6 w-6 object-contain"
-              />
-            </span>
-            <span className="min-w-0">
-              <span className="block text-[11.5px] font-extrabold text-foreground">
-                {isMalayalam ? "ഡെസിഗ്നേഷനുകൾ" : "Designations"}
-              </span>
-              <span className="block text-[9.5px] text-muted-foreground">
-                {isMalayalam
-                  ? "എല്ലാ പാർട്ടി ഡെസിഗ്നേഷനുകളും കാണുക"
-                  : "View all party designations"}
-              </span>
-            </span>
-          </span>
-          <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
-        </button>
-
-        <button
-          type="button"
           onClick={onLogout}
           className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-rose-600 transition-colors hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
         >

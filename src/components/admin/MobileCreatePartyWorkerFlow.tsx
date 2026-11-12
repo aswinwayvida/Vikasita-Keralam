@@ -22,10 +22,20 @@ import {
   Trash2,
   UserRound,
   UserX,
+  Users,
   Users2,
   X,
 } from "lucide-react";
-import { mockUsers, type AppUser } from "@/data/users";
+import {
+  mockUsers,
+  getUserRegion,
+  getUserOrgDistrict,
+  getUserMandalam,
+  getUserArea,
+  getUserBooth,
+  getUserDesignation,
+  type AppUser,
+} from "@/data/users";
 import { partyWorkerStorageKey } from "@/data/party-worker-directory";
 import {
   constituencies,
@@ -166,6 +176,7 @@ type PickerKey =
   | "worker_filter_ward"
   | "worker_filter_booth"
   | "worker_filter_org_unit"
+  | "worker_filter_status"
   | "worker_filter_app_role";
 
 interface PickerOption {
@@ -448,7 +459,7 @@ function workerAreaLabel(worker: WorkerProfile, lang: Lang) {
 }
 
 type WorkerListFilters = {
-  status: "all" | "Active" | "Suspended";
+  status: "all" | "Active" | "Inactive";
   level: AssignmentLevel | "all";
   designationId: string;
   districtId: string;
@@ -529,7 +540,7 @@ function workerMatchesListFilters(worker: WorkerProfile, filters: WorkerListFilt
 
   const matchesStatus =
     filters.status === "all" ||
-    (filters.status === "Suspended"
+    (filters.status === "Inactive"
       ? worker.status === "Deactivated"
       : worker.status !== "Deactivated");
   if (!matchesStatus) return false;
@@ -623,10 +634,24 @@ function workerMatchesListFilters(worker: WorkerProfile, filters: WorkerListFilt
 
 function buildWorkerDirectory() {
   const workers = new Map<string, WorkerProfile>();
+  const mockPartyMembers = mockUsers
+    .filter((user) => user.category === "bjp_member")
+    .map((user, idx) => {
+      const profile = profileFromAppUser(user);
+      // Ensure some users are displayed as Inactive (Deactivated)
+      if (idx === 2 || idx === 5) {
+        return {
+          ...profile,
+          status: "Deactivated" as const,
+        };
+      }
+      return profile;
+    });
+
   [
     ...sessionCreatedWorkers,
     ...readStoredWorkers(),
-    ...mockUsers.filter((user) => user.category === "bjp_member").map(profileFromAppUser),
+    ...mockPartyMembers,
   ].forEach((worker) => {
     const key = worker.mobile.replace(/\D/g, "") || worker.id;
     if (!workers.has(key)) workers.set(key, worker);
@@ -1626,6 +1651,13 @@ export function MobileCreatePartyWorkerFlow({
     }));
   };
 
+  const handleWorkerFilterStatusChange = (nextId: string) => {
+    setDraftWorkerFilters((prev) => ({
+      ...prev,
+      status: nextId as WorkerListFilters["status"],
+    }));
+  };
+
   const beginAccessAreaChange = () => {
     if (!profile) return;
     loadWorkerIntoForm(profile);
@@ -2085,6 +2117,29 @@ export function MobileCreatePartyWorkerFlow({
       ];
       selectedId = draftWorkerFilters.orgUnitId || "all";
       onPick = handleWorkerFilterOrgUnitChange;
+    } else if (picker === "worker_filter_status") {
+      title = tr("User Status", "ഉപയോക്തൃ നില");
+      options = [
+        {
+          id: "all",
+          label: tr("All", "എല്ലാം"),
+          search: "all എല്ലാം",
+        },
+        {
+          id: "Active",
+          label: tr("Active", "സജീവം"),
+          hint: tr("Active users", "സജീവ ഉപയോക്താക്കൾ"),
+          search: "active സജീവം",
+        },
+        {
+          id: "Inactive",
+          label: tr("Inactive", "നിഷ്ക്രിയം"),
+          hint: tr("Deactivated / inactive users", "നിഷ്ക്രിയ ഉപയോക്താക്കൾ"),
+          search: "inactive deactivated നിഷ്ക്രിയം",
+        },
+      ];
+      selectedId = draftWorkerFilters.status;
+      onPick = handleWorkerFilterStatusChange;
     } else if (picker === "worker_filter_app_role") {
       title = tr("App Role", "ആപ്പ് റോൾ");
       options = [
@@ -3090,7 +3145,7 @@ export function MobileCreatePartyWorkerFlow({
     const visibleWorkers = getVisibleWorkers();
 
     return (
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {visibleWorkers.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-orange-200 bg-white px-5 py-10 text-center dark:border-slate-700 dark:bg-slate-900">
             <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-orange-50 text-[#ff5500] dark:bg-orange-950/40 dark:text-orange-300">
@@ -3117,53 +3172,51 @@ export function MobileCreatePartyWorkerFlow({
           visibleWorkers.map((worker) => {
             const designation = lang === "ml" ? worker.designationMl : worker.designationEn;
             const area = workerAreaLabel(worker, lang);
-            const statusClass =
-              worker.status === "Deactivated"
-                ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"
-                : worker.status === "Pending"
-                  ? "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
-                  : worker.status === "Verified"
-                    ? "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300"
-                    : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300";
+            const isActive = worker.status !== "Deactivated";
 
             return (
               <button
                 key={`${worker.id}-${worker.mobile}`}
                 type="button"
                 onClick={() => openWorkerProfile(worker)}
-                className="flex w-full items-center gap-2.5 rounded-xl border border-orange-100 bg-white p-2.5 text-left shadow-2xs transition hover:border-orange-200 hover:bg-[#FFFCF7] active:scale-[0.995] dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
+                className="flex w-full items-center gap-2.5 rounded-xl border border-orange-100 bg-white px-3 py-2 text-left shadow-2xs transition hover:border-orange-200 hover:bg-[#FFFCF7] active:scale-[0.995] dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
               >
-                <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full bg-orange-50 shadow-sm ring-2 ring-white dark:bg-slate-800 dark:ring-slate-900">
-                  <img
-                    src={worker.photoUrl || partyWorkerAvatar}
-                    alt=""
-                    className={`h-full w-full rounded-full object-cover ${
-                      worker.photoUrl ? "" : "scale-[1.22]"
+                <div className="relative shrink-0">
+                  <div className="h-9 w-9 overflow-hidden rounded-full bg-orange-50 shadow-sm ring-1 ring-orange-100 dark:bg-slate-800 dark:ring-slate-800">
+                    <img
+                      src={worker.photoUrl || partyWorkerAvatar}
+                      alt=""
+                      className={`h-full w-full rounded-full object-cover ${
+                        worker.photoUrl ? "" : "scale-[1.22]"
+                      }`}
+                    />
+                  </div>
+                  <span
+                    className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white shadow-xs dark:border-slate-900 ${
+                      isActive ? "bg-emerald-500" : "bg-rose-500"
                     }`}
+                    title={isActive ? tr("Active", "സജീവം") : tr("Inactive", "നിഷ്ക്രിയം")}
                   />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
-                    <h2 className="min-w-0 flex-1 truncate text-[12px] font-extrabold leading-tight text-slate-900 dark:text-white">
+                    <h2 className="min-w-0 flex-1 truncate text-[11.5px] font-extrabold leading-tight text-slate-900 dark:text-white">
                       {lang === "ml" ? worker.nameMl || worker.name : worker.name}
                     </h2>
-                    <span
-                      className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-black ${statusClass}`}
-                    >
-                      {worker.status}
-                    </span>
                   </div>
-                  <p className="mt-0.5 truncate text-[9.5px] font-bold text-[#C2410C] dark:text-orange-300">
+                  <p className="mt-0.5 truncate text-[9px] font-bold text-[#C2410C] dark:text-orange-300">
                     {designation || tr("User", "ഉപയോക്താവ്")}
                   </p>
-                  <p className="mt-0.5 flex min-w-0 items-center gap-1 text-[8.5px] font-semibold text-slate-500 dark:text-slate-400">
+                  <p className="mt-0.5 flex min-w-0 items-center gap-1 text-[8px] font-semibold text-slate-500 dark:text-slate-400">
                     <MapPin className="h-2.5 w-2.5 shrink-0 text-[#ff5500]" />
                     <span className="truncate">
                       {area || tr("Area not recorded", "പ്രദേശം രേഖപ്പെടുത്തിയിട്ടില്ല")}
                     </span>
                   </p>
                 </div>
-                <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500">
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </div>
               </button>
             );
           })
@@ -3177,7 +3230,7 @@ export function MobileCreatePartyWorkerFlow({
     const statusOptions: { id: WorkerListFilters["status"]; en: string; ml: string }[] = [
       { id: "all", en: "All", ml: "എല്ലാം" },
       { id: "Active", en: "Active", ml: "സജീവം" },
-      { id: "Suspended", en: "Suspended", ml: "സസ്പെൻഡ് ചെയ്തത്" },
+      { id: "Inactive", en: "Inactive", ml: "നിഷ്ക്രിയം" },
     ];
     const level = draftWorkerFilters.level;
     const showDistrict = level !== "all" && level !== "state" && level !== "org_unit";
@@ -3201,9 +3254,10 @@ export function MobileCreatePartyWorkerFlow({
         >
           <div className="shrink-0 border-b border-slate-100 px-3.5 pb-2.5 pt-2 dark:border-slate-800">
             <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-slate-200 dark:bg-slate-700" />
-            <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center justify-between gap-2">
               <div>
                 <h3 className="flex items-center gap-1.5 text-[13px] font-extrabold text-slate-900 dark:text-white">
+                  <Filter className="h-4 w-4 text-[#ff5500] stroke-[2.2]" />
                   {tr("Filter users", "ഉപയോക്താക്കളെ ഫിൽട്ടർ ചെയ്യുക")}
                   {draftFilterCount > 0 ? (
                     <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-[#ff5500] px-1 text-[8.5px] font-black text-white">
@@ -3211,14 +3265,11 @@ export function MobileCreatePartyWorkerFlow({
                     </span>
                   ) : null}
                 </h3>
-                <p className="mt-0.5 text-[9.5px] font-semibold text-slate-500 dark:text-slate-400">
-                  {tr("Status, assignment and area", "നില, അസൈൻമെന്റ്, പ്രദേശം")}
-                </p>
               </div>
               <button
                 type="button"
                 onClick={closeWorkerFilters}
-                className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -3226,33 +3277,6 @@ export function MobileCreatePartyWorkerFlow({
           </div>
 
           <div className="min-h-0 flex-1 space-y-3.5 overflow-y-auto px-3.5 py-3 [scrollbar-width:thin]">
-            <div>
-              <p className="mb-1.5 text-[9px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                {tr("Account Status", "അക്കൗണ്ട് നില")}
-              </p>
-              <div className="grid grid-cols-3 gap-1.5">
-                {statusOptions.map((option) => {
-                  const active = draftWorkerFilters.status === option.id;
-                  return (
-                    <button
-                      key={option.id}
-                      type="button"
-                      onClick={() =>
-                        setDraftWorkerFilters((prev) => ({ ...prev, status: option.id }))
-                      }
-                      className={`h-8 rounded-lg border text-[10px] font-extrabold transition ${
-                        active
-                          ? "border-[#ff5500] bg-[#FFF2E6] text-[#C2410C] dark:border-orange-700 dark:bg-orange-950/40 dark:text-orange-300"
-                          : "border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
-                      }`}
-                    >
-                      {lang === "ml" ? option.ml : option.en}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
             <div className="space-y-2">
               <PickerButton
                 label={tr("Assignment Level", "അസൈൻമെന്റ് ലെവൽ")}
@@ -3439,9 +3463,18 @@ export function MobileCreatePartyWorkerFlow({
                   <p className="text-[11px] font-extrabold text-slate-800 dark:text-slate-100">
                     {tr("More Filters", "കൂടുതൽ ഫിൽട്ടറുകൾ")}
                   </p>
-                  {!workerMoreFiltersOpen && draftWorkerFilters.appRole !== "all" ? (
+                  {!workerMoreFiltersOpen && (draftWorkerFilters.appRole !== "all" || draftWorkerFilters.status !== "all") ? (
                     <p className="mt-0.5 truncate text-[9px] font-medium text-slate-500 dark:text-slate-400">
-                      {tr("App role", "ആപ്പ് റോൾ")}: {workerFilterAppRole?.[lang]}
+                      {[
+                        draftWorkerFilters.status !== "all"
+                          ? `${tr("Status", "നില")}: ${statusOptions.find((o) => o.id === draftWorkerFilters.status)?.[lang] || draftWorkerFilters.status}`
+                          : null,
+                        draftWorkerFilters.appRole !== "all"
+                          ? `${tr("App role", "ആപ്പ് റോൾ")}: ${workerFilterAppRole?.[lang]}`
+                          : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
                     </p>
                   ) : null}
                 </div>
@@ -3452,7 +3485,16 @@ export function MobileCreatePartyWorkerFlow({
                 />
               </button>
               {workerMoreFiltersOpen ? (
-                <div className="border-t border-slate-100 p-2.5 dark:border-slate-800">
+                <div className="space-y-2 border-t border-slate-100 p-2.5 dark:border-slate-800">
+                  <PickerButton
+                    label={tr("User Status", "ഉപയോക്തൃ നില")}
+                    value={
+                      statusOptions.find((o) => o.id === draftWorkerFilters.status)?.[lang] ||
+                      tr("All", "എല്ലാം")
+                    }
+                    placeholder={tr("All", "എല്ലാം")}
+                    onClick={() => openPicker("worker_filter_status")}
+                  />
                   <PickerButton
                     label={tr("App Role", "ആപ്പ് റോൾ")}
                     value={
@@ -3489,159 +3531,232 @@ export function MobileCreatePartyWorkerFlow({
     );
   };
 
-  const renderProfilePermissions = (permissions: string[]) => {
-    const grantedAdditionalPermissions = additionalPermissionModulesForCreateUser.flatMap(
-      ({ module, actions }) =>
-        actions
-          .filter((action) => permissions.includes(permissionKey(module.id, action.id)))
-          .map((action) => ({ module, action })),
-    );
-    const permissionStateLabel = (value: "allowed" | "notAllowed" | "unavailable") =>
-      value === "allowed"
-        ? tr("Allowed", "അനുവദിച്ചിരിക്കുന്നു")
-        : value === "notAllowed"
-          ? tr("Not Allowed", "അനുവദിച്ചിട്ടില്ല")
-          : tr("Unavailable", "ലഭ്യമല്ല");
+  const renderProfilePermissions = (
+    permissions: string[],
+    dataAccess?: RoleDataAccess,
+  ) => {
+    const isModulePermChecked = (moduleId: string, colId: string): boolean => {
+      if (moduleId === "team") {
+        return permissions.includes("party_workers.view") || permissions.includes("party_workers.view_teams");
+      }
+      if (moduleId === "help_desk") {
+        if (colId === "view") return permissions.includes("help_desk.view");
+        if (colId === "assign") return permissions.includes("help_desk.assign");
+        if (colId === "respond") return permissions.includes("help_desk.respond");
+        return false;
+      }
+      const override = permissionTableKeyOverrides[moduleId as PermissionModuleId]?.[colId];
+      if (override && override.length > 0) {
+        return override.some((actionId) => permissions.includes(permissionKey(moduleId as PermissionModuleId, actionId)));
+      }
+      return permissions.includes(permissionKey(moduleId as PermissionModuleId, colId));
+    };
+
+    const getDataAccessBadge = (moduleId: string) => {
+      const scopes = dataAccess?.[moduleId as PermissionModuleId];
+      if (scopes && scopes.length > 0) {
+        const primary = dataAccessOptions.find((opt) => opt.id === scopes[0]);
+        if (primary) return lang === "ml" ? primary.ml : primary.en;
+      }
+      if (moduleId === "help_desk") {
+        return lang === "ml" ? "സ്വന്തം റെക്കോർഡുകൾ" : "Own Records";
+      }
+      return lang === "ml" ? "സ്വന്തം റെക്കോർഡുകൾ" : "Own Records";
+    };
+
+    const primaryRows = [
+      { id: "applicant_profile", en: "Applicant Profile", ml: "അപേക്ഷകന്റെ പ്രൊഫൈൽ", icon: UserRound },
+      { id: "applications", en: "Applications", ml: "അപേക്ഷകൾ", icon: ClipboardList },
+      { id: "schemes", en: "Schemes", ml: "പദ്ധതികൾ", icon: FileText },
+      { id: "roles", en: "Role & Access", ml: "റോളും ആക്‌സസും", icon: ShieldCheck },
+      { id: "designations", en: "Designation", ml: "തസ്തിക", icon: Users2 },
+      { id: "party_workers", en: "Users", ml: "ഉപയോക്താക്കൾ", icon: Users },
+    ];
+
+    const secondaryRows = [
+      { id: "help_desk", en: "Request", ml: "അഭ്യർത്ഥന", icon: Headset, hasAssign: true, hasRespond: true },
+      { id: "team", en: "Team", ml: "ടീം", icon: Users, hasAssign: false, hasRespond: false },
+    ];
 
     return (
       <div className="p-3">
         <SectionHeading
           icon={ShieldCheck}
-          title={tr("Permissions", "അനുമതികൾ")}
-          subtitle={tr("Access assigned to this worker", "ഈ പ്രവർത്തകന് നൽകിയ ആക്സസ്")}
+          title={tr("Role Permissions", "റോൾ പെർമിഷനുകൾ")}
+          subtitle={tr("Module permissions and data access levels", "മൊഡ്യൂൾ പെർമിഷനുകളും ഡാറ്റ ആക്സസ് തലങ്ങളും")}
         />
 
-        <div className="mt-2.5">
-          <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
-            <div className="grid grid-cols-[minmax(0,1fr)_36px_36px_36px_36px] items-center gap-1 bg-orange-50/70 px-2 py-2 dark:bg-slate-800/70">
-              <span className="pl-1 text-[8px] font-black uppercase tracking-wide text-orange-700/80 dark:text-orange-300">
-                {tr("Module", "മൊഡ്യൂൾ")}
-              </span>
-              {permissionTableColumns.map((column) => (
-                <span
-                  key={column.id}
-                  className="text-center text-[7.5px] font-black uppercase tracking-tight text-orange-700/80 dark:text-orange-300"
-                >
-                  {lang === "ml" ? column.ml : column.en}
-                </span>
-              ))}
-            </div>
-
-            {orderedPartyWorkerPermissions.map((module) => {
-              const Icon = moduleIcons[module.id];
-              const moduleLabel = createUserPermissionModuleLabel(module, lang === "ml");
-
-              return (
-                <div
-                  key={module.id}
-                  className="grid grid-cols-[minmax(0,1fr)_36px_36px_36px_36px] items-center gap-1 border-t border-slate-200/80 px-2 dark:border-slate-700"
-                >
-                  <div className="flex min-w-0 items-start gap-1.5 py-1.5">
-                    <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-orange-600 dark:text-orange-300" />
-                    <span className="min-w-0 whitespace-normal break-words text-[9.5px] font-extrabold leading-snug text-foreground">
-                      {moduleLabel}
-                    </span>
-                  </div>
-                  {permissionTableColumns.map((column) => {
-                    const action = module.actions.find((item) => item.id === column.id);
-                    const permissionIds =
-                      permissionTableKeyOverrides[module.id]?.[column.id] ??
-                      (action ? [action.id] : []);
-                    const available = permissionIds.length > 0;
-                    const checked =
-                      available &&
-                      permissionIds.every((id) =>
-                        permissions.includes(permissionKey(module.id, id)),
-                      );
-                    const columnLabel = lang === "ml" ? column.ml : column.en;
-                    const status = !available
-                      ? permissionStateLabel("unavailable")
-                      : checked
-                        ? permissionStateLabel("allowed")
-                        : permissionStateLabel("notAllowed");
+        <div className="mt-2.5 space-y-3">
+          {/* Table 1: Primary CRUD Modules */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xs dark:border-slate-800 dark:bg-slate-900">
+            <div className="overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+              <table className="w-full min-w-[460px] text-[9.5px]">
+                <thead>
+                  <tr className="border-b border-orange-100/90 bg-orange-50/70 text-[8px] font-black uppercase tracking-wider text-orange-800/80 dark:border-slate-800 dark:bg-slate-800/70 dark:text-orange-300">
+                    <th className="py-2 pl-3 pr-2 text-left font-black">{tr("MODULES", "മൊഡ്യൂളുകൾ")}</th>
+                    <th className="px-1.5 py-2 text-center font-black">{tr("CREATE", "സൃഷ്ടിക്കുക")}</th>
+                    <th className="px-1.5 py-2 text-center font-black">{tr("VIEW", "കാണുക")}</th>
+                    <th className="px-1.5 py-2 text-center font-black">{tr("EDIT", "തിരുത്തുക")}</th>
+                    <th className="px-1.5 py-2 text-center font-black">{tr("DELETE", "നീക്കം ചെയ്യുക")}</th>
+                    <th className="py-2 pl-2 pr-3 text-left font-black">{tr("DATA ACCESS LEVEL", "ഡാറ്റാ ആക്സസ് ലെവൽ")}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {primaryRows.map((row) => {
+                    const Icon = row.icon;
+                    const createChecked = isModulePermChecked(row.id, "create");
+                    const viewChecked = isModulePermChecked(row.id, "view");
+                    const editChecked = isModulePermChecked(row.id, "edit");
+                    const deleteChecked = isModulePermChecked(row.id, "delete");
 
                     return (
-                      <span
-                        key={column.id}
-                        role="img"
-                        aria-label={`${moduleLabel} ${columnLabel}: ${status}`}
-                        className="flex h-9 items-center justify-center"
-                      >
-                        {!available ? (
-                          <span className="text-[11px] font-semibold text-slate-300 dark:text-slate-600">
-                            —
-                          </span>
-                        ) : (
+                      <tr key={row.id} className="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
+                        <td className="py-2.5 pl-3 pr-2 font-bold text-slate-800 dark:text-slate-200">
+                          <div className="flex items-center gap-1.5">
+                            <Icon className="h-3.5 w-3.5 shrink-0 text-orange-500" />
+                            <span className="whitespace-nowrap">{lang === "ml" ? row.ml : row.en}</span>
+                          </div>
+                        </td>
+                        <td className="px-1.5 py-2.5 text-center">
                           <span
-                            className={`flex h-4 w-4 items-center justify-center rounded-[3px] border ${
-                              checked
-                                ? "border-[#ff5500] bg-[#ff5500] text-white"
-                                : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900"
+                            className={`mx-auto flex h-4 w-4 items-center justify-center rounded-full border transition-all ${
+                              createChecked
+                                ? "border-[#ff5500] bg-[#ff5500] text-white shadow-2xs"
+                                : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-800"
                             }`}
                           >
-                            {checked ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : null}
+                            {createChecked ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : null}
                           </span>
-                        )}
-                      </span>
+                        </td>
+                        <td className="px-1.5 py-2.5 text-center">
+                          <span
+                            className={`mx-auto flex h-4 w-4 items-center justify-center rounded-full border transition-all ${
+                              viewChecked
+                                ? "border-[#ff5500] bg-[#ff5500] text-white shadow-2xs"
+                                : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-800"
+                            }`}
+                          >
+                            {viewChecked ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : null}
+                          </span>
+                        </td>
+                        <td className="px-1.5 py-2.5 text-center">
+                          <span
+                            className={`mx-auto flex h-4 w-4 items-center justify-center rounded-full border transition-all ${
+                              editChecked
+                                ? "border-[#ff5500] bg-[#ff5500] text-white shadow-2xs"
+                                : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-800"
+                            }`}
+                          >
+                            {editChecked ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : null}
+                          </span>
+                        </td>
+                        <td className="px-1.5 py-2.5 text-center">
+                          <span
+                            className={`mx-auto flex h-4 w-4 items-center justify-center rounded-full border transition-all ${
+                              deleteChecked
+                                ? "border-[#ff5500] bg-[#ff5500] text-white shadow-2xs"
+                                : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-800"
+                            }`}
+                          >
+                            {deleteChecked ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : null}
+                          </span>
+                        </td>
+                        <td className="py-2.5 pl-2 pr-3">
+                          <div className="inline-flex h-6 items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50/70 px-2 text-[9px] font-semibold text-slate-700 shadow-2xs dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                            <span className="truncate max-w-[120px]">{getDataAccessBadge(row.id)}</span>
+                            <ChevronDown className="h-3 w-3 shrink-0 text-slate-400" />
+                          </div>
+                        </td>
+                      </tr>
                     );
                   })}
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 px-0.5 text-[8px] font-semibold text-muted-foreground">
-            <span className="inline-flex items-center gap-1">
-              <span className="flex h-3.5 w-3.5 items-center justify-center rounded-[3px] border border-[#ff5500] bg-[#ff5500] text-white">
-                <Check className="h-2.5 w-2.5 stroke-[3]" />
-              </span>
-              {permissionStateLabel("allowed")}
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <span className="h-3.5 w-3.5 rounded-[3px] border border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900" />
-              {permissionStateLabel("notAllowed")}
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <span className="w-3.5 text-center text-[11px] font-semibold text-slate-300 dark:text-slate-600">
-                —
-              </span>
-              {permissionStateLabel("unavailable")}
-            </span>
-          </div>
-
-          {grantedAdditionalPermissions.length > 0 ? (
-            <div className="mt-2 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
-              <div className="bg-orange-50/70 px-2.5 py-1.5 dark:bg-slate-800/70">
-                <span className="text-[8px] font-black uppercase tracking-wide text-orange-700/80 dark:text-orange-300">
-                  {tr("Additional Permissions", "അധിക അനുമതികൾ")}
-                </span>
-              </div>
-              {grantedAdditionalPermissions.map(({ module, action }) => {
-                const Icon = moduleIcons[module.id];
-                const moduleLabel = createUserPermissionModuleLabel(module, lang === "ml");
-                return (
-                  <div
-                    key={`${module.id}.${action.id}`}
-                    className="flex items-center justify-between gap-2 border-t border-slate-200/80 px-2.5 py-1.5 dark:border-slate-700"
-                  >
-                    <div className="flex min-w-0 items-center gap-1.5">
-                      <Icon className="h-3.5 w-3.5 shrink-0 text-orange-600 dark:text-orange-300" />
-                      <span className="min-w-0 truncate text-[9.5px] font-extrabold text-foreground">
-                        {moduleLabel}
-                      </span>
-                      <span className="shrink-0 text-[9.5px] text-slate-400">·</span>
-                      <span className="min-w-0 truncate text-[9.5px] font-semibold text-slate-600 dark:text-slate-300">
-                        {lang === "ml" ? action.ml : action.en}
-                      </span>
-                    </div>
-                    <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] border border-[#ff5500] bg-[#ff5500] text-white">
-                      <Check className="h-2.5 w-2.5 stroke-[3]" />
-                    </span>
-                  </div>
-                );
-              })}
+                </tbody>
+              </table>
             </div>
-          ) : null}
+          </div>
+
+          {/* Table 2: Request & Team Modules */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xs dark:border-slate-800 dark:bg-slate-900">
+            <div className="overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+              <table className="w-full min-w-[420px] text-[9.5px]">
+                <thead>
+                  <tr className="border-b border-orange-100/90 bg-orange-50/70 text-[8px] font-black uppercase tracking-wider text-orange-800/80 dark:border-slate-800 dark:bg-slate-800/70 dark:text-orange-300">
+                    <th className="py-2 pl-3 pr-2 text-left font-black">{tr("MODULES", "മൊഡ്യൂളുകൾ")}</th>
+                    <th className="px-1.5 py-2 text-center font-black">{tr("VIEW", "കാണുക")}</th>
+                    <th className="px-1.5 py-2 text-center font-black">{tr("ASSIGN", "അസൈൻ ചെയ്യുക")}</th>
+                    <th className="px-1.5 py-2 text-center font-black">{tr("RESPOND", "മറുപടി നൽകുക")}</th>
+                    <th className="py-2 pl-2 pr-3 text-left font-black">{tr("DATA ACCESS LEVEL", "ഡാറ്റാ ആക്സസ് ലെവൽ")}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {secondaryRows.map((row) => {
+                    const Icon = row.icon;
+                    const viewChecked = isModulePermChecked(row.id, "view");
+                    const assignChecked = row.hasAssign ? isModulePermChecked(row.id, "assign") : false;
+                    const respondChecked = row.hasRespond ? isModulePermChecked(row.id, "respond") : false;
+
+                    return (
+                      <tr key={row.id} className="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
+                        <td className="py-2.5 pl-3 pr-2 font-bold text-slate-800 dark:text-slate-200">
+                          <div className="flex items-center gap-1.5">
+                            <Icon className="h-3.5 w-3.5 shrink-0 text-orange-500" />
+                            <span className="whitespace-nowrap">{lang === "ml" ? row.ml : row.en}</span>
+                          </div>
+                        </td>
+                        <td className="px-1.5 py-2.5 text-center">
+                          <span
+                            className={`mx-auto flex h-4 w-4 items-center justify-center rounded-full border transition-all ${
+                              viewChecked
+                                ? "border-[#ff5500] bg-[#ff5500] text-white shadow-2xs"
+                                : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-800"
+                            }`}
+                          >
+                            {viewChecked ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : null}
+                          </span>
+                        </td>
+                        <td className="px-1.5 py-2.5 text-center">
+                          {row.hasAssign ? (
+                            <span
+                              className={`mx-auto flex h-4 w-4 items-center justify-center rounded-full border transition-all ${
+                                assignChecked
+                                  ? "border-[#ff5500] bg-[#ff5500] text-white shadow-2xs"
+                                  : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-800"
+                              }`}
+                            >
+                              {assignChecked ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : null}
+                            </span>
+                          ) : (
+                            <span className="text-[11px] font-bold text-slate-300 dark:text-slate-600">—</span>
+                          )}
+                        </td>
+                        <td className="px-1.5 py-2.5 text-center">
+                          {row.hasRespond ? (
+                            <span
+                              className={`mx-auto flex h-4 w-4 items-center justify-center rounded-full border transition-all ${
+                                respondChecked
+                                  ? "border-[#ff5500] bg-[#ff5500] text-white shadow-2xs"
+                                  : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-800"
+                              }`}
+                            >
+                              {respondChecked ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : null}
+                            </span>
+                          ) : (
+                            <span className="text-[11px] font-bold text-slate-300 dark:text-slate-600">—</span>
+                          )}
+                        </td>
+                        <td className="py-2.5 pl-2 pr-3">
+                          <div className="inline-flex h-6 items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50/70 px-2 text-[9px] font-semibold text-slate-700 shadow-2xs dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                            <span className="truncate max-w-[120px]">{getDataAccessBadge(row.id)}</span>
+                            <ChevronDown className="h-3 w-3 shrink-0 text-slate-400" />
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -3748,9 +3863,43 @@ export function MobileCreatePartyWorkerFlow({
       return "";
     })();
 
+    // Resolve hierarchical locations
+    const userRegion = getUserRegion({ districtNameEn: profile.districtNameEn, districtNameMl: profile.districtNameMl } as Partial<AppUser>);
+    const userOrgDistrict = getUserOrgDistrict({ districtNameEn: profile.districtNameEn, districtNameMl: profile.districtNameMl, id: profile.id } as Partial<AppUser>);
+    const userMandalam = getUserMandalam({ constituencyEn: profileConstituency?.en, constituencyMl: profileConstituency?.ml, districtNameEn: profile.districtNameEn } as Partial<AppUser>);
+    const userArea = getUserArea({ areaEn: profileAreaLabel, constituencyEn: profileConstituency?.en, districtNameEn: profile.districtNameEn, id: profile.id } as Partial<AppUser>);
+    const userBooth = profileBooth
+      ? lang === "ml" ? profileBooth.nameMl : profileBooth.nameEn
+      : getUserBooth({ designationEn: profile.designationEn, id: profile.id } as Partial<AppUser>);
+
+    // Resolve Role and Role Level
+    const resolvedRoleName = (() => {
+      if (profile.presetId) {
+        const preset = rolePresets.find((p) => p.id === profile.presetId);
+        if (preset) return lang === "ml" ? preset.ml : preset.en;
+      }
+      return profileLevel === "state"
+        ? (lang === "ml" ? "സംസ്ഥാന അഡ്മിൻ" : "State Admin")
+        : profileLevel === "district"
+          ? (lang === "ml" ? "ജില്ലാ അഡ്മിൻ" : "District Admin")
+          : profileLevel === "assembly_constituency" || profileLevel === "mandalam"
+            ? (lang === "ml" ? "നിയോജകമണ്ഡലം അഡ്മിൻ" : "Constituency Admin")
+            : profileLevel === "local_body"
+              ? (lang === "ml" ? "തദ്ദേശ സ്ഥാപന അഡ്മിൻ" : "Local Body Admin")
+              : profileLevel === "booth"
+                ? (lang === "ml" ? "ബൂത്ത് അഡ്മിൻ" : "Booth Admin")
+                : (lang === "ml" ? "ഉപയോക്താവ്" : "Party Worker");
+    })();
+
+    const resolvedRoleLevel = (() => {
+      const match = roleLevelOptions.find((opt) => opt.id === profileLevel);
+      if (match) return lang === "ml" ? match.ml : match.en;
+      return lang === "ml" ? profile.levelLabelMl : profile.levelLabelEn;
+    })();
+
     return (
-      <section className="divide-y divide-orange-100/80 overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-2xs dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
-        <div className="p-3">
+      <section className="overflow-hidden rounded-2xl border border-orange-100/90 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900">
+        <div className="p-4">
           <input
             ref={profilePhotoInputRef}
             type="file"
@@ -3758,9 +3907,9 @@ export function MobileCreatePartyWorkerFlow({
             className="hidden"
             onChange={handleProfilePhotoChange}
           />
-          <div className="flex items-start gap-3">
+          <div className="flex items-start gap-3.5 pb-4 border-b border-slate-100 dark:border-slate-800">
             <div className="relative shrink-0">
-              <div className="h-12 w-12 overflow-hidden rounded-full bg-orange-50 shadow-sm ring-2 ring-white dark:bg-slate-800 dark:ring-slate-900">
+              <div className="h-14 w-14 overflow-hidden rounded-full bg-orange-50 shadow-sm ring-2 ring-orange-100/80 dark:bg-slate-800 dark:ring-slate-700">
                 <img
                   src={profile.photoUrl || partyWorkerAvatar}
                   alt={profile.name}
@@ -3773,118 +3922,119 @@ export function MobileCreatePartyWorkerFlow({
                 type="button"
                 onClick={triggerProfilePhotoUpload}
                 disabled={profilePhotoBusy}
-                className="absolute -bottom-0.5 -right-0.5 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-[#ff5500] text-white shadow-md ring-2 ring-white transition active:scale-95 disabled:opacity-60 dark:ring-slate-900"
+                className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#ff5500] text-white shadow-md ring-2 ring-white transition active:scale-95 disabled:opacity-60 dark:ring-slate-900"
                 aria-label={tr("Upload profile picture", "പ്രൊഫൈൽ ചിത്രം അപ്‌ലോഡ് ചെയ്യുക")}
                 title={tr("Upload profile picture", "പ്രൊഫൈൽ ചിത്രം അപ്‌ലോഡ് ചെയ്യുക")}
               >
                 <Camera className="h-2.5 w-2.5 stroke-[2.5]" />
               </button>
             </div>
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 pt-0.5">
               <div className="flex items-start justify-between gap-2">
-                <h2 className="text-[14px] font-extrabold leading-tight text-slate-900 dark:text-white">
+                <h2 className="text-[15px] font-extrabold leading-tight text-slate-900 dark:text-white">
                   {profile.name}
                 </h2>
                 <span
-                  className={`shrink-0 rounded-full px-1.5 py-0.5 text-[8.5px] font-black ${
+                  className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-extrabold ${
                     profile.status === "Deactivated"
                       ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"
                       : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
                   }`}
                 >
-                  {profile.status}
+                  {profile.status === "Deactivated"
+                    ? tr("Inactive", "നിർജ്ജീവം")
+                    : tr("Active", "സജീവം")}
                 </span>
               </div>
-              <p className="mt-0.5 text-[10px] font-bold text-[#C2410C] dark:text-orange-300">
+              <p className="mt-1 text-[11px] font-bold text-[#C2410C] dark:text-orange-300">
                 {lang === "ml" ? profile.designationMl : profile.designationEn}
               </p>
               {profileAreaLabel ? (
-                <p className="mt-0.5 text-[9px] font-semibold leading-snug text-slate-500 dark:text-slate-400">
-                  {profileAreaLabel}
+                <p className="mt-1 flex items-center gap-1 text-[10px] font-medium leading-snug text-slate-500 dark:text-slate-400">
+                  <MapPin className="h-3 w-3 shrink-0 text-slate-400" />
+                  <span className="truncate">{profileAreaLabel}</span>
                 </p>
               ) : null}
             </div>
           </div>
           {profilePhotoError ? (
-            <p className="mt-2 flex items-start gap-1 rounded-lg bg-rose-50 px-2 py-1.5 text-[9px] font-bold text-rose-600 dark:bg-rose-950/30 dark:text-rose-300">
-              <AlertCircle className="mt-px h-3 w-3 shrink-0" />
+            <p className="mt-2.5 flex items-start gap-1 rounded-lg bg-rose-50 px-2.5 py-1.5 text-[9.5px] font-bold text-rose-600 dark:bg-rose-950/30 dark:text-rose-300">
+              <AlertCircle className="mt-px h-3.5 w-3.5 shrink-0" />
               {profilePhotoError}
             </p>
           ) : null}
-          <div className="mt-3 space-y-1.5 rounded-xl border border-slate-200 bg-slate-50/70 p-2.5 dark:border-slate-700 dark:bg-slate-800/40">
-            <SummaryRow
-              label={tr("Level", "ലെവൽ")}
-              value={lang === "ml" ? profile.levelLabelMl : profile.levelLabelEn}
-            />
-            <SummaryRow
-              label={tr("Assignment", "അസൈൻമെന്റ്")}
-              value={lang === "ml" ? profile.locationLines.ml : profile.locationLines.en}
-            />
-            <SummaryRow label={tr("Mobile", "മൊബൈൽ")} value={`+91 ${profile.mobile}`} />
-            <SummaryRow
-              label={
-                profileLevel === "region"
-                  ? tr("Regions", "റീജിയണുകൾ")
-                  : profileLevel === "district"
-                    ? tr("Organisational District", "ഓർഗനൈസേഷണൽ ജില്ല")
-                    : profileLevel === "area"
-                      ? tr("Region", "റീജിയൺ")
-                      : tr("District", "ജില്ല")
-              }
-              value={
-                profileLevel === "region"
-                  ? profileAreaLabel ||
-                    (lang === "ml" ? profile.districtNameMl : profile.districtNameEn)
-                  : profileLevel === "area"
-                    ? profileDistrict
-                      ? lang === "ml"
-                        ? profileDistrict.ml
-                        : profileDistrict.en
-                      : lang === "ml"
-                        ? profile.districtNameMl
-                        : profile.districtNameEn
-                    : lang === "ml"
-                      ? profile.districtNameMl
-                      : profile.districtNameEn
-              }
-            />
-          </div>
-        </div>
 
-        {renderProfilePermissions(profile.permissions)}
+          {/* User Information Section */}
+          <div className="mt-4 rounded-xl border border-slate-200/90 bg-slate-50/70 p-3.5 dark:border-slate-800 dark:bg-slate-800/40">
+            <div className="flex items-center gap-1.5 border-b border-slate-200/80 pb-2.5 dark:border-slate-700/80">
+              <UserRound className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400" />
+              <h3 className="text-[10.5px] font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                {tr("User Information", "ഉപയോക്തൃ വിവരങ്ങൾ")}
+              </h3>
+            </div>
 
-        <div className="p-3">
-          <SectionHeading
-            icon={MapPin}
-            title={tr("Access Areas", "ആക്സസ് പ്രദേശങ്ങൾ")}
-            subtitle={tr(
-              "Scoped grants saved with the worker",
-              "പ്രവർത്തകനൊപ്പം സൂക്ഷിച്ച സ്കോപ്പ് ഗ്രാന്റുകൾ",
-            )}
-          />
-          <div className="mt-2.5 space-y-2">
-            {profile.grants.length === 0 ? (
-              <p className="rounded-xl border border-dashed border-slate-200 px-3 py-3 text-center text-[9.5px] font-semibold text-slate-500 dark:border-slate-700">
-                {tr(
-                  "No extra access areas. Access is limited to the assignment.",
-                  "അധിക ആക്സസ് പ്രദേശങ്ങളില്ല. അസൈൻമെന്റിൽ മാത്രം ആക്സസ്.",
+            <div className="space-y-2 pt-2.5 text-[10px]">
+              <SummaryRow label={tr("Mobile Number", "മൊബൈൽ നമ്പർ")} value={`+91 ${profile.mobile}`} />
+              <SummaryRow
+                label={tr("Organisation Level", "ഓർഗനൈസേഷൻ ലെവൽ")}
+                value={lang === "ml" ? profile.levelLabelMl : profile.levelLabelEn}
+              />
+              <SummaryRow
+                label={tr("Designation", "പദവി")}
+                value={lang === "ml" ? profile.designationMl : profile.designationEn}
+              />
+              <SummaryRow label={tr("Role", "റോൾ")} value={resolvedRoleName} />
+              <SummaryRow label={tr("Role Level", "റോൾ ലെവൽ")} value={resolvedRoleLevel} />
+
+              {/* Location breakdown based on Role Level */}
+              <div className="my-2 border-t border-dashed border-slate-200/90 pt-2 dark:border-slate-700">
+                <span className="block text-[8.5px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-400">
+                  {tr("Assigned Location Hierarchy", "അസൈൻ ചെയ്ത പ്രദേശങ്ങൾ")}
+                </span>
+              </div>
+
+              {/* Region */}
+              <SummaryRow label={tr("Region", "റീജിയൺ")} value={userRegion} />
+
+              {/* Organisation District / District */}
+              <SummaryRow
+                label={tr("Organisational District", "ഓർഗനൈസേഷണൽ ജില്ല")}
+                value={userOrgDistrict}
+              />
+
+              {/* Show Mandalam for mandalam, area, local_body, ward, booth levels */}
+              {profileLevel !== "state" && profileLevel !== "region" && (
+                <SummaryRow label={tr("Mandalam", "മണ്ഡലം")} value={userMandalam} />
+              )}
+
+              {/* Show Area for area, local_body, ward, booth levels */}
+              {profileLevel !== "state" &&
+                profileLevel !== "region" &&
+                profileLevel !== "district" && (
+                  <SummaryRow label={tr("Area", "ഏരിയ")} value={userArea} />
                 )}
-              </p>
-            ) : (
-              profile.grants.map((grant) => (
-                <div
-                  key={grant.id}
-                  className="rounded-lg bg-slate-50/70 p-2.5 dark:bg-slate-800/40"
-                >
-                  <div className="flex flex-wrap items-center gap-1">
-                    <span className="rounded-md bg-orange-50 px-1.5 py-0.5 text-[8.5px] font-black uppercase text-[#C2410C] dark:bg-orange-950/40 dark:text-orange-300">
-                      {grantScopeLabel(grant, lang)}
-                    </span>
-                  </div>
-                  <GrantAreaGroups grant={grant} lang={lang} />
-                </div>
-              ))
-            )}
+
+              {/* Show Local Body if available */}
+              {profileLocalBody && (
+                <SummaryRow
+                  label={tr("Local Body", "തദ്ദേശ സ്ഥാപനം")}
+                  value={lang === "ml" ? profileLocalBody.ml : profileLocalBody.en}
+                />
+              )}
+
+              {/* Show Ward if available */}
+              {profileWard && (
+                <SummaryRow
+                  label={tr("Ward", "വാർഡ്")}
+                  value={lang === "ml" ? profileWard.displayMl : profileWard.displayEn}
+                />
+              )}
+
+              {/* Show Booth if booth level or booth is found */}
+              {(profileLevel === "booth" || profileBooth) && (
+                <SummaryRow label={tr("Booth", "ബൂത്ത്")} value={userBooth} />
+              )}
+            </div>
           </div>
         </div>
       </section>
@@ -4243,155 +4393,12 @@ export function MobileCreatePartyWorkerFlow({
   return (
     <div className="absolute inset-0 z-[90] flex flex-col overflow-hidden bg-[#FFFDF9] dark:bg-slate-900">
       <div className="shrink-0 border-b border-orange-100 bg-[#FFFDF9] px-3 dark:border-slate-800 dark:bg-slate-900">
-        <div className="relative flex h-9 items-center justify-between gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              if (phase === "profile") {
-                setProfileMenuOpen(false);
-                setPhase("list");
-              } else if (phase === "list") onClose();
-              else if (editingWorkerId && profile) {
-                setEditingWorkerId(null);
-                setPhase("profile");
-              } else if (step === 2) setStep(1);
-              else onClose();
-            }}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FFF7EC] text-[#1B255A] shadow-2xs transition-colors hover:bg-orange-100 dark:bg-slate-800 dark:text-white"
-            title={tr("Go back", "തിരികെ പോവുക")}
-          >
-            <ArrowLeft className="h-3.5 w-3.5 stroke-[2.2]" />
-          </button>
-          <div className="pointer-events-none absolute inset-x-10 top-1/2 -translate-y-1/2 text-center">
-            <h1 className="truncate text-[13.5px] font-extrabold text-[#0F172A] dark:text-white">
-              {phase === "profile"
-                ? tr("User Profile", "ഉപയോക്തൃ പ്രൊഫൈൽ")
-                : phase === "list"
-                  ? tr(
-                      `User list (${getVisibleWorkers().length})`,
-                      `ഉപയോക്തൃ ലിസ്റ്റ് (${getVisibleWorkers().length})`,
-                    )
-                  : editingWorkerId
-                    ? tr("Edit User", "ഉപയോക്താവിനെ തിരുത്തുക")
-                    : tr("Create User", "ഉപയോക്താവിനെ ചേർക്കുക")}
-            </h1>
-          </div>
-          {phase === "list" ? (
-            <div className="relative z-20 flex shrink-0 items-center gap-0.5">
-              <button
-                type="button"
-                onClick={() => {
-                  if (workerSearchOpen) setWorkerSearch("");
-                  setWorkerSearchOpen((prev) => !prev);
-                }}
-                className={`flex h-7 w-7 items-center justify-center rounded-full transition-colors active:scale-95 ${
-                  workerSearchOpen
-                    ? "bg-[#FFF2E6] text-[#C2410C] dark:bg-orange-950/40 dark:text-orange-300"
-                    : "text-[#1B255A] hover:bg-orange-50 dark:text-white dark:hover:bg-slate-800"
-                }`}
-                aria-label={tr("Search users", "ഉപയോക്താക്കളെ തിരയുക")}
-                aria-expanded={workerSearchOpen}
-              >
-                <Search className="h-4 w-4 stroke-[2.2]" />
-              </button>
-              <button
-                type="button"
-                onClick={openWorkerFilters}
-                className={`relative flex h-7 w-7 items-center justify-center rounded-full transition-colors active:scale-95 ${
-                  appliedWorkerFilterCount > 0
-                    ? "bg-[#FFF2E6] text-[#C2410C] dark:bg-orange-950/40 dark:text-orange-300"
-                    : "text-[#1B255A] hover:bg-orange-50 dark:text-white dark:hover:bg-slate-800"
-                }`}
-                aria-label={
-                  appliedWorkerFilterCount > 0
-                    ? tr(
-                        `Filter users, ${appliedWorkerFilterCount} applied`,
-                        `ഉപയോക്താക്കളെ ഫിൽട്ടർ ചെയ്യുക, ${appliedWorkerFilterCount} പ്രയോഗിച്ചു`,
-                      )
-                    : tr("Filter users", "ഉപയോക്താക്കളെ ഫിൽട്ടർ ചെയ്യുക")
-                }
-              >
-                <Filter className="h-4 w-4 stroke-[2.2]" />
-                {appliedWorkerFilterCount > 0 ? (
-                  <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#ff5500] px-1 text-[9px] font-black leading-none text-white ring-2 ring-[#FFFDF9] dark:ring-slate-900">
-                    {appliedWorkerFilterCount}
-                  </span>
-                ) : null}
-              </button>
-            </div>
-          ) : phase === "profile" ? (
-            <div ref={profileMenuRef} className="relative z-20 shrink-0">
-              <button
-                type="button"
-                onClick={() => setProfileMenuOpen((prev) => !prev)}
-                className="flex h-7 w-7 items-center justify-center rounded-full text-[#1B255A] transition-colors hover:bg-orange-50 active:scale-95 dark:text-white dark:hover:bg-slate-800"
-                aria-label={tr("User actions", "ഉപയോക്തൃ ആക്ഷനുകൾ")}
-                aria-expanded={profileMenuOpen}
-              >
-                <MoreVertical className="h-4 w-4 stroke-[2.3]" />
-              </button>
-              {profileMenuOpen ? (
-                <div className="absolute right-0 top-9 w-56 overflow-hidden rounded-xl border border-orange-100 bg-white p-1 shadow-xl animate-in fade-in zoom-in-95 duration-150 dark:border-slate-700 dark:bg-slate-900">
-                  <button
-                    type="button"
-                    onClick={triggerProfilePhotoUpload}
-                    disabled={profilePhotoBusy}
-                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[10.5px] font-bold text-slate-700 transition hover:bg-orange-50 disabled:opacity-60 dark:text-slate-200 dark:hover:bg-slate-800"
-                  >
-                    <Camera className="h-3.5 w-3.5 shrink-0 text-[#C2410C] dark:text-orange-300" />
-                    {profilePhotoBusy
-                      ? tr("Updating photo...", "ഫോട്ടോ അപ്‌ഡേറ്റ് ചെയ്യുന്നു...")
-                      : tr("Upload Profile picture", "പ്രൊഫൈൽ ചിത്രം അപ്‌ലോഡ് ചെയ്യുക")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={beginWorkerEdit}
-                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[10.5px] font-bold text-slate-700 transition hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-800"
-                  >
-                    <Pencil className="h-3.5 w-3.5 shrink-0 text-[#C2410C] dark:text-orange-300" />
-                    {tr("Edit Details", "വിവരങ്ങൾ തിരുത്തുക")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={beginAccessAreaChange}
-                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[10.5px] font-bold text-slate-700 transition hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-800"
-                  >
-                    <MapPin className="h-3.5 w-3.5 shrink-0 text-[#C2410C] dark:text-orange-300" />
-                    {tr("Change access area", "ആക്സസ് പ്രദേശം മാറ്റുക")}
-                  </button>
-                  <div className="my-1 border-t border-slate-100 dark:border-slate-700" />
-                  <button
-                    type="button"
-                    onClick={toggleWorkerStatus}
-                    className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[10.5px] font-bold transition ${
-                      profile?.status === "Deactivated"
-                        ? "text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-950/30"
-                        : "text-rose-600 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-950/30"
-                    }`}
-                  >
-                    {profile?.status === "Deactivated" ? (
-                      <Check className="h-3.5 w-3.5 shrink-0" />
-                    ) : (
-                      <UserX className="h-3.5 w-3.5 shrink-0" />
-                    )}
-                    {profile?.status === "Deactivated"
-                      ? tr("Reactivate user", "ഉപയോക്താവിനെ വീണ്ടും സജീവമാക്കുക")
-                      : tr("Deactivate user", "ഉപയോക്താവിനെ നിർജ്ജീവമാക്കുക")}
-                  </button>
-                </div>
-              ) : null}
-            </div>
-          ) : (
-            <span className="shrink-0 rounded-full border border-orange-200/80 bg-[#FFF2E6] px-2 py-0.5 text-[10px] font-extrabold text-[#C2410C] shadow-2xs dark:border-orange-800/80 dark:bg-orange-950/80 dark:text-orange-300">
-              {tr(`Step ${step} of 2`, `ഘട്ടം ${step} / 2`)}
-            </span>
-          )}
-        </div>
         {phase === "list" && workerSearchOpen ? (
-          <div className="pb-2">
-            <div className="flex h-8 items-center gap-1.5 rounded-lg border border-orange-200/80 bg-white px-2.5 dark:border-slate-700 dark:bg-slate-800">
-              <Search className="h-3.5 w-3.5 shrink-0 text-[#ff5500]" />
+          <div className="flex h-9 items-center justify-between gap-2 w-full animate-in fade-in duration-150">
+            <div className="relative flex-1 flex items-center">
+              <Search className="absolute left-2.5 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
               <input
+                type="text"
                 autoFocus
                 value={workerSearch}
                 onChange={(event) => setWorkerSearch(event.target.value)}
@@ -4399,26 +4406,183 @@ export function MobileCreatePartyWorkerFlow({
                   "Search by name, designation or area...",
                   "പേര്, പദവി അല്ലെങ്കിൽ പ്രദേശം തിരയുക...",
                 )}
-                className="min-w-0 flex-1 bg-transparent text-[10.5px] font-semibold text-slate-800 outline-none placeholder:text-slate-400 dark:text-slate-100"
+                className="w-full h-7 pl-8 pr-7 text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-full border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-orange-500"
               />
               {workerSearch ? (
                 <button
                   type="button"
                   onClick={() => setWorkerSearch("")}
-                  className="rounded-full p-0.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"
+                  className="absolute right-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                   aria-label={tr("Clear search", "തിരയൽ മായ്ക്കുക")}
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-3.5 w-3.5" />
                 </button>
               ) : null}
             </div>
+            <button
+              type="button"
+              onClick={() => {
+                setWorkerSearchOpen(false);
+                setWorkerSearch("");
+              }}
+              className="text-xs font-bold text-orange-600 hover:text-orange-700 dark:text-orange-400 shrink-0 px-1 cursor-pointer"
+            >
+              {tr("Cancel", "റദ്ദാക്കുക")}
+            </button>
           </div>
-        ) : null}
+        ) : (
+          <div className="relative flex h-9 items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                if (phase === "profile") {
+                  setProfileMenuOpen(false);
+                  setPhase("list");
+                } else if (phase === "list") onClose();
+                else if (editingWorkerId && profile) {
+                  setEditingWorkerId(null);
+                  setPhase("profile");
+                } else if (step === 2) setStep(1);
+                else onClose();
+              }}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FFF7EC] text-[#1B255A] shadow-2xs transition-colors hover:bg-orange-100 dark:bg-slate-800 dark:text-white"
+              title={tr("Go back", "തിരികെ പോവുക")}
+            >
+              <ArrowLeft className="h-3.5 w-3.5 stroke-[2.2]" />
+            </button>
+            <div className="pointer-events-none absolute inset-x-10 top-1/2 -translate-y-1/2 text-center">
+              <h1 className="truncate text-[13.5px] font-extrabold text-[#0F172A] dark:text-white">
+                {phase === "profile"
+                  ? tr("User Profile", "ഉപയോക്തൃ പ്രൊഫൈൽ")
+                  : phase === "list"
+                    ? tr(
+                        `User list (${getVisibleWorkers().length})`,
+                        `ഉപയോക്തൃ ലിസ്റ്റ് (${getVisibleWorkers().length})`,
+                      )
+                    : editingWorkerId
+                      ? tr("Edit User", "ഉപയോക്താവിനെ തിരുത്തുക")
+                      : tr("Create User", "ഉപയോക്താവിനെ ചേർക്കുക")}
+              </h1>
+            </div>
+            {phase === "list" ? (
+              <div className="relative z-20 flex shrink-0 items-center gap-0.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (workerSearchOpen) setWorkerSearch("");
+                    setWorkerSearchOpen((prev) => !prev);
+                  }}
+                  className={`flex h-7 w-7 items-center justify-center rounded-full transition-colors active:scale-95 ${
+                    workerSearchOpen
+                      ? "bg-[#FFF2E6] text-[#C2410C] dark:bg-orange-950/40 dark:text-orange-300"
+                      : "text-[#1B255A] hover:bg-orange-50 dark:text-white dark:hover:bg-slate-800"
+                  }`}
+                  aria-label={tr("Search users", "ഉപയോക്താക്കളെ തിരയുക")}
+                  aria-expanded={workerSearchOpen}
+                >
+                  <Search className="h-4 w-4 stroke-[2.2]" />
+                </button>
+                <button
+                  type="button"
+                  onClick={openWorkerFilters}
+                  className={`relative flex h-7 w-7 items-center justify-center rounded-full transition-colors active:scale-95 ${
+                    appliedWorkerFilterCount > 0
+                      ? "bg-[#FFF2E6] text-[#C2410C] dark:bg-orange-950/40 dark:text-orange-300"
+                      : "text-[#1B255A] hover:bg-orange-50 dark:text-white dark:hover:bg-slate-800"
+                  }`}
+                  aria-label={
+                    appliedWorkerFilterCount > 0
+                      ? tr(
+                          `Filter users, ${appliedWorkerFilterCount} applied`,
+                          `ഉപയോക്താക്കളെ ഫിൽട്ടർ ചെയ്യുക, ${appliedWorkerFilterCount} പ്രയോഗിച്ചു`,
+                        )
+                      : tr("Filter users", "ഉപയോക്താക്കളെ ഫിൽട്ടർ ചെയ്യുക")
+                  }
+                >
+                  <Filter className="h-4 w-4 stroke-[2.2]" />
+                  {appliedWorkerFilterCount > 0 ? (
+                    <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#ff5500] px-1 text-[9px] font-black leading-none text-white ring-2 ring-[#FFFDF9] dark:ring-slate-900">
+                      {appliedWorkerFilterCount}
+                    </span>
+                  ) : null}
+                </button>
+              </div>
+            ) : phase === "profile" ? (
+              <div ref={profileMenuRef} className="relative z-20 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setProfileMenuOpen((prev) => !prev)}
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-[#1B255A] transition-colors hover:bg-orange-50 active:scale-95 dark:text-white dark:hover:bg-slate-800"
+                  aria-label={tr("User actions", "ഉപയോക്തൃ ആക്ഷനുകൾ")}
+                  aria-expanded={profileMenuOpen}
+                >
+                  <MoreVertical className="h-4 w-4 stroke-[2.3]" />
+                </button>
+                {profileMenuOpen ? (
+                  <div className="absolute right-0 top-9 w-56 overflow-hidden rounded-xl border border-orange-100 bg-white p-1 shadow-xl animate-in fade-in zoom-in-95 duration-150 dark:border-slate-700 dark:bg-slate-900">
+                    <button
+                      type="button"
+                      onClick={triggerProfilePhotoUpload}
+                      disabled={profilePhotoBusy}
+                      className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[10.5px] font-bold text-slate-700 transition hover:bg-orange-50 disabled:opacity-60 dark:text-slate-200 dark:hover:bg-slate-800"
+                    >
+                      <Camera className="h-3.5 w-3.5 shrink-0 text-[#C2410C] dark:text-orange-300" />
+                      {profilePhotoBusy
+                        ? tr("Updating photo...", "ഫോട്ടോ അപ്‌ഡേറ്റ് ചെയ്യുന്നു...")
+                        : tr("Upload Profile picture", "പ്രൊഫൈൽ ചിത്രം അപ്‌ലോഡ് ചെയ്യുക")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={beginWorkerEdit}
+                      className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[10.5px] font-bold text-slate-700 transition hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-800"
+                    >
+                      <Pencil className="h-3.5 w-3.5 shrink-0 text-[#C2410C] dark:text-orange-300" />
+                      {tr("Edit Details", "വിവരങ്ങൾ തിരുത്തുക")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={beginAccessAreaChange}
+                      className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[10.5px] font-bold text-slate-700 transition hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-800"
+                    >
+                      <MapPin className="h-3.5 w-3.5 shrink-0 text-[#C2410C] dark:text-orange-300" />
+                      {tr("Change access area", "ആക്സസ് പ്രദേശം മാറ്റുക")}
+                    </button>
+                    <div className="my-1 border-t border-slate-100 dark:border-slate-700" />
+                    <button
+                      type="button"
+                      onClick={toggleWorkerStatus}
+                      className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[10.5px] font-bold transition ${
+                        profile?.status === "Deactivated"
+                          ? "text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-950/30"
+                          : "text-rose-600 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-950/30"
+                      }`}
+                    >
+                      {profile?.status === "Deactivated" ? (
+                        <Check className="h-3.5 w-3.5 shrink-0" />
+                      ) : (
+                        <UserX className="h-3.5 w-3.5 shrink-0" />
+                      )}
+                      {profile?.status === "Deactivated"
+                        ? tr("Reactivate user", "ഉപയോക്താവിനെ വീണ്ടും സജീവമാക്കുക")
+                        : tr("Deactivate user", "ഉപയോക്താവിനെ നിർജ്ജീവമാക്കുക")}
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <span className="shrink-0 rounded-full border border-orange-200/80 bg-[#FFF2E6] px-2 py-0.5 text-[10px] font-extrabold text-[#C2410C] shadow-2xs dark:border-orange-800/80 dark:bg-orange-950/80 dark:text-orange-300">
+                {tr(`Step ${step} of 2`, `ഘട്ടം ${step} / 2`)}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       <div
         ref={bodyRef}
-        className="flex-1 overflow-y-auto px-3.5 py-3 pb-[max(1.5rem,env(safe-area-inset-bottom))] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        className={`flex-1 overflow-y-auto px-3.5 py-3 pb-[max(1.5rem,env(safe-area-inset-bottom))] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${
+          phase === "list" ? "bg-white dark:bg-slate-900" : ""
+        }`}
       >
         {phase === "form"
           ? step === 1

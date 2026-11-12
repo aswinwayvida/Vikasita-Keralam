@@ -5621,9 +5621,19 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [beneficiarySearchQuery, setBeneficiarySearchQuery] = useState<string>("");
   const [userSearchQuery, setUserSearchQuery] = useState<string>("");
   const [isApplicantFilterOpen, setIsApplicantFilterOpen] = useState<boolean>(false);
+  const [applicantRegionFilter, setApplicantRegionFilter] = useState<string>("all");
+  const [applicantPendingRegion, setApplicantPendingRegion] = useState<string>("all");
   const [applicantDistrictFilter, setApplicantDistrictFilter] = useState<string>("all");
   const [applicantPendingDistrict, setApplicantPendingDistrict] = useState<string>("all");
+  const [applicantMandalamFilter, setApplicantMandalamFilter] = useState<string>("all");
+  const [applicantPendingMandalam, setApplicantPendingMandalam] = useState<string>("all");
+  const [applicantLocalBodyFilter, setApplicantLocalBodyFilter] = useState<string>("all");
+  const [applicantPendingLocalBody, setApplicantPendingLocalBody] = useState<string>("all");
+  const [applicantWardFilter, setApplicantWardFilter] = useState<string>("all");
+  const [applicantPendingWard, setApplicantPendingWard] = useState<string>("all");
   const [selectedApplicationUserId, setSelectedApplicationUserId] = useState<string | null>(null);
+  const [isApplicantProfileMenuOpen, setIsApplicantProfileMenuOpen] = useState<boolean>(false);
+  const [isDeleteApplicantConfirmOpen, setIsDeleteApplicantConfirmOpen] = useState<boolean>(false);
   const [appDetailReturnSubPage, setAppDetailReturnSubPage] = useState<"applications" | "user_detail">("applications");
   const [beneficiaryCategoryFilter, setBeneficiaryCategoryFilter] = useState<string>("ALL");
   const [currentSelectedDate, setCurrentSelectedDate] = useState<Date>(new Date(2026, 9, 12)); // 12/10/2026
@@ -8328,23 +8338,99 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   })();
 
   const applicantDistrictOptions = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          mobileApplicationUsers
-            .map((user) => (user.locationEn.split(",").pop() || "").trim())
-            .filter(Boolean),
-        ),
-      ).sort(),
-    [mobileApplicationUsers],
+    () => [
+      "Thiruvananthapuram",
+      "Kollam",
+      "Pathanamthitta",
+      "Alappuzha",
+      "Kottayam",
+      "Idukki",
+      "Ernakulam",
+      "Thrissur",
+      "Palakkad",
+      "Malappuram",
+      "Kozhikode",
+      "Wayanad",
+      "Kannur",
+      "Kasaragod",
+    ],
+    [],
   );
+
+  const applicantMandalamOptions = useMemo(
+    () => [
+      "Chavara",
+      "Kazhakoottam",
+      "Nemom",
+      "Vattiyoorkavu",
+      "Kottarakkara",
+      "Tripunithura",
+      "Fort Kochi",
+      "Mananthavady",
+      "Kannur Town",
+      "Thodupuzha",
+      "Chathannoor",
+      "Cherthala",
+      "Palakkad North",
+    ],
+    [],
+  );
+
+  const applicantLocalBodyOptions = useMemo(
+    () => [
+      "Chavara Grama Panchayat",
+      "Kazhakoottam Zone",
+      "Nemom Zone",
+      "Kottarakkara Municipality",
+      "Tripunithura Municipality",
+      "Fort Kochi Municipality",
+      "Mananthavady Municipality",
+      "Kannur Corporation",
+      "Thodupuzha Municipality",
+      "Chathannoor Grama Panchayat",
+    ],
+    [],
+  );
+
+  const applicantActiveFilterCount = [
+    applicantRegionFilter !== "all",
+    applicantDistrictFilter !== "all",
+    applicantMandalamFilter !== "all",
+    applicantLocalBodyFilter !== "all",
+    applicantWardFilter !== "all",
+  ].filter(Boolean).length;
 
   const userQuery = userSearchQuery.trim().toLowerCase();
   const filteredMobileApplicationUsers = mobileApplicationUsers.filter((user) => {
-    if (applicantDistrictFilter !== "all") {
-      const district = (user.locationEn.split(",").pop() || "").trim();
-      if (district !== applicantDistrictFilter) return false;
+    const locParts = user.locationEn.split(",").map((s) => s.trim());
+    const district = locParts[locParts.length - 1] || "";
+
+    if (applicantRegionFilter !== "all") {
+      const southDistricts = ["thiruvananthapuram", "kollam", "pathanamthitta", "alappuzha"];
+      const centralDistricts = ["kottayam", "idukki", "ernakulam", "thrissur", "palakkad"];
+      const northDistricts = ["malappuram", "kozhikode", "wayanad", "kannur", "kasaragod"];
+      const distLower = district.toLowerCase();
+      if (applicantRegionFilter === "south" && !southDistricts.includes(distLower)) return false;
+      if (applicantRegionFilter === "central" && !centralDistricts.includes(distLower)) return false;
+      if (applicantRegionFilter === "north" && !northDistricts.includes(distLower)) return false;
     }
+
+    if (applicantDistrictFilter !== "all") {
+      if (district.toLowerCase() !== applicantDistrictFilter.toLowerCase()) return false;
+    }
+
+    if (applicantMandalamFilter !== "all") {
+      const q = applicantMandalamFilter.toLowerCase();
+      if (!user.locationEn.toLowerCase().includes(q) && !user.locationMl.toLowerCase().includes(q)) return false;
+    }
+
+    if (applicantLocalBodyFilter !== "all") {
+      const q = applicantLocalBodyFilter.toLowerCase();
+      const firstPart = (locParts[0] || "").toLowerCase();
+      const firstWord = q.split(" ")[0] || "";
+      if (!firstPart.includes(firstWord) && !user.locationEn.toLowerCase().includes(firstWord)) return false;
+    }
+
     return !userQuery
       ? true
       : [user.nameEn, user.nameMl, user.locationEn, user.locationMl, user.phone].some((value) =>
@@ -13182,93 +13268,106 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
                     {/* Dedicated Subpage: Applicants List (users from applications) */}
                     {mobileSubPage === "applicants" && (
-                      <div className="space-y-3 pt-0.5 animate-in fade-in duration-200">
-                        <div className="flex flex-col gap-2 border-b border-orange-100 pb-2 dark:border-slate-800">
-                          <div className="relative flex h-9 items-center justify-between gap-2">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setMobileSubPage("none");
-                                setUserSearchQuery("");
-                                setIsApplicantSearchExpanded(false);
-                              }}
-                              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FFF7EC] text-[#1B255A] shadow-2xs transition-colors hover:bg-orange-100 dark:bg-slate-800 dark:text-white"
-                              title={lang === "ml" ? "തിരികെ പോവുക" : "Go back"}
-                            >
-                              <ArrowLeft className="h-3.5 w-3.5 stroke-[2.2]" />
-                            </button>
-
-                            <div className="pointer-events-none absolute inset-x-12 top-1/2 -translate-y-1/2 text-center">
-                              <h1 className="truncate text-[13.5px] font-extrabold text-[#0F172A] dark:text-white">
-                                {lang === "ml"
-                                  ? `അപേക്ഷക ലിസ്റ്റ് (${filteredMobileApplicationUsers.length})`
-                                  : `Applicants List (${filteredMobileApplicationUsers.length})`}
-                              </h1>
-                            </div>
-
-                            <div className="relative z-10 flex shrink-0 items-center gap-1">
-                              <button
-                                type="button"
-                                onClick={() => setIsApplicantSearchExpanded(!isApplicantSearchExpanded)}
-                                className={`flex h-7 w-7 items-center justify-center rounded-full transition-colors cursor-pointer ${
-                                  isApplicantSearchExpanded || userSearchQuery
-                                    ? "bg-[#FFF2E6] text-[#C2410C] dark:bg-orange-950/40 dark:text-orange-300"
-                                    : "text-[#1B255A] hover:bg-orange-50 dark:text-white dark:hover:bg-slate-800"
-                                }`}
-                                title={lang === "ml" ? "തിരയുക" : "Search"}
-                              >
-                                <Search className="h-4 w-4 stroke-[2.2]" />
-                              </button>
+                      <div className="space-y-2 animate-in fade-in slide-in-from-right-2 duration-200 -mt-3 -mx-3">
+                        {/* Header matching Schemes List Header style */}
+                        <div className="w-full bg-[#FFFDF9] dark:bg-slate-900 border-b border-slate-200/60 dark:border-slate-800/60 shadow-2xs px-3.5 py-2 transition-all">
+                          {isApplicantSearchExpanded ? (
+                            <div className="flex h-8 items-center justify-between gap-2 w-full animate-in fade-in duration-150">
+                              <div className="relative flex-1 flex items-center">
+                                <Search className="absolute left-2.5 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                                <input
+                                  type="text"
+                                  autoFocus
+                                  value={userSearchQuery}
+                                  onChange={(e) => setUserSearchQuery(e.target.value)}
+                                  placeholder={lang === "ml" ? "പേര്, സ്ഥലം, ഫോൺ സെർച്ച് ചെയ്യുക..." : "Search name, location, phone..."}
+                                  className="w-full h-7.5 pl-8 pr-7 text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-full border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                                />
+                                {userSearchQuery && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setUserSearchQuery("")}
+                                    className="absolute right-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </button>
+                                )}
+                              </div>
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setApplicantPendingDistrict(applicantDistrictFilter);
-                                  setIsApplicantFilterOpen(true);
+                                  setIsApplicantSearchExpanded(false);
+                                  setUserSearchQuery("");
                                 }}
-                                className={`relative flex h-7 w-7 items-center justify-center rounded-full transition-colors cursor-pointer ${
-                                  applicantDistrictFilter !== "all"
-                                    ? "bg-[#FFF2E6] text-[#C2410C] dark:bg-orange-950/40 dark:text-orange-300"
-                                    : "text-[#1B255A] hover:bg-orange-50 dark:text-white dark:hover:bg-slate-800"
-                                }`}
-                                title={lang === "ml" ? "അപേക്ഷകരെ ഫിൽട്ടർ ചെയ്യുക" : "Filter applicants"}
+                                className="text-xs font-bold text-orange-600 hover:text-orange-700 dark:text-orange-400 shrink-0 px-1 cursor-pointer"
                               >
-                                <Filter className="h-4 w-4 stroke-[2.2]" />
-                                {applicantDistrictFilter !== "all" ? (
-                                  <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#ff5500] px-1 text-[9px] font-black leading-none text-white ring-2 ring-[#FFFDF9] dark:ring-slate-900">
-                                    1
-                                  </span>
-                                ) : null}
+                                {lang === "ml" ? "റദ്ദാക്കുക" : "Cancel"}
                               </button>
                             </div>
-                          </div>
-
-                          {/* Expandable Search Bar */}
-                          {isApplicantSearchExpanded && (
-                            <div className="relative w-full animate-in fade-in slide-in-from-top-1 duration-150">
-                              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                              <input
-                                type="text"
-                                value={userSearchQuery}
-                                onChange={(e) => setUserSearchQuery(e.target.value)}
-                                placeholder={lang === "ml" ? "പേര്, സ്ഥലം, ഫോൺ സെർച്ച് ചെയ്യുക..." : "Search name, location, phone..."}
-                                className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-card pl-8 pr-7 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs"
-                                autoFocus
-                              />
+                          ) : (
+                            <div className="relative flex h-8 items-center justify-between w-full">
                               <button
                                 type="button"
                                 onClick={() => {
+                                  setMobileSubPage("none");
                                   setUserSearchQuery("");
                                   setIsApplicantSearchExpanded(false);
                                 }}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 cursor-pointer"
+                                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FFF7EC] text-[#1b255a] hover:bg-orange-100 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 transition-colors cursor-pointer shadow-2xs z-10 border border-orange-100/80 dark:border-slate-700"
+                                title={lang === "ml" ? "തിരികെ പോവുക" : "Go back"}
                               >
-                                <X className="h-3.5 w-3.5" />
+                                <ArrowLeft className="h-3.5 w-3.5 stroke-[2.2]" />
                               </button>
+
+                              <h3 className="absolute inset-x-0 text-center text-[13.5px] font-extrabold text-[#0f172a] dark:text-slate-100 pointer-events-none px-16 truncate">
+                                {lang === "ml"
+                                  ? `അപേക്ഷക ലിസ്റ്റ് (${filteredMobileApplicationUsers.length})`
+                                  : `Applicants List (${filteredMobileApplicationUsers.length})`}
+                              </h3>
+
+                              <div className="relative z-10 flex items-center gap-1 shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => setIsApplicantSearchExpanded(true)}
+                                  className={`flex h-7 w-7 items-center justify-center rounded-full transition-colors cursor-pointer border shadow-2xs ${
+                                    userSearchQuery
+                                      ? "bg-[#ff5500] text-white border-orange-600"
+                                      : "bg-[#FFF7EC] text-[#1b255a] border-orange-100/80 hover:bg-orange-100 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700"
+                                  }`}
+                                  title={lang === "ml" ? "തിരയുക" : "Search"}
+                                >
+                                  <Search className="h-3.5 w-3.5 stroke-[2.2]" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setApplicantPendingRegion(applicantRegionFilter);
+                                    setApplicantPendingDistrict(applicantDistrictFilter);
+                                    setApplicantPendingMandalam(applicantMandalamFilter);
+                                    setApplicantPendingLocalBody(applicantLocalBodyFilter);
+                                    setApplicantPendingWard(applicantWardFilter);
+                                    setIsApplicantFilterOpen(true);
+                                  }}
+                                  className={`relative flex h-7 w-7 items-center justify-center rounded-full transition-colors cursor-pointer border shadow-2xs ${
+                                    applicantActiveFilterCount > 0
+                                      ? "bg-[#ff5500] text-white border-orange-600"
+                                      : "bg-[#FFF7EC] text-[#1b255a] border-orange-100/80 hover:bg-orange-100 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700"
+                                  }`}
+                                  title={lang === "ml" ? "അപേക്ഷകരെ ഫിൽട്ടർ ചെയ്യുക" : "Filter applicants"}
+                                >
+                                  <Filter className="h-3.5 w-3.5 stroke-[2.2]" />
+                                  {applicantActiveFilterCount > 0 ? (
+                                    <span className="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-600 text-[8px] font-black text-white ring-1.5 ring-white dark:ring-slate-900">
+                                      {applicantActiveFilterCount}
+                                    </span>
+                                  ) : null}
+                                </button>
+                              </div>
                             </div>
                           )}
                         </div>
 
-                        <div className="space-y-2">
+                        <div className="space-y-1.5 pt-0.5 px-3">
                           {filteredMobileApplicationUsers.map((user) => {
                             const avatar = getApplicantAvatarInfo(user.nameEn || user.nameMl || "");
                             return (
@@ -13279,17 +13378,17 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                   setSelectedApplicationUserId(user.id);
                                   setMobileSubPage("user_detail");
                                 }}
-                                className="flex w-full items-center justify-between gap-2 rounded-2xl border border-border bg-card p-3 text-left shadow-2xs transition-all hover:border-orange-300 dark:hover:border-orange-800 cursor-pointer"
+                                className="flex w-full items-center justify-between gap-2 rounded-xl border border-border bg-card px-3 py-2 text-left shadow-2xs transition-all hover:border-orange-300 dark:hover:border-orange-800 cursor-pointer"
                               >
-                                <span className="flex min-w-0 items-center gap-2.5">
-                                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[12px] font-extrabold shadow-2xs ${avatar.colorStyle}`}>
+                                <span className="flex min-w-0 items-center gap-2">
+                                  <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-extrabold shadow-2xs ${avatar.colorStyle}`}>
                                     {avatar.initials}
                                   </span>
                                   <span className="min-w-0">
-                                    <span className="block truncate text-[12px] font-bold text-foreground">
+                                    <span className="block truncate text-[12px] font-bold text-foreground leading-tight">
                                       {lang === "ml" ? user.nameMl : user.nameEn}
                                     </span>
-                                    <span className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground">
+                                    <span className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground leading-none">
                                       <MapPin className="h-3 w-3 shrink-0 text-orange-500" />
                                       <span className="truncate">{lang === "ml" ? user.locationMl : user.locationEn}</span>
                                     </span>
@@ -13297,7 +13396,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 </span>
 
                                 <span className="flex shrink-0 items-center">
-                                  <ChevronRight className="h-4 w-4 text-slate-400" />
+                                  <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
                                 </span>
                               </button>
                             );
@@ -13309,15 +13408,23 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                               <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400">
                                 {lang === "ml" ? "അപേക്ഷകരെ കണ്ടെത്തിയില്ല." : "No applicants found."}
                               </p>
-                              {(applicantDistrictFilter !== "all" || userQuery) && (
+                              {(applicantActiveFilterCount > 0 || userQuery) && (
                                 <button
                                   type="button"
                                   onClick={() => {
+                                    setApplicantRegionFilter("all");
+                                    setApplicantPendingRegion("all");
                                     setApplicantDistrictFilter("all");
                                     setApplicantPendingDistrict("all");
+                                    setApplicantMandalamFilter("all");
+                                    setApplicantPendingMandalam("all");
+                                    setApplicantLocalBodyFilter("all");
+                                    setApplicantPendingLocalBody("all");
+                                    setApplicantWardFilter("all");
+                                    setApplicantPendingWard("all");
                                     setUserSearchQuery("");
                                   }}
-                                  className="mt-2.5 rounded-full border border-orange-200 bg-[#FFF7EC] px-3 py-1 text-[11px] font-extrabold text-[#C2410C] transition-colors hover:bg-orange-100 dark:border-orange-800 dark:bg-orange-950/40 dark:text-orange-300"
+                                  className="mt-2.5 rounded-full border border-orange-200 bg-[#FFF7EC] px-3 py-1 text-[11px] font-extrabold text-[#C2410C] transition-colors hover:bg-orange-100 dark:border-orange-800 dark:bg-orange-950/40 dark:text-orange-300 cursor-pointer"
                                 >
                                   {lang === "ml" ? "ഫിൽട്ടറുകൾ മാറ്റുക" : "Clear Filters"}
                                 </button>
@@ -13331,15 +13438,85 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     {/* Dedicated Subpage: User Details (applications of one user) */}
                     {mobileSubPage === "user_detail" && selectedApplicationUser && (
                       <div className="space-y-3 pt-0.5 animate-in fade-in duration-200">
-                        <div className="flex items-center justify-between border-b border-border/80 pb-2 gap-2">
+                        {/* Header matching Application Details header style */}
+                        <div className="relative flex h-10 items-center justify-between px-1 border-b border-border/60 bg-[#FFFDF9] dark:bg-slate-900 -mx-3 -mt-1.5 px-3">
                           <button
                             type="button"
-                            onClick={() => setMobileSubPage("applicants")}
-                            className="inline-flex items-center gap-1 text-xs font-extrabold text-[#ff5500] hover:text-orange-600 cursor-pointer shrink-0"
+                            onClick={() => {
+                              setIsApplicantProfileMenuOpen(false);
+                              setMobileSubPage("applicants");
+                            }}
+                            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FFF7EC] text-[#1b255a] hover:bg-orange-100 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 transition-colors cursor-pointer shadow-2xs z-10 border border-orange-100/80 dark:border-slate-700"
+                            aria-label={lang === "ml" ? "തിരികെ പോവുക" : "Go back"}
+                            title={lang === "ml" ? "തിരികെ പോവുക" : "Go back"}
                           >
-                            <ChevronRight className="h-4 w-4 rotate-180" />
-                            <span>{lang === "ml" ? "അപേക്ഷക പ്രൊഫൈൽ വിവരങ്ങൾ" : "Applicant Profile Details"}</span>
+                            <ArrowLeft className="h-3.5 w-3.5 stroke-[2.2]" />
                           </button>
+
+                          <h3 className="absolute inset-x-0 text-center text-[13.5px] font-extrabold text-[#0F172A] dark:text-white pointer-events-none px-12 truncate">
+                            {lang === "ml" ? "അപേക്ഷക പ്രൊഫൈൽ വിവരങ്ങൾ" : "Applicant Profile Details"}
+                          </h3>
+
+                          {/* 3 dots action menu on right */}
+                          <div className="relative z-10 flex items-center">
+                            <button
+                              type="button"
+                              onClick={() => setIsApplicantProfileMenuOpen((prev) => !prev)}
+                              className="flex h-7 w-7 items-center justify-center rounded-full text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 cursor-pointer transition-colors"
+                              aria-label={lang === "ml" ? "കൂടുതൽ ഓപ്ഷനുകൾ" : "More actions"}
+                              title={lang === "ml" ? "കൂടുതൽ ഓപ്ഷനുകൾ" : "More actions"}
+                            >
+                              <MoreVertical className="h-3.5 w-3.5 stroke-[2]" />
+                            </button>
+
+                            {isApplicantProfileMenuOpen && (
+                              <>
+                                <div
+                                  className="fixed inset-0 z-20"
+                                  onClick={() => setIsApplicantProfileMenuOpen(false)}
+                                />
+                                <div className="absolute right-0 top-8 z-30 min-w-[150px] rounded-xl border border-slate-200/80 bg-white py-1 shadow-lg dark:border-slate-800 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-150">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setIsApplicantProfileMenuOpen(false);
+                                      const appToEdit = selectedApplicationUserApplications[0];
+                                      if (appToEdit) {
+                                        handleEditApplicationDetails(appToEdit);
+                                      } else {
+                                        handleAddAnotherApplicant();
+                                        setCreateFullName(selectedApplicationUser.nameEn);
+                                        const phoneDigits = selectedApplicationUser.phone.replace(/\D/g, "");
+                                        setCreatePhone(
+                                          phoneDigits.length === 12 && phoneDigits.startsWith("91")
+                                            ? phoneDigits.slice(2)
+                                            : phoneDigits,
+                                        );
+                                        setCreateFlowStep("form");
+                                        setActiveTab("create");
+                                        setMobileSubPage("none");
+                                      }
+                                    }}
+                                    className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11.5px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
+                                  >
+                                    <Pencil className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                                    {lang === "ml" ? "അപേക്ഷകൻ തിരുത്തുക" : "Edit Applicant"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setIsApplicantProfileMenuOpen(false);
+                                      setIsDeleteApplicantConfirmOpen(true);
+                                    }}
+                                    className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-1.5 text-left text-[11.5px] font-semibold text-red-600 hover:bg-red-50 dark:border-slate-800 dark:text-red-400 dark:hover:bg-red-950/40 cursor-pointer"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5 text-red-500 dark:text-red-400" />
+                                    {lang === "ml" ? "നീക്കം ചെയ്യുക" : "Delete"}
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
                         </div>
 
                         <div className="rounded-2xl border border-border bg-card p-3.5 shadow-2xs">
@@ -17338,6 +17515,75 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             </div>
           ) : null}
 
+          {isDeleteApplicantConfirmOpen && mobileSubPage === "user_detail" && selectedApplicationUser ? (
+            <div
+              className="absolute inset-0 z-[80] flex items-center justify-center bg-slate-900/60 p-5 backdrop-blur-xs animate-in fade-in duration-150"
+              onClick={() => setIsDeleteApplicantConfirmOpen(false)}
+            >
+              <div
+                className="w-full max-w-[300px] rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="flex items-start gap-2.5">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600 dark:bg-red-950/60 dark:text-red-400">
+                    <Trash2 className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <h4 className="text-[13px] font-extrabold text-slate-900 dark:text-white">
+                      {lang === "ml" ? "അപേക്ഷകനെ നീക്കം ചെയ്യണോ?" : "Delete Applicant?"}
+                    </h4>
+                    <p className="mt-1 text-[10.5px] font-medium leading-relaxed text-slate-500 dark:text-slate-400">
+                      {lang === "ml"
+                        ? "ഈ അപേക്ഷകന്റെ എല്ലാ അപേക്ഷകളും നീക്കം ചെയ്യപ്പെടും. ഇത് പഴയപടിയാക്കാൻ സാധിക്കില്ല."
+                        : "All applications associated with this applicant will be removed. This action cannot be undone."}
+                    </p>
+                    <p className="mt-1.5 truncate text-[10px] font-bold text-slate-700 dark:text-slate-300">
+                      {lang === "ml"
+                        ? selectedApplicationUser.nameMl || selectedApplicationUser.nameEn
+                        : selectedApplicationUser.nameEn || selectedApplicationUser.nameMl}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-4 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsDeleteApplicantConfirmOpen(false)}
+                    className="min-h-9 flex-1 rounded-lg border border-slate-200 bg-white px-3 text-[11px] font-extrabold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer"
+                  >
+                    {lang === "ml" ? "റദ്ദാക്കുക" : "Cancel"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const userAppRefs = selectedApplicationUserApplications.map((app) => app.ref);
+                      if (userAppRefs.length > 0) {
+                        setSavedApplicationRecords((current) =>
+                          current.filter((application) => !userAppRefs.includes(application.ref)),
+                        );
+                        setDeletedApplicationRefs((current) => [
+                          ...current,
+                          ...userAppRefs.filter((ref) => !current.includes(ref)),
+                        ]);
+                      }
+                      setIsDeleteApplicantConfirmOpen(false);
+                      setIsApplicantProfileMenuOpen(false);
+                      setSelectedApplicationUserId(null);
+                      setMobileSubPage("applicants");
+                      toast.success(
+                        lang === "ml"
+                          ? "അപേക്ഷകന്റെ വിവരങ്ങൾ വിജയകരമായി നീക്കം ചെയ്തു"
+                          : "Applicant profile removed successfully"
+                      );
+                    }}
+                    className="min-h-9 flex-1 rounded-lg bg-red-600 px-3 text-[11px] font-extrabold text-white hover:bg-red-700 active:scale-[0.98] transition-all cursor-pointer"
+                  >
+                    {lang === "ml" ? "നീക്കം ചെയ്യുക" : "Delete"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           {helpdeskDetailRequest ? (
             <HelpdeskRequestDetailView
               request={helpdeskDetailRequest}
@@ -17632,61 +17878,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   </button>
                 </div>
 
-                {/* 3 Action Option Cards */}
+                {/* Create Action Options */}
                 <div className="space-y-2 pt-1">
-                  {/* 1. Scheme */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsStateAdminCreateMenuOpen(false);
-                      setCreateSchemeInitialData(null);
-                      setMobileSubPage("create_scheme");
-                    }}
-                    className="flex w-full items-center gap-3 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-left shadow-2xs group cursor-pointer"
-                  >
-                    <div className="relative h-12 w-12 rounded-full overflow-hidden shrink-0 group-hover:scale-105 transition-transform bg-amber-50">
-                      <img src={createSchemeAvatar} alt="Scheme" className="h-full w-full object-cover scale-[1.22]" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h4 className="font-extrabold text-xs sm:text-[13px] text-slate-900 dark:text-white">
-                        {lang === "ml" ? "പദ്ധതി (Scheme)" : "Scheme"}
-                      </h4>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-tight mt-0.5">
-                        {lang === "ml"
-                          ? "പുതിയ ക്ഷേമപദ്ധതിയോ വികസന പ്രോഗ്രാമോ സൃഷ്ടിക്കുക"
-                          : "Add new welfare scheme or central program"}
-                      </p>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0 group-hover:translate-x-0.5 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-all" />
-                  </button>
-
-                  {/* 2. Party Worker */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsStateAdminCreateMenuOpen(false);
-                      setPartyWorkerStartPhase("form");
-                      setIsCreatePartyWorkerModalOpen(true);
-                    }}
-                    className="flex w-full items-center gap-3 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-left shadow-2xs group cursor-pointer"
-                  >
-                    <div className="relative h-12 w-12 rounded-full overflow-hidden shrink-0 group-hover:scale-105 transition-transform bg-indigo-50">
-                      <img src={createPartyWorkerAvatar} alt="User" className="h-full w-full object-cover scale-[1.22]" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h4 className="font-extrabold text-xs sm:text-[13px] text-slate-900 dark:text-white">
-                        {lang === "ml" ? "ഉപയോക്താവ് (User)" : "User"}
-                      </h4>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-tight mt-0.5">
-                        {lang === "ml"
-                          ? "പുതിയ ഉപയോക്താവിനെയോ ബൂത്ത് ലീഡറെയോ ചേർക്കുക"
-                          : "Add new user, booth leader or executive"}
-                      </p>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0 group-hover:translate-x-0.5 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-all" />
-                  </button>
-
-                  {/* 3. Applicant */}
+                  {/* Applicant */}
                   <button
                     type="button"
                     onClick={() => {
@@ -18832,97 +19026,174 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               onClick={() => setIsApplicantFilterOpen(false)}
             >
               <div
-                className="w-full max-h-[85%] overflow-y-auto rounded-t-[24px] border-t border-orange-100 bg-[#FFFDF9] px-4 pb-5 pt-3 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+                className="w-full max-h-[85%] overflow-y-auto rounded-t-[24px] border-t border-slate-100 bg-white px-4 pb-5 pt-3 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
                 onClick={(event) => event.stopPropagation()}
               >
                 <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-slate-200 dark:bg-slate-700" />
 
-                <div className="mb-3 flex items-center justify-between gap-2">
+                <div className="mb-2 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#FFF2E6] text-[#ff5500] dark:bg-orange-950/40 dark:text-orange-300">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-orange-50 text-[#ff5500] dark:bg-orange-950/40 dark:text-orange-300">
                       <Filter className="h-3.5 w-3.5 stroke-[2.2]" />
                     </span>
                     <div>
-                      <p className="text-[13.5px] font-extrabold text-[#0F172A] dark:text-white">
-                        {lang === "ml" ? "അപേക്ഷകർ ഫിൽട്ടർ" : "Filter Applicants"}
-                      </p>
-                      <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
-                        {lang === "ml"
-                          ? `${mobileApplicationUsers.length} അപേക്ഷകർ`
-                          : `${mobileApplicationUsers.length} applicants`}
+                      <p className="text-[13px] font-black tracking-wide text-[#0F172A] dark:text-white uppercase">
+                        {lang === "ml" ? "അപേക്ഷകർ ഫിൽട്ടറുകൾ" : "Applicant Filters"}
                       </p>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => setIsApplicantFilterOpen(false)}
-                    className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
+                    className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 cursor-pointer"
                   >
                     <X className="h-3.5 w-3.5 stroke-[2.2]" />
                   </button>
                 </div>
 
+                <div className="h-px w-full bg-slate-100 dark:bg-slate-800 mb-3" />
+
                 <div className="space-y-3">
+                  {/* Organisation Region Dropdown */}
                   <div>
-                    <p className="mb-1.5 text-[9px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                      {lang === "ml" ? "ജില്ല" : "District"}
+                    <p className="mb-1 text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
+                      {lang === "ml" ? "മേഖല (Organisation Region)" : "Organisation Region"}
+                    </p>
+                    <div className="relative">
+                      <select
+                        value={applicantPendingRegion}
+                        onChange={(event) => setApplicantPendingRegion(event.target.value)}
+                        className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2 pr-8 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white cursor-pointer"
+                      >
+                        <option value="all">{lang === "ml" ? "എല്ലാ മേഖലകളും" : "All Regions"}</option>
+                        <option value="south">{lang === "ml" ? "തെക്കൻ മേഖല (South Region)" : "South Region"}</option>
+                        <option value="central">{lang === "ml" ? "മധ്യ മേഖല (Central Region)" : "Central Region"}</option>
+                        <option value="north">{lang === "ml" ? "വടക്കൻ മേഖല (North Region)" : "North Region"}</option>
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                    </div>
+                  </div>
+
+                  {/* District (20) Dropdown */}
+                  <div>
+                    <p className="mb-1 text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
+                      {lang === "ml" ? "ജില്ല (District)" : "District"}
                     </p>
                     <div className="relative">
                       <select
                         value={applicantPendingDistrict}
                         onChange={(event) => setApplicantPendingDistrict(event.target.value)}
-                        className="w-full appearance-none rounded-xl border border-border bg-card px-3 py-2 pr-8 text-xs font-semibold text-foreground shadow-2xs focus:outline-none focus:ring-1 focus:ring-orange-500"
+                        className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2 pr-8 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white cursor-pointer"
                       >
-                        <option value="all">{lang === "ml" ? "എല്ലാ ജില്ലകളും" : "All Districts"}</option>
+                        <option value="all">{lang === "ml" ? "എല്ലാ ജില്ലകളും (20)" : "All Districts (20)"}</option>
                         {applicantDistrictOptions.map((district) => (
                           <option key={district} value={district}>
                             {district}
                           </option>
                         ))}
                       </select>
-                      <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-orange-100 bg-white px-3 py-2.5 dark:border-slate-800 dark:bg-slate-950/40">
-                    <p className="text-[11px] font-semibold leading-snug text-slate-600 dark:text-slate-300">
-                      {lang === "ml"
-                        ? applicantPendingDistrict === "all"
-                          ? `എല്ലാ ജില്ലകളിലുമായി ${mobileApplicationUsers.length} അപേക്ഷകരെ കാണിക്കുന്നു.`
-                          : `${applicantPendingDistrict} ജില്ലയിലെ ${
-                              mobileApplicationUsers.filter(
-                                (user) => (user.locationEn.split(",").pop() || "").trim() === applicantPendingDistrict,
-                              ).length
-                            } അപേക്ഷകരെ കാണിക്കുന്നു.`
-                        : applicantPendingDistrict === "all"
-                          ? `Showing ${mobileApplicationUsers.length} applicants across all districts.`
-                          : `Showing ${
-                              mobileApplicationUsers.filter(
-                                (user) => (user.locationEn.split(",").pop() || "").trim() === applicantPendingDistrict,
-                              ).length
-                            } applicants in ${applicantPendingDistrict} district.`}
+                  {/* Mandalam Dropdown */}
+                  <div>
+                    <p className="mb-1 text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
+                      {lang === "ml" ? "മണ്ഡലം (Mandalam)" : "Mandalam"}
                     </p>
+                    <div className="relative">
+                      <select
+                        value={applicantPendingMandalam}
+                        onChange={(event) => setApplicantPendingMandalam(event.target.value)}
+                        className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2 pr-8 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white cursor-pointer"
+                      >
+                        <option value="all">{lang === "ml" ? "എല്ലാ മണ്ഡലങ്ങളും" : "All Mandalams"}</option>
+                        {applicantMandalamOptions.map((mandalam) => (
+                          <option key={mandalam} value={mandalam}>
+                            {mandalam}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                    </div>
                   </div>
-                </div>
 
-                <div className="mt-4 flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setApplicantPendingDistrict("all")}
-                    className="flex-1 rounded-xl border border-orange-200 bg-white px-3 py-2.5 text-xs font-extrabold text-[#C2410C] transition-colors hover:bg-orange-50 dark:border-slate-700 dark:bg-slate-900 dark:text-orange-300 dark:hover:bg-slate-800"
-                  >
-                    {lang === "ml" ? "റീസെറ്റ്" : "Reset"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setApplicantDistrictFilter(applicantPendingDistrict);
-                      setIsApplicantFilterOpen(false);
-                    }}
-                    className="flex-[1.6] rounded-xl bg-[#ff5500] px-3 py-2.5 text-xs font-extrabold text-white shadow-sm transition-colors hover:bg-[#e64d00]"
-                  >
-                    {lang === "ml" ? "ഫിൽട്ടർ പ്രയോഗിക്കുക" : "Apply Filters"}
-                  </button>
+                  {/* Area and Local Body Dropdown */}
+                  <div>
+                    <p className="mb-1 text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
+                      {lang === "ml" ? "തദ്ദേശ സ്ഥാപനം (Area & Local Body)" : "Area and Local Body"}
+                    </p>
+                    <div className="relative">
+                      <select
+                        value={applicantPendingLocalBody}
+                        onChange={(event) => setApplicantPendingLocalBody(event.target.value)}
+                        className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2 pr-8 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white cursor-pointer"
+                      >
+                        <option value="all">{lang === "ml" ? "എല്ലാ തദ്ദേശ സ്ഥാപനങ്ങളും" : "All Local Bodies"}</option>
+                        {applicantLocalBodyOptions.map((localBody) => (
+                          <option key={localBody} value={localBody}>
+                            {localBody}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                    </div>
+                  </div>
+
+                  {/* Wards Dropdown */}
+                  <div>
+                    <p className="mb-1 text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
+                      {lang === "ml" ? "വാർഡുകൾ (Wards)" : "Wards"}
+                    </p>
+                    <div className="relative">
+                      <select
+                        value={applicantPendingWard}
+                        onChange={(event) => setApplicantPendingWard(event.target.value)}
+                        className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2 pr-8 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white cursor-pointer"
+                      >
+                        <option value="all">{lang === "ml" ? "എല്ലാ വാർഡുകളും" : "All Wards"}</option>
+                        <option value="Ward 1">Ward 1</option>
+                        <option value="Ward 2">Ward 2</option>
+                        <option value="Ward 3">Ward 3</option>
+                        <option value="Ward 4">Ward 4</option>
+                        <option value="Ward 5">Ward 5</option>
+                        <option value="Ward 6">Ward 6</option>
+                        <option value="Ward 7">Ward 7</option>
+                        <option value="Ward 8">Ward 8</option>
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                    </div>
+                  </div>
+
+                  <div className="pt-2 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setApplicantPendingRegion("all");
+                        setApplicantPendingDistrict("all");
+                        setApplicantPendingMandalam("all");
+                        setApplicantPendingLocalBody("all");
+                        setApplicantPendingWard("all");
+                      }}
+                      className="w-1/3 rounded-xl border border-slate-200 bg-slate-50 py-2.5 text-xs font-bold text-slate-600 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 cursor-pointer text-center"
+                    >
+                      {lang === "ml" ? "പുനഃസജ്ജമാക്കുക" : "Reset All"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setApplicantRegionFilter(applicantPendingRegion);
+                        setApplicantDistrictFilter(applicantPendingDistrict);
+                        setApplicantMandalamFilter(applicantPendingMandalam);
+                        setApplicantLocalBodyFilter(applicantPendingLocalBody);
+                        setApplicantWardFilter(applicantPendingWard);
+                        setIsApplicantFilterOpen(false);
+                      }}
+                      className="w-2/3 rounded-xl bg-[#ff5500] py-2.5 text-xs font-extrabold text-white transition-colors hover:bg-orange-600 cursor-pointer text-center"
+                    >
+                      {lang === "ml" ? "ഫിൽട്ടർ ഉപയോഗിക്കുക" : "Apply Filters"}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
