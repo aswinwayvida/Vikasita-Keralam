@@ -3179,7 +3179,7 @@ export function MobileCreatePartyWorkerFlow({
                 key={`${worker.id}-${worker.mobile}`}
                 type="button"
                 onClick={() => openWorkerProfile(worker)}
-                className="flex w-full items-center gap-2.5 rounded-xl border border-orange-100 bg-white px-3 py-2 text-left shadow-2xs transition hover:border-orange-200 hover:bg-[#FFFCF7] active:scale-[0.995] dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
+                className="flex w-full items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left shadow-2xs transition hover:border-slate-300 hover:bg-[#FFFCF7] active:scale-[0.995] dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
               >
                 <div className="relative shrink-0">
                   <div className="h-9 w-9 overflow-hidden rounded-full bg-orange-50 shadow-sm ring-1 ring-orange-100 dark:bg-slate-800 dark:ring-slate-800">
