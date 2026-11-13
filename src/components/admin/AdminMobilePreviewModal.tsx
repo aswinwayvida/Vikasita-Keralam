@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
-import { X, Smartphone, Wifi, Battery, Signal, ChevronRight, ChevronLeft, ArrowLeft, ArrowRight, ArrowUpDown, Users, Users2, HeartHandshake, Database, Layers, Sparkles, MessageSquare, Clock3, Clock, UserCheck, LayoutDashboard, Sliders, SlidersHorizontal, Calendar, FileText, XCircle, CheckCircle2, Hourglass, MapPin, Mail, PhoneCall, Trophy, AlertTriangle, Activity, Globe, Map as MapIcon, Network, Store, ShieldCheck, ChevronDown, Filter, Search, SearchCheck, Megaphone, CalendarDays, BellRing, Phone, RotateCcw, GraduationCap, Sprout, LayoutGrid, MoreVertical, AlertCircle, Star, Zap, Headphones, Edit, Upload, FileCheck, Loader2, SearchX, RefreshCw, Check, Minus, Lock, User, Eye, Send, Info, Plus, Inbox, FileSearch, HandCoins, UserRound, Paperclip, ClipboardList, Headset, Copy, Pencil, Download, FileImage, ExternalLink, CloudUpload, Home, Building2, Landmark, Flame, HelpCircle, UserPlus, Trash2, Accessibility, Briefcase, Percent, BookOpen, Share2, Navigation } from "lucide-react";
+import { X, Smartphone, Wifi, Battery, Signal, ChevronRight, ChevronLeft, ArrowLeft, ArrowRight, ArrowUpDown, Users, Users2, HeartHandshake, Database, Layers, Sparkles, MessageSquare, Clock3, Clock, UserCheck, LayoutDashboard, Sliders, SlidersHorizontal, Calendar, FileText, XCircle, CheckCircle2, Hourglass, MapPin, Mail, PhoneCall, Trophy, AlertTriangle, Activity, Globe, Map as MapIcon, Network, Store, ShieldCheck, ChevronDown, Filter, Search, SearchCheck, Megaphone, CalendarDays, BellRing, Phone, RotateCcw, GraduationCap, Sprout, LayoutGrid, MoreVertical, AlertCircle, Star, Zap, Headphones, Edit, Upload, FileCheck, Loader2, SearchX, RefreshCw, Check, Minus, Lock, User, Eye, Send, Info, Plus, Inbox, FileSearch, HandCoins, UserRound, Paperclip, ClipboardList, Headset, Copy, Pencil, Download, FileImage, ExternalLink, CloudUpload, Home, Building2, Flame, HelpCircle, UserPlus, Trash2, Accessibility, Briefcase, Percent, BookOpen, Share2, Navigation, Facebook, Instagram, Twitter } from "lucide-react";
 import { useLang } from "@/i18n/LanguageProvider";
 import { helpdeskLocations, helpdeskDistricts } from "@/data/helpdesk-locations";
 import officialLotus from "@/assets/bjp-official-lotus.png";
@@ -5577,6 +5577,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
     const [mobileSubPage, setMobileSubPage] = useState<"none" | "leaderboard" | "needs_attention" | "recent_activity" | "beneficiaries" | "users" | "applicants" | "user_detail" | "notifications" | "applications" | "events_announcements" | "app_detail" | "category_schemes" | "scheme_details" | "guest_popular_schemes" | "guest_schemes" | "about" | "contact" | "create_scheme" | "settings">("none");
   const [contactSelectedDistrict, setContactSelectedDistrict] = useState("");
+  const [contactSelectedRegion, setContactSelectedRegion] = useState<"" | "north" | "central" | "south">("");
   const [contactDistrictPickerOpen, setContactDistrictPickerOpen] = useState(false);
   const [contactDistrictSearch, setContactDistrictSearch] = useState("");
   const [contactExpandedOfficeId, setContactExpandedOfficeId] = useState<string | null>(null);
@@ -9181,10 +9182,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
   const renderGuestContactPage = () => {
     const stateOffice = {
-      nameEn: "Kerala State Office",
-      nameMl: "കേരള സംസ്ഥാന ഓഫീസ്",
-      subEn: "BJP Kerala · Thiruvananthapuram",
-      subMl: "ബിജെപി കേരള · തിരുവനന്തപുരം",
+      nameEn: "BJP Kerala State Office",
+      nameMl: "ബിജെപി കേരള സംസ്ഥാന ഓഫീസ്",
       addressLinesEn: ["Mararji Smrithi Mandiram, Thycaud PO.,", "Trivandrum, Kerala 695014"],
       addressLinesMl: ["മാരാർജി സ്മൃതി മന്ദിരം, തൈക്കാട് പി.ഒ.,", "തിരുവനന്തപുരം, കേരളം 695014"],
       phone: "+91 471 2333390",
@@ -9197,13 +9196,33 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     const stateMapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
       "BJP Kerala, Mararji Smrithi Mandiram, Thycaud P.O, Trivandrum, Kerala 695014",
     )}`;
+    const stateSocialLinks = [
+      { label: "Facebook", href: "https://www.facebook.com/BJPKeralam/", Icon: Facebook },
+      { label: "Instagram", href: "https://www.instagram.com/bjp4keralam/", Icon: Instagram },
+      { label: "X (Twitter)", href: "https://x.com/BJP4Keralam", Icon: Twitter },
+      { label: "Website", href: "https://keralabjp.org/", Icon: Globe },
+    ];
+
+    const regionDistricts: Record<"north" | "central" | "south", string[]> = {
+      north: ["Kasaragod", "Kannur", "Wayanad", "Kozhikode", "Malappuram"],
+      central: ["Palakkad", "Thrissur", "Ernakulam", "Idukki", "Kottayam"],
+      south: ["Alappuzha", "Pathanamthitta", "Kollam", "Thiruvananthapuram"],
+    };
+    const activeRegionDistricts = contactSelectedRegion ? regionDistricts[contactSelectedRegion] : null;
+
+    const visibleOfficeCount = activeRegionDistricts
+      ? helpdeskLocations.filter((loc) => activeRegionDistricts.includes(loc.district)).length
+      : helpdeskLocations.length;
 
     const filteredLocations = contactSelectedDistrict
       ? helpdeskLocations.filter((loc) => loc.district === contactSelectedDistrict)
-      : helpdeskLocations;
+      : activeRegionDistricts
+        ? helpdeskLocations.filter((loc) => activeRegionDistricts.includes(loc.district))
+        : helpdeskLocations;
 
     const districtQuery = contactDistrictSearch.trim().toLowerCase();
     const districtOptions = helpdeskDistricts.filter((district) => {
+      if (activeRegionDistricts && !activeRegionDistricts.includes(district.name)) return false;
       if (!districtQuery) return true;
       return (
         district.name.toLowerCase().includes(districtQuery) || district.nameMl.includes(contactDistrictSearch)
@@ -9244,89 +9263,154 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     };
 
     return (
-      <div className="animate-in fade-in duration-200 space-y-3 pb-8 pt-1">
-        {/* Kerala State Office */}
-        <div className="rounded-2xl border border-[#F3E5D8] bg-white p-3 shadow-[0_2px_10px_-4px_rgba(15,23,42,0.12)] dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex min-w-0 items-start gap-2.5">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#FFE6CC] to-[#FFD3A8] text-[#F5730A]">
-                <Landmark className="h-5 w-5 stroke-[2]" />
-              </span>
-              <div className="min-w-0">
-                <h3 className="text-[13.5px] font-extrabold leading-tight tracking-tight text-[#16225C] dark:text-white">
-                  {lang === "ml" ? stateOffice.nameMl : stateOffice.nameEn}
-                </h3>
-                <p className="mt-0.5 text-[10px] font-bold text-[#D9640C] dark:text-orange-300">
-                  {lang === "ml" ? stateOffice.subMl : stateOffice.subEn}
-                </p>
-              </div>
-            </div>
-            <span className="shrink-0 rounded-full bg-[#FFF1E3] px-2.5 py-1 text-[9.5px] font-extrabold text-[#D9640C] dark:bg-orange-950/40 dark:text-orange-300">
-              {lang === "ml" ? "സംസ്ഥാനം" : "State"}
-            </span>
-          </div>
-
-          <div className="mt-2.5 flex items-start gap-2 px-0.5">
-            <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#F5730A] stroke-[2.3]" />
-            <p className="text-[10.5px] font-semibold leading-snug text-[#334155] dark:text-slate-300">
-              {(lang === "ml" ? stateOffice.addressLinesMl : stateOffice.addressLinesEn).map((line) => (
-                <span key={line} className="block">
-                  {line}
-                </span>
-              ))}
+      <div className="animate-in fade-in duration-200 space-y-2 pb-1.5 pt-0">
+        {/* Intro */}
+        <div className="flex items-center gap-1.5 px-0.5 pb-0 pt-0">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-[15px] font-extrabold leading-[1.15] tracking-tight text-[#243D95] dark:text-blue-200">
+              {lang === "ml" ? "ഞങ്ങൾ എങ്ങനെ സഹായിക്കാം?" : "How can we help you?"}
+            </h2>
+            <p className="mt-1 text-[9.5px] font-semibold leading-snug text-[#4A5B8C] dark:text-slate-400">
+              {lang === "ml"
+                ? "സംസ്ഥാന ഓഫീസിന്റെയോ നിങ്ങളുടെ അടുത്തുള്ള ജില്ലാ ഓഫീസിന്റെയോ വിവരങ്ങൾ കണ്ടെത്തുക."
+                : "Find contact details for the state office or your nearest district office."}
             </p>
           </div>
+          <img
+            src="/images/contact-help-3d.png"
+            alt=""
+            aria-hidden="true"
+            className="h-[76px] w-[76px] shrink-0 object-contain"
+          />
+        </div>
 
-          <div className="mt-2.5 grid grid-cols-3 gap-1.5">
+        {/* Kerala State Office */}
+        <div className="rounded-2xl border border-[#F3E5D8] bg-white p-2 shadow-[0_2px_8px_-4px_rgba(15,23,42,0.10)] dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex min-w-0 items-start gap-2 px-0.5">
+            <img
+              src="/images/mararji-bhavan-3d.png"
+              alt=""
+              aria-hidden="true"
+              className="mt-0.5 h-[52px] w-[72px] shrink-0 object-contain"
+            />
+            <div className="min-w-0">
+              <h3 className="text-[13.5px] font-extrabold leading-tight tracking-tight text-[#16225C] dark:text-white">
+                {lang === "ml" ? stateOffice.nameMl : stateOffice.nameEn}
+              </h3>
+              <p className="mt-0.5 text-[10px] font-bold leading-snug text-[#D9640C] dark:text-orange-300">
+                {(lang === "ml" ? stateOffice.addressLinesMl : stateOffice.addressLinesEn).map((line) => (
+                  <span key={line} className="block">
+                    {line}
+                  </span>
+                ))}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-1.5 flex items-center gap-1.5">
+            <a
+              href={stateOffice.emailHref}
+              title={stateOffice.email}
+              className="mr-auto inline-flex min-w-0 items-center gap-1 text-[9.5px] font-bold text-[#243D95] transition-colors hover:text-[#1B2F78] dark:text-blue-300 dark:hover:text-blue-200"
+            >
+              <Mail className="h-3 w-3 shrink-0 stroke-[2.3]" />
+              <span className="truncate">{stateOffice.email}</span>
+            </a>
             <a
               href={stateOffice.phoneHref}
-              className="flex h-9 items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-[#FF8A12] to-[#F56A00] text-[10.5px] font-extrabold text-white shadow-[0_4px_10px_-4px_rgba(245,106,0,0.8)] transition-transform active:scale-95"
+              className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-[#FF8A12] to-[#F56A00] px-3.5 text-[10px] font-extrabold text-white shadow-[0_4px_10px_-4px_rgba(245,106,0,0.8)] transition-transform active:scale-95"
             >
-              <Phone className="h-3.5 w-3.5 stroke-[2.4]" />
+              <Phone className="h-3 w-3 stroke-[2.4]" />
               {lang === "ml" ? "വിളിക്കുക" : "Call"}
             </a>
             <a
               href={stateMapsHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex h-9 items-center justify-center gap-1.5 rounded-full border border-[#FFD9B8] bg-white text-[10.5px] font-extrabold text-[#D9640C] transition-colors hover:bg-[#FFF7EF] dark:border-slate-700 dark:bg-slate-900 dark:text-orange-300 dark:hover:bg-slate-800"
+              className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-[#243D95]/35 bg-white px-3 text-[10px] font-extrabold text-[#243D95] transition-colors hover:bg-[#243D95]/5 dark:border-blue-400/40 dark:bg-slate-900 dark:text-blue-300 dark:hover:bg-slate-800"
             >
-              <Navigation className="h-3.5 w-3.5 stroke-[2.3]" />
+              <Navigation className="h-3 w-3 stroke-[2.4]" />
               {lang === "ml" ? "വഴി" : "Directions"}
-            </a>
-            <a
-              href={stateOffice.emailHref}
-              className="flex h-9 items-center justify-center gap-1.5 rounded-full border border-[#FFD9B8] bg-white text-[10.5px] font-extrabold text-[#D9640C] transition-colors hover:bg-[#FFF7EF] dark:border-slate-700 dark:bg-slate-900 dark:text-orange-300 dark:hover:bg-slate-800"
-            >
-              <Mail className="h-3.5 w-3.5 stroke-[2.3]" />
-              {lang === "ml" ? "ഇമെയിൽ" : "Email"}
             </a>
           </div>
 
-          <div className="mt-2.5 flex items-center gap-2 border-t border-[#F3E5D8] pt-2 dark:border-slate-800">
-            <Clock className="h-3.5 w-3.5 shrink-0 text-[#F5730A] stroke-[2.3]" />
-            <span className="text-[10px] font-semibold text-[#64748B] dark:text-slate-400">
-              {lang === "ml" ? "ഓഫീസ് സമയം" : "Office hours"}
+          <div className="mt-1.5 flex items-center gap-2 border-t border-[#F3E5D8] pt-1.5 dark:border-slate-800">
+            <Share2 className="h-3.5 w-3.5 shrink-0 text-[#F5730A] stroke-[2.3]" />
+            <span className="text-[9.5px] font-bold text-[#64748B] dark:text-slate-400">
+              {lang === "ml" ? "സോഷ്യൽ മീഡിയയിൽ പിന്തുടരുക" : "Follow us on social media"}
             </span>
-            <span className="ml-auto text-[10.5px] font-extrabold text-[#16225C] dark:text-slate-100">
-              {lang === "ml" ? stateOffice.hoursMl : stateOffice.hoursEn}
-            </span>
+            <div className="ml-auto flex items-center gap-1">
+              {stateSocialLinks.map(({ label, href, Icon }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
+                  title={label}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#F3D9C2] bg-[#FFF7EF] text-[#D9640C] transition-colors hover:border-[#FF8A12] hover:bg-[#FF8A12] hover:text-white dark:border-slate-700 dark:bg-slate-800 dark:text-orange-300 dark:hover:bg-orange-500 dark:hover:text-white"
+                >
+                  <Icon className="h-3.5 w-3.5 stroke-[2.2]" />
+                </a>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* District Offices */}
-        <div className="relative overflow-hidden px-0.5 pt-1">
-          <h3 className="text-[16px] font-extrabold leading-tight tracking-tight text-[#16225C] dark:text-white">
-            {lang === "ml" ? "ജില്ലാ ഓഫീസുകൾ" : "District Offices"}
-          </h3>
-          <p className="mt-0.5 text-[10px] font-bold text-[#D9640C] dark:text-orange-300">
-            {lang === "ml" ? "30 സംഘടനാ ജില്ലാ ഓഫീസുകൾ" : "30 organisational district offices"}
-          </p>
+        <div className="relative mt-1 border-t border-[#F1E4D6] px-0.5 pt-2.5 dark:border-slate-800">
+          <div className="min-w-0 pr-11">
+            <h3 className="text-[15px] font-extrabold leading-tight tracking-tight text-[#16225C] dark:text-white">
+              {lang === "ml" ? "ജില്ലാ ഓഫീസുകൾ" : "District Offices"}
+            </h3>
+            <p className="mt-0.5 text-[9.5px] font-bold text-[#D9640C] dark:text-orange-300">
+              {lang === "ml" ? "30 സംഘടനാ ജില്ലാ ഓഫീസുകൾ" : "30 organisational district offices"}
+            </p>
+          </div>
           <MapPin
-            className="pointer-events-none absolute -right-1 -top-1 h-11 w-11 rotate-12 text-[#FFE0C2] dark:text-orange-950/60"
-            strokeWidth={1.6}
+            className="pointer-events-none absolute right-0.5 top-0.5 h-10 w-10 rotate-12 text-[#FFC085] dark:text-orange-900/70"
+            strokeWidth={1.7}
             aria-hidden="true"
           />
+        </div>
+
+        {/* Region tabs */}
+        <div className="flex items-center border-b border-[#F1E4D6] dark:border-slate-800">
+          {(
+            [
+              { key: "north", en: "North", ml: "\u0d35\u0d1f\u0d15\u0d4d\u0d15\u0d7b" },
+              { key: "central", en: "Central", ml: "\u0d2e\u0d27\u0d4d\u0d2f" },
+              { key: "south", en: "South", ml: "\u0d24\u0d46\u0d15\u0d4d\u0d15\u0d7b" },
+            ] as const
+          ).map((region) => {
+            const active = contactSelectedRegion === region.key;
+            return (
+              <button
+                key={region.key}
+                type="button"
+                aria-pressed={active}
+                onClick={() => {
+                  setContactSelectedRegion(active ? "" : region.key);
+                  setContactSelectedDistrict("");
+                  setContactDistrictSearch("");
+                  setContactDistrictPickerOpen(false);
+                  setContactExpandedOfficeId(null);
+                }}
+                className={`relative flex-1 pb-1.5 pt-1 text-[11px] font-bold transition-colors ${
+                  active
+                    ? "text-[#D9640C] dark:text-orange-300"
+                    : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                }`}
+              >
+                {lang === "ml" ? region.ml : region.en}
+                <span
+                  className={`absolute inset-x-5 -bottom-px h-[2px] rounded-full bg-[#F5730A] transition-opacity ${
+                    active ? "opacity-100" : "opacity-0"
+                  }`}
+                />
+              </button>
+            );
+          })}
         </div>
 
         {/* District selector */}
@@ -9335,7 +9419,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             type="button"
             onClick={() => setContactDistrictPickerOpen((prev) => !prev)}
             aria-expanded={contactDistrictPickerOpen}
-            className="flex h-10 w-full items-center gap-2 rounded-full border border-[#F3E5D8] bg-white px-3.5 text-left shadow-[0_2px_8px_-4px_rgba(15,23,42,0.12)] transition-colors hover:border-[#FFD9B8] dark:border-slate-800 dark:bg-slate-900"
+            className="flex h-9 w-full items-center gap-2 rounded-full border border-[#F3E5D8] bg-white px-3 text-left shadow-[0_2px_8px_-4px_rgba(15,23,42,0.12)] transition-colors hover:border-[#FFD9B8] dark:border-slate-800 dark:bg-slate-900"
           >
             <Search className="h-4 w-4 shrink-0 text-[#F5730A] stroke-[2.3]" />
             <span
@@ -9356,7 +9440,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           </button>
 
           {contactDistrictPickerOpen && (
-            <div className="absolute inset-x-0 top-11 z-30 rounded-2xl border border-[#F3E5D8] bg-white p-2 shadow-lg dark:border-slate-800 dark:bg-slate-900">
+            <div className="absolute inset-x-0 top-10 z-30 rounded-2xl border border-[#F3E5D8] bg-white p-2 shadow-lg dark:border-slate-800 dark:bg-slate-900">
               <div className="flex h-9 items-center gap-2 rounded-full border border-[#F3E5D8] bg-[#FFFCF8] px-3 dark:border-slate-700 dark:bg-slate-800">
                 <Search className="h-3.5 w-3.5 shrink-0 text-[#F5730A]" />
                 <input
@@ -9390,7 +9474,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   <span className="text-[11px] font-semibold text-[#16225C] dark:text-slate-100">
                     {lang === "ml" ? "എല്ലാ ജില്ലകളും" : "All districts"}
                   </span>
-                  <span className="text-[9px] font-bold text-slate-400">{helpdeskLocations.length}</span>
+                  <span className="text-[9px] font-bold text-slate-400">{visibleOfficeCount}</span>
                 </button>
                 {districtOptions.map((district) => {
                   const count = helpdeskLocations.filter((loc) => loc.district === district.name).length;
@@ -9429,7 +9513,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         </div>
 
         {/* Office cards */}
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {filteredLocations.map((loc) => {
             const expanded = contactExpandedOfficeId === loc.id;
             const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc.address)}`;
@@ -9444,7 +9528,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   type="button"
                   onClick={() => setContactExpandedOfficeId(expanded ? null : loc.id)}
                   aria-expanded={expanded}
-                  className="flex w-full items-start gap-2.5 px-3 pt-2.5 text-left"
+                  className="flex w-full items-start gap-2 px-2.5 pt-1.5 text-left"
                 >
                   {districtIconMap[loc.district] ? (
                     <img
@@ -9478,11 +9562,11 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   />
                 </button>
 
-                <div className="flex flex-wrap items-center gap-1.5 px-3 pb-2.5 pt-2">
+                <div className="flex flex-wrap items-center gap-1.5 px-2.5 pb-1.5 pt-1.5">
                   {primaryPhone ? (
                     <a
                       href={`tel:${primaryPhone}`}
-                      className="inline-flex h-7 items-center gap-1.5 rounded-full bg-[#243D95] px-3 text-[10px] font-bold text-white transition-colors hover:bg-[#1E3177]"
+                      className="inline-flex h-7 items-center gap-1.5 rounded-full border border-[#FF7900] bg-white px-3 text-[10px] font-bold text-[#FF7900] transition-colors hover:bg-[#FFF3E6] dark:border-orange-400/60 dark:bg-slate-900 dark:text-orange-300 dark:hover:bg-orange-950/30"
                     >
                       <Phone className="h-3 w-3 stroke-[2.4]" />
                       {primaryPhone}
@@ -9493,7 +9577,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         <a
                           key={phone}
                           href={`tel:${phone}`}
-                          className="inline-flex h-7 items-center gap-1.5 rounded-full border border-[#243D95]/30 bg-white px-3 text-[10px] font-bold text-[#243D95] transition-colors hover:bg-[#243D95]/5 dark:border-slate-700 dark:bg-slate-900 dark:text-blue-300"
+                          className="inline-flex h-7 items-center gap-1.5 rounded-full border border-[#FF7900]/60 bg-white px-3 text-[10px] font-bold text-[#FF7900] transition-colors hover:bg-[#FFF3E6] dark:border-orange-400/50 dark:bg-slate-900 dark:text-orange-300 dark:hover:bg-orange-950/30"
                         >
                           <Phone className="h-3 w-3 stroke-[2.4]" />
                           {phone}
@@ -9512,7 +9596,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 </div>
 
                 {expanded && (
-                  <div className="animate-in fade-in slide-in-from-top-1 flex items-center justify-between border-t border-[#F3E5D8] px-3 py-2 duration-150 dark:border-slate-800">
+                  <div className="animate-in fade-in slide-in-from-top-1 flex items-center justify-between border-t border-[#F3E5D8] px-2.5 py-1 duration-150 dark:border-slate-800">
                     <button
                       type="button"
                       onClick={() => handleCopyAddress(loc.id, loc.address)}
@@ -9547,7 +9631,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         </div>
 
         {/* Call before visiting */}
-        <div className="flex items-center gap-2 rounded-xl bg-[#FFF4E8] px-3 py-2.5 dark:bg-orange-950/30">
+        <div className="flex items-center gap-2 rounded-xl bg-[#FFF4E8] px-3 py-2 dark:bg-orange-950/30">
           <Info className="h-4 w-4 shrink-0 text-[#F5730A] stroke-[2.4]" />
           <p className="text-[10.5px] font-bold text-[#B45309] dark:text-orange-300">
             {lang === "ml" ? "സന്ദർശിക്കുന്നതിന് മുമ്പ് ദയവായി വിളിക്കുക." : "Please call before visiting."}
