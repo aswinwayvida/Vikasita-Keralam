@@ -253,9 +253,6 @@ export function MobileAuthFlow({
                   handleRequestOtp();
                 }}
               >
-                <label className="block text-[12.5px] font-extrabold text-[#0a1f44]" htmlFor="mobile-number">
-                  {t("Mobile number", "മൊബൈല്‍ നമ്പര്‍")}
-                </label>
                 <div
                   className={`mt-2 flex min-h-[52px] items-stretch overflow-hidden rounded-xl border bg-[#fffaf5] transition-all ${
                     mobileError
@@ -274,8 +271,9 @@ export function MobileAuthFlow({
                     placeholder={t("Enter 10-digit mobile number", "10 അക്ക മൊബൈല്‍ നമ്പര്‍ നല്‍കുക")}
                     maxLength={10}
                     className="min-w-0 flex-1 bg-transparent px-4 text-[14px] font-semibold text-[#0a1f44] outline-none placeholder:font-normal placeholder:text-[#9a9aa2]"
+                    aria-label={t("Mobile number", "മൊബൈല്‍ നമ്പര്‍")}
                     aria-invalid={Boolean(mobileError)}
-                    aria-describedby={mobileError ? "mobile-error" : "mobile-helper"}
+                    aria-describedby={mobileError ? "mobile-error" : undefined}
                   />
                 </div>
 
@@ -286,11 +284,7 @@ export function MobileAuthFlow({
                       ? t("Enter your mobile number.", "നിങ്ങളുടെ മൊബൈല്‍ നമ്പര്‍ നല്‍കുക.")
                       : t("Enter a valid 10-digit Indian mobile number.", "സാധുവായ 10 അക്ക ഇന്ത്യന്‍ മൊബൈല്‍ നമ്പര്‍ നല്‍കുക.")}
                   </p>
-                ) : (
-                  <p id="mobile-helper" className="mt-2 text-[11.5px] text-[#5b6478]">
-                    {t("We’ll send a verification code by SMS.", "SMS വഴി സ്ഥിരീകരണ കോഡ് അയയ്ക്കും.")}
-                  </p>
-                )}
+                ) : null}
 
                 <button
                   type="submit"
@@ -308,22 +302,10 @@ export function MobileAuthFlow({
                 </button>
               </form>
 
-              <p className="mt-5 text-center text-[11px] leading-5 text-[#596276]">
-                {t("By continuing, you agree to our", "തുടരുന്നതിലൂടെ നിങ്ങൾ അംഗീകരിക്കുന്നത്")}{" "}
-                <a href="#terms" onClick={(event) => event.preventDefault()} className="font-bold text-[#e15307] underline underline-offset-2">
-                  {t("Terms of Use", "ഉപയോഗ നിബന്ധനകൾ")}
-                </a>{" "}
-                {t("and", "ഒപ്പം")}{" "}
-                <a href="#privacy" onClick={(event) => event.preventDefault()} className="font-bold text-[#e15307] underline underline-offset-2">
-                  {t("Privacy Policy", "സ്വകാര്യതാ നയം")}
-                </a>
-                .
-              </p>
-
               <button
                 type="button"
                 onClick={onContinueAsGuest}
-                className="mt-5 flex min-h-11 w-full items-center gap-3 text-[12.5px] font-extrabold text-[#d9570b] cursor-pointer"
+                className="mt-5 flex min-h-11 w-full items-center gap-3 text-[12.5px] font-extrabold text-[#243D95] cursor-pointer"
               >
                 <span className="h-px flex-1 bg-[#dce1e9]" />
                 <span className="whitespace-nowrap">{t("Continue as Guest", "അതിഥിയായി തുടരുക")}</span>
