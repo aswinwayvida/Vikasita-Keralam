@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
-import { X, Smartphone, Wifi, Battery, Signal, ChevronRight, ChevronLeft, ArrowLeft, ArrowRight, Users, Users2, HeartHandshake, Database, Layers, Sparkles, MessageSquare, Clock3, Clock, UserCheck, LayoutDashboard, Sliders, SlidersHorizontal, Calendar, FileText, XCircle, CheckCircle2, Hourglass, MapPin, Mail, PhoneCall, Trophy, AlertTriangle, Activity, Globe, Map as MapIcon, Network, Store, ShieldCheck, ChevronDown, Filter, Search, SearchCheck, Megaphone, CalendarDays, BellRing, Phone, RotateCcw, GraduationCap, Sprout, LayoutGrid, MoreVertical, AlertCircle, Star, Zap, Headphones, Edit, Upload, FileCheck, Loader2, SearchX, RefreshCw, Check, Minus, Lock, User, Eye, Send, Info, Plus, Inbox, FileSearch, HandCoins, UserRound, Paperclip, ClipboardList, Headset, Copy, Pencil, Download, FileImage, ExternalLink, CloudUpload, Home, Building2, Flame, HelpCircle, UserPlus, Trash2, Accessibility, Briefcase, Percent, BookOpen, Share2, Navigation } from "lucide-react";
+import { X, Smartphone, Wifi, Battery, Signal, ChevronRight, ChevronLeft, ArrowLeft, ArrowRight, ArrowUpDown, Users, Users2, HeartHandshake, Database, Layers, Sparkles, MessageSquare, Clock3, Clock, UserCheck, LayoutDashboard, Sliders, SlidersHorizontal, Calendar, FileText, XCircle, CheckCircle2, Hourglass, MapPin, Mail, PhoneCall, Trophy, AlertTriangle, Activity, Globe, Map as MapIcon, Network, Store, ShieldCheck, ChevronDown, Filter, Search, SearchCheck, Megaphone, CalendarDays, BellRing, Phone, RotateCcw, GraduationCap, Sprout, LayoutGrid, MoreVertical, AlertCircle, Star, Zap, Headphones, Edit, Upload, FileCheck, Loader2, SearchX, RefreshCw, Check, Minus, Lock, User, Eye, Send, Info, Plus, Inbox, FileSearch, HandCoins, UserRound, Paperclip, ClipboardList, Headset, Copy, Pencil, Download, FileImage, ExternalLink, CloudUpload, Home, Building2, Landmark, Flame, HelpCircle, UserPlus, Trash2, Accessibility, Briefcase, Percent, BookOpen, Share2, Navigation } from "lucide-react";
 import { useLang } from "@/i18n/LanguageProvider";
 import { helpdeskLocations, helpdeskDistricts } from "@/data/helpdesk-locations";
 import officialLotus from "@/assets/bjp-official-lotus.png";
@@ -1723,7 +1723,7 @@ function MobileApplicationStatusBadge({
 }: {
   status: MobileApplicationListStatus;
   lang: string;
-  size?: "compact" | "medium" | "prominent";
+  size?: "tiny" | "compact" | "medium" | "prominent";
   labelEn?: string;
   labelMl?: string;
 }) {
@@ -1731,8 +1731,15 @@ function MobileApplicationStatusBadge({
   const Icon = meta.icon;
   const isProminent = size === "prominent";
   const isMedium = size === "medium";
-  const iconSizeClass = isProminent ? "h-[18px] w-[18px]" : isMedium ? "h-4 w-4" : "h-3.5 w-3.5";
-  const checkSizeClass = isProminent ? "h-2.5 w-2.5" : "h-2 w-2";
+  const isTiny = size === "tiny";
+  const iconSizeClass = isProminent
+    ? "h-[18px] w-[18px]"
+    : isMedium
+      ? "h-4 w-4"
+      : isTiny
+        ? "h-3 w-3"
+        : "h-3.5 w-3.5";
+  const checkSizeClass = isProminent ? "h-2.5 w-2.5" : isTiny ? "h-1.5 w-1.5" : "h-2 w-2";
 
   return (
     <span
@@ -1741,7 +1748,9 @@ function MobileApplicationStatusBadge({
           ? "h-9 gap-1.5 rounded-lg px-2.5 text-[12px]"
           : isMedium
             ? "h-6 gap-1.5 rounded-full px-2.5 text-[10.5px]"
-            : "h-5 gap-1 rounded-full px-2 text-[9.5px]"
+            : isTiny
+              ? "h-[18px] gap-1 rounded-full px-1.5 text-[8.5px] tracking-[-0.01em]"
+              : "h-5 gap-1 rounded-full px-2 text-[9.5px]"
       }`}
     >
       {status === "beneficiary" ? (
@@ -3029,6 +3038,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [createCaste, setCreateCaste] = useState<string>("");
   const [createMaritalStatus, setCreateMaritalStatus] = useState<string>("");
   const [createOccupation, setCreateOccupation] = useState<string>("");
+  const [createMinorityStatus, setCreateMinorityStatus] = useState<string>("");
+  const [createDisabilityStatus, setCreateDisabilityStatus] = useState<string>("");
+  const [createStudentStatus, setCreateStudentStatus] = useState<string>("");
   const [createIncomeRange, setCreateIncomeRange] = useState<string>("");
 
   // Address Section
@@ -4006,7 +4018,10 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     createReligion.trim() &&
     createCaste.trim() &&
     createMaritalStatus.trim() &&
-    createOccupation.trim() &&
+    createMinorityStatus.trim() &&
+    createDisabilityStatus.trim() &&
+    createStudentStatus.trim() &&
+    (createStudentStatus === "Yes" || createOccupation.trim()) &&
     createIncomeRange.trim() &&
     createDistrict.trim() &&
     createLocalBodyType &&
@@ -5219,6 +5234,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     setCreateCaste("");
     setCreateMaritalStatus("");
     setCreateOccupation("");
+    setCreateMinorityStatus("");
+    setCreateDisabilityStatus("");
+    setCreateStudentStatus("");
     setCreateIncomeRange("");
     setCreateDistrict("");
     setCreateLocalBodyType("");
@@ -5385,6 +5403,12 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     if (["yes", "no"].includes(guestAnswers.minorityStatus)) setFinalMinorityStatus(guestAnswers.minorityStatus);
     if (["yes", "no"].includes(guestAnswers.disabilityStatus)) setFinalDisabilityStatus(guestAnswers.disabilityStatus);
     if (["yes", "no"].includes(guestAnswers.studentStatus)) setFinalStudentStatus(guestAnswers.studentStatus);
+    if (["yes", "no"].includes(guestAnswers.minorityStatus)) {
+      setCreateMinorityStatus(guestAnswers.minorityStatus === "yes" ? "Yes" : "No");
+    }
+    if (["yes", "no"].includes(guestAnswers.studentStatus)) {
+      setCreateStudentStatus(guestAnswers.studentStatus === "yes" ? "Yes" : "No");
+    }
     const finalEmploymentMap: Record<string, string> = {
       employed: "employed",
       self_employed: "self-employed",
@@ -5552,8 +5576,10 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   };
 
     const [mobileSubPage, setMobileSubPage] = useState<"none" | "leaderboard" | "needs_attention" | "recent_activity" | "beneficiaries" | "users" | "applicants" | "user_detail" | "notifications" | "applications" | "events_announcements" | "app_detail" | "category_schemes" | "scheme_details" | "guest_popular_schemes" | "guest_schemes" | "about" | "contact" | "create_scheme" | "settings">("none");
-  const [contactDistrictQuery, setContactDistrictQuery] = useState("");
-  const [contactSelectedDistrict, setContactSelectedDistrict] = useState("all");
+  const [contactSelectedDistrict, setContactSelectedDistrict] = useState("");
+  const [contactDistrictPickerOpen, setContactDistrictPickerOpen] = useState(false);
+  const [contactDistrictSearch, setContactDistrictSearch] = useState("");
+  const [contactExpandedOfficeId, setContactExpandedOfficeId] = useState<string | null>(null);
   const [copiedLocationId, setCopiedLocationId] = useState<string | null>(null);
   const [isMobileSettingsFormOpen, setIsMobileSettingsFormOpen] = useState(false);
   const [showSupportModal, setShowSupportModal] = useState(false);
@@ -5631,6 +5657,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [applicantWardFilter, setApplicantWardFilter] = useState<string>("all");
   const [applicantPendingWard, setApplicantPendingWard] = useState<string>("all");
   const [selectedApplicationUserId, setSelectedApplicationUserId] = useState<string | null>(null);
+  const [applicantApplicationSort, setApplicantApplicationSort] = useState<"newest" | "oldest">("newest");
+  const [isApplicantSortMenuOpen, setIsApplicantSortMenuOpen] = useState<boolean>(false);
   const [isApplicantProfileMenuOpen, setIsApplicantProfileMenuOpen] = useState<boolean>(false);
   const [isDeleteApplicantConfirmOpen, setIsDeleteApplicantConfirmOpen] = useState<boolean>(false);
   const [appDetailReturnSubPage, setAppDetailReturnSubPage] = useState<"applications" | "user_detail">("applications");
@@ -6117,6 +6145,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [schemeSearchQuery, setSchemeSearchQuery] = useState<string>("");
   const [selectedApplicationRecord, setSelectedApplicationRecord] = useState<MobileApplicationRecord | null>(null);
   const [appDetailView, setAppDetailView] = useState<"overview" | "applicant" | "scheme" | "documents" | "history" | "support">("overview");
+  const [pendingApplicantInfoView, setPendingApplicantInfoView] = useState(false);
   const [appInfoMenuOpen, setAppInfoMenuOpen] = useState(false);
   const [appDeleteConfirmOpen, setAppDeleteConfirmOpen] = useState(false);
   const [deletedApplicationRefs, setDeletedApplicationRefs] = useState<string[]>([]);
@@ -6151,7 +6180,12 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   >(mobileApplicationCollectedDetails);
 
   useEffect(() => {
-    setAppDetailView("overview");
+    if (pendingApplicantInfoView) {
+      setPendingApplicantInfoView(false);
+      setAppDetailView("applicant");
+    } else {
+      setAppDetailView("overview");
+    }
     setAppDetailMenuOpen(false);
     setIsTrackingSheetOpen(false);
     setIsTrackingSuccessOpen(false);
@@ -6319,6 +6353,14 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       }),
     );
     setCreateCaste(pickOption(details?.caste, ["General", "OBC", "SC", "ST", "OBC-NCL", "EWS"]));
+    setCreateMinorityStatus(pickOption(details?.minorityStatus, ["Yes", "No"]));
+    setCreateDisabilityStatus(
+      pickOption(details?.disabilityStatus, ["No", "Below 40%", "40% or Above", "Not Sure"], {
+        Yes: "Below 40%",
+        yes: "Below 40%",
+      }),
+    );
+    setCreateStudentStatus(pickOption(details?.studentStatus, ["Yes", "No"]));
     setCreateMaritalStatus(
       pickOption(
         details?.maritalStatus,
@@ -6469,7 +6511,10 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         religion: createReligion,
         caste: createCaste,
         maritalStatus: createMaritalStatus,
-        occupation: createOccupation,
+        occupation: createStudentStatus === "Yes" ? "Student" : createOccupation,
+        minorityStatus: createMinorityStatus,
+        disabilityStatus: createDisabilityStatus,
+        studentStatus: createStudentStatus,
         email: createEmail.trim(),
         houseName: [createHouseNumber.trim(), createHouseName.trim()].filter(Boolean).join(", "),
         streetLocality: createStreetLocality.trim(),
@@ -6702,6 +6747,23 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     const categoryName = lang === "ml" ? record.categoryMl : record.categoryEn;
     const applicantName = lang === "ml" ? record.applicantNameMl : record.applicantNameEn;
     const applicantLocation = lang === "ml" ? record.locationMl : record.locationEn;
+    const applicantProfileId = (record.applicantNameEn || record.applicantNameMl || "").trim().toLowerCase();
+    const otherApplicantApplications = [...savedApplicationRecords, ...mobileApplicationAllPreviewRecords]
+      .filter((application) => !deletedApplicationRefs.includes(application.ref))
+      .filter((application) => application.ref !== record.ref)
+      .filter(
+        (application) =>
+          (application.applicantNameEn || application.applicantNameMl || "").trim().toLowerCase() ===
+          applicantProfileId,
+      )
+      .filter(
+        (application, index, applications) =>
+          applications.findIndex((candidate) => candidate.ref === application.ref) === index,
+      )
+      .map((application) => ({
+        ...application,
+        ...(applicationRecordEdits[application.ref] ?? {}),
+      }));
     const assistedBy = (lang === "ml" ? record.assistedByMl : record.assistedByEn) || "—";
     const uploadedDocs = record.pendingDocs ?? [];
     const documentCountLabel = String(uploadedDocs.length).padStart(2, "0");
@@ -6901,7 +6963,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       | undefined;
     const notRecorded = lang === "ml" ? "രേഖപ്പെടുത്തിയിട്ടില്ല" : "Not recorded";
     const collectedValue = (value?: string) => (value && value.trim() ? value : notRecorded);
-    const districtValue = collected?.district ?? applicantLocation.split(",").pop()?.trim() ?? notRecorded;
 
     if (appDetailView !== "overview") {
       const viewTitle =
@@ -6923,79 +6984,97 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         >
           {renderDetailNav(viewTitle.en, viewTitle.ml)}
           <div
-            className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
+            className={
+              appDetailView === "applicant"
+                ? "overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs dark:border-slate-800 dark:bg-slate-900"
+                : "rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
+            }
           >
-            {appDetailView === "applicant" && (
-              <div className="space-y-4">
-                {detailSection(
-                  UserRound,
-                  lang === "ml" ? "വ്യക്തിഗത വിവരങ്ങൾ" : "Personal details",
-                  [
-                    { label: lang === "ml" ? "മുഴുവൻ പേര്" : "Full name", value: applicantName },
-                    { label: lang === "ml" ? "ജനനത്തീയതി" : "Date of birth", value: collectedValue(collected?.dateOfBirth) },
-                    { label: lang === "ml" ? "ലിംഗം" : "Gender", value: collectedValue(collected?.gender) },
-                    { label: lang === "ml" ? "വിവാഹ നില" : "Marital status", value: collectedValue(collected?.maritalStatus) },
-                    { label: lang === "ml" ? "മതം" : "Religion", value: collectedValue(collected?.religion) },
-                    { label: lang === "ml" ? "സാമൂഹിക വിഭാഗം" : "Social category", value: collectedValue(collected?.caste) },
-                    { label: lang === "ml" ? "തൊഴിൽ" : "Occupation", value: collectedValue(collected?.occupation) },
-                    { label: lang === "ml" ? "ആധാർ നമ്പർ" : "Aadhaar number", value: record.aadhaar },
-                  ],
-                )}
+            {appDetailView === "applicant" && (() => {
+              const matchingHelpdesk = helpdeskRequests.find(
+                (r) =>
+                  (r.applicant && record.applicantNameEn && r.applicant.toLowerCase() === record.applicantNameEn.toLowerCase()) ||
+                  (r.contactMobile && record.phone && r.contactMobile.replace(/\D/g, "") === record.phone.replace(/\D/g, ""))
+              );
+              const helpdeskEligibility = matchingHelpdesk?.eligibility;
 
-                {detailSection(Phone, lang === "ml" ? "ബന്ധപ്പെടാനുള്ള വിവരങ്ങൾ" : "Contact", [
-                  { label: lang === "ml" ? "മൊബൈൽ നമ്പർ" : "Mobile number", value: record.phone },
-                  { label: lang === "ml" ? "ഇമെയിൽ" : "Email", value: collectedValue(collected?.email) },
-                ])}
+              const locParts = (record.locationEn || "").split(",").map((s) => s.trim());
+              const mandalamFallback = locParts.length > 1 ? locParts[locParts.length - 1] : locParts[0] || "Kazhakoottam";
+              const districtFallback = locParts.length > 1 ? locParts[0] : (matchingHelpdesk?.district || "Thiruvananthapuram");
 
-                {detailSection(MapPin, lang === "ml" ? "വിലാസം" : "Address", [
-                  { label: lang === "ml" ? "വീട്ടുപേര്" : "House name", value: collectedValue(collected?.houseName) },
-                  { label: lang === "ml" ? "തെരുവ് / പ്രദേശം" : "Street / locality", value: collectedValue(collected?.streetLocality) },
-                  { label: lang === "ml" ? "തദ്ദേശ സ്ഥാപന തരം" : "Local body type", value: collectedValue(collected?.localBodyType) },
-                  { label: lang === "ml" ? "തദ്ദേശ സ്ഥാപനം" : "Local body", value: collectedValue(collected?.localBody) },
-                  { label: lang === "ml" ? "വാർഡ്" : "Ward", value: collectedValue(collected?.ward) },
-                  { label: lang === "ml" ? "നിയമസഭാ മണ്ഡലം" : "Assembly Mandalam", value: collectedValue(collected?.mandalam) },
-                  { label: lang === "ml" ? "ജില്ല" : "District", value: collectedValue(districtValue) },
-                  { label: lang === "ml" ? "പിൻ കോഡ്" : "PIN code", value: collectedValue(collected?.pincode) },
-                  { label: lang === "ml" ? "സംസ്ഥാനം" : "State", value: "Kerala" },
-                ])}
+              const district = collected?.district || matchingHelpdesk?.location?.districtName || matchingHelpdesk?.district || districtFallback || "Thiruvananthapuram";
+              const mandalam = collected?.mandalam || matchingHelpdesk?.location?.mandalamName || mandalamFallback || "Kazhakoottam";
+              const localBodyType = collected?.localBodyType || "Not provided";
+              const localBody = collected?.localBody || matchingHelpdesk?.location?.localBodyName || "Not provided";
+              const ward = collected?.ward || matchingHelpdesk?.location?.wardName || "Not provided";
 
-                {detailSection(
-                  ShieldCheck,
-                  lang === "ml" ? "സാമൂഹിക-സാമ്പത്തിക വിവരങ്ങൾ" : "Socio-economic details",
-                  [
-                    { label: lang === "ml" ? "ന്യൂനപക്ഷ പദവി" : "Minority status", value: collectedValue(collected?.minorityStatus) },
-                    {
-                      label: lang === "ml" ? "വൈകല്യമുള്ള വ്യക്തി" : "Person with a disability",
-                      value: collectedValue(collected?.disabilityStatus),
-                    },
-                    { label: lang === "ml" ? "വിദ്യാർത്ഥി പദവി" : "Student status", value: collectedValue(collected?.studentStatus) },
-                    { label: lang === "ml" ? "തൊഴിൽ നില" : "Employment status", value: collectedValue(collected?.employmentStatus) },
-                    { label: lang === "ml" ? "ബിപിഎൽ നില" : "BPL status", value: collectedValue(collected?.bplStatus) },
-                    {
-                      label: lang === "ml" ? "സാമ്പത്തിക ബുദ്ധിമുട്ട്" : "Financial hardship",
-                      value: collectedValue(collected?.financialHardshipStatus),
-                    },
-                    {
-                      label: lang === "ml" ? "വാർഷിക കുടുംബ വരുമാനം" : "Annual family income",
-                      value: collectedValue(collected?.annualFamilyIncome ?? record.annualIncome),
-                    },
-                    {
-                      label: lang === "ml" ? "വരുമാന പരിധി" : "Income range",
-                      value: collectedValue(collected?.incomeRange),
-                    },
-                    { label: lang === "ml" ? "താമസ മേഖല" : "Area of residence", value: collectedValue(collected?.residenceArea) },
-                  ],
-                )}
+              const genderVal = collected?.gender || (helpdeskEligibility?.gender === "male" ? "Male" : helpdeskEligibility?.gender === "female" ? "Female" : "Female");
+              const ageVal = (() => {
+                if (collected?.dateOfBirth) {
+                  const parts = collected.dateOfBirth.split("/");
+                  if (parts.length === 3) {
+                    const yr = parseInt(parts[2], 10);
+                    if (!isNaN(yr)) return `${Math.max(18, 2026 - yr)} years`;
+                  }
+                }
+                if (helpdeskEligibility?.age) return `${helpdeskEligibility.age} years`;
+                return "27 years";
+              })();
+              const dobVal =
+                collected?.dateOfBirth ||
+                (helpdeskEligibility?.age ? `01/01/${2026 - Number(helpdeskEligibility.age)}` : "01/01/1999");
+              const socialCategoryVal = collected?.caste || (helpdeskEligibility?.socialCategory === "obc" ? "OBC / SEBC" : helpdeskEligibility?.socialCategory === "sc" ? "SC" : helpdeskEligibility?.socialCategory === "st" ? "ST" : "OBC / SEBC");
+              const minorityVal = collected?.minorityStatus || (helpdeskEligibility?.minorityStatus === "yes" ? "Yes" : "No");
+              const disabilityVal = collected?.disabilityStatus || (helpdeskEligibility?.disabilityStatus === "yes" ? "Yes" : "No");
+              const studentVal = collected?.studentStatus || (helpdeskEligibility?.studentStatus === "yes" ? "Yes" : "No");
+              const employmentVal = collected?.employmentStatus || (helpdeskEligibility?.employmentStatus === "self_employed" ? "Self-employed" : helpdeskEligibility?.employmentStatus === "employed" ? "Employed" : "Self-employed");
+              const occupationVal = collected?.occupation || (helpdeskEligibility?.occupation === "selfEmployed" ? "Self-employed / Business" : "Self-employed / Business");
+              const bplVal = collected?.bplStatus || (helpdeskEligibility?.bplStatus === "yes" ? "Yes" : "No");
+              const incomeVal = collected?.annualFamilyIncome || (helpdeskEligibility?.annualFamilyIncome === "oneToTwoFive" ? "₹1–2.5 lakh" : "₹1–2.5 lakh");
+              const maritalVal = collected?.maritalStatus || helpdeskEligibility?.maritalStatus || "Single";
+              const religionVal = collected?.religion || helpdeskEligibility?.religion || "Hindu";
+              const casteVal = collected?.caste || helpdeskEligibility?.casteCommunity || "OBC";
 
-                {detailSection(HandCoins, lang === "ml" ? "ബാങ്ക് വിവരങ്ങൾ" : "Bank details", [
-                  {
-                    label: lang === "ml" ? "അക്കൗണ്ട് നമ്പർ" : "Account number",
-                    value: collectedValue(collected?.bankAccountNumber),
-                  },
-                  { label: lang === "ml" ? "ഐഎഫ്എസ്സി കോഡ്" : "IFSC code", value: collectedValue(collected?.bankIfscCode) },
-                ])}
-              </div>
-            )}
+              const applicantRows = [
+                { icon: MapPin, label: lang === "ml" ? "ജില്ല" : "District", value: district },
+                { icon: Network, label: lang === "ml" ? "മണ്ഡലം" : "Mandalam", value: mandalam },
+                { icon: Building2, label: lang === "ml" ? "തദ്ദേശ സ്ഥാപന തരം" : "Local body type", value: localBodyType },
+                { icon: MapIcon, label: lang === "ml" ? "തദ്ദേശ സ്ഥാപനം" : "Local body", value: localBody },
+                { icon: Home, label: lang === "ml" ? "വാർഡ്" : "Ward", value: ward },
+                { icon: UserRound, label: lang === "ml" ? "ലിംഗം" : "Gender", value: genderVal },
+                { icon: CalendarDays, label: lang === "ml" ? "ജനനത്തീയതി" : "Date of Birth", value: `${dobVal} (${ageVal})` },
+                { icon: Users, label: lang === "ml" ? "സാമൂഹിക വിഭാഗം" : "Social Category", value: socialCategoryVal },
+                { icon: Users2, label: lang === "ml" ? "ന്യൂനപക്ഷ പദവി" : "Minority Status", value: minorityVal },
+                { icon: Accessibility, label: lang === "ml" ? "വൈകല്യ നില" : "Disability Status", value: disabilityVal },
+                { icon: GraduationCap, label: lang === "ml" ? "വിദ്യാർത്ഥി നില" : "Student Status", value: studentVal },
+                { icon: Briefcase, label: lang === "ml" ? "തൊഴിൽ നില" : "Employment Status", value: employmentVal },
+                { icon: Store, label: lang === "ml" ? "തൊഴിൽ" : "Occupation", value: occupationVal },
+                { icon: Home, label: lang === "ml" ? "കുടുംബ ബിപിഎൽ നില" : "Household BPL Status", value: bplVal },
+                { icon: HandCoins, label: lang === "ml" ? "വാർഷിക കുടുംബ വരുമാനം" : "Annual Family Income", value: incomeVal },
+                { icon: HeartHandshake, label: lang === "ml" ? "വിവാഹ നില" : "Marital Status", value: maritalVal },
+                { icon: BookOpen, label: lang === "ml" ? "മതം" : "Religion", value: religionVal },
+                { icon: Network, label: lang === "ml" ? "ജാതി / സമുദായം" : "Caste / Community", value: casteVal },
+              ];
+
+              return (
+                <div className="divide-y divide-slate-100 dark:divide-slate-800/70">
+                  {applicantRows.map((row) => {
+                    const RowIcon = row.icon;
+                    return (
+                      <div key={row.label} className="flex items-center justify-between gap-3 px-3.5 py-2">
+                        <div className="flex min-w-0 items-center gap-2.5 text-slate-500 dark:text-slate-400">
+                          <RowIcon className="h-[15px] w-[15px] shrink-0 text-orange-500 stroke-[2.2]" />
+                          <span className="truncate text-[12px] font-medium">{row.label}</span>
+                        </div>
+                        <span className="max-w-[58%] shrink-0 truncate text-right text-[12px] font-bold text-[#0F172A] dark:text-white">
+                          {row.value}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
 
             {appDetailView === "scheme" && (
               <div className="space-y-4">
@@ -7277,8 +7356,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
       return (
       <div
-        className="space-y-2.5 pt-2 animate-in fade-in duration-200 text-slate-900 dark:text-slate-100"
-        style={{ paddingBottom: "max(24px, env(safe-area-inset-bottom))" }}
+        className="space-y-2 pt-1.5 animate-in fade-in duration-200 text-slate-900 dark:text-slate-100"
+        style={{ paddingBottom: "max(20px, env(safe-area-inset-bottom))" }}
       >
         {/* Scheduled Follow-up Red Indicator Below Header */}
         {(() => {
@@ -7297,14 +7376,14 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         })()}
 
         {/* Application Details Card (Merged) */}
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-2xs p-3 space-y-2.5">
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-2xs p-2.5 space-y-2">
           {/* Applicant Info */}
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-2.5 min-w-0">
               {(() => {
                 const avatar = getApplicantAvatarInfo(applicantName || "");
                 return (
-                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[14px] font-extrabold shadow-2xs ${avatar.colorStyle}`}>
+                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[13px] font-extrabold shadow-2xs ${avatar.colorStyle}`}>
                     {avatar.initials}
                   </span>
                 );
@@ -7369,7 +7448,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               .replace(/,\s*(Govt of India|ഭാരത സർക്കാർ|Central Government|State Government)/gi, "");
 
             return (
-              <div className="p-2.5 rounded-lg bg-transparent border border-slate-200/80 dark:border-slate-800 space-y-1.5">
+              <div className="p-2 rounded-lg bg-transparent border border-slate-200/80 dark:border-slate-800 space-y-1">
                 {/* Row 1: Left Scheme Category with Icon, Right Application Status Badge */}
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5 min-w-0 flex-1">
@@ -7579,11 +7658,13 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             </div>
 
             {/* List options inside the merged card */}
-            <div className="border-t border-slate-100 pt-1 dark:border-slate-800">
+            <div className="border-t border-slate-100 pt-0.5 dark:border-slate-800">
               <button
                 type="button"
-                onClick={() => setAppDetailView("applicant")}
-                className="flex min-h-12 w-full items-center gap-3 border-b border-slate-100 py-2.5 text-left cursor-pointer dark:border-slate-800"
+                onClick={() => {
+                  setAppDetailView("applicant");
+                }}
+                className="flex min-h-10 w-full items-center gap-2.5 border-b border-slate-100 py-2 text-left cursor-pointer dark:border-slate-800"
               >
                 <UserRound className="h-5 w-5 shrink-0 text-slate-500 dark:text-slate-400" strokeWidth={1.8} />
                 <span className="min-w-0 flex-1 text-[13px] font-semibold text-[#0F172A] dark:text-white">
@@ -7594,7 +7675,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               <button
                 type="button"
                 onClick={() => setAppDetailView("documents")}
-                className="flex min-h-12 w-full items-center gap-3 py-2.5 text-left cursor-pointer"
+                className="flex min-h-10 w-full items-center gap-2.5 py-2 text-left cursor-pointer"
               >
                 <ClipboardList className="h-5 w-5 shrink-0 text-slate-500 dark:text-slate-400" strokeWidth={1.8} />
                 <span className="min-w-0 flex-1">
@@ -7608,7 +7689,42 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 <Eye className="h-4 w-4 shrink-0 text-slate-400" />
                 <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
               </button>
-              <div className="flex min-h-12 w-full items-center gap-3 border-t border-slate-100 py-2.5 dark:border-slate-800">
+              {otherApplicantApplications.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedApplicationUserId(applicantProfileId);
+                    setActiveTab("overview");
+                    setMobileSubPage("user_detail");
+                    setAppDetailView("overview");
+                    setAppDetailMenuOpen(false);
+                    mobileContentRef.current?.scrollTo({ top: 0 });
+                  }}
+                  className="flex min-h-10 w-full items-center gap-2.5 border-t border-slate-100 py-2 text-left cursor-pointer dark:border-slate-800"
+                  aria-label={
+                    lang === "ml"
+                      ? "അപേക്ഷകന്റെ മറ്റ് പദ്ധതി അപേക്ഷകൾ കാണുക"
+                      : "View this applicant's other scheme applications"
+                  }
+                >
+                  <Layers className="h-5 w-5 shrink-0 text-slate-500 dark:text-slate-400" strokeWidth={1.8} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[13px] font-semibold text-[#0F172A] dark:text-white">
+                      {lang === "ml" ? "മറ്റ് പദ്ധതി അപേക്ഷകൾ" : "Other Scheme Applications"}
+                    </span>
+                    <span className="mt-0.5 block text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                      {lang === "ml"
+                        ? `${otherApplicantApplications.length} അപേക്ഷകൾ കൂടി`
+                        : `${otherApplicantApplications.length} more application${otherApplicantApplications.length === 1 ? "" : "s"}`}
+                    </span>
+                  </span>
+                  <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-orange-50 px-1.5 text-[9.5px] font-extrabold text-[#ff5500] dark:bg-orange-950/50 dark:text-orange-300">
+                    {otherApplicantApplications.length}
+                  </span>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
+                </button>
+              )}
+              <div className="flex min-h-10 w-full items-center gap-2.5 border-t border-slate-100 py-2 dark:border-slate-800">
                 <UserCheck className="h-5 w-5 shrink-0 text-slate-500 dark:text-slate-400" strokeWidth={1.8} />
                 <div className="min-w-0 flex-1">
                   <p className="text-[11px] font-medium leading-snug text-slate-500 dark:text-slate-400">
@@ -7631,7 +7747,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         <button
           type="button"
           onClick={() => setIsSahAiOpen(true)}
-          className="flex w-full items-center gap-2 rounded-xl border border-[#f1ddc7] bg-[#fff8ee] px-4 py-3 text-left transition-colors hover:bg-[#fff3e2] cursor-pointer dark:border-orange-900/50 dark:bg-slate-900"
+          className="flex w-full items-center gap-2 rounded-xl border border-[#f1ddc7] bg-[#fff8ee] px-3.5 py-2.5 text-left transition-colors hover:bg-[#fff3e2] cursor-pointer dark:border-orange-900/50 dark:bg-slate-900"
         >
           <Headset className="h-5 w-5 shrink-0 text-[#ff5500]" strokeWidth={1.8} />
           <span className="min-w-0 flex-1 text-[12px] font-semibold leading-snug text-[#0F172A] dark:text-slate-100">
@@ -8454,6 +8570,16 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       )
     : [];
 
+  const sortedSelectedApplicationUserApplications = [...selectedApplicationUserApplications].sort((a, b) => {
+    const aTime = Date.parse(a.appliedDate);
+    const bTime = Date.parse(b.appliedDate);
+    const difference =
+      Number.isNaN(aTime) || Number.isNaN(bTime)
+        ? a.appliedDate.localeCompare(b.appliedDate)
+        : aTime - bTime;
+    return applicantApplicationSort === "oldest" ? difference : -difference;
+  });
+
   type MobileApplicationApplicantGroup = {
     key: string;
     nameEn: string;
@@ -8526,9 +8652,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
 
   const renderMobileApplicationListCard = (application: MobileApplicationRecord) => {
-    const nameToUse = application.applicantNameEn || application.applicantNameMl || "";
-    const avatar = getApplicantAvatarInfo(nameToUse);
-
     return (
       <div
         key={application.ref}
@@ -8537,28 +8660,10 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           setSelectedApplicationRecord(application);
           setMobileSubPage("app_detail");
         }}
-        className="group p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:shadow-xs transition-all cursor-pointer space-y-1.5"
+        className="group flex items-center gap-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:shadow-xs transition-all cursor-pointer p-2.5"
       >
-        {/* Top Section: User Avatar Circle + Applicant Name & Location */}
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="flex items-center gap-2 min-w-0 flex-1">
-            <div className={`flex h-7 w-7 items-center justify-center rounded-full font-extrabold text-[11px] shrink-0 ${avatar.colorStyle}`}>
-              {avatar.initials}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="font-extrabold text-[12.5px] text-[#0a0f1d] dark:text-white leading-tight truncate">
-                {lang === "ml" ? application.applicantNameMl : application.applicantNameEn}
-              </p>
-              <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 leading-tight truncate mt-0.5">
-                {lang === "ml" ? application.locationMl : application.locationEn}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom Section: Category, Status Badge & Scheme Name */}
-        <div className="space-y-0.5 pt-1 border-t border-slate-100/70 dark:border-slate-800/40">
-          <div className="flex items-center justify-between gap-2">
+        {/* Category & Scheme name with vertically centered status */}
+        <div className="min-w-0 flex-1 space-y-0.5">
             {(() => {
               const catEn = application.categoryEn;
               const catMl = application.categoryMl;
@@ -8588,7 +8693,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               }
 
               return (
-                <div className="flex min-w-0 flex-1 items-center gap-1.5 text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
+                <div className="flex min-w-0 items-center gap-1.5 text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
                   <img
                     src={getMobileCategoryIconSrc(iconKey)}
                     alt=""
@@ -8600,26 +8705,25 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 </div>
               );
             })()}
-            <MobileApplicationStatusBadge
-              status={application.workflowStatus ?? "application_received"}
-              lang={lang}
-            />
-          </div>
-          <div className="flex items-center justify-between gap-2">
-            <h5 className="min-w-0 flex-1 font-bold text-[12px] text-[#0a0f1d] dark:text-white leading-tight truncate">
+            <h5 className="min-w-0 truncate font-bold text-[12px] text-[#0a0f1d] dark:text-white leading-tight">
               {lang === "ml" ? application.schemeNameMl : application.schemeNameEn}
             </h5>
-            <div className="shrink-0 flex items-center justify-center p-1 text-slate-400 group-hover:text-[#f15a0a] transition-colors">
-              <ChevronRight className="h-4 w-4 stroke-[2]" />
-            </div>
-          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          <MobileApplicationStatusBadge
+            status={application.workflowStatus ?? "application_received"}
+            lang={lang}
+          />
+          <span className="flex items-center justify-center text-slate-300 group-hover:text-[#f15a0a] transition-colors">
+            <ChevronRight className="h-3.5 w-3.5 stroke-[2.2]" />
+          </span>
         </div>
       </div>
     );
   };
 
   const renderMobileApplicationSchemeRows = (applications: MobileApplicationRecord[]) => (
-    <div className="mt-1 border-t border-slate-100/70 dark:border-slate-800/40">
+    <div className="mt-2 overflow-hidden rounded-xl border border-slate-100 bg-[#FAFBFD] dark:border-slate-800/70 dark:bg-slate-950/30">
       {applications.map((application, index) => {
         const category = getMobileApplicationDisplayCategory(application);
         return (
@@ -8629,30 +8733,31 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               event.stopPropagation();
               openMobileApplicationDetail(application);
             }}
-            className={`cursor-pointer py-1 ${index > 0 ? "border-t border-slate-100/60 dark:border-slate-800/40" : ""}`}
+            className={`group/row flex cursor-pointer items-center gap-2 px-2.5 py-1.5 transition-colors duration-150 hover:bg-white dark:hover:bg-slate-800/60 ${index > 0 ? "border-t border-slate-100/90 dark:border-slate-800/70" : ""}`}
           >
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex min-w-0 flex-1 items-center gap-1.5 text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+            <div className="min-w-0 flex-1">
+              <div className="flex min-w-0 items-center gap-1.5">
                 <img
                   src={getMobileCategoryIconSrc(category.iconKey)}
                   alt=""
                   className="h-3.5 w-3.5 shrink-0 object-contain"
                 />
-                <span className="truncate">
+                <p className="truncate text-[9px] font-bold uppercase tracking-[0.07em] text-slate-400 dark:text-slate-500">
                   {lang === "ml" ? category.displayMl : category.displayEn}
-                </span>
+                </p>
               </div>
-              <div className="flex shrink-0 items-center gap-1">
-                <MobileApplicationStatusBadge
-                  status={application.workflowStatus ?? "application_received"}
-                  lang={lang}
-                />
-                <ChevronRight className="h-3.5 w-3.5 text-slate-400 transition-colors group-hover:text-[#f15a0a]" />
-              </div>
+              <p className="mt-px truncate text-[10.5px] font-medium leading-snug text-slate-700 dark:text-slate-300">
+                {lang === "ml" ? application.schemeNameMl : application.schemeNameEn}
+              </p>
             </div>
-            <h5 className="mt-0.5 truncate font-bold text-[11.5px] text-[#0a0f1d] leading-tight dark:text-white">
-              {lang === "ml" ? application.schemeNameMl : application.schemeNameEn}
-            </h5>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <MobileApplicationStatusBadge
+                status={application.workflowStatus ?? "application_received"}
+                lang={lang}
+                size="tiny"
+              />
+              <ChevronRight className="h-3.5 w-3.5 text-slate-300 transition-all duration-150 group-hover/row:translate-x-0.5 group-hover/row:text-[#f15a0a] dark:text-slate-600" />
+            </div>
           </div>
         );
       })}
@@ -8662,23 +8767,37 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const renderMobileApplicationApplicantCard = (group: MobileApplicationApplicantGroup) => {
     const nameToUse = group.nameEn || group.nameMl || "";
     const avatar = getApplicantAvatarInfo(nameToUse);
+    const applicantProfileId = (group.nameEn || group.nameMl || "").trim().toLowerCase();
 
     return (
       <div
         key={group.key}
         onClick={() => openMobileApplicationDetail(group.applications[0])}
-        className="group cursor-pointer rounded-xl border border-slate-100 bg-white p-2.5 shadow-2xs transition-all hover:shadow-xs dark:border-slate-800/80 dark:bg-slate-900"
+        className="group cursor-pointer rounded-2xl border border-slate-200/80 bg-white p-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all duration-200 hover:border-slate-300/80 hover:shadow-[0_8px_24px_-12px_rgba(15,23,42,0.18)] dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
       >
         <div className="flex min-w-0 items-center gap-2">
-          <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-extrabold ${avatar.colorStyle}`}>
+          <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-extrabold ${avatar.colorStyle}`}>
             {avatar.initials}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate font-extrabold text-[12px] leading-tight text-[#0a0f1d] dark:text-white">
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                setSelectedApplicationUserId(applicantProfileId);
+                setActiveTab("overview");
+                setMobileSubPage("user_detail");
+                mobileContentRef.current?.scrollTo({ top: 0 });
+              }}
+              title={lang === "ml" ? "അപേക്ഷക പ്രൊഫൈൽ കാണുക" : "View applicant profile"}
+              aria-label={lang === "ml" ? "അപേക്ഷക പ്രൊഫൈൽ കാണുക" : "View applicant profile"}
+              className="block max-w-full truncate rounded-sm text-left text-[13px] font-extrabold leading-tight text-[#0a0f1d] transition-colors duration-150 hover:text-[#f15a0a] hover:underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f15a0a]/40 dark:text-white dark:hover:text-orange-400"
+            >
               {lang === "ml" ? group.nameMl || group.nameEn : group.nameEn || group.nameMl}
-            </p>
-            <p className="mt-0.5 truncate text-[10px] font-medium leading-tight text-slate-500 dark:text-slate-400">
-              {lang === "ml" ? group.locationMl : group.locationEn}
+            </button>
+            <p className="mt-0.5 flex min-w-0 items-center gap-1 text-[10.5px] font-medium leading-tight text-slate-500 dark:text-slate-400">
+              <MapPin className="h-3 w-3 shrink-0 text-slate-400 dark:text-slate-500" />
+              <span className="truncate">{lang === "ml" ? group.locationMl : group.locationEn}</span>
             </p>
           </div>
         </div>
@@ -8728,7 +8847,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           </button>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {groupMobileApplicationsByApplicant(latestSavedApplications).map((group) =>
             renderMobileApplicationApplicantCard(group),
           )}
@@ -9061,55 +9180,33 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   );
 
   const renderGuestContactPage = () => {
-    const contactItems: Array<{
-      icon: typeof PhoneCall;
-      labelEn: string;
-      labelMl: string;
-      value?: string;
-      valueEn?: string;
-      valueMl?: string;
-      href?: string;
-    }> = [
-      {
-        icon: MapPin,
-        labelEn: "State Office Address",
-        labelMl: "സംസ്ഥാന ഓഫീസ് വിലാസം",
-        value:
-          "BJP Kerala\nMararji Smrithi Mandiram,\nThycaud P.O,\nTrivandrum, Kerala 695014,\nIndia",
-      },
-      {
-        icon: PhoneCall,
-        labelEn: "Official Phone Number",
-        labelMl: "ഔദ്യോഗിക ഫോൺ നമ്പർ",
-        value: "+91.4712333390",
-        href: "tel:+914712333390",
-      },
-      {
-        icon: Mail,
-        labelEn: "Official Email ID",
-        labelMl: "ഔദ്യോഗിക ഇമെയിൽ വിലാസം",
-        value: "bjpkerala@gmail.com",
-        href: "mailto:bjpkerala@gmail.com",
-      },
-      {
-        icon: Clock,
-        labelEn: "Business Hours",
-        labelMl: "പ്രവർത്തന സമയം",
-        valueEn: "10 AM to 5:30 PM",
-        valueMl: "രാവിലെ 10 മുതൽ വൈകുന്നേരം 5:30 വരെ",
-      },
-    ];
+    const stateOffice = {
+      nameEn: "Kerala State Office",
+      nameMl: "കേരള സംസ്ഥാന ഓഫീസ്",
+      subEn: "BJP Kerala · Thiruvananthapuram",
+      subMl: "ബിജെപി കേരള · തിരുവനന്തപുരം",
+      addressLinesEn: ["Mararji Smrithi Mandiram, Thycaud PO.,", "Trivandrum, Kerala 695014"],
+      addressLinesMl: ["മാരാർജി സ്മൃതി മന്ദിരം, തൈക്കാട് പി.ഒ.,", "തിരുവനന്തപുരം, കേരളം 695014"],
+      phone: "+91 471 2333390",
+      phoneHref: "tel:+914712333390",
+      email: "bjpkerala@gmail.com",
+      emailHref: "mailto:bjpkerala@gmail.com",
+      hoursEn: "10:00 AM - 5:30 PM",
+      hoursMl: "രാവിലെ 10 മുതൽ വൈകുന്നേരം 5:30 വരെ",
+    };
+    const stateMapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      "BJP Kerala, Mararji Smrithi Mandiram, Thycaud P.O, Trivandrum, Kerala 695014",
+    )}`;
 
-    const filteredLocations = helpdeskLocations.filter((loc) => {
-      if (contactSelectedDistrict !== "all" && loc.district !== contactSelectedDistrict) return false;
-      if (!contactDistrictQuery.trim()) return true;
-      const q = contactDistrictQuery.toLowerCase().trim();
+    const filteredLocations = contactSelectedDistrict
+      ? helpdeskLocations.filter((loc) => loc.district === contactSelectedDistrict)
+      : helpdeskLocations;
+
+    const districtQuery = contactDistrictSearch.trim().toLowerCase();
+    const districtOptions = helpdeskDistricts.filter((district) => {
+      if (!districtQuery) return true;
       return (
-        loc.name.toLowerCase().includes(q) ||
-        loc.district.toLowerCase().includes(q) ||
-        loc.districtMl.includes(q) ||
-        loc.address.toLowerCase().includes(q) ||
-        loc.phones.some((p) => p.includes(q))
+        district.name.toLowerCase().includes(districtQuery) || district.nameMl.includes(contactDistrictSearch)
       );
     });
 
@@ -9122,218 +9219,317 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       }
     };
 
+    const selectedDistrictLabel = contactSelectedDistrict
+      ? lang === "ml"
+        ? helpdeskDistricts.find((district) => district.name === contactSelectedDistrict)?.nameMl ??
+          contactSelectedDistrict
+        : contactSelectedDistrict
+      : "";
+
     return (
       <div className="animate-in fade-in duration-200 space-y-3 pb-8 pt-1">
-        <div className="space-y-1.5">
-          {contactItems.map((item) => {
-            const body = (
-              <>
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400">
-                  <item.icon className="h-4 w-4 stroke-[2.1]" />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">
-                    {lang === "ml" ? item.labelMl : item.labelEn}
-                  </span>
-                  <span className="mt-0.5 block whitespace-pre-line break-words text-[11.5px] font-bold leading-snug text-slate-900 dark:text-slate-100">
-                    {item.value ?? (lang === "ml" ? item.valueMl : item.valueEn)}
-                  </span>
-                </span>
-                {item.href ? (
-                  <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
-                ) : null}
-              </>
-            );
+        {/* Kerala State Office */}
+        <div className="rounded-2xl border border-[#F3E5D8] bg-white p-3 shadow-[0_2px_10px_-4px_rgba(15,23,42,0.12)] dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex min-w-0 items-start gap-2.5">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#FFE6CC] to-[#FFD3A8] text-[#F5730A]">
+                <Landmark className="h-5 w-5 stroke-[2]" />
+              </span>
+              <div className="min-w-0">
+                <h3 className="text-[13.5px] font-extrabold leading-tight tracking-tight text-[#16225C] dark:text-white">
+                  {lang === "ml" ? stateOffice.nameMl : stateOffice.nameEn}
+                </h3>
+                <p className="mt-0.5 text-[10px] font-bold text-[#D9640C] dark:text-orange-300">
+                  {lang === "ml" ? stateOffice.subMl : stateOffice.subEn}
+                </p>
+              </div>
+            </div>
+            <span className="shrink-0 rounded-full bg-[#FFF1E3] px-2.5 py-1 text-[9.5px] font-extrabold text-[#D9640C] dark:bg-orange-950/40 dark:text-orange-300">
+              {lang === "ml" ? "സംസ്ഥാനം" : "State"}
+            </span>
+          </div>
 
-            return item.href ? (
-              <a
-                key={item.labelEn}
-                href={item.href}
-                className="flex items-center gap-2.5 rounded-xl border border-slate-200/80 bg-white px-3 py-2.5 shadow-2xs transition-colors hover:border-orange-200 hover:bg-orange-50/40 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
-              >
-                {body}
-              </a>
-            ) : (
+          <div className="mt-2.5 flex items-start gap-2 px-0.5">
+            <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#F5730A] stroke-[2.3]" />
+            <p className="text-[10.5px] font-semibold leading-snug text-[#334155] dark:text-slate-300">
+              {(lang === "ml" ? stateOffice.addressLinesMl : stateOffice.addressLinesEn).map((line) => (
+                <span key={line} className="block">
+                  {line}
+                </span>
+              ))}
+            </p>
+          </div>
+
+          <div className="mt-2.5 grid grid-cols-3 gap-1.5">
+            <a
+              href={stateOffice.phoneHref}
+              className="flex h-9 items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-[#FF8A12] to-[#F56A00] text-[10.5px] font-extrabold text-white shadow-[0_4px_10px_-4px_rgba(245,106,0,0.8)] transition-transform active:scale-95"
+            >
+              <Phone className="h-3.5 w-3.5 stroke-[2.4]" />
+              {lang === "ml" ? "വിളിക്കുക" : "Call"}
+            </a>
+            <a
+              href={stateMapsHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex h-9 items-center justify-center gap-1.5 rounded-full border border-[#FFD9B8] bg-white text-[10.5px] font-extrabold text-[#D9640C] transition-colors hover:bg-[#FFF7EF] dark:border-slate-700 dark:bg-slate-900 dark:text-orange-300 dark:hover:bg-slate-800"
+            >
+              <Navigation className="h-3.5 w-3.5 stroke-[2.3]" />
+              {lang === "ml" ? "വഴി" : "Directions"}
+            </a>
+            <a
+              href={stateOffice.emailHref}
+              className="flex h-9 items-center justify-center gap-1.5 rounded-full border border-[#FFD9B8] bg-white text-[10.5px] font-extrabold text-[#D9640C] transition-colors hover:bg-[#FFF7EF] dark:border-slate-700 dark:bg-slate-900 dark:text-orange-300 dark:hover:bg-slate-800"
+            >
+              <Mail className="h-3.5 w-3.5 stroke-[2.3]" />
+              {lang === "ml" ? "ഇമെയിൽ" : "Email"}
+            </a>
+          </div>
+
+          <div className="mt-2.5 flex items-center gap-2 border-t border-[#F3E5D8] pt-2 dark:border-slate-800">
+            <Clock className="h-3.5 w-3.5 shrink-0 text-[#F5730A] stroke-[2.3]" />
+            <span className="text-[10px] font-semibold text-[#64748B] dark:text-slate-400">
+              {lang === "ml" ? "ഓഫീസ് സമയം" : "Office hours"}
+            </span>
+            <span className="ml-auto text-[10.5px] font-extrabold text-[#16225C] dark:text-slate-100">
+              {lang === "ml" ? stateOffice.hoursMl : stateOffice.hoursEn}
+            </span>
+          </div>
+        </div>
+
+        {/* District Offices */}
+        <div className="relative overflow-hidden px-0.5 pt-1">
+          <h3 className="text-[16px] font-extrabold leading-tight tracking-tight text-[#16225C] dark:text-white">
+            {lang === "ml" ? "ജില്ലാ ഓഫീസുകൾ" : "District Offices"}
+          </h3>
+          <p className="mt-0.5 text-[10px] font-bold text-[#D9640C] dark:text-orange-300">
+            {lang === "ml" ? "30 സംഘടനാ ജില്ലാ ഓഫീസുകൾ" : "30 organisational district offices"}
+          </p>
+          <MapPin
+            className="pointer-events-none absolute -right-1 -top-1 h-11 w-11 rotate-12 text-[#FFE0C2] dark:text-orange-950/60"
+            strokeWidth={1.6}
+            aria-hidden="true"
+          />
+        </div>
+
+        {/* District selector */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setContactDistrictPickerOpen((prev) => !prev)}
+            aria-expanded={contactDistrictPickerOpen}
+            className="flex h-10 w-full items-center gap-2 rounded-full border border-[#F3E5D8] bg-white px-3.5 text-left shadow-[0_2px_8px_-4px_rgba(15,23,42,0.12)] transition-colors hover:border-[#FFD9B8] dark:border-slate-800 dark:bg-slate-900"
+          >
+            <Search className="h-4 w-4 shrink-0 text-[#F5730A] stroke-[2.3]" />
+            <span
+              className={`min-w-0 flex-1 truncate text-[11.5px] font-semibold ${
+                contactSelectedDistrict
+                  ? "text-[#16225C] dark:text-slate-100"
+                  : "text-slate-400 dark:text-slate-500"
+              }`}
+            >
+              {selectedDistrictLabel ||
+                (lang === "ml" ? "ജില്ല തിരഞ്ഞെടുക്കുക" : "Choose your district")}
+            </span>
+            <ChevronDown
+              className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${
+                contactDistrictPickerOpen ? "rotate-180" : ""
+              }`}
+            />
+          </button>
+
+          {contactDistrictPickerOpen && (
+            <div className="absolute inset-x-0 top-11 z-30 rounded-2xl border border-[#F3E5D8] bg-white p-2 shadow-lg dark:border-slate-800 dark:bg-slate-900">
+              <div className="flex h-9 items-center gap-2 rounded-full border border-[#F3E5D8] bg-[#FFFCF8] px-3 dark:border-slate-700 dark:bg-slate-800">
+                <Search className="h-3.5 w-3.5 shrink-0 text-[#F5730A]" />
+                <input
+                  value={contactDistrictSearch}
+                  onChange={(event) => setContactDistrictSearch(event.target.value)}
+                  placeholder={lang === "ml" ? "ജില്ല തിരയുക" : "Search district"}
+                  className="min-w-0 flex-1 bg-transparent text-[11px] font-semibold text-[#16225C] outline-none placeholder:text-slate-400 dark:text-slate-100"
+                />
+                {contactDistrictSearch ? (
+                  <button
+                    type="button"
+                    onClick={() => setContactDistrictSearch("")}
+                    className="text-slate-400 hover:text-slate-600"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                ) : null}
+              </div>
+
+              <div className="mt-1.5 max-h-52 overflow-y-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setContactSelectedDistrict("");
+                    setContactDistrictPickerOpen(false);
+                    setContactDistrictSearch("");
+                    setContactExpandedOfficeId(null);
+                  }}
+                  className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-[#FFF4E8] dark:hover:bg-slate-800"
+                >
+                  <span className="text-[11px] font-semibold text-[#16225C] dark:text-slate-100">
+                    {lang === "ml" ? "എല്ലാ ജില്ലകളും" : "All districts"}
+                  </span>
+                  <span className="text-[9px] font-bold text-slate-400">{helpdeskLocations.length}</span>
+                </button>
+                {districtOptions.map((district) => {
+                  const count = helpdeskLocations.filter((loc) => loc.district === district.name).length;
+                  const selected = contactSelectedDistrict === district.name;
+                  return (
+                    <button
+                      key={district.name}
+                      type="button"
+                      onClick={() => {
+                        setContactSelectedDistrict(district.name);
+                        setContactDistrictPickerOpen(false);
+                        setContactDistrictSearch("");
+                        setContactExpandedOfficeId(null);
+                      }}
+                      className={`flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left transition-colors ${
+                        selected
+                          ? "bg-[#FFF1E3] dark:bg-orange-950/30"
+                          : "hover:bg-[#FFF4E8] dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      <span className="text-[11px] font-semibold text-[#16225C] dark:text-slate-100">
+                        {lang === "ml" ? district.nameMl : district.name}
+                      </span>
+                      <span className="text-[9px] font-bold text-slate-400">{count}</span>
+                    </button>
+                  );
+                })}
+                {districtOptions.length === 0 ? (
+                  <p className="px-2.5 py-3 text-center text-[10px] font-semibold text-slate-400">
+                    {lang === "ml" ? "ജില്ല കണ്ടെത്തിയില്ല" : "No district found"}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Office cards */}
+        <div className="space-y-2">
+          {filteredLocations.map((loc) => {
+            const expanded = contactExpandedOfficeId === loc.id;
+            const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc.address)}`;
+            const primaryPhone = loc.phones[0];
+            const extraPhones = loc.phones.slice(1);
+            return (
               <div
-                key={item.labelEn}
-                className="flex items-center gap-2.5 rounded-xl border border-slate-200/80 bg-white px-3 py-2.5 shadow-2xs dark:border-slate-800 dark:bg-slate-900"
+                key={loc.id}
+                className="overflow-hidden rounded-2xl border border-[#F3E5D8] bg-white shadow-[0_2px_8px_-4px_rgba(15,23,42,0.1)] dark:border-slate-800 dark:bg-slate-900"
               >
-                {body}
+                <button
+                  type="button"
+                  onClick={() => setContactExpandedOfficeId(expanded ? null : loc.id)}
+                  aria-expanded={expanded}
+                  className="flex w-full items-start gap-2.5 px-3 pt-2.5 text-left"
+                >
+                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FFF0E1] text-[#F5730A] dark:bg-orange-950/40">
+                    <MapPin className="h-3.5 w-3.5 stroke-[2.3]" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[12px] font-extrabold leading-tight text-[#16225C] dark:text-white">
+                      {loc.name}
+                    </span>
+                    <span
+                      className={`mt-0.5 text-[9.5px] font-medium leading-snug text-[#64748B] dark:text-slate-400 ${
+                        expanded ? "block" : "line-clamp-2"
+                      }`}
+                    >
+                      {loc.address}
+                    </span>
+                  </span>
+                  <ChevronRight
+                    className={`mt-1 h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform ${
+                      expanded ? "rotate-90" : ""
+                    }`}
+                  />
+                </button>
+
+                <div className="flex flex-wrap items-center gap-1.5 px-3 pb-2.5 pt-2">
+                  {primaryPhone ? (
+                    <a
+                      href={`tel:${primaryPhone}`}
+                      className="inline-flex h-7 items-center gap-1.5 rounded-full bg-[#243D95] px-3 text-[10px] font-bold text-white transition-colors hover:bg-[#1E3177]"
+                    >
+                      <Phone className="h-3 w-3 stroke-[2.4]" />
+                      {primaryPhone}
+                    </a>
+                  ) : null}
+                  {expanded
+                    ? extraPhones.map((phone) => (
+                        <a
+                          key={phone}
+                          href={`tel:${phone}`}
+                          className="inline-flex h-7 items-center gap-1.5 rounded-full border border-[#243D95]/30 bg-white px-3 text-[10px] font-bold text-[#243D95] transition-colors hover:bg-[#243D95]/5 dark:border-slate-700 dark:bg-slate-900 dark:text-blue-300"
+                        >
+                          <Phone className="h-3 w-3 stroke-[2.4]" />
+                          {phone}
+                        </a>
+                      ))
+                    : null}
+                  <a
+                    href={mapsHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-auto inline-flex h-7 items-center gap-1 rounded-full border border-[#E4E9F5] bg-white px-3 text-[10px] font-bold text-[#243D95] transition-colors hover:bg-[#F5F7FC] dark:border-slate-700 dark:bg-slate-900 dark:text-blue-300 dark:hover:bg-slate-800"
+                  >
+                    <Navigation className="h-3 w-3 stroke-[2.4]" />
+                    {lang === "ml" ? "വഴി" : "Directions"}
+                  </a>
+                </div>
+
+                {expanded && (
+                  <div className="animate-in fade-in slide-in-from-top-1 flex items-center justify-between border-t border-[#F3E5D8] px-3 py-2 duration-150 dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => handleCopyAddress(loc.id, loc.address)}
+                      className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-[#64748B] transition-colors hover:text-[#16225C] dark:text-slate-400 dark:hover:text-white"
+                    >
+                      {copiedLocationId === loc.id ? (
+                        <>
+                          <Check className="h-3 w-3 text-emerald-600 stroke-[2.6]" />
+                          <span className="font-bold text-emerald-600">
+                            {lang === "ml" ? "പകർത്തി" : "Copied"}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-3 w-3 stroke-[2.2]" />
+                          <span>{lang === "ml" ? "വിലാസം പകർത്തൂ" : "Copy address"}</span>
+                        </>
+                      )}
+                    </button>
+                    {extraPhones.length > 0 ? (
+                      <span className="text-[9px] font-bold text-slate-400">
+                        {lang === "ml"
+                          ? `${loc.phones.length} ഫോൺ നമ്പറുകൾ`
+                          : `${loc.phones.length} phone numbers`}
+                      </span>
+                    ) : null}
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
 
-        {/* 30 Organizational District Helpdesks */}
-        <div className="pt-2">
-          <div className="px-0.5 mb-2">
-            <h3 className="text-[13px] font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
-              <Building2 className="h-4 w-4 text-orange-500" />
-              {lang === "ml" ? "സംഘടനാ ജില്ലാ ഓഫീസുകൾ (30)" : "District Offices (30)"}
-            </h3>
-            <p className="text-[10px] text-amber-700 dark:text-amber-400 font-medium mt-0.5">
-              {lang === "ml"
-                ? "സന്ദർശിക്കുന്നതിന് മുമ്പ് ഫോൺ ചെയ്ത് സമയം സ്ഥിരീകരിക്കുക."
-                : "Please call and confirm the visiting time before travelling."}
-            </p>
-          </div>
-
-          {/* Search & District Filter Controls */}
-          <div className="space-y-1.5 mb-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-              <input
-                type="text"
-                value={contactDistrictQuery}
-                onChange={(e) => setContactDistrictQuery(e.target.value)}
-                placeholder={lang === "ml" ? "ഓഫീസ് അല്ലെങ്കിൽ സ്ഥലം തിരയുക..." : "Search office or location..."}
-                className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-8 py-2 text-[11.5px] font-medium text-slate-800 outline-none focus:border-orange-500 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
-              />
-              {contactDistrictQuery && (
-                <button
-                  type="button"
-                  onClick={() => setContactDistrictQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 hover:text-slate-600"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-
-            <select
-              value={contactSelectedDistrict}
-              onChange={(e) => setContactSelectedDistrict(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-700 outline-none focus:border-orange-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
-            >
-              <option value="all">
-                {lang === "ml" ? "എല്ലാ ജില്ലകളും (All 30 Offices)" : "All Districts (All 30 Offices)"}
-              </option>
-              {helpdeskDistricts.map((d) => (
-                <option key={d.name} value={d.name}>
-                  {lang === "ml" ? d.nameMl : d.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* District Office List Cards */}
-          <div className="space-y-2.5">
-            {filteredLocations.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-slate-200 bg-white p-4 text-center dark:border-slate-800 dark:bg-slate-900">
-                <p className="text-[11px] font-semibold text-slate-500">
-                  {lang === "ml" ? "ഓഫീസുകളൊന്നും കണ്ടെത്തിയില്ല" : "No office found matching search"}
-                </p>
-              </div>
-            ) : (
-              filteredLocations.map((loc) => (
-                <div
-                  key={loc.id}
-                  className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-2xs transition-all dark:border-slate-800 dark:bg-slate-900 space-y-2"
-                >
-                  {/* Name + District Subtitle */}
-                  <div className="flex items-start gap-2 min-w-0">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400 mt-0.5">
-                      <MapPin className="h-3.5 w-3.5 stroke-[2.2]" />
-                    </span>
-                    <div className="min-w-0">
-                      <h4 className="text-[13px] font-extrabold text-[#0F172A] dark:text-white leading-tight">
-                        {loc.name}
-                      </h4>
-                      <span className="inline-block text-[10.5px] font-bold text-orange-600 dark:text-orange-400 mt-0.5">
-                        {lang === "ml" ? loc.districtMl : loc.district}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Address */}
-                  <div className="bg-slate-50/80 dark:bg-slate-800/40 rounded-lg p-2 text-[10.5px]">
-                    <span className="block text-[9px] font-extrabold uppercase tracking-wider text-slate-400 mb-0.5">
-                      {lang === "ml" ? "വിലാസം" : "ADDRESS"}
-                    </span>
-                    <p className="font-medium text-slate-700 dark:text-slate-300 leading-relaxed">
-                      {loc.address}
-                    </p>
-                  </div>
-
-                  {/* Mobile Call Buttons */}
-                  <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                    {loc.phones.map((phone) => (
-                      <a
-                        key={phone}
-                        href={`tel:${phone}`}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 active:scale-95 text-white px-2.5 py-1.5 text-[11px] font-bold shadow-xs transition-all"
-                      >
-                        <Phone className="h-3 w-3 stroke-[2.5]" />
-                        <span>{phone}</span>
-                      </a>
-                    ))}
-                  </div>
-
-                  {/* Actions Row: Copy Address & Directions */}
-                  <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800/80 text-[10.5px]">
-                    <button
-                      type="button"
-                      onClick={() => handleCopyAddress(loc.id, loc.address)}
-                      className="inline-flex items-center gap-1 font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors cursor-pointer"
-                    >
-                      {copiedLocationId === loc.id ? (
-                        <>
-                          <Check className="h-3 w-3 text-emerald-600 stroke-[2.5]" />
-                          <span className="text-emerald-600 font-bold">
-                            {lang === "ml" ? "വിലാസം പകർത്തി" : "Copied"}
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="h-3 w-3 stroke-[2]" />
-                          <span>{lang === "ml" ? "വിലാസം പകർത്തൂ" : "Copy address"}</span>
-                        </>
-                      )}
-                    </button>
-
-                    <a
-                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc.address)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400 transition-colors"
-                    >
-                      <Navigation className="h-3 w-3 stroke-[2]" />
-                      <span>{lang === "ml" ? "വഴികാട്ടി" : "Directions"}</span>
-                    </a>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Instant Assistance / SahAI Box */}
-        <div className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400">
-              <MessageSquare className="h-3.5 w-3.5 stroke-[2.2]" />
-            </span>
-            <h3 className="text-[12px] font-extrabold tracking-tight text-[#0F172A] dark:text-white">
-              {lang === "ml" ? "തത്സമയ സഹായം" : "Instant Assistance"}
-            </h3>
-          </div>
-          <p className="mt-1.5 text-[10.5px] font-medium leading-snug text-slate-500 dark:text-slate-400">
-            {lang === "ml"
-              ? "SahAI ഉപയോഗിച്ച് പദ്ധതികളെക്കുറിച്ചുള്ള ഉത്തരങ്ങൾ ഉടൻ നേടുക."
-              : "Get quick answers about schemes and eligibility from SahAI."}
+        {/* Call before visiting */}
+        <div className="flex items-center gap-2 rounded-xl bg-[#FFF4E8] px-3 py-2.5 dark:bg-orange-950/30">
+          <Info className="h-4 w-4 shrink-0 text-[#F5730A] stroke-[2.4]" />
+          <p className="text-[10.5px] font-bold text-[#B45309] dark:text-orange-300">
+            {lang === "ml" ? "സന്ദർശിക്കുന്നതിന് മുമ്പ് ദയവായി വിളിക്കുക." : "Please call before visiting."}
           </p>
-          <button
-            type="button"
-            onClick={() => setIsSahAiOpen(true)}
-            className="mt-2 flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-orange-200 bg-white text-[11px] font-extrabold text-orange-700 transition-colors hover:bg-orange-50 dark:border-orange-900/60 dark:bg-slate-900 dark:text-orange-300 dark:hover:bg-orange-950/40 cursor-pointer"
-          >
-            {lang === "ml" ? "SahAI-യോട് ചോദിക്കുക" : "Ask SahAI"}
-            <MessageSquare className="h-3.5 w-3.5 stroke-[2.2]" />
-          </button>
         </div>
       </div>
     );
   };
+
   const renderGuestScreen = () => {
     if (mobileSubPage === "about") {
       return renderGuestAboutPage();
@@ -9606,7 +9802,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         {/* Mobile App Standard Header or Application Details / Document Verification Back Header */}
 
           {/* Mobile App Standard Header or Application Details / Document Verification Back Header */}
-          {!isLogoutSplashScreen && !isGuestEligibilityOpen && !isMobileAuthOpen && mobileSubPage !== "category_schemes" && mobileSubPage !== "create_scheme" && mobileSubPage !== "users" && mobileSubPage !== "applicants" && mobileSubPage !== "user_detail" && mobileSubPage !== "settings" && (
+          {!isLogoutSplashScreen && !isGuestEligibilityOpen && !isMobileAuthOpen && !(activeTab === "create" && createFlowStep === "checking") && mobileSubPage !== "category_schemes" && mobileSubPage !== "create_scheme" && mobileSubPage !== "users" && mobileSubPage !== "applicants" && mobileSubPage !== "user_detail" && mobileSubPage !== "settings" && (
             mobileSubPage === "guest_popular_schemes" || mobileSubPage === "guest_schemes" || mobileSubPage === "app_detail" || mobileSubPage === "needs_attention" || mobileSubPage === "notifications" || mobileSubPage === "scheme_details" || mobileSubPage === "about" || mobileSubPage === "contact" || mobileSubPage === "events_announcements" || (activeTab === "create" && (createFlowStep === "scheme_details" || createFlowStep === "eligible_schemes" || createFlowStep === "form")) ? (
               <header className="relative z-40 w-full bg-[#FFFDF9] dark:bg-slate-900 border-b border-slate-200/60 dark:border-slate-800/60 shadow-2xs">
                 {mobileSubPage === "guest_popular_schemes" || mobileSubPage === "guest_schemes" ? (
@@ -9771,7 +9967,13 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       } else if (mobileSubPage === "needs_attention" || mobileSubPage === "notifications" || mobileSubPage === "about" || mobileSubPage === "contact" || mobileSubPage === "events_announcements") {
                         setMobileSubPage("none");
                       } else if (mobileSubPage === "app_detail" && appDetailView !== "overview") {
-                        setAppDetailView("overview");
+                        if (appDetailView === "applicant" && appDetailReturnSubPage === "user_detail") {
+                          setActiveTab("overview");
+                          setAppDetailView("overview");
+                          setMobileSubPage("user_detail");
+                        } else {
+                          setAppDetailView("overview");
+                        }
                       } else {
                         setMobileSubPage(appDetailReturnSubPage || "applications");
                       }
@@ -13360,9 +13562,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
                     {/* Dedicated Subpage: Applicants List (users from applications) */}
                     {mobileSubPage === "applicants" && (
-                      <div className="space-y-2 animate-in fade-in slide-in-from-right-2 duration-200 -mt-3 -mx-3">
+                      <div className="space-y-2 bg-white animate-in fade-in slide-in-from-right-2 duration-200 -mt-3 -mx-3 dark:bg-slate-950">
                         {/* Header matching Schemes List Header style */}
-                        <div className="w-full bg-[#FFFDF9] dark:bg-slate-900 border-b border-slate-200/60 dark:border-slate-800/60 shadow-2xs px-3.5 py-2 transition-all">
+                        <div className="w-full bg-white dark:bg-slate-950 border-b border-slate-200/60 dark:border-slate-800/60 shadow-2xs px-3.5 py-2 transition-all">
                           {isApplicantSearchExpanded ? (
                             <div className="flex h-8 items-center justify-between gap-2 w-full animate-in fade-in duration-150">
                               <div className="relative flex-1 flex items-center">
@@ -13470,7 +13672,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                   setSelectedApplicationUserId(user.id);
                                   setMobileSubPage("user_detail");
                                 }}
-                                className="flex w-full items-center justify-between gap-2 rounded-xl border border-border bg-card px-3 py-2 text-left shadow-2xs transition-all hover:border-orange-300 dark:hover:border-orange-800 cursor-pointer"
+                                className="flex w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left shadow-2xs transition-all hover:border-orange-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-orange-800 cursor-pointer"
                               >
                                 <span className="flex min-w-0 items-center gap-2">
                                   <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-extrabold shadow-2xs ${avatar.colorStyle}`}>
@@ -13529,13 +13731,14 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
                     {/* Dedicated Subpage: User Details (applications of one user) */}
                     {mobileSubPage === "user_detail" && selectedApplicationUser && (
-                      <div className="space-y-3 pt-0.5 animate-in fade-in duration-200">
+                      <div className="space-y-1.5 pb-20 animate-in fade-in duration-200">
                         {/* Header matching Application Details header style */}
-                        <div className="relative flex h-10 items-center justify-between px-1 border-b border-border/60 bg-[#FFFDF9] dark:bg-slate-900 -mx-3 -mt-1.5 px-3">
+                        <div className="relative -mx-3 -mt-1 flex h-9 items-center justify-between border-b border-border/60 bg-[#FFFDF9] px-3 dark:bg-slate-900">
                           <button
                             type="button"
                             onClick={() => {
                               setIsApplicantProfileMenuOpen(false);
+                              setIsApplicantSortMenuOpen(false);
                               setMobileSubPage("applicants");
                             }}
                             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FFF7EC] text-[#1b255a] hover:bg-orange-100 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 transition-colors cursor-pointer shadow-2xs z-10 border border-orange-100/80 dark:border-slate-700"
@@ -13611,19 +13814,19 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           </div>
                         </div>
 
-                        <div className="rounded-2xl border border-border bg-card p-3.5 shadow-2xs">
+                        <div className="rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
                           <div className="flex items-center justify-between gap-3">
                             <div className="flex items-center gap-3 min-w-0 flex-1">
                               {(() => {
                                 const avatar = getApplicantAvatarInfo(selectedApplicationUser.nameEn || selectedApplicationUser.nameMl || "");
                                 return (
-                                  <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-[15px] font-extrabold shadow-2xs ${avatar.colorStyle}`}>
+                                  <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[14px] font-extrabold shadow-2xs ${avatar.colorStyle}`}>
                                     {avatar.initials}
                                   </span>
                                 );
                               })()}
                               <div className="min-w-0">
-                                <p className="truncate text-[14px] font-extrabold text-foreground">
+                                <p className="truncate text-[13.5px] font-extrabold text-foreground">
                                   {lang === "ml" ? selectedApplicationUser.nameMl : selectedApplicationUser.nameEn}
                                 </p>
                                 <p className="mt-0.5 flex items-center gap-1 text-[10.5px] text-muted-foreground">
@@ -13641,171 +13844,109 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                               </div>
                             </div>
                           </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const primaryApp = selectedApplicationUserApplications[0];
+                              if (!primaryApp) return;
+                              setPendingApplicantInfoView(true);
+                              setAppDetailReturnSubPage("user_detail");
+                              setSelectedApplicationRecord(primaryApp);
+                              setActiveTab("applications");
+                              setMobileSubPage("app_detail");
+                              setAppDetailView("applicant");
+                              mobileContentRef.current?.scrollTo({ top: 0 });
+                            }}
+                            className="mt-2.5 flex min-h-9 w-full items-center gap-2 border-t border-slate-100 pt-2.5 text-left transition-colors hover:text-[#243D95] dark:border-slate-800 dark:hover:text-blue-300 cursor-pointer"
+                          >
+                            <UserRound className="h-[18px] w-[18px] shrink-0 text-slate-500 dark:text-slate-400" strokeWidth={1.8} />
+                            <span className="min-w-0 flex-1 text-[12.5px] font-semibold text-[#0F172A] dark:text-white">
+                              {lang === "ml" ? "അപേക്ഷക വിവരങ്ങൾ" : "Applicant information"}
+                            </span>
+                            <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
+                          </button>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            handleAddAnotherApplicant();
-                            setCreateFullName(selectedApplicationUser.nameEn);
-                            const phoneDigits = selectedApplicationUser.phone.replace(/\D/g, "");
-                            setCreatePhone(
-                              phoneDigits.length === 12 && phoneDigits.startsWith("91")
-                                ? phoneDigits.slice(2)
-                                : phoneDigits,
-                            );
-                            setCreateFlowStep("eligible_schemes");
-                          }}
-                          className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#ff5500] px-3 py-2.5 text-[11.5px] font-extrabold text-white shadow-2xs transition-colors hover:bg-orange-600 cursor-pointer"
-                        >
-                          <Plus className="h-3.5 w-3.5 stroke-[2.6]" />
-                          {lang === "ml" ? "പുതിയ അപേക്ഷ" : "Apply New"}
-                        </button>
-
-                        {/* Applicant Information Section */}
-                        {(() => {
-                          const matchingApp = selectedApplicationUserApplications[0];
-                          const appRef = matchingApp?.ref;
-                          const collected = appRef ? applicationCollectedDetails[appRef] : undefined;
-                          const matchingHelpdesk = helpdeskRequests.find(
-                            (r) =>
-                              (r.applicant && r.applicant.toLowerCase() === selectedApplicationUser.nameEn.toLowerCase()) ||
-                              (r.contactMobile && selectedApplicationUser.phone && r.contactMobile.replace(/\D/g, "") === selectedApplicationUser.phone.replace(/\D/g, ""))
-                          );
-                          const helpdeskEligibility = matchingHelpdesk?.eligibility;
-
-                          const locParts = (selectedApplicationUser.locationEn || "").split(",").map((s) => s.trim());
-                          const mandalamFallback = locParts.length > 1 ? locParts[locParts.length - 1] : locParts[0] || "Kazhakoottam";
-                          const districtFallback = locParts.length > 1 ? locParts[0] : (matchingHelpdesk?.district || "Thiruvananthapuram");
-
-                          const fullName = selectedApplicationUser.nameEn || matchingHelpdesk?.applicant || "Anand V S";
-                          const mobileNumber = selectedApplicationUser.phone || matchingHelpdesk?.contactMobile || "9847123456";
-                          const email = collected?.email || matchingHelpdesk?.email || "Not provided";
-                          const district = collected?.district || matchingHelpdesk?.location?.districtName || matchingHelpdesk?.district || districtFallback || "Thiruvananthapuram";
-                          const mandalam = collected?.mandalam || matchingHelpdesk?.location?.mandalamName || mandalamFallback || "Kazhakoottam";
-                          const localBodyType = collected?.localBodyType || "Not provided";
-                          const localBody = collected?.localBody || matchingHelpdesk?.location?.localBodyName || "Not provided";
-                          const ward = collected?.ward || matchingHelpdesk?.location?.wardName || "Not provided";
-
-                          const genderVal = collected?.gender || (helpdeskEligibility?.gender === "male" ? "Male" : helpdeskEligibility?.gender === "female" ? "Female" : "Female");
-                          const ageVal = (() => {
-                            if (helpdeskEligibility?.age) return `${helpdeskEligibility.age} years`;
-                            if (collected?.dateOfBirth) {
-                              const parts = collected.dateOfBirth.split("/");
-                              if (parts.length === 3) {
-                                const yr = parseInt(parts[2], 10);
-                                if (!isNaN(yr)) return `${Math.max(18, 2026 - yr)} years`;
-                              }
-                            }
-                            return "27 years";
-                          })();
-                          const socialCategoryVal = collected?.caste || (helpdeskEligibility?.socialCategory === "obc" ? "OBC / SEBC" : helpdeskEligibility?.socialCategory === "sc" ? "SC" : helpdeskEligibility?.socialCategory === "st" ? "ST" : "OBC / SEBC");
-                          const minorityVal = collected?.minorityStatus || (helpdeskEligibility?.minorityStatus === "yes" ? "Yes" : "No");
-                          const disabilityVal = collected?.disabilityStatus || (helpdeskEligibility?.disabilityStatus === "yes" ? "Yes" : "No");
-                          const studentVal = collected?.studentStatus || (helpdeskEligibility?.studentStatus === "yes" ? "Yes" : "No");
-                          const employmentVal = collected?.employmentStatus || (helpdeskEligibility?.employmentStatus === "self_employed" ? "Self-employed" : helpdeskEligibility?.employmentStatus === "employed" ? "Employed" : "Self-employed");
-                          const occupationVal = collected?.occupation || (helpdeskEligibility?.occupation === "selfEmployed" ? "Self-employed / Business" : collected?.occupation || "Self-employed / Business");
-                          const bplVal = collected?.bplStatus || (helpdeskEligibility?.bplStatus === "yes" ? "Yes" : "No");
-                          const incomeVal = collected?.annualFamilyIncome || (helpdeskEligibility?.annualFamilyIncome === "oneToTwoFive" ? "₹1–2.5 lakh" : "₹1–2.5 lakh");
-                          const maritalVal = collected?.maritalStatus || helpdeskEligibility?.maritalStatus || "Single";
-                          const religionVal = collected?.religion || helpdeskEligibility?.religion || "Hindu";
-                          const casteVal = collected?.caste || helpdeskEligibility?.casteCommunity || "OBC";
-
-                          const contactLocationRows = [
-                            { icon: UserRound, label: "Full name", value: fullName },
-                            { icon: Phone, label: "Mobile number", value: mobileNumber },
-                            { icon: Mail, label: "Email", value: email },
-                            { icon: MapPin, label: "District", value: district },
-                            { icon: Network, label: "Mandalam", value: mandalam },
-                            { icon: Building2, label: "Local body type", value: localBodyType },
-                            { icon: MapIcon, label: "Local body", value: localBody },
-                            { icon: Home, label: "Ward", value: ward },
-                          ];
-
-                          const profileDetailRows = [
-                            { icon: UserRound, label: "Gender", value: genderVal },
-                            { icon: CalendarDays, label: "Age", value: ageVal },
-                            { icon: Users, label: "Social Category", value: socialCategoryVal },
-                            { icon: Users2, label: "Minority Status", value: minorityVal },
-                            { icon: Accessibility, label: "Disability Status", value: disabilityVal },
-                            { icon: GraduationCap, label: "Student Status", value: studentVal },
-                            { icon: Briefcase, label: "Employment Status", value: employmentVal },
-                            { icon: Store, label: "Occupation", value: occupationVal },
-                            { icon: Home, label: "Household BPL Status", value: bplVal },
-                            { icon: HandCoins, label: "Annual Family Income", value: incomeVal },
-                            { icon: HeartHandshake, label: "Marital Status", value: maritalVal },
-                            { icon: BookOpen, label: "Religion", value: religionVal },
-                            { icon: Network, label: "Caste / Community", value: casteVal },
-                          ];
-
-                          return (
-                            <div className="space-y-3">
-                              {/* Contact & Location Details Card */}
-                              <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
-                                <h4 className="text-[11px] font-extrabold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                                  {lang === "ml" ? "ബന്ധപ്പെടാനുള്ള വിവരങ്ങൾ & പ്രദേശം" : "CONTACT & LOCATION DETAILS"}
-                                </h4>
-                                <div className="mt-2 divide-y divide-slate-100 dark:divide-slate-800/70">
-                                  {contactLocationRows.map((row) => {
-                                    const RowIcon = row.icon;
-                                    return (
-                                      <div
-                                        key={row.label}
-                                        className="flex items-center justify-between py-2 text-[11.5px]"
-                                      >
-                                        <div className="flex items-center gap-2.5 text-slate-600 dark:text-slate-400">
-                                          <RowIcon className="h-3.5 w-3.5 text-orange-500 stroke-[2.2] shrink-0" />
-                                          <span className="font-semibold">{row.label}</span>
-                                        </div>
-                                        <span className="font-extrabold text-slate-900 dark:text-white text-right max-w-[55%] truncate">
-                                          {row.value}
-                                        </span>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-
-                              {/* Personal & Demographic Details Card */}
-                              <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
-                                <div className="divide-y divide-slate-100 dark:divide-slate-800/70">
-                                  {profileDetailRows.map((row) => {
-                                    const RowIcon = row.icon;
-                                    return (
-                                      <div
-                                        key={row.label}
-                                        className="flex items-center py-2 text-[11.5px]"
-                                      >
-                                        <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                                          <RowIcon className="h-3.5 w-3.5 text-orange-500 stroke-[2.2] shrink-0" />
-                                          <span className="font-semibold">{row.label}</span>
-                                          <span className="text-slate-400 font-normal">:</span>
-                                        </div>
-                                        <span className="ml-1.5 font-extrabold text-slate-900 dark:text-white">
-                                          {row.value}
-                                        </span>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
+                        <div className="space-y-1.5 pt-0.5">
+                          <div className="flex items-center justify-between gap-2.5 px-0.5">
+                            <p className="text-[12px] font-bold text-[#FF7900] dark:text-orange-400">
+                              {lang === "ml"
+                                ? `അപേക്ഷകൾ (${selectedApplicationUserApplications.length})`
+                                : `Applications (${selectedApplicationUserApplications.length})`}
+                            </p>
+                            <div className="relative shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setIsApplicantProfileMenuOpen(false);
+                                  setIsApplicantSortMenuOpen((prev) => !prev);
+                                }}
+                                aria-haspopup="listbox"
+                                aria-expanded={isApplicantSortMenuOpen}
+                                aria-label={lang === "ml" ? "അപേക്ഷകൾ ക്രമീകരിക്കുക" : "Sort applications"}
+                                className={`flex h-7 items-center gap-1.5 rounded-full px-2 text-[10.5px] font-semibold transition-colors cursor-pointer ${
+                                  isApplicantSortMenuOpen
+                                    ? "bg-[#FFF2E6] text-[#C2410C] dark:bg-orange-950/50 dark:text-orange-300"
+                                    : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                                }`}
+                              >
+                                <ArrowUpDown className="h-3.5 w-3.5 text-[#FF7900] dark:text-orange-400" />
+                                <span>{applicantApplicationSort === "newest"
+                                  ? lang === "ml" ? "പുതിയത് → പഴയത്" : "New to Old"
+                                  : lang === "ml" ? "പഴയത് → പുതിയത്" : "Old to New"}</span>
+                                <ChevronDown
+                                  className={`h-3 w-3 text-slate-400 transition-transform ${isApplicantSortMenuOpen ? "rotate-180" : ""}`}
+                                />
+                              </button>
+                              {isApplicantSortMenuOpen && (
+                                <>
+                                  <div
+                                    className="fixed inset-0 z-20"
+                                    aria-hidden="true"
+                                    onClick={() => setIsApplicantSortMenuOpen(false)}
+                                  />
+                                  <div
+                                    role="listbox"
+                                    aria-label={lang === "ml" ? "അപേക്ഷകൾ ക്രമീകരിക്കുക" : "Sort applications"}
+                                    className="absolute right-0 top-full z-30 mt-1 w-[126px] rounded-xl border border-slate-200 bg-white p-1 shadow-[0_10px_28px_-10px_rgba(15,23,42,0.28)] dark:border-slate-700 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-150"
+                                  >
+                                    {(["newest", "oldest"] as const).map((sortOption) => {
+                                      const isSelected = applicantApplicationSort === sortOption;
+                                      return (
+                                        <button
+                                          key={sortOption}
+                                          type="button"
+                                          role="option"
+                                          aria-selected={isSelected}
+                                          onClick={() => {
+                                            setApplicantApplicationSort(sortOption);
+                                            setIsApplicantSortMenuOpen(false);
+                                          }}
+                                          className={`flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left text-[10.5px] font-semibold transition-colors cursor-pointer ${
+                                            isSelected
+                                              ? "bg-[#FFF2E6] text-[#C2410C] dark:bg-orange-950/60 dark:text-orange-300"
+                                              : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                                          }`}
+                                        >
+                                          <span>
+                                            {sortOption === "newest"
+                                              ? lang === "ml" ? "പുതിയത് → പഴയത്" : "New to Old"
+                                              : lang === "ml" ? "പഴയത് → പുതിയത്" : "Old to New"}
+                                          </span>
+                                          {isSelected && <Check className="h-3 w-3 shrink-0" />}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </>
+                              )}
                             </div>
-                          );
-                        })()}
-
-                        <div className="flex items-center justify-between gap-2 px-0.5">
-                          <h4 className="text-[12px] font-extrabold text-foreground">
-                            {lang === "ml" ? "എല്ലാ അപേക്ഷകളും" : "All Applications"}
-                          </h4>
-                          <span className="inline-flex h-[18px] min-w-[22px] items-center justify-center rounded-full border border-orange-200/80 bg-orange-500/10 px-1.5 text-[10px] font-extrabold text-[#ff5500] dark:border-orange-800/60 dark:bg-orange-950/40 dark:text-orange-300">
-                            {selectedApplicationUserApplications.length}
-                          </span>
-                        </div>
-
-                        <div className="space-y-2">
-                          {selectedApplicationUserApplications.map((application) =>
-                            renderMobileApplicationListCard(application),
-                          )}
+                          </div>
+                          <div className="space-y-1.5">
+                            {sortedSelectedApplicationUserApplications.map((application) =>
+                              renderMobileApplicationListCard(application),
+                            )}
+                          </div>
                           {selectedApplicationUserApplications.length === 0 && (
                             <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-8 text-center dark:border-slate-800 dark:bg-slate-900">
                               <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400">
@@ -13814,6 +13955,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             </div>
                           )}
                         </div>
+
+
                       </div>
                     )}
 
@@ -14658,7 +14801,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 {/* Removed per user request */}
 
                 {/* List of Applications */}
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {groupMobileApplicationsByApplicant(displayedMobileApplicationRecords).map((group) =>
                     renderMobileApplicationApplicantCard(group),
                   )}
@@ -14684,7 +14827,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
             {(activeTab === "create" || activeTab === "helpdesk") && (
               <div className="space-y-3 animate-in fade-in duration-200">
-                {mobileSubPage !== "create_scheme" && createFlowStep !== "scheme_details" && createFlowStep !== "eligible_schemes" && createFlowStep !== "form" && (
+                {mobileSubPage !== "create_scheme" && createFlowStep !== "scheme_details" && createFlowStep !== "eligible_schemes" && createFlowStep !== "form" && createFlowStep !== "checking" && (
                 <div className={`flex items-center justify-between border-b border-border/80 ${createFlowStep === "selected_schemes" ? "-mx-4 px-4 pb-1.5" : "px-0.5 pb-2"}`}>
                         {activeTab === "create" && createFlowStep === "eligible_schemes" ? (
                           <div className="flex-1 flex flex-col gap-2">
@@ -15179,6 +15322,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       setCreateGender("Male");
                                       setCreateReligion("Hinduism");
                                       setCreateCaste("OBC");
+                                      setCreateMinorityStatus("No");
+                                      setCreateDisabilityStatus("No");
+                                      setCreateStudentStatus("No");
                                       setCreateMaritalStatus("Married");
                                       setCreateOccupation("Farmer / Agriculture");
                                       setCreateIncomeRange("Below ₹50,000");
@@ -15289,8 +15435,63 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     </div>
                                   </div>
 
-                                  {/* 5. Marital Status */}
-                                  <div>
+                                  {/* 5. Minority Status & Person with Disability in a single row */}
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div className="min-w-0">
+                                      <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 block mb-1 leading-snug">
+                                        {lang === "ml" ? "ന്യൂനപക്ഷ പദവി *" : "Minority Status *"}
+                                      </label>
+                                      <select
+                                        value={createMinorityStatus}
+                                        onChange={(e) => setCreateMinorityStatus(e.target.value)}
+                                        className="w-full min-w-0 text-xs h-9 px-2 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
+                                      >
+                                        <option value="">{lang === "ml" ? "-- തിരഞ്ഞെടുക്കുക --" : "-- Select --"}</option>
+                                        <option value="Yes">{lang === "ml" ? "അതെ" : "Yes"}</option>
+                                        <option value="No">{lang === "ml" ? "അല്ല" : "No"}</option>
+                                      </select>
+                                    </div>
+
+                                    <div className="min-w-0">
+                                      <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 block mb-1 leading-snug">
+                                        {lang === "ml" ? "ഭിന്നശേഷി *" : "Person with Disability *"}
+                                      </label>
+                                      <select
+                                        value={createDisabilityStatus}
+                                        onChange={(e) => setCreateDisabilityStatus(e.target.value)}
+                                        className="w-full min-w-0 text-xs h-9 px-2 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
+                                      >
+                                        <option value="">{lang === "ml" ? "-- തിരഞ്ഞെടുക്കുക --" : "-- Select --"}</option>
+                                        <option value="No">{lang === "ml" ? "ഇല്ല" : "No"}</option>
+                                        <option value="Below 40%">{lang === "ml" ? "40%-ൽ താഴെ" : "Below 40%"}</option>
+                                        <option value="40% or Above">{lang === "ml" ? "40% അല്ലെങ്കിൽ അതിലധികം" : "40% or Above"}</option>
+                                        <option value="Not Sure">{lang === "ml" ? "ഉറപ്പില്ല" : "Not Sure"}</option>
+                                      </select>
+                                    </div>
+                                  </div>
+
+                                  {/* 6. Are you a Student & Marital Status in a single row */}
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div className="min-w-0">
+                                      <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 block mb-1 leading-snug">
+                                        {lang === "ml" ? "നിങ്ങൾ വിദ്യാർത്ഥിയാണോ? *" : "Are you a Student? *"}
+                                      </label>
+                                      <select
+                                        value={createStudentStatus}
+                                        onChange={(e) => {
+                                          const value = e.target.value;
+                                          setCreateStudentStatus(value);
+                                          if (value === "Yes") setCreateOccupation("");
+                                        }}
+                                        className="w-full min-w-0 text-xs h-9 px-2 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
+                                      >
+                                        <option value="">{lang === "ml" ? "-- തിരഞ്ഞെടുക്കുക --" : "-- Select --"}</option>
+                                        <option value="Yes">{lang === "ml" ? "അതെ" : "Yes"}</option>
+                                        <option value="No">{lang === "ml" ? "അല്ല" : "No"}</option>
+                                      </select>
+                                    </div>
+
+                                    <div className="min-w-0">
                                     <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 block mb-1 leading-snug">
                                       {lang === "ml" ? "വൈവാഹിക അവസ്ഥ *" : "Marital Status *"}
                                     </label>
@@ -15307,13 +15508,15 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       <option value="Separated">{lang === "ml" ? "വേർപിരിഞ്ഞു കഴിയുന്ന വ്യക്തി" : "Separated"}</option>
                                     </select>
                                   </div>
+                                  </div>
 
-                                  {/* 6. Occupation */}
+                                  {/* 7. Occupation (only when not a student) */}
+                                  {createStudentStatus === "No" && (
                                   <div>
                                     <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 block mb-1 leading-snug">
                                       {lang === "ml" ? "തൊഴിൽ *" : "Occupation *"}
                                     </label>
-                                    <select 
+                                    <select
                                       value={createOccupation}
                                       onChange={(e) => setCreateOccupation(e.target.value)}
                                       className="w-full text-xs h-9 px-2.5 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
@@ -15330,8 +15533,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       <option value="Other">{lang === "ml" ? "മറ്റുള്ളവ (Other)" : "Other"}</option>
                                     </select>
                                   </div>
+                                  )}
 
-                                  {/* 7. Annual Family Income */}
+                                  {/* 8. Annual Family Income */}
                                   <div>
                                     <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 block mb-1 leading-snug">
                                       {lang === "ml" ? "വാർഷിക കുടുംബ വരുമാനം *" : "Annual Family Income *"}
@@ -15350,7 +15554,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     </select>
                                   </div>
 
-                                  {/* 8. Aadhaar Number */}
+                                  {/* 9. Aadhaar Number */}
                                   <div>
                                     <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 block mb-1 leading-snug">
                                       {lang === "ml" ? "ആധാർ നമ്പർ *" : "Aadhaar Number *"}
@@ -15655,29 +15859,62 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
                     {/* Step 2: Scanning / Loading View - Check Eligibility */}
                     {createFlowStep === "checking" && (
-                      <div className="py-6 px-2 flex flex-col items-center justify-center text-center space-y-6 animate-in fade-in duration-300 min-h-[440px]">
-                        {/* Center Graphic: Glowing Halo + Orbiting Dot + Scanning Document Icon */}
-                        <div className="relative flex items-center justify-center py-2">
-                          {/* Outer Blue Orbit Ring */}
-                          <div className="absolute h-36 w-36 rounded-full border border-[#243D95]/30 dark:border-[#243D95]/60 animate-spin" style={{ animationDuration: '8s' }}>
-                            <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 h-3 w-3 rounded-full bg-[#243D95] dark:bg-[#8FA5E3] shadow-md" />
-                          </div>
-                          {/* Soft Inner Glowing Circular Gradient Background */}
-                          <div className="h-28 w-28 rounded-full bg-gradient-to-b from-[#E8EDFA]/90 via-[#EEF2FC]/60 to-[#E8EDFA]/30 dark:from-[#243D95]/40 dark:via-[#243D95]/20 dark:to-[#243D95]/5 border border-[#B9C6E8]/80 dark:border-[#243D95]/60 flex items-center justify-center shadow-inner">
-                            <div className="relative h-14 w-14 rounded-xl bg-[#DDE5F7]/80 dark:bg-[#243D95]/50 border border-[#8FA5E3] dark:border-[#243D95] flex flex-col items-center justify-center shadow-xs overflow-hidden">
-                              <FileText className="h-9 w-9 text-[#243D95] dark:text-[#C9D4F5] stroke-[1.8]" />
-                              {/* Horizontal Scan Beam Line */}
-                              <div className="absolute inset-x-0 h-0.5 bg-[#243D95] dark:bg-[#8FA5E3] shadow-[0_0_8px_#243D95] animate-pulse top-1/2 -translate-y-1/2" />
-                            </div>
-                          </div>
+                      <div className="bg-white dark:bg-slate-950 pt-5 pb-6 px-4 flex flex-col items-center justify-center text-center gap-5 animate-in fade-in duration-300 min-h-[440px]">
+                        <style>{`
+                          @keyframes vk-checking-float {
+                            0%, 100% { transform: translateY(0); }
+                            50% { transform: translateY(-7px); }
+                          }
+                          @keyframes vk-checking-rise {
+                            from { opacity: 0; transform: translateY(12px); }
+                            to { opacity: 1; transform: translateY(0); }
+                          }
+                          @keyframes vk-checking-sheen {
+                            0% { transform: translateX(-140%); }
+                            60%, 100% { transform: translateX(340%); }
+                          }
+                          @keyframes vk-checking-halo {
+                            0%, 100% { opacity: 0.35; transform: scale(0.94); }
+                            50% { opacity: 0.7; transform: scale(1.06); }
+                          }
+                          @keyframes vk-checking-lock {
+                            0%, 100% { transform: scale(1); }
+                            50% { transform: scale(1.08); }
+                          }
+                          @keyframes vk-checking-glow {
+                            0%, 100% { box-shadow: 0 12px 26px -9px rgba(255, 121, 0, 0.55); }
+                            50% { box-shadow: 0 16px 34px -8px rgba(255, 121, 0, 0.85); }
+                          }
+                          .vk-checking-float { animation: vk-checking-float 4.5s ease-in-out infinite; }
+                          .vk-checking-rise { animation: vk-checking-rise 0.55s cubic-bezier(0.22, 0.8, 0.3, 1) both; }
+                          .vk-checking-sheen { animation: vk-checking-sheen 1.9s ease-in-out infinite; }
+                          .vk-checking-halo { animation: vk-checking-halo 4.5s ease-in-out infinite; }
+                          .vk-checking-lock { animation: vk-checking-lock 3s ease-in-out infinite; }
+                          .vk-checking-btn { animation: vk-checking-rise 0.55s cubic-bezier(0.22, 0.8, 0.3, 1) 0.45s both, vk-checking-glow 2.4s ease-in-out 0.9s infinite; }
+                          @media (prefers-reduced-motion: reduce) {
+                            .vk-checking-float, .vk-checking-rise, .vk-checking-sheen,
+                            .vk-checking-halo, .vk-checking-lock, .vk-checking-btn { animation: none !important; }
+                          }
+                        `}</style>
+
+                        {/* 3D eligibility illustration */}
+                        <div className="vk-checking-rise relative flex w-full items-center justify-center pt-1">
+                          <div className="vk-checking-halo pointer-events-none absolute h-[170px] w-[170px] rounded-full bg-[#FF7900]/20 blur-2xl" />
+                          <img
+                            src="/images/checking_eligibility_3d.png"
+                            alt=""
+                            aria-hidden="true"
+                            draggable={false}
+                            className="vk-checking-float relative pointer-events-none select-none h-auto w-[190px] max-w-[62vw] min-[420px]:w-[205px]"
+                          />
                         </div>
 
                         {/* Title & Description */}
-                        <div className="space-y-1.5 max-w-xs">
-                          <h3 className="text-xl font-black text-[#243D95] dark:text-[#C9D4F5] tracking-tight">
+                        <div className="space-y-2 max-w-[280px]">
+                          <h3 className="vk-checking-rise text-[22px] leading-tight font-black text-[#FF7900] dark:text-orange-300 tracking-tight" style={{ animationDelay: "90ms" }}>
                             {lang === "ml" ? "യോഗ്യത പരിശോധിക്കുന്നു..." : "Checking eligibility..."}
                           </h3>
-                          <p className="text-xs text-[#5B74C4] dark:text-[#8FA5E3] font-medium leading-relaxed px-2">
+                          <p className="vk-checking-rise text-[13px] text-[#243D95] dark:text-[#9DB0E8] font-semibold leading-relaxed px-1" style={{ animationDelay: "150ms" }}>
                             {lang === "ml"
                               ? "നിങ്ങളുടെ വിവരങ്ങളുമായി പദ്ധതിയുടെ മാനദണ്ഡങ്ങൾ പൊരുത്തപ്പെടുത്തുന്നു."
                               : "Matching your details with the scheme requirements."}
@@ -15685,25 +15922,32 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         </div>
 
                         {/* Animated Progress Bar */}
-                        <div className="w-full max-w-sm space-y-2">
-                          <div className="h-2 w-full bg-[#E3E9F8] dark:bg-slate-800 rounded-full overflow-hidden">
-                            <div className="h-full bg-gradient-to-r from-[#5B74C4] via-[#243D95] to-[#1B2E73] rounded-full animate-pulse w-3/4 transition-all duration-1000" />
+                        <div className="vk-checking-rise w-full max-w-[300px] space-y-2" style={{ animationDelay: "210ms" }}>
+                          <div className="h-2.5 w-full bg-[#FFEEDF] dark:bg-slate-800 rounded-full overflow-hidden">
+                            <div className="relative h-full bg-[#FF7900] rounded-full w-3/4 overflow-hidden shadow-[0_0_10px_rgba(255,121,0,0.45)]">
+                              <span className="vk-checking-sheen absolute inset-y-0 left-0 w-1/3 rounded-full bg-gradient-to-r from-transparent via-white/50 to-transparent" />
+                            </div>
                           </div>
-                          <p className="text-xs font-semibold text-[#5B74C4] dark:text-[#8FA5E3] text-center">
+                          <p className="vk-checking-rise text-xs font-extrabold text-[#FF7900] dark:text-orange-300 text-center" style={{ animationDelay: "270ms" }}>
                             {lang === "ml" ? "പദ്ധതി മാനദണ്ഡങ്ങൾ പരിശോധിക്കുന്നു..." : "Checking scheme criteria..."}
                           </p>
                         </div>
 
-                        {/* Bottom Security / Keep Open Note */}
-                        <div className="pt-2 flex items-start justify-center gap-2 text-left max-w-xs mx-auto">
-                          <Lock className="h-4 w-4 text-[#5B74C4] dark:text-[#8FA5E3] shrink-0 mt-0.5" />
-                          <div className="text-[11px] leading-snug">
-                            <span className="font-bold text-[#243D95] dark:text-[#C9D4F5] block">
-                              {lang === "ml" ? "നിങ്ങൾ നൽകിയ വിവരങ്ങൾ സൂക്ഷിച്ചിരിക്കുന്നു." : "Your entered details are saved."}
-                            </span>
-                            <span className="text-[#5B74C4] dark:text-[#8FA5E3] block">
-                              {lang === "ml" ? "ദയവായി ഈ സ്ക്രീൻ ഓപ്പണായി നിർത്തുക." : "Please keep this screen open."}
-                            </span>
+                        {/* Saved Details Card */}
+                        <div className="vk-checking-rise w-full max-w-[320px] rounded-2xl border border-[#E2E8F7] dark:border-blue-900/60 bg-[#FAFBFF] dark:bg-slate-900/60 px-3.5 py-3 shadow-[0_8px_22px_-16px_rgba(36,61,149,0.45)]" style={{ animationDelay: "330ms" }}>
+                          <div className="flex items-center gap-3 text-left">
+                            <div className="vk-checking-lock h-10 w-10 shrink-0 rounded-xl bg-[#FFF2E6] dark:bg-orange-950/50 flex items-center justify-center">
+                              <Lock className="h-[18px] w-[18px] text-[#FF7900] dark:text-orange-400" />
+                            </div>
+                            <div className="h-8 w-px shrink-0 bg-[#C9D3EF] dark:bg-blue-800" />
+                            <div className="text-[11.5px] leading-snug">
+                              <span className="font-bold text-[#FF7900] dark:text-orange-300 block">
+                                {lang === "ml" ? "നിങ്ങൾ നൽകിയ വിവരങ്ങൾ സൂക്ഷിച്ചിരിക്കുന്നു." : "Your entered details are saved."}
+                              </span>
+                              <span className="font-medium text-[#243D95] dark:text-[#9DB0E8] block">
+                                {lang === "ml" ? "ദയവായി ഈ സ്ക്രീൻ ഓപ്പണായി നിർത്തുക." : "Please keep this screen open."}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -17832,15 +18076,15 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
           {/* Sticky Phone App Bottom Footer Navigation */}
           {activeTab === "create" && createFlowStep !== "applicant_applications" && createFlowStep !== "selected_schemes" && createFlowStep !== "form" && (
-            <div className="sticky bottom-0 left-0 right-0 px-4 pt-3 pb-6 bg-card/95 backdrop-blur-md border-t border-border z-30 shadow-lg">
+            <div className={`sticky bottom-0 left-0 right-0 px-4 pt-3 bg-card/95 backdrop-blur-md border-t border-border z-30 shadow-lg ${createFlowStep === "checking" ? "pb-[calc(1.5rem+env(safe-area-inset-bottom))]" : "pb-6"}`}>
               {createFlowStep === "checking" && (
                 <button
                   type="button"
                   disabled
-                  className="w-full py-3 rounded-xl font-bold text-xs shadow-md bg-gradient-to-r from-[#243D95] to-[#3B57B5] text-white flex items-center justify-center gap-2 cursor-wait"
+                  className="vk-checking-btn w-full py-3.5 rounded-full font-extrabold text-[15px] shadow-[0_12px_26px_-9px_rgba(255,121,0,0.8)] ring-1 ring-[#FF7900]/30 bg-[#FF7900] text-white flex items-center justify-center gap-2.5 cursor-wait disabled:opacity-100"
                 >
-                  <Loader2 className="h-4 w-4 animate-spin text-white" />
-                  <span>{lang === "ml" ? "യോഗ്യത പരിശോധിക്കുന്നു..." : "Checking eligibility…"}</span>
+                  <Loader2 className="h-5 w-5 animate-spin text-white/95" />
+                  <span>{lang === "ml" ? "യോഗ്യത പരിശോധിക്കുന്നു..." : "Checking eligibility..."}</span>
                 </button>
               )}
 
@@ -18047,6 +18291,30 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 }}
               />
             )}
+
+          {/* Floating Apply New action (Applicant Profile Details only) */}
+          {mobileSubPage === "user_detail" && selectedApplicationUser && !isSideMenuOpen && !isMobileAuthOpen && (
+            <button
+              type="button"
+              title={lang === "ml" ? "പുതിയ അപേക്ഷ" : "Apply New"}
+              aria-label={lang === "ml" ? "പുതിയ അപേക്ഷ" : "Apply New"}
+              onClick={() => {
+                handleAddAnotherApplicant();
+                setCreateFullName(selectedApplicationUser.nameEn);
+                const phoneDigits = selectedApplicationUser.phone.replace(/\D/g, "");
+                setCreatePhone(
+                  phoneDigits.length === 12 && phoneDigits.startsWith("91")
+                    ? phoneDigits.slice(2)
+                    : phoneDigits,
+                );
+                setCreateFlowStep("eligible_schemes");
+              }}
+              className="absolute right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-[#ff5500] text-white shadow-lg shadow-orange-500/30 transition-all hover:bg-orange-600 active:scale-95 cursor-pointer"
+              style={{ bottom: "max(20px, calc(env(safe-area-inset-bottom, 0px) + 16px))" }}
+            >
+              <Plus className="h-5 w-5 stroke-[3]" />
+            </button>
+          )}
 
           {/* Scheme Details Edit Sheet */}
           {isSchemeEditSheetOpen && (
