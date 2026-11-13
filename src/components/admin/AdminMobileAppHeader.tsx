@@ -396,17 +396,12 @@ export function AdminMobileAppHeader({
 
             {/* Sidebar Footer */}
             <div className="border-t border-slate-100 dark:border-slate-800 pt-3 text-center space-y-1">
-              <a
-                href="https://wayvida.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[10px] text-slate-400 hover:text-slate-800 dark:text-slate-500 dark:hover:text-slate-200 transition-colors inline-flex items-center justify-center gap-1 cursor-pointer"
-              >
+              <div className="text-[10px] text-slate-400 dark:text-slate-500 inline-flex items-center justify-center gap-1">
                 <span>Powered by</span>
-                <strong className="font-bold text-slate-600 dark:text-slate-300 hover:text-orange-600">
+                <strong className="font-bold text-slate-600 dark:text-slate-300">
                   Wayvida
                 </strong>
-              </a>
+              </div>
             </div>
           </div>
         </div>
@@ -589,14 +584,9 @@ export function AdminMobileAppHeader({
               <div className="border-t border-slate-200/80 dark:border-slate-800 pt-2.5 pb-1.5 text-center space-y-1">
                 <div className="text-[11.5px] text-slate-400 dark:text-slate-500 font-medium flex items-center justify-center gap-1">
                   <span>Powered by</span>
-                  <a
-                    href="https://wayvida.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-bold text-slate-700 dark:text-slate-200 hover:text-orange-600 dark:hover:text-orange-400 transition-colors cursor-pointer"
-                  >
+                  <strong className="font-bold text-slate-700 dark:text-slate-200">
                     Wayvida
-                  </a>
+                  </strong>
                 </div>
               </div>
             </div>

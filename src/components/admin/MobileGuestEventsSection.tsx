@@ -185,15 +185,10 @@ export function MobileGuestEventsSection({
 
       {/* Powered By Wayvida */}
       <div className="mt-4 mb-2 flex items-center justify-center text-center">
-        <a
-          href="https://wayvida.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-[10px] text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300 transition-colors inline-flex items-center gap-1 cursor-pointer"
-        >
+        <div className="text-[10px] text-slate-400 dark:text-slate-500 inline-flex items-center gap-1">
           <span>Powered by</span>
-          <strong className="font-semibold text-[#243D95] dark:text-blue-300 hover:text-[#1d3178]">Wayvida</strong>
-        </a>
+          <strong className="font-semibold text-[#243D95] dark:text-blue-300">Wayvida</strong>
+        </div>
       </div>
     </div>
   );
