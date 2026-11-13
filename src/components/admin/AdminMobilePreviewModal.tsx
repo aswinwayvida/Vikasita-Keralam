@@ -5576,12 +5576,24 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   };
 
     const [mobileSubPage, setMobileSubPage] = useState<"none" | "leaderboard" | "needs_attention" | "recent_activity" | "beneficiaries" | "users" | "applicants" | "user_detail" | "notifications" | "applications" | "events_announcements" | "app_detail" | "category_schemes" | "scheme_details" | "guest_popular_schemes" | "guest_schemes" | "about" | "contact" | "create_scheme" | "settings">("none");
-  const [contactSelectedDistrict, setContactSelectedDistrict] = useState("");
-  const [contactSelectedRegion, setContactSelectedRegion] = useState<"" | "north" | "central" | "south">("");
+  const [contactSelectedDistrict, setContactSelectedDistrict] = useState("Thiruvananthapuram");
   const [contactDistrictPickerOpen, setContactDistrictPickerOpen] = useState(false);
   const [contactDistrictSearch, setContactDistrictSearch] = useState("");
   const [contactExpandedOfficeId, setContactExpandedOfficeId] = useState<string | null>(null);
+  const [contactCallPickerLocationId, setContactCallPickerLocationId] = useState<string | null>(null);
   const [copiedLocationId, setCopiedLocationId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (mobileSubPage === "contact") {
+      setContactSelectedDistrict("Thiruvananthapuram");
+      setContactDistrictPickerOpen(false);
+      setContactDistrictSearch("");
+      setContactExpandedOfficeId(null);
+    } else {
+      setContactCallPickerLocationId(null);
+    }
+  }, [mobileSubPage]);
+
   const [isMobileSettingsFormOpen, setIsMobileSettingsFormOpen] = useState(false);
   const [showSupportModal, setShowSupportModal] = useState(false);
   const [supportModalSubmitted, setSupportModalSubmitted] = useState(false);
@@ -8765,7 +8777,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     </div>
   );
 
-  const renderMobileApplicationApplicantCard = (group: MobileApplicationApplicantGroup) => {
+  const renderMobileApplicationApplicantCard = (group: MobileApplicationApplicantGroup, compact = false) => {
     const nameToUse = group.nameEn || group.nameMl || "";
     const avatar = getApplicantAvatarInfo(nameToUse);
     const applicantProfileId = (group.nameEn || group.nameMl || "").trim().toLowerCase();
@@ -8801,8 +8813,17 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               <span className="truncate">{lang === "ml" ? group.locationMl : group.locationEn}</span>
             </p>
           </div>
+          {compact && (
+            <span
+              title={`${group.applications.length} ${lang === "ml" ? "സ്കീം അപേക്ഷകൾ" : group.applications.length === 1 ? "scheme application" : "scheme applications"}`}
+              className="flex shrink-0 items-center gap-1 rounded-full bg-[#E8EEFB] px-2 py-1 text-[11px] font-black leading-none text-[#243D95] dark:bg-[#243D95]/25 dark:text-blue-200"
+            >
+              <ClipboardList className="h-3 w-3 shrink-0 stroke-[2.4]" />
+              {group.applications.length}
+            </span>
+          )}
         </div>
-        {renderMobileApplicationSchemeRows(group.applications)}
+        {!compact && renderMobileApplicationSchemeRows(group.applications)}
       </div>
     );
   };
@@ -8850,7 +8871,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
         <div className="space-y-1.5">
           {groupMobileApplicationsByApplicant(latestSavedApplications).map((group) =>
-            renderMobileApplicationApplicantCard(group),
+            renderMobileApplicationApplicantCard(group, true),
           )}
         </div>
       </div>
@@ -9203,26 +9224,14 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       { label: "Website", href: "https://keralabjp.org/", Icon: Globe },
     ];
 
-    const regionDistricts: Record<"north" | "central" | "south", string[]> = {
-      north: ["Kasaragod", "Kannur", "Wayanad", "Kozhikode", "Malappuram"],
-      central: ["Palakkad", "Thrissur", "Ernakulam", "Idukki", "Kottayam"],
-      south: ["Alappuzha", "Pathanamthitta", "Kollam", "Thiruvananthapuram"],
-    };
-    const activeRegionDistricts = contactSelectedRegion ? regionDistricts[contactSelectedRegion] : null;
-
-    const visibleOfficeCount = activeRegionDistricts
-      ? helpdeskLocations.filter((loc) => activeRegionDistricts.includes(loc.district)).length
-      : helpdeskLocations.length;
+    const visibleOfficeCount = helpdeskLocations.length;
 
     const filteredLocations = contactSelectedDistrict
       ? helpdeskLocations.filter((loc) => loc.district === contactSelectedDistrict)
-      : activeRegionDistricts
-        ? helpdeskLocations.filter((loc) => activeRegionDistricts.includes(loc.district))
-        : helpdeskLocations;
+      : helpdeskLocations;
 
     const districtQuery = contactDistrictSearch.trim().toLowerCase();
     const districtOptions = helpdeskDistricts.filter((district) => {
-      if (activeRegionDistricts && !activeRegionDistricts.includes(district.name)) return false;
       if (!districtQuery) return true;
       return (
         district.name.toLowerCase().includes(districtQuery) || district.nameMl.includes(contactDistrictSearch)
@@ -9317,20 +9326,20 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               <span className="truncate">{stateOffice.email}</span>
             </a>
             <a
-              href={stateOffice.phoneHref}
-              className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-[#FF8A12] to-[#F56A00] px-3.5 text-[10px] font-extrabold text-white shadow-[0_4px_10px_-4px_rgba(245,106,0,0.8)] transition-transform active:scale-95"
-            >
-              <Phone className="h-3 w-3 stroke-[2.4]" />
-              {lang === "ml" ? "വിളിക്കുക" : "Call"}
-            </a>
-            <a
               href={stateMapsHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-[#243D95]/35 bg-white px-3 text-[10px] font-extrabold text-[#243D95] transition-colors hover:bg-[#243D95]/5 dark:border-blue-400/40 dark:bg-slate-900 dark:text-blue-300 dark:hover:bg-slate-800"
+              className="inline-flex h-7 shrink-0 items-center gap-1 rounded-full border border-[#243D95]/35 bg-white px-2.5 text-[9px] font-extrabold text-[#243D95] transition-colors hover:bg-[#243D95]/5 dark:border-blue-400/40 dark:bg-slate-900 dark:text-blue-300 dark:hover:bg-slate-800"
             >
-              <Navigation className="h-3 w-3 stroke-[2.4]" />
+              <Navigation className="h-2.5 w-2.5 stroke-[2.4]" />
               {lang === "ml" ? "വഴി" : "Directions"}
+            </a>
+            <a
+              href={stateOffice.phoneHref}
+              className="inline-flex h-7 shrink-0 items-center gap-1 rounded-full bg-gradient-to-r from-[#FF8A12] to-[#F56A00] px-3 text-[9px] font-extrabold text-white shadow-[0_4px_10px_-4px_rgba(245,106,0,0.8)] transition-transform active:scale-95"
+            >
+              <Phone className="h-2.5 w-2.5 stroke-[2.4]" />
+              {lang === "ml" ? "വിളിക്കുക" : "Call"}
             </a>
           </div>
 
@@ -9358,59 +9367,10 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         </div>
 
         {/* District Offices */}
-        <div className="relative mt-1 border-t border-[#F1E4D6] px-0.5 pt-2.5 dark:border-slate-800">
-          <div className="min-w-0 pr-11">
-            <h3 className="text-[15px] font-extrabold leading-tight tracking-tight text-[#16225C] dark:text-white">
-              {lang === "ml" ? "ജില്ലാ ഓഫീസുകൾ" : "District Offices"}
-            </h3>
-            <p className="mt-0.5 text-[9.5px] font-bold text-[#D9640C] dark:text-orange-300">
-              {lang === "ml" ? "30 സംഘടനാ ജില്ലാ ഓഫീസുകൾ" : "30 organisational district offices"}
-            </p>
-          </div>
-          <MapPin
-            className="pointer-events-none absolute right-0.5 top-0.5 h-10 w-10 rotate-12 text-[#FFC085] dark:text-orange-900/70"
-            strokeWidth={1.7}
-            aria-hidden="true"
-          />
-        </div>
-
-        {/* Region tabs */}
-        <div className="flex items-center border-b border-[#F1E4D6] dark:border-slate-800">
-          {(
-            [
-              { key: "north", en: "North", ml: "\u0d35\u0d1f\u0d15\u0d4d\u0d15\u0d7b" },
-              { key: "central", en: "Central", ml: "\u0d2e\u0d27\u0d4d\u0d2f" },
-              { key: "south", en: "South", ml: "\u0d24\u0d46\u0d15\u0d4d\u0d15\u0d7b" },
-            ] as const
-          ).map((region) => {
-            const active = contactSelectedRegion === region.key;
-            return (
-              <button
-                key={region.key}
-                type="button"
-                aria-pressed={active}
-                onClick={() => {
-                  setContactSelectedRegion(active ? "" : region.key);
-                  setContactSelectedDistrict("");
-                  setContactDistrictSearch("");
-                  setContactDistrictPickerOpen(false);
-                  setContactExpandedOfficeId(null);
-                }}
-                className={`relative flex-1 pb-1.5 pt-1 text-[11px] font-bold transition-colors ${
-                  active
-                    ? "text-[#D9640C] dark:text-orange-300"
-                    : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                }`}
-              >
-                {lang === "ml" ? region.ml : region.en}
-                <span
-                  className={`absolute inset-x-5 -bottom-px h-[2px] rounded-full bg-[#F5730A] transition-opacity ${
-                    active ? "opacity-100" : "opacity-0"
-                  }`}
-                />
-              </button>
-            );
-          })}
+        <div className="mt-1 border-t border-[#F1E4D6] px-0.5 pt-2.5 dark:border-slate-800">
+          <h3 className="text-[15px] font-extrabold leading-tight tracking-tight text-[#16225C] dark:text-white">
+            {lang === "ml" ? "ജില്ലാ ഓഫീസുകൾ" : "District Offices"}
+          </h3>
         </div>
 
         {/* District selector */}
@@ -9422,15 +9382,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             className="flex h-9 w-full items-center gap-2 rounded-full border border-[#F3E5D8] bg-white px-3 text-left shadow-[0_2px_8px_-4px_rgba(15,23,42,0.12)] transition-colors hover:border-[#FFD9B8] dark:border-slate-800 dark:bg-slate-900"
           >
             <Search className="h-4 w-4 shrink-0 text-[#F5730A] stroke-[2.3]" />
-            <span
-              className={`min-w-0 flex-1 truncate text-[11.5px] font-semibold ${
-                contactSelectedDistrict
-                  ? "text-[#16225C] dark:text-slate-100"
-                  : "text-slate-400 dark:text-slate-500"
-              }`}
-            >
-              {selectedDistrictLabel ||
-                (lang === "ml" ? "ജില്ല തിരഞ്ഞെടുക്കുക" : "Choose your district")}
+            <span className="min-w-0 flex-1 truncate text-[11.5px] font-semibold text-[#16225C] dark:text-slate-100">
+              {selectedDistrictLabel || (lang === "ml" ? "ഒന്നുമില്ല" : "None")}
             </span>
             <ChevronDown
               className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${
@@ -9469,10 +9422,14 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     setContactDistrictSearch("");
                     setContactExpandedOfficeId(null);
                   }}
-                  className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-[#FFF4E8] dark:hover:bg-slate-800"
+                  className={`flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left transition-colors ${
+                    !contactSelectedDistrict
+                      ? "bg-[#FFF1E3] dark:bg-orange-950/30"
+                      : "hover:bg-[#FFF4E8] dark:hover:bg-slate-800"
+                  }`}
                 >
                   <span className="text-[11px] font-semibold text-[#16225C] dark:text-slate-100">
-                    {lang === "ml" ? "എല്ലാ ജില്ലകളും" : "All districts"}
+                    {lang === "ml" ? "ഒന്നുമില്ല" : "None"}
                   </span>
                   <span className="text-[9px] font-bold text-slate-400">{visibleOfficeCount}</span>
                 </button>
@@ -9519,6 +9476,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc.address)}`;
             const primaryPhone = loc.phones[0];
             const extraPhones = loc.phones.slice(1);
+            const callButtonClass =
+              "inline-flex h-7 shrink-0 items-center gap-1 rounded-full bg-gradient-to-r from-[#FF8A12] to-[#F56A00] px-2.5 text-[9px] font-extrabold text-white shadow-[0_3px_8px_-4px_rgba(245,106,0,0.8)] transition-transform active:scale-95";
             return (
               <div
                 key={loc.id}
@@ -9562,41 +9521,30 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   />
                 </button>
 
-                <div className="flex flex-wrap items-center gap-1.5 px-2.5 pb-1.5 pt-1.5">
-                  {primaryPhone ? (
-                    <a
-                      href={`tel:${primaryPhone}`}
-                      className="inline-flex h-7 items-center gap-1.5 rounded-full border border-[#FF7900] bg-white px-3 text-[10px] font-bold text-[#FF7900] transition-colors hover:bg-[#FFF3E6] dark:border-orange-400/60 dark:bg-slate-900 dark:text-orange-300 dark:hover:bg-orange-950/30"
-                    >
-                      <Phone className="h-3 w-3 stroke-[2.4]" />
-                      {primaryPhone}
-                    </a>
-                  ) : null}
-                  {expanded
-                    ? extraPhones.map((phone) => (
-                        <a
-                          key={phone}
-                          href={`tel:${phone}`}
-                          className="inline-flex h-7 items-center gap-1.5 rounded-full border border-[#FF7900]/60 bg-white px-3 text-[10px] font-bold text-[#FF7900] transition-colors hover:bg-[#FFF3E6] dark:border-orange-400/50 dark:bg-slate-900 dark:text-orange-300 dark:hover:bg-orange-950/30"
-                        >
-                          <Phone className="h-3 w-3 stroke-[2.4]" />
-                          {phone}
-                        </a>
-                      ))
-                    : null}
+                <div className="flex items-center justify-end gap-1.5 px-2.5 pb-1.5 pt-1.5">
                   <a
                     href={mapsHref}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="ml-auto inline-flex h-7 items-center gap-1 rounded-full border border-[#E4E9F5] bg-white px-3 text-[10px] font-bold text-[#243D95] transition-colors hover:bg-[#F5F7FC] dark:border-slate-700 dark:bg-slate-900 dark:text-blue-300 dark:hover:bg-slate-800"
+                    className="inline-flex h-7 shrink-0 items-center gap-1 rounded-full border border-[#243D95]/35 bg-white px-2.5 text-[9px] font-extrabold text-[#243D95] transition-colors hover:bg-[#243D95]/5 dark:border-blue-400/40 dark:bg-slate-900 dark:text-blue-300 dark:hover:bg-slate-800"
                   >
-                    <Navigation className="h-3 w-3 stroke-[2.4]" />
+                    <Navigation className="h-2.5 w-2.5 stroke-[2.4]" />
                     {lang === "ml" ? "വഴി" : "Directions"}
                   </a>
+                  {primaryPhone ? (
+                    <button
+                      type="button"
+                      onClick={() => setContactCallPickerLocationId(loc.id)}
+                      className={callButtonClass}
+                    >
+                      <Phone className="h-2.5 w-2.5 stroke-[2.4]" />
+                      {lang === "ml" ? "വിളിക്കുക" : "Call"}
+                    </button>
+                  ) : null}
                 </div>
 
                 {expanded && (
-                  <div className="animate-in fade-in slide-in-from-top-1 flex items-center justify-between border-t border-[#F3E5D8] px-2.5 py-1 duration-150 dark:border-slate-800">
+                  <div className="animate-in fade-in slide-in-from-top-1 flex flex-wrap items-center justify-between gap-1.5 border-t border-[#F3E5D8] px-2.5 py-1 duration-150 dark:border-slate-800">
                     <button
                       type="button"
                       onClick={() => handleCopyAddress(loc.id, loc.address)}
@@ -9617,11 +9565,17 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       )}
                     </button>
                     {extraPhones.length > 0 ? (
-                      <span className="text-[9px] font-bold text-slate-400">
-                        {lang === "ml"
-                          ? `${loc.phones.length} ഫോൺ നമ്പറുകൾ`
-                          : `${loc.phones.length} phone numbers`}
-                      </span>
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                        {extraPhones.map((phone) => (
+                          <a
+                            key={phone}
+                            href={`tel:${phone}`}
+                            className="text-[9px] font-semibold text-[#D9640C] transition-colors hover:text-[#B45309] dark:text-orange-300 dark:hover:text-orange-200"
+                          >
+                            {phone}
+                          </a>
+                        ))}
+                      </div>
                     ) : null}
                   </div>
                 )}
@@ -9907,6 +9861,11 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const successStatusLabelMl = successStatusMeta.labelMl;
 
   if (!isOpen && !standalone) return null;
+
+  const contactCallPickerLocation =
+    mobileSubPage === "contact" && contactCallPickerLocationId
+      ? helpdeskLocations.find((location) => location.id === contactCallPickerLocationId) ?? null
+      : null;
 
   const appContent = (
     <div className={standalone ? "w-full min-h-screen bg-card text-foreground flex flex-col relative select-none" : "flex flex-col flex-1 h-full w-full overflow-hidden relative"}>
@@ -21243,6 +21202,90 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               </div>
             </div>
           )}
+
+      {/* Contact Us number picker */}
+      {contactCallPickerLocation && (
+        <div
+          className="absolute inset-0 z-[95] flex items-end bg-black/45 backdrop-blur-[1px] animate-in fade-in duration-150"
+          onClick={() => setContactCallPickerLocationId(null)}
+          role="presentation"
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="contact-call-picker-title"
+            onClick={(event) => event.stopPropagation()}
+            className="w-full rounded-t-3xl border-t border-[#F3E5D8] bg-white px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 shadow-2xl animate-in slide-in-from-bottom duration-200 dark:border-slate-800 dark:bg-slate-900"
+          >
+            <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-slate-200 dark:bg-slate-700" />
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <h3
+                  id="contact-call-picker-title"
+                  className="text-[13px] font-extrabold text-[#16225C] dark:text-white"
+                >
+                  {lang === "ml"
+                    ? contactCallPickerLocation.phones.length > 1
+                      ? "വിളിക്കാനുള്ള നമ്പർ തിരഞ്ഞെടുക്കുക"
+                      : "ഒഫീസിലേക്ക് വിളിക്കുക"
+                    : contactCallPickerLocation.phones.length > 1
+                      ? "Select a number to call"
+                      : "Call this office"}
+                </h3>
+                <p className="mt-0.5 truncate text-[10px] font-semibold text-[#64748B] dark:text-slate-400">
+                  {contactCallPickerLocation.name}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setContactCallPickerLocationId(null)}
+                aria-label={lang === "ml" ? "അടയ്ക്കുക" : "Close"}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <div className="mt-2.5 space-y-1.5">
+              {contactCallPickerLocation.phones.map((phone, index) => (
+                <a
+                  key={phone}
+                  href={`tel:${phone}`}
+                  onClick={() => setContactCallPickerLocationId(null)}
+                  className="flex items-center gap-2.5 rounded-xl border border-[#F3E5D8] bg-[#FFFCF8] px-3 py-2 transition-colors hover:border-[#FFD9B8] hover:bg-[#FFF4E8] dark:border-slate-700 dark:bg-slate-800 dark:hover:border-orange-500/40 dark:hover:bg-slate-700"
+                >
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#FFF0E1] text-[#D9640C] dark:bg-orange-950/50 dark:text-orange-300">
+                    <Phone className="h-3.5 w-3.5 stroke-[2.4]" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[8.5px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                      {contactCallPickerLocation.phones.length > 1
+                        ? lang === "ml"
+                          ? `മൊബൈൽ ${index + 1}`
+                          : `Mobile ${index + 1}`
+                        : lang === "ml"
+                          ? "ഫോൺ നമ്പർ"
+                          : "Phone number"}
+                    </span>
+                    <span className="block truncate text-[12px] font-extrabold text-[#16225C] dark:text-slate-100">
+                      {phone}
+                    </span>
+                  </span>
+                  <span className="shrink-0 rounded-full bg-gradient-to-r from-[#FF8A12] to-[#F56A00] px-2.5 py-1 text-[9px] font-extrabold text-white">
+                    {lang === "ml" ? "വിളിക്കുക" : "Call"}
+                  </span>
+                </a>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => setContactCallPickerLocationId(null)}
+              className="mt-2 h-9 w-full rounded-xl border border-slate-200 bg-white text-[11px] font-bold text-[#64748B] transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+            >
+              {lang === "ml" ? "റദ്ദാക്കുക" : "Cancel"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Support Request Modal */}
       {showSupportModal && (
