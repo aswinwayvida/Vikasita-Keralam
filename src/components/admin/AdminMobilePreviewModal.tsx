@@ -9226,6 +9226,23 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         : contactSelectedDistrict
       : "";
 
+    const districtIconMap: Record<string, string> = {
+      Kasaragod: "/images/district-icons/kasaragod.png",
+      Kannur: "/images/district-icons/kannur.png",
+      Wayanad: "/images/district-icons/wayanad.png",
+      Kozhikode: "/images/district-icons/kozhikode.png",
+      Malappuram: "/images/district-icons/malappuram.png",
+      Palakkad: "/images/district-icons/palakkad.png",
+      Thrissur: "/images/district-icons/thrissur.png",
+      Ernakulam: "/images/district-icons/ernakulam.png",
+      Idukki: "/images/district-icons/idukki.png",
+      Kottayam: "/images/district-icons/kottayam.png",
+      Alappuzha: "/images/district-icons/alappuzha.png",
+      Pathanamthitta: "/images/district-icons/pathanamthitta.png",
+      Kollam: "/images/district-icons/kollam.png",
+      Thiruvananthapuram: "/images/district-icons/thiruvananthapuram.png",
+    };
+
     return (
       <div className="animate-in fade-in duration-200 space-y-3 pb-8 pt-1">
         {/* Kerala State Office */}
@@ -9429,9 +9446,19 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   aria-expanded={expanded}
                   className="flex w-full items-start gap-2.5 px-3 pt-2.5 text-left"
                 >
-                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FFF0E1] text-[#F5730A] dark:bg-orange-950/40">
-                    <MapPin className="h-3.5 w-3.5 stroke-[2.3]" />
-                  </span>
+                  {districtIconMap[loc.district] ? (
+                    <img
+                      src={districtIconMap[loc.district]}
+                      alt=""
+                      aria-hidden="true"
+                      loading="lazy"
+                      className="mt-0.5 h-8 w-8 shrink-0 rounded-lg object-cover"
+                    />
+                  ) : (
+                    <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FFF0E1] text-[#F5730A] dark:bg-orange-950/40">
+                      <MapPin className="h-3.5 w-3.5 stroke-[2.3]" />
+                    </span>
+                  )}
                   <span className="min-w-0 flex-1">
                     <span className="block text-[12px] font-extrabold leading-tight text-[#16225C] dark:text-white">
                       {loc.name}
