@@ -47,6 +47,7 @@ import { Route as AdminGrowthHelpdeskIdRouteImport } from './routes/admin.growth
 import { Route as AdminSchemesSchemeIdRouteImport } from './routes/admin.schemes_.$schemeId'
 import { Route as AdminSchemesNewRouteImport } from './routes/admin.schemes_.new'
 import { Route as AdminSettingsAssignRoleRouteImport } from './routes/admin.settings_.assign-role'
+import { Route as AdminSettingsMasterDataRouteImport } from './routes/admin.settings_.master-data'
 import { Route as AdminSettingsNewRoleRouteImport } from './routes/admin.settings_.new-role'
 import { Route as AdminSettingsNewUserRouteImport } from './routes/admin.settings_.new-user'
 import { Route as AdminSettingsUserDetailsRouteImport } from './routes/admin.settings_.user-details'
@@ -246,6 +247,11 @@ const AdminSettingsAssignRoleRoute = AdminSettingsAssignRoleRouteImport.update({
   path: '/settings/assign-role',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSettingsMasterDataRoute = AdminSettingsMasterDataRouteImport.update({
+  id: '/settings_/master-data',
+  path: '/settings/master-data',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminSettingsNewRoleRoute = AdminSettingsNewRoleRouteImport.update({
   id: '/settings_/new-role',
   path: '/settings/new-role',
@@ -313,6 +319,7 @@ export interface FileRoutesByFullPath {
   '/admin/schemes/$schemeId': typeof AdminSchemesSchemeIdRoute
   '/admin/schemes/new': typeof AdminSchemesNewRoute
   '/admin/settings/assign-role': typeof AdminSettingsAssignRoleRoute
+  '/admin/settings/master-data': typeof AdminSettingsMasterDataRoute
   '/admin/settings/new-role': typeof AdminSettingsNewRoleRoute
   '/admin/settings/new-user': typeof AdminSettingsNewUserRoute
   '/admin/settings/user-details': typeof AdminSettingsUserDetailsRoute
@@ -356,6 +363,7 @@ export interface FileRoutesByTo {
   '/admin/schemes/$schemeId': typeof AdminSchemesSchemeIdRoute
   '/admin/schemes/new': typeof AdminSchemesNewRoute
   '/admin/settings/assign-role': typeof AdminSettingsAssignRoleRoute
+  '/admin/settings/master-data': typeof AdminSettingsMasterDataRoute
   '/admin/settings/new-role': typeof AdminSettingsNewRoleRoute
   '/admin/settings/new-user': typeof AdminSettingsNewUserRoute
   '/admin/settings/user-details': typeof AdminSettingsUserDetailsRoute
@@ -402,6 +410,7 @@ export interface FileRoutesById {
   '/admin/schemes_/$schemeId': typeof AdminSchemesSchemeIdRoute
   '/admin/schemes_/new': typeof AdminSchemesNewRoute
   '/admin/settings_/assign-role': typeof AdminSettingsAssignRoleRoute
+  '/admin/settings_/master-data': typeof AdminSettingsMasterDataRoute
   '/admin/settings_/new-role': typeof AdminSettingsNewRoleRoute
   '/admin/settings_/new-user': typeof AdminSettingsNewUserRoute
   '/admin/settings_/user-details': typeof AdminSettingsUserDetailsRoute
@@ -449,6 +458,7 @@ export interface FileRouteTypes {
     | '/admin/schemes/$schemeId'
     | '/admin/schemes/new'
     | '/admin/settings/assign-role'
+    | '/admin/settings/master-data'
     | '/admin/settings/new-role'
     | '/admin/settings/new-user'
     | '/admin/settings/user-details'
@@ -492,6 +502,7 @@ export interface FileRouteTypes {
     | '/admin/schemes/$schemeId'
     | '/admin/schemes/new'
     | '/admin/settings/assign-role'
+    | '/admin/settings/master-data'
     | '/admin/settings/new-role'
     | '/admin/settings/new-user'
     | '/admin/settings/user-details'
@@ -537,6 +548,7 @@ export interface FileRouteTypes {
     | '/admin/schemes_/$schemeId'
     | '/admin/schemes_/new'
     | '/admin/settings_/assign-role'
+    | '/admin/settings_/master-data'
     | '/admin/settings_/new-role'
     | '/admin/settings_/new-user'
     | '/admin/settings_/user-details'
@@ -828,6 +840,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSettingsAssignRoleRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/settings_/master-data': {
+      id: '/admin/settings_/master-data'
+      path: '/settings/master-data'
+      fullPath: '/admin/settings/master-data'
+      preLoaderRoute: typeof AdminSettingsMasterDataRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/settings_/new-role': {
       id: '/admin/settings_/new-role'
       path: '/settings/new-role'
@@ -887,6 +906,7 @@ interface AdminRouteChildren {
   AdminSchemesSchemeIdRoute: typeof AdminSchemesSchemeIdRoute
   AdminSchemesNewRoute: typeof AdminSchemesNewRoute
   AdminSettingsAssignRoleRoute: typeof AdminSettingsAssignRoleRoute
+  AdminSettingsMasterDataRoute: typeof AdminSettingsMasterDataRoute
   AdminSettingsNewRoleRoute: typeof AdminSettingsNewRoleRoute
   AdminSettingsNewUserRoute: typeof AdminSettingsNewUserRoute
   AdminSettingsUserDetailsRoute: typeof AdminSettingsUserDetailsRoute
@@ -915,6 +935,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminSchemesSchemeIdRoute: AdminSchemesSchemeIdRoute,
   AdminSchemesNewRoute: AdminSchemesNewRoute,
   AdminSettingsAssignRoleRoute: AdminSettingsAssignRoleRoute,
+  AdminSettingsMasterDataRoute: AdminSettingsMasterDataRoute,
   AdminSettingsNewRoleRoute: AdminSettingsNewRoleRoute,
   AdminSettingsNewUserRoute: AdminSettingsNewUserRoute,
   AdminSettingsUserDetailsRoute: AdminSettingsUserDetailsRoute,

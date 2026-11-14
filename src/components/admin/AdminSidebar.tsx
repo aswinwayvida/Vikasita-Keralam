@@ -15,6 +15,7 @@ import officialLotus from "@/assets/bjp-official-lotus.png";
 import {
   Award,
   Building2,
+  Database,
   FileText,
   HeartHandshake,
   LayoutDashboard,
@@ -73,6 +74,11 @@ export function AdminSidebar() {
           icon: MapPin,
           label: "Organisational Charts",
           search: { tab: "location" },
+        },
+        {
+          to: "/admin/settings/master-data",
+          icon: Database,
+          label: "Master Data",
         },
       ],
     },

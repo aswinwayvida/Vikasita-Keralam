@@ -131,7 +131,7 @@ const CATEGORY_OPTIONS = [
   "Others",
 ];
 
-const STATUS_OPTIONS = ["Active", "Inactive", "Draft", "Archived"];
+const STATUS_OPTIONS = ["Active", "Inactive"];
 
 const BENEFICIARY_OPTIONS = [
   "Farmers",
@@ -848,6 +848,7 @@ function SchemesPage() {
   );
   const [draggedColumnIndex, setDraggedColumnIndex] = useState<number | null>(null);
   const [isManageColumnsOpen, setIsManageColumnsOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const handleDragStartColumn = (index: number) => {
     setDraggedColumnIndex(index);
@@ -887,13 +888,7 @@ function SchemesPage() {
       schemes.map((scheme, index) => {
         const categoryDisplay = getCategoryDisplay(scheme.category);
         const beneficiaries = getBeneficiariesForScheme(scheme);
-        const status = disabledSchemeIds.has(scheme.id)
-          ? "Inactive"
-          : index % 11 === 0
-            ? "Draft"
-            : index % 13 === 0
-              ? "Archived"
-              : "Active";
+        const status = disabledSchemeIds.has(scheme.id) ? "Inactive" : "Active";
 
         const totalApps = 38 + ((index * 17) % 148);
         const approved = Math.floor(totalApps * 0.55);
@@ -1134,12 +1129,12 @@ function SchemesPage() {
   }, []);
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="w-full min-w-0 max-w-full space-y-6 pb-8 md:max-w-[calc(100vw-var(--sidebar-width)-4.5rem)]">
       {/* Merged Single Section Container */}
-      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-xs">
+      <div className="w-full max-w-full min-w-0 overflow-hidden rounded-2xl border border-border bg-card shadow-xs">
         {/* Top Header Row with Title & Filter / Export / Import / Add Scheme Buttons */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 p-4 sm:p-5">
-          <div className="flex flex-wrap items-center gap-3">
+        <div className="flex min-w-0 flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 p-4 sm:p-5">
+          <div className="flex min-w-0 flex-wrap items-center gap-3">
             <h2 className="font-display text-base font-bold text-foreground">
               {lang === "ml"
                 ? `പദ്ധതി പട്ടിക (${filtered.length})`
@@ -1205,7 +1200,7 @@ function SchemesPage() {
           </div>
 
           {/* Controls on the Right */}
-          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar desktop-hide-scrollbar pb-0.5 max-w-full sm:ml-auto shrink-0">
+          <div className="flex min-w-0 max-w-full items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar desktop-hide-scrollbar pb-0.5 sm:ml-auto">
             {/* Date Filter */}
             <SchemesDateFilter lang={lang} tr={tr} />
 
@@ -1255,84 +1250,24 @@ function SchemesPage() {
 
             {/* Actions Group: Filter, Import, Export */}
             <div className="flex items-center gap-2 shrink-0">
-              {/* Filter Dropdown Menu (Identical to User Filter) */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    className={cn(
-                      "inline-flex items-center gap-1.5 rounded-xl sm:rounded-lg border px-3.5 py-1.5 text-[13px] leading-tight font-semibold transition-colors shrink-0 cursor-pointer",
-                      activeFilterCount > 0
-                        ? "border-primary bg-primary/10 text-primary font-bold"
-                        : "border-border bg-background text-foreground hover:bg-muted",
-                    )}
-                  >
-                    <Filter className="h-4 w-4 text-muted-foreground" />
-                    <span>{tr("Filter", "ഫിൽട്ടർ")}</span>
-                    {activeFilterCount > 0 && (
-                      <span className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                        {activeFilterCount}
-                      </span>
-                    )}
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64 p-3 text-xs space-y-3 max-h-96 overflow-y-auto">
-                  <div className="flex items-center justify-between pb-1.5 border-b border-border">
-                    <span className="font-bold text-foreground text-xs">
-                      {tr("Filter Schemes", "പദ്ധതികൾ ഫിൽട്ടർ ചെയ്യുക")}
-                    </span>
-                    {activeFilterCount > 0 && (
-                      <button
-                        type="button"
-                        onClick={handleResetFilters}
-                        className="text-[11px] font-semibold text-primary hover:underline cursor-pointer"
-                      >
-                        {tr("Reset All", "എല്ലാം റീസെറ്റ് ചെയ്യുക")}
-                      </button>
-                    )}
-                  </div>
-
-                  {/* 1. Scheme Category Filter */}
-                  <FilterDropdownSelector
-                    title={tr("SCHEME CATEGORY", "പദ്ധതി വിഭാഗം")}
-                    placeholder={tr("Select Category", "വിഭാഗം തിരഞ്ഞെടുക്കുക")}
-                    options={CATEGORY_OPTIONS}
-                    selectedValues={selectedCategories}
-                    onChange={setSelectedCategories}
-                    tr={tr}
-                  />
-
-                  {/* 2. Ministry / Department Filter */}
-                  <FilterDropdownSelector
-                    title={tr("MINISTRY / DEPARTMENT", "മന്ത്രാലയം / വകുപ്പ്")}
-                    placeholder={tr("Select Ministry", "മന്ത്രാലയം തിരഞ്ഞെടുക്കുക")}
-                    options={allMinistryOptions}
-                    selectedValues={selectedMinistries}
-                    onChange={setSelectedMinistries}
-                    tr={tr}
-                  />
-
-                  {/* 3. Scheme Status Filter */}
-                  <FilterDropdownSelector
-                    title={tr("SCHEME STATUS", "പദ്ധതി സ്റ്റാറ്റസ്")}
-                    placeholder={tr("Select Status", "സ്റ്റാറ്റസ് തിരഞ്ഞെടുക്കുക")}
-                    options={STATUS_OPTIONS}
-                    selectedValues={selectedStatuses}
-                    onChange={setSelectedStatuses}
-                    tr={tr}
-                  />
-
-                  {/* 4. Target Beneficiary Filter */}
-                  <FilterDropdownSelector
-                    title={tr("TARGET BENEFICIARY", "ലക്ഷ്യ ഗുണഭോക്താവ്")}
-                    placeholder={tr("Select Beneficiary", "ഗുണഭോക്താവ് തിരഞ്ഞെടുക്കുക")}
-                    options={BENEFICIARY_OPTIONS}
-                    selectedValues={selectedBeneficiaries}
-                    onChange={setSelectedBeneficiaries}
-                    tr={tr}
-                  />
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <button
+                type="button"
+                onClick={() => setIsFilterOpen(true)}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-xl sm:rounded-lg border px-3.5 py-1.5 text-[13px] leading-tight font-semibold transition-colors shrink-0 cursor-pointer",
+                  activeFilterCount > 0
+                    ? "border-primary bg-primary/10 text-primary font-bold"
+                    : "border-border bg-background text-foreground hover:bg-muted",
+                )}
+              >
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <span>{tr("Filter", "ഫിൽട്ടർ")}</span>
+                {activeFilterCount > 0 && (
+                  <span className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
 
             </div>
 
@@ -1460,7 +1395,7 @@ function SchemesPage() {
 
         {/* Data Table View */}
         {viewMode === "table" && (
-          <div className="overflow-x-auto desktop-hide-scrollbar">
+          <div className="w-full max-w-full min-w-0 overflow-x-auto desktop-hide-scrollbar [&_th]:px-2 [&_th]:py-3 [&_td]:px-2 [&_td]:py-3">
             <table className="w-full text-left text-xs">
               <thead className="bg-muted/50 font-bold text-muted-foreground border-b border-border">
                 <tr>
@@ -1596,7 +1531,7 @@ function SchemesPage() {
                         switch (colKey) {
                           case "scheme":
                             return (
-                              <td key="scheme" className="py-3.5 pl-2 pr-3 min-w-44 max-w-80">
+                              <td key="scheme" className="min-w-40 max-w-72">
                                 <div className="flex items-center gap-2.5">
                                   <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-white p-1 shadow-2xs">
                                     <img
@@ -1846,6 +1781,88 @@ function SchemesPage() {
           </div>
         )}
       </div>
+
+      {/* Right Side Popup Sheet for Scheme Filters */}
+      <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-md flex flex-col h-full p-0 gap-0 bg-white border-l border-border z-50">
+          <SheetHeader className="p-5 border-b border-border bg-white text-left space-y-1">
+            <SheetTitle className="text-base font-bold flex items-center gap-2 text-foreground">
+              <Filter className="h-5 w-5 text-primary" />
+              <span>{tr("Filter Schemes", "പദ്ധതികൾ ഫിൽട്ടർ ചെയ്യുക")}</span>
+            </SheetTitle>
+            <SheetDescription className="text-xs text-muted-foreground">
+              {tr(
+                "Refine the scheme list by category, ministry, status or beneficiary.",
+                "വിഭാഗം, മന്ത്രാലയം, സ്റ്റാറ്റസ് അല്ലെങ്കിൽ ഗുണഭോക്താവ് ഉപയോഗിച്ച് പദ്ധതികൾ ഫിൽട്ടർ ചെയ്യുക.",
+              )}
+            </SheetDescription>
+            <div className="pt-2 flex items-center justify-between">
+              <span className="text-xs font-semibold text-muted-foreground">
+                {activeFilterCount > 0
+                  ? `${activeFilterCount} ${tr("filters applied", "ഫിൽട്ടറുകൾ പ്രയോഗിച്ചു")}`
+                  : tr("No filters applied", "ഫിൽട്ടറുകൾ പ്രയോഗിച്ചിട്ടില്ല")}
+              </span>
+              {activeFilterCount > 0 && (
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  className="text-xs font-bold text-primary hover:underline cursor-pointer"
+                >
+                  {tr("Reset All", "എല്ലാം റീസെറ്റ് ചെയ്യുക")}
+                </button>
+              )}
+            </div>
+          </SheetHeader>
+
+          <div className="flex-1 overflow-y-auto p-5 space-y-5">
+            <FilterDropdownSelector
+              title={tr("SCHEME CATEGORY", "പദ്ധതി വിഭാഗം")}
+              placeholder={tr("Select Category", "വിഭാഗം തിരഞ്ഞെടുക്കുക")}
+              options={CATEGORY_OPTIONS}
+              selectedValues={selectedCategories}
+              onChange={setSelectedCategories}
+              tr={tr}
+            />
+
+            <FilterDropdownSelector
+              title={tr("MINISTRY / DEPARTMENT", "മന്ത്രാലയം / വകുപ്പ്")}
+              placeholder={tr("Select Ministry", "മന്ത്രാലയം തിരഞ്ഞെടുക്കുക")}
+              options={allMinistryOptions}
+              selectedValues={selectedMinistries}
+              onChange={setSelectedMinistries}
+              tr={tr}
+            />
+
+            <FilterDropdownSelector
+              title={tr("SCHEME STATUS", "പദ്ധതി സ്റ്റാറ്റസ്")}
+              placeholder={tr("Select Status", "സ്റ്റാറ്റസ് തിരഞ്ഞെടുക്കുക")}
+              options={STATUS_OPTIONS}
+              selectedValues={selectedStatuses}
+              onChange={setSelectedStatuses}
+              tr={tr}
+            />
+
+            <FilterDropdownSelector
+              title={tr("TARGET BENEFICIARY", "ലക്ഷ്യ ഗുണഭോക്താവ്")}
+              placeholder={tr("Select Beneficiary", "ഗുണഭോക്താവ് തിരഞ്ഞെടുക്കുക")}
+              options={BENEFICIARY_OPTIONS}
+              selectedValues={selectedBeneficiaries}
+              onChange={setSelectedBeneficiaries}
+              tr={tr}
+            />
+          </div>
+
+          <SheetFooter className="p-4 border-t border-border bg-slate-50 flex items-center justify-end gap-2 shrink-0">
+            <Button
+              type="button"
+              onClick={() => setIsFilterOpen(false)}
+              className="w-full sm:w-auto h-9 px-5 text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+            >
+              {lang === "ml" ? "ശരി" : "Done"}
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
 
       {/* Right Side Popup Sheet for Manage Columns */}
       <Sheet open={isManageColumnsOpen} onOpenChange={setIsManageColumnsOpen}>

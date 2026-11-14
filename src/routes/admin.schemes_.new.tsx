@@ -19,8 +19,13 @@ import {
 } from "lucide-react";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useSidebar } from "@/components/ui/sidebar";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { schemes, type Scheme } from "@/data/schemes";
+import {
+  getEligibilityMasterFields,
+  type EligibilityMasterField,
+} from "@/data/eligibility-master";
 
 export const Route = createFileRoute("/admin/schemes_/new")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -140,117 +145,115 @@ const INCOME_OPERATORS = [
   "Equal To",
 ];
 
-const ELIGIBILITY_FIELDS: EligibilityFieldConfig[] = [
-  {
-    key: "gender",
-    label: "Gender",
-    operators: OPTION_OPERATORS,
-    valueKind: "options",
-    options: ["Male", "Female", "Transgender", "Other / Self-describe"],
-  },
-  {
-    key: "age",
-    label: "Age",
-    operators: RANGE_OPERATORS,
-    valueKind: "number",
-    minValue: 0,
-    maxValue: 120,
-    placeholder: "e.g. 18",
-  },
-  {
-    key: "religion",
-    label: "Religion",
-    operators: OPTION_OPERATORS,
-    valueKind: "options",
-    options: [
-      "Hinduism",
-      "Islam",
-      "Christianity",
-      "Sikhism",
-      "Buddhism",
-      "Jainism",
-      "Other",
-      "Prefer Not to Disclose / Unknown",
-    ],
-  },
-  {
-    key: "caste",
-    label: "Caste / Social Category",
-    operators: OPTION_OPERATORS,
-    valueKind: "options",
-    options: ["General / Unreserved", "SC", "ST", "OBC", "Other"],
-  },
-  { key: "disabilityStatus", label: "Disability Status", operators: YES_NO_OPERATORS, valueKind: "none" },
-  {
-    key: "disabilityPercentage",
-    label: "Disability Percentage",
-    operators: RANGE_OPERATORS,
-    valueKind: "number",
-    minValue: 0,
-    maxValue: 100,
-    placeholder: "e.g. 40",
-  },
-  { key: "minorityStatus", label: "Minority Status", operators: YES_NO_OPERATORS, valueKind: "none" },
-  { key: "studentStatus", label: "Student Status", operators: YES_NO_OPERATORS, valueKind: "none" },
-  {
-    key: "employmentStatus",
-    label: "Employment Status",
-    operators: OPTION_OPERATORS,
-    valueKind: "options",
-    options: ["Employed", "Unemployed", "Self-Employed", "Retired", "Not in Labour Force", "Other"],
-  },
-  {
-    key: "occupation",
-    label: "Occupation",
-    operators: OPTION_OPERATORS,
-    valueKind: "options",
-    options: [
-      "Farmer",
-      "Agricultural Labourer",
-      "Daily Wage Worker",
-      "Construction Worker",
-      "Fisherperson",
-      "Artisan / Craftsperson",
-      "Street Vendor",
-      "Small Business Owner",
-      "Salaried Employee",
-      "Government Employee",
-      "Homemaker",
-      "Student",
-      "Other",
-    ],
-  },
-  {
-    key: "annualIncome",
-    label: "Annual Family Income",
-    operators: INCOME_OPERATORS,
-    valueKind: "currency",
-    minValue: 0,
-    placeholder: "e.g. 100000",
-  },
-  {
-    key: "maritalStatus",
-    label: "Marital Status",
-    operators: OPTION_OPERATORS,
-    valueKind: "options",
-    options: ["Never Married / Single", "Married", "Widowed", "Divorced", "Separated", "Other / Not Specified"],
-  },
-  {
-    key: "householdStatus",
-    label: "Household Status",
-    operators: OPTION_OPERATORS,
-    valueKind: "options",
-    options: [
-      "Head of Household",
-      "Spouse of Head",
-      "Dependent Family Member",
-      "Other Adult Household Member",
-      "Single-Person Household",
-      "Other",
-    ],
-  },
-  { key: "bplStatus", label: "BPL Status", operators: YES_NO_OPERATORS, valueKind: "none" },
-];
+const SCHEME_FIELD_OPERATORS: Record<string, string[]> = {
+  gender: OPTION_OPERATORS,
+  age: RANGE_OPERATORS,
+  religion: OPTION_OPERATORS,
+  caste: OPTION_OPERATORS,
+  disabilityStatus: YES_NO_OPERATORS,
+  disabilityPercentage: RANGE_OPERATORS,
+  minorityStatus: YES_NO_OPERATORS,
+  studentStatus: YES_NO_OPERATORS,
+  employmentStatus: OPTION_OPERATORS,
+  occupation: OPTION_OPERATORS,
+  annualIncome: INCOME_OPERATORS,
+  maritalStatus: OPTION_OPERATORS,
+  householdStatus: OPTION_OPERATORS,
+  bplStatus: YES_NO_OPERATORS,
+};
+
+const buildSchemeEligibilityFields = (
+  masterFields: EligibilityMasterField[],
+): EligibilityFieldConfig[] =>
+  masterFields.map((field) => ({
+    key: field.key,
+    label: field.label,
+    operators: SCHEME_FIELD_OPERATORS[field.key] ?? OPTION_OPERATORS,
+    valueKind:
+      field.kind === "yesno" ? "none" : field.kind === "options" ? "options" : field.kind,
+    options:
+      field.kind === "options"
+        ? field.options
+            .filter((option) => option.status === "Active")
+            .slice()
+            .sort(
+              (a, b) => a.displayOrder - b.displayOrder || a.label.localeCompare(b.label),
+            )
+            .map((option) => option.label)
+        : undefined,
+    placeholder: field.placeholder,
+    minValue: field.minValue,
+    maxValue: field.maxValue,
+  }));
+
+const EligibilityConditionValueSelect = ({
+  field,
+  rule,
+  multi,
+  disabled,
+  onToggle,
+}: {
+  field: EligibilityFieldConfig;
+  rule: EligibilityRuleState;
+  multi: boolean;
+  disabled?: boolean;
+  onToggle: (option: string) => void;
+}) => {
+  const [open, setOpen] = useState(false);
+  const selectedValues = rule.values;
+  const selectedLabel =
+    selectedValues.length === 0
+      ? "Select values"
+      : selectedValues.length <= 2
+        ? selectedValues.join(", ")
+        : `${selectedValues.length} values selected`;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          disabled={disabled}
+          className={`flex h-9 w-full max-w-[280px] items-center justify-between gap-2 rounded-lg border border-border bg-background px-2.5 text-left text-xs font-semibold transition-colors focus:border-primary focus:ring-1 focus:ring-primary/20 focus:outline-none xl:bg-white ${
+            disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+          } ${selectedValues.length ? "text-foreground" : "text-muted-foreground"}`}
+        >
+          <span className="truncate">{selectedLabel}</span>
+          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-64 p-1.5">
+        <div className="max-h-56 space-y-0.5 overflow-y-auto">
+          {field.options?.map((option) => {
+            const isSelected = selectedValues.includes(option);
+            return (
+              <button
+                key={option}
+                type="button"
+                onClick={() => {
+                  onToggle(option);
+                  if (!multi) setOpen(false);
+                }}
+                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs font-semibold text-foreground transition-colors hover:bg-muted/60 cursor-pointer"
+              >
+                <span
+                  className={`grid h-4 w-4 shrink-0 place-content-center rounded-sm border transition-colors ${
+                    isSelected
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-background"
+                  }`}
+                >
+                  {isSelected && <Check className="h-3 w-3 stroke-[3]" />}
+                </span>
+                <span className="min-w-0 flex-1">{option}</span>
+              </button>
+            );
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+};
 
 const createEmptyEligibilityRule = (): EligibilityRuleState => ({
   operator: "Any",
@@ -261,8 +264,10 @@ const createEmptyEligibilityRule = (): EligibilityRuleState => ({
   referenceDate: "",
 });
 
-const createInitialEligibilityRules = (): Record<string, EligibilityRuleState> =>
-  ELIGIBILITY_FIELDS.reduce<Record<string, EligibilityRuleState>>((acc, field) => {
+const createInitialEligibilityRules = (
+  fields: EligibilityFieldConfig[],
+): Record<string, EligibilityRuleState> =>
+  fields.reduce<Record<string, EligibilityRuleState>>((acc, field) => {
     acc[field.key] = createEmptyEligibilityRule();
     return acc;
   }, {});
@@ -312,8 +317,14 @@ export function CreateSchemePage() {
   const [officialWebsite, setOfficialWebsite] = useState("");
 
   // Section 2: Eligibility
+  const eligibilityFields = useMemo(
+    () => buildSchemeEligibilityFields(getEligibilityMasterFields()),
+    [],
+  );
   const [eligibilityRules, setEligibilityRules] =
-    useState<Record<string, EligibilityRuleState>>(createInitialEligibilityRules);
+    useState<Record<string, EligibilityRuleState>>(() =>
+      createInitialEligibilityRules(eligibilityFields),
+    );
   const [benefitType, setBenefitType] = useState("");
 
   // Section 3: Additional Questions & Documents
@@ -473,7 +484,7 @@ export function CreateSchemePage() {
       return;
     }
 
-    const hasEligibilityRuleErrors = ELIGIBILITY_FIELDS.some(
+    const hasEligibilityRuleErrors = eligibilityFields.some(
       (field) => getEligibilityRuleError(field, eligibilityRules[field.key]) !== "",
     );
 
@@ -985,16 +996,21 @@ export function CreateSchemePage() {
             <div className="space-y-5">
               <div className="overflow-hidden rounded-2xl border border-border bg-card">
                 <div className="overflow-x-auto desktop-hide-scrollbar">
-                  <table className="w-full min-w-[900px] border-collapse text-left">
+                  <table className="w-full min-w-[1120px] border-collapse text-left">
                     <thead>
                       <tr className="bg-muted/30 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
                         <th className="w-12 px-4 py-2.5">#</th>
                         <th className="w-56 px-4 py-2.5">Eligibility Field</th>
-                        <th className="px-4 py-2.5">Admin Rule Configuration</th>
+                        <th className="w-[340px] px-4 py-2.5">
+                          {lang === "ml" ? "സ്കീം വ്യവസ്ഥ കോൺഫിഗറേഷൻ" : "Scheme Conditions Configuration"}
+                        </th>
+                        <th className="px-4 py-2.5">
+                          {lang === "ml" ? "വ്യവസ്ഥ മൂല്യങ്ങൾ" : "Condition Values"}
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {ELIGIBILITY_FIELDS.map((field, index) => {
+                      {eligibilityFields.map((field, index) => {
                         const rule = eligibilityRules[field.key];
                         const operatorKind = getOperatorKind(rule.operator);
                         const showsChoices =
@@ -1013,12 +1029,12 @@ export function CreateSchemePage() {
                             <td className="px-4 py-2.5 text-xs font-semibold text-foreground">{field.label}</td>
                             <td className="px-4 py-2.5">
                               <div className="flex flex-col gap-2">
-                                <div className="flex flex-wrap items-center gap-1.5">
+                                <div className="flex flex-nowrap items-center gap-1.5">
                                   <select
                                     value={rule.operator}
                                     onChange={(e) => updateEligibilityRule(field.key, { operator: e.target.value })}
                                     disabled={isDisabled}
-                                    className={`h-9 ${field.valueKind === "number" ? "w-36" : "w-44"} rounded-lg border border-border bg-background xl:bg-white px-2.5 text-xs font-semibold text-foreground focus:border-primary focus:ring-1 focus:ring-primary/20 focus:outline-none transition-colors ${
+                                    className={`h-9 shrink-0 ${field.valueKind === "number" ? "w-36" : "w-44"} rounded-lg border border-border bg-background xl:bg-white px-2.5 text-xs font-semibold text-foreground focus:border-primary focus:ring-1 focus:ring-primary/20 focus:outline-none transition-colors ${
                                       isDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
                                     }`}
                                   >
@@ -1028,97 +1044,69 @@ export function CreateSchemePage() {
                                       </option>
                                     ))}
                                   </select>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-2.5">
+                              <div className="flex flex-nowrap items-center gap-2">
+                                {showsChoices && (
+                                  <EligibilityConditionValueSelect
+                                    field={field}
+                                    rule={rule}
+                                    multi={operatorKind === "multi"}
+                                    disabled={isDisabled}
+                                    onToggle={(option) =>
+                                      toggleEligibilityValue(field.key, option, operatorKind === "multi")
+                                    }
+                                  />
+                                )}
 
-                                  {showsChoices && (
-                                    <div className="flex flex-wrap items-center gap-1.5">
-                                      {field.options?.map((option) => {
-                                        const isSelected = rule.values.includes(option);
-                                        return (
-                                          <button
-                                            key={option}
-                                            type="button"
-                                            onClick={() =>
-                                              toggleEligibilityValue(field.key, option, operatorKind === "multi")
-                                            }
-                                            className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-colors ${
-                                              isSelected
-                                                ? "border-primary bg-primary/10 text-primary"
-                                                : "border-border bg-background xl:bg-white text-muted-foreground hover:bg-muted/30"
-                                            }`}
-                                          >
-                                            {option}
-                                          </button>
-                                        );
-                                      })}
+                                {showsNumber && (
+                                  <div className="flex shrink-0 flex-nowrap items-center gap-1.5">
+                                    <div className="relative">
+                                      {field.valueKind === "currency" && (
+                                        <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                                          ₹
+                                        </span>
+                                      )}
+                                      <input
+                                        type="number"
+                                        min={field.minValue}
+                                        max={field.maxValue}
+                                        inputMode="numeric"
+                                        value={rule.min}
+                                        onChange={(e) => updateEligibilityRule(field.key, { min: e.target.value })}
+                                        placeholder={isRange ? "Min" : field.placeholder ?? "Value"}
+                                        className={`h-9 ${field.valueKind === "currency" ? "w-32" : "w-16"} rounded-lg border border-border bg-background xl:bg-white px-2.5 text-xs text-foreground focus:border-primary focus:ring-1 focus:ring-primary/20 focus:outline-none transition-colors ${
+                                          field.valueKind === "currency" ? "pl-6" : ""
+                                        }`}
+                                      />
                                     </div>
-                                  )}
-
-                                  {showsNumber && (
-                                    <div className="flex flex-wrap items-center gap-1.5">
-                                      <div className="relative">
-                                        {field.valueKind === "currency" && (
-                                          <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                                            ₹
-                                          </span>
-                                        )}
+                                    {isRange && (
+                                      <>
+                                        <span className="text-[11px] font-semibold text-muted-foreground">and</span>
                                         <input
                                           type="number"
                                           min={field.minValue}
                                           max={field.maxValue}
                                           inputMode="numeric"
-                                          value={rule.min}
-                                          onChange={(e) => updateEligibilityRule(field.key, { min: e.target.value })}
-                                          placeholder={isRange ? "Min" : field.placeholder ?? "Value"}
-                                          className={`h-9 ${field.valueKind === "currency" ? "w-32" : "w-16"} rounded-lg border border-border bg-background xl:bg-white px-2.5 text-xs text-foreground focus:border-primary focus:ring-1 focus:ring-primary/20 focus:outline-none transition-colors ${
-                                            field.valueKind === "currency" ? "pl-6" : ""
-                                          }`}
+                                          value={rule.max}
+                                          onChange={(e) => updateEligibilityRule(field.key, { max: e.target.value })}
+                                          placeholder="Max"
+                                          className={`h-9 ${field.valueKind === "currency" ? "w-28" : "w-16"} rounded-lg border border-border bg-background xl:bg-white px-2.5 text-xs text-foreground focus:border-primary focus:ring-1 focus:ring-primary/20 focus:outline-none transition-colors`}
                                         />
-                                      </div>
-                                      {isRange && (
-                                        <>
-                                          <span className="text-[11px] font-semibold text-muted-foreground">and</span>
-                                          <input
-                                            type="number"
-                                            min={field.minValue}
-                                            max={field.maxValue}
-                                            inputMode="numeric"
-                                            value={rule.max}
-                                            onChange={(e) => updateEligibilityRule(field.key, { max: e.target.value })}
-                                            placeholder="Max"
-                                            className={`h-9 ${field.valueKind === "currency" ? "w-28" : "w-16"} rounded-lg border border-border bg-background xl:bg-white px-2.5 text-xs text-foreground focus:border-primary focus:ring-1 focus:ring-primary/20 focus:outline-none transition-colors`}
-                                          />
-                                        </>
-                                      )}
-                                    </div>
-                                  )}
-                                  {field.key === "age" && rule.operator !== "Any" && (
-                                    <div className="flex flex-wrap items-center gap-1.5">
-                                      <span className="text-[11px] font-semibold text-muted-foreground whitespace-nowrap">Age as of</span>
-                                      <select
-                                        value={rule.reference}
-                                        onChange={(e) => updateEligibilityRule(field.key, { reference: e.target.value })}
-                                        className="h-8 rounded-lg border border-border bg-background xl:bg-white px-2 text-[11px] font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer"
-                                      >
-                                        <option value="Application Date">Application Date</option>
-                                        <option value="Scheme Cutoff Date">Scheme Cutoff Date</option>
-                                        <option value="Fixed Reference Date">Fixed Reference Date</option>
-                                      </select>
-                                      {rule.reference === "Fixed Reference Date" && (
-                                        <input
-                                          type="date"
-                                          value={rule.referenceDate}
-                                          onChange={(e) =>
-                                            updateEligibilityRule(field.key, { referenceDate: e.target.value })
-                                          }
-                                          className="h-8 rounded-lg border border-border bg-background xl:bg-white px-2 text-[11px] text-foreground focus:border-primary focus:outline-none"
-                                        />
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
+                                      </>
+                                    )}
+                                  </div>
+                                )}
 
+                                {!showsChoices && !showsNumber && (
+                                  <span className="flex h-9 items-center text-xs font-semibold text-muted-foreground">—</span>
+                                )}
 
-                                {error && <p className="text-[11px] font-semibold text-destructive">{error}</p>}
+                                {error && (
+                                  <p className="shrink-0 whitespace-nowrap text-[11px] font-semibold text-destructive">{error}</p>
+                                )}
                               </div>
                             </td>
                           </tr>

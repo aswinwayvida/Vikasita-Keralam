@@ -7596,6 +7596,19 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     : "Official scheme website is not available for this scheme."}
                 </p>
               )}
+              {!record.trackingId && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTrackingIdDraft("");
+                    setIsTrackingSheetOpen(true);
+                  }}
+                  className="mt-2 flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-[#ff5500] bg-white text-[12px] font-extrabold text-[#ff5500] transition-colors hover:bg-[#fff4e5] cursor-pointer active:scale-[0.99] dark:border-orange-700 dark:bg-slate-900 dark:text-orange-300"
+                >
+                  <span>{lang === "ml" ? "ട്രാക്കിംഗ് ഐഡി നൽകുക" : "Enter Tracking ID"}</span>
+                  <ChevronRight className="h-4 w-4 stroke-[2.5]" />
+                </button>
+              )}
             </div>
           ) : isReceivedStage ? (
             <button
