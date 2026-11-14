@@ -5710,6 +5710,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [beneficiarySearchQuery, setBeneficiarySearchQuery] = useState<string>("");
   const [userSearchQuery, setUserSearchQuery] = useState<string>("");
   const [isApplicantFilterOpen, setIsApplicantFilterOpen] = useState<boolean>(false);
+  const [applicantSchemeFilter, setApplicantSchemeFilter] = useState<string>("all");
+  const [applicantPendingScheme, setApplicantPendingScheme] = useState<string>("all");
   const [applicantSchemeStatusFilter, setApplicantSchemeStatusFilter] = useState<MobileApplicantSchemeStatusFilter>("all");
   const [applicantPendingSchemeStatus, setApplicantPendingSchemeStatus] = useState<MobileApplicantSchemeStatusFilter>("all");
   const [applicantRegionFilter, setApplicantRegionFilter] = useState<string>("all");
@@ -8522,6 +8524,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         locationEn: string;
         locationMl: string;
         phone: string;
+        schemeNames: string[];
         schemeStatuses: MobileApplicationRecord["status"][];
         applicationCount: number;
       }
@@ -8535,6 +8538,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       if (existing) {
         existing.applicationCount += 1;
         if (!existing.phone && application.phone) existing.phone = application.phone;
+        if (!existing.schemeNames.includes(application.schemeNameEn)) existing.schemeNames.push(application.schemeNameEn);
         if (!existing.schemeStatuses.includes(application.status)) existing.schemeStatuses.push(application.status);
         return;
       }
@@ -8545,6 +8549,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         locationEn: application.locationEn,
         locationMl: application.locationMl,
         phone: application.phone,
+        schemeNames: [application.schemeNameEn],
         schemeStatuses: [application.status],
         applicationCount: 1,
       });
@@ -8554,6 +8559,16 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       (a, b) => b.applicationCount - a.applicationCount || a.nameEn.localeCompare(b.nameEn),
     );
   })();
+
+  const applicantSchemeOptions = Array.from(
+    new globalThis.Map(
+      [...savedApplicationRecords, ...mobileApplicationAllPreviewRecords]
+        .filter((application) => !deletedApplicationRefs.includes(application.ref))
+        .map((application) => [application.schemeNameEn, application.schemeNameMl] as const),
+    ),
+  )
+    .map(([nameEn, nameMl]) => ({ nameEn, nameMl }))
+    .sort((a, b) => a.nameEn.localeCompare(b.nameEn));
 
   const applicantDistrictOptions = useMemo(
     () => [
@@ -8611,6 +8626,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   );
 
   const applicantActiveFilterCount = [
+    applicantSchemeFilter !== "all",
     applicantSchemeStatusFilter !== "all",
     applicantRegionFilter !== "all",
     applicantDistrictFilter !== "all",
@@ -8629,6 +8645,10 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
   const userQuery = userSearchQuery.trim().toLowerCase();
   const filteredMobileApplicationUsers = mobileApplicationUsers.filter((user) => {
+    if (applicantSchemeFilter !== "all" && !user.schemeNames.includes(applicantSchemeFilter)) {
+      return false;
+    }
+
     if (applicantSchemeStatusFilter !== "all" && !user.schemeStatuses.includes(applicantSchemeStatusFilter)) {
       return false;
     }
@@ -13802,6 +13822,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 <button
                                   type="button"
                                   onClick={() => {
+                                    setApplicantPendingScheme(applicantSchemeFilter);
                                     setApplicantPendingSchemeStatus(applicantSchemeStatusFilter);
                                     setApplicantPendingRegion(applicantRegionFilter);
                                     setApplicantPendingDistrict(applicantDistrictFilter);
@@ -13874,6 +13895,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 <button
                                   type="button"
                                   onClick={() => {
+                                    setApplicantSchemeFilter("all");
+                                    setApplicantPendingScheme("all");
                                     setApplicantSchemeStatusFilter("all");
                                     setApplicantPendingSchemeStatus("all");
                                     setApplicantRegionFilter("all");
@@ -19659,6 +19682,28 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 <div className="h-px w-full bg-slate-100 dark:bg-slate-800 mb-3" />
 
                 <div className="space-y-3">
+                  {/* Select Scheme Dropdown */}
+                  <div>
+                    <p className="mb-1 text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
+                      {lang === "ml" ? "പദ്ധതി തിരഞ്ഞെടുക്കുക (Select Scheme)" : "Select Scheme"}
+                    </p>
+                    <div className="relative">
+                      <select
+                        value={applicantPendingScheme}
+                        onChange={(event) => setApplicantPendingScheme(event.target.value)}
+                        className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2 pr-8 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white cursor-pointer"
+                      >
+                        <option value="all">{lang === "ml" ? "എല്ലാ പദ്ധതികളും" : "All Schemes"}</option>
+                        {applicantSchemeOptions.map((scheme) => (
+                          <option key={scheme.nameEn} value={scheme.nameEn}>
+                            {lang === "ml" ? scheme.nameMl : scheme.nameEn}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                    </div>
+                  </div>
+
                   {/* Scheme Status Dropdown */}
                   <div>
                     <p className="mb-1 text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
@@ -19681,6 +19726,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     </div>
                   </div>
 
+                  <div className="grid grid-cols-2 gap-3">
                   {/* Organisation Region Dropdown */}
                   <div>
                     <p className="mb-1 text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
@@ -19721,6 +19767,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       </select>
                       <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
                     </div>
+                  </div>
                   </div>
 
                   {/* Mandalam Dropdown */}
@@ -19796,6 +19843,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     <button
                       type="button"
                       onClick={() => {
+                        setApplicantPendingScheme("all");
                         setApplicantPendingSchemeStatus("all");
                         setApplicantPendingRegion("all");
                         setApplicantPendingDistrict("all");
@@ -19810,6 +19858,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     <button
                       type="button"
                       onClick={() => {
+                        setApplicantSchemeFilter(applicantPendingScheme);
                         setApplicantSchemeStatusFilter(applicantPendingSchemeStatus);
                         setApplicantRegionFilter(applicantPendingRegion);
                         setApplicantDistrictFilter(applicantPendingDistrict);
