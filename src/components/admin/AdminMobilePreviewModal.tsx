@@ -21696,7 +21696,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               src="/images/document-verified-badge-blue.png"
               alt=""
               aria-hidden="true"
-              className="mx-auto block h-16 w-16 shrink-0 rounded-full object-cover"
+              className="mx-auto block h-20 w-20 shrink-0 rounded-full object-cover"
             />
 
             {/* Title & Subtitle */}
