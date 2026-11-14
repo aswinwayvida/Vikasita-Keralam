@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -15,7 +15,15 @@ import {
   ChevronRight,
   ChevronDown,
   List,
+  ListOrdered,
   Type,
+  Bold,
+  Italic,
+  Underline,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Link2,
 } from "lucide-react";
 import { useLang } from "@/i18n/LanguageProvider";
 import { useSidebar } from "@/components/ui/sidebar";
@@ -271,6 +279,139 @@ const createInitialEligibilityRules = (
     acc[field.key] = createEmptyEligibilityRule();
     return acc;
   }, {});
+
+const RICH_TEXT_TOOLS = [
+  { command: "bold", label: "Bold", icon: Bold },
+  { command: "italic", label: "Italic", icon: Italic },
+  { command: "underline", label: "Underline", icon: Underline },
+  { command: "insertUnorderedList", label: "Bulleted list", icon: List },
+  { command: "insertOrderedList", label: "Numbered list", icon: ListOrdered },
+  { command: "justifyLeft", label: "Align left", icon: AlignLeft },
+  { command: "justifyCenter", label: "Align center", icon: AlignCenter },
+  { command: "justifyRight", label: "Align right", icon: AlignRight },
+] as const;
+
+function RichTextEditor({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+}) {
+  const editorRef = useRef<HTMLDivElement>(null);
+  const [isEmpty, setIsEmpty] = useState(!value.trim());
+  const [activeFormats, setActiveFormats] = useState<Record<string, boolean>>({});
+
+  const updateActiveFormats = () => {
+    const editor = editorRef.current;
+    const selection = window.getSelection();
+    if (!editor || !selection || selection.rangeCount === 0 || !editor.contains(selection.anchorNode)) {
+      setActiveFormats({});
+      return;
+    }
+    setActiveFormats(
+      Object.fromEntries(
+        RICH_TEXT_TOOLS.map((tool) => [tool.command, document.queryCommandState(tool.command)]),
+      ),
+    );
+  };
+
+  const syncValue = () => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    onChange(editor.innerHTML);
+    setIsEmpty(!editor.innerText.trim());
+    updateActiveFormats();
+  };
+
+  const applyCommand = (command: string, commandValue?: string) => {
+    editorRef.current?.focus();
+    document.execCommand(command, false, commandValue);
+    syncValue();
+  };
+
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor || editor.innerHTML === value) return;
+    editor.innerHTML = value;
+    setIsEmpty(!editor.innerText.trim());
+  }, [value]);
+
+  useEffect(() => {
+    document.addEventListener("selectionchange", updateActiveFormats);
+    return () => document.removeEventListener("selectionchange", updateActiveFormats);
+  }, []);
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-border bg-background transition-colors focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/20 xl:bg-white">
+      <div className="flex flex-wrap items-center gap-0.5 border-b border-border/70 px-2 py-1.5">
+        {RICH_TEXT_TOOLS.map((tool) => {
+          const ToolIcon = tool.icon;
+          const isActive = Boolean(activeFormats[tool.command]);
+          return (
+            <button
+              key={tool.command}
+              type="button"
+              title={tool.label}
+              aria-label={tool.label}
+              aria-pressed={isActive}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => applyCommand(tool.command)}
+              className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors cursor-pointer ${
+                isActive
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
+            >
+              <ToolIcon className="h-3.5 w-3.5" strokeWidth={2.1} />
+            </button>
+          );
+        })}
+        <span className="mx-1 h-4 w-px bg-border/80" />
+        <button
+          type="button"
+          title="Insert link"
+          aria-label="Insert link"
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => {
+            const url = window.prompt("Enter link URL");
+            if (url?.trim()) applyCommand("createLink", url.trim());
+          }}
+          className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
+        >
+          <Link2 className="h-3.5 w-3.5" strokeWidth={2.1} />
+        </button>
+      </div>
+
+      <div className="relative">
+        {isEmpty && (
+          <span className="pointer-events-none absolute left-3.5 top-3 text-xs text-muted-foreground sm:text-sm">
+            {placeholder}
+          </span>
+        )}
+        <div
+          ref={editorRef}
+          contentEditable
+          suppressContentEditableWarning
+          role="textbox"
+          aria-multiline="true"
+          aria-label={placeholder}
+          tabIndex={0}
+          onInput={syncValue}
+          onBlur={syncValue}
+          onPaste={(event) => {
+            event.preventDefault();
+            document.execCommand("insertText", false, event.clipboardData.getData("text/plain"));
+            window.setTimeout(syncValue, 0);
+          }}
+          className="min-h-[132px] max-h-[300px] w-full overflow-y-auto px-3.5 py-3 text-xs leading-relaxed text-foreground focus:outline-none sm:text-sm [&_a]:text-primary [&_a]:underline [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+        />
+      </div>
+    </div>
+  );
+}
 
 export function CreateSchemePage() {
   const { lang } = useLang();
@@ -967,15 +1108,13 @@ export function CreateSchemePage() {
                 <label className="text-xs font-bold text-foreground">
                   {lang === "ml" ? "പദ്ധതിയെക്കുറിച്ച്" : "About Scheme"}
                 </label>
-                <textarea
-                  rows={4}
+                <RichTextEditor
                   value={detailedDescription}
-                  onChange={(e) => {
-                    setDetailedDescription(e.target.value);
+                  onChange={(value) => {
+                    setDetailedDescription(value);
                     handleInputChange();
                   }}
                   placeholder="Describe the scheme, its objectives, scope, and key details..."
-                  className="w-full rounded-xl border border-border bg-background xl:bg-white p-3 text-xs sm:text-sm text-foreground focus:border-primary focus:ring-1 focus:ring-primary/20 focus:outline-none transition-colors"
                 />
               </div>
             </div>
