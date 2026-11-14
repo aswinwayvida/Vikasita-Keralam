@@ -23,7 +23,7 @@ export function AdminMobileAppBottomNav({
     applications: isMl ? "അപേക്ഷകൾ" : "Applications",
     create: isMl ? "പുതിയത്" : "Create",
     schemes: isMl ? "പദ്ധതികൾ" : "Schemes",
-    helpdesk: isMl ? "ഹെൽപ്പ്ഡെസ്ക്" : "Help Desk",
+    helpdesk: isMl ? "അഭ്യർത്ഥനകൾ" : "Requests",
   };
 
   const navItems = [

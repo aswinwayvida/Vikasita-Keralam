@@ -61,7 +61,7 @@ const INITIAL_MOCK_HELP_REQUESTS: HelpdeskRequest[] = [
     district: "Kollam",
     helpdeskId: "klm-helpdesk",
     helpdeskName: "Kollam Main Help Desk",
-    notes: "",
+    notes: "Needs help uploading the income certificate.",
     location: { districtId: "klm", districtName: "Kollam", mandalamId: "chavara", mandalamName: "Chavara" },
     source: "guest_eligibility",
     documents: [],
@@ -99,7 +99,7 @@ const INITIAL_MOCK_HELP_REQUESTS: HelpdeskRequest[] = [
     district: "Thiruvananthapuram",
     helpdeskId: "tvm-helpdesk",
     helpdeskName: "Thiruvananthapuram Main Help Desk",
-    notes: "",
+    notes: "Requested a callback to check eligibility.",
     location: { districtId: "tvm", districtName: "Thiruvananthapuram", mandalamId: "nemom", mandalamName: "Nemom" },
     source: "guest_eligibility",
     documents: [],
@@ -175,7 +175,7 @@ const INITIAL_MOCK_HELP_REQUESTS: HelpdeskRequest[] = [
     district: "Ernakulam",
     helpdeskId: "ekm-helpdesk",
     helpdeskName: "Ernakulam Main Help Desk",
-    notes: "",
+    notes: "Documents are ready, needs help with submission.",
     location: { districtId: "ekm", districtName: "Ernakulam", mandalamId: "paravur", mandalamName: "Paravur" },
     source: "guest_eligibility",
     documents: [],
@@ -270,7 +270,7 @@ const INITIAL_MOCK_HELP_REQUESTS: HelpdeskRequest[] = [
     district: "Malappuram",
     helpdeskId: "mlp-helpdesk",
     helpdeskName: "Malappuram Main Help Desk",
-    notes: "",
+    notes: "Applying for the second instalment.",
     location: { districtId: "mlp", districtName: "Malappuram", mandalamId: "tirur", mandalamName: "Tirur" },
     source: "guest_eligibility",
     documents: [],
@@ -747,6 +747,8 @@ type MobileApplicationRecordSeed = Omit<
   MobileApplicationRecord,
   "ref" | "status" | "currentStep" | "pendingDocs" | "nextActionEn" | "nextActionMl" | "auditLog" | "workflowStatus" | "decisionReason"
 >;
+
+type MobileApplicantSchemeStatusFilter = "all" | MobileApplicationRecord["status"];
 
 const mobileApplicationRecordSeeds: MobileApplicationRecordSeed[] = [
   {
@@ -4230,6 +4232,29 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     return { en: scheme.categoryEn, ml: scheme.categoryMl };
   };
 
+  const getSchemeDetailsRecord = (scheme: MobileEligibleScheme): Scheme => {
+    const category: Scheme["category"] =
+      scheme.id === "SCH-001" ? "agriculture" : scheme.id === "SCH-002" ? "health" : scheme.id === "SCH-003" ? "housing" : "welfare";
+    const eligibility =
+      scheme.id === "SCH-001"
+        ? { en: "Small & marginal land-owning farmer families.", ml: "ചെറുകിട-നാമമാത്ര ഭൂവുടമ കർഷക കുടുംബങ്ങൾ." }
+        : scheme.id === "SCH-002"
+          ? { en: "Eligible families as per the SECC database.", ml: "SECC ഡാറ്റാബേസ് പ്രകാരം അർഹരായ കുടുംബങ്ങൾ." }
+          : scheme.id === "SCH-003"
+            ? { en: "Eligible rural families without a pucca house.", ml: "പക്കാ വീടില്ലാത്ത അർഹരായ ഗ്രാമീണ കുടുംബങ്ങൾ." }
+            : { en: "BPL senior citizens aged 60 and above.", ml: "60 വയസ്സും അതിന് മുകളിലും പ്രായമുള്ള ബിപിഎൽ മുതിർന്ന പൗരന്മാർ." };
+
+    return {
+      id: scheme.id,
+      en: scheme.titleEn,
+      ml: scheme.titleMl,
+      ministry: { en: scheme.deptEn, ml: scheme.deptMl },
+      category,
+      benefit: { en: scheme.benefitEn, ml: scheme.benefitMl },
+      eligibility,
+    };
+  };
+
   const getSchemeRequiredFieldKeys = (scheme: MobileEligibleScheme | null) => {
     if (isPmKisanScheme(scheme)) return [];
     return scheme?.requiredFieldKeys || (Object.keys(mobileFieldLabels) as MobileSchemeFieldKey[]);
@@ -5601,19 +5626,18 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   };
 
     const [mobileSubPage, setMobileSubPage] = useState<"none" | "leaderboard" | "needs_attention" | "recent_activity" | "beneficiaries" | "users" | "applicants" | "user_detail" | "notifications" | "applications" | "events_announcements" | "app_detail" | "category_schemes" | "scheme_details" | "guest_popular_schemes" | "guest_schemes" | "about" | "contact" | "create_scheme" | "settings">("none");
+  const [contactTab, setContactTab] = useState<"state" | "district">("state");
   const [contactSelectedDistrict, setContactSelectedDistrict] = useState("Thiruvananthapuram");
   const [contactDistrictPickerOpen, setContactDistrictPickerOpen] = useState(false);
   const [contactDistrictSearch, setContactDistrictSearch] = useState("");
-  const [contactExpandedOfficeId, setContactExpandedOfficeId] = useState<string | null>(null);
   const [contactCallPickerLocationId, setContactCallPickerLocationId] = useState<string | null>(null);
-  const [copiedLocationId, setCopiedLocationId] = useState<string | null>(null);
 
   useEffect(() => {
     if (mobileSubPage === "contact") {
+      setContactTab("state");
       setContactSelectedDistrict("Thiruvananthapuram");
       setContactDistrictPickerOpen(false);
       setContactDistrictSearch("");
-      setContactExpandedOfficeId(null);
     } else {
       setContactCallPickerLocationId(null);
     }
@@ -5684,6 +5708,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [beneficiarySearchQuery, setBeneficiarySearchQuery] = useState<string>("");
   const [userSearchQuery, setUserSearchQuery] = useState<string>("");
   const [isApplicantFilterOpen, setIsApplicantFilterOpen] = useState<boolean>(false);
+  const [applicantSchemeStatusFilter, setApplicantSchemeStatusFilter] = useState<MobileApplicantSchemeStatusFilter>("all");
+  const [applicantPendingSchemeStatus, setApplicantPendingSchemeStatus] = useState<MobileApplicantSchemeStatusFilter>("all");
   const [applicantRegionFilter, setApplicantRegionFilter] = useState<string>("all");
   const [applicantPendingRegion, setApplicantPendingRegion] = useState<string>("all");
   const [applicantDistrictFilter, setApplicantDistrictFilter] = useState<string>("all");
@@ -8415,6 +8441,13 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     slaBreaches: Math.max(0, Math.round((rawMetrics?.slaBreaches || 0) * geoScopeMultiplier)),
   };
 
+  const openApplicationListWithStatus = (status: MobileApplicationStatusFilter) => {
+    setActiveTab("applications");
+    setMobileSubPage("none");
+    setApplicationStatusFilter(status);
+    setApplicationSearchQuery("");
+  };
+
   const savedRecordsForActiveFilter: MobileApplicationRecord[] =
     applicationStatusFilter === "all" ||
     applicationStatusFilter === "pending" ||
@@ -8465,6 +8498,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         locationEn: string;
         locationMl: string;
         phone: string;
+        schemeStatuses: MobileApplicationRecord["status"][];
         applicationCount: number;
       }
     >();
@@ -8477,6 +8511,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       if (existing) {
         existing.applicationCount += 1;
         if (!existing.phone && application.phone) existing.phone = application.phone;
+        if (!existing.schemeStatuses.includes(application.status)) existing.schemeStatuses.push(application.status);
         return;
       }
       usersByName.set(key, {
@@ -8486,6 +8521,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         locationEn: application.locationEn,
         locationMl: application.locationMl,
         phone: application.phone,
+        schemeStatuses: [application.status],
         applicationCount: 1,
       });
       });
@@ -8551,6 +8587,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   );
 
   const applicantActiveFilterCount = [
+    applicantSchemeStatusFilter !== "all",
     applicantRegionFilter !== "all",
     applicantDistrictFilter !== "all",
     applicantMandalamFilter !== "all",
@@ -8558,8 +8595,20 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     applicantWardFilter !== "all",
   ].filter(Boolean).length;
 
+  const applicationTabActiveFilterCount = [
+    applicationStatusFilter !== "all",
+    appFilterLocation !== "all",
+    appSchemeCategoryFilter !== "all",
+    appFilterAssignedWorker !== "all",
+    appFilterFollowUp !== "all",
+  ].filter(Boolean).length;
+
   const userQuery = userSearchQuery.trim().toLowerCase();
   const filteredMobileApplicationUsers = mobileApplicationUsers.filter((user) => {
+    if (applicantSchemeStatusFilter !== "all" && !user.schemeStatuses.includes(applicantSchemeStatusFilter)) {
+      return false;
+    }
+
     const locParts = user.locationEn.split(",").map((s) => s.trim());
     const district = locParts[locParts.length - 1] || "";
 
@@ -9232,12 +9281,10 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       nameMl: "ബിജെപി കേരള സംസ്ഥാന ഓഫീസ്",
       addressLinesEn: ["Mararji Smrithi Mandiram, Thycaud PO.,", "Trivandrum, Kerala 695014"],
       addressLinesMl: ["മാരാർജി സ്മൃതി മന്ദിരം, തൈക്കാട് പി.ഒ.,", "തിരുവനന്തപുരം, കേരളം 695014"],
-      phone: "+91 471 2333390",
+      phone: "0471 2333390",
       phoneHref: "tel:+914712333390",
       email: "bjpkerala@gmail.com",
       emailHref: "mailto:bjpkerala@gmail.com",
-      hoursEn: "10:00 AM - 5:30 PM",
-      hoursMl: "രാവിലെ 10 മുതൽ വൈകുന്നേരം 5:30 വരെ",
     };
     const stateMapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
       "BJP Kerala, Mararji Smrithi Mandiram, Thycaud P.O, Trivandrum, Kerala 695014",
@@ -9262,15 +9309,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         district.name.toLowerCase().includes(districtQuery) || district.nameMl.includes(contactDistrictSearch)
       );
     });
-
-    const handleCopyAddress = (locId: string, address: string) => {
-      if (typeof navigator !== "undefined" && navigator.clipboard) {
-        navigator.clipboard.writeText(address);
-        setCopiedLocationId(locId);
-        toast.success(lang === "ml" ? "വിലാസം പകർത്തി" : "Address copied to clipboard");
-        setTimeout(() => setCopiedLocationId(null), 2500);
-      }
-    };
 
     const selectedDistrictLabel = contactSelectedDistrict
       ? lang === "ml"
@@ -9318,86 +9356,159 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           />
         </div>
 
-        {/* Kerala State Office */}
-        <div className="rounded-2xl border border-[#F3E5D8] bg-white p-2 shadow-[0_2px_8px_-4px_rgba(15,23,42,0.10)] dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex min-w-0 items-start gap-2 px-0.5">
-            <img
-              src="/images/mararji-bhavan-3d.png"
-              alt=""
+        {/* Office type tabs */}
+        <div
+          role="tablist"
+          aria-label={lang === "ml" ? "ഓഫീസ് തരം" : "Office type"}
+          className="grid grid-cols-2 border-b border-[#EADFD2] dark:border-slate-800"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={contactTab === "state"}
+            onClick={() => {
+              setContactTab("state");
+              setContactDistrictPickerOpen(false);
+            }}
+            className={`relative flex items-center justify-center pb-2 pt-1 text-[12px] font-extrabold tracking-tight transition-colors ${
+              contactTab === "state"
+                ? "text-[#243D95] dark:text-blue-300"
+                : "text-[#7C8AAE] hover:text-[#243D95] dark:text-slate-400 dark:hover:text-blue-300"
+            }`}
+          >
+            {lang === "ml" ? "സംസ്ഥാന ഓഫീസ്" : "State Office"}
+            <span
               aria-hidden="true"
-              className="mt-0.5 h-[52px] w-[72px] shrink-0 object-contain"
+              className={`absolute -bottom-px left-1/2 h-[2px] w-9 -translate-x-1/2 rounded-full transition-colors ${
+                contactTab === "state" ? "bg-[#243D95] dark:bg-blue-300" : "bg-transparent"
+              }`}
             />
-            <div className="min-w-0">
-              <h3 className="text-[13.5px] font-extrabold leading-tight tracking-tight text-[#16225C] dark:text-white">
-                {lang === "ml" ? stateOffice.nameMl : stateOffice.nameEn}
-              </h3>
-              <p className="mt-0.5 text-[10px] font-bold leading-snug text-[#D9640C] dark:text-orange-300">
-                {(lang === "ml" ? stateOffice.addressLinesMl : stateOffice.addressLinesEn).map((line) => (
-                  <span key={line} className="block">
-                    {line}
-                  </span>
-                ))}
-              </p>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={contactTab === "district"}
+            onClick={() => {
+              setContactTab("district");
+              setContactDistrictPickerOpen(false);
+            }}
+            className={`relative flex items-center justify-center pb-2 pt-1 text-[12px] font-extrabold tracking-tight transition-colors ${
+              contactTab === "district"
+                ? "text-[#243D95] dark:text-blue-300"
+                : "text-[#7C8AAE] hover:text-[#243D95] dark:text-slate-400 dark:hover:text-blue-300"
+            }`}
+          >
+            {lang === "ml" ? "ജില്ലാ ഓഫീസുകൾ" : "District Offices"}
+            <span
+              aria-hidden="true"
+              className={`absolute -bottom-px left-1/2 h-[2px] w-9 -translate-x-1/2 rounded-full transition-colors ${
+                contactTab === "district" ? "bg-[#243D95] dark:bg-blue-300" : "bg-transparent"
+              }`}
+            />
+          </button>
+        </div>
+
+        {/* Kerala State Office */}
+        {contactTab === "state" && (
+          <div className="overflow-hidden rounded-2xl border border-[#F3E5D8] bg-white shadow-[0_2px_8px_-4px_rgba(15,23,42,0.10)] dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex min-w-0 items-start gap-2.5 p-2.5">
+              <img
+                src="/images/mararji-bhavan-3d.png"
+                alt=""
+                aria-hidden="true"
+                className="mt-0.5 h-[62px] w-[82px] shrink-0 object-contain"
+              />
+              <div className="min-w-0 flex-1">
+                <h3 className="text-[13.5px] font-extrabold leading-tight tracking-tight text-[#16225C] dark:text-white">
+                  {lang === "ml" ? stateOffice.nameMl : stateOffice.nameEn}
+                </h3>
+                <p className="mt-1 text-[10px] font-medium leading-snug text-[#64748B] dark:text-slate-400">
+                  {(lang === "ml" ? stateOffice.addressLinesMl : stateOffice.addressLinesEn).map(
+                    (line) => (
+                      <span key={line} className="block">
+                        {line}
+                      </span>
+                    ),
+                  )}
+                </p>
+              </div>
             </div>
-          </div>
 
-          <div className="mt-1.5 flex items-center gap-1.5">
-            <a
-              href={stateOffice.emailHref}
-              title={stateOffice.email}
-              className="mr-auto inline-flex min-w-0 items-center gap-1 text-[9.5px] font-bold text-[#243D95] transition-colors hover:text-[#1B2F78] dark:text-blue-300 dark:hover:text-blue-200"
-            >
-              <Mail className="h-3 w-3 shrink-0 stroke-[2.3]" />
-              <span className="truncate">{stateOffice.email}</span>
-            </a>
-            <a
-              href={stateMapsHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex h-7 shrink-0 items-center gap-1 rounded-full border border-[#243D95]/35 bg-white px-2.5 text-[9px] font-extrabold text-[#243D95] transition-colors hover:bg-[#243D95]/5 dark:border-blue-400/40 dark:bg-slate-900 dark:text-blue-300 dark:hover:bg-slate-800"
-            >
-              <Navigation className="h-2.5 w-2.5 stroke-[2.4]" />
-              {lang === "ml" ? "വഴി" : "Directions"}
-            </a>
-            <a
-              href={stateOffice.phoneHref}
-              className="inline-flex h-7 shrink-0 items-center gap-1 rounded-full bg-gradient-to-r from-[#FF8A12] to-[#F56A00] px-3 text-[9px] font-extrabold text-white shadow-[0_4px_10px_-4px_rgba(245,106,0,0.8)] transition-transform active:scale-95"
-            >
-              <Phone className="h-2.5 w-2.5 stroke-[2.4]" />
-              {lang === "ml" ? "വിളിക്കുക" : "Call"}
-            </a>
-          </div>
+            <div className="grid grid-cols-2 divide-x divide-[#F3E5D8] border-t border-[#F3E5D8] dark:divide-slate-800 dark:border-slate-800">
+              <a
+                href={stateOffice.emailHref}
+                title={stateOffice.email}
+                className="min-w-0 px-2 py-2 transition-colors hover:bg-[#FFF7EF] dark:hover:bg-slate-800/60"
+              >
+                <span className="flex items-center gap-1 text-[8px] font-black uppercase tracking-wide text-[#64748B] dark:text-slate-400">
+                  <Mail className="h-2.5 w-2.5 shrink-0 text-[#F5730A] stroke-[2.3]" />
+                  {lang === "ml" ? "ഇമെയിൽ" : "Email"}
+                </span>
+                <span className="mt-0.5 block truncate text-[9px] font-bold text-[#16225C] dark:text-slate-100">
+                  {stateOffice.email}
+                </span>
+              </a>
+              <a
+                href={stateOffice.phoneHref}
+                className="min-w-0 px-2 py-2 transition-colors hover:bg-[#FFF7EF] dark:hover:bg-slate-800/60"
+              >
+                <span className="flex items-center gap-1 text-[8px] font-black uppercase tracking-wide text-[#64748B] dark:text-slate-400">
+                  <Phone className="h-2.5 w-2.5 shrink-0 text-[#F5730A] stroke-[2.3]" />
+                  {lang === "ml" ? "ഫോൺ" : "Phone"}
+                </span>
+                <span className="mt-0.5 block truncate text-[9px] font-bold text-[#16225C] dark:text-slate-100">
+                  {stateOffice.phone}
+                </span>
+              </a>
+            </div>
 
-          <div className="mt-1.5 flex items-center gap-2 border-t border-[#F3E5D8] pt-1.5 dark:border-slate-800">
-            <Share2 className="h-3.5 w-3.5 shrink-0 text-[#F5730A] stroke-[2.3]" />
-            <span className="text-[9.5px] font-bold text-[#64748B] dark:text-slate-400">
-              {lang === "ml" ? "സോഷ്യൽ മീഡിയയിൽ പിന്തുടരുക" : "Follow us on social media"}
-            </span>
-            <div className="ml-auto flex items-center gap-1">
-              {stateSocialLinks.map(({ label, href, Icon }) => (
+            <div className="flex items-center gap-2 border-t border-[#F3E5D8] px-2.5 py-2 dark:border-slate-800">
+              <div className="min-w-0 flex-1">
+                <span className="block text-[8.5px] font-black uppercase tracking-wide text-[#64748B] dark:text-slate-400">
+                  {lang === "ml" ? "സോഷ്യൽ മീഡിയ" : "Follow us on social media"}
+                </span>
+                <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                  {stateSocialLinks.map(({ label, href, Icon }) => (
+                    <a
+                      key={label}
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={label}
+                      title={label}
+                      className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-[#F3D9C2] bg-[#FFF7EF] text-[#D9640C] transition-colors hover:border-[#FF8A12] hover:bg-[#FF8A12] hover:text-white dark:border-slate-700 dark:bg-slate-800 dark:text-orange-300 dark:hover:bg-orange-500 dark:hover:text-white"
+                    >
+                      <Icon className="h-3 w-3 stroke-[2.2]" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+              <div className="flex shrink-0 items-center gap-1.5">
                 <a
-                  key={label}
-                  href={href}
+                  href={stateMapsHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={label}
-                  title={label}
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#F3D9C2] bg-[#FFF7EF] text-[#D9640C] transition-colors hover:border-[#FF8A12] hover:bg-[#FF8A12] hover:text-white dark:border-slate-700 dark:bg-slate-800 dark:text-orange-300 dark:hover:bg-orange-500 dark:hover:text-white"
+                  aria-label={lang === "ml" ? "വഴി" : "Directions"}
+                  title={lang === "ml" ? "വഴി" : "Directions"}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#F3E5D8] bg-white text-[#16225C] transition-colors hover:bg-[#FFF7EF] active:scale-95 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
                 >
-                  <Icon className="h-3.5 w-3.5 stroke-[2.2]" />
+                  <Navigation className="h-3.5 w-3.5 stroke-[2.4]" />
                 </a>
-              ))}
+                <a
+                  href={stateOffice.phoneHref}
+                  aria-label={lang === "ml" ? "വിളിക്കുക" : "Call"}
+                  title={lang === "ml" ? "വിളിക്കുക" : "Call"}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-[#FF8A12] to-[#F56A00] text-white shadow-[0_4px_10px_-4px_rgba(245,106,0,0.8)] transition-transform active:scale-95"
+                >
+                  <Phone className="h-3.5 w-3.5 stroke-[2.4]" />
+                </a>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* District Offices */}
-        <div className="mt-1 border-t border-[#F1E4D6] px-0.5 pt-2.5 dark:border-slate-800">
-          <h3 className="text-[15px] font-extrabold leading-tight tracking-tight text-[#16225C] dark:text-white">
-            {lang === "ml" ? "ജില്ലാ ഓഫീസുകൾ" : "District Offices"}
-          </h3>
-        </div>
-
+        {contactTab === "district" && (
+        <>
         {/* District selector */}
         <div className="relative">
           <button
@@ -9445,7 +9556,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     setContactSelectedDistrict("");
                     setContactDistrictPickerOpen(false);
                     setContactDistrictSearch("");
-                    setContactExpandedOfficeId(null);
                   }}
                   className={`flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left transition-colors ${
                     !contactSelectedDistrict
@@ -9469,7 +9579,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         setContactSelectedDistrict(district.name);
                         setContactDistrictPickerOpen(false);
                         setContactDistrictSearch("");
-                        setContactExpandedOfficeId(null);
                       }}
                       className={`flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left transition-colors ${
                         selected
@@ -9497,113 +9606,57 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         {/* Office cards */}
         <div className="space-y-1.5">
           {filteredLocations.map((loc) => {
-            const expanded = contactExpandedOfficeId === loc.id;
             const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc.address)}`;
             const primaryPhone = loc.phones[0];
-            const extraPhones = loc.phones.slice(1);
-            const callButtonClass =
-              "inline-flex h-7 shrink-0 items-center gap-1 rounded-full bg-gradient-to-r from-[#FF8A12] to-[#F56A00] px-2.5 text-[9px] font-extrabold text-white shadow-[0_3px_8px_-4px_rgba(245,106,0,0.8)] transition-transform active:scale-95";
             return (
               <div
                 key={loc.id}
-                className="overflow-hidden rounded-2xl border border-[#F3E5D8] bg-white shadow-[0_2px_8px_-4px_rgba(15,23,42,0.1)] dark:border-slate-800 dark:bg-slate-900"
+                className="flex items-center gap-2.5 overflow-hidden rounded-2xl border border-[#F3E5D8] bg-white p-2.5 shadow-[0_2px_8px_-4px_rgba(15,23,42,0.1)] dark:border-slate-800 dark:bg-slate-900"
               >
-                <button
-                  type="button"
-                  onClick={() => setContactExpandedOfficeId(expanded ? null : loc.id)}
-                  aria-expanded={expanded}
-                  className="flex w-full items-start gap-2 px-2.5 pt-1.5 text-left"
-                >
-                  {districtIconMap[loc.district] ? (
-                    <img
-                      src={districtIconMap[loc.district]}
-                      alt=""
-                      aria-hidden="true"
-                      loading="lazy"
-                      className="mt-0.5 h-8 w-8 shrink-0 rounded-lg object-cover"
-                    />
-                  ) : (
-                    <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FFF0E1] text-[#F5730A] dark:bg-orange-950/40">
-                      <MapPin className="h-3.5 w-3.5 stroke-[2.3]" />
-                    </span>
-                  )}
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[12px] font-extrabold leading-tight text-[#16225C] dark:text-white">
-                      {loc.name}
-                    </span>
-                    <span
-                      className={`mt-0.5 text-[9.5px] font-medium leading-snug text-[#64748B] dark:text-slate-400 ${
-                        expanded ? "block" : "line-clamp-2"
-                      }`}
-                    >
-                      {loc.address}
-                    </span>
-                  </span>
-                  <ChevronRight
-                    className={`mt-1 h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform ${
-                      expanded ? "rotate-90" : ""
-                    }`}
+                {districtIconMap[loc.district] ? (
+                  <img
+                    src={districtIconMap[loc.district]}
+                    alt=""
+                    aria-hidden="true"
+                    loading="lazy"
+                    className="h-14 w-14 shrink-0 object-contain"
                   />
-                </button>
-
-                <div className="flex items-center justify-end gap-1.5 px-2.5 pb-1.5 pt-1.5">
+                ) : (
+                  <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[#FFF0E1] text-[#F5730A] dark:bg-orange-950/40">
+                    <MapPin className="h-6 w-6 stroke-[2.3]" />
+                  </span>
+                )}
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-[13.5px] font-extrabold leading-tight tracking-tight text-[#16225C] dark:text-white">
+                    {loc.name}
+                  </h3>
+                  <p className="mt-1 line-clamp-2 text-[10px] font-medium leading-snug text-[#64748B] dark:text-slate-400">
+                    {loc.address}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-1.5">
                   <a
                     href={mapsHref}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex h-7 shrink-0 items-center gap-1 rounded-full border border-[#243D95]/35 bg-white px-2.5 text-[9px] font-extrabold text-[#243D95] transition-colors hover:bg-[#243D95]/5 dark:border-blue-400/40 dark:bg-slate-900 dark:text-blue-300 dark:hover:bg-slate-800"
+                    aria-label={lang === "ml" ? "വഴി" : "Directions"}
+                    title={lang === "ml" ? "വഴി" : "Directions"}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#F3E5D8] bg-white text-[#16225C] transition-colors hover:bg-[#FFF7EF] active:scale-95 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
                   >
-                    <Navigation className="h-2.5 w-2.5 stroke-[2.4]" />
-                    {lang === "ml" ? "വഴി" : "Directions"}
+                    <Navigation className="h-3.5 w-3.5 stroke-[2.4]" />
                   </a>
                   {primaryPhone ? (
                     <button
                       type="button"
                       onClick={() => setContactCallPickerLocationId(loc.id)}
-                      className={callButtonClass}
+                      aria-label={lang === "ml" ? "വിളിക്കുക" : "Call"}
+                      title={lang === "ml" ? "വിളിക്കുക" : "Call"}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-[#FF8A12] to-[#F56A00] text-white shadow-[0_4px_10px_-4px_rgba(245,106,0,0.8)] transition-transform active:scale-95"
                     >
-                      <Phone className="h-2.5 w-2.5 stroke-[2.4]" />
-                      {lang === "ml" ? "വിളിക്കുക" : "Call"}
+                      <Phone className="h-3.5 w-3.5 stroke-[2.4]" />
                     </button>
                   ) : null}
                 </div>
-
-                {expanded && (
-                  <div className="animate-in fade-in slide-in-from-top-1 flex flex-wrap items-center justify-between gap-1.5 border-t border-[#F3E5D8] px-2.5 py-1 duration-150 dark:border-slate-800">
-                    <button
-                      type="button"
-                      onClick={() => handleCopyAddress(loc.id, loc.address)}
-                      className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-[#64748B] transition-colors hover:text-[#16225C] dark:text-slate-400 dark:hover:text-white"
-                    >
-                      {copiedLocationId === loc.id ? (
-                        <>
-                          <Check className="h-3 w-3 text-emerald-600 stroke-[2.6]" />
-                          <span className="font-bold text-emerald-600">
-                            {lang === "ml" ? "പകർത്തി" : "Copied"}
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="h-3 w-3 stroke-[2.2]" />
-                          <span>{lang === "ml" ? "വിലാസം പകർത്തൂ" : "Copy address"}</span>
-                        </>
-                      )}
-                    </button>
-                    {extraPhones.length > 0 ? (
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                        {extraPhones.map((phone) => (
-                          <a
-                            key={phone}
-                            href={`tel:${phone}`}
-                            className="text-[9px] font-semibold text-[#D9640C] transition-colors hover:text-[#B45309] dark:text-orange-300 dark:hover:text-orange-200"
-                          >
-                            {phone}
-                          </a>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
-                )}
               </div>
             );
           })}
@@ -9616,6 +9669,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             {lang === "ml" ? "സന്ദർശിക്കുന്നതിന് മുമ്പ് ദയവായി വിളിക്കുക." : "Please call before visiting."}
           </p>
         </div>
+        </>
+        )}
       </div>
     );
   };
@@ -9897,7 +9952,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         {/* Mobile App Standard Header or Application Details / Document Verification Back Header */}
 
           {/* Mobile App Standard Header or Application Details / Document Verification Back Header */}
-          {!isLogoutSplashScreen && !isGuestEligibilityOpen && !isMobileAuthOpen && !(activeTab === "create" && createFlowStep === "checking") && mobileSubPage !== "category_schemes" && mobileSubPage !== "create_scheme" && mobileSubPage !== "users" && mobileSubPage !== "applicants" && mobileSubPage !== "user_detail" && mobileSubPage !== "settings" && (
+          {!isLogoutSplashScreen && (!isGuestEligibilityOpen || mobileSubPage === "scheme_details") && !isMobileAuthOpen && !(activeTab === "create" && createFlowStep === "checking") && mobileSubPage !== "category_schemes" && mobileSubPage !== "create_scheme" && mobileSubPage !== "users" && mobileSubPage !== "applicants" && mobileSubPage !== "user_detail" && mobileSubPage !== "settings" && (
             mobileSubPage === "guest_popular_schemes" || mobileSubPage === "guest_schemes" || mobileSubPage === "app_detail" || mobileSubPage === "needs_attention" || mobileSubPage === "notifications" || mobileSubPage === "scheme_details" || mobileSubPage === "about" || mobileSubPage === "contact" || mobileSubPage === "events_announcements" || (activeTab === "create" && (createFlowStep === "scheme_details" || createFlowStep === "eligible_schemes" || createFlowStep === "form")) ? (
               <header className="relative z-40 w-full bg-[#FFFDF9] dark:bg-slate-900 border-b border-slate-200/60 dark:border-slate-800/60 shadow-2xs">
                 {mobileSubPage === "guest_popular_schemes" || mobileSubPage === "guest_schemes" ? (
@@ -10048,7 +10103,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       } else if (mobileSubPage === "create_scheme") {
                         setMobileSubPage("none");
                         setIsCreateSchemeModalOpen(false);
-                      } else if (activeTab === "create" && createFlowStep === "eligible_schemes") {
+                      } else if (activeTab === "create" && createFlowStep === "eligible_schemes" && mobileSubPage !== "scheme_details") {
                         setCreateFlowStep("form");
                       } else if (mobileSubPage === "scheme_details") {
                         setMobileSubPage(schemeDetailsReturnSubPage || "none");
@@ -10089,7 +10144,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         ? editingApplicationRef
                           ? (lang === "ml" ? "അപേക്ഷ തിരുത്തുക" : "Edit Application")
                           : (lang === "ml" ? "അപേക്ഷക പ്രൊഫൈൽ നിർമ്മിക്കുക" : "Create Applicant Profile")
-                      : activeTab === "create" && createFlowStep === "eligible_schemes"
+                      : activeTab === "create" && createFlowStep === "eligible_schemes" && mobileSubPage !== "scheme_details"
                         ? (lang === "ml" ? "യോഗ്യമായ പദ്ധതികൾ" : "Eligible Schemes")
                         : mobileSubPage === "about"
                           ? (lang === "ml" ? "ഞങ്ങളെക്കുറിച്ച്" : "About Us")
@@ -10124,7 +10179,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           ? (createProfileStep === 1 ? "ഘട്ടം 1 / 2" : "ഘട്ടം 2 / 2")
                           : (createProfileStep === 1 ? "Step 1 of 2" : "Step 2 of 2")}
                       </span>
-                    ) : activeTab === "create" && createFlowStep === "eligible_schemes" ? (
+                    ) : activeTab === "create" && createFlowStep === "eligible_schemes" && mobileSubPage !== "scheme_details" ? (
                       <button
                         type="button"
                         onClick={() => setIsEligibleSchemesSearchOpen((prev) => !prev)}
@@ -10315,7 +10370,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           <div
             ref={mobileContentRef}
             className={`flex-1 ${mobileSubPage === "create_scheme" || (mobileSubPage === "settings" && isMobileSettingsFormOpen) ? "overflow-hidden" : "overflow-y-auto"} [ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden relative bg-white ${
-              isGuestEligibilityOpen ||
+              (isGuestEligibilityOpen && mobileSubPage !== "scheme_details") ||
               isMobileAuthOpen ||
               mobileSubPage === "create_scheme" ||
               (mobileSubPage === "settings" && isMobileSettingsFormOpen)
@@ -10398,12 +10453,17 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 onContactSupport={() => setIsSahAiOpen(true)}
               />
             ) : isGuestEligibilityOpen ? (
-              <MobileGuestEligibilityQuestionnaire
-                lang={lang}
-                onClose={() => setIsGuestEligibilityOpen(false)}
-                onHelpRequestSent={handleGuestHelpRequestSent}
-                onOpenSchemeDetails={(schemeId) => openMobileSchemeDetailsView(schemeId)}
-              />
+              <>
+                <div hidden={mobileSubPage === "scheme_details"} className="h-full">
+                  <MobileGuestEligibilityQuestionnaire
+                    lang={lang}
+                    onClose={() => setIsGuestEligibilityOpen(false)}
+                    onHelpRequestSent={handleGuestHelpRequestSent}
+                    onOpenSchemeDetails={(schemeId) => openMobileSchemeDetailsView(schemeId)}
+                  />
+                </div>
+                {mobileSubPage === "scheme_details" ? renderSchemeDetailsSubpage() : null}
+              </>
             ) : isGuest ? (
               renderGuestScreen()
             ) : (
@@ -10512,12 +10572,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     <div className="grid grid-cols-2 gap-2">
                       {/* 1. Application Received */}
                       <div
-                        onClick={() => {
-                          setActiveTab("applications");
-                          setMobileSubPage("none");
-                          setApplicationStatusFilter("all");
-                          setApplicationSearchQuery("");
-                        }}
+                        onClick={() => openApplicationListWithStatus("application_received")}
                         className="rounded-lg border border-border bg-card py-1 px-2 flex flex-col justify-between shadow-2xs hover:border-blue-500/70 transition-all cursor-pointer"
                       >
                         <div className="flex items-center justify-between gap-1">
@@ -10531,11 +10586,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
                       {/* 2. Submitted */}
                       <div
-                        onClick={() => {
-                          setActiveTab("applications");
-                          setMobileSubPage("none");
-                          setApplicationStatusFilter("applied");
-                        }}
+                        onClick={() => openApplicationListWithStatus("applied")}
                         className="rounded-lg border border-border bg-card py-1 px-2 flex flex-col justify-between shadow-2xs hover:border-sky-500/70 transition-all cursor-pointer"
                       >
                         <div className="flex items-center justify-between gap-1">
@@ -10549,7 +10600,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
                       {/* 3. Beneficiaries */}
                       <div
-                        onClick={() => setMobileSubPage("beneficiaries")}
+                        onClick={() => openApplicationListWithStatus("beneficiary")}
                         className="rounded-lg border border-border bg-card py-1 px-2 flex flex-col justify-between shadow-2xs hover:border-emerald-500/70 transition-all cursor-pointer"
                       >
                         <div className="flex items-center justify-between gap-1">
@@ -10563,11 +10614,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
                       {/* 4. In Review */}
                       <div
-                        onClick={() => {
-                          setActiveTab("applications");
-                          setMobileSubPage("none");
-                          setApplicationStatusFilter("review");
-                        }}
+                        onClick={() => openApplicationListWithStatus("review")}
                         className="rounded-lg border border-border bg-card py-1 px-2 flex flex-col justify-between shadow-2xs hover:border-indigo-500/70 transition-all cursor-pointer"
                       >
                         <div className="flex items-center justify-between gap-1">
@@ -10581,11 +10628,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
                       {/* 5. Pending */}
                       <div
-                        onClick={() => {
-                          setActiveTab("applications");
-                          setMobileSubPage("none");
-                          setApplicationStatusFilter("application_received");
-                        }}
+                        onClick={() => openApplicationListWithStatus("document_verification_completed")}
                         className="rounded-lg border border-border bg-card py-1 px-2 flex flex-col justify-between shadow-2xs hover:border-amber-500/70 transition-all cursor-pointer"
                       >
                         <div className="flex items-center justify-between gap-1">
@@ -13730,6 +13773,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 <button
                                   type="button"
                                   onClick={() => {
+                                    setApplicantPendingSchemeStatus(applicantSchemeStatusFilter);
                                     setApplicantPendingRegion(applicantRegionFilter);
                                     setApplicantPendingDistrict(applicantDistrictFilter);
                                     setApplicantPendingMandalam(applicantMandalamFilter);
@@ -13801,6 +13845,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 <button
                                   type="button"
                                   onClick={() => {
+                                    setApplicantSchemeStatusFilter("all");
+                                    setApplicantPendingSchemeStatus("all");
                                     setApplicantRegionFilter("all");
                                     setApplicantPendingRegion("all");
                                     setApplicantDistrictFilter("all");
@@ -14453,31 +14499,49 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           <div
                             key={scheme.titleEn}
                             onClick={() => openMobileSchemeDetailsView(scheme.titleEn, "category_schemes")}
-                            className="py-2 px-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:shadow-md transition-all cursor-pointer flex items-center justify-between gap-2.5 group"
+                            className="w-full cursor-pointer bg-card p-3 rounded-2xl border border-border shadow-2xs transition-all space-y-2 text-left hover:border-orange-300 dark:hover:border-orange-800"
                           >
-                            <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                              <div className="h-9 w-9 rounded-xl bg-orange-50/70 dark:bg-slate-800 border border-orange-100/80 dark:border-slate-700 flex items-center justify-center shrink-0 p-1 shadow-2xs overflow-hidden">
-                                <img
-                                  src={getEligibleSchemeLogo({
-                                    titleEn: scheme.titleEn,
-                                    categoryEn: (scheme as any).categoryEn || selectedSchemeCategoryDetail.id,
-                                  } as any)}
-                                  alt={scheme.titleEn}
-                                  className="h-full w-full object-contain"
-                                />
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex min-w-0 items-start gap-2">
+                                <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-orange-100 bg-white p-0.5 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
+                                  <img
+                                    src={getEligibleSchemeLogo({
+                                      titleEn: scheme.titleEn,
+                                      categoryEn: (scheme as any).categoryEn || selectedSchemeCategoryDetail.id,
+                                    } as any)}
+                                    alt=""
+                                    aria-hidden
+                                    className="h-full w-full object-contain"
+                                  />
+                                </span>
+                                <div className="min-w-0">
+                                  <button
+                                    type="button"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      openMobileSchemeDetailsView(scheme.titleEn, "category_schemes");
+                                    }}
+                                    onKeyDown={(event) => event.stopPropagation()}
+                                    className="block max-w-full text-left font-bold text-[13px] text-foreground leading-snug break-words hover:text-orange-600 dark:hover:text-orange-400 hover:underline cursor-pointer"
+                                  >
+                                    {lang === "ml" ? scheme.titleMl : scheme.titleEn}
+                                  </button>
+                                  <p className="mt-0.5 text-[10.5px] font-semibold text-muted-foreground leading-snug">
+                                    {lang === "ml" ? scheme.deptMl : scheme.deptEn}
+                                  </p>
+                                </div>
                               </div>
-                              <div className="min-w-0 flex-1">
-                                <h4 className="font-extrabold text-[12.5px] sm:text-[13px] text-[#0a0f1d] dark:text-white leading-snug group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors truncate">
-                                  {lang === "ml" ? scheme.titleMl : scheme.titleEn}
-                                </h4>
-                                <p className="text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 truncate">
-                                  {lang === "ml" ? scheme.deptMl : scheme.deptEn}
-                                </p>
-                              </div>
+                              <span
+                                aria-hidden="true"
+                                className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border-2 border-orange-300 bg-white text-orange-500 dark:border-orange-900 dark:bg-slate-900"
+                              >
+                                <ChevronRight className="h-2.5 w-2.5 stroke-[4]" />
+                              </span>
                             </div>
-                            <div className="h-6.5 w-6.5 rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center shrink-0 text-slate-400 group-hover:text-orange-600 group-hover:bg-orange-50 dark:group-hover:bg-slate-700 transition-all">
-                              <ChevronRight className="h-3.5 w-3.5 stroke-[2.2]" />
-                            </div>
+
+                            <p className="text-[11px] text-muted-foreground leading-snug">
+                              {lang === "ml" ? scheme.benefitMl : scheme.benefitEn}
+                            </p>
                           </div>
                         ))}
                     </div>
@@ -14838,13 +14902,18 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       type="button"
                       onClick={() => setShowFilterMenu(!showFilterMenu)}
                       className={`relative flex h-7 w-7 items-center justify-center rounded-full border transition-all shadow-2xs cursor-pointer shrink-0 ${
-                        showFilterMenu
+                        showFilterMenu || applicationTabActiveFilterCount > 0
                           ? "border-orange-500 bg-orange-500 text-white ring-2 ring-orange-500/30 shadow-xs"
                           : "border-amber-200/60 dark:border-slate-800 bg-[#fffcf0] dark:bg-slate-900 text-[#0a0f1d] dark:text-slate-200 hover:bg-amber-100/50"
                       }`}
                       title="Toggle Filters"
                     >
-                      <Filter className={`h-3.5 w-3.5 stroke-[2.2] shrink-0 ${showFilterMenu ? "text-white" : "text-[#ff5500]"}`} />
+                      <Filter className={`h-3.5 w-3.5 stroke-[2.2] shrink-0 ${showFilterMenu || applicationTabActiveFilterCount > 0 ? "text-white" : "text-[#ff5500]"}`} />
+                      {applicationTabActiveFilterCount > 0 && (
+                        <span className="absolute -top-1 -right-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-red-600 px-0.5 text-[8px] font-black leading-none text-white ring-1.5 ring-white dark:ring-slate-900">
+                          {applicationTabActiveFilterCount}
+                        </span>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -15135,7 +15204,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       }
                                     }}
                                     placeholder="10-digit phone number"
-                                    className="w-full text-xs h-9 px-2.5 rounded-lg border border-border bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
+                                    className="w-full text-xs h-9 px-2.5 rounded-lg border border-slate-200 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
                                   />
                                 </div>
 
@@ -15148,7 +15217,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     value={createFullName}
                                     onChange={(e) => setCreateFullName(e.target.value)}
                                     placeholder={lang === "ml" ? "ഉദാ: സോമൻ പി" : "Enter Full Name"}
-                                    className="w-full text-xs h-9 px-2.5 rounded-lg border border-border bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
+                                    className="w-full text-xs h-9 px-2.5 rounded-lg border border-slate-200 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 outline-none text-foreground"
                                   />
                                 </div>
                               </div>
@@ -15169,7 +15238,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                         <select
                                           value={activeSelectedApplicant?.name || ""}
                                           onChange={(e) => setSelectedExistingApplicantName(e.target.value)}
-                                          className="w-full text-xs h-9 px-2.5 rounded-lg border border-border bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 outline-none text-foreground font-bold cursor-pointer"
+                                          className="w-full text-xs h-9 px-2.5 rounded-lg border border-slate-200 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 outline-none text-foreground font-bold cursor-pointer"
                                         >
                                           {existingApplicantsList.map((app) => (
                                             <option key={app.name} value={app.name}>
@@ -15465,7 +15534,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                         type="date" 
                                         value={createDob}
                                         onChange={(e) => setCreateDob(e.target.value)}
-                                        className="w-full min-w-0 text-xs h-9 px-2 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 font-normal transition-colors" 
+                                        className="w-full min-w-0 text-xs h-9 px-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 font-normal transition-colors" 
                                       />
                                     </div>
 
@@ -15476,7 +15545,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       <select 
                                         value={createGender}
                                         onChange={(e) => setCreateGender(e.target.value)}
-                                        className="w-full min-w-0 text-xs h-9 px-2 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
+                                        className="w-full min-w-0 text-xs h-9 px-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
                                       >
                                         <option value="">{lang === "ml" ? "-- ലിംഗഭേദം തിരഞ്ഞെടുക്കുക --" : "-- Select Gender --"}</option>
                                         <option value="Male">{lang === "ml" ? "പുരുഷൻ" : "Male"}</option>
@@ -15496,7 +15565,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       <select 
                                         value={createReligion}
                                         onChange={(e) => setCreateReligion(e.target.value)}
-                                        className="w-full text-xs h-9 px-2 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
+                                        className="w-full text-xs h-9 px-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
                                       >
                                         <option value="">{lang === "ml" ? "-- മതം --" : "-- Select Religion --"}</option>
                                         <option value="Hindu">Hindu</option>
@@ -15517,7 +15586,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       <select 
                                         value={createCaste}
                                         onChange={(e) => setCreateCaste(e.target.value)}
-                                        className="w-full text-xs h-9 px-2 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
+                                        className="w-full text-xs h-9 px-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
                                       >
                                         <option value="">{lang === "ml" ? "-- വിഭാഗം --" : "-- Select Caste --"}</option>
                                         <option value="General">General</option>
@@ -15539,7 +15608,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       <select
                                         value={createMinorityStatus}
                                         onChange={(e) => setCreateMinorityStatus(e.target.value)}
-                                        className="w-full min-w-0 text-xs h-9 px-2 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
+                                        className="w-full min-w-0 text-xs h-9 px-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
                                       >
                                         <option value="">{lang === "ml" ? "-- തിരഞ്ഞെടുക്കുക --" : "-- Select --"}</option>
                                         <option value="Yes">{lang === "ml" ? "അതെ" : "Yes"}</option>
@@ -15554,7 +15623,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       <select
                                         value={createDisabilityStatus}
                                         onChange={(e) => setCreateDisabilityStatus(e.target.value)}
-                                        className="w-full min-w-0 text-xs h-9 px-2 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
+                                        className="w-full min-w-0 text-xs h-9 px-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
                                       >
                                         <option value="">{lang === "ml" ? "-- തിരഞ്ഞെടുക്കുക --" : "-- Select --"}</option>
                                         <option value="No">{lang === "ml" ? "ഇല്ല" : "No"}</option>
@@ -15578,7 +15647,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                           setCreateStudentStatus(value);
                                           if (value === "Yes") setCreateOccupation("");
                                         }}
-                                        className="w-full min-w-0 text-xs h-9 px-2 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
+                                        className="w-full min-w-0 text-xs h-9 px-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
                                       >
                                         <option value="">{lang === "ml" ? "-- തിരഞ്ഞെടുക്കുക --" : "-- Select --"}</option>
                                         <option value="Yes">{lang === "ml" ? "അതെ" : "Yes"}</option>
@@ -15593,7 +15662,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     <select 
                                       value={createMaritalStatus}
                                       onChange={(e) => setCreateMaritalStatus(e.target.value)}
-                                      className="w-full text-xs h-9 px-2.5 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
+                                      className="w-full text-xs h-9 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
                                     >
                                       <option value="">{lang === "ml" ? "-- വൈവാഹിക അവസ്ഥ --" : "-- Select Marital Status --"}</option>
                                       <option value="Single / Unmarried">{lang === "ml" ? "അവിവാഹിതൻ / അവിവാഹിത" : "Single / Unmarried"}</option>
@@ -15614,7 +15683,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     <select
                                       value={createOccupation}
                                       onChange={(e) => setCreateOccupation(e.target.value)}
-                                      className="w-full text-xs h-9 px-2.5 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
+                                      className="w-full text-xs h-9 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
                                     >
                                       <option value="">{lang === "ml" ? "-- തൊഴിൽ തിരഞ്ഞെടുക്കുക --" : "-- Select Occupation --"}</option>
                                       <option value="Farmer / Agriculture">{lang === "ml" ? "കർഷകൻ / കൃഷി (Farmer/Agriculture)" : "Farmer/Agriculture"}</option>
@@ -15638,7 +15707,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     <select 
                                       value={createIncomeRange}
                                       onChange={(e) => setCreateIncomeRange(e.target.value)}
-                                      className="w-full text-xs h-9 px-2.5 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
+                                      className="w-full text-xs h-9 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
                                     >
                                       <option value="">{lang === "ml" ? "-- വരുമാന പരിധി --" : "-- Select Income Range --"}</option>
                                       <option value="Below ₹50,000">Below ₹50,000</option>
@@ -15660,7 +15729,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       value={createAadhaar}
                                       onChange={(e) => setCreateAadhaar(e.target.value.replace(/\D/g, ''))}
                                       placeholder="12-digit Aadhaar number"
-                                      className="w-full text-xs h-9 px-2.5 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 font-normal transition-colors" 
+                                      className="w-full text-xs h-9 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 font-normal transition-colors" 
                                     />
                                   </div>
                                 </div>
@@ -15681,7 +15750,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                           value={createPin}
                                           onChange={(e) => setCreatePin(e.target.value.replace(/\D/g, ''))}
                                           placeholder={lang === "ml" ? "പിൻകോഡ് നൽകുക / തിരയുക" : "Search or enter PIN"}
-                                          className="w-full text-xs h-9 pl-8 pr-2.5 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 font-normal transition-colors"
+                                          className="w-full text-xs h-9 pl-8 pr-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 font-normal transition-colors"
                                         />
                                       </div>
                                       <button
@@ -15706,7 +15775,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                         setActiveAddressSheet("district");
                                         setAddressSheetSearch("");
                                       }}
-                                      className="w-full text-xs h-9 px-2.5 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none flex items-center justify-between transition-colors cursor-pointer text-left font-normal"
+                                      className="w-full text-xs h-9 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none flex items-center justify-between transition-colors cursor-pointer text-left font-normal"
                                     >
                                       <span className={createDistrict ? "text-slate-800 dark:text-slate-100 font-normal" : "text-muted-foreground font-normal"}>
                                         {createDistrict
@@ -15717,11 +15786,11 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     </button>
                                   </div>
 
-                                  {/* 2. Assembly Constituency (Mandalam) */}
+                                  {/* 2. Assembly Constituency */}
                                   <div>
                                     <div className="flex items-center justify-between mb-1">
                                       <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 block leading-snug">
-                                        {lang === "ml" ? "നിയമസഭാ മണ്ഡലം *" : "Assembly Constituency (Mandalam) *"}
+                                        {lang === "ml" ? "നിയമസഭാ മണ്ഡലം *" : "Assembly Constituency *"}
                                       </label>
                                       {isMandalamAutoFilled && (
                                         <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
@@ -15740,8 +15809,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       }}
                                       className={`w-full text-xs h-9 px-2.5 rounded-lg border outline-none flex items-center justify-between transition-colors text-left font-normal ${
                                         !createDistrict
-                                          ? "bg-muted/50 border-border text-muted-foreground cursor-not-allowed opacity-70"
-                                          : "border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 text-slate-800 dark:text-slate-100 cursor-pointer"
+                                          ? "bg-muted/50 border-slate-200 text-muted-foreground cursor-not-allowed opacity-70"
+                                          : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 text-slate-800 dark:text-slate-100 cursor-pointer"
                                       }`}
                                     >
                                       <span className={createMandalam ? "text-slate-800 dark:text-slate-100 font-normal" : "text-muted-foreground font-normal"}>
@@ -15762,7 +15831,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       <select
                                         value={createLocalBodyType}
                                         onChange={(e) => handleLocalBodyTypeSelect(e.target.value as LocalBodyType)}
-                                        className="w-full text-xs h-9 px-2 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
+                                        className="w-full text-xs h-9 px-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 cursor-pointer font-normal transition-colors"
                                       >
                                         <option value="">{lang === "ml" ? "-- തരം --" : "-- Select Type --"}</option>
                                         <option value="panchayat">{lang === "ml" ? "ഗ്രാമ പഞ്ചായത്ത് (Grama Panchayat)" : "Grama Panchayat"}</option>
@@ -15786,8 +15855,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                         }}
                                         className={`w-full text-xs h-9 px-2 rounded-lg border outline-none flex items-center justify-between transition-colors text-left font-normal ${
                                           !createDistrict || !createLocalBodyType
-                                            ? "bg-muted/50 border-border text-muted-foreground cursor-not-allowed opacity-70"
-                                            : "border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 text-slate-800 dark:text-slate-100 cursor-pointer"
+                                            ? "bg-muted/50 border-slate-200 text-muted-foreground cursor-not-allowed opacity-70"
+                                            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 text-slate-800 dark:text-slate-100 cursor-pointer"
                                         }`}
                                       >
                                         <span className={`truncate ${createLocalBody ? "text-slate-800 dark:text-slate-100 font-normal" : "text-muted-foreground font-normal"}`}>
@@ -15816,8 +15885,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       }}
                                       className={`w-full text-xs h-9 px-2.5 rounded-lg border outline-none flex items-center justify-between transition-colors text-left font-normal ${
                                         !createLocalBody
-                                          ? "bg-muted/50 border-border text-muted-foreground cursor-not-allowed opacity-70"
-                                          : "border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 text-slate-800 dark:text-slate-100 cursor-pointer"
+                                          ? "bg-muted/50 border-slate-200 text-muted-foreground cursor-not-allowed opacity-70"
+                                          : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 text-slate-800 dark:text-slate-100 cursor-pointer"
                                       }`}
                                     >
                                       <span className={createWard ? "text-slate-800 dark:text-slate-100 font-normal" : "text-muted-foreground font-normal"}>
@@ -15876,7 +15945,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                             ? "e.g. 12/345-A"
                                             : "e.g. 12/345 or VII/234"
                                         }
-                                        className="w-full text-xs h-9 px-2 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 font-normal transition-colors" 
+                                        className="w-full text-xs h-9 px-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 font-normal transition-colors" 
                                       />
                                     </div>
                                     <div>
@@ -15888,7 +15957,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                         value={createHouseName}
                                         onChange={(e) => setCreateHouseName(e.target.value)}
                                         placeholder={lang === "ml" ? "ഉദാ: കൃഷ്ണകൃപ" : "e.g. Krishnakripa"}
-                                        className="w-full text-xs h-9 px-2 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 font-normal transition-colors" 
+                                        className="w-full text-xs h-9 px-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 font-normal transition-colors" 
                                       />
                                     </div>
                                   </div>
@@ -15903,7 +15972,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       value={createStreetLocality}
                                       onChange={(e) => setCreateStreetLocality(e.target.value)}
                                       placeholder={lang === "ml" ? "റോഡ് / പ്രദേശം / അടയാളം" : "Street / Locality / Landmark"}
-                                      className="w-full text-xs h-9 px-2.5 rounded-lg border border-amber-200/70 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 font-normal transition-colors" 
+                                      className="w-full text-xs h-9 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-800 dark:text-slate-100 font-normal transition-colors" 
                                     />
                                   </div>
                                 </div>
@@ -16222,6 +16291,11 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
                     {/* Step 3: Eligible Schemes View */}
                     {createFlowStep === "eligible_schemes" && (
+                      mobileSubPage === "scheme_details" ? (
+                        <div className="pt-2.5 animate-in fade-in duration-200">
+                          {renderSchemeDetailsSubpage()}
+                        </div>
+                      ) : (
                       <div className="space-y-2.5 pt-2.5 animate-in fade-in duration-200">
                         <div className="flex items-center justify-between gap-2 pl-0.5 pr-3">
                           <div className="flex min-w-0 items-center gap-1.5">
@@ -16334,7 +16408,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                           type="button"
                                           onClick={(event) => {
                                             event.stopPropagation();
-                                            openSchemeDetails(scheme.id, "eligible_schemes");
+                                            openMobileSchemeDetailsView(getSchemeDetailsRecord(scheme), "none");
                                           }}
                                           onKeyDown={(event) => event.stopPropagation()}
                                           className="block max-w-full text-left font-bold text-[13px] text-foreground leading-snug break-words hover:text-orange-600 dark:hover:text-orange-400 hover:underline cursor-pointer"
@@ -16395,6 +16469,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           </div>
                         )}
                       </div>
+                      )
                     )}
 
                     {/* Step 3b: Selected Schemes - one application per scheme */}
@@ -17612,7 +17687,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     )}
                   </>
                 ) : (
-                  <div className="space-y-3.5">
+                  <div className="space-y-3.5 bg-white dark:bg-transparent">
                     {/* Public / Guest Eligibility Assistance Requests */}
                     <div className="space-y-2.5">
                       <div className="flex items-center justify-between border-b border-border/80 pb-2 gap-1">
@@ -17642,7 +17717,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           </div>
                         ) : (
                           <div className="flex items-center gap-1.5 min-w-0">
-                            <HeartHandshake className="h-4 w-4 text-orange-500 shrink-0" />
+                            <HeartHandshake className="h-4 w-4 text-[#243D95] dark:text-blue-300 shrink-0" />
                             <h3 className="font-extrabold text-xs sm:text-sm text-foreground truncate">
                               {lang === "ml"
                                 ? `പൊതുജന സഹായ അഭ്യർത്ഥനകൾ (${helpdeskRequests.length})`
@@ -17738,10 +17813,10 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 setHelpdeskDetailRequest(req);
                                 setOpenHelpdeskMenuIndex(null);
                               }}
-                              className="bg-card p-2 rounded-xl border border-border shadow-2xs hover:border-orange-200 transition-all space-y-1 cursor-pointer"
+                              className="bg-white p-2 rounded-xl border border-slate-200 shadow-2xs hover:border-slate-300 transition-all space-y-1.5 cursor-pointer dark:bg-slate-900 dark:border-slate-800"
                             >
                               {/* Header: Name, Mandalam & District, 3-Dot Action Menu */}
-                              <div className="flex items-center justify-between gap-2 border-b border-border/50 pb-1.5">
+                              <div className={`flex items-center justify-between gap-2 pb-1.5 ${req.notes?.trim() ? "border-b border-slate-200/70 dark:border-slate-800" : ""}`}>
                                 <div className="flex items-center gap-2 min-w-0">
                                   <div className="h-6.5 w-6.5 rounded-full bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold text-[11px] shrink-0">
                                     {(req.contactName || req.applicant || "A").charAt(0).toUpperCase()}
@@ -17757,8 +17832,26 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                   </div>
                                 </div>
 
-                                {/* 3-Dot Action Menu */}
-                                <div className="relative shrink-0">
+                                {/* Requested scheme count + 3-Dot Action Menu */}
+                                <div className="relative flex shrink-0 items-center gap-1.5">
+                                  {(() => {
+                                    const schemeCount = (
+                                      req.schemeIds && req.schemeIds.length > 0
+                                        ? req.schemeIds
+                                        : req.schemeId
+                                          ? [req.schemeId]
+                                          : []
+                                    ).length;
+                                    return schemeCount > 0 ? (
+                                      <span
+                                        className="inline-flex items-center gap-1 rounded-full border border-[#D7E1F8] bg-[#F2F6FF] px-1.5 py-0.5 text-[9.5px] font-extrabold text-[#243D95] dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300"
+                                        title={lang === "ml" ? `${schemeCount} പദ്ധതികൾ` : `${schemeCount} schemes`}
+                                      >
+                                        <Layers className="h-2.5 w-2.5 shrink-0" />
+                                        {schemeCount}
+                                      </span>
+                                    ) : null;
+                                  })()}
                                   <button
                                     type="button"
                                     onClick={(e) => {
@@ -17837,27 +17930,16 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 </div>
                               </div>
 
-                              {/* Schemes Requested (Single Row) */}
-                              {req.schemeIds && req.schemeIds.length > 0 && (
-                                <div className="flex items-center gap-1.5 flex-wrap text-xs pt-0.5">
-                                  <span className="text-[10.5px] font-bold text-slate-700 dark:text-slate-300 shrink-0">
-                                    {lang === "ml" ? "ആവശ്യപ്പെട്ട പദ്ധതികൾ:" : "Requested Schemes:"}
-                                  </span>
-                                  <div className="flex flex-wrap gap-1 items-center">
-                                    {req.schemeIds.map((sId) => {
-                                      const foundScheme = schemes.find((s) => s.id === sId);
-                                      return (
-                                        <span
-                                          key={sId}
-                                          className="px-2.5 py-0.5 rounded-full bg-[#243D95]/10 dark:bg-[#243D95]/25 text-[#243D95] dark:text-blue-300 text-[10.5px] font-bold border border-[#243D95]/20 dark:border-[#243D95]/40"
-                                        >
-                                          {foundScheme ? (lang === "ml" ? foundScheme.ml : foundScheme.en) : sId}
-                                        </span>
-                                      );
-                                    })}
-                                  </div>
+                              {req.notes?.trim() ? (
+                                <div className="flex items-start gap-1.5">
+                                  <MessageSquare className="mt-[2px] h-3 w-3 shrink-0 text-[#ff5500]" />
+                                  <p className="line-clamp-2 text-[10.5px] font-medium leading-snug text-slate-600 dark:text-slate-300">
+                                    <span className="font-extrabold text-slate-700 dark:text-slate-200">{lang === "ml" ? "കുറിപ്പ്: " : "Notes: "}</span>
+                                    {req.notes.trim()}
+                                  </p>
                                 </div>
-                              )}
+                              ) : null}
+
                             </div>
                           ))}
                         </div>
@@ -18170,7 +18252,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           />
 
           {/* Sticky Phone App Bottom Footer Navigation */}
-          {activeTab === "create" && createFlowStep !== "applicant_applications" && createFlowStep !== "selected_schemes" && createFlowStep !== "form" && (
+          {activeTab === "create" && createFlowStep !== "applicant_applications" && createFlowStep !== "selected_schemes" && createFlowStep !== "form" && mobileSubPage !== "scheme_details" && (
             <div className={`sticky bottom-0 left-0 right-0 px-4 pt-3 bg-card/95 backdrop-blur-md border-t border-border z-30 shadow-lg ${createFlowStep === "checking" ? "pb-[calc(1.5rem+env(safe-area-inset-bottom))]" : "pb-6"}`}>
               {createFlowStep === "checking" && (
                 <button
@@ -19553,6 +19635,28 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 <div className="h-px w-full bg-slate-100 dark:bg-slate-800 mb-3" />
 
                 <div className="space-y-3">
+                  {/* Scheme Status Dropdown */}
+                  <div>
+                    <p className="mb-1 text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
+                      {lang === "ml" ? "പദ്ധതി നില (Scheme Status)" : "Scheme Status"}
+                    </p>
+                    <div className="relative">
+                      <select
+                        value={applicantPendingSchemeStatus}
+                        onChange={(event) => setApplicantPendingSchemeStatus(event.target.value as MobileApplicantSchemeStatusFilter)}
+                        className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2 pr-8 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-orange-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white cursor-pointer"
+                      >
+                        <option value="all">{lang === "ml" ? "എല്ലാ പദ്ധതി നിലകളും" : "All Scheme Statuses"}</option>
+                        <option value="pending">{lang === "ml" ? "കാത്തിരിക്കുന്നു" : "Pending"}</option>
+                        <option value="in_review">{lang === "ml" ? "പരിശോധനയിൽ" : "In Review"}</option>
+                        <option value="approved">{lang === "ml" ? "അംഗീകരിച്ചു" : "Approved"}</option>
+                        <option value="rejected">{lang === "ml" ? "നിരസിച്ചു" : "Rejected"}</option>
+                        <option value="disbursed">{lang === "ml" ? "വിതരണം ചെയ്തു" : "Disbursed"}</option>
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                    </div>
+                  </div>
+
                   {/* Organisation Region Dropdown */}
                   <div>
                     <p className="mb-1 text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
@@ -19668,6 +19772,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     <button
                       type="button"
                       onClick={() => {
+                        setApplicantPendingSchemeStatus("all");
                         setApplicantPendingRegion("all");
                         setApplicantPendingDistrict("all");
                         setApplicantPendingMandalam("all");
@@ -19681,6 +19786,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     <button
                       type="button"
                       onClick={() => {
+                        setApplicantSchemeStatusFilter(applicantPendingSchemeStatus);
                         setApplicantRegionFilter(applicantPendingRegion);
                         setApplicantDistrictFilter(applicantPendingDistrict);
                         setApplicantMandalamFilter(applicantPendingMandalam);
@@ -22251,7 +22357,7 @@ function HelpdeskRequestDetailView({
   ];
 
   return (
-    <div className="absolute inset-0 z-[75] flex flex-col bg-[#f8fafc] animate-in slide-in-from-right duration-200 dark:bg-slate-950">
+    <div className="absolute inset-0 z-[75] flex flex-col bg-white animate-in slide-in-from-right duration-200 dark:bg-slate-950">
       <div className="flex h-11 shrink-0 items-center gap-2 border-b border-slate-200/70 bg-[#FFFDF9] px-3 dark:border-slate-800 dark:bg-slate-900">
         <button
           type="button"
@@ -22269,8 +22375,8 @@ function HelpdeskRequestDetailView({
 
       <div className="flex-1 overflow-y-auto px-3 py-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         <div className="space-y-2.5 pb-6">
-          <section className="rounded-2xl border border-orange-100 bg-white p-3 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
-            <div className="flex items-center gap-2.5 border-b border-orange-100/70 pb-3 dark:border-slate-800">
+          <section className="rounded-2xl border border-slate-200 bg-white p-3 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex items-center gap-2.5 border-b border-slate-200 pb-3 dark:border-slate-800">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[12px] font-extrabold text-orange-600 dark:bg-orange-950/60 dark:text-orange-300">
                 {(applicantName || "A").charAt(0).toUpperCase()}
               </div>
@@ -22295,7 +22401,7 @@ function HelpdeskRequestDetailView({
                     className="flex items-start gap-2 border-b border-slate-100/80 py-1.5 last:border-0 dark:border-slate-800/70"
                   >
                     <RowIcon
-                      className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary"
+                      className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#ff5500]"
                       strokeWidth={2}
                     />
                     <span className="min-w-0 flex-1 text-[10.5px] font-medium text-slate-500 dark:text-slate-400">
@@ -22347,7 +22453,7 @@ function HelpdeskRequestDetailView({
             </p>
           </section>
 
-          <section className="rounded-2xl border border-orange-100 bg-white p-3 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
+          <section className="rounded-2xl border border-slate-200 bg-white p-3 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
             <h4 className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-slate-500 dark:text-slate-400">
               {t("Request details", "അഭ്യർത്ഥന വിവരങ്ങൾ")}
             </h4>
@@ -22362,7 +22468,7 @@ function HelpdeskRequestDetailView({
                         className="flex items-start gap-2 border-b-[0.5px] border-slate-300/80 py-1.5 first:pt-0 last:border-b-0 last:pb-0 dark:border-slate-700/70"
                       >
                         <EligibilityIcon
-                          className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary"
+                          className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#ff5500]"
                           strokeWidth={2}
                         />
                         <span className="min-w-0 leading-snug">
@@ -22389,14 +22495,14 @@ function HelpdeskRequestDetailView({
         </div>
       </div>
 
-      <div className="sticky bottom-0 z-20 shrink-0 border-t border-slate-200/80 bg-[#FFFDF9]/95 px-3 pb-5 pt-3 shadow-[0_-4px_16px_rgba(15,23,42,0.06)] backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/95">
+      <div className="sticky bottom-0 z-20 shrink-0 border-t border-slate-200/80 bg-white/95 px-3 pb-5 pt-3 shadow-[0_-4px_16px_rgba(15,23,42,0.06)] backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/95">
         <div className="grid grid-cols-2 gap-2.5">
           <button
             type="button"
             onClick={() => {
               setIsAssignSheetOpen(true);
             }}
-            className="flex h-10 items-center justify-center gap-1.5 rounded-lg border border-primary/60 bg-white text-[11px] font-extrabold text-primary transition-colors hover:bg-orange-50 dark:bg-slate-900 dark:hover:bg-slate-800"
+            className="flex h-10 items-center justify-center gap-1.5 rounded-lg border border-[#ff5500]/50 bg-white text-[11px] font-extrabold text-[#ff5500] transition-colors hover:bg-orange-50 dark:bg-slate-900 dark:hover:bg-slate-800"
           >
             <UserPlus className="h-3.5 w-3.5" />
             {t("Assign User", "ഉപയോക്താവിന് നൽകുക")}
@@ -22404,7 +22510,7 @@ function HelpdeskRequestDetailView({
           <button
             type="button"
             onClick={onConvertToApplication}
-            className="flex h-10 items-center justify-center gap-1.5 rounded-lg bg-primary text-[11px] font-extrabold text-white transition-colors hover:bg-primary/90"
+            className="flex h-10 items-center justify-center gap-1.5 rounded-lg bg-[#ff5500] text-[11px] font-extrabold text-white transition-colors hover:bg-[#e64d00]"
           >
             <FileText className="h-3.5 w-3.5" />
             {t("Convert to Applications", "അപേക്ഷയാക്കി മാറ്റുക")}

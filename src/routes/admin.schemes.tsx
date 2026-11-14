@@ -28,6 +28,8 @@ import {
   ChevronDown,
   Check,
   X,
+  Calendar,
+  ChevronLeft,
 } from "lucide-react";
 import { schemes, type Scheme } from "@/data/schemes";
 import { useLang } from "@/i18n/LanguageProvider";
@@ -388,6 +390,444 @@ function FilterDropdownSelector({
           </div>
         </PopoverContent>
       </Popover>
+    </div>
+  );
+}
+
+type SchemeDatePreset =
+  | "allTime"
+  | "today"
+  | "thisWeek"
+  | "thisMonth"
+  | "thisYear"
+  | "yesterday"
+  | "lastWeek"
+  | "lastMonth"
+  | "lastYear";
+
+type SchemeDateFilterMode = "single" | "range";
+
+const SCHEME_DATE_REFERENCE = new Date(2026, 9, 8);
+
+const SCHEME_DATE_PRESETS: Array<{
+  key: SchemeDatePreset;
+  en: string;
+  ml: string;
+}> = [
+  { key: "allTime", en: "All time", ml: "എല്ലാ സമയവും" },
+  { key: "today", en: "Today", ml: "ഇന്ന്" },
+  { key: "thisWeek", en: "This week", ml: "ഈ ആഴ്ച" },
+  { key: "thisMonth", en: "This month", ml: "ഈ മാസം" },
+  { key: "thisYear", en: "This year", ml: "ഈ വർഷം" },
+  { key: "yesterday", en: "Yesterday", ml: "ഇന്നലെ" },
+  { key: "lastWeek", en: "Last week", ml: "കഴിഞ്ഞ ആഴ്ച" },
+  { key: "lastMonth", en: "Last month", ml: "കഴിഞ്ഞ മാസം" },
+  { key: "lastYear", en: "Last year", ml: "കഴിഞ്ഞ വർഷം" },
+];
+
+function isSameSchemeDate(a: Date | null | undefined, b: Date | null | undefined) {
+  return Boolean(
+    a &&
+      b &&
+      a.getFullYear() === b.getFullYear() &&
+      a.getMonth() === b.getMonth() &&
+      a.getDate() === b.getDate(),
+  );
+}
+
+function SchemesDateFilter({
+  lang,
+  tr,
+}: {
+  lang: "en" | "ml";
+  tr: (en: string, ml: string) => string;
+}) {
+  const locale = lang === "ml" ? "ml-IN" : "en-GB";
+  const [isOpen, setIsOpen] = useState(false);
+  const [appliedDate, setAppliedDate] = useState(() => new Date(SCHEME_DATE_REFERENCE));
+  const [appliedPreset, setAppliedPreset] = useState<SchemeDatePreset | null>("thisMonth");
+  const [draftDate, setDraftDate] = useState(() => new Date(SCHEME_DATE_REFERENCE));
+  const [draftPreset, setDraftPreset] = useState<SchemeDatePreset | null>("thisMonth");
+  const [draftMode, setDraftMode] = useState<SchemeDateFilterMode>("single");
+  const [draftRangeStart, setDraftRangeStart] = useState<Date | null>(null);
+  const [draftRangeEnd, setDraftRangeEnd] = useState<Date | null>(null);
+  const [viewMonth, setViewMonth] = useState(
+    () => new Date(SCHEME_DATE_REFERENCE.getFullYear(), SCHEME_DATE_REFERENCE.getMonth(), 1),
+  );
+
+  const formatMonth = (date: Date) =>
+    date.toLocaleDateString(locale, { month: "long", year: "numeric" });
+  const formatFullDate = (date: Date) =>
+    date.toLocaleDateString(locale, {
+      weekday: "long",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  const formatShortDate = (date: Date) =>
+    date.toLocaleDateString(locale, {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+
+  const weekdayLabels = useMemo(
+    () =>
+      Array.from({ length: 7 }, (_, index) =>
+        new Date(2026, 9, 4 + index).toLocaleDateString(locale, { weekday: "narrow" }),
+      ),
+    [locale],
+  );
+
+  const calendarDays = useMemo(() => {
+    const year = viewMonth.getFullYear();
+    const month = viewMonth.getMonth();
+    const leadingDays = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const cells: Array<Date | null> = Array.from({ length: leadingDays }, () => null);
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      cells.push(new Date(year, month, day));
+    }
+    while (cells.length % 7 !== 0) cells.push(null);
+    return cells;
+  }, [viewMonth]);
+
+  const presetDate = (preset: SchemeDatePreset) => {
+    const reference = new Date(SCHEME_DATE_REFERENCE);
+    const year = reference.getFullYear();
+    const month = reference.getMonth();
+    const day = reference.getDate();
+    const startOfWeek = new Date(year, month, day - reference.getDay());
+
+    switch (preset) {
+      case "today":
+        return reference;
+      case "yesterday":
+        return new Date(year, month, day - 1);
+      case "thisWeek":
+        return startOfWeek;
+      case "lastWeek":
+        return new Date(year, month, day - reference.getDay() - 7);
+      case "thisMonth":
+        return reference;
+      case "lastMonth":
+        return new Date(year, month - 1, day);
+      case "thisYear":
+        return new Date(year, 0, day);
+      case "lastYear":
+        return new Date(year - 1, 0, day);
+      case "allTime":
+      default:
+        return reference;
+    }
+  };
+
+  const resetDraft = () => {
+    setDraftDate(new Date(appliedDate));
+    setDraftPreset(appliedPreset);
+    setDraftMode("single");
+    setDraftRangeStart(null);
+    setDraftRangeEnd(null);
+    setViewMonth(new Date(appliedDate.getFullYear(), appliedDate.getMonth(), 1));
+  };
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) resetDraft();
+    setIsOpen(nextOpen);
+  };
+
+  const handlePresetSelect = (preset: SchemeDatePreset) => {
+    const nextDate = presetDate(preset);
+    setDraftPreset(preset);
+    setDraftDate(nextDate);
+    setDraftMode("single");
+    setDraftRangeStart(nextDate);
+    setDraftRangeEnd(null);
+    setViewMonth(new Date(nextDate.getFullYear(), nextDate.getMonth(), 1));
+  };
+
+  const handleModeChange = (mode: SchemeDateFilterMode) => {
+    setDraftMode(mode);
+    setDraftPreset(null);
+    if (mode === "range") {
+      setDraftRangeStart(null);
+      setDraftRangeEnd(null);
+    }
+  };
+
+  const handleDaySelect = (date: Date) => {
+    if (draftMode === "single") {
+      setDraftDate(date);
+      setDraftPreset(null);
+      return;
+    }
+
+    if (!draftRangeStart || draftRangeEnd) {
+      setDraftRangeStart(date);
+      setDraftRangeEnd(null);
+      return;
+    }
+
+    if (date.getTime() < draftRangeStart.getTime()) {
+      setDraftRangeStart(date);
+      setDraftRangeEnd(null);
+      return;
+    }
+
+    setDraftRangeEnd(date);
+  };
+
+  const stepAppliedMonth = (offset: number) => {
+    setAppliedDate((current) => {
+      const targetMonth = new Date(current.getFullYear(), current.getMonth() + offset, 1);
+      const lastDay = new Date(
+        targetMonth.getFullYear(),
+        targetMonth.getMonth() + 1,
+        0,
+      ).getDate();
+      return new Date(
+        targetMonth.getFullYear(),
+        targetMonth.getMonth(),
+        Math.min(current.getDate(), lastDay),
+      );
+    });
+    setAppliedPreset(null);
+  };
+
+  const stepViewMonth = (offset: number) => {
+    setViewMonth((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1));
+  };
+
+  const applySelection = () => {
+    if (draftMode === "single") {
+      setAppliedDate(draftDate);
+      setAppliedPreset(draftPreset);
+    } else if (draftRangeStart && draftRangeEnd) {
+      setAppliedDate(draftRangeEnd);
+      setAppliedPreset(null);
+    }
+    setIsOpen(false);
+  };
+
+  const rangeStart = draftRangeStart;
+  const rangeEnd = draftRangeEnd;
+  const rangeStartTime = rangeStart?.getTime() ?? null;
+  const rangeEndTime = rangeEnd?.getTime() ?? null;
+  const appliedDateLabel =
+    appliedPreset === "thisMonth" ? formatMonth(appliedDate) : formatShortDate(appliedDate);
+  const draftSummary =
+    draftMode === "single"
+      ? formatFullDate(draftDate)
+      : `${rangeStart ? formatShortDate(rangeStart) : tr("Start date", "ആരംഭ തീയതി")} – ${
+          rangeEnd ? formatShortDate(rangeEnd) : tr("End date", "അവസാന തീയതി")
+        }`;
+
+  return (
+    <div className="hidden md:flex h-8 items-center rounded-xl sm:rounded-lg border border-border bg-background p-0.5 shadow-2xs shrink-0">
+      <button
+        type="button"
+        onClick={() => stepAppliedMonth(-1)}
+        aria-label={tr("Previous month", "മുൻ മാസം")}
+        title={tr("Previous month", "മുൻ മാസം")}
+        className="flex h-7 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+      >
+        <ChevronLeft className="h-3.5 w-3.5" />
+      </button>
+
+      <Sheet open={isOpen} onOpenChange={handleOpenChange}>
+        <button
+          type="button"
+          onClick={() => handleOpenChange(true)}
+          className="inline-flex h-7 items-center gap-1.5 rounded-md px-1.5 text-[12px] font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+          title={tr("Select date", "തീയതി തിരഞ്ഞെടുക്കുക")}
+        >
+          <Calendar className="h-3.5 w-3.5 text-primary" />
+            <span className="whitespace-nowrap">{appliedDateLabel}</span>
+        </button>
+
+        <SheetContent
+          side="right"
+          className="flex h-full w-full flex-col gap-0 border-l border-border bg-white p-0 sm:max-w-[420px] z-50"
+        >
+          <SheetHeader className="space-y-1 border-b border-slate-100 px-5 py-4 pr-12 text-left">
+            <SheetTitle className="flex items-center gap-2 text-base font-bold text-[#101828]">
+              <Calendar className="h-4 w-4 text-primary" />
+              <span>{tr("Date filter", "തീയതി ഫിൽട്ടർ")}</span>
+            </SheetTitle>
+            <SheetDescription className="text-xs text-slate-500">
+              {tr(
+                "Choose a preset, single date, or date range.",
+                "ഒരു പ്രീസെറ്റ്, ഒരു തീയതി അല്ലെങ്കിൽ തീയതി പരിധി തിരഞ്ഞെടുക്കുക.",
+              )}
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="flex-1 overflow-y-auto">
+          <div className="px-4 pt-4">
+            <div className="flex max-w-[310px] flex-wrap gap-1.5">
+              {SCHEME_DATE_PRESETS.map((preset) => {
+                const isActive = draftPreset === preset.key;
+                return (
+                  <button
+                    key={preset.key}
+                    type="button"
+                    onClick={() => handlePresetSelect(preset.key)}
+                    className={cn(
+                      "rounded-full border px-2.5 py-[3px] text-[10.5px] leading-4 font-semibold transition-colors cursor-pointer",
+                      isActive
+                        ? "border-primary bg-primary text-primary-foreground shadow-2xs"
+                        : "border-[#f2dfca] bg-[#fffaf3] text-slate-700 hover:border-primary/40 hover:bg-orange-50",
+                    )}
+                  >
+                    {lang === "ml" ? preset.ml : preset.en}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="mx-4 mt-3 border-t border-slate-100" />
+
+          <div className="space-y-1.5 px-4 pt-3">
+            <div className="flex items-center justify-between gap-4 border-b border-slate-100">
+              <span className="pb-2 text-[11px] font-semibold text-slate-500">
+                {tr("Select date", "തീയതി തിരഞ്ഞെടുക്കുക")}
+              </span>
+              <div className="flex items-center gap-4 text-[11px] font-semibold">
+                <button
+                  type="button"
+                  onClick={() => handleModeChange("single")}
+                  className={cn(
+                    "border-b-2 pb-2 transition-colors cursor-pointer",
+                    draftMode === "single"
+                      ? "border-primary text-primary"
+                      : "border-transparent text-slate-500 hover:text-foreground",
+                  )}
+                >
+                  {tr("Single Date", "ഒരു തീയതി")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleModeChange("range")}
+                  className={cn(
+                    "border-b-2 pb-2 transition-colors cursor-pointer",
+                    draftMode === "range"
+                      ? "border-primary text-primary"
+                      : "border-transparent text-slate-500 hover:text-foreground",
+                  )}
+                >
+                  {tr("Date Range", "തീയതി പരിധി")}
+                </button>
+              </div>
+            </div>
+            <p className="text-[16px] font-extrabold tracking-tight text-[#101828]">
+              {draftSummary}
+            </p>
+          </div>
+
+          <div className="px-4 pt-3">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-[16px] font-extrabold tracking-tight text-[#101828]">
+                {formatMonth(viewMonth)}
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => stepViewMonth(-1)}
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-foreground transition-colors cursor-pointer"
+                  aria-label={tr("Previous month", "മുൻ മാസം")}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => stepViewMonth(1)}
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-foreground transition-colors cursor-pointer"
+                  aria-label={tr("Next month", "അടുത്ത മാസം")}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-7 gap-y-1 text-center">
+              {weekdayLabels.map((label, index) => (
+                <span
+                  key={`${label}-${index}`}
+                  className="pb-1 text-[10px] font-bold uppercase text-slate-400"
+                >
+                  {label}
+                </span>
+              ))}
+
+              {calendarDays.map((day, index) => {
+                if (!day) return <span key={`empty-${index}`} className="h-10" />;
+
+                const dayTime = day.getTime();
+                const isSelected =
+                  draftMode === "single"
+                    ? isSameSchemeDate(day, draftDate)
+                    : isSameSchemeDate(day, rangeStart) || isSameSchemeDate(day, rangeEnd);
+                const isInRange =
+                  draftMode === "range" &&
+                  rangeStartTime !== null &&
+                  rangeEndTime !== null &&
+                  dayTime > Math.min(rangeStartTime, rangeEndTime) &&
+                  dayTime < Math.max(rangeStartTime, rangeEndTime);
+
+                return (
+                  <div key={day.toISOString()} className="flex h-[34px] items-center justify-center">
+                    <button
+                      type="button"
+                      onClick={() => handleDaySelect(day)}
+                      aria-label={formatFullDate(day)}
+                      className={cn(
+                        "flex h-8 w-8 items-center justify-center rounded-full text-[12px] font-semibold transition-colors cursor-pointer",
+                        isSelected
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : isInRange
+                            ? "bg-orange-50 text-primary hover:bg-orange-100"
+                            : "text-[#344054] hover:bg-orange-50 hover:text-primary",
+                      )}
+                    >
+                      {day.getDate()}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          </div>
+
+          <SheetFooter className="flex shrink-0 flex-row items-center justify-end gap-3 border-t border-slate-100 bg-white px-4 py-3">
+            <button
+              type="button"
+              onClick={() => handleOpenChange(false)}
+              className="px-3 py-1.5 text-[12px] font-semibold text-slate-600 hover:text-foreground transition-colors cursor-pointer"
+            >
+              {tr("Cancel", "റദ്ദാക്കുക")}
+            </button>
+            <button
+              type="button"
+              onClick={applySelection}
+              disabled={draftMode === "range" && (!rangeStart || !rangeEnd)}
+              className="inline-flex h-8 min-w-16 items-center justify-center rounded-full bg-primary px-4 text-[12px] font-bold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 transition-colors cursor-pointer"
+            >
+              {tr("OK", "ശരി")}
+            </button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+
+      <button
+        type="button"
+        onClick={() => stepAppliedMonth(1)}
+        aria-label={tr("Next month", "അടുത്ത മാസം")}
+        title={tr("Next month", "അടുത്ത മാസം")}
+        className="flex h-7 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+      >
+        <ChevronRight className="h-3.5 w-3.5" />
+      </button>
     </div>
   );
 }
@@ -766,6 +1206,11 @@ function SchemesPage() {
 
           {/* Controls on the Right */}
           <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar desktop-hide-scrollbar pb-0.5 max-w-full sm:ml-auto shrink-0">
+            {/* Date Filter */}
+            <SchemesDateFilter lang={lang} tr={tr} />
+
+            <div className="hidden md:block h-5 w-px shrink-0 bg-border" />
+
             {/* Column Management */}
             {/* Manage Columns Button (Desktop) */}
             <button

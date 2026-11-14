@@ -375,7 +375,7 @@ export function MobileGuestEligibilityQuestionnaire({
   const [occupationQuery, setOccupationQuery] = useState("");
   const [showAllOccupations, setShowAllOccupations] = useState(false);
   const [customOccupationText, setCustomOccupationText] = useState("");
-  const [browseQuery, setBrowseQuery] = useState("");
+  const [customReligionText, setCustomReligionText] = useState("");
   const [browseCategory, setBrowseCategory] = useState("all");
   const [selectedSchemeIds, setSelectedSchemeIds] = useState<string[]>([]);
   const [assistanceOpen, setAssistanceOpen] = useState(false);
@@ -454,7 +454,7 @@ export function MobileGuestEligibilityQuestionnaire({
   });
   const browseCategories = Array.from(new Set(schemes.map((scheme) => scheme.category)));
   const browsedSchemes = schemes.filter((scheme) => {
-    const normalized = browseQuery.trim().toLocaleLowerCase();
+    const normalized = resultQuery.trim().toLocaleLowerCase();
     const queryMatch =
       !normalized ||
       `${scheme.en} ${scheme.ml} ${scheme.benefit.en} ${scheme.benefit.ml} ${scheme.ministry.en} ${scheme.ministry.ml}`
@@ -905,7 +905,6 @@ export function MobileGuestEligibilityQuestionnaire({
               { value: "obc", en: "OBC / SEBC", ml: "OBC / SEBC" },
               { value: "sc", en: "Scheduled Caste (SC)", ml: "പട്ടികജാതി (SC)" },
               { value: "st", en: "Scheduled Tribe (ST)", ml: "പട്ടികവർഗം (ST)" },
-              { value: "prefer_not", en: "Prefer not to say", ml: "പറയാൻ താൽപര്യമില്ല" },
             ].map((option) => (
               <ChoiceCard
                 key={option.value}
@@ -937,7 +936,6 @@ export function MobileGuestEligibilityQuestionnaire({
               { value: "christian", en: "Christian", ml: "ക്രിസ്ത്യൻ" },
               { value: "sikh", en: "Sikh", ml: "സിഖ്" },
               { value: "buddhist", en: "Buddhist", ml: "ബുദ്ധ" },
-              { value: "other_religion", en: "Other Religion", ml: "മറ്റു മതങ്ങൾ" },
             ].map((option) => (
               <ChoiceCard
                 key={option.value}
@@ -947,6 +945,22 @@ export function MobileGuestEligibilityQuestionnaire({
               />
             ))}
           </div>
+
+          {answers.religion === "other_religion" ? (
+            <div className="mt-2.5 space-y-1.5 rounded-xl border border-blue-200 bg-blue-50/50 p-3">
+              <label htmlFor="specify-religion-input" className="block text-[10.5px] font-extrabold text-[#243D95]">
+                {t("Specify Religion", "മതം വ്യക്തമാക്കുക")}
+              </label>
+              <input
+                id="specify-religion-input"
+                type="text"
+                value={customReligionText}
+                onChange={(e) => setCustomReligionText(e.target.value)}
+                placeholder={t("Enter your religion...", "നിങ്ങളുടെ മതം ഇവിടെ നൽകുക...")}
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-medium text-slate-800 outline-none focus:border-[#243D95]"
+              />
+            </div>
+          ) : null}
         </>
       );
     }
@@ -1366,8 +1380,10 @@ export function MobileGuestEligibilityQuestionnaire({
               >
                 {lang === "ml" ? scheme.ml : scheme.en}
               </h4>
-              <p className="mt-0.5 text-[10.5px] font-semibold text-muted-foreground leading-snug">
-                {lang === "ml" ? meta.ml : meta.en}
+              <p className="mt-0.5 truncate text-[10.5px] font-semibold text-muted-foreground leading-snug">
+                {lang === "ml"
+                  ? `${meta.ml} (${scheme.ministry.ml})`
+                  : `${meta.en} (${scheme.ministry.en})`}
               </p>
             </div>
           </div>
@@ -1384,10 +1400,6 @@ export function MobileGuestEligibilityQuestionnaire({
             </span>
           </div>
         </div>
-
-        <p className="text-[11px] text-muted-foreground leading-snug">
-          {lang === "ml" ? scheme.benefit.ml : scheme.benefit.en}
-        </p>
       </button>
     );
   };
@@ -1573,39 +1585,7 @@ export function MobileGuestEligibilityQuestionnaire({
 
   const renderBrowse = () => (
     <>
-      <div className="rounded-2xl border border-slate-200 bg-white px-3.5 py-3">
-        <p className="text-[9px] font-extrabold uppercase tracking-wide text-slate-400">
-          {t("General browsing", "പൊതു വിവരശേഖരണം")}
-        </p>
-        <h2 className="mt-1 text-[15px] font-extrabold text-slate-900">
-          {t("All Schemes", "എല്ലാ പദ്ധതികളും")}
-        </h2>
-        <p className="mt-1 text-[10px] font-medium leading-relaxed text-slate-500">
-          {t(
-            "These are not matched to your answers. Use search or categories to explore.",
-            "ഇവ നിങ്ങളുടെ ഉത്തരങ്ങളുമായി പൊരുത്തപ്പെടുത്തിയതല്ല. തിരയൽ അല്ലെങ്കിൽ വിഭാഗങ്ങൾ ഉപയോഗിക്കുക.",
-          )}
-        </p>
-      </div>
       <div className="space-y-2">
-        <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5">
-          <Search className="h-4 w-4 shrink-0 text-slate-400" />
-          <input
-            value={browseQuery}
-            onChange={(event) => setBrowseQuery(event.target.value)}
-            placeholder={t("Search all schemes", "എല്ലാ പദ്ധതികളും തിരയുക")}
-            className="min-w-0 flex-1 bg-transparent text-[11.5px] font-medium text-slate-800 outline-none placeholder:text-slate-400"
-          />
-          {browseQuery ? (
-            <button
-              type="button"
-              onClick={() => setBrowseQuery("")}
-              className="text-[9.5px] font-bold text-orange-600"
-            >
-              {t("Clear", "മായ്ക്കുക")}
-            </button>
-          ) : null}
-        </div>
         <div className="flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <button
             type="button"
@@ -1831,14 +1811,14 @@ export function MobileGuestEligibilityQuestionnaire({
 
       {/* Title */}
       <h2 className="mt-3 text-[22px] font-black tracking-tight text-[#0f172a]">
-        {t("Request sent", "അഭ്യർത്ഥന അയച്ചു")}
+        {t("Help Request Submitted!", "സഹായ അഭ്യർത്ഥന സമർപ്പിച്ചു!")}
       </h2>
 
       {/* Subtitle */}
-      <p className="mt-2 text-[13px] font-semibold leading-relaxed text-slate-500 max-w-[280px]">
+      <p className="mt-2 text-[13px] font-semibold leading-relaxed text-slate-500 max-w-[330px]">
         {t(
-          "Your local party team will review your request and assign a worker to help you.",
-          "നിങ്ങളുടെ പ്രാദേശിക പാർട്ടി ടീം അഭ്യർത്ഥന പരിശോധിച്ച് നിങ്ങളെ സഹായിക്കാൻ പ്രവർത്തകനെ ചുമതലപ്പെടുത്തും.",
+          "Your request has been received. A party worker will review it and reach out to assist you.",
+          "നിങ്ങളുടെ അഭ്യർത്ഥന ലഭിച്ചിട്ടുണ്ട്. ഒരു പാർട്ടി പ്രവർത്തകൻ ഇത് പരിശോധിച്ച് സഹായിക്കാൻ നിങ്ങളെ ബന്ധപ്പെടും.",
         )}
       </p>
 
@@ -1879,17 +1859,11 @@ export function MobileGuestEligibilityQuestionnaire({
             renderAssistanceOtp()
           ) : (
             <>
-              <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 px-3.5 pb-2.5 pt-2.5">
+              <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 px-3.5 py-3">
                 <div className="min-w-0">
                   <h2 className="text-[14px] font-extrabold text-slate-900">
                     {t("Request assistance", "സഹായം അഭ്യർത്ഥിക്കുക")}
                   </h2>
-                  <p className="mt-0.5 text-[10px] font-medium leading-relaxed text-slate-500">
-                    {t(
-                      "Share your contact details so a party leader can help.",
-                      "ഒരു പാർട്ടി നേതാവിന് സഹായിക്കാൻ കഴിയുന്ന വിധം നിങ്ങളുടെ കോൺടാക്റ്റ് വിവരങ്ങൾ പങ്കിടുക.",
-                    )}
-                  </p>
                 </div>
                 <button
                   type="button"

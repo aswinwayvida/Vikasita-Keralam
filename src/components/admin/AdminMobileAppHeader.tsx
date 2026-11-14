@@ -515,7 +515,7 @@ export function AdminMobileAppHeader({
                 >
                   <span className="flex items-center gap-3">
                     <Headphones className="h-4 w-4 text-[#243D95]" />{" "}
-                    {lang === "ml" ? "ഹെൽപ്പ്ഡെസ്ക്" : "Help Desk"}
+                    {lang === "ml" ? "അഭ്യർത്ഥനകൾ" : "Requests"}
                   </span>
                   <ChevronRight className="h-4 w-4 text-slate-400" />
                 </button>
