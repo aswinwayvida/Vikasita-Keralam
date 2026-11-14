@@ -8068,6 +8068,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         restricted: false,
       },
     ].map((attribute) => ({
+      key: attribute.labelEn,
       icon: attribute.icon,
       label: lang === "ml" ? attribute.labelMl : attribute.labelEn,
       value: lang === "ml" ? attribute.valueMl : attribute.valueEn,
@@ -8076,6 +8077,48 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
     const keyRequirementAttributes = requiredAttributes.filter((attribute) => attribute.restricted);
     const otherAttributes = requiredAttributes.filter((attribute) => !attribute.restricted);
+
+    const eligibilityAttributeGroups = [
+      {
+        key: "personal",
+        titleEn: "Personal Profile",
+        titleMl: "വ്യക്തിഗത വിവരങ്ങൾ",
+        icon: UserRound,
+        fieldKeys: ["Gender", "Marital Status", "Religion"],
+      },
+      {
+        key: "social",
+        titleEn: "Social & Community",
+        titleMl: "സാമൂഹിക & സമുദായ വിവരങ്ങൾ",
+        icon: Users,
+        fieldKeys: ["Social Category", "Minority Status", "Caste / Community"],
+      },
+      {
+        key: "disability",
+        titleEn: "Disability",
+        titleMl: "ഭിന്നശേഷി",
+        icon: Accessibility,
+        fieldKeys: ["Disability Status", "Disability Percentage"],
+      },
+      {
+        key: "work",
+        titleEn: "Work & Household",
+        titleMl: "തൊഴിൽ & കുടുംബം",
+        icon: Briefcase,
+        fieldKeys: ["Employment Status", "Occupation", "Household BPL Status"],
+      },
+    ]
+      .map((group) => ({
+        ...group,
+        title: lang === "ml" ? group.titleMl : group.titleEn,
+        attributes: otherAttributes.filter((attribute) => group.fieldKeys.includes(attribute.key)),
+      }))
+      .filter((group) => group.attributes.length > 0);
+
+    const groupedAttributeKeys = new Set(
+      eligibilityAttributeGroups.flatMap((group) => group.attributes.map((attribute) => attribute.key)),
+    );
+    const ungroupedAttributes = otherAttributes.filter((attribute) => !groupedAttributeKeys.has(attribute.key));
 
     const requiredDetails = [
       {
@@ -8219,17 +8262,25 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           </div>
 
           <div className="space-y-2">
-            {keyRequirementAttributes.length > 0 && (
+            {keyRequirementAttributes.length > 0 ? (
               <div className="rounded-xl border border-orange-200/80 bg-orange-50/60 p-2.5 dark:border-orange-900/40 dark:bg-orange-950/10">
+                <div className="mb-1.5 flex items-center gap-1.5">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-orange-100 text-orange-600 dark:bg-orange-950/60 dark:text-orange-300">
+                    <Sparkles className="h-3 w-3" strokeWidth={2.2} />
+                  </span>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wide text-orange-700 dark:text-orange-300">
+                    {lang === "ml" ? "പ്രധാന ആവശ്യകതകൾ" : "Key Requirements"}
+                  </span>
+                </div>
                 <ul className="text-[11px]">
                   {keyRequirementAttributes.map((attribute) => {
                     const AttributeIcon = attribute.icon;
                     return (
                       <li
-                        key={attribute.label}
+                        key={attribute.key}
                         className="flex items-start gap-2 border-b-[0.5px] border-orange-200/60 py-1.5 first:pt-0 last:border-b-0 last:pb-0 dark:border-orange-900/40"
                       >
-                        <AttributeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" strokeWidth={2} />
+                        <AttributeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-orange-600 dark:text-orange-300" strokeWidth={2} />
                         <span className="min-w-0 leading-snug">
                           <span className="font-medium text-slate-600 dark:text-slate-300">{attribute.label}</span>
                           <span className="px-1 text-slate-400 dark:text-slate-500">:</span>
@@ -8240,16 +8291,71 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   })}
                 </ul>
               </div>
+            ) : (
+              <div className="flex items-center gap-2 rounded-xl border border-slate-200/80 bg-slate-50/70 p-2.5 text-[11px] font-semibold text-slate-500 dark:border-slate-700/70 dark:bg-slate-800/50 dark:text-slate-400">
+                <ShieldCheck className="h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500" strokeWidth={2} />
+                <span>{lang === "ml" ? "പ്രത്യേക യോഗ്യതാ നിയന്ത്രണങ്ങളില്ല" : "No Specific Eligibility Restrictions"}</span>
+              </div>
             )}
 
-            {otherAttributes.length > 0 && (
+            {eligibilityAttributeGroups.map((group) => {
+              const GroupIcon = group.icon;
+              return (
+                <div
+                  key={group.key}
+                  className="rounded-xl border border-slate-200/80 bg-white p-2.5 dark:border-slate-700/70 dark:bg-slate-800/50"
+                >
+                  <div className="mb-1.5 flex items-center gap-1.5">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-[#243D95]/10 text-[#243D95] dark:bg-[#243D95]/30 dark:text-blue-300">
+                      <GroupIcon className="h-3 w-3" strokeWidth={2.2} />
+                    </span>
+                    <span className="text-[10px] font-extrabold uppercase tracking-wide text-slate-600 dark:text-slate-300">
+                      {group.title}
+                    </span>
+                  </div>
+                  <ul className="text-[11px]">
+                    {group.attributes.map((attribute) => {
+                      const AttributeIcon = attribute.icon;
+                      return (
+                        <li
+                          key={attribute.key}
+                          className="flex items-start gap-2 border-b-[0.5px] border-slate-200/70 py-1.5 first:pt-0 last:border-b-0 last:pb-0 dark:border-slate-700/60"
+                        >
+                          <AttributeIcon
+                            className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500"
+                            strokeWidth={2}
+                          />
+                          <span className="min-w-0 leading-snug">
+                            <span className="font-normal text-slate-500 dark:text-slate-400">{attribute.label}</span>
+                            <span className="px-1 text-slate-400 dark:text-slate-500">:</span>
+                            <span className="font-semibold text-slate-700 dark:text-slate-200">
+                              {attribute.value}
+                            </span>
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              );
+            })}
+
+            {ungroupedAttributes.length > 0 && (
               <div className="rounded-xl border border-slate-200/80 bg-white p-2.5 dark:border-slate-700/70 dark:bg-slate-800/50">
+                <div className="mb-1.5 flex items-center gap-1.5">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-[#243D95]/10 text-[#243D95] dark:bg-[#243D95]/30 dark:text-blue-300">
+                    <Info className="h-3 w-3" strokeWidth={2.2} />
+                  </span>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wide text-slate-600 dark:text-slate-300">
+                    {lang === "ml" ? "മറ്റ് മാനദണ്ഡങ്ങൾ" : "Other Criteria"}
+                  </span>
+                </div>
                 <ul className="text-[11px]">
-                  {otherAttributes.map((attribute) => {
+                  {ungroupedAttributes.map((attribute) => {
                     const AttributeIcon = attribute.icon;
                     return (
                       <li
-                        key={attribute.label}
+                        key={attribute.key}
                         className="flex items-start gap-2 border-b-[0.5px] border-slate-200/70 py-1.5 first:pt-0 last:border-b-0 last:pb-0 dark:border-slate-700/60"
                       >
                         <AttributeIcon
@@ -8259,9 +8365,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         <span className="min-w-0 leading-snug">
                           <span className="font-normal text-slate-500 dark:text-slate-400">{attribute.label}</span>
                           <span className="px-1 text-slate-400 dark:text-slate-500">:</span>
-                          <span className="font-semibold text-slate-700 dark:text-slate-200">
-                            {attribute.value}
-                          </span>
+                          <span className="font-semibold text-slate-700 dark:text-slate-200">{attribute.value}</span>
                         </span>
                       </li>
                     );
