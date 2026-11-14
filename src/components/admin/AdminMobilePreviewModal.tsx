@@ -4204,6 +4204,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           ) || mockEligibleSchemesList[0];
           setSelectedEligibleScheme(matched);
           setSelectedEligibleSchemeIds([matched.id]);
+          setShowEligibilityDetails(true);
           setCreateFlowStep("eligibility_result");
         } else {
           setSelectedEligibleSchemeIds([]);
@@ -5363,6 +5364,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         setPmKisanDetails(createEmptyPmKisanDetails());
         setSchemeDetailsReturnStep("eligibility_result");
         setIsSingleSchemeEligible(true);
+        setShowEligibilityDetails(true);
         setCreateFlowStep("eligibility_result");
       } else {
         setSelectedEligibleScheme(null);
@@ -9928,7 +9930,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         {/* Mobile App Standard Header or Application Details / Document Verification Back Header */}
 
           {/* Mobile App Standard Header or Application Details / Document Verification Back Header */}
-          {!isLogoutSplashScreen && (!isGuestEligibilityOpen || mobileSubPage === "scheme_details") && !isMobileAuthOpen && !(activeTab === "create" && createFlowStep === "checking") && mobileSubPage !== "category_schemes" && mobileSubPage !== "create_scheme" && mobileSubPage !== "users" && mobileSubPage !== "applicants" && mobileSubPage !== "user_detail" && mobileSubPage !== "settings" && (
+          {!isLogoutSplashScreen && (!isGuestEligibilityOpen || mobileSubPage === "scheme_details") && !isMobileAuthOpen && !(activeTab === "create" && createFlowStep === "checking") && !(activeTab === "create" && createFlowStep === "eligibility_result") && mobileSubPage !== "category_schemes" && mobileSubPage !== "create_scheme" && mobileSubPage !== "users" && mobileSubPage !== "applicants" && mobileSubPage !== "user_detail" && mobileSubPage !== "settings" && (
             mobileSubPage === "guest_popular_schemes" || mobileSubPage === "guest_schemes" || mobileSubPage === "app_detail" || mobileSubPage === "needs_attention" || mobileSubPage === "notifications" || mobileSubPage === "scheme_details" || mobileSubPage === "about" || mobileSubPage === "contact" || mobileSubPage === "events_announcements" || (activeTab === "create" && (createFlowStep === "scheme_details" || createFlowStep === "eligible_schemes" || createFlowStep === "form")) ? (
               <header className="relative z-40 w-full bg-[#FFFDF9] dark:bg-slate-900 border-b border-slate-200/60 dark:border-slate-800/60 shadow-2xs">
                 {mobileSubPage === "guest_popular_schemes" || mobileSubPage === "guest_schemes" ? (
@@ -10375,7 +10377,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       mobileSubPage === "recent_activity" ||
                       mobileSubPage === "events_announcements")
                       ? "pb-16"
-                      : "pb-6"
+                      : activeTab === "create" && createFlowStep === "eligibility_result" && mobileSubPage !== "scheme_details"
+                        ? "pb-28"
+                        : "pb-6"
                   } space-y-2.5`
             }`}
           >
@@ -14971,8 +14975,32 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             {(activeTab === "create" || activeTab === "helpdesk") && (
               <div className="space-y-3 animate-in fade-in duration-200">
                 {mobileSubPage !== "create_scheme" && createFlowStep !== "scheme_details" && createFlowStep !== "eligible_schemes" && createFlowStep !== "form" && createFlowStep !== "checking" && (
-                <div className={`flex items-center justify-between border-b border-border/80 ${createFlowStep === "selected_schemes" ? "-mx-4 px-4 pb-1.5" : "px-0.5 pb-2"}`}>
-                        {activeTab === "create" && createFlowStep === "eligible_schemes" ? (
+                <div className={`flex items-center justify-between ${
+                  createFlowStep === "eligibility_result"
+                    ? "-mx-3.5 border-b border-border/80 bg-[#FFFDF9] px-3.5 py-2 dark:bg-slate-900"
+                    : createFlowStep === "selected_schemes"
+                      ? "border-b border-border/80 -mx-4 px-4 pb-1.5"
+                      : "border-b border-border/80 px-0.5 pb-2"
+                }`}>
+                        {activeTab === "create" && createFlowStep === "eligibility_result" ? (
+                          <div className="relative flex w-full items-center justify-center py-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsCheckingEligibility(false);
+                                setCreateFlowStep("form");
+                                setCreateProfileStep(1);
+                              }}
+                              className="absolute left-0 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border border-orange-100/80 bg-[#FFF7EC] text-[#1b255a] shadow-2xs transition-colors hover:bg-orange-100 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700"
+                              title={lang === "ml" ? "തിരികെ പോവുക" : "Go back"}
+                            >
+                              <ArrowLeft className="h-3.5 w-3.5 stroke-[2.2]" />
+                            </button>
+                            <h3 className="pointer-events-none px-10 text-center text-[13.5px] font-extrabold text-[#0f172a] dark:text-slate-100">
+                              {lang === "ml" ? "അർഹതാ ഫലം" : "Eligibility Result"}
+                            </h3>
+                          </div>
+                        ) : activeTab === "create" && createFlowStep === "eligible_schemes" ? (
                           <div className="flex-1 flex flex-col gap-2">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
@@ -16121,18 +16149,26 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         {/* Card: Selected Scheme details & Checks */}
                         <div className="bg-card rounded-xl border border-border shadow-xs overflow-hidden">
                           {/* Card Header Section */}
-                          <div className="p-3.5 space-y-1">
+                          <div className="p-3.5 space-y-2">
                             <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">
                               {lang === "ml" ? "തിരഞ്ഞെടുത്ത പദ്ധതി" : "SELECTED SCHEME"}
                             </span>
-                            <h4 className="font-extrabold text-sm text-foreground">
-                              {selectedSchemeName || (lang === "ml" ? selectedEligibleScheme.titleMl : selectedEligibleScheme.titleEn)}
-                            </h4>
-                            <p className="text-xs text-muted-foreground">
-                              {lang === "ml"
-                                ? "പ്രാഥമിക അർഹതാ മാനദണ്ഡങ്ങൾ അനുസരിച്ച് നിങ്ങൾ അർഹനാണ്."
-                                : "You appear to meet the initial eligibility criteria."}
-                            </p>
+                            <div className="flex items-start gap-2.5">
+                              <img
+                                src={getEligibleSchemeLogo(selectedEligibleScheme)}
+                                alt={lang === "ml" ? selectedEligibleScheme.titleMl : selectedEligibleScheme.titleEn}
+                                className="h-11 w-11 shrink-0 rounded-full border border-slate-200 bg-white object-contain p-1 dark:border-slate-700 dark:bg-slate-900"
+                              />
+                              <div className="min-w-0 space-y-1">
+                                <h4 className="font-extrabold text-xs text-foreground leading-snug">
+                                  {selectedSchemeName || (lang === "ml" ? selectedEligibleScheme.titleMl : selectedEligibleScheme.titleEn)}
+                                </h4>
+                                <p className="flex items-start gap-1 text-[11px] font-medium leading-snug text-muted-foreground">
+                                  <Building2 className="h-3 w-3 shrink-0 mt-0.5" />
+                                  <span className="min-w-0">{lang === "ml" ? selectedEligibleScheme.deptMl : selectedEligibleScheme.deptEn}</span>
+                                </p>
+                              </div>
+                            </div>
                           </div>
 
                           <div className="h-[1px] bg-border/80 w-full" />
@@ -16168,34 +16204,32 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             <button
                               type="button"
                               onClick={() => setShowEligibilityDetails(!showEligibilityDetails)}
-                              className="w-full p-3.5 flex items-center justify-between gap-3 text-left hover:bg-muted/40 transition-colors cursor-pointer"
+                              className="w-full px-2.5 py-2 flex items-center justify-between gap-2 text-left hover:bg-muted/40 transition-colors cursor-pointer"
                             >
-                              <div className="flex items-center gap-3 min-w-0">
-                                <div className="h-9 w-9 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-200/60 dark:border-emerald-900/40">
-                                  <Check className="h-4 w-4 stroke-[2.5]" />
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <div className="h-7 w-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                                  <ShieldCheck className="h-3.5 w-3.5 stroke-[2.2]" />
                                 </div>
-                                <div>
-                                  <h5 className="font-bold text-xs text-foreground leading-snug">
-                                    {lang === "ml" ? "അർഹതാ പരിശോധനകൾ കാണുക" : "View eligibility checks"}
-                                  </h5>
-                                </div>
+                                <h5 className="font-bold text-[11px] text-foreground leading-snug">
+                                  {lang === "ml" ? "അർഹതാ പരിശോധനകൾ കാണുക" : "View eligibility checks"}
+                                </h5>
                               </div>
-                              <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 shrink-0 ${showEligibilityDetails ? "rotate-180" : ""}`} />
+                              <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 shrink-0 ${showEligibilityDetails ? "rotate-180" : ""}`} />
                             </button>
 
                             {/* Collapsible content */}
                             {showEligibilityDetails && (
-                              <div className="px-3.5 pb-3.5 pt-1 space-y-2 bg-muted/20 text-xs border-t border-border/40">
-                                <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300 font-semibold text-[11px]">
-                                  <Check className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                              <div className="px-2.5 pb-2.5 pt-0.5 space-y-1.5 bg-muted/20 border-t border-border/40">
+                                <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300 font-semibold text-[10.5px]">
+                                  <CheckCircle2 className="h-3 w-3 text-emerald-600 shrink-0" />
                                   <span>{lang === "ml" ? "വരുമാന പരിധി യോഗ്യത പൂർത്തിയായി" : "Income Criteria Verified"}</span>
                                 </div>
-                                <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300 font-semibold text-[11px]">
-                                  <Check className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                                <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300 font-semibold text-[10.5px]">
+                                  <CheckCircle2 className="h-3 w-3 text-emerald-600 shrink-0" />
                                   <span>{lang === "ml" ? "മേഖല / മണ്ഡലം പരിധി യോഗ്യമാണ്" : "Regional Location Matched"}</span>
                                 </div>
-                                <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300 font-semibold text-[11px]">
-                                  <Check className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                                <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300 font-semibold text-[10.5px]">
+                                  <CheckCircle2 className="h-3 w-3 text-emerald-600 shrink-0" />
                                   <span>{lang === "ml" ? "പ്രായപരിധി മാനദണ്ഡങ്ങൾ പാലിക്കപ്പെട്ടു" : "Age Limit Requirements Met"}</span>
                                 </div>
                               </div>
@@ -16203,68 +16237,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           </div>
                         </div>
 
-                        {/* Section: What happens next? */}
-                        <div className="pt-1 space-y-2.5">
-                          <h4 className="font-extrabold text-xs text-foreground px-0.5">
-                            {lang === "ml" ? "അടുത്തത് എന്താണ്?" : "What happens next?"}
-                          </h4>
-
-                          <div className="space-y-2">
-                            {/* Step 1 */}
-                            <div className="flex items-start gap-3 p-2.5 bg-card rounded-xl border border-border/70 shadow-2xs">
-                              <div className="h-8 w-8 rounded-lg bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0 border border-orange-200/50 dark:border-orange-900/40">
-                                <FileText className="h-4 w-4" />
-                              </div>
-                              <div className="min-w-0 pt-0.5">
-                                <h5 className="font-bold text-xs text-foreground leading-tight">
-                                  {lang === "ml" ? "ബാക്കി വിവരങ്ങൾ പൂർത്തിയാക്കുക" : "Complete remaining details"}
-                                </h5>
-                                <p className="text-[11px] text-muted-foreground leading-snug">
-                                  {lang === "ml" ? "പ്രൊഫൈൽ പൂർത്തിയാക്കാൻ ആവശ്യമായ വിവരങ്ങൾ നൽകുക." : "Fill required info to complete your profile."}
-                                </p>
-                              </div>
-                            </div>
-
-                            {/* Step 2 */}
-                            <div className="flex items-start gap-3 p-2.5 bg-card rounded-xl border border-border/70 shadow-2xs">
-                              <div className="h-8 w-8 rounded-lg bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0 border border-orange-200/50 dark:border-orange-900/40">
-                                <Upload className="h-4 w-4" />
-                              </div>
-                              <div className="min-w-0 pt-0.5">
-                                <h5 className="font-bold text-xs text-foreground leading-tight">
-                                  {lang === "ml" ? "ആവശ്യമായ രേഖകൾ അപ്‌ലോഡ് ചെയ്യുക" : "Upload required documents"}
-                                </h5>
-                                <p className="text-[11px] text-muted-foreground leading-snug">
-                                  {lang === "ml" ? "തിരിച്ചറിയൽ രേഖയും വരുമാന സർട്ടിഫിക്കറ്റും സമർപ്പിക്കുക." : "Submit proof of identity and income."}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Footer / Application Action */}
-                        <div className="pt-2 text-center space-y-2">
-                          <p className="text-[11px] text-muted-foreground font-medium">
-                            {lang === "ml" ? "നിങ്ങൾ നൽകിയ വിവരങ്ങൾ ഇതോടൊപ്പം ചേർക്കും." : "Your entered details will be carried forward."}
-                          </p>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const schemeId = selectedEligibleScheme.id;
-                              setSelectedEligibleSchemeIds([schemeId]);
-                              startSelectedSchemesCollection([schemeId]);
-                            }}
-                            className="w-full py-3 px-4 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-extrabold text-xs sm:text-sm shadow-md active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                          >
-                            <span>{lang === "ml" ? "അപേക്ഷ തുടരുക" : "Continue Application"}</span>
-                            <ChevronRight className="h-4 w-4 stroke-[2.5]" />
-                          </button>
-
-                          <p className="text-[10px] text-muted-foreground/80 font-medium pt-0.5">
-                            {lang === "ml" ? "അന്തിമ അനുമതി പരിശോധനയ്ക്ക് വിധേയമാണ്." : "Final approval is subject to verification."}
-                          </p>
-                        </div>
                       </div>
                     )}
 
@@ -18416,6 +18388,33 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               )}
             </div>
           )}
+
+          {/* Eligibility Result - Continue action pinned to the bottom of the app */}
+          {activeTab === "create" &&
+            createFlowStep === "eligibility_result" &&
+            mobileSubPage !== "scheme_details" &&
+            selectedEligibleScheme &&
+            !isGuest &&
+            !isSideMenuOpen &&
+            !isMobileAuthOpen && (
+              <div
+                className="absolute inset-x-0 bottom-0 z-40 border-t border-slate-200/80 bg-white px-4 pt-2.5 dark:border-slate-800 dark:bg-slate-900"
+                style={{ paddingBottom: "calc(10px + env(safe-area-inset-bottom, 0px))" }}
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    const schemeId = selectedEligibleScheme.id;
+                    setSelectedEligibleSchemeIds([schemeId]);
+                    startSelectedSchemesCollection([schemeId]);
+                  }}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-orange-500 px-4 py-3 text-xs font-extrabold text-white transition-all hover:bg-orange-600 active:scale-95 cursor-pointer sm:text-sm"
+                >
+                  <span>{lang === "ml" ? "അപേക്ഷ തുടരുക" : "Continue Application"}</span>
+                  <ChevronRight className="h-4 w-4 stroke-[2.5]" />
+                </button>
+              </div>
+            )}
 
           {/* Bottom Nav Bar - Hidden in Guest Mode or when Side Menu is Open */}
           {!isGuest &&
@@ -21676,29 +21675,32 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       {/* Mark as Document Verified Skip Popup Modal */}
       {isSkipDocumentVerifyModalOpen && (
         <div
-          className="absolute inset-0 z-[80] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200 rounded-[36px]"
+          className="absolute inset-0 z-[80] flex flex-col justify-end bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 rounded-[36px]"
           onClick={() => setIsSkipDocumentVerifyModalOpen(false)}
         >
           <div
-            className="relative w-full max-w-[325px] rounded-3xl bg-white dark:bg-slate-900 p-5 shadow-2xl animate-in zoom-in-95 duration-200 space-y-4 text-left"
+            className="relative w-full max-h-[90%] overflow-y-auto rounded-t-3xl rounded-b-[36px] bg-white dark:bg-slate-900 px-5 pb-6 pt-5 shadow-2xl animate-in slide-in-from-bottom duration-250 space-y-4 text-left"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close Button Top Right */}
             <button
               type="button"
               onClick={() => setIsSkipDocumentVerifyModalOpen(false)}
-              className="absolute top-4 right-4 rounded-full p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+              className="absolute top-4 right-4 flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors cursor-pointer"
             >
-              <X className="h-5 w-5" />
+              <X className="h-4 w-4" />
             </button>
 
             {/* Document Check Icon */}
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-orange-100/70 text-orange-600 dark:bg-orange-950/60 dark:text-orange-400">
-              <FileCheck className="h-6 w-6 stroke-[2.2]" />
-            </div>
+            <img
+              src="/images/document-verified-badge-blue.png"
+              alt=""
+              aria-hidden="true"
+              className="mx-auto block h-16 w-16 shrink-0 rounded-full object-cover"
+            />
 
             {/* Title & Subtitle */}
-            <div className="space-y-1">
+            <div className="space-y-1 text-center">
               <h3 className="font-extrabold text-[17px] text-slate-900 dark:text-white leading-tight tracking-tight">
                 {lang === "ml" ? "രേഖകൾ ശരിയാണെന്ന് സ്ഥിരീകരിക്കണോ?" : "Mark documents as verified?"}
               </h3>
@@ -21710,7 +21712,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             </div>
 
             {/* Applicant Card */}
-            <div className="rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-3 flex items-center gap-3">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-100/50 dark:bg-slate-800/50 p-3 flex items-center gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-100 text-orange-600 dark:bg-orange-950/80 dark:text-orange-400 font-black text-sm">
                 {(createFullName.trim() || "K. Krishnan")
                   .split(" ")
@@ -21732,11 +21734,11 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             </div>
 
             {/* Action Buttons */}
-            <div className="grid grid-cols-2 gap-2.5 pt-2">
+            <div className="grid grid-cols-[1fr_1.35fr] gap-2.5 pt-2">
               <button
                 type="button"
                 onClick={() => setIsSkipDocumentVerifyModalOpen(false)}
-                className="h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold text-xs hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer flex items-center justify-center"
+                className="h-10 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold text-xs hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer flex items-center justify-center"
               >
                 {lang === "ml" ? "റദ്ദാക്കുക" : "Cancel"}
               </button>
@@ -21835,7 +21837,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       : "Marked as Document Verified successfully."
                   );
                 }}
-                className="h-10 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center shadow-none"
+                className="h-10 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center shadow-none"
               >
                 {lang === "ml" ? "ശരിയാണെന്ന് സാക്ഷ്യപ്പെടുത്തുക" : "Mark as Verified"}
               </button>
