@@ -161,7 +161,7 @@ const PRESET_MINISTRIES = [
 function CategoryTag({ category, lang }: { category: Scheme["category"]; lang: "en" | "ml" }) {
   const CategoryIcon = categoryIcons[category];
   return (
-    <span className="inline-flex items-center gap-1 rounded-md border border-border bg-transparent px-1.5 py-1 text-[10px] font-bold text-muted-foreground">
+    <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-md border border-border bg-transparent px-1.5 py-1 text-[10px] font-bold text-muted-foreground">
       <CategoryIcon className="h-3 w-3 shrink-0 text-primary" />
       {categoryLabels[category][lang]}
     </span>
@@ -1395,11 +1395,11 @@ function SchemesPage() {
 
         {/* Data Table View */}
         {viewMode === "table" && (
-          <div className="w-full max-w-full min-w-0 overflow-x-auto desktop-hide-scrollbar [&_th]:px-2 [&_th]:py-3 [&_td]:px-2 [&_td]:py-3">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-muted/50 font-bold text-muted-foreground border-b border-border">
+          <div className="w-full max-w-full min-w-0 overflow-x-auto desktop-hide-scrollbar">
+            <table className="w-full table-fixed text-left text-xs">
+              <thead className="bg-muted/50 border-b border-border text-[10px] font-bold uppercase tracking-[0.03em] text-muted-foreground">
                 <tr>
-                  <th className="py-3.5 pl-4 sm:pl-5 pr-2 w-10 text-center">
+                  <th className="w-10 py-3 pl-4 pr-1 text-center">
                     <Checkbox
                       checked={
                         paginatedFiltered.length > 0 &&
@@ -1427,67 +1427,67 @@ function SchemesPage() {
                     switch (colKey) {
                       case "scheme":
                         return (
-                          <th key="scheme" className="py-3.5 pl-2 pr-3 whitespace-nowrap">
+                          <th key="scheme" className="whitespace-nowrap py-3 pl-2 pr-3">
                             {lang === "ml" ? "പദ്ധതിയുടെ പേര്" : "SCHEME NAME"}
                           </th>
                         );
                       case "category":
                         return (
-                          <th key="category" className="p-3.5 whitespace-nowrap">
+                          <th key="category" className="w-[150px] whitespace-nowrap px-2 py-3">
                             {lang === "ml" ? "വിഭാഗം" : "CATEGORY"}
                           </th>
                         );
                       case "portal":
                         return (
-                          <th key="portal" className="p-3.5 whitespace-nowrap">
+                          <th key="portal" className="w-[84px] whitespace-nowrap px-2 py-3">
                             {lang === "ml" ? "പോർട്ടൽ തുറക്കുക" : "APPLY LINK"}
                           </th>
                         );
                       case "website":
                         return (
-                          <th key="website" className="p-3.5 whitespace-nowrap">
+                          <th key="website" className="w-[114px] whitespace-nowrap px-2 py-3">
                             {lang === "ml" ? "ഔദ്യോഗിക വെബ്‌സൈറ്റ്" : "OFFICIAL WEBSITE"}
                           </th>
                         );
                       case "status":
                         return (
-                          <th key="status" className="p-3.5 whitespace-nowrap">
+                          <th key="status" className="w-[68px] whitespace-nowrap px-2 py-3">
                             {lang === "ml" ? "സ്റ്റാറ്റസ്" : "STATUS"}
                           </th>
                         );
                       case "applications":
                         return (
-                          <th key="applications" className="p-3.5 text-right whitespace-nowrap">
+                          <th key="applications" className="w-[98px] whitespace-nowrap px-2 py-3 text-right">
                             {lang === "ml" ? "അപേക്ഷകൾ" : "APPLICATIONS"}
                           </th>
                         );
                       case "approved":
                         return (
-                          <th key="approved" className="p-3.5 text-right whitespace-nowrap">
+                          <th key="approved" className="w-[80px] whitespace-nowrap px-2 py-3 text-right">
                             {lang === "ml" ? "അംഗീകരിച്ചത്" : "APPROVED"}
                           </th>
                         );
                       case "rejected":
                         return (
-                          <th key="rejected" className="p-3.5 text-right whitespace-nowrap">
+                          <th key="rejected" className="w-[74px] whitespace-nowrap px-2 py-3 text-right">
                             {lang === "ml" ? "നിരസിച്ചത്" : "REJECTED"}
                           </th>
                         );
                       case "pending":
                         return (
-                          <th key="pending" className="p-3.5 text-right whitespace-nowrap">
+                          <th key="pending" className="w-[72px] whitespace-nowrap px-2 py-3 text-right">
                             {lang === "ml" ? "തീർപ്പുകൽപ്പിക്കാത്തത്" : "PENDING"}
                           </th>
                         );
                       case "inProgress":
                         return (
-                          <th key="inProgress" className="p-3.5 text-right whitespace-nowrap">
+                          <th key="inProgress" className="w-[84px] whitespace-nowrap px-2 py-3 text-right">
                             {lang === "ml" ? "പുരോഗതിയിൽ" : "IN PROGRESS"}
                           </th>
                         );
                       case "actions":
                         return (
-                          <th key="actions" className="py-3.5 pl-3 pr-4 sm:pr-5 text-right whitespace-nowrap">
+                          <th key="actions" className="w-16 whitespace-nowrap py-3 pl-2 pr-3 text-right">
                             {lang === "ml" ? "നടപടികൾ" : "ACTIONS"}
                           </th>
                         );
@@ -1511,7 +1511,7 @@ function SchemesPage() {
                       }`}
                     >
                       <td
-                        className="py-3.5 pl-4 sm:pl-5 pr-2 w-10 text-center"
+                        className="w-10 py-4 pl-4 pr-1 text-center"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <Checkbox
@@ -1531,9 +1531,9 @@ function SchemesPage() {
                         switch (colKey) {
                           case "scheme":
                             return (
-                              <td key="scheme" className="min-w-40 max-w-72">
-                                <div className="flex items-center gap-2.5">
-                                  <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-white p-1 shadow-2xs">
+                              <td key="scheme" className="py-4 pl-2 pr-3">
+                                <div className="flex items-center gap-2">
+                                  <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-white p-1 shadow-2xs">
                                     <img
                                       src={schemeLogoUrls[record.id] ?? schemeLogoFallback}
                                       alt=""
@@ -1545,9 +1545,11 @@ function SchemesPage() {
                                       }}
                                     />
                                   </span>
-                                  <div className="space-y-0.5">
-                                    <p className="font-bold text-foreground leading-snug">{record[lang]}</p>
-                                    <p className="text-[11px] font-medium text-muted-foreground">
+                                  <div className="min-w-0 space-y-0.5">
+                                    <p className="font-bold leading-tight text-foreground">
+                                      {record[lang]}
+                                    </p>
+                                    <p className="text-[11px] font-medium leading-tight text-muted-foreground">
                                       {record.ministry[lang]}
                                     </p>
                                   </div>
@@ -1556,13 +1558,13 @@ function SchemesPage() {
                             );
                           case "category":
                             return (
-                              <td key="category" className="p-3.5">
+                              <td key="category" className="whitespace-nowrap px-2 py-4">
                                 <CategoryTag category={record.category} lang={lang} />
                               </td>
                             );
                           case "portal":
                             return (
-                              <td key="portal" className="p-3.5 whitespace-nowrap">
+                              <td key="portal" className="whitespace-nowrap px-2 py-4">
                                 <a
                                   href={`https://www.myscheme.gov.in/search?q=${encodeURIComponent(record.en)}`}
                                   target="_blank"
@@ -1577,7 +1579,7 @@ function SchemesPage() {
                             );
                           case "website":
                             return (
-                              <td key="website" className="p-3.5 whitespace-nowrap">
+                              <td key="website" className="whitespace-nowrap px-2 py-4">
                                 <a
                                   href={
                                     record.id === "pmkisan"
@@ -1604,7 +1606,7 @@ function SchemesPage() {
                             );
                           case "status":
                             return (
-                              <td key="status" className="p-3.5">
+                              <td key="status" className="whitespace-nowrap px-2 py-4">
                                 <span
                                   className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-extrabold border ${
                                     record.status === "Active"
@@ -1620,31 +1622,31 @@ function SchemesPage() {
                             );
                           case "applications":
                             return (
-                              <td key="applications" className="p-3.5 text-right font-mono text-foreground font-bold whitespace-nowrap">
+                              <td key="applications" className="whitespace-nowrap px-2 py-4 text-right font-mono font-bold text-foreground">
                                 {record.applications.toLocaleString()}
                               </td>
                             );
                           case "approved":
                             return (
-                              <td key="approved" className="p-3.5 text-right font-mono text-emerald-600 font-bold whitespace-nowrap">
+                              <td key="approved" className="whitespace-nowrap px-2 py-4 text-right font-mono font-bold text-emerald-600">
                                 {record.approved.toLocaleString()}
                               </td>
                             );
                           case "rejected":
                             return (
-                              <td key="rejected" className="p-3.5 text-right font-mono text-rose-600 font-bold whitespace-nowrap">
+                              <td key="rejected" className="whitespace-nowrap px-2 py-4 text-right font-mono font-bold text-rose-600">
                                 {record.rejected.toLocaleString()}
                               </td>
                             );
                           case "pending":
                             return (
-                              <td key="pending" className="p-3.5 text-right font-mono text-amber-600 font-bold whitespace-nowrap">
+                              <td key="pending" className="whitespace-nowrap px-2 py-4 text-right font-mono font-bold text-amber-600">
                                 {record.pending.toLocaleString()}
                               </td>
                             );
                           case "inProgress":
                             return (
-                              <td key="inProgress" className="p-3.5 text-right font-mono text-sky-600 font-bold whitespace-nowrap">
+                              <td key="inProgress" className="whitespace-nowrap px-2 py-4 text-right font-mono font-bold text-sky-600">
                                 {record.inProgress.toLocaleString()}
                               </td>
                             );
@@ -1652,7 +1654,7 @@ function SchemesPage() {
                             return (
                               <td
                                 key="actions"
-                                className="py-3.5 pl-3 pr-4 sm:pr-5 text-right"
+                                className="w-16 py-4 pl-2 pr-3 text-right"
                                 onClick={(event) => event.stopPropagation()}
                               >
                                 <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">

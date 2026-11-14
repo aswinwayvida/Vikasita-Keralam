@@ -7977,8 +7977,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       {
         icon: CalendarDays, labelEn: "Age",
         labelMl: "പ്രായം",
-        valueEn: "Between 18 and 25 years, inclusive; age on application date",
-        valueMl: "18 മുതൽ 25 വയസ്സ് വരെ (ഉൾപ്പെടെ); അപേക്ഷാ തീയതിയിലെ പ്രായം",
+        valueEn: "Between 18 and 25 years",
+        valueMl: "18 മുതൽ 25 വയസ്സ് വരെ",
         restricted: true,
       },
       {
@@ -8040,8 +8040,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       {
         icon: HandCoins, labelEn: "Annual Family Income",
         labelMl: "വാർഷിക കുടുംബ വരുമാനം",
-        valueEn: "Maximum ₹2,00,000 per year, inclusive",
-        valueMl: "പ്രതിവർഷം പരമാവധി ₹2,00,000 (ഉൾപ്പെടെ)",
+        valueEn: "Maximum ₹2,00,000/year",
+        valueMl: "പരമാവധി ₹2,00,000/വർഷം",
         restricted: true,
       },
       {
@@ -8071,6 +8071,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       value: lang === "ml" ? attribute.valueMl : attribute.valueEn,
       restricted: attribute.restricted,
     }));
+
+    const keyRequirementAttributes = requiredAttributes.filter((attribute) => attribute.restricted);
+    const otherAttributes = requiredAttributes.filter((attribute) => !attribute.restricted);
 
     const requiredDetails = [
       {
@@ -8182,7 +8185,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             </p>
           </div>
 
-          <div className="space-y-1.5 rounded-xl border border-orange-100 bg-orange-50/50 p-2.5 dark:border-orange-900/40 dark:bg-orange-950/10">
+          <div className="space-y-1.5 rounded-xl border border-slate-200 bg-white p-2.5 dark:border-slate-700 dark:bg-slate-900">
             <div className="flex items-center gap-1.5 text-[11px]">
               <HandCoins className="h-3.5 w-3.5 shrink-0 text-orange-600" />
               <span className="font-semibold text-slate-500 dark:text-slate-400">
@@ -8213,27 +8216,57 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             </div>
           </div>
 
-          <div className="rounded-xl bg-white p-2.5 dark:bg-slate-800/50">
-            <ul className="text-[11px]">
-            {requiredAttributes.map((attribute) => {
-              const AttributeIcon = attribute.icon;
-              return (
-                <li
-                  key={attribute.label}
-                  className="flex items-start gap-2 border-b-[0.5px] border-slate-300/80 dark:border-slate-700/70 py-1.5 first:pt-0 last:border-b-0 last:pb-0"
-                >
-                  <AttributeIcon className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" strokeWidth={2} />
-                  <span className="min-w-0 leading-snug">
-                    <span className="font-normal text-slate-500 dark:text-slate-400">{attribute.label}</span>
-                    <span className="px-1 text-slate-400 dark:text-slate-500">:</span>
-                    <span className={attribute.restricted ? "font-bold text-slate-900 dark:text-white" : "font-semibold text-slate-800 dark:text-slate-200"}>
-                      {attribute.value}
-                    </span>
-                  </span>
-                </li>
-              );
-            })}
-            </ul>
+          <div className="space-y-2">
+            {keyRequirementAttributes.length > 0 && (
+              <div className="rounded-xl border border-orange-200/80 bg-orange-50/60 p-2.5 dark:border-orange-900/40 dark:bg-orange-950/10">
+                <ul className="text-[11px]">
+                  {keyRequirementAttributes.map((attribute) => {
+                    const AttributeIcon = attribute.icon;
+                    return (
+                      <li
+                        key={attribute.label}
+                        className="flex items-start gap-2 border-b-[0.5px] border-orange-200/60 py-1.5 first:pt-0 last:border-b-0 last:pb-0 dark:border-orange-900/40"
+                      >
+                        <AttributeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" strokeWidth={2} />
+                        <span className="min-w-0 leading-snug">
+                          <span className="font-medium text-slate-600 dark:text-slate-300">{attribute.label}</span>
+                          <span className="px-1 text-slate-400 dark:text-slate-500">:</span>
+                          <span className="font-bold text-slate-900 dark:text-white">{attribute.value}</span>
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+
+            {otherAttributes.length > 0 && (
+              <div className="rounded-xl border border-slate-200/80 bg-white p-2.5 dark:border-slate-700/70 dark:bg-slate-800/50">
+                <ul className="text-[11px]">
+                  {otherAttributes.map((attribute) => {
+                    const AttributeIcon = attribute.icon;
+                    return (
+                      <li
+                        key={attribute.label}
+                        className="flex items-start gap-2 border-b-[0.5px] border-slate-200/70 py-1.5 first:pt-0 last:border-b-0 last:pb-0 dark:border-slate-700/60"
+                      >
+                        <AttributeIcon
+                          className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500"
+                          strokeWidth={2}
+                        />
+                        <span className="min-w-0 leading-snug">
+                          <span className="font-normal text-slate-500 dark:text-slate-400">{attribute.label}</span>
+                          <span className="px-1 text-slate-400 dark:text-slate-500">:</span>
+                          <span className="font-semibold text-slate-700 dark:text-slate-200">
+                            {attribute.value}
+                          </span>
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
 
