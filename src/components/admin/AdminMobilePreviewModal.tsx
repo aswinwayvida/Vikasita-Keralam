@@ -8124,25 +8124,30 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       }
     };
 
+    const benefitDurationValueEn = /annual income support/i.test(detail.benefitDurationEn)
+      ? "5 Years"
+      : detail.benefitDurationEn;
+    const benefitDurationValueMl = detail.benefitDurationMl.includes("വാർഷിക വരുമാന")
+      ? "5 വർഷം"
+      : detail.benefitDurationMl;
+
     return (
       <div className="space-y-3 pt-0.5 pb-0 animate-in fade-in duration-200">
-        {/* 1. Scheme Overview */}
+        {/* Scheme Overview & About */}
         <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-2.5">
           <div className="flex items-start gap-3">
             <img
               src={detail.logo}
               alt={lang === "ml" ? detail.fullSchemeNameMl : detail.fullSchemeNameEn}
-              className="h-12 w-12 shrink-0 object-contain p-1 rounded-xl bg-orange-50 dark:bg-slate-800 border border-orange-100 dark:border-slate-700"
+              className="h-14 w-14 shrink-0 object-contain p-0.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xs"
             />
             <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-1.5 mb-1">
-                <span className="text-[9px] font-extrabold text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-950/80 border border-orange-200 dark:border-orange-900/60 px-2 py-0.5 rounded-md">
-                  {lang === "ml" ? detail.categoryMl : detail.categoryEn}
-                </span>
-              </div>
               <h2 className="font-extrabold text-xs sm:text-xs text-[#0a0f1d] dark:text-white leading-snug">
                 {lang === "ml" ? detail.fullSchemeNameMl : detail.fullSchemeNameEn}
               </h2>
+              <span className="mt-1 inline-flex items-center text-[9px] font-extrabold text-[#243D95] bg-white border border-[#243D95] px-2 py-0.5 rounded-md dark:text-[#b9c4ee] dark:bg-slate-900 dark:border-[#243D95]">
+                {lang === "ml" ? detail.categoryMl : detail.categoryEn}
+              </span>
               {selectedCreatedScheme?.shortCardDescription && (
                 <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-1 font-medium leading-snug">
                   {selectedCreatedScheme.shortCardDescription}
@@ -8150,49 +8155,50 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               )}
             </div>
           </div>
-          <p className="w-full text-[11px] text-slate-500 dark:text-slate-400 font-medium flex items-start gap-1 leading-snug">
-            <Building2 className="h-3 w-3 shrink-0 text-slate-400 mt-0.5" />
-            <span className="min-w-0">{lang === "ml" ? detail.ministryMl : detail.ministryEn}</span>
-          </p>
-        </div>
+          <div className="space-y-1.5">
+            <p className="w-full text-[11px] text-slate-500 dark:text-slate-400 font-medium flex items-start gap-1 leading-snug">
+              <Building2 className="h-3 w-3 shrink-0 text-primary mt-0.5" />
+              <span className="min-w-0">{lang === "ml" ? detail.ministryMl : detail.ministryEn}</span>
+            </p>
 
-        {/* 2. About the Scheme */}
-        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-2.5">
-          <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-900 dark:text-white">
-            <Info className="h-4 w-4 text-orange-500 shrink-0" />
-            <span>{lang === "ml" ? "പദ്ധതിയെക്കുറിച്ച്" : "About the Scheme"}</span>
+            <div className="border-t border-slate-100 dark:border-slate-800" />
+            <p className="text-[11.5px] text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+              {lang === "ml" ? detail.aboutMl : detail.aboutEn}
+            </p>
           </div>
-          <p className="text-[11.5px] text-slate-600 dark:text-slate-300 leading-relaxed pt-0.5 font-medium">
-            {lang === "ml" ? detail.aboutMl : detail.aboutEn}
-          </p>
 
           <div className="space-y-1.5 rounded-xl border border-orange-100 bg-orange-50/50 p-2.5 dark:border-orange-900/40 dark:bg-orange-950/10">
-            <div className="flex items-center gap-1.5 text-[11px] font-extrabold text-orange-800 dark:text-orange-300">
-              <HandCoins className="h-3.5 w-3.5 text-orange-600 shrink-0" />
-              <span>{lang === "ml" ? "ലഭ്യമാകുന്ന ആനുകൂല്യങ്ങൾ" : "Benefits Offered"}</span>
+            <div className="flex items-center gap-1.5 text-[11px]">
+              <HandCoins className="h-3.5 w-3.5 shrink-0 text-orange-600" />
+              <span className="font-semibold text-slate-500 dark:text-slate-400">
+                {lang === "ml" ? "ആനുകൂല്യ തരം" : "Benefit Type"}
+              </span>
+              <span className="text-slate-400 dark:text-slate-500">:</span>
+              <span className="font-bold text-slate-800 dark:text-slate-100">
+                {lang === "ml" ? detail.benefitTypeMl : detail.benefitTypeEn}
+              </span>
             </div>
-            <div className="space-y-1">
-              <p className="text-[11.5px] leading-snug text-slate-700 dark:text-slate-300">
-                <span className="font-semibold text-slate-500 dark:text-slate-400">{lang === "ml" ? "തരം :" : "Type :"}</span>{" "}
-                <span className="font-bold text-slate-800 dark:text-slate-100">{lang === "ml" ? detail.benefitTypeMl : detail.benefitTypeEn}</span>
-              </p>
-              <p className="text-[11.5px] leading-snug text-slate-700 dark:text-slate-300">
-                <span className="font-semibold text-slate-500 dark:text-slate-400">{lang === "ml" ? "കാലയളവ് :" : "Duration :"}</span>{" "}
-                <span className="font-bold text-slate-800 dark:text-slate-100">{lang === "ml" ? detail.benefitDurationMl : detail.benefitDurationEn}</span>
-              </p>
+            <div className="flex items-center gap-1.5 text-[11px]">
+              <CalendarDays className="h-3.5 w-3.5 shrink-0 text-orange-600" />
+              <span className="font-semibold text-slate-500 dark:text-slate-400">
+                {lang === "ml" ? "ആനുകൂല്യ കാലയളവ്" : "Benefit Duration"}
+              </span>
+              <span className="text-slate-400 dark:text-slate-500">:</span>
+              <span className="font-bold text-slate-800 dark:text-slate-100">
+                {lang === "ml" ? benefitDurationValueMl : benefitDurationValueEn}
+              </span>
             </div>
           </div>
 
           {/* Eligibility & Exclusions */}
           <div className="border-t border-slate-100 pt-2.5 dark:border-slate-800" />
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-900 dark:text-white">
-              <UserCheck className="h-4 w-4 text-emerald-600 shrink-0" />
+            <div className="text-xs font-extrabold text-slate-900 dark:text-white">
               <span>{lang === "ml" ? "യോഗ്യതാ മാനദണ്ഡങ്ങൾ" : "Eligibility Criteria"}</span>
             </div>
           </div>
 
-          <div className="rounded-xl bg-slate-50 p-2.5 dark:bg-slate-800/50">
+          <div className="rounded-xl bg-white p-2.5 dark:bg-slate-800/50">
             <ul className="text-[11px]">
             {requiredAttributes.map((attribute) => {
               const AttributeIcon = attribute.icon;
@@ -8218,8 +8224,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
         {/* 4. Required Details */}
         <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-2.5">
-          <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-900 dark:text-white">
-            <FileText className="h-4 w-4 text-blue-600 shrink-0" />
+          <div className="text-xs font-extrabold text-slate-900 dark:text-white">
             <span>{lang === "ml" ? "ആവശ്യമായ വിവരങ്ങൾ" : "Required Details"}</span>
           </div>
 
@@ -8277,38 +8282,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           </div>
         )}
 
-        {/* 5. Department & Support */}
-        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-2">
-          <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-900 dark:text-white">
-            <Headphones className="h-4 w-4 text-blue-600 shrink-0" />
-            <span>{lang === "ml" ? "വകുപ്പും സഹായ കേന്ദ്രവും" : "Department & Support"}</span>
-          </div>
-
-          <div className="space-y-1.5 text-[11px] pt-0.5">
-            <p className="font-medium text-slate-700 dark:text-slate-300">
-              <span className="font-bold text-slate-900 dark:text-white block">{lang === "ml" ? "ചുമതലയുള്ള വകുപ്പ്:" : "Responsible Department:"}</span>
-              {lang === "ml" ? detail.deptSupportMl : detail.deptSupportEn}
-            </p>
-            {detail.helplineEn && (
-              <div className="p-2 rounded-xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <Phone className="h-3.5 w-3.5 text-blue-600 shrink-0" />
-                  <span className="font-extrabold text-blue-900 dark:text-blue-300">{lang === "ml" ? detail.helplineMl : detail.helplineEn}</span>
-                </div>
-                <a
-                  href={`tel:${detail.helplineEn.split('/')[0].trim()}`}
-                  className="px-2 py-1 rounded-md bg-blue-600 text-white font-bold text-[10px] hover:bg-blue-700 transition-colors"
-                >
-                  {lang === "ml" ? "വിളിക്കുക" : "Call"}
-                </a>
-              </div>
-            )}
-          </div>
-        </div>
-
         {/* 6. Last Verified */}
         <div className="p-2.5 rounded-xl bg-slate-100/70 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-center gap-1.5 text-[10px] font-extrabold text-slate-500 dark:text-slate-400">
-          <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+          <ShieldCheck className="h-3.5 w-3.5 text-primary shrink-0" />
           <span>
             {selectedCreatedScheme
               ? lang === "ml"
@@ -8327,7 +8303,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               href={detail.officialPortalUrl && detail.officialPortalUrl !== "#" ? detail.officialPortalUrl : "https://india.gov.in"}
               target="_blank"
               rel="noreferrer"
-              className="flex-[35] min-w-0 h-10 rounded-lg font-extrabold text-[11px] text-orange-700 dark:text-orange-300 bg-white dark:bg-slate-800 border border-orange-300 dark:border-orange-800 flex items-center justify-center gap-1.5 transition-colors hover:bg-orange-50 dark:hover:bg-slate-700 active:scale-[0.98]"
+              className="flex-[35] min-w-0 h-10 rounded-lg font-extrabold text-[11px] text-white bg-[#243D95] flex items-center justify-center gap-1.5 transition-colors hover:bg-[#1c2f73] active:scale-[0.98]"
             >
               <ExternalLink className="h-3.5 w-3.5 shrink-0 stroke-[2.4]" />
               <span className="truncate">{lang === "ml" ? "വെബ്സൈറ്റ്" : "Visit Website"}</span>
@@ -8335,10 +8311,10 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             <button
               type="button"
               onClick={handlePrimaryAction}
-              className={`flex-[65] min-w-0 h-10 rounded-lg font-extrabold text-[11px] text-primary-foreground flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer ${
+              className={`flex-[65] min-w-0 h-10 rounded-lg font-extrabold text-[11px] text-white flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer ${
                 isSelectedInFlow
                   ? "bg-emerald-600 hover:bg-emerald-700"
-                  : "bg-primary hover:bg-primary/90"
+                  : "bg-[#F5730A] hover:bg-[#de6809]"
               }`}
             >
               {isSelectedInFlow ? (
@@ -10224,22 +10200,25 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                               onClick={() => setSchemeDetailsMenuOpen(false)}
                             />
                             <div className="absolute right-0 top-8 z-30 w-52 overflow-hidden rounded-xl border border-slate-200/80 bg-white py-1 shadow-lg animate-in fade-in zoom-in-95 duration-150 dark:border-slate-800 dark:bg-slate-900">
-                              {!isGuest ? (
-                                <button
-                                  type="button"
-                                  onClick={openSchemeEditSheet}
-                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-[11.5px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
-                                >
-                                  <Pencil className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
-                                  {lang === "ml" ? "തിരുത്തുക" : "Edit"}
-                                </button>
-                              ) : null}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const applyUrl =
+                                    detail.officialPortalUrl && detail.officialPortalUrl !== "#"
+                                      ? detail.officialPortalUrl
+                                      : "https://india.gov.in";
+                                  if (typeof window !== "undefined") window.open(applyUrl, "_blank", "noopener,noreferrer");
+                                  setSchemeDetailsMenuOpen(false);
+                                }}
+                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-[11.5px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
+                              >
+                                <ExternalLink className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                                {lang === "ml" ? "അപേക്ഷാ ലിങ്ക്" : "Apply Link"}
+                              </button>
                               <button
                                 type="button"
                                 onClick={() => void shareSchemeDetails()}
-                                className={`flex w-full items-center gap-2 px-3 py-2 text-left text-[11.5px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer ${
-                                  isGuest ? "" : "border-t border-slate-100 dark:border-slate-800"
-                                }`}
+                                className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-2 text-left text-[11.5px] font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
                               >
                                 <Share2 className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
                                 {lang === "ml" ? "പങ്കിടുക" : "Share"}
