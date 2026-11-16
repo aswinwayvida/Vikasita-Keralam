@@ -30,6 +30,7 @@ interface AdminMobileAppHeaderProps {
   onNavigateTab?: (tab: AdminMobileTab) => void;
   onOpenApplicants?: () => void;
   onOpenPartyWorkers?: () => void;
+  onOpenReports?: () => void;
   onOpenSettings?: () => void;
   onOpenNotifications?: () => void;
   userRole?: "state_admin" | "party_worker";
@@ -46,6 +47,7 @@ export function AdminMobileAppHeader({
   onNavigateTab,
   onOpenApplicants,
   onOpenPartyWorkers,
+  onOpenReports,
   onOpenSettings,
   onOpenNotifications,
   userRole = "state_admin",
@@ -516,6 +518,21 @@ export function AdminMobileAppHeader({
                   <span className="flex items-center gap-3">
                     <Headphones className="h-4 w-4 text-[#243D95]" />{" "}
                     {lang === "ml" ? "അഭ്യർത്ഥനകൾ" : "Requests"}
+                  </span>
+                  <ChevronRight className="h-4 w-4 text-slate-400" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    if (onOpenReports) onOpenReports();
+                  }}
+                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 hover:bg-[#243D95]/10 dark:hover:bg-slate-800 font-bold transition-all cursor-pointer"
+                >
+                  <span className="flex items-center gap-3">
+                    <BarChart2 className="h-4 w-4 text-[#243D95]" />{" "}
+                    {lang === "ml" ? "റിപ്പോർട്ടുകൾ" : "Reports"}
                   </span>
                   <ChevronRight className="h-4 w-4 text-slate-400" />
                 </button>
