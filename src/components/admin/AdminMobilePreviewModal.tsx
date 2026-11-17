@@ -10049,7 +10049,118 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
 
 
+  const getApplicationMinistryText = (application: MobileApplicationRecord, currentLang: "en" | "ml") => {
+    const sNameEn = (application.schemeNameEn || "").toLowerCase().trim();
+    const sNameMl = (application.schemeNameMl || "").trim();
+
+    const getTitleEn = (s: any) => s?.titleEn || s?.en || s?.nameEn || "";
+    const getTitleMl = (s: any) => s?.titleMl || s?.ml || s?.nameMl || "";
+
+    const matchedScheme = schemes.find(
+      (s) =>
+        (getTitleEn(s) && getTitleEn(s).toLowerCase() === sNameEn) ||
+        (getTitleMl(s) && getTitleMl(s) === sNameMl) ||
+        (s.id && sNameEn.includes(s.id.toLowerCase()))
+    ) || mockEligibleSchemesList.find(
+      (s) =>
+        (getTitleEn(s) && getTitleEn(s).toLowerCase() === sNameEn) ||
+        (getTitleMl(s) && getTitleMl(s) === sNameMl)
+    );
+
+    let ministryEn = "";
+    let ministryMl = "";
+
+    if (matchedScheme) {
+      const detailed = getDetailedSchemeData(matchedScheme);
+      ministryEn = detailed?.ministryEn || (matchedScheme as any)?.deptEn || (matchedScheme as any)?.ministry?.en || "";
+      ministryMl = detailed?.ministryMl || (matchedScheme as any)?.deptMl || (matchedScheme as any)?.ministry?.ml || "";
+    }
+
+    if (!ministryEn) {
+      const matchedGuest = ALL_GUEST_SCHEMES_CARDS.find(
+        (c) =>
+          (c.titleEn && c.titleEn.toLowerCase() === sNameEn) ||
+          (c.titleMl && c.titleMl === sNameMl) ||
+          (sNameEn && c.titleEn && sNameEn.includes(c.titleEn.toLowerCase()))
+      );
+      if (matchedGuest) {
+        ministryEn = matchedGuest.deptEn;
+        ministryMl = matchedGuest.deptMl;
+      }
+    }
+
+    if (!ministryEn) {
+      if (/(svanidhi|street vendor)/.test(sNameEn)) {
+        ministryEn = "Ministry of Housing & Urban Affairs";
+        ministryMl = "പാർപ്പിട നഗരകാര്യ മന്ത്രാലയം";
+      } else if (/(vishwakarma|msme|artisan)/.test(sNameEn)) {
+        ministryEn = "Ministry of MSME";
+        ministryMl = "സൂക്ഷ്മ-ചെറുകിട സംരംഭ മന്ത്രാലയം";
+      } else if (/(kisan|fasal|agriculture|krishi|crop)/.test(sNameEn)) {
+        ministryEn = "Ministry of Agriculture & Farmers Welfare";
+        ministryMl = "കാർഷിക–കർഷക ക്ഷേമ മന്ത്രാലയം";
+      } else if (/(ayushman|health|swasthya|hospital|medical|karunya)/.test(sNameEn)) {
+        ministryEn = "National Health Authority";
+        ministryMl = "ദേശീയ ആരോഗ്യ അതോറിറ്റി";
+      } else if (/(awas|housing|gramin|house)/.test(sNameEn)) {
+        ministryEn = "Ministry of Housing & Urban Affairs";
+        ministryMl = "പാർപ്പിട നഗരകാര്യ മന്ത്രാലയം";
+      } else if (/(mudra|jan dhan|pmjdy|bank|credit|kcc|loan|suraksha|bima)/.test(sNameEn)) {
+        ministryEn = "Ministry of Finance";
+        ministryMl = "ധനകാര്യ മന്ത്രാലയം";
+      } else if (/(pension|ignoaps|old age|vayo|vayosheshtha)/.test(sNameEn)) {
+        ministryEn = "Ministry of Social Justice & Empowerment";
+        ministryMl = "സാമൂഹിക നീതി ശാക്തീകരണ മന്ത്രാലയം";
+      } else if (/(scholarship|yasasvi|vidyalaxmi|education)/.test(sNameEn)) {
+        ministryEn = "Ministry of Education";
+        ministryMl = "വിദ്യാഭ്യാസ മന്ത്രാലയം";
+      } else if (/(matsya|fisheries|samridhi)/.test(sNameEn)) {
+        ministryEn = "Department of Fisheries";
+        ministryMl = "ഫിഷറീസ് വകുപ്പ്";
+      } else if (/(surya ghar|solar|bijli|energy)/.test(sNameEn)) {
+        ministryEn = "Ministry of New and Renewable Energy";
+        ministryMl = "പുതിയതും പുനരുൽപ്പാദിപ്പിക്കാവുന്നതുമായ ഊർജ്ജ മന്ത്രാലയം";
+      } else {
+        ministryEn = "Ministry of Housing & Urban Affairs";
+        ministryMl = "പാർപ്പിട നഗരകാര്യ മന്ത്രാലയം";
+      }
+    }
+
+    const rawMinistry = currentLang === "ml" ? (ministryMl || ministryEn) : (ministryEn || ministryMl);
+    return rawMinistry.replace(/,\s*(Govt of India|ഭാരത സർക്കാർ|Central Government|State Government)/gi, "").trim();
+  };
+
   const renderMobileApplicationListCard = (application: MobileApplicationRecord) => {
+    const ministryText = getApplicationMinistryText(application, lang);
+    const schemeTitle = lang === "ml" ? application.schemeNameMl : application.schemeNameEn;
+
+    const catEn = application.categoryEn;
+    const catMl = application.categoryMl;
+    const isGovt = !catEn || catEn === "Central Government" || catEn === "State Government";
+
+    let displayEn = catEn;
+    let displayMl = catMl;
+    let iconKey = catEn;
+
+    if (isGovt) {
+      const sName = (application.schemeNameEn || "").toLowerCase();
+      if (/(kisan|fasal|agriculture|krishi|crop)/.test(sName)) {
+        displayEn = "Agriculture"; displayMl = "കൃഷി"; iconKey = "Agriculture";
+      } else if (/(ayushman|health|swasthya|hospital|medical)/.test(sName)) {
+        displayEn = "Health & Wellness"; displayMl = "ആരോഗ്യം"; iconKey = "Health & Wellness";
+      } else if (/(awas|housing|gramin|house)/.test(sName)) {
+        displayEn = "Housing"; displayMl = "ഭവനം"; iconKey = "Housing";
+      } else if (/(pension|ignoaps|old age|vayo)/.test(sName)) {
+        displayEn = "Social Welfare"; displayMl = "സാമൂഹിക ക്ഷേമം"; iconKey = "Social Welfare";
+      } else if (/(mudra|jan dhan|pmjdy|bank|credit|kcc|loan)/.test(sName)) {
+        displayEn = "Banking & Credit"; displayMl = "ബാങ്കിംഗ് & ക്രഡിറ്റ്"; iconKey = "Banking";
+      } else if (/(vishwakarma|svanidhi|skill|msme|business)/.test(sName)) {
+        displayEn = "Business"; displayMl = "ബിസിനസ്"; iconKey = "Business";
+      } else {
+        displayEn = "Social Welfare"; displayMl = "സാമൂഹിക ക്ഷേമം"; iconKey = "Social Welfare";
+      }
+    }
+
     return (
       <div
         key={application.ref}
@@ -10058,62 +10169,43 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           setSelectedApplicationRecord(application);
           setMobileSubPage("app_detail");
         }}
-        className="group flex items-center gap-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:shadow-xs transition-all cursor-pointer p-2.5"
+        className="group flex items-center justify-between gap-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:shadow-xs transition-all cursor-pointer p-2.5"
       >
-        {/* Category & Scheme name with vertically centered status */}
+        {/* Left: Scheme Category, Scheme Name, Department / Ministry */}
         <div className="min-w-0 flex-1 space-y-0.5">
-            {(() => {
-              const catEn = application.categoryEn;
-              const catMl = application.categoryMl;
-              const isGovt = !catEn || catEn === "Central Government" || catEn === "State Government";
+          {/* 1. Scheme Category */}
+          <div className="flex min-w-0 items-center gap-1.5 text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
+            <img
+              src={getMobileCategoryIconSrc(iconKey)}
+              alt=""
+              className="h-3.5 w-3.5 shrink-0 object-contain"
+            />
+            <span className="truncate">
+              {lang === "ml" ? displayMl : displayEn}
+            </span>
+          </div>
 
-              let displayEn = catEn;
-              let displayMl = catMl;
-              let iconKey = catEn;
+          {/* 2. Scheme Name */}
+          <h5 className="min-w-0 truncate font-bold text-[12px] text-[#0a0f1d] dark:text-white leading-tight">
+            {schemeTitle}
+          </h5>
 
-              if (isGovt) {
-                const sName = (application.schemeNameEn || "").toLowerCase();
-                if (/(kisan|fasal|agriculture|krishi|crop)/.test(sName)) {
-                  displayEn = "Agriculture"; displayMl = "കൃഷി"; iconKey = "Agriculture";
-                } else if (/(ayushman|health|swasthya|hospital|medical)/.test(sName)) {
-                  displayEn = "Health & Wellness"; displayMl = "ആരോഗ്യം"; iconKey = "Health & Wellness";
-                } else if (/(awas|housing|gramin|house)/.test(sName)) {
-                  displayEn = "Housing"; displayMl = "ഭവനം"; iconKey = "Housing";
-                } else if (/(pension|ignoaps|old age|vayo)/.test(sName)) {
-                  displayEn = "Social Welfare"; displayMl = "സാമൂഹിക ക്ഷേമം"; iconKey = "Social Welfare";
-                } else if (/(mudra|jan dhan|pmjdy|bank|credit|kcc|loan)/.test(sName)) {
-                  displayEn = "Banking & Credit"; displayMl = "ബാങ്കിംഗ് & ക്രഡിറ്റ്"; iconKey = "Banking";
-                } else if (/(vishwakarma|svanidhi|skill|msme|business)/.test(sName)) {
-                  displayEn = "Business & Skills"; displayMl = "ബിസിനസ്സ് & നൈപുണ്യം"; iconKey = "Business";
-                } else {
-                  displayEn = "Social Welfare"; displayMl = "സാമൂഹിക ക്ഷേമം"; iconKey = "Social Welfare";
-                }
-              }
-
-              return (
-                <div className="flex min-w-0 items-center gap-1.5 text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
-                  <img
-                    src={getMobileCategoryIconSrc(iconKey)}
-                    alt=""
-                    className="h-3.5 w-3.5 shrink-0 object-contain"
-                  />
-                  <span className="truncate">
-                    {lang === "ml" ? displayMl : displayEn}
-                  </span>
-                </div>
-              );
-            })()}
-            <h5 className="min-w-0 truncate font-bold text-[12px] text-[#0a0f1d] dark:text-white leading-tight">
-              {lang === "ml" ? application.schemeNameMl : application.schemeNameEn}
-            </h5>
+          {/* 3. Department / Ministry */}
+          <div className="flex min-w-0 items-center gap-1 text-[9.5px] font-medium text-slate-400 dark:text-slate-500 truncate">
+            <Building2 className="h-2.5 w-2.5 shrink-0 text-slate-400 dark:text-slate-500" />
+            <span className="truncate">{ministryText}</span>
+          </div>
         </div>
-        <div className="flex shrink-0 items-center gap-1">
+
+        {/* Right: Status badge (decreased size: tiny) & Chevron */}
+        <div className="flex shrink-0 items-center gap-1 self-center">
           <MobileApplicationStatusBadge
             status={application.workflowStatus ?? "application_received"}
             lang={lang}
+            size="tiny"
           />
           <span className="flex items-center justify-center text-slate-300 group-hover:text-[#f15a0a] transition-colors">
-            <ChevronRight className="h-3.5 w-3.5 stroke-[2.2]" />
+            <ChevronRight className="h-3 w-3 stroke-[2]" />
           </span>
         </div>
       </div>
@@ -11564,7 +11656,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           : activeTab === "create" && (createFlowStep === "scheme_details" || createFlowStep === "collection_record")
                             ? (lang === "ml" ? "രേഖാ പരിശോധന" : "Document Verification")
                             : mobileSubPage === "needs_attention"
-                              ? (lang === "ml" ? "ശ്രദ്ധ ആവശ്യമുണ്ട്" : "Needs Attention")
+                              ? (lang === "ml" ? "ശ്രദ്ധ ആവശ്യമുണ്ട് (10)" : "Needs Attention (10)")
                               : mobileSubPage === "notifications"
                                 ? (lang === "ml" ? "അറിയിപ്പുകൾ" : "Notifications")
                                 : appDetailView === "applicant"
@@ -11603,16 +11695,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       <span className="shrink-0 text-[10px] font-extrabold text-blue-700 bg-blue-50 dark:bg-blue-950/80 dark:text-blue-300 px-2.5 py-0.5 rounded-full border border-blue-200/80 dark:border-blue-900/50 z-10">
                         {lang === "ml" ? "4 പുതിയത്" : "4 unread"}
                       </span>
-                    ) : mobileSubPage === "needs_attention" ? (
-                      <span className="shrink-0 text-[10px] font-bold text-red-600 bg-red-50 dark:bg-red-950/50 dark:text-red-300 px-2 py-0.5 rounded-full flex items-center gap-1 border border-red-100 dark:border-red-900/50 z-10">
-                        <AlertTriangle className="h-3 w-3 text-red-600" />
-                        <span>
-                          {lang === "ml"
-                            ? `${3 + followUpCollectionRecords.length} കാര്യങ്ങൾ`
-                            : `${3 + followUpCollectionRecords.length} Items`}
-                        </span>
-                      </span>
-                    ) : mobileSubPage === "scheme_details" ? (
+                    ) : mobileSubPage === "needs_attention" ? null : mobileSubPage === "scheme_details" ? (
                       <div className="relative">
                         <button
                           type="button"
