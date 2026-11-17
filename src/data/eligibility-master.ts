@@ -27,6 +27,8 @@ export interface EligibilityMasterField {
   configLabel?: string;
   usage: string;
   dependsOn?: string;
+  status?: EligibilityMasterOptionStatus;
+  isCustom?: boolean;
 }
 
 export const ELIGIBILITY_MASTER_STORAGE_KEY = "vikasita_eligibility_master_v1";
@@ -289,83 +291,131 @@ export function cloneEligibilityMasterFields(
   }));
 }
 
-export function loadEligibilityMasterOptions(): Record<string, EligibilityMasterOption[]> {
-  if (typeof window === "undefined") return {};
+export interface StoredMasterDataPayload {
+  version: number;
+  options?: Record<string, unknown>;
+  numericConfigs?: Record<string, unknown>;
+  customFields?: EligibilityMasterField[];
+  fieldStatuses?: Record<string, EligibilityMasterOptionStatus>;
+  deletedFieldKeys?: string[];
+}
+
+export function loadEligibilityMasterPayload(): StoredMasterDataPayload {
+  if (typeof window === "undefined") return { version: 3 };
 
   try {
     const raw = window.localStorage.getItem(ELIGIBILITY_MASTER_STORAGE_KEY);
-    if (!raw) return {};
-
-    const parsed = JSON.parse(raw) as { options?: Record<string, unknown> } | null;
-    if (!parsed || typeof parsed !== "object" || !parsed.options) return {};
-
-    const result: Record<string, EligibilityMasterOption[]> = {};
-    for (const field of ELIGIBILITY_MASTER_FIELDS) {
-      if (field.kind !== "options" && field.kind !== "yesno") continue;
-      const stored = sanitizeStoredOptions(parsed.options[field.key]);
-      if (stored) result[field.key] = stored;
-    }
-    return result;
+    if (!raw) return { version: 3 };
+    const parsed = JSON.parse(raw) as StoredMasterDataPayload | null;
+    return parsed && typeof parsed === "object" ? parsed : { version: 3 };
   } catch {
-    return {};
+    return { version: 3 };
   }
+}
+
+export function loadEligibilityMasterOptions(): Record<string, EligibilityMasterOption[]> {
+  const payload = loadEligibilityMasterPayload();
+  if (!payload.options || typeof payload.options !== "object") return {};
+
+  const allFields = [
+    ...ELIGIBILITY_MASTER_FIELDS,
+    ...(Array.isArray(payload.customFields) ? payload.customFields : []),
+  ];
+
+  const result: Record<string, EligibilityMasterOption[]> = {};
+  for (const field of allFields) {
+    if (field.kind !== "options" && field.kind !== "yesno") continue;
+    const stored = sanitizeStoredOptions(payload.options[field.key]);
+    if (stored) result[field.key] = stored;
+  }
+  return result;
 }
 
 export function loadEligibilityMasterNumericConfigs(): Record<
   string,
   EligibilityMasterNumericConfig
 > {
-  if (typeof window === "undefined") return {};
+  const payload = loadEligibilityMasterPayload();
+  if (!payload.numericConfigs || typeof payload.numericConfigs !== "object") return {};
 
-  try {
-    const raw = window.localStorage.getItem(ELIGIBILITY_MASTER_STORAGE_KEY);
-    if (!raw) return {};
+  const allFields = [
+    ...ELIGIBILITY_MASTER_FIELDS,
+    ...(Array.isArray(payload.customFields) ? payload.customFields : []),
+  ];
 
-    const parsed = JSON.parse(raw) as { numericConfigs?: Record<string, unknown> } | null;
-    if (!parsed || typeof parsed !== "object" || !parsed.numericConfigs) return {};
-
-    const result: Record<string, EligibilityMasterNumericConfig> = {};
-    for (const field of ELIGIBILITY_MASTER_FIELDS) {
-      if (field.kind !== "number" && field.kind !== "currency") continue;
-      const stored = sanitizeNumericConfig(parsed.numericConfigs[field.key]);
-      if (stored) result[field.key] = stored;
-    }
-    return result;
-  } catch {
-    return {};
+  const result: Record<string, EligibilityMasterNumericConfig> = {};
+  for (const field of allFields) {
+    if (field.kind !== "number" && field.kind !== "currency") continue;
+    const stored = sanitizeNumericConfig(payload.numericConfigs[field.key]);
+    if (stored) result[field.key] = stored;
   }
+  return result;
 }
 
 export function getEligibilityMasterFields(): EligibilityMasterField[] {
-  const stored = loadEligibilityMasterOptions();
+  const payload = loadEligibilityMasterPayload();
+  const deletedKeys = new Set(payload.deletedFieldKeys ?? []);
+  const customFields = Array.isArray(payload.customFields) ? payload.customFields : [];
+  const fieldStatuses = payload.fieldStatuses ?? {};
+
+  const baseFields = ELIGIBILITY_MASTER_FIELDS.filter((f) => !deletedKeys.has(f.key));
+  const validCustomFields = customFields.filter((f) => !deletedKeys.has(f.key));
+
+  const allFields = [...baseFields, ...validCustomFields];
+  const storedOptions = loadEligibilityMasterOptions();
   const numericConfigs = loadEligibilityMasterNumericConfigs();
-  return ELIGIBILITY_MASTER_FIELDS.map((field) => ({
+
+  return allFields.map((field) => ({
     ...field,
-    options: (stored[field.key] ?? field.options).map(cloneOption),
+    status: (fieldStatuses[field.key] as EligibilityMasterOptionStatus) ?? field.status ?? "Active",
+    options: (storedOptions[field.key] ?? field.options).map(cloneOption),
     ...(numericConfigs[field.key] ?? {}),
   }));
+}
+
+export function saveEligibilityMasterState(params: {
+  options: Record<string, EligibilityMasterOption[]>;
+  numericConfigs?: Record<string, EligibilityMasterNumericConfig>;
+  customFields?: EligibilityMasterField[];
+  fieldStatuses?: Record<string, EligibilityMasterOptionStatus>;
+  deletedFieldKeys?: string[];
+}): void {
+  if (typeof window === "undefined") return;
+
+  const currentPayload = loadEligibilityMasterPayload();
+
+  const persistedOptions: Record<string, EligibilityMasterOption[]> = {};
+  for (const [key, opts] of Object.entries(params.options)) {
+    if (Array.isArray(opts)) {
+      persistedOptions[key] = opts.map(cloneOption);
+    }
+  }
+
+  const persistedNumeric: Record<string, EligibilityMasterNumericConfig> = {};
+  const inputNumeric = params.numericConfigs ?? (currentPayload.numericConfigs as Record<string, EligibilityMasterNumericConfig>) ?? {};
+  for (const [key, conf] of Object.entries(inputNumeric)) {
+    const sanitized = sanitizeNumericConfig(conf);
+    if (sanitized) persistedNumeric[key] = sanitized;
+  }
+
+  const payloadToStore: StoredMasterDataPayload = {
+    version: 3,
+    options: persistedOptions,
+    numericConfigs: persistedNumeric,
+    customFields: params.customFields ?? currentPayload.customFields ?? [],
+    fieldStatuses: params.fieldStatuses ?? currentPayload.fieldStatuses ?? {},
+    deletedFieldKeys: params.deletedFieldKeys ?? currentPayload.deletedFieldKeys ?? [],
+  };
+
+  window.localStorage.setItem(ELIGIBILITY_MASTER_STORAGE_KEY, JSON.stringify(payloadToStore));
 }
 
 export function saveEligibilityMasterOptions(
   options: Record<string, EligibilityMasterOption[]>,
   numericConfigs: Record<string, EligibilityMasterNumericConfig> = {},
 ): void {
-  if (typeof window === "undefined") return;
-
-  const persisted: Record<string, EligibilityMasterOption[]> = {};
-  const persistedNumericConfigs: Record<string, EligibilityMasterNumericConfig> = {};
-  for (const field of ELIGIBILITY_MASTER_FIELDS) {
-    if (field.kind === "options" || field.kind === "yesno") {
-      if (options[field.key]) persisted[field.key] = options[field.key].map(cloneOption);
-      continue;
-    }
-
-    const numericConfig = sanitizeNumericConfig(numericConfigs[field.key]);
-    if (numericConfig) persistedNumericConfigs[field.key] = numericConfig;
-  }
-
-  window.localStorage.setItem(
-    ELIGIBILITY_MASTER_STORAGE_KEY,
-    JSON.stringify({ version: 2, options: persisted, numericConfigs: persistedNumericConfigs }),
-  );
+  saveEligibilityMasterState({
+    options,
+    numericConfigs,
+  });
 }
