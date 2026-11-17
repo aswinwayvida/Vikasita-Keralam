@@ -34,7 +34,7 @@ import {
   type GuestEligibilityAnswers,
 } from "./MobileGuestEligibilityQuestionnaire";
 import { schemes, type Scheme } from "@/data/schemes";
-import { DatePickerModal } from "./DatePickerModal";
+import { DatePickerModal, type DatePickerDateInfo } from "./DatePickerModal";
 import { MobileUsersListTab } from "./MobileUsersListTab";
 import {
   MobileCreateSchemeFlow,
@@ -43,7 +43,7 @@ import {
 import { MobileCreatePartyWorkerFlow } from "./MobileCreatePartyWorkerFlow";
 import { MobileSettingsPage } from "./MobileSettingsPage";
 import { MobileReportsPage } from "./MobileReportsPage";
-import { MobileAppliedFiltersScope, FilterChip } from "./MobileAppliedFiltersScope";
+import { type FilterChip } from "./MobileAppliedFiltersScope";
 import { PartyFlagIcon } from "@/components/common/PartyFlagIcon";
 import { districts, organisationalDistricts, constituencies, panchayats, wards, getDistrictName, getConstituencyName, getWardsForLocalBody, getMappedConstituencyForWard, LocalBodyType, WardItem } from "@/data/geo";
 import { LeaderboardTop3Podium } from "./LeaderboardTop3Podium";
@@ -2873,20 +2873,19 @@ const getMobileCentralSchemeCards = (categoryId: string) => {
   return mobileCentralSchemeCardsByCategory[categoryId] ?? mobileCentralSchemeCardsByCategory.default;
 };
 
-const metricsByPeriod: Record<
-  string,
-  {
-    users: number;
-    beneficiaries: number;
-    pending: number;
-    assisted: number;
-    rejected: number;
-    schemes: number;
-    boothCoverage: string;
-    convertedBooths: string;
-    slaBreaches: number;
-  }
-> = {
+interface MobileMetricsSnapshot {
+  users: number;
+  beneficiaries: number;
+  pending: number;
+  assisted: number;
+  rejected: number;
+  schemes: number;
+  boothCoverage: string;
+  convertedBooths: string;
+  slaBreaches: number;
+}
+
+const metricsByPeriod: Record<string, MobileMetricsSnapshot> = {
   today: {
     users: 1420,
     beneficiaries: 450,
@@ -2897,6 +2896,17 @@ const metricsByPeriod: Record<
     boothCoverage: "94.2%",
     convertedBooths: "27,850",
     slaBreaches: 3,
+  },
+  yesterday: {
+    users: 1380,
+    beneficiaries: 430,
+    pending: 175,
+    assisted: 395,
+    rejected: 14,
+    schemes: 740,
+    boothCoverage: "94.2%",
+    convertedBooths: "27,820",
+    slaBreaches: 2,
   },
   this_week: {
     users: 12850,
@@ -2909,6 +2919,17 @@ const metricsByPeriod: Record<
     convertedBooths: "28,210",
     slaBreaches: 18,
   },
+  last_week: {
+    users: 11900,
+    beneficiaries: 3850,
+    pending: 1180,
+    assisted: 3720,
+    rejected: 108,
+    schemes: 740,
+    boothCoverage: "94.2%",
+    convertedBooths: "28,150",
+    slaBreaches: 16,
+  },
   this_month: {
     users: 142850,
     beneficiaries: 48250,
@@ -2920,6 +2941,17 @@ const metricsByPeriod: Record<
     convertedBooths: "28,726",
     slaBreaches: 68,
   },
+  last_month: {
+    users: 138200,
+    beneficiaries: 46100,
+    pending: 5850,
+    assisted: 7640,
+    rejected: 1380,
+    schemes: 738,
+    boothCoverage: "93.9%",
+    convertedBooths: "28,450",
+    slaBreaches: 62,
+  },
   this_quarter: {
     users: 385400,
     beneficiaries: 135400,
@@ -2930,6 +2962,39 @@ const metricsByPeriod: Record<
     boothCoverage: "94.2%",
     convertedBooths: "29,400",
     slaBreaches: 142,
+  },
+  this_year: {
+    users: 980000,
+    beneficiaries: 340000,
+    pending: 22500,
+    assisted: 64000,
+    rejected: 9800,
+    schemes: 740,
+    boothCoverage: "94.8%",
+    convertedBooths: "29,100",
+    slaBreaches: 245,
+  },
+  last_year: {
+    users: 1250000,
+    beneficiaries: 420000,
+    pending: 28000,
+    assisted: 78000,
+    rejected: 12400,
+    schemes: 710,
+    boothCoverage: "95.5%",
+    convertedBooths: "29,800",
+    slaBreaches: 310,
+  },
+  all_time: {
+    users: 1850000,
+    beneficiaries: 620000,
+    pending: 42000,
+    assisted: 115000,
+    rejected: 18500,
+    schemes: 740,
+    boothCoverage: "96.8%",
+    convertedBooths: "31,450",
+    slaBreaches: 420,
   },
   custom: {
     users: 210500,
@@ -2943,6 +3008,51 @@ const metricsByPeriod: Record<
     slaBreaches: 85,
   },
 };
+
+function computeRawMetrics(
+  period: string,
+  dateInfo: DatePickerDateInfo | null,
+  selectedDate: Date
+): MobileMetricsSnapshot {
+  // 1. Explicit date range (e.g. 01/09/2026 - 03/09/2026 => 3 days)
+  if (dateInfo?.mode === "range" || period === "custom_range") {
+    const days = Math.max(1, dateInfo?.daysCount || 3);
+    return {
+      users: Math.round(1450 * days),
+      beneficiaries: Math.round(460 * days),
+      pending: Math.round(180 * days),
+      assisted: Math.round(410 * days),
+      rejected: Math.round(15 * days),
+      schemes: 740,
+      boothCoverage: "94.2%",
+      convertedBooths: "28,726",
+      slaBreaches: Math.max(1, Math.round(2.2 * days)),
+    };
+  }
+
+  // 2. Single calendar day (e.g. picked single day or stepped with arrows)
+  if (period === "custom_single" || dateInfo?.mode === "single") {
+    const targetDate = dateInfo?.startDate || selectedDate || new Date(2026, 9, 12);
+    const day = targetDate.getDate();
+    const month = targetDate.getMonth();
+    const variance = ((day * 17 + month * 23) % 20) - 10; // -10% to +9%
+    const factor = 1 + variance / 100;
+    return {
+      users: Math.round(1420 * factor),
+      beneficiaries: Math.round(450 * factor),
+      pending: Math.round(180 * factor),
+      assisted: Math.round(410 * factor),
+      rejected: Math.round(15 * factor),
+      schemes: 740,
+      boothCoverage: "94.2%",
+      convertedBooths: "27,850",
+      slaBreaches: Math.max(0, Math.round(3 * factor)),
+    };
+  }
+
+  // 3. Preset match or fallback
+  return metricsByPeriod[period] || metricsByPeriod.this_month;
+}
 
 export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, standalone = false }: AdminMobilePreviewModalProps) {
   const { lang } = useLang();
@@ -3012,6 +3122,20 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [appSelectedWardIds, setAppSelectedWardIds] = useState<string[]>(["all"]);
   const [isAppWardDropdownOpen, setIsAppWardDropdownOpen] = useState<boolean>(false);
   const [appWardSearchQuery, setAppWardSearchQuery] = useState<string>("");
+  const [isAppScopeAccordionOpen, setIsAppScopeAccordionOpen] = useState<boolean>(false);
+
+  // Home Filter Location Hierarchy States
+  type HomeLocationLevel = "state" | "region" | "org_district" | "mandalam" | "area" | "ward";
+  const [homeLocationLevel, setHomeLocationLevel] = useState<HomeLocationLevel>("state");
+  const [homeSelectedRegion, setHomeSelectedRegion] = useState<string>("all");
+  const [homeSelectedOrgDistrict, setHomeSelectedOrgDistrict] = useState<string>("all");
+  const [homeSelectedMandalam, setHomeSelectedMandalam] = useState<string>("all");
+  const [homeSelectedArea, setHomeSelectedArea] = useState<string>("all");
+  const [homeSelectedWard, setHomeSelectedWard] = useState<string>("all");
+  const [homeSelectedWardIds, setHomeSelectedWardIds] = useState<string[]>(["all"]);
+  const [isHomeWardDropdownOpen, setIsHomeWardDropdownOpen] = useState<boolean>(false);
+  const [homeWardSearchQuery, setHomeWardSearchQuery] = useState<string>("");
+  const [isHomeScopeAccordionOpen, setIsHomeScopeAccordionOpen] = useState<boolean>(false);
 
   useEffect(() => {
     if (userRole === "party_worker") {
@@ -3023,6 +3147,14 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       setAppSelectedWard("all");
       setAppSelectedWardIds(["all"]);
       setAppFilterLocation("all");
+
+      setHomeLocationLevel("area");
+      setHomeSelectedRegion("reg-south");
+      setHomeSelectedOrgDistrict("od-tvm-north");
+      setHomeSelectedMandalam("tvm-c6");
+      setHomeSelectedArea("area-kazh-main");
+      setHomeSelectedWard("all");
+      setHomeSelectedWardIds(["all"]);
     } else {
       setAppLocationLevel("state");
       setAppSelectedRegion("all");
@@ -3032,6 +3164,14 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       setAppSelectedWard("all");
       setAppSelectedWardIds(["all"]);
       setAppFilterLocation("all");
+
+      setHomeLocationLevel("state");
+      setHomeSelectedRegion("all");
+      setHomeSelectedOrgDistrict("all");
+      setHomeSelectedMandalam("all");
+      setHomeSelectedArea("all");
+      setHomeSelectedWard("all");
+      setHomeSelectedWardIds(["all"]);
     }
   }, [userRole]);
 
@@ -3349,21 +3489,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               </div>
             </div>
 
-            {/* Applied Filters & Current Scope UI */}
-            <MobileAppliedFiltersScope
-              currentScopeTitle={filterGeoScope !== "state" ? activeLocationLabel : "All Kerala • State Level"}
-              currentScopeSubLabel={filterGeoScope !== "state" ? "Sector 1, Kazhakuttam" : "All 14 Districts & 140 Constituencies"}
-              onResetScope={filterGeoScope !== "state" ? () => setFilterGeoScope("state") : undefined}
-              appliedFilters={dashboardFilterChips}
-              onResetAllFilters={() => {
-                setFilterSchemeType("all");
-                setFilterSchemeCategory("all");
-                setFilterDepartment("all");
-                setFilterPerformance("all");
-                setFilterGeoScope("state");
-              }}
-            />
-
             {/* Core Analytics KPI Grid (6 cards matching Booth Level sample counts for Party Worker) */}
             <div className="grid grid-cols-2 gap-2 pt-1">
               {/* 1. Application Received */}
@@ -3383,7 +3508,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   <img src={openApplication3dIcon} alt="Applications Received" className="h-6 w-6 object-contain shrink-0" />
                 </div>
                 <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-0.5">
-                  45
+                  {partyWorkerMetrics.applicationsReceived.toLocaleString()}
                 </p>
               </div>
 
@@ -3403,7 +3528,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   <img src={readyToSubmit3dIcon} alt="Submitted" className="h-6 w-6 object-contain shrink-0" />
                 </div>
                 <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-0.5">
-                  32
+                  {partyWorkerMetrics.submitted.toLocaleString()}
                 </p>
               </div>
 
@@ -3419,7 +3544,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   <img src={assisted3dIcon} alt="Beneficiaries" className="h-6 w-6 object-contain shrink-0" />
                 </div>
                 <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-0.5">
-                  24
+                  {partyWorkerMetrics.beneficiaries.toLocaleString()}
                 </p>
               </div>
 
@@ -3439,7 +3564,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   <img src={documentsPending3dIcon} alt="In Review" className="h-6 w-6 object-contain shrink-0" />
                 </div>
                 <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-0.5">
-                  06
+                  {partyWorkerMetrics.inReview < 10 ? `0${partyWorkerMetrics.inReview}` : partyWorkerMetrics.inReview}
                 </p>
               </div>
 
@@ -3459,7 +3584,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   <img src={followupsDue3dIcon} alt="Pending Submission" className="h-6 w-6 object-contain shrink-0" />
                 </div>
                 <p className="font-display text-sm sm:text-base font-bold text-amber-600 dark:text-amber-400 leading-none mt-0.5">
-                  13
+                  {partyWorkerMetrics.pending < 10 ? `0${partyWorkerMetrics.pending}` : partyWorkerMetrics.pending}
                 </p>
               </div>
 
@@ -3479,7 +3604,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   <img src={rejected3dIcon} alt="Rejected" className="h-6 w-6 object-contain shrink-0" />
                 </div>
                 <p className="font-display text-sm sm:text-base font-bold text-rose-600 dark:text-rose-400 leading-none mt-0.5">
-                  02
+                  {partyWorkerMetrics.rejected < 10 ? `0${partyWorkerMetrics.rejected}` : partyWorkerMetrics.rejected}
                 </p>
               </div>
             </div>
@@ -4064,21 +4189,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               </div>
             </div>
 
-            {/* Applied Filters & Current Scope UI */}
-            <MobileAppliedFiltersScope
-              currentScopeTitle={filterGeoScope !== "state" ? activeLocationLabel : "All Kerala • State Level"}
-              currentScopeSubLabel={filterGeoScope !== "state" ? "Sector 1, Kazhakuttam" : "All 14 Districts & 140 Constituencies"}
-              onResetScope={filterGeoScope !== "state" ? () => setFilterGeoScope("state") : undefined}
-              appliedFilters={dashboardFilterChips}
-              onResetAllFilters={() => {
-                setFilterSchemeType("all");
-                setFilterSchemeCategory("all");
-                setFilterDepartment("all");
-                setFilterPerformance("all");
-                setFilterGeoScope("state");
-              }}
-            />
-
             {/* 2 KPI Cards matching My Work tab card styling */}
             <div className="grid grid-cols-2 gap-2 pt-0.5">
               {/* 1. Total Workers */}
@@ -4111,7 +4221,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   <img src={openApplication3dIcon} alt="Total Applications" className="h-6 w-6 object-contain shrink-0" />
                 </div>
                 <p className="font-display text-base font-bold text-emerald-600 dark:text-emerald-400 leading-none mt-1">
-                  142
+                  {partyWorkerMetrics.teamApplications.toLocaleString()}
                 </p>
               </div>
             </div>
@@ -6056,6 +6166,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [currentSelectedDate, setCurrentSelectedDate] = useState<Date>(new Date(2026, 9, 12)); // 12/10/2026
   const [selectedPeriod, setSelectedPeriod] = useState<string>("this_month");
   const [periodCustomLabel, setPeriodCustomLabel] = useState<string>("");
+  const [selectedDateInfo, setSelectedDateInfo] = useState<DatePickerDateInfo | null>(null);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState<boolean>(false);
   const [showFilterMenu, setShowFilterMenu] = useState<boolean>(false);
   const [showMoreMenu, setShowMoreMenu] = useState<boolean>(false);
@@ -7191,17 +7302,38 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   };
 
     const getFormattedPeriodDisplay = () => {
-    if (selectedPeriod === "this_month" && !periodCustomLabel) {
-      return lang === "ml" ? "ഒക്ടോബർ 2026" : "October 2026";
-    }
-    if (selectedPeriod === "last_month" && !periodCustomLabel) {
-      return lang === "ml" ? "സെപ്റ്റംബർ 2026" : "September 2026";
-    }
-    if (selectedPeriod === "this_year" && !periodCustomLabel) {
-      return lang === "ml" ? "2026 വർഷം" : "Year 2026";
-    }
     if (periodCustomLabel) {
       return periodCustomLabel;
+    }
+    if (selectedPeriod === "all_time") {
+      return lang === "ml" ? "എല്ലാ സമയവും" : "All time";
+    }
+    if (selectedPeriod === "today") {
+      return lang === "ml" ? "ഇന്ന്" : "Today";
+    }
+    if (selectedPeriod === "yesterday") {
+      return lang === "ml" ? "ഇന്നലെ" : "Yesterday";
+    }
+    if (selectedPeriod === "this_week") {
+      return lang === "ml" ? "ഈ ആഴ്ച" : "This week";
+    }
+    if (selectedPeriod === "last_week") {
+      return lang === "ml" ? "കഴിഞ്ഞ ആഴ്ച" : "Last week";
+    }
+    if (selectedPeriod === "this_month") {
+      return lang === "ml" ? "ഒക്ടോബർ 2026" : "October 2026";
+    }
+    if (selectedPeriod === "last_month") {
+      return lang === "ml" ? "സെപ്റ്റംബർ 2026" : "September 2026";
+    }
+    if (selectedPeriod === "this_quarter") {
+      return lang === "ml" ? "ഈ പാദം (Q4 2026)" : "This Quarter (Q4 2026)";
+    }
+    if (selectedPeriod === "this_year") {
+      return lang === "ml" ? "2026 വർഷം" : "Year 2026";
+    }
+    if (selectedPeriod === "last_year") {
+      return lang === "ml" ? "2025 വർഷം" : "Year 2025";
     }
     return formatDateWithDay(currentSelectedDate);
   };
@@ -8609,7 +8741,20 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     const newDate = new Date(baseDate);
     newDate.setDate(newDate.getDate() + daysOffset);
     setCurrentSelectedDate(newDate);
-    setPeriodCustomLabel(formatDateWithDay(newDate));
+    setSelectedPeriod("custom_single");
+    const label = formatDateWithDay(newDate);
+    setPeriodCustomLabel(label);
+    setSelectedDateInfo({
+      mode: "single",
+      daysCount: 1,
+      startDate: newDate,
+      endDate: newDate,
+      label,
+      startDay: newDate.getDate(),
+      endDay: newDate.getDate(),
+      month: newDate.getMonth(),
+      year: newDate.getFullYear(),
+    });
   };
 
   const openSchemeEditSheet = () => {
@@ -9408,7 +9553,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       ? 0.08
       : 1.0;
 
-  const rawMetrics = metricsByPeriod[selectedPeriod] || metricsByPeriod.this_month;
+  const rawMetrics = computeRawMetrics(selectedPeriod, selectedDateInfo, currentSelectedDate);
 
   const currentMetrics = {
     ...rawMetrics,
@@ -9422,6 +9567,64 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     convertedBooths: rawMetrics?.convertedBooths || "23,550",
     slaBreaches: Math.max(0, Math.round((rawMetrics?.slaBreaches || 0) * geoScopeMultiplier)),
   };
+
+  const partyWorkerMetrics = React.useMemo(() => {
+    let ratio = 1.0;
+    if (selectedDateInfo?.mode === "range" || selectedPeriod === "custom_range") {
+      const days = Math.max(1, selectedDateInfo?.daysCount || 3);
+      ratio = days / 30;
+    } else if (
+      selectedPeriod === "today" ||
+      selectedPeriod === "yesterday" ||
+      selectedPeriod === "custom_single" ||
+      selectedDateInfo?.mode === "single"
+    ) {
+      ratio = 1 / 30;
+    } else if (selectedPeriod === "this_week" || selectedPeriod === "last_week") {
+      ratio = 7 / 30;
+    } else if (selectedPeriod === "this_quarter") {
+      ratio = 3.0;
+    } else if (selectedPeriod === "this_year" || selectedPeriod === "last_year") {
+      ratio = 11.0;
+    } else if (selectedPeriod === "all_time") {
+      ratio = 25.0;
+    } else if (selectedPeriod === "last_month") {
+      ratio = 1.05;
+    } else {
+      ratio = 1.0;
+    }
+
+    const baseReceived = 45;
+    const baseSubmitted = 32;
+    const baseBeneficiaries = 24;
+    const baseInReview = 6;
+    const basePending = 13;
+    const baseRejected = 2;
+    const baseTeamApps = 142;
+
+    if (ratio < 0.08) {
+      // Single day
+      return {
+        applicationsReceived: 3,
+        submitted: 2,
+        beneficiaries: 2,
+        inReview: 1,
+        pending: 1,
+        rejected: 0,
+        teamApplications: 8,
+      };
+    }
+
+    return {
+      applicationsReceived: Math.max(1, Math.round(baseReceived * ratio)),
+      submitted: Math.max(1, Math.round(baseSubmitted * ratio)),
+      beneficiaries: Math.max(1, Math.round(baseBeneficiaries * ratio)),
+      inReview: Math.max(0, Math.round(baseInReview * ratio)),
+      pending: Math.max(1, Math.round(basePending * ratio)),
+      rejected: Math.max(0, Math.round(baseRejected * ratio)),
+      teamApplications: Math.max(2, Math.round(baseTeamApps * ratio)),
+    };
+  }, [selectedPeriod, selectedDateInfo]);
 
   const openApplicationListWithStatus = (status: MobileApplicationStatusFilter) => {
     setActiveTab("applications");
@@ -10062,36 +10265,43 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
     // Human readable active location label
   const activeLocationLabel = React.useMemo(() => {
-    if (filterGeoScope === "booth") {
-      const currentAreas = getAreasForMandalam(selectedMandalam, lang);
-      const foundArea = currentAreas.find(a => a.id === selectedArea);
-      const areaName = foundArea ? foundArea[lang] : "Area";
-      const c = constituencies.find(item => item.id === selectedMandalam || item.en.toLowerCase() === selectedMandalam.toLowerCase());
-      const mandalamName = c ? c[lang] : "Mandalam";
-      const boothNum = selectedBooth.replace("booth_", "Booth #");
-      return `${boothNum} (${areaName}, ${mandalamName})`;
+    if (homeLocationLevel === "ward" || filterGeoScope === "booth") {
+      const wardCount = homeSelectedWardIds.filter(id => id !== "all").length;
+      if (wardCount > 1) {
+        return `${wardCount} ${lang === "ml" ? "വാർഡുകൾ/ബൂത്തുകൾ" : "Wards/Booths"} (Kazhakkoottam)`;
+      }
+      return lang === "ml" ? "വാർഡ് 1 — കഴക്കൂട്ടം" : "Ward 1 — Kazhakkoottam";
     }
-    if (filterGeoScope === "area") {
-      const currentAreas = getAreasForMandalam(selectedMandalam, lang);
-      const foundArea = currentAreas.find(a => a.id === selectedArea);
-      const areaName = foundArea ? foundArea[lang] : "Area";
-      const c = constituencies.find(item => item.id === selectedMandalam || item.en.toLowerCase() === selectedMandalam.toLowerCase());
-      const mandalamName = c ? c[lang] : "Mandalam";
-      return `${areaName} (${mandalamName})`;
+    if (homeLocationLevel === "area" || filterGeoScope === "area") {
+      const areaNames: Record<string, { en: string; ml: string }> = {
+        "area-kazh-main": { en: "Kazhakkoottam Area", ml: "കഴക്കൂട്ടം ഏരിയ" },
+        "area-kariavattom": { en: "Kariavattom Area", ml: "കാര്യവട്ടം ഏരിയ" },
+        "area-technopark": { en: "Technopark Area", ml: "ടെക്നോപാർക്ക് ഏരിയ" },
+        "area-chanthavila": { en: "Chanthavila Area", ml: "ചന്തവിള ഏരിയ" },
+        "area-menamkulam": { en: "Menamkulam Area", ml: "മേനംകുളം ഏരിയ" },
+      };
+      const a = areaNames[homeSelectedArea] || { en: "Kazhakkoottam Area", ml: "കഴക്കൂട്ടം ഏരിയ" };
+      return `${a[lang]} (Kazhakkoottam)`;
     }
-    if (filterGeoScope === "mandalam") {
-      const c = constituencies.find(item => item.id === selectedMandalam || item.en.toLowerCase() === selectedMandalam.toLowerCase());
-      const mandalamName = c ? c[lang] : "Mandalam";
-      const distObj = districts.find(d => d.id === selectedDistrict);
-      const distName = distObj ? distObj[lang] : "District";
-      return `${mandalamName} (${distName})`;
+    if (homeLocationLevel === "mandalam" || filterGeoScope === "mandalam") {
+      return lang === "ml" ? "കഴക്കൂട്ടം മണ്ഡലം" : "Kazhakkoottam Mandalam";
+    }
+    if (homeLocationLevel === "org_district") {
+      const od = organisationalDistricts.find(o => o.id === homeSelectedOrgDistrict);
+      return od ? od[lang] : (lang === "ml" ? "തിരുവനന്തപുരം നോർത്ത്" : "Trivandrum North Org. District");
+    }
+    if (homeLocationLevel === "region") {
+      if (homeSelectedRegion === "reg-south") return lang === "ml" ? "സൗത്ത് റീജിയൺ" : "South Region";
+      if (homeSelectedRegion === "reg-central") return lang === "ml" ? "സെൻട്രൽ റീജിയൺ" : "Central Region";
+      if (homeSelectedRegion === "reg-north") return lang === "ml" ? "നോർത്ത് റീജിയൺ" : "North Region";
+      return lang === "ml" ? "എല്ലാ മേഖലകളും" : "All Regions";
     }
     if (filterGeoScope === "district") {
       const distObj = districts.find(d => d.id === selectedDistrict);
       return distObj ? `${distObj[lang]} ${lang === "ml" ? "ജില്ല" : "District"}` : "District Level";
     }
     return lang === "ml" ? "എല്ലാ കേരളവും • സംസ്ഥാന തലം" : "Kerala State (State-Wide)";
-  }, [filterGeoScope, selectedDistrict, selectedMandalam, selectedArea, selectedBooth, lang]);
+  }, [filterGeoScope, homeLocationLevel, homeSelectedRegion, homeSelectedOrgDistrict, homeSelectedMandalam, homeSelectedArea, homeSelectedWard, homeSelectedWardIds, selectedDistrict, selectedMandalam, selectedArea, selectedBooth, lang]);
   // Applications = sum of pending, assisted (In Review), rejected, and beneficiaries (Approved)
   const applicationsCount =
     currentMetrics.pending +
@@ -10160,7 +10370,85 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     return chips;
   }, [filterSchemeType, filterSchemeCategory, filterDepartment, filterPerformance]);
 
-  const appliedFilterChips = dashboardFilterChips;
+  const isHomeLocationFiltered = React.useMemo(() => {
+    if (userRole === "party_worker") {
+      return homeSelectedWardIds.length > 0 && !homeSelectedWardIds.includes("all");
+    }
+    return (
+      homeLocationLevel !== "state" ||
+      filterGeoScope !== "state" ||
+      homeSelectedRegion !== "all" ||
+      homeSelectedOrgDistrict !== "all" ||
+      homeSelectedMandalam !== "all" ||
+      homeSelectedArea !== "all" ||
+      (homeSelectedWardIds.length > 0 && !homeSelectedWardIds.includes("all"))
+    );
+  }, [
+    userRole,
+    homeLocationLevel,
+    filterGeoScope,
+    homeSelectedRegion,
+    homeSelectedOrgDistrict,
+    homeSelectedMandalam,
+    homeSelectedArea,
+    homeSelectedWardIds,
+  ]);
+
+  const isHomeSchemeFiltered = React.useMemo(() => {
+    const hasCategoryFilter =
+      (selectedCategoryIds.length > 0 && !selectedCategoryIds.includes("all")) ||
+      filterSchemeCategory !== "all";
+    const hasSchemeFilter =
+      (selectedSchemeIds.length > 0 && !selectedSchemeIds.includes("all")) ||
+      filterScheme !== "all";
+    return (
+      hasCategoryFilter ||
+      hasSchemeFilter ||
+      filterSchemeType !== "all" ||
+      filterDepartment !== "all" ||
+      filterPerformance !== "all"
+    );
+  }, [
+    selectedCategoryIds,
+    filterSchemeCategory,
+    selectedSchemeIds,
+    filterScheme,
+    filterSchemeType,
+    filterDepartment,
+    filterPerformance,
+  ]);
+
+  const isHomeFilterApplied = isHomeLocationFiltered || isHomeSchemeFiltered;
+
+  const homeActiveFilterCount = React.useMemo(() => {
+    let count = 0;
+    if (isHomeLocationFiltered) count += 1;
+    const hasCategoryFilter =
+      (selectedCategoryIds.length > 0 && !selectedCategoryIds.includes("all")) ||
+      filterSchemeCategory !== "all";
+    if (hasCategoryFilter) count += 1;
+    const hasSchemeFilter =
+      (selectedSchemeIds.length > 0 && !selectedSchemeIds.includes("all")) ||
+      filterScheme !== "all";
+    if (hasSchemeFilter) count += 1;
+    if (filterSchemeType !== "all") count += 1;
+    if (filterDepartment !== "all") count += 1;
+    if (filterPerformance !== "all") count += 1;
+    return count;
+  }, [
+    isHomeLocationFiltered,
+    selectedCategoryIds,
+    filterSchemeCategory,
+    selectedSchemeIds,
+    filterScheme,
+    filterSchemeType,
+    filterDepartment,
+    filterPerformance,
+  ]);
+
+  const appliedFilterChips = isHomeFilterApplied
+    ? Array(Math.max(1, homeActiveFilterCount)).fill({ id: "filter", label: "", onRemove: () => {} })
+    : [];
 
   const filteredBeneficiariesList = React.useMemo(() => {
     return mockBeneficiariesFullList.filter((b) => {
@@ -11693,21 +11981,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       </div>
                     </div>
 
-                    {/* Applied Filters & Current Scope UI */}
-                    <MobileAppliedFiltersScope
-                      currentScopeTitle={filterGeoScope !== "state" ? activeLocationLabel : "All Kerala • State Level"}
-                      currentScopeSubLabel={filterGeoScope !== "state" ? "Sector 1, Kazhakuttam" : "All 14 Districts & 140 Constituencies"}
-                      onResetScope={filterGeoScope !== "state" ? () => setFilterGeoScope("state") : undefined}
-                      appliedFilters={dashboardFilterChips}
-                      onResetAllFilters={() => {
-                        setFilterSchemeType("all");
-                        setFilterSchemeCategory("all");
-                        setFilterDepartment("all");
-                        setFilterPerformance("all");
-                        setFilterGeoScope("state");
-                      }}
-                    />
-
                     {/* Core Analytics KPI Grid (2 cards per row) */}
                     <div className="grid grid-cols-2 gap-2">
                       {/* 1. Application Received */}
@@ -11735,7 +12008,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           </span>
                           <img src={readyToSubmit3dIcon} alt="Submitted" className="h-6 w-6 object-contain shrink-0" />
                         </div>
-                        <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-0.5">{(applicationsCount - 150).toLocaleString()}</p>
+                        <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-0.5">{Math.max(0, Math.round(applicationsCount * 0.94)).toLocaleString()}</p>
                       </div>
 
                       {/* 3. Beneficiaries */}
@@ -15240,167 +15513,219 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     {/* Dedicated Subpage: Events & Announcements Page */}
                     {mobileSubPage === "events_announcements" && (
                       <div className="space-y-3 pt-1 pb-4 animate-in fade-in duration-200">
-                        {/* Two Sub-Tabs: Events & Announcements */}
-                        <div className="grid grid-cols-2 gap-1.5 p-1 flex-1 rounded-2xl bg-slate-100/90 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 text-xs font-extrabold shadow-2xs">
-                            <button
-                              type="button"
-                              onClick={() => setEventsSubTab("events")}
-                              className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl transition-all cursor-pointer ${
-                                eventsSubTab === "events"
-                                  ? "bg-white dark:bg-slate-900 text-[#ff5500] dark:text-orange-400 shadow-xs border border-slate-200/80 dark:border-slate-700 font-extrabold"
-                                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                        {/* Two Sub-Tabs: Events & Announcements (Underline Tab Style matching Attachment 2) */}
+                        <div
+                          role="tablist"
+                          aria-label={lang === "ml" ? "പരിപാടികളും അറിയിപ്പുകളും" : "Events & Announcements"}
+                          className="grid grid-cols-2 border-b border-[#EADFD2] dark:border-slate-800"
+                        >
+                          <button
+                            type="button"
+                            role="tab"
+                            aria-selected={eventsSubTab === "events"}
+                            onClick={() => setEventsSubTab("events")}
+                            className={`relative flex items-center justify-center pb-2.5 pt-1 text-[13px] font-extrabold tracking-tight transition-colors cursor-pointer ${
+                              eventsSubTab === "events"
+                                ? "text-[#243D95] dark:text-blue-300"
+                                : "text-[#7C8AAE] hover:text-[#243D95] dark:text-slate-400 dark:hover:text-blue-300"
+                            }`}
+                          >
+                            <span>{lang === "ml" ? "പരിപാടികൾ (4)" : "Events (4)"}</span>
+                            <span
+                              aria-hidden="true"
+                              className={`absolute -bottom-px left-1/2 h-[2.5px] w-12 -translate-x-1/2 rounded-full transition-colors ${
+                                eventsSubTab === "events" ? "bg-[#243D95] dark:bg-blue-300" : "bg-transparent"
                               }`}
-                            >
-                              <CalendarDays className="h-3.5 w-3.5" />
-                              <span>{lang === "ml" ? "പരിപാടികൾ" : "Events"}</span>
-                              <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-black ${
-                                eventsSubTab === "events"
-                                  ? "bg-orange-100 text-[#ff5500] dark:bg-orange-950 dark:text-orange-300"
-                                  : "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
-                              }`}>
-                                4
-                              </span>
-                            </button>
+                            />
+                          </button>
 
-                            <button
-                              type="button"
-                              onClick={() => setEventsSubTab("announcements")}
-                              className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl transition-all cursor-pointer ${
-                                eventsSubTab === "announcements"
-                                  ? "bg-white dark:bg-slate-900 text-[#ff5500] dark:text-orange-400 shadow-xs border border-slate-200/80 dark:border-slate-700 font-extrabold"
-                                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                          <button
+                            type="button"
+                            role="tab"
+                            aria-selected={eventsSubTab === "announcements"}
+                            onClick={() => setEventsSubTab("announcements")}
+                            className={`relative flex items-center justify-center pb-2.5 pt-1 text-[13px] font-extrabold tracking-tight transition-colors cursor-pointer ${
+                              eventsSubTab === "announcements"
+                                ? "text-[#243D95] dark:text-blue-300"
+                                : "text-[#7C8AAE] hover:text-[#243D95] dark:text-slate-400 dark:hover:text-blue-300"
+                            }`}
+                          >
+                            <span>{lang === "ml" ? "അറിയിപ്പുകൾ (4)" : "Announcements (4)"}</span>
+                            <span
+                              aria-hidden="true"
+                              className={`absolute -bottom-px left-1/2 h-[2.5px] w-12 -translate-x-1/2 rounded-full transition-colors ${
+                                eventsSubTab === "announcements" ? "bg-[#243D95] dark:bg-blue-300" : "bg-transparent"
                               }`}
-                            >
-                              <BellRing className="h-3.5 w-3.5" />
-                              <span>{lang === "ml" ? "അറിയിപ്പുകൾ" : "Announcements"}</span>
-                              <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-black ${
-                                eventsSubTab === "announcements"
-                                  ? "bg-orange-100 text-[#ff5500] dark:bg-orange-950 dark:text-orange-300"
-                                  : "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
-                              }`}>
-                                4
-                              </span>
-                            </button>
-                          </div>
+                            />
+                          </button>
+                        </div>
 
-                        {/* Tab Content List */}
-                        <div className="space-y-3 pt-0.5">
+                        {/* Tab Content List - Matching Style and Size (h-[80px]) of Home Page Banner Cards */}
+                        <div className="space-y-2.5 pt-0.5">
                           {eventsSubTab === "events" ? (
-                            /* Render Events List */
+                            /* Render Events List with Home Page Geometric Banner Style */
                             <div className="space-y-2.5">
                               {/* Event 1 */}
-                              <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs p-3.5 flex items-center justify-between transition-all">
-                                <div className="flex-1 min-w-0 pr-3 space-y-1">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[8.5px] font-black text-[#243d95] bg-blue-50 dark:bg-blue-950/80 border border-blue-200/80 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                                      {lang === "ml" ? "ബൂത്ത് സമ്മേളനം" : "BOOTH CONVENTION"}
-                                    </span>
+                              <div className="relative overflow-hidden rounded-xl bg-white dark:bg-slate-900 border border-[#B9C6E8]/80 dark:border-[#243D95]/50 shadow-sm h-[80px] flex items-center justify-between transition-all">
+                                <div className="flex-1 min-w-0 h-full p-2.5 pl-3 pr-2 flex flex-col justify-between z-10">
+                                  <div className="space-y-0.5">
+                                    <div className="flex items-center gap-1.5 min-w-0">
+                                      <h4 className="font-display text-[11.5px] sm:text-[12px] font-black text-slate-900 dark:text-white leading-tight tracking-tight truncate">
+                                        VIKASITA KERALAM SAMMELAN 2026
+                                      </h4>
+                                    </div>
+                                    <p className="text-[9.5px] font-medium text-slate-600 dark:text-slate-300 leading-tight line-clamp-1">
+                                      {lang === "ml" ? "സംസ്ഥാനതല മെഗാ ബൂത്ത് സമ്മേളനം" : "Statewide Mega Booth Worker Convention in TVM"}
+                                    </p>
                                   </div>
-                                  <h4 className="font-display text-xs font-black text-slate-900 dark:text-white leading-tight">
-                                    VIKASITA KERALAM SAMMELAN 2026
-                                  </h4>
-                                  <p className="text-[10px] text-slate-600 dark:text-slate-300">
-                                    {lang === "ml" ? "സംസ്ഥാനതല മെഗാ ബൂത്ത് സമ്മേളനം" : "Statewide Mega Booth Worker Convention in TVM"}
-                                  </p>
-                                  <div className="pt-1">
-                                    <span className="inline-block rounded-full bg-slate-950 dark:bg-slate-100 text-white dark:text-slate-950 px-2.5 py-0.5 text-[8.5px] font-black uppercase tracking-wider">
+                                  <div className="pt-0.5">
+                                    <button
+                                      type="button"
+                                      className="inline-block rounded-full bg-[#243D95] dark:bg-[#5B74C4] text-white px-3 py-1 text-[8.5px] font-black tracking-wider uppercase shadow-xs transition-transform active:scale-95 cursor-pointer"
+                                    >
                                       {lang === "ml" ? "രജിസ്റ്റർ ചെയ്യുക" : "REGISTER NOW"}
-                                    </span>
+                                    </button>
                                   </div>
                                 </div>
-                                <div className="shrink-0 rounded-lg p-2 bg-[#243d95] text-white flex flex-col items-center justify-center min-w-[50px] text-center shadow-xs">
-                                  <span className="text-[8px] font-black uppercase">OCT</span>
-                                  <span className="text-base font-black leading-none my-0.5">15</span>
-                                  <span className="text-[7px] font-bold opacity-90">2026</span>
+
+                                <div className="relative h-full w-[38%] shrink-0 flex items-center justify-center overflow-hidden pr-0.5">
+                                  <div className="absolute inset-0 bg-gradient-to-br from-[#3B57B5] via-[#243D95] to-[#1B2E73] [clip-path:polygon(20%_0%,100%_0%,100%_100%,0%_100%,15%_50%)]" />
+                                  <div className="absolute inset-0 border-l-2 border-[#5B74C4] opacity-80 [clip-path:polygon(20%_0%,25%_0%,20%_50%,25%_100%,20%_100%,15%_50%)]" />
+                                  <div className="relative z-10 rounded-lg px-2 py-0.5 flex flex-col items-center justify-center text-center bg-white text-[#243D95] min-w-[48px] shadow-md border border-white/60">
+                                    <span className="block text-[8px] font-black uppercase tracking-wider leading-none">OCT</span>
+                                    <span className="block text-[15px] font-black leading-tight my-0.5 tracking-tight">15</span>
+                                    <span className="block text-[7px] font-black tracking-widest leading-none px-1 py-0.5 rounded-xs border bg-[#EEF2FC] text-[#243D95] border-[#B9C6E8]">
+                                      2026
+                                    </span>
+                                  </div>
+                                  <div className="absolute top-1 right-1 z-20 h-5 w-5 rounded-full bg-white border border-[#B9C6E8]/80 p-0.5 flex items-center justify-center shadow-xs">
+                                    <img src={officialLotus} alt="Lotus" className="h-3.5 w-3.5 object-contain" />
+                                  </div>
                                 </div>
                               </div>
 
-                              {/* Event 2 */}
-                              <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs p-3.5 flex items-center justify-between transition-all">
-                                <div className="flex-1 min-w-0 pr-3 space-y-1">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[8.5px] font-black text-orange-700 bg-orange-50 dark:bg-orange-950/80 border border-orange-200/80 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                                      {lang === "ml" ? "യുവമോർച്ച റാലി" : "YOUTH RALLY"}
-                                    </span>
+                              {/* Event 2 - Saffron/Orange Banner */}
+                              <div className="relative overflow-hidden rounded-xl bg-white dark:bg-slate-900 border border-[#FDBA74]/70 dark:border-orange-900/50 shadow-sm h-[80px] flex items-center justify-between transition-all">
+                                <div className="flex-1 min-w-0 h-full p-2.5 pl-3 pr-2 flex flex-col justify-between z-10">
+                                  <div className="space-y-0.5">
+                                    <div className="flex items-center gap-1.5 min-w-0">
+                                      <h4 className="font-display text-[11.5px] sm:text-[12px] font-black text-slate-900 dark:text-white leading-tight tracking-tight truncate">
+                                        YUVA VIKAS YATRA & CONCLAVE
+                                      </h4>
+                                    </div>
+                                    <p className="text-[9.5px] font-medium text-slate-600 dark:text-slate-300 leading-tight line-clamp-1">
+                                      {lang === "ml" ? "തിരുവനന്തപുരത്ത് 50,000+ യുവ പ്രതിനിധികൾ" : "50,000+ Youth Leaders Gathering in TVM"}
+                                    </p>
                                   </div>
-                                  <h4 className="font-display text-xs font-black text-slate-900 dark:text-white leading-tight">
-                                    YUVA VIKAS YATRA & CONCLAVE
-                                  </h4>
-                                  <p className="text-[10px] text-slate-600 dark:text-slate-300">
-                                    {lang === "ml" ? "തിരുവനന്തപുരത്ത് 50,000+ യുവ പ്രതിനിധികൾ" : "50,000+ Youth Leaders Gathering in TVM"}
-                                  </p>
-                                  <div className="pt-1">
-                                    <span className="inline-block rounded-full bg-slate-950 dark:bg-slate-100 text-white dark:text-slate-950 px-2.5 py-0.5 text-[8.5px] font-black uppercase tracking-wider">
+                                  <div className="pt-0.5">
+                                    <button
+                                      type="button"
+                                      className="inline-block rounded-full bg-[#ea580c] dark:bg-[#f97316] text-white px-3 py-1 text-[8.5px] font-black tracking-wider uppercase shadow-xs transition-transform active:scale-95 cursor-pointer"
+                                    >
                                       {lang === "ml" ? "പങ്കെടുക്കുക" : "JOIN YATRA"}
-                                    </span>
+                                    </button>
                                   </div>
                                 </div>
-                                <div className="shrink-0 rounded-lg p-2 bg-[#ea580c] text-white flex flex-col items-center justify-center min-w-[50px] text-center shadow-xs">
-                                  <span className="text-[8px] font-black uppercase">NOV</span>
-                                  <span className="text-base font-black leading-none my-0.5">02</span>
-                                  <span className="text-[7px] font-bold opacity-90">2026</span>
+
+                                <div className="relative h-full w-[38%] shrink-0 flex items-center justify-center overflow-hidden pr-0.5">
+                                  <div className="absolute inset-0 bg-gradient-to-br from-[#f97316] via-[#ea580c] to-[#c2410c] [clip-path:polygon(20%_0%,100%_0%,100%_100%,0%_100%,15%_50%)]" />
+                                  <div className="absolute inset-0 border-l-2 border-[#fdba74] opacity-80 [clip-path:polygon(20%_0%,25%_0%,20%_50%,25%_100%,20%_100%,15%_50%)]" />
+                                  <div className="relative z-10 rounded-lg px-2 py-0.5 flex flex-col items-center justify-center text-center bg-white text-[#ea580c] min-w-[48px] shadow-md border border-white/60">
+                                    <span className="block text-[8px] font-black uppercase tracking-wider leading-none">NOV</span>
+                                    <span className="block text-[15px] font-black leading-tight my-0.5 tracking-tight">02</span>
+                                    <span className="block text-[7px] font-black tracking-widest leading-none px-1 py-0.5 rounded-xs border bg-[#FFF4ED] text-[#ea580c] border-[#FDBA74]">
+                                      2026
+                                    </span>
+                                  </div>
+                                  <div className="absolute top-1 right-1 z-20 h-5 w-5 rounded-full bg-white border border-[#FDBA74]/80 p-0.5 flex items-center justify-center shadow-xs">
+                                    <img src={officialLotus} alt="Lotus" className="h-3.5 w-3.5 object-contain" />
+                                  </div>
                                 </div>
                               </div>
 
                               {/* Event 3 */}
-                              <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs p-3.5 flex items-center justify-between transition-all">
-                                <div className="flex-1 min-w-0 pr-3 space-y-1">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[8.5px] font-black text-blue-700 bg-blue-50 dark:bg-blue-950/80 border border-blue-200/80 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                                      {lang === "ml" ? "ഗുണഭോക്തൃ സംഗമം" : "BENEFICIARY MEET"}
-                                    </span>
+                              <div className="relative overflow-hidden rounded-xl bg-white dark:bg-slate-900 border border-[#B9C6E8]/80 dark:border-[#243D95]/50 shadow-sm h-[80px] flex items-center justify-between transition-all">
+                                <div className="flex-1 min-w-0 h-full p-2.5 pl-3 pr-2 flex flex-col justify-between z-10">
+                                  <div className="space-y-0.5">
+                                    <div className="flex items-center gap-1.5 min-w-0">
+                                      <h4 className="font-display text-[11.5px] sm:text-[12px] font-black text-slate-900 dark:text-white leading-tight tracking-tight truncate">
+                                        CENTRAL SCHEMES EXPO
+                                      </h4>
+                                    </div>
+                                    <p className="text-[9.5px] font-medium text-slate-600 dark:text-slate-300 leading-tight line-clamp-1">
+                                      {lang === "ml" ? "കേന്ദ്ര മന്ത്രിമാരുമായുള്ള ഗുണഭോക്തൃ സംവാദം" : "Interactive Session with Union Ministers at Kochi"}
+                                    </p>
                                   </div>
-                                  <h4 className="font-display text-xs font-black text-slate-900 dark:text-white leading-tight">
-                                    CENTRAL SCHEMES EXPO
-                                  </h4>
-                                  <p className="text-[10px] text-slate-600 dark:text-slate-300">
-                                    {lang === "ml" ? "കേന്ദ്ര മന്ത്രിമാരുമായുള്ള ഗുണഭോക്തൃ സംവാദം" : "Interactive Session with Union Ministers at Kochi"}
-                                  </p>
-                                  <div className="pt-1">
-                                    <span className="inline-block rounded-full bg-slate-950 dark:bg-slate-100 text-white dark:text-slate-950 px-2.5 py-0.5 text-[8.5px] font-black uppercase tracking-wider">
+                                  <div className="pt-0.5">
+                                    <button
+                                      type="button"
+                                      className="inline-block rounded-full bg-[#243D95] dark:bg-[#5B74C4] text-white px-3 py-1 text-[8.5px] font-black tracking-wider uppercase shadow-xs transition-transform active:scale-95 cursor-pointer"
+                                    >
                                       {lang === "ml" ? "സന്ദർശിക്കുക" : "ATTEND EXPO"}
-                                    </span>
+                                    </button>
                                   </div>
                                 </div>
-                                <div className="shrink-0 rounded-lg p-2 bg-[#1d4ed8] text-white flex flex-col items-center justify-center min-w-[50px] text-center shadow-xs">
-                                  <span className="text-[8px] font-black uppercase">NOV</span>
-                                  <span className="text-base font-black leading-none my-0.5">20</span>
-                                  <span className="text-[7px] font-bold opacity-90">2026</span>
+
+                                <div className="relative h-full w-[38%] shrink-0 flex items-center justify-center overflow-hidden pr-0.5">
+                                  <div className="absolute inset-0 bg-gradient-to-br from-[#3B57B5] via-[#243D95] to-[#1B2E73] [clip-path:polygon(20%_0%,100%_0%,100%_100%,0%_100%,15%_50%)]" />
+                                  <div className="absolute inset-0 border-l-2 border-[#5B74C4] opacity-80 [clip-path:polygon(20%_0%,25%_0%,20%_50%,25%_100%,20%_100%,15%_50%)]" />
+                                  <div className="relative z-10 rounded-lg px-2 py-0.5 flex flex-col items-center justify-center text-center bg-white text-[#243D95] min-w-[48px] shadow-md border border-white/60">
+                                    <span className="block text-[8px] font-black uppercase tracking-wider leading-none">NOV</span>
+                                    <span className="block text-[15px] font-black leading-tight my-0.5 tracking-tight">20</span>
+                                    <span className="block text-[7px] font-black tracking-widest leading-none px-1 py-0.5 rounded-xs border bg-[#EEF2FC] text-[#243D95] border-[#B9C6E8]">
+                                      2026
+                                    </span>
+                                  </div>
+                                  <div className="absolute top-1 right-1 z-20 h-5 w-5 rounded-full bg-white border border-[#B9C6E8]/80 p-0.5 flex items-center justify-center shadow-xs">
+                                    <img src={officialLotus} alt="Lotus" className="h-3.5 w-3.5 object-contain" />
+                                  </div>
                                 </div>
                               </div>
 
-                              {/* Event 4 */}
-                              <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs p-3.5 flex items-center justify-between transition-all">
-                                <div className="flex-1 min-w-0 pr-3 space-y-1">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[8.5px] font-black text-amber-700 bg-amber-50 dark:bg-amber-950/80 border border-amber-200/80 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                                      {lang === "ml" ? "മഹിളാ സമ്മേളനം" : "MAHILA SAMMELAN"}
-                                    </span>
+                              {/* Event 4 - Saffron/Orange Banner */}
+                              <div className="relative overflow-hidden rounded-xl bg-white dark:bg-slate-900 border border-[#FDBA74]/70 dark:border-orange-900/50 shadow-sm h-[80px] flex items-center justify-between transition-all">
+                                <div className="flex-1 min-w-0 h-full p-2.5 pl-3 pr-2 flex flex-col justify-between z-10">
+                                  <div className="space-y-0.5">
+                                    <div className="flex items-center gap-1.5 min-w-0">
+                                      <h4 className="font-display text-[11.5px] sm:text-[12px] font-black text-slate-900 dark:text-white leading-tight tracking-tight truncate">
+                                        NARI SHAKTI VIKAS CONCLAVE
+                                      </h4>
+                                    </div>
+                                    <p className="text-[9.5px] font-medium text-slate-600 dark:text-slate-300 leading-tight line-clamp-1">
+                                      {lang === "ml" ? "വനിതാ സംരംഭകത്വ സംസ്ഥാന സമ്മേളനം" : "Empowering Women Entrepreneurs in Kozhikode"}
+                                    </p>
                                   </div>
-                                  <h4 className="font-display text-xs font-black text-slate-900 dark:text-white leading-tight">
-                                    NARI SHAKTI VIKAS CONCLAVE
-                                  </h4>
-                                  <p className="text-[10px] text-slate-600 dark:text-slate-300">
-                                    {lang === "ml" ? "വനിതാ സംരംഭകത്വ സംസ്ഥാന സമ്മേളനം" : "Empowering Women Entrepreneurs in Kozhikode"}
-                                  </p>
-                                  <div className="pt-1">
-                                    <span className="inline-block rounded-full bg-slate-950 dark:bg-slate-100 text-white dark:text-slate-950 px-2.5 py-0.5 text-[8.5px] font-black uppercase tracking-wider">
+                                  <div className="pt-0.5">
+                                    <button
+                                      type="button"
+                                      className="inline-block rounded-full bg-[#ea580c] dark:bg-[#f97316] text-white px-3 py-1 text-[8.5px] font-black tracking-wider uppercase shadow-xs transition-transform active:scale-95 cursor-pointer"
+                                    >
                                       {lang === "ml" ? "പാസ് നേടുക" : "GET PASS"}
-                                    </span>
+                                    </button>
                                   </div>
                                 </div>
-                                <div className="shrink-0 rounded-lg p-2 bg-[#d97706] text-white flex flex-col items-center justify-center min-w-[50px] text-center shadow-xs">
-                                  <span className="text-[8px] font-black uppercase">DEC</span>
-                                  <span className="text-base font-black leading-none my-0.5">10</span>
-                                  <span className="text-[7px] font-bold opacity-90">2026</span>
+
+                                <div className="relative h-full w-[38%] shrink-0 flex items-center justify-center overflow-hidden pr-0.5">
+                                  <div className="absolute inset-0 bg-gradient-to-br from-[#f97316] via-[#ea580c] to-[#b45309] [clip-path:polygon(20%_0%,100%_0%,100%_100%,0%_100%,15%_50%)]" />
+                                  <div className="absolute inset-0 border-l-2 border-[#fdba74] opacity-80 [clip-path:polygon(20%_0%,25%_0%,20%_50%,25%_100%,20%_100%,15%_50%)]" />
+                                  <div className="relative z-10 rounded-lg px-2 py-0.5 flex flex-col items-center justify-center text-center bg-white text-[#ea580c] min-w-[48px] shadow-md border border-white/60">
+                                    <span className="block text-[8px] font-black uppercase tracking-wider leading-none">DEC</span>
+                                    <span className="block text-[15px] font-black leading-tight my-0.5 tracking-tight">10</span>
+                                    <span className="block text-[7px] font-black tracking-widest leading-none px-1 py-0.5 rounded-xs border bg-[#FFF4ED] text-[#ea580c] border-[#FDBA74]">
+                                      2026
+                                    </span>
+                                  </div>
+                                  <div className="absolute top-1 right-1 z-20 h-5 w-5 rounded-full bg-white border border-[#FDBA74]/80 p-0.5 flex items-center justify-center shadow-xs">
+                                    <img src={officialLotus} alt="Lotus" className="h-3.5 w-3.5 object-contain" />
+                                  </div>
                                 </div>
                               </div>
                             </div>
                           ) : (
-                            /* Render Announcements & Banners List */
+                            /* Render Announcements & Banners List matching Home Page Size & Style */
                             <div className="space-y-2.5">
                               {/* Announcement Banner 1: PM Schemes */}
-                              <div className="relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs h-[85px] w-full cursor-pointer group">
+                              <div className="relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs h-[80px] w-full cursor-pointer group transition-all duration-300">
                                 <img
                                   src="/images/pm_schemes_explore_now.png"
                                   alt="Explore PM Schemes - Viksit Bharat"
@@ -15409,56 +15734,86 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                               </div>
 
                               {/* Announcement Banner 2: Sabka Saath Sabka Vikas */}
-                              <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-blue-50 via-sky-50 to-orange-50 dark:from-slate-800 dark:via-blue-950/40 dark:to-orange-950/40 text-slate-900 dark:text-white shadow-xs border border-blue-200/80 dark:border-blue-900/50 p-3 flex items-center justify-between">
-                                <div className="flex-1 min-w-0 pr-2 space-y-1">
-                                  <span className="inline-block rounded-md bg-blue-600 text-white px-2 py-0.2 text-[8px] font-black uppercase tracking-wider">
+                              <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-[#F5F7FD] via-[#EEF2FC] to-[#E8EDFA] dark:from-slate-800 dark:via-[#243D95]/25 dark:to-[#243D95]/10 text-slate-900 dark:text-white shadow-xs border border-[#B9C6E8]/80 dark:border-[#243D95]/50 p-2 px-2.5 h-[80px] flex flex-col justify-between transition-all duration-300">
+                                <div className="absolute top-0 right-0 z-10">
+                                  <div className="rounded-bl-md px-2 py-0.5 text-[7px] font-black uppercase tracking-wider shadow-xs bg-[#243D95] text-white">
                                     {lang === "ml" ? "മോദിയുടെ ഗ്യാരണ്ടി" : "MODI'S GUARANTEE"}
-                                  </span>
-                                  <h4 className="font-display text-xs font-black text-slate-900 dark:text-white leading-tight">
-                                    SABKA SAATH · SABKA VIKAS
-                                  </h4>
-                                  <p className="text-[10px] text-slate-600 dark:text-slate-300 font-semibold">
-                                    {lang === "ml" ? "സബ്കാ സാഥ്, സബ്കാ വികാസ്, സബ്കാ വിശ്വാസ്" : "Sabka Vishwas · Sabka Prayaas (2047 Vision)"}
-                                  </p>
+                                  </div>
                                 </div>
-                                <div className="shrink-0 h-10 w-10 rounded-full bg-blue-100/80 dark:bg-blue-950/70 border border-blue-300/60 p-1 flex items-center justify-center shadow-xs">
-                                  <img src={officialLotus} alt="Lotus" className="h-6 w-6 object-contain" />
+
+                                <div className="flex items-center gap-2 pt-1 flex-1 min-h-0">
+                                  <div className="shrink-0 h-9 w-9 rounded-full border border-[#B9C6E8] dark:border-[#243D95]/60 bg-white dark:bg-slate-800 p-0.5 flex items-center justify-center shadow-xs overflow-hidden">
+                                    <img
+                                      src="/images/pm_modi.jpg"
+                                      alt="Modi's Guarantee"
+                                      className="h-full w-full object-cover object-top rounded-full"
+                                    />
+                                  </div>
+
+                                  <div className="min-w-0 flex-1 flex flex-col justify-center h-full pr-1 text-left space-y-0.5">
+                                    <h4 className="font-display text-[12px] sm:text-[12.5px] font-extrabold leading-tight tracking-tight truncate text-slate-900 dark:text-white">
+                                      SABKA SAATH · SABKA VIKAS
+                                    </h4>
+                                    <p className="text-[9.5px] leading-tight line-clamp-2 text-[#5B74C4] dark:text-[#C9D4F5] font-medium">
+                                      {lang === "ml" ? "സബ്കാ സാഥ്, സബ്കാ വികാസ്, സബ്കാ വിശ്വാസ്" : "Sabka Vishwas · Sabka Prayaas (2047 Vision)"}
+                                    </p>
+                                  </div>
                                 </div>
                               </div>
 
                               {/* Announcement Banner 3: Direct Benefit Transfer */}
-                              <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-sky-50 via-blue-50 to-orange-50 dark:from-slate-800 dark:via-sky-950/40 dark:to-orange-950/40 text-slate-900 dark:text-white shadow-xs border border-sky-200/80 dark:border-sky-900/50 p-3 flex items-center justify-between">
-                                <div className="flex-1 min-w-0 pr-2 space-y-1">
-                                  <span className="inline-block rounded-md bg-[#ff5500] text-white px-2 py-0.2 text-[8px] font-black uppercase tracking-wider">
+                              <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-[#3B57B5] via-[#243D95] to-[#16265F] text-white shadow-md border border-[#243D95]/60 p-2 px-2.5 h-[80px] flex flex-col justify-between transition-all duration-300">
+                                <div className="absolute top-0 right-0 z-10">
+                                  <div className="rounded-bl-md px-2 py-0.5 text-[7px] font-black uppercase tracking-wider shadow-xs bg-[#3B57B5] text-white">
                                     {lang === "ml" ? "പി.എം കിസാൻ" : "PM KISAN SAMMAN"}
-                                  </span>
-                                  <h4 className="font-display text-xs font-black text-slate-900 dark:text-white leading-tight">
-                                    DIRECT BENEFIT TRANSFER ₹6,000
-                                  </h4>
-                                  <p className="text-[10px] text-slate-600 dark:text-slate-300">
-                                    {lang === "ml" ? "കേരളത്തിലെ 35 ലക്ഷം കർഷകർക്ക് നേട്ടങ്ങൾ" : "Empowering 35 Lakh Farmers Across Kerala"}
-                                  </p>
+                                  </div>
                                 </div>
-                                <div className="shrink-0 h-10 w-10 rounded-full bg-orange-100/80 dark:bg-orange-950/70 border border-orange-300/60 p-1 flex items-center justify-center shadow-xs">
-                                  <img src={officialLotus} alt="Lotus" className="h-6 w-6 object-contain" />
+
+                                <div className="flex items-center gap-2 pt-1 flex-1 min-h-0">
+                                  <div className="shrink-0 h-9 w-9 rounded-full border bg-[#16265F]/70 border-[#8FA5E3]/40 p-0.5 flex items-center justify-center shadow-xs overflow-hidden">
+                                    <img
+                                      src={officialLotus}
+                                      alt="Lotus Emblem"
+                                      className="h-5.5 w-5.5 object-contain drop-shadow-xs"
+                                    />
+                                  </div>
+
+                                  <div className="min-w-0 flex-1 flex flex-col justify-center h-full pr-1 text-left space-y-0.5">
+                                    <h4 className="font-display text-[12px] sm:text-[12.5px] font-extrabold leading-tight tracking-tight truncate text-white">
+                                      DIRECT BENEFIT TRANSFER ₹6,000
+                                    </h4>
+                                    <p className="text-[9.5px] leading-tight line-clamp-2 text-[#DCE4F8] font-medium">
+                                      {lang === "ml" ? "കേരളത്തിലെ 35 ലക്ഷം കർഷകർക്ക് നേട്ടങ്ങൾ" : "Empowering 35 Lakh Farmers Across Kerala"}
+                                    </p>
+                                  </div>
                                 </div>
                               </div>
 
                               {/* Announcement Banner 4: Ayushman Bharat */}
-                              <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-orange-50 via-amber-50 to-blue-50 dark:from-slate-800 dark:via-orange-950/30 dark:to-blue-950/30 text-slate-900 dark:text-white shadow-xs border border-orange-200/80 dark:border-orange-900/50 p-3 flex items-center justify-between">
-                                <div className="flex-1 min-w-0 pr-2 space-y-1">
-                                  <span className="inline-block rounded-md bg-blue-600 text-white px-2 py-0.2 text-[8px] font-black uppercase tracking-wider">
+                              <div className="relative overflow-hidden rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm border border-[#B9C6E8] dark:border-[#243D95]/50 p-2 px-2.5 h-[80px] flex flex-col justify-between transition-all duration-300">
+                                <div className="absolute top-0 right-0 z-10">
+                                  <div className="rounded-bl-md px-2 py-0.5 text-[7px] font-black uppercase tracking-wider shadow-xs bg-[#243D95] text-white">
                                     {lang === "ml" ? "ആയുഷ്മാൻ ഭാരത്" : "AYUSHMAN BHARAT"}
-                                  </span>
-                                  <h4 className="font-display text-xs font-black text-slate-900 dark:text-white leading-tight">
-                                    FREE HEALTH COVERAGE UP TO ₹5 LAKH
-                                  </h4>
-                                  <p className="text-[10px] text-slate-600 dark:text-slate-300">
-                                    {lang === "ml" ? "സൗജന്യ സമഗ്ര കുടുംബ ആരോഗ്യ സുരക്ഷാ പദ്ധതി" : "Cashless Medical Treatment for All Families"}
-                                  </p>
+                                  </div>
                                 </div>
-                                <div className="shrink-0 h-10 w-10 rounded-full bg-amber-100/80 dark:bg-slate-800 border border-amber-300/60 dark:border-slate-700 p-1 flex items-center justify-center shadow-xs">
-                                  <img src={officialLotus} alt="Lotus" className="h-6 w-6 object-contain" />
+
+                                <div className="flex items-center gap-2 pt-1 flex-1 min-h-0">
+                                  <div className="shrink-0 h-9 w-9 rounded-full border bg-white dark:bg-[#243D95]/30 border-[#B9C6E8] dark:border-[#243D95] p-1 flex items-center justify-center shadow-xs overflow-hidden">
+                                    <img
+                                      src="/images/popular-schemes/pm_jay.png"
+                                      alt="Ayushman Bharat"
+                                      className="h-full w-full object-contain"
+                                    />
+                                  </div>
+
+                                  <div className="min-w-0 flex-1 flex flex-col justify-center h-full pr-1 text-left space-y-0.5">
+                                    <h4 className="font-display text-[12px] sm:text-[12.5px] font-extrabold leading-tight tracking-tight truncate text-slate-900 dark:text-white">
+                                      FREE HEALTH COVERAGE UP TO ₹5 LAKH
+                                    </h4>
+                                    <p className="text-[9.5px] leading-tight line-clamp-2 text-[#5B74C4] dark:text-[#C9D4F5] font-medium">
+                                      {lang === "ml" ? "സൗജന്യ സമഗ്ര കുടുംബ ആരോഗ്യ സുരക്ഷാ പദ്ധതി" : "Cashless Medical Treatment for All Families"}
+                                    </p>
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -16066,7 +16421,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         {lang === "ml" ? "അപേക്ഷിക്കാൻ തയ്യാർ" : "Ready to Apply"}
                       </span>
                       <span className="mt-1 block font-display text-base font-bold leading-none text-foreground">
-                        {mobileApplicationRecordsByStatus.document_verification_completed.length.toLocaleString()}
+                        {Math.max(1, Math.round(mobileApplicationRecordsByStatus.document_verification_completed.length * (partyWorkerMetrics.applicationsReceived / 45))).toLocaleString()}
                       </span>
                     </span>
                     <img src={readyToSubmit3dIcon} alt="Ready to Apply" className="h-9 w-9 shrink-0 object-contain" />
@@ -16086,7 +16441,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         {lang === "ml" ? "രേഖകൾ ബാക്കി" : "Document Pending"}
                       </span>
                       <span className="mt-1 block font-display text-base font-bold leading-none text-foreground">
-                        {mobileApplicationRecordsByStatus.application_received.length.toLocaleString()}
+                        {Math.max(1, Math.round(mobileApplicationRecordsByStatus.application_received.length * (partyWorkerMetrics.applicationsReceived / 45))).toLocaleString()}
                       </span>
                     </span>
                     <img src={documentsPending3dIcon} alt="Document Pending" className="h-9 w-9 shrink-0 object-contain" />
@@ -21202,9 +21557,15 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             isOpen={isDatePickerOpen}
             onClose={() => setIsDatePickerOpen(false)}
             selectedPeriod={selectedPeriod}
-            onSelectPeriod={(period, customLabel) => {
+            onSelectPeriod={(period, customLabel, dateInfo) => {
               setSelectedPeriod(period);
               if (customLabel) setPeriodCustomLabel(customLabel);
+              if (dateInfo) {
+                setSelectedDateInfo(dateInfo);
+                if (dateInfo.startDate) {
+                  setCurrentSelectedDate(dateInfo.startDate);
+                }
+              }
             }}
             inlineInApp={true}
           />
@@ -22236,85 +22597,70 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         )}
                       </div>
 
-                      {/* Location Level Selector */}
-                      <div className="space-y-0.5 relative">
-                        <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
-                          {lang === "ml" ? "സ്ഥല തലം തിരഞ്ഞെടുക്കുക (Location Level)" : "Select Location Level"}
-                        </label>
-                        {userRole === "party_worker" ? (
-                          /* Party Worker: Fixed to Area level, non-changeable */
-                          <div className="relative">
-                            <div className="w-full h-9 pl-3 pr-8 flex items-center text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 cursor-not-allowed select-none">
-                              <span>{lang === "ml" ? "ഏരിയ (Area President View)" : "Area (Area President Level)"}</span>
-                            </div>
-                            <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                          </div>
-                        ) : (
-                          /* Admin: Free selection of State, Region, Org District, Assembly Mandalam, Area, Ward */
-                          <div className="relative">
-                            <select
-                              value={appLocationLevel}
-                              onChange={(e) => setAppLocationLevel(e.target.value as AppLocationLevel)}
-                              className="w-full h-9 pl-3 pr-8 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none"
-                            >
-                              <option value="state">{lang === "ml" ? "സംസ്ഥാനം (State)" : "State"}</option>
-                              <option value="region">{lang === "ml" ? "മേഖല (Region)" : "Region"}</option>
-                              <option value="org_district">{lang === "ml" ? "ഓർഗനൈസേഷണൽ ജില്ല (Organisation District)" : "Organisation District"}</option>
-                              <option value="mandalam">{lang === "ml" ? "നിയമസഭാ മണ്ഡലം (Assembly Mandalam)" : "Assembly Mandalam"}</option>
-                              <option value="area">{lang === "ml" ? "ഏരിയ (Area)" : "Area"}</option>
-                              <option value="ward">{lang === "ml" ? "വാർഡ് (Ward)" : "Ward"}</option>
-                            </select>
-                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Dependent Location Selection Fields */}
+                      {/* Select Location Level (Admin) or Merged Accordion (Party Worker) */}
                       {userRole === "party_worker" ? (
-                        /* Party Worker: Constant Region, Org District, Assembly Mandalam, Area; Interactive Ward selection (Multi-select) */
-                        <div className="space-y-2 pt-1">
-                          {/* Constant Assigned Location Summary */}
-                          <div className="p-2.5 rounded-lg border border-orange-200/70 dark:border-slate-700 bg-orange-50/50 dark:bg-slate-800/50 space-y-1.5">
-                            <div className="flex items-center justify-between text-[10px] font-bold text-orange-700 dark:text-orange-400 border-b border-orange-200/40 dark:border-slate-700/60 pb-1">
-                              <span>{lang === "ml" ? "സ്ഥിരമായി അനുവദിച്ച തലം" : "Assigned Organizational Scope"}</span>
-                              <span className="text-[9px] bg-orange-100 dark:bg-orange-950 px-1.5 py-0.2 rounded text-orange-800 dark:text-orange-300 font-semibold">
-                                {lang === "ml" ? "സ്ഥിരം" : "Constant"}
-                              </span>
+                        /* Party Worker: Merged Accordion for Location Level & Assigned Scope */
+                        <div className="space-y-2 pt-0.5">
+                          <div className="space-y-1.5">
+                            <div className="space-y-0.5 relative">
+                              <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
+                                {lang === "ml" ? "സ്ഥല തലം തിരഞ്ഞെടുക്കുക (Select Location Level)" : "Select Location Level"}
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => setIsAppScopeAccordionOpen(!isAppScopeAccordionOpen)}
+                                className="w-full h-8.5 pl-3 pr-2.5 flex items-center justify-between text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-orange-300 dark:hover:border-slate-600 transition-colors cursor-pointer select-none shadow-2xs"
+                              >
+                                <span className="truncate">{lang === "ml" ? "ഏരിയ (Area President View)" : "Area (Area President Level)"}</span>
+                                <div className="flex items-center gap-1.5 shrink-0 text-slate-400">
+                                  <Lock className="h-3 w-3" />
+                                  <ChevronDown
+                                    className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                                      isAppScopeAccordionOpen ? "rotate-180 text-orange-500" : ""
+                                    }`}
+                                  />
+                                </div>
+                              </button>
                             </div>
-                            <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[10.5px]">
-                              <div>
-                                <span className="text-slate-400 dark:text-slate-400 font-medium block text-[9.5px]">
-                                  {lang === "ml" ? "മേഖല (Region)" : "Region"}
-                                </span>
-                                <span className="font-bold text-slate-800 dark:text-slate-200">
-                                  {lang === "ml" ? "സൗത്ത് റീജിയൺ" : "South Region"}
-                                </span>
+
+                            {isAppScopeAccordionOpen && (
+                              <div className="p-2.5 rounded-lg border border-orange-200/70 dark:border-slate-700 bg-orange-50/50 dark:bg-slate-800/50 shadow-2xs animate-in fade-in duration-150">
+                                <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 text-[10.5px]">
+                                  <div>
+                                    <span className="text-slate-400 dark:text-slate-400 font-medium block text-[9.5px]">
+                                      {lang === "ml" ? "മേഖല (Region)" : "Region"}
+                                    </span>
+                                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                                      {lang === "ml" ? "സൗത്ത് റീജിയൺ" : "South Region"}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <span className="text-slate-400 dark:text-slate-400 font-medium block text-[9.5px]">
+                                      {lang === "ml" ? "ഓർഗ്. ജില്ല" : "Org. District"}
+                                    </span>
+                                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                                      {lang === "ml" ? "തിരുവനന്തപുരം നോർത്ത്" : "Trivandrum North"}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <span className="text-slate-400 dark:text-slate-400 font-medium block text-[9.5px]">
+                                      {lang === "ml" ? "നിയമസഭാ മണ്ഡലം" : "Assembly Mandalam"}
+                                    </span>
+                                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                                      {lang === "ml" ? "കഴക്കൂട്ടം" : "Kazhakkoottam"}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <span className="text-slate-400 dark:text-slate-400 font-medium block text-[9.5px]">
+                                      {lang === "ml" ? "ഏരിയ" : "Area"}
+                                    </span>
+                                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                                      {lang === "ml" ? "കഴക്കൂട്ടം ഏരിയ" : "Kazhakkoottam Area"}
+                                    </span>
+                                  </div>
+                                </div>
                               </div>
-                              <div>
-                                <span className="text-slate-400 dark:text-slate-400 font-medium block text-[9.5px]">
-                                  {lang === "ml" ? "ഓർഗ്. ജില്ല" : "Org. District"}
-                                </span>
-                                <span className="font-bold text-slate-800 dark:text-slate-200">
-                                  {lang === "ml" ? "തിരുവനന്തപുരം നോർത്ത്" : "Trivandrum North"}
-                                </span>
-                              </div>
-                              <div>
-                                <span className="text-slate-400 dark:text-slate-400 font-medium block text-[9.5px]">
-                                  {lang === "ml" ? "നിയമസഭാ മണ്ഡലം" : "Assembly Mandalam"}
-                                </span>
-                                <span className="font-bold text-slate-800 dark:text-slate-200">
-                                  {lang === "ml" ? "കഴക്കൂട്ടം" : "Kazhakkoottam"}
-                                </span>
-                              </div>
-                              <div>
-                                <span className="text-slate-400 dark:text-slate-400 font-medium block text-[9.5px]">
-                                  {lang === "ml" ? "ഏരിയ" : "Area"}
-                                </span>
-                                <span className="font-bold text-slate-800 dark:text-slate-200">
-                                  {lang === "ml" ? "കഴക്കൂട്ടം ഏരിയ" : "Kazhakkoottam Area"}
-                                </span>
-                              </div>
-                            </div>
+                            )}
                           </div>
 
                           {/* Ward Selection Multi-select Dropdown */}
@@ -22434,6 +22780,27 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       ) : (
                         /* Admin: Dynamic cascading fields with Region & District in same row, Assembly & Area in same row */
                         <div className="space-y-2 pt-1 animate-in fade-in duration-200">
+                          {/* Location Level Selector for Admin */}
+                          <div className="space-y-0.5 relative">
+                            <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
+                              {lang === "ml" ? "സ്ഥല തലം തിരഞ്ഞെടുക്കുക (Location Level)" : "Select Location Level"}
+                            </label>
+                            <div className="relative">
+                              <select
+                                value={appLocationLevel}
+                                onChange={(e) => setAppLocationLevel(e.target.value as AppLocationLevel)}
+                                className="w-full h-9 pl-3 pr-8 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none"
+                              >
+                                <option value="state">{lang === "ml" ? "സംസ്ഥാനം (State)" : "State"}</option>
+                                <option value="region">{lang === "ml" ? "മേഖല (Region)" : "Region"}</option>
+                                <option value="org_district">{lang === "ml" ? "ഓർഗനൈസേഷണൽ ജില്ല (Organisation District)" : "Organisation District"}</option>
+                                <option value="mandalam">{lang === "ml" ? "നിയമസഭാ മണ്ഡലം (Assembly Mandalam)" : "Assembly Mandalam"}</option>
+                                <option value="area">{lang === "ml" ? "ഏരിയ (Area)" : "Area"}</option>
+                                <option value="ward">{lang === "ml" ? "വാർഡ് (Ward)" : "Ward"}</option>
+                              </select>
+                              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                            </div>
+                          </div>
                           {/* 1. State Level Display */}
                           {appLocationLevel === "state" && (
                             <div className="p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between">
@@ -22808,14 +23175,10 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 ) : (
                   /* Filter Inputs Area for Home */
                   <div className="space-y-2.5 my-1 flex-1">
-                  
-                  {/* Location & Local Body & Category & Scheme Controls */}
-                  <div className="space-y-2">
-                    {userRole === "party_worker" ? (
-                      /* Party Worker: Unified My Work Switch & Fixed Location Card */
-                      <div className="rounded-lg border border-orange-200/80 dark:border-slate-700 bg-orange-50/60 dark:bg-slate-800/60 p-2.5 space-y-2 shadow-2xs">
-                        {/* Top Row: My Work / Teams Switch */}
-                        <div className="flex items-center justify-between pb-2 border-b border-orange-200/50 dark:border-slate-700/60">
+                    {/* Party Worker Work View Toggle (if party worker) */}
+                    {userRole === "party_worker" && (
+                      <div className="rounded-lg border border-orange-200/80 dark:border-slate-700 bg-orange-50/60 dark:bg-slate-800/60 p-2.5 shadow-2xs">
+                        <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             {partyWorkerTab === "my_work" ? (
                               <FileText className="h-3.5 w-3.5 text-orange-500 stroke-[2.2]" />
@@ -22846,339 +23209,111 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             />
                           </button>
                         </div>
-
-                        {/* Fixed Location Info */}
-                        <div className="space-y-1">
-                          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] font-semibold text-slate-800 dark:text-slate-200">
-                            <div>
-                              <span className="text-slate-500 dark:text-slate-400 font-medium">{lang === "ml" ? "ജില്ല: " : "District: "}</span>
-                              <span className="font-bold text-slate-900 dark:text-white">
-                                {lang === "ml" ? "തിരുവനന്തപുരം" : "Trivandrum"}
-                              </span>
-                              <span className="text-slate-400 ml-0.5">,</span>
-                            </div>
-                            <div>
-                              <span className="text-slate-500 dark:text-slate-400 font-medium">{lang === "ml" ? "മണ്ഡലം: " : "Constituency: "}</span>
-                              <span className="font-bold text-slate-900 dark:text-white">
-                                {lang === "ml" ? "കഴക്കൂട്ടം" : "Kazhakkoottam"}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1 text-[11px] font-semibold text-slate-800 dark:text-slate-200 border-t border-orange-200/50 dark:border-slate-700/60 pt-1">
-                            <span className="text-slate-500 dark:text-slate-400 font-medium">{lang === "ml" ? "തദ്ദേശ സ്ഥാപനം: " : "Local Body: "}</span>
-                            <span className="font-bold text-slate-900 dark:text-white">
-                              {lang === "ml" ? "തിരുവനന്തപുരം കോർപ്പറേഷൻ" : "Trivandrum Corporation"}
-                            </span>
-                          </div>
-                        </div>
                       </div>
-                    ) : (
-                      <>
-                    {/* District - Multi-select */}
-                    <div className="space-y-0.5 relative">
-                      <label className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 block">
-                        {lang === "ml" ? "ജില്ല" : "District"}
-                      </label>
+                    )}
 
-                      {/* Trigger Button displaying selected count or labels */}
-                      <button
-                        type="button"
-                        onClick={() => setIsDistrictDropdownOpen(!isDistrictDropdownOpen)}
-                        className="w-full h-8.5 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer flex items-center justify-between gap-2"
-                      >
-                        <span className="truncate">
-                          {selectedDistrictIds.length === 0 || selectedDistrictIds.includes("all") || selectedDistrictIds.length === districts.length
-                            ? (lang === "ml" ? "എല്ലാ ജില്ലകളും" : "All Districts")
-                            : selectedDistrictIds.length === 1
-                            ? (districts.find((d) => d.id === selectedDistrictIds[0])?.[lang] || selectedDistrictIds[0])
-                            : `${selectedDistrictIds.length} ${lang === "ml" ? "ജില്ലകൾ തിരഞ്ഞെടുത്തു" : "districts selected"}`}
-                        </span>
-                        <ChevronDown className={`h-3.5 w-3.5 text-slate-400 shrink-0 transition-transform ${isDistrictDropdownOpen ? "rotate-180" : ""}`} />
-                      </button>
-
-                      {/* Multi-select Dropdown Popover */}
-                      {isDistrictDropdownOpen && (
-                        <div className="absolute top-full left-0 right-0 mt-1 z-30 max-h-56 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg p-1.5 flex flex-col animate-in fade-in slide-in-from-top-1 duration-150">
-                          {/* Search Bar */}
-                          <div className="relative mb-1.5 shrink-0">
-                            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2" />
-                            <input
-                              type="text"
-                              value={districtSearchQuery}
-                              onChange={(e) => setDistrictSearchQuery(e.target.value)}
-                              placeholder={lang === "ml" ? "തിരയുക..." : "Search..."}
-                              className="w-full pl-7 pr-2 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs font-medium text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500"
-                            />
-                          </div>
-
-                            <div className="overflow-y-auto space-y-0.5 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none]">
-                              {/* All Districts Option */}
-                              <label
-                                className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (selectedDistrictIds.includes("all") || selectedDistrictIds.length === districts.length) {
-                                    setSelectedDistrictIds([]);
-                                  } else {
-                                    setSelectedDistrictIds(["all", ...districts.map((d) => d.id)]);
-                                  }
-                                  setDraftDistrict("all");
-                                  setDraftLBDistrict("all");
-                                }}
-                              >
-                                <div
-                                  className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
-                                    selectedDistrictIds.includes("all") || selectedDistrictIds.length === districts.length
-                                      ? "bg-orange-500 border-orange-500 text-white"
-                                      : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
-                                  }`}
-                                >
-                                  {(selectedDistrictIds.includes("all") || selectedDistrictIds.length === districts.length) && (
-                                    <Check className="w-3 h-3 text-white stroke-[3]" />
-                                  )}
-                                </div>
-                                <span>{lang === "ml" ? "എല്ലാ ജില്ലകളും" : "All Districts"}</span>
-                              </label>
-
-                              <div className="h-px bg-slate-100 dark:bg-slate-700 my-1" />
-
-                              {districts
-                                .filter((d) => d[lang].toLowerCase().includes(districtSearchQuery.toLowerCase()))
-                                .map((d) => {
-                                  const isExplicitAll = selectedDistrictIds.includes("all") || selectedDistrictIds.length === districts.length;
-                                  const isSelected = isExplicitAll || selectedDistrictIds.includes(d.id);
-                                  return (
-                                    <label
-                                      key={d.id}
-                                      className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        let updated: string[];
-                                        if (isExplicitAll) {
-                                          updated = districts.map((dis) => dis.id).filter((id) => id !== d.id);
-                                        } else if (selectedDistrictIds.includes(d.id)) {
-                                          updated = selectedDistrictIds.filter((id) => id !== d.id && id !== "all");
-                                        } else {
-                                          updated = [...selectedDistrictIds.filter((id) => id !== "all"), d.id];
-                                        }
-                                        if (updated.length === districts.length) updated = ["all", ...districts.map((dis) => dis.id)];
-                                        setSelectedDistrictIds(updated);
-                                        setDraftDistrict(updated.length === 1 ? updated[0] : "all");
-                                        setDraftLBDistrict(updated.length === 1 ? updated[0] : "all");
-                                      }}
-                                    >
-                                      <div
-                                        className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
-                                          isSelected ? "bg-orange-500 border-orange-500 text-white" : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
-                                        }`}
-                                      >
-                                        {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
-                                      </div>
-                                      <span>{d[lang]}</span>
-                                    </label>
-                                  );
-                                })}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Assembly Constituency - Multi-select */}
-                      <div className="space-y-0.5 relative">
-                        <label className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 block">
-                          {lang === "ml" ? "അസംബ്ലി മണ്ഡലം" : "Assembly Constituency"}
-                        </label>
-                        <button
-                          type="button"
-                          onClick={() => setIsMandalamDropdownOpen(!isMandalamDropdownOpen)}
-                          className="w-full h-8.5 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer flex items-center justify-between gap-2"
-                        >
-                          <span className="truncate">
-                            {selectedMandalamIds.length === 0 || selectedMandalamIds.includes("all") || selectedMandalamIds.length === constituencies.length
-                              ? (lang === "ml" ? "എല്ലാ മണ്ഡലങ്ങളും" : "All Constituencies")
-                              : selectedMandalamIds.length === 1
-                              ? (constituencies.find((c) => c.id === selectedMandalamIds[0])?.[lang] || selectedMandalamIds[0])
-                              : `${selectedMandalamIds.length} ${lang === "ml" ? "മണ്ഡലങ്ങൾ" : "constituencies"}`}
-                          </span>
-                          <ChevronDown className={`h-3.5 w-3.5 text-slate-400 shrink-0 transition-transform ${isMandalamDropdownOpen ? "rotate-180" : ""}`} />
-                        </button>
-
-                        {isMandalamDropdownOpen && (
-                          <div className="absolute top-full left-0 right-0 mt-1 z-30 max-h-56 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg p-1.5 flex flex-col animate-in fade-in slide-in-from-top-1 duration-150">
-                            {/* Search Bar */}
-                            <div className="relative mb-1.5 shrink-0">
-                              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2" />
-                              <input
-                                type="text"
-                                value={mandalamSearchQuery}
-                                onChange={(e) => setMandalamSearchQuery(e.target.value)}
-                                placeholder={lang === "ml" ? "തിരയുക..." : "Search..."}
-                                className="w-full pl-7 pr-2 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs font-medium text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500"
-                              />
-                            </div>
-
-                            <div className="overflow-y-auto space-y-0.5 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none]">
-                              {/* All Constituencies Option */}
-                              <label
-                                className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (selectedMandalamIds.includes("all") || selectedMandalamIds.length === constituencies.length) {
-                                    setSelectedMandalamIds([]);
-                                  } else {
-                                    setSelectedMandalamIds(["all", ...constituencies.map((c) => c.id)]);
-                                  }
-                                  setDraftMandalam("all");
-                                }}
-                              >
-                                <div
-                                  className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
-                                    selectedMandalamIds.includes("all") || selectedMandalamIds.length === constituencies.length
-                                      ? "bg-orange-500 border-orange-500 text-white"
-                                      : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
-                                  }`}
-                                >
-                                  {(selectedMandalamIds.includes("all") || selectedMandalamIds.length === constituencies.length) && (
-                                    <Check className="w-3 h-3 text-white stroke-[3]" />
-                                  )}
-                                </div>
-                                <span>{lang === "ml" ? "എല്ലാ മണ്ഡലങ്ങളും" : "All Constituencies"}</span>
-                              </label>
-
-                              <div className="h-px bg-slate-100 dark:bg-slate-700 my-1" />
-
-                              {constituencies
-                                .filter((c) => (selectedDistrictIds.includes("all") || selectedDistrictIds.includes(c.districtId)) && c[lang].toLowerCase().includes(mandalamSearchQuery.toLowerCase()))
-                                .map((c) => {
-                                  const isExplicitAll = selectedMandalamIds.includes("all") || selectedMandalamIds.length === constituencies.length;
-                                  const isSelected = isExplicitAll || selectedMandalamIds.includes(c.id);
-                                  return (
-                                    <label
-                                      key={c.id}
-                                      className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        let updated: string[];
-                                        if (isExplicitAll) {
-                                          updated = constituencies.map((con) => con.id).filter((id) => id !== c.id);
-                                        } else if (selectedMandalamIds.includes(c.id)) {
-                                          updated = selectedMandalamIds.filter((id) => id !== c.id && id !== "all");
-                                        } else {
-                                          updated = [...selectedMandalamIds.filter((id) => id !== "all"), c.id];
-                                        }
-                                        if (updated.length === constituencies.length) updated = ["all", ...constituencies.map((con) => con.id)];
-                                        setSelectedMandalamIds(updated);
-                                        setDraftMandalam(updated.length === 1 ? updated[0] : "all");
-                                      }}
-                                    >
-                                      <div
-                                        className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
-                                          isSelected ? "bg-orange-500 border-orange-500 text-white" : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
-                                        }`}
-                                      >
-                                        {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
-                                      </div>
-                                      <span>{c[lang]}</span>
-                                    </label>
-                                  );
-                                })}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                    {/* Local Body Type & Local Body in a single row */}
+                    {/* 1. Scheme Category and Scheme Multiple selection dropdown in a single row */}
                     <div className="grid grid-cols-2 gap-2">
-                      {/* Local Body Type - Multi-select */}
+                      {/* Scheme Category - Multi-select */}
                       <div className="space-y-0.5 relative">
-                        <label className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 block">
-                          {lang === "ml" ? "തദ്ദേശ സ്ഥാപന തരം" : "Local Body Type"}
+                        <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block truncate">
+                          {lang === "ml" ? "പദ്ധതി വിഭാഗം (Category)" : "Scheme Category"}
                         </label>
                         <button
                           type="button"
-                          onClick={() => setIsLocalBodyTypeDropdownOpen(!isLocalBodyTypeDropdownOpen)}
-                          className="w-full h-8.5 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer flex items-center justify-between gap-2"
+                          onClick={() => {
+                            setIsCategoryDropdownOpen(!isCategoryDropdownOpen);
+                            setIsSchemeDropdownOpen(false);
+                            setIsHomeWardDropdownOpen(false);
+                          }}
+                          className="w-full h-8.5 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer flex items-center justify-between gap-1 shadow-2xs"
                         >
                           <span className="truncate">
-                            {selectedLocalBodyTypeIds.length === 0 || selectedLocalBodyTypeIds.includes("all") || selectedLocalBodyTypeIds.length === 3
-                              ? (lang === "ml" ? "എല്ലാ തരങ്ങളും" : "All Types")
-                              : `${selectedLocalBodyTypeIds.length} ${lang === "ml" ? "തരങ്ങൾ" : "types"}`}
+                            {selectedCategoryIds.length === 0 || selectedCategoryIds.includes("all") || selectedCategoryIds.length === 8
+                              ? (lang === "ml" ? "എല്ലാ വിഭാഗങ്ങളും" : "All Categories")
+                              : `${selectedCategoryIds.length} ${lang === "ml" ? "വിഭാഗങ്ങൾ" : "categories"}`}
                           </span>
-                          <ChevronDown className={`h-3.5 w-3.5 text-slate-400 shrink-0 transition-transform ${isLocalBodyTypeDropdownOpen ? "rotate-180" : ""}`} />
+                          <ChevronDown className={`h-3.5 w-3.5 text-slate-400 shrink-0 transition-transform ${isCategoryDropdownOpen ? "rotate-180" : ""}`} />
                         </button>
 
-                        {isLocalBodyTypeDropdownOpen && (
-                          <div className="absolute top-full left-0 right-0 mt-1 z-30 max-h-56 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg p-1.5 flex flex-col animate-in fade-in slide-in-from-top-1 duration-150">
+                        {/* Category Popover */}
+                        {isCategoryDropdownOpen && (
+                          <div className="absolute top-full left-0 w-56 sm:w-64 max-w-[calc(100vw-3rem)] mt-1 z-40 max-h-56 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl p-1.5 flex flex-col animate-in fade-in slide-in-from-top-1 duration-150">
                             {/* Search Bar */}
                             <div className="relative mb-1.5 shrink-0">
                               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2" />
                               <input
                                 type="text"
-                                value={localBodyTypeSearchQuery}
-                                onChange={(e) => setLocalBodyTypeSearchQuery(e.target.value)}
+                                value={categorySearchQuery}
+                                onChange={(e) => setCategorySearchQuery(e.target.value)}
                                 placeholder={lang === "ml" ? "തിരയുക..." : "Search..."}
                                 className="w-full pl-7 pr-2 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs font-medium text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500"
                               />
                             </div>
 
                             <div className="overflow-y-auto space-y-0.5 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none]">
-                              {/* All Types Option */}
+                              {/* All Categories Option */}
                               <label
                                 className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  const types = ["corporation", "municipality", "panchayat"];
-                                  if (selectedLocalBodyTypeIds.includes("all") || selectedLocalBodyTypeIds.length === 3) {
-                                    setSelectedLocalBodyTypeIds([]);
+                                  const cats = ["agriculture", "education", "health", "housing", "pension_welfare", "women_welfare", "employment", "msme"];
+                                  if (selectedCategoryIds.includes("all") || selectedCategoryIds.length === cats.length) {
+                                    setSelectedCategoryIds([]);
                                   } else {
-                                    setSelectedLocalBodyTypeIds(["all", ...types]);
+                                    setSelectedCategoryIds(["all", ...cats]);
                                   }
-                                  setDraftLBType("all");
+                                  setFilterSchemeCategory("all");
                                 }}
                               >
                                 <div
                                   className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
-                                    selectedLocalBodyTypeIds.includes("all") || selectedLocalBodyTypeIds.length === 3
+                                    selectedCategoryIds.includes("all") || selectedCategoryIds.length === 8
                                       ? "bg-orange-500 border-orange-500 text-white"
                                       : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
                                   }`}
                                 >
-                                  {(selectedLocalBodyTypeIds.includes("all") || selectedLocalBodyTypeIds.length === 3) && (
+                                  {(selectedCategoryIds.includes("all") || selectedCategoryIds.length === 8) && (
                                     <Check className="w-3 h-3 text-white stroke-[3]" />
                                   )}
                                 </div>
-                                <span>{lang === "ml" ? "എല്ലാ തരങ്ങളും" : "All Types"}</span>
+                                <span>{lang === "ml" ? "എല്ലാ വിഭാഗങ്ങളും" : "All Categories"}</span>
                               </label>
 
                               <div className="h-px bg-slate-100 dark:bg-slate-700 my-1" />
 
                               {[
-                                { id: "corporation", en: "Corporation", ml: "കോർപ്പറേഷൻ" },
-                                { id: "municipality", en: "Municipality", ml: "മുനിസിപ്പാലിറ്റി" },
-                                { id: "panchayat", en: "Grama Panchayat", ml: "ഗ്രാമ പഞ്ചായത്ത്" },
+                                { id: "agriculture", en: "Agriculture", ml: "കൃഷി" },
+                                { id: "education", en: "Education", ml: "വിദ്യാഭ്യാസം" },
+                                { id: "health", en: "Health", ml: "ആരോഗ്യം" },
+                                { id: "housing", en: "Housing", ml: "ഭവനം" },
+                                { id: "pension_welfare", en: "Pension & Welfare", ml: "പെൻഷൻ & ക്ഷേമം" },
+                                { id: "women_welfare", en: "Women Welfare", ml: "വനിതാ ക്ഷേമം" },
+                                { id: "employment", en: "Employment", ml: "തൊഴിൽ" },
+                                { id: "msme", en: "MSME & Business", ml: "എം.എസ്.എം.ഇ & ബിസിനസ്" },
                               ]
-                                .filter((t) => t[lang].toLowerCase().includes(localBodyTypeSearchQuery.toLowerCase()))
-                                .map((t) => {
-                                  const types = ["corporation", "municipality", "panchayat"];
-                                  const isExplicitAll = selectedLocalBodyTypeIds.includes("all") || selectedLocalBodyTypeIds.length === 3;
-                                  const isSelected = isExplicitAll || selectedLocalBodyTypeIds.includes(t.id);
+                                .filter((cat) => cat[lang].toLowerCase().includes(categorySearchQuery.toLowerCase()))
+                                .map((cat) => {
+                                  const allCats = ["agriculture", "education", "health", "housing", "pension_welfare", "women_welfare", "employment", "msme"];
+                                  const isExplicitAll = selectedCategoryIds.includes("all") || selectedCategoryIds.length === allCats.length;
+                                  const isSelected = isExplicitAll || selectedCategoryIds.includes(cat.id);
                                   return (
                                     <label
-                                      key={t.id}
+                                      key={cat.id}
                                       className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         let updated: string[];
                                         if (isExplicitAll) {
-                                          updated = types.filter((id) => id !== t.id);
-                                        } else if (selectedLocalBodyTypeIds.includes(t.id)) {
-                                          updated = selectedLocalBodyTypeIds.filter((id) => id !== t.id && id !== "all");
+                                          updated = allCats.filter((id) => id !== cat.id);
+                                        } else if (selectedCategoryIds.includes(cat.id)) {
+                                          updated = selectedCategoryIds.filter((id) => id !== cat.id && id !== "all");
                                         } else {
-                                          updated = [...selectedLocalBodyTypeIds.filter((id) => id !== "all"), t.id];
+                                          updated = [...selectedCategoryIds.filter((id) => id !== "all"), cat.id];
                                         }
-                                        if (updated.length === 3) updated = ["all", ...types];
-                                        setSelectedLocalBodyTypeIds(updated);
-                                        setDraftLBType(updated.length === 1 ? updated[0] : "all");
+                                        if (updated.length === allCats.length) updated = ["all", ...allCats];
+                                        setSelectedCategoryIds(updated);
+                                        setFilterSchemeCategory(updated.length === 1 ? updated[0] : "all");
                                       }}
                                     >
                                       <div
@@ -23188,7 +23323,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       >
                                         {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
                                       </div>
-                                      <span>{t[lang]}</span>
+                                      <span>{cat[lang]}</span>
                                     </label>
                                   );
                                 })}
@@ -23197,95 +23332,101 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         )}
                       </div>
 
-                      {/* Local Body - Multi-select */}
+                      {/* Scheme - Multi-select */}
                       <div className="space-y-0.5 relative">
-                        <label className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 block">
-                          {lang === "ml" ? "തദ്ദേശ സ്ഥാപനം" : "Local Body"}
+                        <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block truncate">
+                          {lang === "ml" ? "പദ്ധതി (Scheme)" : "Scheme"}
                         </label>
                         <button
                           type="button"
-                          onClick={() => setIsLocalBodyDropdownOpen(!isLocalBodyDropdownOpen)}
-                          className="w-full h-8.5 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer flex items-center justify-between gap-2"
+                          onClick={() => {
+                            setIsSchemeDropdownOpen(!isSchemeDropdownOpen);
+                            setIsCategoryDropdownOpen(false);
+                            setIsHomeWardDropdownOpen(false);
+                          }}
+                          className="w-full h-8.5 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer flex items-center justify-between gap-1 shadow-2xs"
                         >
                           <span className="truncate">
-                            {selectedLocalBodyIds.length === 0 || selectedLocalBodyIds.includes("all") || selectedLocalBodyIds.length === panchayats.length
-                              ? (lang === "ml" ? "എല്ലാ തദ്ദേശ സ്ഥാപനങ്ങളും" : "All Local Bodies")
-                              : `${selectedLocalBodyIds.length} ${lang === "ml" ? "തദ്ദേശ സ്ഥാപനങ്ങൾ" : "local bodies"}`}
+                            {selectedSchemeIds.length === 0 || selectedSchemeIds.includes("all") || selectedSchemeIds.length === 3
+                              ? (lang === "ml" ? "എല്ലാ പദ്ധതികളും" : "All Schemes")
+                              : `${selectedSchemeIds.length} ${lang === "ml" ? "പദ്ധതികൾ" : "schemes"}`}
                           </span>
-                          <ChevronDown className={`h-3.5 w-3.5 text-slate-400 shrink-0 transition-transform ${isLocalBodyDropdownOpen ? "rotate-180" : ""}`} />
+                          <ChevronDown className={`h-3.5 w-3.5 text-slate-400 shrink-0 transition-transform ${isSchemeDropdownOpen ? "rotate-180" : ""}`} />
                         </button>
 
-                        {isLocalBodyDropdownOpen && (
-                          <div className="absolute top-full left-0 right-0 mt-1 z-30 max-h-56 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg p-1.5 flex flex-col animate-in fade-in slide-in-from-top-1 duration-150">
+                        {/* Scheme Popover */}
+                        {isSchemeDropdownOpen && (
+                          <div className="absolute top-full right-0 w-56 sm:w-64 max-w-[calc(100vw-3rem)] mt-1 z-40 max-h-56 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl p-1.5 flex flex-col animate-in fade-in slide-in-from-top-1 duration-150">
                             {/* Search Bar */}
                             <div className="relative mb-1.5 shrink-0">
                               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2" />
                               <input
                                 type="text"
-                                value={localBodySearchQuery}
-                                onChange={(e) => setLocalBodySearchQuery(e.target.value)}
+                                value={homeFilterSchemeSearchQuery}
+                                onChange={(e) => setHomeFilterSchemeSearchQuery(e.target.value)}
                                 placeholder={lang === "ml" ? "തിരയുക..." : "Search..."}
                                 className="w-full pl-7 pr-2 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs font-medium text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500"
                               />
                             </div>
 
                             <div className="overflow-y-auto space-y-0.5 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none]">
-                              {/* All Local Bodies Option */}
+                              {/* All Schemes Option */}
                               <label
                                 className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (selectedLocalBodyIds.includes("all") || selectedLocalBodyIds.length === panchayats.length) {
-                                    setSelectedLocalBodyIds([]);
+                                  const schs = ["ayushman", "pmkisan", "pmfby"];
+                                  if (selectedSchemeIds.includes("all") || selectedSchemeIds.length === schs.length) {
+                                    setSelectedSchemeIdsState([]);
                                   } else {
-                                    setSelectedLocalBodyIds(["all", ...panchayats.map((p) => p.id)]);
+                                    setSelectedSchemeIdsState(["all", ...schs]);
                                   }
-                                  setDraftLocalBody("all");
+                                  setFilterScheme("all");
                                 }}
                               >
                                 <div
                                   className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
-                                    selectedLocalBodyIds.includes("all") || selectedLocalBodyIds.length === panchayats.length
+                                    selectedSchemeIds.includes("all") || selectedSchemeIds.length === 3
                                       ? "bg-orange-500 border-orange-500 text-white"
                                       : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
                                   }`}
                                 >
-                                  {(selectedLocalBodyIds.includes("all") || selectedLocalBodyIds.length === panchayats.length) && (
+                                  {(selectedSchemeIds.includes("all") || selectedSchemeIds.length === 3) && (
                                     <Check className="w-3 h-3 text-white stroke-[3]" />
                                   )}
                                 </div>
-                                <span>{lang === "ml" ? "എല്ലാ തദ്ദേശ സ്ഥാപനങ്ങളും" : "All Local Bodies"}</span>
+                                <span>{lang === "ml" ? "എല്ലാ പദ്ധതികളും" : "All Schemes"}</span>
                               </label>
 
                               <div className="h-px bg-slate-100 dark:bg-slate-700 my-1" />
 
-                              {panchayats
-                                .filter(
-                                  (p) =>
-                                    (selectedDistrictIds.includes("all") || selectedDistrictIds.includes(p.districtId)) &&
-                                    (selectedLocalBodyTypeIds.includes("all") || selectedLocalBodyTypeIds.includes(p.type)) &&
-                                    p[lang].toLowerCase().includes(localBodySearchQuery.toLowerCase())
-                                )
-                                .map((p) => {
-                                  const isExplicitAll = selectedLocalBodyIds.includes("all") || selectedLocalBodyIds.length === panchayats.length;
-                                  const isSelected = isExplicitAll || selectedLocalBodyIds.includes(p.id);
+                              {[
+                                { id: "ayushman", en: "Ayushman Bharat — PMJAY", ml: "ആയുഷ്മാൻ ഭാരത് - പിഎംജെഎവൈ" },
+                                { id: "pmkisan", en: "PM Kisan Samman Nidhi", ml: "പിഎം കിസാൻ സമ്മാൻ നിധി" },
+                                { id: "pmfby", en: "PM Fasal Bima Yojana", ml: "പിഎം ഫസൽ ഭീമ യോജന" },
+                              ]
+                                .filter((sch) => sch[lang].toLowerCase().includes(homeFilterSchemeSearchQuery.toLowerCase()))
+                                .map((sch) => {
+                                  const allSchs = ["ayushman", "pmkisan", "pmfby"];
+                                  const isExplicitAll = selectedSchemeIds.includes("all") || selectedSchemeIds.length === allSchs.length;
+                                  const isSelected = isExplicitAll || selectedSchemeIds.includes(sch.id);
                                   return (
                                     <label
-                                      key={p.id}
+                                      key={sch.id}
                                       className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         let updated: string[];
                                         if (isExplicitAll) {
-                                          updated = panchayats.map((lb) => lb.id).filter((id) => id !== p.id);
-                                        } else if (selectedLocalBodyIds.includes(p.id)) {
-                                          updated = selectedLocalBodyIds.filter((id) => id !== p.id && id !== "all");
+                                          updated = allSchs.filter((id) => id !== sch.id);
+                                        } else if (selectedSchemeIds.includes(sch.id)) {
+                                          updated = selectedSchemeIds.filter((id) => id !== sch.id && id !== "all");
                                         } else {
-                                          updated = [...selectedLocalBodyIds.filter((id) => id !== "all"), p.id];
+                                          updated = [...selectedSchemeIds.filter((id) => id !== "all"), sch.id];
                                         }
-                                        if (updated.length === panchayats.length) updated = ["all", ...panchayats.map((lb) => lb.id)];
-                                        setSelectedLocalBodyIds(updated);
-                                        setDraftLocalBody(updated.length === 1 ? updated[0] : "all");
+                                        if (updated.length === allSchs.length) updated = ["all", ...allSchs];
+                                        setSelectedSchemeIdsState(updated);
+                                        setFilterScheme(updated.length === 1 ? updated[0] : "all");
                                       }}
                                     >
                                       <div
@@ -23295,7 +23436,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       >
                                         {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
                                       </div>
-                                      <span>{p[lang]}</span>
+                                      <span>{sch[lang]}</span>
                                     </label>
                                   );
                                 })}
@@ -23304,333 +23445,578 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         )}
                       </div>
                     </div>
-                  </>
-                )}
 
-                {/* Ward - Multi-select */}
-                <div className="space-y-0.5 relative">
-                      <label className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 block">
-                        {lang === "ml" ? "വാർഡ്" : "Ward"}
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => setIsWardDropdownOpen(!isWardDropdownOpen)}
-                        className="w-full h-8.5 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer flex items-center justify-between gap-2"
-                      >
-                        <span className="truncate">
-                          {selectedWardIds.length === 0 || selectedWardIds.includes("all") || selectedWardIds.length === wards.length
-                            ? (lang === "ml" ? "എല്ലാ വാർഡുകളും" : "All Wards")
-                            : `${selectedWardIds.length} ${lang === "ml" ? "വാർഡുകൾ" : "wards"}`}
-                        </span>
-                        <ChevronDown className={`h-3.5 w-3.5 text-slate-400 shrink-0 transition-transform ${isWardDropdownOpen ? "rotate-180" : ""}`} />
-                      </button>
+                    {/* 2. Location Filter Section */}
+                    <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[10.5px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                          <MapPin className="w-3.5 h-3.5 text-orange-500" />
+                          <span>{lang === "ml" ? "സ്ഥല ഫിൽട്ടർ (Location Filter)" : "Location Filter"}</span>
+                        </label>
+                        {userRole === "party_worker" && (
+                          <span className="inline-flex items-center gap-1 text-[9.5px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
+                            <Lock className="w-2.5 h-2.5" />
+                            {lang === "ml" ? "ഏരിയ തലം അസൈൻഡ്" : "Area President Level"}
+                          </span>
+                        )}
+                      </div>
 
-                      {isWardDropdownOpen && (
-                        <div className="absolute top-full left-0 right-0 mt-1 z-30 max-h-56 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg p-1.5 flex flex-col animate-in fade-in slide-in-from-top-1 duration-150">
-                          {/* Search Bar */}
-                          <div className="relative mb-1.5 shrink-0">
-                            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2" />
-                            <input
-                              type="text"
-                              value={wardSearchQuery}
-                              onChange={(e) => setWardSearchQuery(e.target.value)}
-                              placeholder={lang === "ml" ? "തിരയുക..." : "Search..."}
-                              className="w-full pl-7 pr-2 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs font-medium text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500"
-                            />
+                      {/* Select Location Level (Admin) or Merged Accordion (Party Worker) */}
+                      {userRole === "party_worker" ? (
+                        /* Party Worker: Merged Accordion for Location Level & Assigned Scope */
+                        <div className="space-y-2 pt-0.5">
+                          <div className="space-y-1.5">
+                            <div className="space-y-0.5 relative">
+                              <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
+                                {lang === "ml" ? "സ്ഥല തലം തിരഞ്ഞെടുക്കുക (Select Location Level)" : "Select Location Level"}
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => setIsHomeScopeAccordionOpen(!isHomeScopeAccordionOpen)}
+                                className="w-full h-8.5 pl-3 pr-2.5 flex items-center justify-between text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-orange-300 dark:hover:border-slate-600 transition-colors cursor-pointer select-none shadow-2xs"
+                              >
+                                <span className="truncate">{lang === "ml" ? "ഏരിയ (Area President View)" : "Area (Area President Level)"}</span>
+                                <div className="flex items-center gap-1.5 shrink-0 text-slate-400">
+                                  <Lock className="h-3 w-3" />
+                                  <ChevronDown
+                                    className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                                      isHomeScopeAccordionOpen ? "rotate-180 text-orange-500" : ""
+                                    }`}
+                                  />
+                                </div>
+                              </button>
+                            </div>
+
+                            {isHomeScopeAccordionOpen && (
+                              <div className="p-2.5 rounded-lg border border-orange-200/70 dark:border-slate-700 bg-orange-50/50 dark:bg-slate-800/50 shadow-2xs animate-in fade-in duration-150">
+                                <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 text-[10.5px]">
+                                  <div>
+                                    <span className="text-slate-400 dark:text-slate-400 font-medium block text-[9.5px]">
+                                      {lang === "ml" ? "മേഖല (Region)" : "Region"}
+                                    </span>
+                                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                                      {lang === "ml" ? "സൗത്ത് റീജിയൺ" : "South Region"}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <span className="text-slate-400 dark:text-slate-400 font-medium block text-[9.5px]">
+                                      {lang === "ml" ? "ഓർഗ്. ജില്ല" : "Org. District"}
+                                    </span>
+                                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                                      {lang === "ml" ? "തിരുവനന്തപുരം നോർത്ത്" : "Trivandrum North"}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <span className="text-slate-400 dark:text-slate-400 font-medium block text-[9.5px]">
+                                      {lang === "ml" ? "നിയമസഭാ മണ്ഡലം" : "Assembly Mandalam"}
+                                    </span>
+                                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                                      {lang === "ml" ? "കഴക്കൂട്ടം" : "Kazhakkoottam"}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <span className="text-slate-400 dark:text-slate-400 font-medium block text-[9.5px]">
+                                      {lang === "ml" ? "ഏരിയ" : "Area"}
+                                    </span>
+                                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                                      {lang === "ml" ? "കഴക്കൂട്ടം ഏരിയ" : "Kazhakkoottam Area"}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                           </div>
 
-                          <div className="overflow-y-auto space-y-0.5 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none]">
-                            {/* All Wards Option */}
-                            <label
-                              className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (selectedWardIds.includes("all") || selectedWardIds.length === wards.length) {
-                                  setSelectedWardIds([]);
-                                } else {
-                                  setSelectedWardIds(["all", ...wards.map((w) => w.id)]);
-                                }
-                                setDraftWard("all");
-                              }}
-                            >
-                              <div
-                                className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
-                                  selectedWardIds.includes("all") || selectedWardIds.length === wards.length
-                                    ? "bg-orange-500 border-orange-500 text-white"
-                                    : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
-                                }`}
-                              >
-                                {(selectedWardIds.includes("all") || selectedWardIds.length === wards.length) && (
-                                  <Check className="w-3 h-3 text-white stroke-[3]" />
-                                )}
-                              </div>
-                              <span>{lang === "ml" ? "എല്ലാ വാർഡുകളും" : "All Wards"}</span>
+                          {/* Ward Selection Multi-select Dropdown */}
+                          <div className="space-y-0.5 relative pt-1">
+                            <label className="text-[10px] font-semibold text-slate-600 dark:text-slate-300 block">
+                              {lang === "ml" ? "വാർഡ് / ബൂത്ത് തിരഞ്ഞെടുക്കുക" : "Select Ward / Booth"}
                             </label>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsHomeWardDropdownOpen(!isHomeWardDropdownOpen);
+                                setIsCategoryDropdownOpen(false);
+                                setIsSchemeDropdownOpen(false);
+                              }}
+                              className="w-full flex items-center justify-between rounded-lg border border-orange-300 dark:border-orange-500/50 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-orange-400 transition-colors shadow-2xs"
+                            >
+                              <span className="truncate">
+                                {homeSelectedWardIds.length === 0 || homeSelectedWardIds.includes("all") || homeSelectedWardIds.length === 7
+                                  ? (lang === "ml" ? "എല്ലാ വാർഡുകളും / ബൂത്തുകളും" : "All Wards / Booths")
+                                  : `${homeSelectedWardIds.length} ${lang === "ml" ? "വാർഡുകൾ/ബൂത്തുകൾ" : "wards selected"}`}
+                              </span>
+                              <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isHomeWardDropdownOpen ? "rotate-180" : ""}`} />
+                            </button>
 
-                            <div className="h-px bg-slate-100 dark:bg-slate-700 my-1" />
-
-                            {wards
-                              .filter((w) => w.label.toString().includes(wardSearchQuery.toLowerCase()))
-                              .map((w) => {
-                                const isExplicitAll = selectedWardIds.includes("all") || selectedWardIds.length === wards.length;
-                                const isSelected = isExplicitAll || selectedWardIds.includes(w.id);
-                                return (
+                            {isHomeWardDropdownOpen && (
+                              <div className="absolute top-full left-0 right-0 mt-1 z-50 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-xl animate-in fade-in duration-150 space-y-1">
+                                <div className="relative mb-1">
+                                  <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                  <input
+                                    type="text"
+                                    value={homeWardSearchQuery}
+                                    onChange={(e) => setHomeWardSearchQuery(e.target.value)}
+                                    placeholder={lang === "ml" ? "വാർഡ്/ബൂത്ത് തിരയുക..." : "Search Ward/Booth..."}
+                                    className="w-full pl-8 pr-2.5 py-1 text-xs rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 outline-none focus:border-orange-500"
+                                  />
+                                </div>
+                                <div className="max-h-40 overflow-y-auto space-y-0.5">
+                                  {/* All Wards Option */}
                                   <label
-                                    key={w.id}
                                     className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      let updated: string[];
-                                      if (isExplicitAll) {
-                                        updated = wards.map((wd) => wd.id).filter((id) => id !== w.id);
-                                      } else if (selectedWardIds.includes(w.id)) {
-                                        updated = selectedWardIds.filter((id) => id !== w.id && id !== "all");
+                                      const allW = ["ward_1", "ward_2", "ward_3", "ward_4", "ward_5", "booth_101", "booth_102"];
+                                      if (homeSelectedWardIds.includes("all") || homeSelectedWardIds.length === allW.length) {
+                                        setHomeSelectedWardIds([]);
+                                        setHomeSelectedWard("all");
                                       } else {
-                                        updated = [...selectedWardIds.filter((id) => id !== "all"), w.id];
+                                        setHomeSelectedWardIds(["all", ...allW]);
+                                        setHomeSelectedWard("all");
                                       }
-                                      if (updated.length === wards.length) updated = ["all", ...wards.map((wd) => wd.id)];
-                                      setSelectedWardIds(updated);
-                                      setDraftWard(updated.length === 1 ? updated[0] : "all");
                                     }}
                                   >
                                     <div
                                       className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
-                                        isSelected ? "bg-orange-500 border-orange-500 text-white" : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                                        homeSelectedWardIds.includes("all") || homeSelectedWardIds.length === 7
+                                          ? "bg-orange-500 border-orange-500 text-white"
+                                          : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
                                       }`}
                                     >
-                                      {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
+                                      {(homeSelectedWardIds.includes("all") || homeSelectedWardIds.length === 7) && (
+                                        <Check className="w-3 h-3 text-white stroke-[3]" />
+                                      )}
                                     </div>
-                                    <span>{lang === "ml" ? `വാർഡ് ${w.label}` : `Ward ${w.label}`}</span>
+                                    <span>{lang === "ml" ? "എല്ലാ വാർഡുകളും / ബൂത്തുകളും" : "All Wards / Booths"}</span>
                                   </label>
-                                );
-                              })}
+
+                                  <div className="h-px bg-slate-100 dark:bg-slate-700 my-1" />
+
+                                  {[
+                                    { id: "ward_1", en: "Ward 1 — Kazhakoottam", ml: "വാർഡ് 1 — കഴക്കൂട്ടം" },
+                                    { id: "ward_2", en: "Ward 2 — Kariavattom", ml: "വാർഡ് 2 — കാര്യവട്ടം" },
+                                    { id: "ward_3", en: "Ward 3 — Chanthavila", ml: "വാർഡ് 3 — ചന്തവിള" },
+                                    { id: "ward_4", en: "Ward 4 — Pangappara", ml: "വാർഡ് 4 — പാങ്ങപ്പാറ" },
+                                    { id: "ward_5", en: "Ward 5 — Menamkulam", ml: "വാർഡ് 5 — മേനംകുളം" },
+                                    { id: "booth_101", en: "Booth 101 — Govt H.S", ml: "ബൂത്ത് 101 — ഗവ. എച്ച്.എസ്" },
+                                    { id: "booth_102", en: "Booth 102 — L.P.S കാര്യവട്ടം", ml: "ബൂത്ത് 102 — എൽ.പി.എസ് കാര്യവട്ടം" },
+                                  ]
+                                    .filter((w) => w[lang].toLowerCase().includes(homeWardSearchQuery.toLowerCase()))
+                                    .map((w) => {
+                                      const allW = ["ward_1", "ward_2", "ward_3", "ward_4", "ward_5", "booth_101", "booth_102"];
+                                      const isExplicitAll = homeSelectedWardIds.includes("all") || homeSelectedWardIds.length === allW.length;
+                                      const isSelected = isExplicitAll || homeSelectedWardIds.includes(w.id);
+                                      return (
+                                        <label
+                                          key={w.id}
+                                          className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            let updated: string[];
+                                            if (isExplicitAll) {
+                                              updated = allW.filter((id) => id !== w.id);
+                                            } else if (homeSelectedWardIds.includes(w.id)) {
+                                              updated = homeSelectedWardIds.filter((id) => id !== w.id && id !== "all");
+                                            } else {
+                                              updated = [...homeSelectedWardIds.filter((id) => id !== "all"), w.id];
+                                            }
+                                            if (updated.length === allW.length) updated = ["all", ...allW];
+                                            setHomeSelectedWardIds(updated);
+                                            setHomeSelectedWard(updated.length === 1 ? updated[0] : "all");
+                                          }}
+                                        >
+                                          <div
+                                            className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
+                                              isSelected ? "bg-orange-500 border-orange-500 text-white" : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                                            }`}
+                                          >
+                                            {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
+                                          </div>
+                                          <span>{w[lang]}</span>
+                                        </label>
+                                      );
+                                    })}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
-                      )}
-                    </div>
-
-                    {/* Category - Multi-select */}
-                    <div className="space-y-0.5 relative">
-                      <label className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 block">
-                        {lang === "ml" ? "വിഭാഗം" : "Category"}
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
-                        className="w-full h-8.5 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer flex items-center justify-between gap-2"
-                      >
-                        <span className="truncate">
-                          {selectedCategoryIds.length === 0 || selectedCategoryIds.includes("all") || selectedCategoryIds.length === 8
-                            ? (lang === "ml" ? "എല്ലാ വിഭാഗങ്ങളും" : "All Categories")
-                            : `${selectedCategoryIds.length} ${lang === "ml" ? "വിഭാഗങ്ങൾ" : "categories"}`}
-                        </span>
-                        <ChevronDown className={`h-3.5 w-3.5 text-slate-400 shrink-0 transition-transform ${isCategoryDropdownOpen ? "rotate-180" : ""}`} />
-                      </button>
-
-                      {isCategoryDropdownOpen && (
-                        <div className="absolute top-full left-0 right-0 mt-1 z-30 max-h-56 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg p-1.5 flex flex-col animate-in fade-in slide-in-from-top-1 duration-150">
-                          {/* Search Bar */}
-                          <div className="relative mb-1.5 shrink-0">
-                            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2" />
-                            <input
-                              type="text"
-                              value={categorySearchQuery}
-                              onChange={(e) => setCategorySearchQuery(e.target.value)}
-                              placeholder={lang === "ml" ? "തിരയുക..." : "Search..."}
-                              className="w-full pl-7 pr-2 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs font-medium text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500"
-                            />
-                          </div>
-
-                          <div className="overflow-y-auto space-y-0.5 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none]">
-                            {/* All Categories Option */}
-                            <label
-                              className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const cats = ["agriculture", "education", "health", "housing", "pension_welfare", "women_welfare", "employment", "msme"];
-                                if (selectedCategoryIds.includes("all") || selectedCategoryIds.length === cats.length) {
-                                  setSelectedCategoryIds([]);
-                                } else {
-                                  setSelectedCategoryIds(["all", ...cats]);
-                                }
-                                setAppSchemeCategoryFilter("all");
-                              }}
-                            >
-                              <div
-                                className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
-                                  selectedCategoryIds.includes("all") || selectedCategoryIds.length === 8
-                                    ? "bg-orange-500 border-orange-500 text-white"
-                                    : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
-                                }`}
-                              >
-                                {(selectedCategoryIds.includes("all") || selectedCategoryIds.length === 8) && (
-                                  <Check className="w-3 h-3 text-white stroke-[3]" />
-                                )}
+                      ) : (
+                        /* Admin: Dynamic cascading fields matching location level */
+                        <div className="space-y-2 pt-1 animate-in fade-in duration-200">
+                          {/* 1. State Level Display */}
+                          {homeLocationLevel === "state" && (
+                            <div className="p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                <div>
+                                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                                    {lang === "ml" ? "കേരള സംസ്ഥാനം (സംസ്ഥാന തലം)" : "Kerala State (State-Wide)"}
+                                  </span>
+                                  <span className="text-[9.5px] text-slate-400 dark:text-slate-400">
+                                    {lang === "ml" ? "എല്ലാ ജില്ലകളും മണ്ഡലങ്ങളും ഉൾപ്പെടുന്നു" : "All 14 Revenue / 28 Organisation Districts"}
+                                  </span>
+                                </div>
                               </div>
-                              <span>{lang === "ml" ? "എല്ലാ വിഭാഗങ്ങളും" : "All Categories"}</span>
-                            </label>
+                              <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
+                                {lang === "ml" ? "പൂർണ്ണം" : "All State"}
+                              </span>
+                            </div>
+                          )}
 
-                            <div className="h-px bg-slate-100 dark:bg-slate-700 my-1" />
-
-                            {[
-                              { id: "agriculture", en: "Agriculture", ml: "കൃഷി" },
-                              { id: "education", en: "Education", ml: "വിദ്യാഭ്യാസം" },
-                              { id: "health", en: "Health", ml: "ആരോഗ്യം" },
-                              { id: "housing", en: "Housing", ml: "ഭവനം" },
-                              { id: "pension_welfare", en: "Pension & Welfare", ml: "പെൻഷൻ & ക്ഷേമം" },
-                              { id: "women_welfare", en: "Women Welfare", ml: "വനിതാ ക്ഷേമം" },
-                              { id: "employment", en: "Employment", ml: "തൊഴിൽ" },
-                              { id: "msme", en: "MSME & Business", ml: "എം.എസ്.എം.ഇ & ബിസിനസ്" },
-                            ]
-                              .filter((cat) => cat[lang].toLowerCase().includes(categorySearchQuery.toLowerCase()))
-                              .map((cat) => {
-                                const allCats = ["agriculture", "education", "health", "housing", "pension_welfare", "women_welfare", "employment", "msme"];
-                                const isExplicitAll = selectedCategoryIds.includes("all") || selectedCategoryIds.length === allCats.length;
-                                const isSelected = isExplicitAll || selectedCategoryIds.includes(cat.id);
-                                return (
-                                  <label
-                                    key={cat.id}
-                                    className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      let updated: string[];
-                                      if (isExplicitAll) {
-                                        updated = allCats.filter((id) => id !== cat.id);
-                                      } else if (selectedCategoryIds.includes(cat.id)) {
-                                        updated = selectedCategoryIds.filter((id) => id !== cat.id && id !== "all");
-                                      } else {
-                                        updated = [...selectedCategoryIds.filter((id) => id !== "all"), cat.id];
-                                      }
-                                      if (updated.length === allCats.length) updated = ["all", ...allCats];
-                                      setSelectedCategoryIds(updated);
-                                      setAppSchemeCategoryFilter(updated.length === 1 ? updated[0] : "all");
-                                    }}
-                                  >
-                                    <div
-                                      className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
-                                        isSelected ? "bg-orange-500 border-orange-500 text-white" : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
-                                      }`}
-                                    >
-                                      {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
-                                    </div>
-                                    <span>{cat[lang]}</span>
-                                  </label>
-                                );
-                              })}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Scheme - Multi-select */}
-                    <div className="space-y-0.5 relative">
-                      <label className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 block">
-                        {lang === "ml" ? "പദ്ധതി" : "Scheme"}
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => setIsSchemeDropdownOpen(!isSchemeDropdownOpen)}
-                        className="w-full h-8.5 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer flex items-center justify-between gap-2"
-                      >
-                        <span className="truncate">
-                          {selectedSchemeIds.length === 0 || selectedSchemeIds.includes("all") || selectedSchemeIds.length === 3
-                            ? (lang === "ml" ? "എല്ലാ പദ്ധതികളും" : "All Schemes")
-                            : `${selectedSchemeIds.length} ${lang === "ml" ? "പദ്ധതികൾ" : "schemes"}`}
-                        </span>
-                        <ChevronDown className={`h-3.5 w-3.5 text-slate-400 shrink-0 transition-transform ${isSchemeDropdownOpen ? "rotate-180" : ""}`} />
-                      </button>
-
-                      {isSchemeDropdownOpen && (
-                        <div className="absolute top-full left-0 right-0 mt-1 z-30 max-h-56 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg p-1.5 flex flex-col animate-in fade-in slide-in-from-top-1 duration-150">
-                          {/* Search Bar */}
-                          <div className="relative mb-1.5 shrink-0">
-                            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2" />
-                            <input
-                              type="text"
-                              value={homeFilterSchemeSearchQuery}
-                              onChange={(e) => setHomeFilterSchemeSearchQuery(e.target.value)}
-                              placeholder={lang === "ml" ? "തിരയുക..." : "Search..."}
-                              className="w-full pl-7 pr-2 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-xs font-medium text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500"
-                            />
-                          </div>
-
-                          <div className="overflow-y-auto space-y-0.5 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none]">
-                            {/* All Schemes Option */}
-                            <label
-                              className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const schs = ["ayushman", "pmkisan", "pmfby"];
-                                if (selectedSchemeIds.includes("all") || selectedSchemeIds.length === schs.length) {
-                                  setSelectedSchemeIdsState([]);
-                                } else {
-                                  setSelectedSchemeIdsState(["all", ...schs]);
-                                }
-                                setFilterScheme("all");
-                              }}
-                            >
-                              <div
-                                className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
-                                  selectedSchemeIds.includes("all") || selectedSchemeIds.length === 3
-                                    ? "bg-orange-500 border-orange-500 text-white"
-                                    : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
-                                }`}
-                              >
-                                {(selectedSchemeIds.includes("all") || selectedSchemeIds.length === 3) && (
-                                  <Check className="w-3 h-3 text-white stroke-[3]" />
-                                )}
+                          {/* 2. Region only (when location level is "region") */}
+                          {homeLocationLevel === "region" && (
+                            <div className="space-y-0.5 relative">
+                              <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
+                                {lang === "ml" ? "മേഖല തിരഞ്ഞെടുക്കുക (Select Region)" : "Select Region"}
+                              </label>
+                              <div className="relative">
+                                <select
+                                  value={homeSelectedRegion}
+                                  onChange={(e) => {
+                                    setHomeSelectedRegion(e.target.value);
+                                    setHomeSelectedOrgDistrict("all");
+                                    setHomeSelectedMandalam("all");
+                                    setHomeSelectedArea("all");
+                                    setHomeSelectedWard("all");
+                                  }}
+                                  className="w-full h-8.5 pl-3 pr-8 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none shadow-2xs"
+                                >
+                                  <option value="all">{lang === "ml" ? "എല്ലാ മേഖലകളും" : "All Regions"}</option>
+                                  <option value="reg-south">{lang === "ml" ? "സൗത്ത് റീജിയൺ" : "South Region"}</option>
+                                  <option value="reg-central">{lang === "ml" ? "സെൻട്രൽ റീജിയൺ" : "Central Region"}</option>
+                                  <option value="reg-north">{lang === "ml" ? "നോർത്ത് റീജിയൺ" : "North Region"}</option>
+                                </select>
+                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
                               </div>
-                              <span>{lang === "ml" ? "എല്ലാ പദ്ധതികളും" : "All Schemes"}</span>
-                            </label>
+                            </div>
+                          )}
 
-                            <div className="h-px bg-slate-100 dark:bg-slate-700 my-1" />
-
-                            {[
-                              { id: "ayushman", en: "Ayushman Bharat — PMJAY", ml: "ആയുഷ്മാൻ ഭാരത് - പിഎംജെഎവൈ" },
-                              { id: "pmkisan", en: "PM Kisan Samman Nidhi", ml: "പിഎം കിസാൻ സമ്മാൻ നിധി" },
-                              { id: "pmfby", en: "PM Fasal Bima Yojana", ml: "പിഎം ഫസൽ ഭീമ യോജന" },
-                            ]
-                              .filter((sch) => sch[lang].toLowerCase().includes(homeFilterSchemeSearchQuery.toLowerCase()))
-                              .map((sch) => {
-                                const allSchs = ["ayushman", "pmkisan", "pmfby"];
-                                const isExplicitAll = selectedSchemeIds.includes("all") || selectedSchemeIds.length === allSchs.length;
-                                const isSelected = isExplicitAll || selectedSchemeIds.includes(sch.id);
-                                return (
-                                  <label
-                                    key={sch.id}
-                                    className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      let updated: string[];
-                                      if (isExplicitAll) {
-                                        updated = allSchs.filter((id) => id !== sch.id);
-                                      } else if (selectedSchemeIds.includes(sch.id)) {
-                                        updated = selectedSchemeIds.filter((id) => id !== sch.id && id !== "all");
-                                      } else {
-                                        updated = [...selectedSchemeIds.filter((id) => id !== "all"), sch.id];
-                                      }
-                                      if (updated.length === allSchs.length) updated = ["all", ...allSchs];
-                                      setSelectedSchemeIdsState(updated);
-                                      setFilterScheme(updated.length === 1 ? updated[0] : "all");
+                          {/* Region and District shown in SAME ROW for org_district, mandalam, area, ward */}
+                          {(homeLocationLevel === "org_district" ||
+                            homeLocationLevel === "mandalam" ||
+                            homeLocationLevel === "area" ||
+                            homeLocationLevel === "ward") && (
+                            <div className="grid grid-cols-2 gap-2">
+                              {/* Region */}
+                              <div className="space-y-0.5 relative">
+                                <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block truncate">
+                                  {lang === "ml" ? "മേഖല (Region)" : "Select Region"}
+                                </label>
+                                <div className="relative">
+                                  <select
+                                    value={homeSelectedRegion}
+                                    onChange={(e) => {
+                                      setHomeSelectedRegion(e.target.value);
+                                      setHomeSelectedOrgDistrict("all");
+                                      setHomeSelectedMandalam("all");
+                                      setHomeSelectedArea("all");
+                                      setHomeSelectedWard("all");
                                     }}
+                                    className="w-full h-8.5 pl-2.5 pr-7 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none truncate shadow-2xs"
                                   >
-                                    <div
-                                      className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
-                                        isSelected ? "bg-orange-500 border-orange-500 text-white" : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
-                                      }`}
+                                    <option value="all">{lang === "ml" ? "എല്ലാ മേഖലകളും" : "All Regions"}</option>
+                                    <option value="reg-south">{lang === "ml" ? "സൗത്ത്" : "South Region"}</option>
+                                    <option value="reg-central">{lang === "ml" ? "സെൻട്രൽ" : "Central Region"}</option>
+                                    <option value="reg-north">{lang === "ml" ? "നോർത്ത്" : "North Region"}</option>
+                                  </select>
+                                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                                </div>
+                              </div>
+
+                              {/* Organisation District */}
+                              <div className="space-y-0.5 relative">
+                                <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block truncate">
+                                  {lang === "ml" ? "ഓർഗ്. ജില്ല (Org District)" : "Org District"}
+                                </label>
+                                <div className="relative">
+                                  <select
+                                    value={homeSelectedOrgDistrict}
+                                    onChange={(e) => {
+                                      setHomeSelectedOrgDistrict(e.target.value);
+                                      setHomeSelectedMandalam("all");
+                                      setHomeSelectedArea("all");
+                                      setHomeSelectedWard("all");
+                                    }}
+                                    className="w-full h-8.5 pl-2.5 pr-7 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none truncate shadow-2xs"
+                                  >
+                                    <option value="all">{lang === "ml" ? "എല്ലാ ജില്ലകളും" : "All Org Districts"}</option>
+                                    {organisationalDistricts
+                                      .filter((od) => {
+                                        if (homeSelectedRegion === "all") return true;
+                                        const southIds = ["od-tvm-north", "od-tvm-south", "od-tvm-city", "od-klm-east", "od-klm-west", "od-ptm", "od-alp-north", "od-alp-south", "od-ktm-east", "od-ktm-west", "od-idk-north", "od-idk-south"];
+                                        const centralIds = ["od-ekm-city", "od-ekm-north", "od-ekm-east", "od-tsr-city", "od-tsr-north", "od-tsr-south", "od-pkd-east", "od-pkd-west"];
+                                        const northIds = ["od-mlp-central", "od-mlp-east", "od-mlp-west", "od-kkd-city", "od-kkd-rural", "od-knr", "od-ksd", "od-wyd"];
+                                        if (homeSelectedRegion === "reg-south") return southIds.includes(od.id);
+                                        if (homeSelectedRegion === "reg-central") return centralIds.includes(od.id);
+                                        if (homeSelectedRegion === "reg-north") return northIds.includes(od.id);
+                                        return true;
+                                      })
+                                      .map((od) => (
+                                        <option key={od.id} value={od.id}>
+                                          {od[lang]}
+                                        </option>
+                                      ))}
+                                  </select>
+                                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Assembly Mandalam only (when location level is "mandalam") */}
+                          {homeLocationLevel === "mandalam" && (
+                            <div className="space-y-0.5 relative">
+                              <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
+                                {lang === "ml" ? "നിയമസഭാ മണ്ഡലം തിരഞ്ഞെടുക്കുക" : "Select Assembly Mandalam"}
+                              </label>
+                              <div className="relative">
+                                <select
+                                  value={homeSelectedMandalam}
+                                  onChange={(e) => {
+                                    setHomeSelectedMandalam(e.target.value);
+                                    setHomeSelectedArea("all");
+                                    setHomeSelectedWard("all");
+                                  }}
+                                  className="w-full h-8.5 pl-3 pr-8 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none shadow-2xs"
+                                >
+                                  <option value="all">{lang === "ml" ? "എല്ലാ മണ്ഡലങ്ങളും" : "All Assembly Mandalams"}</option>
+                                  {homeSelectedOrgDistrict === "od-tvm-north" ? (
+                                    <>
+                                      <option value="tvm-c6">{lang === "ml" ? "കഴക്കൂട്ടം" : "Kazhakkoottam"}</option>
+                                      <option value="tvm-c1">{lang === "ml" ? "വർക്കല" : "Varkala"}</option>
+                                      <option value="tvm-c2">{lang === "ml" ? "ആറ്റിങ്ങൽ" : "Attingal"}</option>
+                                      <option value="tvm-c3">{lang === "ml" ? "ചിറയിൻകീഴ്" : "Chirayinkeezhu"}</option>
+                                      <option value="tvm-c4">{lang === "ml" ? "നെടുമങ്ങാട്" : "Nedumangad"}</option>
+                                      <option value="tvm-c5">{lang === "ml" ? "വാമനപുരം" : "Vamanapuram"}</option>
+                                    </>
+                                  ) : homeSelectedOrgDistrict === "od-tvm-south" ? (
+                                    <>
+                                      <option value="tvm-c11">{lang === "ml" ? "പാറശ്ശാല" : "Parassala"}</option>
+                                      <option value="tvm-c12">{lang === "ml" ? "കാട്ടാക്കട" : "Kattakkada"}</option>
+                                      <option value="tvm-c13">{lang === "ml" ? "കോവളം" : "Kovalam"}</option>
+                                      <option value="tvm-c14">{lang === "ml" ? "നെയ്യാറ്റിൻകര" : "Neyyattinkara"}</option>
+                                    </>
+                                  ) : homeSelectedOrgDistrict === "od-tvm-city" ? (
+                                    <>
+                                      <option value="tvm-c7">{lang === "ml" ? "വട്ടിയൂർക്കാവ്" : "Vattiyoorkavu"}</option>
+                                      <option value="tvm-c8">{lang === "ml" ? "തിരുവനന്തപുരം" : "Thiruvananthapuram"}</option>
+                                      <option value="tvm-c9">{lang === "ml" ? "നേമം" : "Nemom"}</option>
+                                    </>
+                                  ) : (
+                                    constituencies.slice(0, 15).map((c) => (
+                                      <option key={c.id} value={c.id}>
+                                        {c[lang]}
+                                      </option>
+                                    ))
+                                  )}
+                                </select>
+                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Assembly Mandalam and Area shown in SAME ROW for area, ward */}
+                          {(homeLocationLevel === "area" || homeLocationLevel === "ward") && (
+                            <div className="grid grid-cols-2 gap-2">
+                              {/* Assembly Mandalam */}
+                              <div className="space-y-0.5 relative">
+                                <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block truncate">
+                                  {lang === "ml" ? "മണ്ഡലം (Mandalam)" : "Assembly Mandalam"}
+                                </label>
+                                <div className="relative">
+                                  <select
+                                    value={homeSelectedMandalam}
+                                    onChange={(e) => {
+                                      setHomeSelectedMandalam(e.target.value);
+                                      setHomeSelectedArea("all");
+                                      setHomeSelectedWard("all");
+                                    }}
+                                    className="w-full h-8.5 pl-2.5 pr-7 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none truncate shadow-2xs"
+                                  >
+                                    <option value="all">{lang === "ml" ? "എല്ലാ മണ്ഡലങ്ങളും" : "All Mandalams"}</option>
+                                    {homeSelectedOrgDistrict === "od-tvm-north" ? (
+                                      <>
+                                        <option value="tvm-c6">{lang === "ml" ? "കഴക്കൂട്ടം" : "Kazhakkoottam"}</option>
+                                        <option value="tvm-c1">{lang === "ml" ? "വർക്കല" : "Varkala"}</option>
+                                        <option value="tvm-c2">{lang === "ml" ? "ആറ്റിങ്ങൽ" : "Attingal"}</option>
+                                        <option value="tvm-c3">{lang === "ml" ? "ചിറയിൻകീഴ്" : "Chirayinkeezhu"}</option>
+                                        <option value="tvm-c4">{lang === "ml" ? "നെടുമങ്ങാട്" : "Nedumangad"}</option>
+                                        <option value="tvm-c5">{lang === "ml" ? "വാമനപുരം" : "Vamanapuram"}</option>
+                                      </>
+                                    ) : homeSelectedOrgDistrict === "od-tvm-south" ? (
+                                      <>
+                                        <option value="tvm-c11">{lang === "ml" ? "പാറശ്ശാല" : "Parassala"}</option>
+                                        <option value="tvm-c12">{lang === "ml" ? "കാട്ടാക്കട" : "Kattakkada"}</option>
+                                        <option value="tvm-c13">{lang === "ml" ? "കോവളം" : "Kovalam"}</option>
+                                        <option value="tvm-c14">{lang === "ml" ? "നെയ്യാറ്റിൻകര" : "Neyyattinkara"}</option>
+                                      </>
+                                    ) : homeSelectedOrgDistrict === "od-tvm-city" ? (
+                                      <>
+                                        <option value="tvm-c7">{lang === "ml" ? "വട്ടിയൂർക്കാവ്" : "Vattiyoorkavu"}</option>
+                                        <option value="tvm-c8">{lang === "ml" ? "തിരുവനന്തപുരം" : "Thiruvananthapuram"}</option>
+                                        <option value="tvm-c9">{lang === "ml" ? "നേമം" : "Nemom"}</option>
+                                      </>
+                                    ) : (
+                                      constituencies.slice(0, 15).map((c) => (
+                                        <option key={c.id} value={c.id}>
+                                          {c[lang]}
+                                        </option>
+                                      ))
+                                    )}
+                                  </select>
+                                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                                </div>
+                              </div>
+
+                              {/* Area */}
+                              <div className="space-y-0.5 relative">
+                                <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block truncate">
+                                  {lang === "ml" ? "ഏരിയ (Area)" : "Area"}
+                                </label>
+                                <div className="relative">
+                                  <select
+                                    value={homeSelectedArea}
+                                    onChange={(e) => {
+                                      setHomeSelectedArea(e.target.value);
+                                      setHomeSelectedWard("all");
+                                    }}
+                                    className="w-full h-8.5 pl-2.5 pr-7 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none truncate shadow-2xs"
+                                  >
+                                    <option value="all">{lang === "ml" ? "എല്ലാ ഏരിയകളും" : "All Areas"}</option>
+                                    <option value="area-kazh-main">{lang === "ml" ? "കഴക്കൂട്ടം" : "Kazhakkoottam Area"}</option>
+                                    <option value="area-kariavattom">{lang === "ml" ? "കാര്യവട്ടം" : "Kariavattom Area"}</option>
+                                    <option value="area-technopark">{lang === "ml" ? "ടെക്നോപാർക്ക്" : "Technopark Area"}</option>
+                                    <option value="area-chanthavila">{lang === "ml" ? "ചന്തവിള" : "Chanthavila Area"}</option>
+                                    <option value="area-menamkulam">{lang === "ml" ? "മേനംകുളം" : "Menamkulam Area"}</option>
+                                  </select>
+                                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Ward (shown for ward level) with Multi-select Dropdown */}
+                          {homeLocationLevel === "ward" && (
+                            <div className="space-y-0.5 relative">
+                              <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
+                                {lang === "ml" ? "വാർഡ് / ബൂത്ത് തിരഞ്ഞെടുക്കുക" : "Select Ward / Booth"}
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setIsHomeWardDropdownOpen(!isHomeWardDropdownOpen);
+                                  setIsCategoryDropdownOpen(false);
+                                  setIsSchemeDropdownOpen(false);
+                                }}
+                                className="w-full flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-orange-300 transition-colors shadow-2xs"
+                              >
+                                <span className="truncate">
+                                  {homeSelectedWardIds.length === 0 || homeSelectedWardIds.includes("all") || homeSelectedWardIds.length === 7
+                                    ? (lang === "ml" ? "എല്ലാ വാർഡുകളും / ബൂത്തുകളും" : "All Wards / Booths")
+                                    : `${homeSelectedWardIds.length} ${lang === "ml" ? "വാർഡുകൾ/ബൂത്തുകൾ" : "wards selected"}`}
+                                </span>
+                                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isHomeWardDropdownOpen ? "rotate-180" : ""}`} />
+                              </button>
+
+                              {isHomeWardDropdownOpen && (
+                                <div className="absolute top-full left-0 right-0 mt-1 z-50 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-xl animate-in fade-in duration-150 space-y-1">
+                                  <div className="relative mb-1">
+                                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                    <input
+                                      type="text"
+                                      value={homeWardSearchQuery}
+                                      onChange={(e) => setHomeWardSearchQuery(e.target.value)}
+                                      placeholder={lang === "ml" ? "വാർഡ്/ബൂത്ത് തിരയുക..." : "Search Ward/Booth..."}
+                                      className="w-full pl-8 pr-2.5 py-1 text-xs rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 outline-none focus:border-orange-500"
+                                    />
+                                  </div>
+                                  <div className="max-h-40 overflow-y-auto space-y-0.5">
+                                    {/* All Wards Option */}
+                                    <label
+                                      className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        const allW = ["ward_1", "ward_2", "ward_3", "ward_4", "ward_5", "booth_101", "booth_102"];
+                                        if (homeSelectedWardIds.includes("all") || homeSelectedWardIds.length === allW.length) {
+                                          setHomeSelectedWardIds([]);
+                                          setHomeSelectedWard("all");
+                                        } else {
+                                          setHomeSelectedWardIds(["all", ...allW]);
+                                          setHomeSelectedWard("all");
+                                        }
+                                      }}
                                     >
-                                      {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
-                                    </div>
-                                    <span>{sch[lang]}</span>
-                                  </label>
-                                );
-                              })}
-                          </div>
+                                      <div
+                                        className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
+                                          homeSelectedWardIds.includes("all") || homeSelectedWardIds.length === 7
+                                            ? "bg-orange-500 border-orange-500 text-white"
+                                            : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                                        }`}
+                                      >
+                                        {(homeSelectedWardIds.includes("all") || homeSelectedWardIds.length === 7) && (
+                                          <Check className="w-3 h-3 text-white stroke-[3]" />
+                                        )}
+                                      </div>
+                                      <span>{lang === "ml" ? "എല്ലാ വാർഡുകളും / ബൂത്തുകളും" : "All Wards / Booths"}</span>
+                                    </label>
+
+                                    <div className="h-px bg-slate-100 dark:bg-slate-700 my-1" />
+
+                                    {[
+                                      { id: "ward_1", en: "Ward 1 — Kazhakoottam", ml: "വാർഡ് 1 — കഴക്കൂട്ടം" },
+                                      { id: "ward_2", en: "Ward 2 — Kariavattom", ml: "വാർഡ് 2 — കാര്യവട്ടം" },
+                                      { id: "ward_3", en: "Ward 3 — Chanthavila", ml: "വാർഡ് 3 — ചന്തവിള" },
+                                      { id: "ward_4", en: "Ward 4 — Pangappara", ml: "വാർഡ് 4 — പാങ്ങപ്പാറ" },
+                                      { id: "ward_5", en: "Ward 5 — Menamkulam", ml: "വാർഡ് 5 — മേനംകുളം" },
+                                      { id: "booth_101", en: "Booth 101 — Govt H.S", ml: "ബൂത്ത് 101 — ഗവ. എച്ച്.എസ്" },
+                                      { id: "booth_102", en: "Booth 102 — L.P.S Kariavattom", ml: "ബൂത്ത് 102 — എൽ.പി.എസ് കാര്യവട്ടം" },
+                                    ]
+                                      .filter((w) => w[lang].toLowerCase().includes(homeWardSearchQuery.toLowerCase()))
+                                      .map((w) => {
+                                        const allW = ["ward_1", "ward_2", "ward_3", "ward_4", "ward_5", "booth_101", "booth_102"];
+                                        const isExplicitAll = homeSelectedWardIds.includes("all") || homeSelectedWardIds.length === allW.length;
+                                        const isSelected = isExplicitAll || homeSelectedWardIds.includes(w.id);
+                                        return (
+                                          <label
+                                            key={w.id}
+                                            className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              let updated: string[];
+                                              if (isExplicitAll) {
+                                                updated = allW.filter((id) => id !== w.id);
+                                              } else if (homeSelectedWardIds.includes(w.id)) {
+                                                updated = homeSelectedWardIds.filter((id) => id !== w.id && id !== "all");
+                                              } else {
+                                                updated = [...homeSelectedWardIds.filter((id) => id !== "all"), w.id];
+                                              }
+                                              if (updated.length === allW.length) updated = ["all", ...allW];
+                                              setHomeSelectedWardIds(updated);
+                                              setHomeSelectedWard(updated.length === 1 ? updated[0] : "all");
+                                            }}
+                                          >
+                                            <div
+                                              className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
+                                                isSelected ? "bg-orange-500 border-orange-500 text-white" : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                                              }`}
+                                            >
+                                              {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
+                                            </div>
+                                            <span>{w[lang]}</span>
+                                          </label>
+                                        );
+                                      })}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
                   </div>
-                </div>
                 )}
 
                 {/* Bottom Action Bar: Reset & Apply Filters */}
@@ -23660,6 +24046,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         setAppWorkerSearchQuery("");
                         setAppSelectedWardIds(["all"]);
                         setIsAppWardDropdownOpen(false);
+                        setIsAppScopeAccordionOpen(false);
                         setAppWardSearchQuery("");
                         setAppLocationSearchQuery("");
                         setCategorySearchQuery("");
@@ -23682,28 +24069,45 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           setAppFilterLocation("all");
                         }
                       } else {
-                        setFilterGeoScope("state");
-                        setSelectedDistrictIds(["all"]);
-                        setIsDistrictDropdownOpen(false);
-                        setDistrictSearchQuery("");
-                        setSelectedMandalamIds(["all"]);
-                        setIsMandalamDropdownOpen(false);
-                        setMandalamSearchQuery("");
-                        setSelectedLocalBodyTypeIds(["all"]);
-                        setIsLocalBodyTypeDropdownOpen(false);
-                        setLocalBodyTypeSearchQuery("");
-                        setSelectedLocalBodyIds(["all"]);
-                        setIsLocalBodyDropdownOpen(false);
-                        setLocalBodySearchQuery("");
-                        setSelectedWardIds(["all"]);
-                        setIsWardDropdownOpen(false);
-                        setWardSearchQuery("");
-                        setSelectedCategoryIds(["all"]);
                         setIsCategoryDropdownOpen(false);
-                        setCategorySearchQuery("");
-                        setSelectedSchemeIdsState(["all"]);
                         setIsSchemeDropdownOpen(false);
+                        setIsHomeWardDropdownOpen(false);
+                        setIsHomeScopeAccordionOpen(false);
+                        setCategorySearchQuery("");
                         setHomeFilterSchemeSearchQuery("");
+                        setHomeWardSearchQuery("");
+                        setSelectedCategoryIds(["all"]);
+                        setSelectedSchemeIdsState(["all"]);
+                        setFilterSchemeCategory("all");
+                        setFilterScheme("all");
+                        setPartyWorkerTab("my_work");
+
+                        if (userRole === "party_worker") {
+                          setHomeLocationLevel("area");
+                          setHomeSelectedRegion("reg-south");
+                          setHomeSelectedOrgDistrict("od-tvm-north");
+                          setHomeSelectedMandalam("tvm-c6");
+                          setHomeSelectedArea("area-kazh-main");
+                          setHomeSelectedWard("all");
+                          setHomeSelectedWardIds(["all"]);
+                          setFilterGeoScope("area");
+                        } else {
+                          setHomeLocationLevel("state");
+                          setHomeSelectedRegion("all");
+                          setHomeSelectedOrgDistrict("all");
+                          setHomeSelectedMandalam("all");
+                          setHomeSelectedArea("all");
+                          setHomeSelectedWard("all");
+                          setHomeSelectedWardIds(["all"]);
+                          setFilterGeoScope("state");
+                        }
+
+                        // Also reset legacy states if any
+                        setSelectedDistrictIds(["all"]);
+                        setSelectedMandalamIds(["all"]);
+                        setSelectedLocalBodyTypeIds(["all"]);
+                        setSelectedLocalBodyIds(["all"]);
+                        setSelectedWardIds(["all"]);
                         setDraftDistrict("all");
                         setDraftMandalam("all");
                         setDraftBooth("all");
@@ -23711,9 +24115,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         setDraftLBDistrict("all");
                         setDraftLocalBody("all");
                         setDraftWard("all");
-                        setFilterScheme("all");
-                        setAppSchemeCategoryFilter("all");
-                        setPartyWorkerTab("my_work");
                       }
                     }}
                     className="w-1/3 rounded-lg border border-orange-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-orange-600 dark:text-orange-400 font-extrabold text-xs py-2.5 hover:bg-orange-50 transition-all cursor-pointer active:scale-[0.98] flex items-center justify-center gap-1.5"
@@ -23732,20 +24133,36 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         setIsAppFollowUpDropdownOpen(false);
                         setIsAppWorkerDropdownOpen(false);
                         setIsAppWardDropdownOpen(false);
+                        setIsAppScopeAccordionOpen(false);
                         setAppFilterLocation(appSelectedWard);
                         setShowFilterMenu(false);
                       } else {
-                        setAppliedGeoMode(geoMode);
-                        if (geoMode === "assembly") {
-                          setAppliedDistrict(draftDistrict);
-                          setAppliedMandalam(draftMandalam);
-                          setAppliedBooth(draftBooth);
+                        // Apply Home Filters
+                        setIsCategoryDropdownOpen(false);
+                        setIsSchemeDropdownOpen(false);
+                        setIsHomeWardDropdownOpen(false);
+                        setIsHomeScopeAccordionOpen(false);
+
+                        // Set Filter Scheme & Category
+                        setFilterScheme(selectedSchemeIds.length === 1 ? selectedSchemeIds[0] : "all");
+                        setFilterSchemeCategory(selectedCategoryIds.length === 1 ? selectedCategoryIds[0] : "all");
+
+                        // Map location level to geo scope for KPI stats calculation
+                        if (homeLocationLevel === "ward") {
+                          setFilterGeoScope("booth");
+                          if (homeSelectedWard !== "all") setSelectedBooth(homeSelectedWard);
+                        } else if (homeLocationLevel === "area") {
+                          setFilterGeoScope("area");
+                          if (homeSelectedArea !== "all") setSelectedArea(homeSelectedArea);
+                        } else if (homeLocationLevel === "mandalam") {
+                          setFilterGeoScope("mandalam");
+                          if (homeSelectedMandalam !== "all") setSelectedMandalam(homeSelectedMandalam);
+                        } else if (homeLocationLevel === "org_district" || homeLocationLevel === "region") {
+                          setFilterGeoScope("district");
                         } else {
-                          setAppliedLBType(draftLBType);
-                          setAppliedLBDistrict(draftLBDistrict);
-                          setAppliedLocalBody(draftLocalBody);
-                          setAppliedWard(draftWard);
+                          setFilterGeoScope("state");
                         }
+
                         setShowFilterMenu(false);
                       }
                     }}

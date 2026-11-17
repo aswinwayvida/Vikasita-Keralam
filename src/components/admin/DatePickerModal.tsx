@@ -1,12 +1,25 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useLang } from "@/i18n/LanguageProvider";
+
+export interface DatePickerDateInfo {
+  mode: "preset" | "single" | "range";
+  preset?: string;
+  startDate?: Date;
+  endDate?: Date;
+  daysCount: number;
+  label: string;
+  startDay?: number;
+  endDay?: number;
+  month?: number;
+  year?: number;
+}
 
 export interface DatePickerModalProps {
   isOpen: boolean;
   onClose: () => void;
   selectedPeriod: string;
-  onSelectPeriod: (period: string, customLabel?: string) => void;
+  onSelectPeriod: (period: string, customLabel?: string, dateInfo?: DatePickerDateInfo) => void;
   inlineInApp?: boolean;
 }
 
@@ -21,10 +34,32 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
   const [activePreset, setActivePreset] = useState<string>(selectedPeriod || "this_month");
   const [selectMode, setSelectMode] = useState<"single" | "range">("single");
   const [selectedDay, setSelectedDay] = useState<number>(8);
-  const [rangeStart, setRangeStart] = useState<number | null>(8);
-  const [rangeEnd, setRangeEnd] = useState<number | null>(15);
+  const [rangeStart, setRangeStart] = useState<number | null>(1);
+  const [rangeEnd, setRangeEnd] = useState<number | null>(3);
   const [currentYear, setCurrentYear] = useState<number>(2026);
   const [currentMonth, setCurrentMonth] = useState<number>(9); // 0-indexed: 9 = October
+
+  useEffect(() => {
+    if (isOpen) {
+      if (selectedPeriod === "last_month") {
+        setActivePreset("last_month");
+        setCurrentMonth(8); // September 2026
+        setCurrentYear(2026);
+      } else if (selectedPeriod === "this_month") {
+        setActivePreset("this_month");
+        setCurrentMonth(9); // October 2026
+        setCurrentYear(2026);
+      } else if (selectedPeriod === "last_year") {
+        setActivePreset("last_year");
+        setCurrentYear(2025);
+      } else if (selectedPeriod === "this_year") {
+        setActivePreset("this_year");
+        setCurrentYear(2026);
+      } else if (selectedPeriod) {
+        setActivePreset(selectedPeriod);
+      }
+    }
+  }, [isOpen, selectedPeriod]);
 
   if (!isOpen) return null;
 
@@ -98,41 +133,69 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
   };
 
   const handleApply = () => {
-    let customLabel = "";
-    if (activePreset === "all_time") {
-      customLabel = lang === "ml" ? "എല്ലാ സമയവും" : "All Time";
-    } else if (selectMode === "range") {
+    // 1. User selected a range in calendar
+    if (selectMode === "range" && rangeStart !== null) {
+      const min = rangeEnd !== null ? Math.min(rangeStart, rangeEnd) : rangeStart;
+      const max = rangeEnd !== null ? Math.max(rangeStart, rangeEnd) : rangeStart;
+      const daysCount = Math.max(1, max - min + 1);
       const validMonth = typeof currentMonth === "number" ? currentMonth : 9;
       const monthStr = String(validMonth + 1).padStart(2, "0");
-      if (rangeStart !== null && rangeEnd !== null) {
-        const min = Math.min(rangeStart, rangeEnd);
-        const max = Math.max(rangeStart, rangeEnd);
-        const startDayStr = String(min).padStart(2, "0");
-        const endDayStr = String(max).padStart(2, "0");
-        customLabel = `${startDayStr}/${monthStr}/${currentYear} - ${endDayStr}/${monthStr}/${currentYear}`;
-      } else if (rangeStart !== null) {
-        const startDayStr = String(rangeStart).padStart(2, "0");
-        customLabel = `${startDayStr}/${monthStr}/${currentYear}`;
-      } else {
-        customLabel = lang === "ml" ? "ഒക്ടോബർ 2026" : "October 2026";
-      }
+      const startDayStr = String(min).padStart(2, "0");
+      const endDayStr = String(max).padStart(2, "0");
+      const customLabel = `${startDayStr}/${monthStr}/${currentYear} - ${endDayStr}/${monthStr}/${currentYear}`;
+
+      const dateInfo: DatePickerDateInfo = {
+        mode: "range",
+        preset: activePreset,
+        startDate: new Date(currentYear, validMonth, min),
+        endDate: new Date(currentYear, validMonth, max),
+        daysCount,
+        label: customLabel,
+        startDay: min,
+        endDay: max,
+        month: validMonth,
+        year: currentYear,
+      };
+
+      onSelectPeriod("custom_range", customLabel, dateInfo);
+      onClose();
+      return;
+    }
+
+    // 2. Preset or single calendar day
+    let periodKey = activePreset;
+    let customLabel = "";
+    let daysCount = 30;
+
+    if (activePreset === "all_time") {
+      customLabel = lang === "ml" ? "എല്ലാ സമയവും" : "All time";
+      daysCount = 1095;
     } else if (activePreset === "today") {
       customLabel = lang === "ml" ? "ഇന്ന്" : "Today";
+      daysCount = 1;
     } else if (activePreset === "yesterday") {
       customLabel = lang === "ml" ? "ഇന്നലെ" : "Yesterday";
+      daysCount = 1;
     } else if (activePreset === "this_week") {
-      customLabel = lang === "ml" ? "ഈ ആഴ്ച" : "This Week";
+      customLabel = lang === "ml" ? "ഈ ആഴ്ച" : "This week";
+      daysCount = 7;
     } else if (activePreset === "last_week") {
-      customLabel = lang === "ml" ? "കഴിഞ്ഞ ആഴ്ച" : "Last Week";
+      customLabel = lang === "ml" ? "കഴിഞ്ഞ ആഴ്ച" : "Last week";
+      daysCount = 7;
     } else if (activePreset === "this_month") {
       customLabel = lang === "ml" ? "ഒക്ടോബർ 2026" : "October 2026";
+      daysCount = 31;
     } else if (activePreset === "last_month") {
       customLabel = lang === "ml" ? "സെപ്റ്റംബർ 2026" : "September 2026";
+      daysCount = 30;
     } else if (activePreset === "this_year") {
       customLabel = lang === "ml" ? "2026 വർഷം" : "Year 2026";
+      daysCount = 365;
     } else if (activePreset === "last_year") {
       customLabel = lang === "ml" ? "2025 വർഷം" : "Year 2025";
+      daysCount = 365;
     } else {
+      periodKey = "custom_single";
       const validDay = selectedDay || 8;
       const validYear = currentYear || 2026;
       const validMonth = typeof currentMonth === "number" ? currentMonth : 9;
@@ -142,8 +205,21 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
       const dayStr = String(validDay).padStart(2, "0");
       const monthStr = String(validMonth + 1).padStart(2, "0");
       customLabel = `${dayName}, ${dayStr}/${monthStr}/${validYear}`;
+      daysCount = 1;
     }
-    onSelectPeriod(activePreset, customLabel);
+
+    const dateInfo: DatePickerDateInfo = {
+      mode: activePreset === "custom" || periodKey === "custom_single" ? "single" : "preset",
+      preset: activePreset,
+      daysCount,
+      label: customLabel,
+      month: currentMonth,
+      year: currentYear,
+      startDate: new Date(currentYear, currentMonth, selectedDay || 8),
+      endDate: new Date(currentYear, currentMonth, selectedDay || 8),
+    };
+
+    onSelectPeriod(periodKey, customLabel, dateInfo);
     onClose();
   };
 
@@ -166,8 +242,8 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
   };
 
   const handleDayClick = (dayNum: number) => {
-    setActivePreset("custom");
     if (selectMode === "single") {
+      setActivePreset("custom");
       setSelectedDay(dayNum);
     } else {
       // Range selection
@@ -257,6 +333,10 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
                       } else if (preset.id === "last_month") {
                         setCurrentMonth(8);
                         setCurrentYear(2026);
+                      } else if (preset.id === "this_year") {
+                        setCurrentYear(2026);
+                      } else if (preset.id === "last_year") {
+                        setCurrentYear(2025);
                       }
                     }}
                     className={`rounded-full py-1.5 px-1.5 text-[10.5px] sm:text-[11px] font-bold transition-all cursor-pointer text-center truncate ${

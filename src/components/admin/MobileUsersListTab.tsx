@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Users,
   Search,
@@ -46,6 +46,10 @@ export function MobileUsersListTab({
 
   const [internalPeriodIndex, setInternalPeriodIndex] = useState(2); // default to "1 Oct - 7 Oct 2026"
   const [internalPeriod, setInternalPeriod] = useState<string | null>(null);
+
+  useEffect(() => {
+    setInternalPeriod(null);
+  }, [periodText]);
 
   const PERIOD_PRESETS = [
     "Today (ഇന്ന്)",
