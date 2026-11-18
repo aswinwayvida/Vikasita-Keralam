@@ -5,6 +5,7 @@ import {
   Layers,
   FolderTree,
   ChevronRight,
+  ChevronDown,
   FileText,
   MapPin,
   Calendar,
@@ -19,6 +20,9 @@ import {
   TrendingUp,
   Award,
   Users,
+  Filter,
+  Check,
+  RotateCcw,
 } from "lucide-react";
 import { useLang } from "@/i18n/LanguageProvider";
 
@@ -47,6 +51,9 @@ export interface MobileReportsPageProps {
   onBack: () => void;
   applications: MobileReportApplicationRecord[];
   onSelectApplication: (application: MobileReportApplicationRecord) => void;
+  onOpenApplicationFilter?: () => void;
+  isFilterActive?: boolean;
+  filterCount?: number;
 }
 
 interface SchemeReportDef {
@@ -67,6 +74,51 @@ interface CategoryReportDef {
   icon: string;
   schemesCount: number;
 }
+
+type SchemeStatusBucket = "approved" | "in_review" | "pending" | "rejected";
+type SchemeWorkView = "my_work" | "team";
+type SchemeLocationLevel = "state" | "region" | "org_district" | "mandalam" | "area" | "ward";
+type SchemeLocationField = "level" | "region" | "orgDistrict" | "mandalam" | "area" | "ward";
+
+interface SchemeLocationOption {
+  value: string;
+  en: string;
+  ml: string;
+}
+
+interface SchemeOrgDistrictOption extends SchemeLocationOption {
+  region: string;
+}
+
+interface SchemeLocationFilter {
+  region: string;
+  orgDistrict: string;
+  mandalam: string;
+  area: string;
+  ward: string;
+}
+
+interface SchemeFilterState {
+  workView: SchemeWorkView;
+  statuses: SchemeStatusBucket[];
+  locationLevel: SchemeLocationLevel;
+  location: SchemeLocationFilter;
+}
+
+const createEmptySchemeLocation = (): SchemeLocationFilter => ({
+  region: "",
+  orgDistrict: "",
+  mandalam: "",
+  area: "",
+  ward: "",
+});
+
+const createDefaultSchemeFilter = (): SchemeFilterState => ({
+  workView: "team",
+  statuses: [],
+  locationLevel: "state",
+  location: createEmptySchemeLocation(),
+});
 
 const REPORT_SCHEMES: SchemeReportDef[] = [
   {
@@ -330,6 +382,112 @@ const REPORT_CATEGORIES: CategoryReportDef[] = [
 
 const normalizeStr = (s?: string) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
+const KERALA_REGIONS: SchemeLocationOption[] = [
+  { value: "south", en: "South Region", ml: "ദക്ഷിണ മേഖല" },
+  { value: "central", en: "Central Region", ml: "മധ്യ മേഖല" },
+  { value: "north", en: "North Region", ml: "ഉത്തര മേഖല" },
+];
+
+const KERALA_ORG_DISTRICTS: SchemeOrgDistrictOption[] = [
+  { value: "thiruvananthapuram", en: "Thiruvananthapuram", ml: "തിരുവനന്തപുരം", region: "south" },
+  { value: "kollam", en: "Kollam", ml: "കൊല്ലം", region: "south" },
+  { value: "pathanamthitta", en: "Pathanamthitta", ml: "പത്തനംതിട്ട", region: "south" },
+  { value: "alappuzha", en: "Alappuzha", ml: "ആലപ്പുഴ", region: "south" },
+  { value: "kottayam", en: "Kottayam", ml: "കോട്ടയം", region: "south" },
+  { value: "idukki", en: "Idukki", ml: "ഇടുക്കി", region: "south" },
+  { value: "ernakulam", en: "Ernakulam", ml: "എറണാകുളം", region: "south" },
+  { value: "thrissur", en: "Thrissur", ml: "തൃശൂർ", region: "central" },
+  { value: "palakkad", en: "Palakkad", ml: "പാലക്കാട്", region: "central" },
+  { value: "malappuram", en: "Malappuram", ml: "മലപ്പുറം", region: "central" },
+  { value: "kozhikode", en: "Kozhikode", ml: "കോഴിക്കോട്", region: "north" },
+  { value: "wayanad", en: "Wayanad", ml: "വയനാട്", region: "north" },
+  { value: "kannur", en: "Kannur", ml: "കണ്ണൂർ", region: "north" },
+  { value: "kasaragod", en: "Kasaragod", ml: "കാസർഗോഡ്", region: "north" },
+];
+
+const KERALA_AREAS: SchemeLocationOption[] = [
+  { value: "north_area", en: "North Area", ml: "വടക്കൻ ഏരിയ" },
+  { value: "central_area", en: "Central Area", ml: "മധ്യ ഏരിയ" },
+  { value: "south_area", en: "South Area", ml: "തെക്കൻ ഏരിയ" },
+];
+
+const KERALA_WARDS: SchemeLocationOption[] = Array.from({ length: 10 }, (_, index) => {
+  const wardNumber = index + 1;
+  return {
+    value: `ward_${wardNumber}`,
+    en: `Ward ${wardNumber}`,
+    ml: `വാർഡ് ${wardNumber}`,
+  };
+});
+
+const SCHEME_LOCATION_LEVEL_OPTIONS: Array<SchemeLocationOption & { id: SchemeLocationLevel }> = [
+  { id: "state", value: "state", en: "State", ml: "സംസ്ഥാനം" },
+  { id: "region", value: "region", en: "Region", ml: "മേഖല" },
+  { id: "org_district", value: "org_district", en: "Org District", ml: "ഓർഗനൈസേഷൻ ജില്ല" },
+  { id: "mandalam", value: "mandalam", en: "Assembly Mandalam", ml: "അസംബ്ലി മണ്ഡലം" },
+  { id: "area", value: "area", en: "Area", ml: "ഏരിയ" },
+  { id: "ward", value: "ward", en: "Ward", ml: "വാർഡ്" },
+];
+
+const SCHEME_LOCATION_LEVEL_RANK: Record<SchemeLocationLevel, number> = {
+  state: 0,
+  region: 1,
+  org_district: 2,
+  mandalam: 3,
+  area: 4,
+  ward: 5,
+};
+
+const normalizeLocationValue = (value?: string) => (value || "").trim().toLowerCase();
+
+const splitSchemeLocation = (locationEn?: string, locationMl?: string) => {
+  const partsEn = (locationEn || "").split(",").map((part) => part.trim()).filter(Boolean);
+  const partsMl = (locationMl || "").split(",").map((part) => part.trim()).filter(Boolean);
+  return {
+    localityEn: partsEn.length > 1 ? partsEn[0] : "",
+    localityMl: partsMl.length > 1 ? partsMl[0] : "",
+    districtEn: partsEn[partsEn.length - 1] || "",
+    districtMl: partsMl[partsMl.length - 1] || "",
+  };
+};
+
+const getSchemeOrgDistrictDef = (districtEn?: string) => {
+  const key = normalizeLocationValue(districtEn);
+  return KERALA_ORG_DISTRICTS.find(
+    (district) => district.value === key || normalizeLocationValue(district.en) === key
+  );
+};
+
+const hashLocationValue = (value: string) => {
+  let hash = 0;
+  for (let index = 0; index < value.length; index++) {
+    hash = (hash * 31 + value.charCodeAt(index)) >>> 0;
+  }
+  return hash;
+};
+
+const getSchemeLocationLabel = (options: SchemeLocationOption[], value: string, lang: string) => {
+  const option = options.find((item) => item.value === value);
+  if (!option) return value;
+  return lang === "ml" ? option.ml : option.en;
+};
+
+const getApplicationLocationHierarchy = (app: MobileReportApplicationRecord) => {
+  const { localityEn, districtEn } = splitSchemeLocation(app.locationEn, app.locationMl);
+  const district = getSchemeOrgDistrictDef(districtEn);
+  const districtKey = district?.value || normalizeLocationValue(districtEn);
+  const seed = hashLocationValue(
+    `${app.ref}|${app.trackingId || ""}|${app.applicantNameEn}|${app.locationEn || ""}`
+  );
+  return {
+    region: district?.region || "",
+    orgDistrict: districtKey,
+    mandalam: normalizeLocationValue(localityEn),
+    area: KERALA_AREAS[seed % KERALA_AREAS.length].value,
+    ward: KERALA_WARDS[hashLocationValue(`${seed}-ward`) % KERALA_WARDS.length].value,
+  };
+};
+
 const KERALA_APPLICANT_POOL: Array<{
   nameEn: string;
   nameMl: string;
@@ -422,13 +580,94 @@ const generateSchemeApplications = (
   return result;
 };
 
+function getApplicationBucket(
+  app: MobileReportApplicationRecord
+): "rejected" | "pending" | "in_review" | "approved" {
+  const wst = (app.workflowStatus || "").toLowerCase();
+  const st = (app.status || "").toLowerCase();
+
+  // 1. Rejected
+  if (wst === "rejected" || st === "rejected") {
+    return "rejected";
+  }
+
+  // 2. Pending: Document Verified or Received / Pending
+  if (
+    wst === "document_verification_completed" ||
+    wst === "document_verified" ||
+    st === "document_verified" ||
+    wst === "application_received" ||
+    wst === "received" ||
+    st === "received" ||
+    wst === "pending" ||
+    st === "pending"
+  ) {
+    return "pending";
+  }
+
+  // 3. In Review
+  if (
+    wst === "in_review" ||
+    wst === "review" ||
+    wst === "under_review" ||
+    wst === "in_progress" ||
+    wst === "applied" ||
+    st === "in_review" ||
+    st === "review" ||
+    st === "under_review" ||
+    st === "in_progress"
+  ) {
+    return "in_review";
+  }
+
+  // 4. Approved
+  if (
+    wst === "beneficiary" ||
+    wst === "approved" ||
+    wst === "assisted" ||
+    st === "beneficiary" ||
+    st === "approved" ||
+    st === "disbursed"
+  ) {
+    return "approved";
+  }
+
+  // 5. Default
+  return "pending";
+}
+
+function getSchemeStats(apps: MobileReportApplicationRecord[]) {
+  const total = apps.length;
+  let approved = 0;
+  let inReview = 0;
+  let pending = 0;
+  let rejected = 0;
+
+  for (const app of apps) {
+    const bucket = getApplicationBucket(app);
+    if (bucket === "rejected") {
+      rejected++;
+    } else if (bucket === "approved") {
+      approved++;
+    } else if (bucket === "in_review") {
+      inReview++;
+    } else {
+      pending++;
+    }
+  }
+
+  return { total, approved, inReview, pending, rejected };
+}
+
 export function MobileReportsPage({
   onBack,
   applications = [],
   onSelectApplication,
+  onOpenApplicationFilter,
+  isFilterActive = false,
+  filterCount = 0,
 }: MobileReportsPageProps) {
   const { lang } = useLang();
-  const [activeTab, setActiveTab] = useState<"schemes" | "categories">("schemes");
   const [selectedScheme, setSelectedScheme] = useState<SchemeReportDef | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<CategoryReportDef | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -438,6 +677,93 @@ export function MobileReportsPage({
   const [schemeAppSearchQuery, setSchemeAppSearchQuery] = useState("");
   const [isSchemeAppSearchExpanded, setIsSchemeAppSearchExpanded] = useState(false);
   const [schemeStatusFilter, setSchemeStatusFilter] = useState<"all" | "approved" | "in_review" | "in_progress" | "pending" | "rejected">("all");
+
+  // Page-level Application Filter (work view + statuses + location)
+  const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
+  const [filterSheetBounds, setFilterSheetBounds] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
+  const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
+  const [openLocationField, setOpenLocationField] = useState<SchemeLocationField | null>(null);
+  const [appliedSchemeFilter, setAppliedSchemeFilter] = useState<SchemeFilterState>(() => createDefaultSchemeFilter());
+  const [draftSchemeFilter, setDraftSchemeFilter] = useState<SchemeFilterState>(() => createDefaultSchemeFilter());
+
+  const mandalamOptionsByDistrict = useMemo(() => {
+    const map = new Map<string, Map<string, SchemeLocationOption>>();
+    const addLocation = (locationEn?: string, locationMl?: string) => {
+      const { localityEn, localityMl, districtEn } = splitSchemeLocation(locationEn, locationMl);
+      const district = getSchemeOrgDistrictDef(districtEn);
+      const districtKey = district?.value || normalizeLocationValue(districtEn);
+      if (!districtKey) return;
+      if (!map.has(districtKey)) map.set(districtKey, new Map());
+      const options = map.get(districtKey);
+      if (!options || !localityEn) return;
+      const value = normalizeLocationValue(localityEn);
+      if (!options.has(value)) {
+        options.set(value, { value, en: localityEn, ml: localityMl || localityEn });
+      }
+    };
+
+    for (const app of applications) addLocation(app.locationEn, app.locationMl);
+    for (const person of KERALA_APPLICANT_POOL) addLocation(person.locationEn, person.locationMl);
+
+    for (const district of KERALA_ORG_DISTRICTS) {
+      if (!map.has(district.value)) map.set(district.value, new Map());
+      const options = map.get(district.value)!;
+      if (options.size === 0) {
+        options.set(district.value, {
+          value: district.value,
+          en: `${district.en} Mandalam`,
+          ml: `${district.ml} മണ്ഡലം`,
+        });
+      }
+    }
+    return map;
+  }, [applications]);
+
+  const allMandalamOptions = useMemo(() => {
+    const map = new Map<string, SchemeLocationOption>();
+    for (const options of mandalamOptionsByDistrict.values()) {
+      for (const [value, option] of options.entries()) {
+        if (!map.has(value)) map.set(value, option);
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => a.en.localeCompare(b.en));
+  }, [mandalamOptionsByDistrict]);
+
+  const appliedLocation = appliedSchemeFilter.location;
+  const appliedLocationChips: Array<{ key: string; label: string }> = [];
+  if (appliedLocation.region) {
+    appliedLocationChips.push({ key: "region", label: getSchemeLocationLabel(KERALA_REGIONS, appliedLocation.region, lang) });
+  }
+  if (appliedLocation.orgDistrict) {
+    appliedLocationChips.push({ key: "orgDistrict", label: getSchemeLocationLabel(KERALA_ORG_DISTRICTS, appliedLocation.orgDistrict, lang) });
+  }
+  if (appliedLocation.mandalam) {
+    appliedLocationChips.push({ key: "mandalam", label: getSchemeLocationLabel(allMandalamOptions, appliedLocation.mandalam, lang) });
+  }
+  if (appliedLocation.area) {
+    appliedLocationChips.push({ key: "area", label: getSchemeLocationLabel(KERALA_AREAS, appliedLocation.area, lang) });
+  }
+  if (appliedLocation.ward) {
+    appliedLocationChips.push({ key: "ward", label: getSchemeLocationLabel(KERALA_WARDS, appliedLocation.ward, lang) });
+  }
+
+  const hasLocationFilters = Boolean(
+    appliedLocation.region ||
+    appliedLocation.orgDistrict ||
+    appliedLocation.mandalam ||
+    appliedLocation.area ||
+    appliedLocation.ward
+  );
+  const hasLocalFilters =
+    appliedSchemeFilter.workView !== "team" ||
+    appliedSchemeFilter.statuses.length > 0 ||
+    hasLocationFilters;
+  const localFilterCount =
+    (appliedSchemeFilter.workView !== "team" ? 1 : 0) +
+    (appliedSchemeFilter.statuses.length > 0 ? 1 : 0) +
+    (hasLocationFilters ? 1 : 0);
+  const activeFilterCount = (isFilterActive ? filterCount : 0) + localFilterCount;
+
 
   // Group applications by Scheme
   const applicationsByScheme = useMemo(() => {
@@ -481,15 +807,45 @@ export function MobileReportsPage({
       }
     }
 
-    // Guarantee that every scheme has a rich complete roster of applications
+    // Guarantee that every scheme has a rich complete roster of applications when no filter is active
     for (const scheme of REPORT_SCHEMES) {
       const existing = map.get(scheme.id) || [];
-      const completeList = generateSchemeApplications(scheme, existing);
+      const completeList = isFilterActive ? existing : generateSchemeApplications(scheme, existing);
       map.set(scheme.id, completeList);
     }
 
     return map;
-  }, [applications]);
+  }, [applications, isFilterActive]);
+
+  // Apply the page-level filter (work view + statuses + location) to each scheme roster
+  const filteredByScheme = useMemo(() => {
+    if (!hasLocalFilters) return applicationsByScheme;
+    const statuses = new Set(appliedSchemeFilter.statuses);
+    const selectedLocation = appliedSchemeFilter.location;
+    const map = new Map<string, MobileReportApplicationRecord[]>();
+    for (const [schemeId, list] of applicationsByScheme.entries()) {
+      map.set(
+        schemeId,
+        list.filter((app) => {
+          const bucket = getApplicationBucket(app);
+          if (appliedSchemeFilter.workView === "my_work" && bucket !== "pending" && bucket !== "in_review") {
+            return false;
+          }
+          if (statuses.size > 0 && !statuses.has(bucket)) {
+            return false;
+          }
+          const appLocation = getApplicationLocationHierarchy(app);
+          if (selectedLocation.region && appLocation.region !== selectedLocation.region) return false;
+          if (selectedLocation.orgDistrict && appLocation.orgDistrict !== selectedLocation.orgDistrict) return false;
+          if (selectedLocation.mandalam && appLocation.mandalam !== selectedLocation.mandalam) return false;
+          if (selectedLocation.area && appLocation.area !== selectedLocation.area) return false;
+          if (selectedLocation.ward && appLocation.ward !== selectedLocation.ward) return false;
+          return true;
+        })
+      );
+    }
+    return map;
+  }, [applicationsByScheme, hasLocalFilters, appliedSchemeFilter]);
 
   // Group applications by Category from schemes
   const applicationsByCategory = useMemo(() => {
@@ -499,14 +855,14 @@ export function MobileReportsPage({
     }
 
     for (const scheme of REPORT_SCHEMES) {
-      const schemeApps = applicationsByScheme.get(scheme.id) || [];
+      const schemeApps = filteredByScheme.get(scheme.id) || [];
       const catId = scheme.categoryId || "agriculture";
       if (!map.has(catId)) map.set(catId, []);
       map.get(catId)!.push(...schemeApps);
     }
 
     return map;
-  }, [applicationsByScheme]);
+  }, [filteredByScheme]);
 
   // Count schemes per category
   const schemesCountByCategory = useMemo(() => {
@@ -539,11 +895,531 @@ export function MobileReportsPage({
     );
   }, [searchQuery]);
 
+  // Hide schemes that have no applications matching the active filter
+  const visibleSchemes = useMemo(() => {
+    if (!isFilterActive && !hasLocalFilters) return filteredSchemes;
+    return filteredSchemes.filter((scheme) => (filteredByScheme.get(scheme.id) || []).length > 0);
+  }, [filteredSchemes, filteredByScheme, isFilterActive, hasLocalFilters]);
+  const getFilterSheetBounds = (anchor?: HTMLElement | null) => {
+    let ancestor = anchor?.parentElement || null;
+    while (ancestor && ancestor !== document.body) {
+      const style = window.getComputedStyle(ancestor);
+      const rect = ancestor.getBoundingClientRect();
+      const isClippedFrame =
+        style.overflowX === "hidden" &&
+        style.overflowY === "hidden" &&
+        rect.width >= 280 &&
+        rect.height >= 400 &&
+        rect.width < window.innerWidth - 8 &&
+        rect.height <= window.innerHeight;
+      if (isClippedFrame) {
+        return { top: rect.top, left: rect.left, width: rect.width, height: rect.height };
+      }
+      ancestor = ancestor.parentElement;
+    }
+    return null;
+  };
+
+  const openFilterSheet = (event?: React.MouseEvent<HTMLButtonElement>) => {
+    if (onOpenApplicationFilter) {
+      onOpenApplicationFilter();
+      return;
+    }
+    setFilterSheetBounds(getFilterSheetBounds(event?.currentTarget));
+    setDraftSchemeFilter({
+      ...appliedSchemeFilter,
+      statuses: [...appliedSchemeFilter.statuses],
+      location: { ...appliedSchemeFilter.location },
+    });
+    setIsStatusMenuOpen(false);
+    setOpenLocationField(null);
+    setIsFilterSheetOpen(true);
+  };
+
+  const clearLocalFilters = () => {
+    setAppliedSchemeFilter(createDefaultSchemeFilter());
+    setDraftSchemeFilter(createDefaultSchemeFilter());
+    setOpenLocationField(null);
+  };
+
+  const toggleDraftStatus = (id: SchemeStatusBucket) => {
+    setDraftSchemeFilter((prev) => ({
+      ...prev,
+      statuses: prev.statuses.includes(id)
+        ? prev.statuses.filter((status) => status !== id)
+        : [...prev.statuses, id],
+    }));
+  };
+
+  const updateDraftLocation = (field: keyof SchemeLocationFilter, value: string) => {
+    setDraftSchemeFilter((prev) => {
+      const nextLocation = { ...prev.location, [field]: value };
+      if (field === "region") {
+        nextLocation.orgDistrict = "";
+        nextLocation.mandalam = "";
+        nextLocation.area = "";
+        nextLocation.ward = "";
+      } else if (field === "orgDistrict") {
+        nextLocation.mandalam = "";
+        nextLocation.area = "";
+        nextLocation.ward = "";
+      } else if (field === "mandalam") {
+        nextLocation.area = "";
+        nextLocation.ward = "";
+      } else if (field === "area") {
+        nextLocation.ward = "";
+      }
+      return { ...prev, location: nextLocation };
+    });
+    setOpenLocationField(null);
+  };
+
+  const statusFilterOptions: Array<{ id: SchemeStatusBucket; en: string; ml: string }> = [
+    { id: "approved", en: "Approved", ml: "അംഗീകരിച്ചവ" },
+    { id: "in_review", en: "In Review", ml: "പരിശോധനയിൽ" },
+    { id: "pending", en: "Pending", ml: "തീർപ്പുകൽപ്പിക്കാത്തവ" },
+    { id: "rejected", en: "Rejected", ml: "നിരസിച്ചവ" },
+  ];
+
+  const renderApplicationFilterSheet = () => {
+    if (!isFilterSheetOpen) return null;
+    const draftLocation = draftSchemeFilter.location;
+    const draftHasLocation = Boolean(
+      draftLocation.region ||
+      draftLocation.orgDistrict ||
+      draftLocation.mandalam ||
+      draftLocation.area ||
+      draftLocation.ward
+    );
+    const draftCount =
+      (draftSchemeFilter.workView !== "team" ? 1 : 0) +
+      (draftSchemeFilter.statuses.length > 0 ? 1 : 0) +
+      (draftHasLocation ? 1 : 0);
+    const draftStatusSummary =
+      draftSchemeFilter.statuses.length === 0
+        ? (lang === "ml" ? "എല്ലാ അപേക്ഷകളും" : "All Applications")
+        : draftSchemeFilter.statuses.length === 1
+          ? (() => {
+              const option = statusFilterOptions.find((item) => item.id === draftSchemeFilter.statuses[0]);
+              if (!option) return "1";
+              return lang === "ml" ? option.ml : option.en;
+            })()
+          : lang === "ml"
+            ? `${draftSchemeFilter.statuses.length} എണ്ണം തിരഞ്ഞെടുത്തു`
+            : `${draftSchemeFilter.statuses.length} selected`;
+
+    return (
+      <div
+        className={`fixed ${filterSheetBounds ? "" : "inset-0"} z-[120] flex items-end bg-slate-950/50 backdrop-blur-[1px] animate-in fade-in duration-150`}
+        style={filterSheetBounds ?? undefined}
+        onClick={() => setIsFilterSheetOpen(false)}
+      >
+        <div
+          className="w-full max-h-[88%] overflow-y-auto rounded-t-[24px] border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-2xl animate-in slide-in-from-bottom-full duration-300"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto -mt-1 mb-3" />
+
+          <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-orange-50 dark:bg-orange-950/40 text-[#ff5500]">
+                <Filter className="h-3.5 w-3.5 stroke-[2.2]" />
+              </div>
+              <span className="text-[13px] font-extrabold text-slate-900 dark:text-white">
+                {lang === "ml" ? "അപേക്ഷാ ഫിൽട്ടറുകൾ" : "Application Filters"}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsFilterSheetOpen(false)}
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+              aria-label={lang === "ml" ? "അടയ്ക്കുക" : "Close"}
+              title={lang === "ml" ? "അടയ്ക്കുക" : "Close"}
+            >
+              <X className="h-4 w-4 stroke-[2.2]" />
+            </button>
+          </div>
+
+          {/* Work View */}
+          <div className="space-y-1 mb-2.5">
+            <label className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 block">
+              {lang === "ml" ? "വർക്ക് വ്യൂ" : "Work View"}
+            </label>
+            <div className="grid grid-cols-2 gap-0.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 p-0.5">
+              {([
+                { id: "my_work" as SchemeWorkView, en: "My Work", ml: "എന്റെ ജോലി", icon: Inbox },
+                { id: "team" as SchemeWorkView, en: "Team", ml: "ടീം", icon: Users },
+              ]).map((option) => {
+                const WorkIcon = option.icon;
+                const isSelected = draftSchemeFilter.workView === option.id;
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => setDraftSchemeFilter((prev) => ({ ...prev, workView: option.id }))}
+                    className={`flex items-center justify-center gap-1 rounded-md border px-1.5 py-1 text-[10.5px] font-extrabold transition-all cursor-pointer ${
+                      isSelected
+                        ? "bg-orange-50 dark:bg-orange-950/30 border-orange-300 dark:border-orange-700 text-[#EA580C] dark:text-orange-400 shadow-2xs"
+                        : "bg-transparent border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                    }`}
+                  >
+                    <WorkIcon className="h-3 w-3 shrink-0" strokeWidth={2.2} />
+                    <span>{lang === "ml" ? option.ml : option.en}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Application Status - multi-select dropdown */}
+          <div className="space-y-1.5 mb-3">
+            <label className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 block">
+              {lang === "ml" ? "അപേക്ഷാ നില" : "Application Status"}
+            </label>
+            <button
+              type="button"
+              onClick={() => setIsStatusMenuOpen((open) => !open)}
+              aria-expanded={isStatusMenuOpen}
+              className="flex w-full items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-2 text-left cursor-pointer"
+            >
+              <span className="truncate text-[11.5px] font-bold text-slate-800 dark:text-slate-100">
+                {draftStatusSummary}
+              </span>
+              <ChevronDown
+                className={`h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform ${
+                  isStatusMenuOpen ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+            {isStatusMenuOpen && (
+              <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setDraftSchemeFilter((prev) => ({ ...prev, statuses: [] }))}
+                  className={`flex w-full items-center justify-between gap-2 px-2.5 py-2 text-[11px] font-semibold text-left transition-colors cursor-pointer ${
+                    draftSchemeFilter.statuses.length === 0
+                      ? "bg-orange-50 dark:bg-orange-950/40 text-[#EA580C] dark:text-orange-400"
+                      : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/60"
+                  }`}
+                >
+                  <span>{lang === "ml" ? "എല്ലാ അപേക്ഷകളും" : "All Applications"}</span>
+                  {draftSchemeFilter.statuses.length === 0 && (
+                    <Check className="h-3 w-3 shrink-0 stroke-[3]" />
+                  )}
+                </button>
+                {statusFilterOptions.map((option) => {
+                  const isChecked = draftSchemeFilter.statuses.includes(option.id);
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => toggleDraftStatus(option.id)}
+                      className={`flex w-full items-center gap-2 px-2.5 py-2 text-[11px] font-semibold text-left transition-colors cursor-pointer ${
+                        isChecked
+                          ? "bg-orange-50/70 dark:bg-orange-950/30 text-slate-900 dark:text-white"
+                          : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/60"
+                      }`}
+                    >
+                      <span
+                        className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[4px] border ${
+                          isChecked
+                            ? "border-[#EA580C] bg-[#EA580C] text-white"
+                            : "border-slate-300 dark:border-slate-600"
+                        }`}
+                      >
+                        {isChecked && <Check className="h-2.5 w-2.5 stroke-[3.4]" />}
+                      </span>
+                      <span className="truncate">{lang === "ml" ? option.ml : option.en}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Location Filter */}
+          <div className="space-y-2 mb-3">
+            <div className="flex items-center gap-1.5">
+              <MapPin className="h-3.5 w-3.5 text-[#ff5500]" />
+              <span className="text-[11px] font-extrabold text-slate-800 dark:text-slate-100">
+                {lang === "ml" ? "ലൊക്കേഷൻ ഫിൽട്ടർ" : "Location Filter"}
+              </span>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
+                {lang === "ml" ? "ലൊക്കേഷൻ ലെവൽ തിരഞ്ഞെടുക്കുക" : "Select Location Level"}
+              </label>
+              <button
+                type="button"
+                onClick={() => setOpenLocationField((open) => (open === "level" ? null : "level"))}
+                aria-expanded={openLocationField === "level"}
+                className="flex w-full items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-left cursor-pointer"
+              >
+                <span className="truncate text-[11px] font-bold text-slate-800 dark:text-slate-100">
+                  {lang === "ml"
+                    ? SCHEME_LOCATION_LEVEL_OPTIONS.find((option) => option.id === draftSchemeFilter.locationLevel)?.ml
+                    : SCHEME_LOCATION_LEVEL_OPTIONS.find((option) => option.id === draftSchemeFilter.locationLevel)?.en}
+                </span>
+                <ChevronDown
+                  className={`h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform ${
+                    openLocationField === "level" ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+              {openLocationField === "level" && (
+                <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800">
+                  {SCHEME_LOCATION_LEVEL_OPTIONS.map((option) => {
+                    const isSelected = draftSchemeFilter.locationLevel === option.id;
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => {
+                          const rank = SCHEME_LOCATION_LEVEL_RANK[option.id];
+                          setDraftSchemeFilter((prev) => {
+                            const nextLocation = { ...prev.location };
+                            if (rank === 0) {
+                              return { ...prev, locationLevel: option.id, location: createEmptySchemeLocation() };
+                            }
+                            if (rank < 2) nextLocation.orgDistrict = "";
+                            if (rank < 3) nextLocation.mandalam = "";
+                            if (rank < 4) nextLocation.area = "";
+                            if (rank < 5) nextLocation.ward = "";
+                            return { ...prev, locationLevel: option.id, location: nextLocation };
+                          });
+                          setOpenLocationField(null);
+                        }}
+                        className={`flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-[11px] font-semibold text-left transition-colors cursor-pointer ${
+                          isSelected
+                            ? "bg-orange-50 dark:bg-orange-950/40 text-[#EA580C] dark:text-orange-400"
+                            : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/60"
+                        }`}
+                      >
+                        <span>{lang === "ml" ? option.ml : option.en}</span>
+                        {isSelected && <Check className="h-3 w-3 shrink-0 stroke-[3]" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {(() => {
+              const rank = SCHEME_LOCATION_LEVEL_RANK[draftSchemeFilter.locationLevel];
+              const selectedLocation = draftSchemeFilter.location;
+              const orgDistrictOptions = selectedLocation.region
+                ? KERALA_ORG_DISTRICTS.filter((district) => district.region === selectedLocation.region)
+                : KERALA_ORG_DISTRICTS;
+              const selectedDistrictMandalams = new Map<string, SchemeLocationOption>();
+              for (const district of selectedLocation.orgDistrict) {
+                for (const option of mandalamOptionsByDistrict.get(district)?.values() || []) {
+                  if (!selectedDistrictMandalams.has(option.value)) {
+                    selectedDistrictMandalams.set(option.value, option);
+                  }
+                }
+              }
+              const mandalamOptions = selectedLocation.orgDistrict.length
+                ? Array.from(selectedDistrictMandalams.values()).sort((a, b) => a.en.localeCompare(b.en))
+                : allMandalamOptions;
+
+              const renderLocationDropdown = ({
+                field,
+                label,
+                allLabel,
+                value,
+                values = [],
+                multiple = false,
+                options,
+              }: {
+                field: Exclude<SchemeLocationField, "level">;
+                label: string;
+                allLabel: string;
+                value?: string;
+                values?: string[];
+                multiple?: boolean;
+                options: SchemeLocationOption[];
+              }) => {
+                const isOpen = openLocationField === field;
+                const selectedValues = multiple ? values : value ? [value] : [];
+                const selectedLabel =
+                  selectedValues.length === 0
+                    ? allLabel
+                    : selectedValues.length === 1
+                      ? getSchemeLocationLabel(options, selectedValues[0], lang)
+                      : lang === "ml"
+                        ? `${selectedValues.length} എണ്ണം തിരഞ്ഞെടുത്തു`
+                        : `${selectedValues.length} selected`;
+                return (
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
+                      {label}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setOpenLocationField((open) => (open === field ? null : field))}
+                      aria-expanded={isOpen}
+                      className="flex w-full items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-left cursor-pointer"
+                    >
+                      <span className="truncate text-[11px] font-bold text-slate-800 dark:text-slate-100">
+                        {selectedLabel}
+                      </span>
+                      <ChevronDown
+                        className={`h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform ${
+                          isOpen ? "rotate-180" : ""
+                        }`}
+                      />
+                    </button>
+                    {isOpen && (
+                      <div className="max-h-36 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800">
+                        <button
+                          type="button"
+                          onClick={() => (multiple ? clearDraftLocation(field) : updateDraftRegion(""))}
+                          className={`flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-[11px] font-semibold text-left transition-colors cursor-pointer ${
+                            selectedValues.length === 0
+                              ? "bg-orange-50 dark:bg-orange-950/40 text-[#EA580C] dark:text-orange-400"
+                              : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/60"
+                          }`}
+                        >
+                          <span>{allLabel}</span>
+                          {selectedValues.length === 0 && <Check className="h-3 w-3 shrink-0 stroke-[3]" />}
+                        </button>
+                        {options.map((option) => {
+                          const isSelected = selectedValues.includes(option.value);
+                          return (
+                            <button
+                              key={option.value}
+                              type="button"
+                              onClick={() =>
+                                multiple
+                                  ? toggleDraftLocation(field, option.value)
+                                  : updateDraftRegion(option.value)
+                              }
+                              className={`flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-[11px] font-semibold text-left transition-colors cursor-pointer ${
+                                isSelected
+                                  ? "bg-orange-50 dark:bg-orange-950/40 text-[#EA580C] dark:text-orange-400"
+                                  : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/60"
+                              }`}
+                            >
+                              <span className="truncate">{lang === "ml" ? option.ml : option.en}</span>
+                              {multiple ? (
+                                <span
+                                  className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[4px] border ${
+                                    isSelected
+                                      ? "border-[#EA580C] bg-[#EA580C] text-white"
+                                      : "border-slate-300 dark:border-slate-600"
+                                  }`}
+                                >
+                                  {isSelected && <Check className="h-2.5 w-2.5 stroke-[3.4]" />}
+                                </span>
+                              ) : (
+                                isSelected && <Check className="h-3 w-3 shrink-0 stroke-[3]" />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              };
+
+              if (rank === 0) return null;
+
+              return (
+                <div className="space-y-1.5">
+                  <div className={`grid gap-1.5 ${rank >= 2 ? "grid-cols-2" : "grid-cols-1"}`}>
+                    {renderLocationDropdown({
+                      field: "region",
+                      label: lang === "ml" ? "മേഖല തിരഞ്ഞെടുക്കുക" : "Select Region",
+                      allLabel: lang === "ml" ? "എല്ലാ മേഖലകളും" : "All Regions",
+                      value: selectedLocation.region,
+                      options: KERALA_REGIONS,
+                    })}
+                    {rank >= 2 &&
+                      renderLocationDropdown({
+                        field: "orgDistrict",
+                        label: lang === "ml" ? "ഓർഗനൈസേഷൻ ജില്ല" : "Org District",
+                        allLabel: lang === "ml" ? "എല്ലാ ഓർഗ് ജില്ലകളും" : "All Org Districts",
+                        value: selectedLocation.orgDistrict,
+                        options: orgDistrictOptions,
+                      })}
+                  </div>
+                  {rank >= 3 && (
+                    <div className={`grid gap-1.5 ${rank >= 4 ? "grid-cols-2" : "grid-cols-1"}`}>
+                      {renderLocationDropdown({
+                        field: "mandalam",
+                        label: lang === "ml" ? "അസംബ്ലി മണ്ഡലം" : "Assembly Mandalam",
+                        allLabel: lang === "ml" ? "എല്ലാ മണ്ഡലങ്ങളും" : "All Mandalams",
+                        value: selectedLocation.mandalam,
+                        options: mandalamOptions,
+                      })}
+                      {rank >= 4 &&
+                        renderLocationDropdown({
+                          field: "area",
+                          label: lang === "ml" ? "ഏരിയ" : "Area",
+                          allLabel: lang === "ml" ? "എല്ലാ ഏരിയകളും" : "All Areas",
+                          value: selectedLocation.area,
+                          options: KERALA_AREAS,
+                        })}
+                    </div>
+                  )}
+                  {rank >= 5 &&
+                    renderLocationDropdown({
+                      field: "ward",
+                      label: lang === "ml" ? "വാർഡ് / ബൂത്ത് തിരഞ്ഞെടുക്കുക" : "Select Ward / Booth",
+                      allLabel: lang === "ml" ? "എല്ലാ വാർഡുകളും / ബൂത്തുകളും" : "All Wards / Booths",
+                      value: selectedLocation.ward,
+                      options: KERALA_WARDS,
+                    })}
+                </div>
+              );
+            })()}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setDraftSchemeFilter(createDefaultSchemeFilter());
+                setIsStatusMenuOpen(false);
+                setOpenLocationField(null);
+              }}
+              className="w-1/3 flex items-center justify-center gap-1.5 rounded-lg border border-orange-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-orange-600 dark:text-orange-400 font-extrabold text-[11.5px] py-2.5 hover:bg-orange-50 transition-all cursor-pointer active:scale-[0.98]"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span>{lang === "ml" ? "റീസെറ്റ്" : "Reset"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAppliedSchemeFilter({
+                  ...draftSchemeFilter,
+                  statuses: [...draftSchemeFilter.statuses],
+                  location: { ...draftSchemeFilter.location },
+                });
+                setIsFilterSheetOpen(false);
+                setIsStatusMenuOpen(false);
+                setOpenLocationField(null);
+              }}
+              className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-[#ff5500] hover:bg-orange-600 text-white font-extrabold text-[11.5px] py-2.5 transition-all cursor-pointer active:scale-[0.98]"
+            >
+              <Filter className="h-3.5 w-3.5 stroke-[2.2]" />
+              <span>
+                {lang === "ml" ? "ഫിൽട്ടർ പ്രയോഗിക്കുക" : "Apply Filters"}
+                {draftCount > 0 ? ` (${draftCount})` : ""}
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Applications list for selected scheme
   const schemeApplications = useMemo(() => {
     if (!selectedScheme) return [];
-    return applicationsByScheme.get(selectedScheme.id) || [];
-  }, [selectedScheme, applicationsByScheme]);
+    return filteredByScheme.get(selectedScheme.id) || [];
+  }, [selectedScheme, filteredByScheme]);
 
   // Applications list for selected category
   const categoryApplications = useMemo(() => {
@@ -652,85 +1528,12 @@ export function MobileReportsPage({
     rejectedSchemeApps,
     filteredSchemeApplications,
   } = useMemo(() => {
-    // Exact classification matching user rules:
-    // Rejected: rejected
-    // Pending: Received, Document Verified
-    // In Review: in_review, in_progress, under_review, review
-    // Approved: beneficiary, approved
-    const getApplicationBucket = (
-      app: MobileReportApplicationRecord
-    ): "rejected" | "pending" | "in_review" | "approved" => {
-      const wst = (app.workflowStatus || "").toLowerCase();
-      const st = (app.status || "").toLowerCase();
-
-      // 1. Rejected
-      if (wst === "rejected" || st === "rejected") {
-        return "rejected";
-      }
-
-      // 2. Pending: Document Verified or Received / Pending
-      if (
-        wst === "document_verification_completed" ||
-        wst === "document_verified" ||
-        st === "document_verified" ||
-        wst === "application_received" ||
-        wst === "received" ||
-        st === "received" ||
-        wst === "pending" ||
-        st === "pending"
-      ) {
-        return "pending";
-      }
-
-      // 3. In Review
-      if (
-        wst === "in_review" ||
-        wst === "review" ||
-        wst === "under_review" ||
-        wst === "in_progress" ||
-        wst === "applied" ||
-        st === "in_review" ||
-        st === "review" ||
-        st === "under_review" ||
-        st === "in_progress"
-      ) {
-        return "in_review";
-      }
-
-      // 4. Approved
-      if (
-        wst === "beneficiary" ||
-        wst === "approved" ||
-        wst === "assisted" ||
-        st === "beneficiary" ||
-        st === "approved" ||
-        st === "disbursed"
-      ) {
-        return "approved";
-      }
-
-      // 5. Default
-      return "pending";
-    };
-
-    const total = schemeApplications.length;
-    let approved = 0;
-    let inReview = 0;
-    let pending = 0;
-    let rejected = 0;
-
-    for (const app of schemeApplications) {
-      const bucket = getApplicationBucket(app);
-      if (bucket === "rejected") {
-        rejected++;
-      } else if (bucket === "approved") {
-        approved++;
-      } else if (bucket === "in_review") {
-        inReview++;
-      } else {
-        pending++;
-      }
-    }
+    const stats = getSchemeStats(schemeApplications);
+    const total = stats.total;
+    const approved = stats.approved;
+    const inReview = stats.inReview;
+    const pending = stats.pending;
+    const rejected = stats.rejected;
 
     let list = schemeApplications;
     if (schemeStatusFilter === "approved") {
@@ -768,7 +1571,7 @@ export function MobileReportsPage({
     return (
       <div className="flex flex-col min-h-full bg-white dark:bg-slate-950 pb-8 animate-in fade-in duration-200">
         {/* Header */}
-        <header className="sticky top-0 z-30 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 px-3.5 py-1.5 shadow-2xs">
+        <header className="sticky top-0 z-30 bg-[#FFFDF9] dark:bg-slate-900 border-b border-slate-200/60 dark:border-slate-800/60 px-3.5 py-1.5 shadow-2xs">
           <div className="relative flex h-9 items-center justify-between w-full">
             <button
               type="button"
@@ -784,18 +1587,47 @@ export function MobileReportsPage({
             >
               <ArrowLeft className="h-3.5 w-3.5 stroke-[2.2]" />
             </button>
-            <h2 className="absolute inset-x-0 text-center text-[13.5px] font-extrabold text-[#0F172A] dark:text-white pointer-events-none px-12 truncate leading-tight">
+            <h2 className="absolute inset-y-0 left-10 right-20 flex items-center justify-center text-center text-[12.5px] font-extrabold text-[#0F172A] dark:text-white pointer-events-none truncate leading-tight">
               {lang === "ml" ? selectedScheme.nameMl : selectedScheme.nameEn}
             </h2>
-            <button
-              type="button"
-              onClick={() => setIsSchemeAppSearchExpanded(!isSchemeAppSearchExpanded)}
-              className="flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-full bg-[#FFF7EC] text-[#1b255a] hover:bg-orange-100 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 cursor-pointer transition-colors border border-orange-100/80 dark:border-slate-700 shadow-2xs z-10"
-              aria-label={lang === "ml" ? "തിരയുക" : "Search"}
-              title={lang === "ml" ? "തിരയുക" : "Search"}
-            >
-              <Search className="h-3.5 w-3.5 stroke-[2.2]" />
-            </button>
+
+            {/* Right Action Buttons: Search & Application Filter */}
+            <div className="flex items-center gap-1.5 shrink-0 z-10">
+              <button
+                type="button"
+                onClick={() => setIsSchemeAppSearchExpanded(!isSchemeAppSearchExpanded)}
+                className="flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-full bg-white text-[#1b255a] hover:bg-slate-50 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 cursor-pointer transition-colors border border-slate-200/80 dark:border-slate-700 shadow-2xs"
+                aria-label={lang === "ml" ? "തിരയുക" : "Search"}
+                title={lang === "ml" ? "തിരയുക" : "Search"}
+              >
+                <Search className="h-3.5 w-3.5 stroke-[2.2]" />
+              </button>
+
+              <button
+                type="button"
+                onClick={openFilterSheet}
+                aria-haspopup="dialog"
+                aria-expanded={isFilterSheetOpen}
+                className={`relative flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-full transition-all border shadow-2xs cursor-pointer ${
+                  activeFilterCount > 0
+                    ? "bg-orange-500 text-white border-orange-500 shadow-xs ring-2 ring-orange-500/20"
+                    : "bg-white text-[#1b255a] hover:bg-slate-50 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 border-slate-200/80 dark:border-slate-700"
+                }`}
+                title={lang === "ml" ? "അപേക്ഷാ ഫിൽട്ടർ" : "Application Filter"}
+                aria-label={lang === "ml" ? "അപേക്ഷാ ഫിൽട്ടർ" : "Application Filter"}
+              >
+                <Filter
+                  className={`h-3.5 w-3.5 stroke-[2.2] ${
+                    activeFilterCount > 0 ? "text-white" : "text-[#ff5500]"
+                  }`}
+                />
+                {activeFilterCount > 0 ? (
+                  <span className="absolute -top-1 -right-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-red-600 px-0.5 text-[8px] font-black leading-none text-white ring-1.5 ring-white dark:ring-slate-900">
+                    {activeFilterCount}
+                  </span>
+                ) : null}
+              </button>
+            </div>
           </div>
 
           {/* Expandable Search Input */}
@@ -932,12 +1764,13 @@ export function MobileReportsPage({
               <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 {lang === "ml" ? "അപേക്ഷകർ" : "Applications"} ({filteredSchemeApplications.length})
               </span>
-              {(schemeStatusFilter !== "all" || schemeAppSearchQuery) && (
+              {(schemeStatusFilter !== "all" || schemeAppSearchQuery || activeFilterCount > 0) && (
                 <button
                   type="button"
                   onClick={() => {
                     setSchemeStatusFilter("all");
                     setSchemeAppSearchQuery("");
+                    clearLocalFilters();
                   }}
                   className="text-[9.5px] font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
                 >
@@ -994,6 +1827,7 @@ export function MobileReportsPage({
             )}
           </div>
         </div>
+        {renderApplicationFilterSheet()}
       </div>
     );
   }
@@ -1006,7 +1840,7 @@ export function MobileReportsPage({
     return (
       <div className="flex flex-col min-h-full bg-white dark:bg-slate-950 pb-8 animate-in fade-in duration-200">
         {/* Header */}
-        <header className="sticky top-0 z-30 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 px-3.5 py-1.5 shadow-2xs">
+        <header className="sticky top-0 z-30 bg-[#FFFDF9] dark:bg-slate-900 border-b border-slate-200/60 dark:border-slate-800/60 px-3.5 py-1.5 shadow-2xs">
           <div className="relative flex h-9 items-center justify-between w-full">
             <button
               type="button"
@@ -1017,7 +1851,7 @@ export function MobileReportsPage({
             >
               <ArrowLeft className="h-3.5 w-3.5 stroke-[2.2]" />
             </button>
-            <h2 className="absolute inset-x-0 text-center text-[13.5px] font-extrabold text-[#0F172A] dark:text-white pointer-events-none px-12 truncate leading-tight">
+            <h2 className="absolute inset-y-0 left-10 right-10 flex items-center justify-center text-center text-[12.5px] font-extrabold text-[#0F172A] dark:text-white pointer-events-none truncate leading-tight">
               {lang === "ml" ? selectedCategory.nameMl : selectedCategory.nameEn}
             </h2>
           </div>
@@ -1113,6 +1947,7 @@ export function MobileReportsPage({
             )}
           </div>
         </div>
+        {renderApplicationFilterSheet()}
       </div>
     );
   }
@@ -1121,7 +1956,7 @@ export function MobileReportsPage({
   return (
     <div className="flex flex-col min-h-full bg-white dark:bg-slate-950 pb-8 animate-in fade-in duration-200">
       {/* Top Header */}
-      <header className="sticky top-0 z-30 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 px-3.5 py-1.5 shadow-2xs">
+      <header className="sticky top-0 z-30 bg-[#FFFDF9] dark:bg-slate-900 border-b border-slate-200/60 dark:border-slate-800/60 px-3.5 py-1.5 shadow-2xs">
         <div className="relative flex h-9 items-center justify-between w-full">
           {/* Back button */}
           <button
@@ -1135,35 +1970,61 @@ export function MobileReportsPage({
           </button>
 
           {/* Header Title */}
-          <h1 className="absolute inset-x-0 text-center text-[13.5px] font-extrabold text-[#0F172A] dark:text-white pointer-events-none px-12 truncate leading-tight">
-            {lang === "ml" ? "റിപ്പോർട്ടുകൾ" : "Reports"}
+          <h1 className="absolute inset-y-0 left-10 right-20 flex items-center justify-center text-center text-[12.5px] font-extrabold text-[#0F172A] dark:text-white pointer-events-none truncate leading-tight">
+            {lang === "ml" ? "പദ്ധതി തിരിച്ചുള്ള അപേക്ഷകൾ" : "Scheme-wise Applications"}
           </h1>
 
-          {/* Quick Search Toggle */}
-          <button
-            type="button"
-            onClick={() => setIsSearchExpanded(!isSearchExpanded)}
-            className="flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-full bg-[#FFF7EC] text-[#1b255a] hover:bg-orange-100 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 cursor-pointer transition-colors border border-orange-100/80 dark:border-slate-700 shadow-2xs z-10"
-            title={lang === "ml" ? "തിരയുക" : "Search"}
-          >
-            <Search className="h-3.5 w-3.5 stroke-[2.2]" />
-          </button>
+          {/* Right Action Buttons: Search & Application Filter */}
+          <div className="flex items-center gap-1.5 shrink-0 z-10">
+            {/* Quick Search Toggle */}
+            <button
+              type="button"
+              onClick={() => setIsSearchExpanded(!isSearchExpanded)}
+              className="flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-full bg-white text-[#1b255a] hover:bg-slate-50 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 cursor-pointer transition-colors border border-slate-200/80 dark:border-slate-700 shadow-2xs"
+              title={lang === "ml" ? "തിരയുക" : "Search"}
+              aria-label={lang === "ml" ? "തിരയുക" : "Search"}
+            >
+              <Search className="h-3.5 w-3.5 stroke-[2.2]" />
+            </button>
+
+            {/* Application Filter Button */}
+            <button
+              type="button"
+              onClick={openFilterSheet}
+              aria-haspopup="dialog"
+              aria-expanded={isFilterSheetOpen}
+              className={`relative flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-full transition-all border shadow-2xs cursor-pointer ${
+                activeFilterCount > 0
+                  ? "bg-orange-500 text-white border-orange-500 shadow-xs ring-2 ring-orange-500/20"
+                  : "bg-white text-[#1b255a] hover:bg-slate-50 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 border-slate-200/80 dark:border-slate-700"
+              }`}
+              title={lang === "ml" ? "അപേക്ഷാ ഫിൽട്ടർ" : "Application Filter"}
+              aria-label={lang === "ml" ? "അപേക്ഷാ ഫിൽട്ടർ" : "Application Filter"}
+            >
+              <Filter
+                className={`h-3.5 w-3.5 stroke-[2.2] ${
+                  activeFilterCount > 0 ? "text-white" : "text-[#ff5500]"
+                }`}
+              />
+              {activeFilterCount > 0 ? (
+                <span className="absolute -top-1 -right-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-red-600 px-0.5 text-[8px] font-black leading-none text-white ring-1.5 ring-white dark:ring-slate-900">
+                  {activeFilterCount}
+                </span>
+              ) : null}
+            </button>
+          </div>
         </div>
 
         {/* Collapsible Search Input */}
         {isSearchExpanded && (
-          <div className="relative mt-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+          <div className="relative mt-2 pt-1 border-t border-slate-200/60 dark:border-slate-800">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
             <input
               type="text"
               autoFocus
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={
-                activeTab === "schemes"
-                  ? lang === "ml" ? "പദ്ധതികൾ തിരയുക..." : "Search schemes..."
-                  : lang === "ml" ? "വിഭാഗങ്ങൾ തിരയുക..." : "Search categories..."
-              }
+              placeholder={lang === "ml" ? "പദ്ധതികൾ തിരയുക..." : "Search schemes..."}
               className="w-full h-7.5 pl-8 pr-7 text-[11px] font-semibold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#243D95] shadow-2xs"
             />
             {searchQuery && (
@@ -1179,178 +2040,167 @@ export function MobileReportsPage({
         )}
       </header>
 
-      {/* Main Body */}
-      <div className="p-3 space-y-2.5">
-        {/* 2 Tabs: Schemes (First) vs Categories (Next) - Underline Tab Style with Count */}
-        <div
-          role="tablist"
-          aria-label={lang === "ml" ? "പദ്ധതികൾ അല്ലെങ്കിൽ വിഭാഗങ്ങൾ" : "Schemes or Categories"}
-          className="grid grid-cols-2 border-b border-[#EADFD2] dark:border-slate-800"
-        >
-          {/* Tab 1: Schemes */}
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "schemes"}
-            onClick={() => setActiveTab("schemes")}
-            className={`relative flex items-center justify-center gap-1.5 pb-2 pt-1 text-[12.5px] font-extrabold tracking-tight transition-colors cursor-pointer ${
-              activeTab === "schemes"
-                ? "text-[#243D95] dark:text-blue-300"
-                : "text-[#7C8AAE] hover:text-[#243D95] dark:text-slate-400 dark:hover:text-blue-300"
-            }`}
-          >
-            <span>{lang === "ml" ? "പദ്ധതികൾ" : "Schemes"}</span>
-            <span className="text-[11px] font-bold opacity-80">({filteredSchemes.length})</span>
-            <span
-              aria-hidden="true"
-              className={`absolute -bottom-px left-1/2 h-[2.5px] w-14 -translate-x-1/2 rounded-full transition-colors ${
-                activeTab === "schemes" ? "bg-[#243D95] dark:bg-blue-300" : "bg-transparent"
-              }`}
-            />
-          </button>
 
-          {/* Tab 2: Categories */}
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "categories"}
-            onClick={() => setActiveTab("categories")}
-            className={`relative flex items-center justify-center gap-1.5 pb-2 pt-1 text-[12.5px] font-extrabold tracking-tight transition-colors cursor-pointer ${
-              activeTab === "categories"
-                ? "text-[#243D95] dark:text-blue-300"
-                : "text-[#7C8AAE] hover:text-[#243D95] dark:text-slate-400 dark:hover:text-blue-300"
-            }`}
-          >
-            <span>{lang === "ml" ? "വിഭാഗങ്ങൾ" : "Categories"}</span>
-            <span className="text-[11px] font-bold opacity-80">({filteredCategories.length})</span>
-            <span
-              aria-hidden="true"
-              className={`absolute -bottom-px left-1/2 h-[2.5px] w-14 -translate-x-1/2 rounded-full transition-colors ${
-                activeTab === "categories" ? "bg-[#243D95] dark:bg-blue-300" : "bg-transparent"
-              }`}
-            />
-          </button>
-        </div>
+      {/* Main Body - Scheme-wise Applications List */}
+      <div className="p-2.5 space-y-2">
+        <div className="space-y-1.5">
+          {visibleSchemes.map((scheme) => {
+            const schemeApps = filteredByScheme.get(scheme.id) || [];
+            const stats = getSchemeStats(schemeApps);
 
-        {/* TAB 1: Schemes View (First) */}
-        {activeTab === "schemes" && (
-          <div className="space-y-1.5">
-            {filteredSchemes.map((scheme) => {
-              const schemeApps = applicationsByScheme.get(scheme.id) || [];
-              const appsCount = schemeApps.length;
+            return (
+              <div
+                key={scheme.id}
+                onClick={() => {
+                  setSelectedScheme(scheme);
+                  setSchemeStatusFilter("all");
+                }}
+                className="group flex flex-col gap-1.5 px-2.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:border-blue-300 dark:hover:border-blue-800 transition-all cursor-pointer active:scale-[0.99]"
+              >
+                {/* Top Row: Scheme Logo, Name, Category & Chevron */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    {/* Left: Scheme Logo */}
+                    <div className="relative h-7 w-7 shrink-0 rounded-md bg-slate-50 dark:bg-slate-800 p-0.5 border border-slate-100 dark:border-slate-700 flex items-center justify-center overflow-hidden">
+                      <img
+                        src={scheme.logo}
+                        alt={scheme.nameEn}
+                        className="h-full w-full object-contain"
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = "none";
+                        }}
+                      />
+                      <FileText className="h-3 w-3 text-[#243D95] fallback-icon" />
+                    </div>
 
-              return (
-                <div
-                  key={scheme.id}
-                  onClick={() => setSelectedScheme(scheme)}
-                  className="group flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:border-blue-300 dark:hover:border-blue-800 transition-all cursor-pointer active:scale-[0.99]"
-                >
-                  {/* Left: Scheme Logo */}
-                  <div className="relative h-8 w-8 shrink-0 rounded-lg bg-slate-50 dark:bg-slate-800 p-1 border border-slate-100 dark:border-slate-700 flex items-center justify-center overflow-hidden">
-                    <img
-                      src={scheme.logo}
-                      alt={scheme.nameEn}
-                      className="h-full w-full object-contain"
-                      onError={(e) => {
-                        (e.target as HTMLElement).style.display = "none";
-                      }}
-                    />
-                    <FileText className="h-3.5 w-3.5 text-[#243D95] fallback-icon" />
-                  </div>
-
-                  {/* Middle: Scheme Name & Category */}
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-[11px] font-bold text-slate-900 dark:text-white leading-tight truncate group-hover:text-[#243D95] transition-colors">
-                      {lang === "ml" ? scheme.nameMl : scheme.nameEn}
-                    </h3>
-                    <div className="mt-0.5">
-                      <span className="inline-block text-[9px] font-medium text-slate-500 dark:text-slate-400 truncate">
+                    {/* Middle: Scheme Name & Category */}
+                    <div className="min-w-0 flex-1 flex flex-col justify-center">
+                      <h3 className="text-[11px] font-bold text-slate-900 dark:text-white leading-none truncate group-hover:text-[#243D95] transition-colors">
+                        {lang === "ml" ? scheme.nameMl : scheme.nameEn}
+                      </h3>
+                      <p className="text-[9px] font-medium text-slate-500 dark:text-slate-400 truncate leading-none mt-0.5">
                         {lang === "ml" ? scheme.categoryMl : scheme.categoryEn}
-                      </span>
+                      </p>
                     </div>
                   </div>
 
-                  {/* Right: Application icon and count only near arrow button in orange color */}
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <div className="flex items-center gap-1 text-[11px] font-bold text-orange-600 dark:text-orange-400">
-                      <FileText className="h-3.5 w-3.5 text-orange-500 dark:text-orange-400 stroke-[2.2]" />
-                      <span className="font-extrabold">{appsCount}</span>
-                    </div>
-                    <ChevronRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 group-hover:text-orange-500 group-hover:translate-x-0.5 transition-all" />
-                  </div>
+                  {/* Right: Chevron Arrow (Count removed) */}
+                  <ChevronRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 group-hover:text-[#243D95] group-hover:translate-x-0.5 transition-all shrink-0" />
                 </div>
-              );
-            })}
 
-            {filteredSchemes.length === 0 && (
-              <div className="p-6 text-center rounded-xl bg-white dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800">
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                  {lang === "ml" ? "പദ്ധതികൾ കണ്ടെത്തിയില്ല." : "No schemes found."}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
+                {/* 5-KPI Segmented Status Bar (Compact padding, gap and spaces) */}
+                <div className="flex items-stretch rounded-lg bg-[#FCFAF6] dark:bg-slate-900 border border-[#ECE7DF] dark:border-slate-800 shadow-2xs overflow-hidden divide-x divide-[#ECE7DF] dark:divide-slate-800">
+                  {/* 1. Applications */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedScheme(scheme);
+                      setSchemeStatusFilter("all");
+                    }}
+                    className="flex-1 py-1 px-0.5 flex flex-col items-center justify-center bg-blue-50/70 dark:bg-blue-950/40 transition-colors cursor-pointer text-center hover:bg-blue-100/60 dark:hover:bg-blue-900/50"
+                    title={lang === "ml" ? "എല്ലാ അപേക്ഷകളും" : "All Applications"}
+                  >
+                    <span className="text-[11.5px] font-extrabold text-[#0B2545] dark:text-blue-300 leading-none">
+                      {stats.total}
+                    </span>
+                    <span className="text-[7.5px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap leading-none">
+                      {lang === "ml" ? "അപേക്ഷകൾ" : "Applications"}
+                    </span>
+                  </button>
 
-        {/* TAB 2: Categories View (Next) */}
-        {activeTab === "categories" && (
-          <div className="space-y-1.5">
-            {filteredCategories.map((cat) => {
-              const catApps = applicationsByCategory.get(cat.id) || [];
-              const appsCount = catApps.length;
-              const schemesCount = schemesCountByCategory[cat.id] || cat.schemesCount;
+                  {/* 2. Approved */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedScheme(scheme);
+                      setSchemeStatusFilter("approved");
+                    }}
+                    className="flex-1 py-1 px-0.5 flex flex-col items-center justify-center transition-colors cursor-pointer text-center hover:bg-emerald-50/70 dark:hover:bg-emerald-950/40"
+                    title={lang === "ml" ? "അംഗീകരിച്ചവ" : "Approved"}
+                  >
+                    <span className="text-[11.5px] font-extrabold text-[#00875A] dark:text-emerald-400 leading-none">
+                      {stats.approved}
+                    </span>
+                    <span className="text-[7.5px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap leading-none">
+                      {lang === "ml" ? "അംഗീകാരം" : "Approved"}
+                    </span>
+                  </button>
 
-              return (
-                <div
-                  key={cat.id}
-                  onClick={() => setSelectedCategory(cat)}
-                  className="group flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:border-blue-300 dark:hover:border-blue-800 transition-all cursor-pointer active:scale-[0.99]"
-                >
-                  {/* Left: Category Icon */}
-                  <div className="relative h-8 w-8 shrink-0 rounded-lg bg-blue-50/60 dark:bg-slate-800 p-1 border border-blue-100/60 dark:border-slate-700 flex items-center justify-center overflow-hidden">
-                    <img
-                      src={cat.icon}
-                      alt={cat.nameEn}
-                      className="h-full w-full object-contain"
-                      onError={(e) => {
-                        (e.target as HTMLElement).style.display = "none";
-                      }}
-                    />
-                    <FolderTree className="h-3.5 w-3.5 text-[#243D95] fallback-icon" />
-                  </div>
+                  {/* 3. In Review */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedScheme(scheme);
+                      setSchemeStatusFilter("in_review");
+                    }}
+                    className="flex-1 py-1 px-0.5 flex flex-col items-center justify-center transition-colors cursor-pointer text-center hover:bg-sky-50/70 dark:hover:bg-sky-950/40"
+                    title={lang === "ml" ? "പരിശോധനയിൽ" : "In Review"}
+                  >
+                    <span className="text-[11.5px] font-extrabold text-[#2563EB] dark:text-sky-400 leading-none">
+                      {stats.inReview}
+                    </span>
+                    <span className="text-[7.5px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap leading-none">
+                      {lang === "ml" ? "പരിശോധനയിൽ" : "In Review"}
+                    </span>
+                  </button>
 
-                  {/* Middle: Category Name & Scheme Count */}
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-[11px] font-bold text-slate-900 dark:text-white leading-tight truncate group-hover:text-[#243D95] transition-colors">
-                      {lang === "ml" ? cat.nameMl : cat.nameEn}
-                    </h3>
-                    <p className="mt-0.5 text-[9px] font-medium text-slate-500 dark:text-slate-400">
-                      {schemesCount} {lang === "ml" ? "പദ്ധതികൾ" : "Schemes"}
-                    </p>
-                  </div>
+                  {/* 4. Pending */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedScheme(scheme);
+                      setSchemeStatusFilter("pending");
+                    }}
+                    className="flex-1 py-1 px-0.5 flex flex-col items-center justify-center transition-colors cursor-pointer text-center hover:bg-amber-50/70 dark:hover:bg-amber-950/40"
+                    title={lang === "ml" ? "തീർപ്പുകൽപ്പിക്കാത്തവ" : "Pending"}
+                  >
+                    <span className="text-[11.5px] font-extrabold text-[#EA580C] dark:text-amber-400 leading-none">
+                      {stats.pending}
+                    </span>
+                    <span className="text-[7.5px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap leading-none">
+                      {lang === "ml" ? "തീർപ്പില്ലാത്തവ" : "Pending"}
+                    </span>
+                  </button>
 
-                  {/* Right: Application icon and count only near arrow button in orange color */}
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <div className="flex items-center gap-1 text-[11px] font-bold text-orange-600 dark:text-orange-400">
-                      <FileText className="h-3.5 w-3.5 text-orange-500 dark:text-orange-400 stroke-[2.2]" />
-                      <span className="font-extrabold">{appsCount}</span>
-                    </div>
-                    <ChevronRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 group-hover:text-orange-500 group-hover:translate-x-0.5 transition-all" />
-                  </div>
+                  {/* 5. Rejected */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedScheme(scheme);
+                      setSchemeStatusFilter("rejected");
+                    }}
+                    className="flex-1 py-1 px-0.5 flex flex-col items-center justify-center transition-colors cursor-pointer text-center hover:bg-rose-50/70 dark:hover:bg-rose-950/40"
+                    title={lang === "ml" ? "നിരസിച്ചവ" : "Rejected"}
+                  >
+                    <span className="text-[11.5px] font-extrabold text-[#DC2626] dark:text-rose-400 leading-none">
+                      {stats.rejected}
+                    </span>
+                    <span className="text-[7.5px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap leading-none">
+                      {lang === "ml" ? "നിരസിച്ചത്" : "Rejected"}
+                    </span>
+                  </button>
                 </div>
-              );
-            })}
-
-            {filteredCategories.length === 0 && (
-              <div className="p-6 text-center rounded-xl bg-white dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800">
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                  {lang === "ml" ? "വിഭാഗങ്ങൾ കണ്ടെത്തിയില്ല." : "No categories found."}
-                </p>
               </div>
-            )}
-          </div>
-        )}
+            );
+          })}
+
+          {visibleSchemes.length === 0 && (
+            <div className="p-6 text-center rounded-xl bg-white dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800">
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                {activeFilterCount > 0
+                  ? (lang === "ml" ? "ഫിൽട്ടറുമായി പൊരുത്തപ്പെടുന്ന അപേക്ഷകൾ ഇല്ല." : "No applications match the selected filters.")
+                  : (lang === "ml" ? "പദ്ധതികൾ കണ്ടെത്തിയില്ല." : "No schemes found.")}
+              </p>
+            </div>
+          )}
+        </div>
       </div>
+      {renderApplicationFilterSheet()}
     </div>
   );
 }

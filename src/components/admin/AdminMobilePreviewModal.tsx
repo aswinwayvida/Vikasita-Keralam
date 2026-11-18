@@ -1678,6 +1678,16 @@ const mobileApplicationCollectedDetails: Record<string, MobileApplicationCollect
 
 type MobileDocumentKind = "pdf" | "word" | "jpg" | "png";
 
+type MobileCollectedFileRow = {
+  id: string;
+  titleEn: string;
+  titleMl?: string;
+  fileName: string;
+  size: string;
+  kind: MobileDocumentKind;
+  uploaded: boolean;
+};
+
 const mobileDocumentKindMeta: Record<
   MobileDocumentKind,
   { label: string; extension: string; tileClass: string; chipClass: string; Icon: React.ComponentType<{ className?: string }> }
@@ -6648,6 +6658,14 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [appDetailView, setAppDetailView] = useState<"overview" | "applicant" | "scheme" | "documents" | "history" | "support">("overview");
   const [collectedSubTab, setCollectedSubTab] = useState<"details" | "files">("details");
   const [openDocMenu, setOpenDocMenu] = useState<string | null>(null);
+  const [collectedFileRowsByRecord, setCollectedFileRowsByRecord] = useState<
+    Record<string, MobileCollectedFileRow[]>
+  >({});
+  const [collectedFilePickerTarget, setCollectedFilePickerTarget] = useState<{
+    recordRef: string;
+    fileId: string | null;
+  } | null>(null);
+  const collectedFileInputRef = useRef<HTMLInputElement>(null);
   const [copiedDetailKey, setCopiedDetailKey] = useState<string>("");
   const [pendingApplicantInfoView, setPendingApplicantInfoView] = useState(false);
   const [appInfoMenuOpen, setAppInfoMenuOpen] = useState(false);
@@ -6655,6 +6673,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [schemeDetailTab, setSchemeDetailTab] = useState<"about" | "eligibility">("about");
   const [schemeDetailGuide, setSchemeDetailGuide] = useState<"apply" | "requirements" | null>(null);
   const [appDeleteConfirmOpen, setAppDeleteConfirmOpen] = useState(false);
+  const [openApplicationMenuKey, setOpenApplicationMenuKey] = useState<string | null>(null);
+  const [openApplicationMenuUp, setOpenApplicationMenuUp] = useState(false);
   const [deletedApplicationRefs, setDeletedApplicationRefs] = useState<string[]>([]);
   const [appDetailMenuOpen, setAppDetailMenuOpen] = useState<boolean>(false);
   const [isTrackingSheetOpen, setIsTrackingSheetOpen] = useState<boolean>(false);
@@ -7038,6 +7058,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       : null;
     if (!record) return;
 
+    setSelectedApplicationRecord(record);
+
     const normalizeSchemeName = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, "");
     const applicationSchemeName = normalizeSchemeName(record.schemeNameEn);
 
@@ -7120,7 +7142,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     setAppInfoMenuOpen(false);
     setAppDetailView("overview");
     setSelectedApplicationRecord(null);
-    setMobileSubPage(appDetailReturnSubPage || "applications");
+    setMobileSubPage(
+      mobileSubPage === "none" ? "none" : appDetailReturnSubPage || "applications",
+    );
   };
 
   const handleSaveEditedApplicationDetails = () => {
@@ -7929,6 +7953,111 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 },
               ];
 
+              const defaultCollectedFiles = (): MobileCollectedFileRow[] => [
+                {
+                  id: "rationCardProof",
+                  titleEn: "Ration Card / Family Proof",
+                  titleMl: "റേഷൻ കാർഡ് / കുടുംബ തെളിവ്",
+                  fileName: "",
+                  size: "",
+                  kind: "pdf",
+                  uploaded: false,
+                },
+                ...documentList.map((doc) => ({
+                  id: `doc-${doc.fileName}`,
+                  titleEn: doc.titleEn,
+                  fileName: doc.fileName,
+                  size: doc.size,
+                  kind: doc.kind,
+                  uploaded: true,
+                })),
+              ];
+
+              const collectedFileRows =
+                collectedFileRowsByRecord[record.ref] ?? defaultCollectedFiles();
+              const uploadedFileCount = collectedFileRows.filter((file) => file.uploaded).length;
+              const totalFileCount = collectedFileRows.length;
+              const filledDetailCount = dataCollectionRows.filter((row) => {
+                const value = (row.value ?? "").trim();
+                return (
+                  Boolean(value)
+                  && !["—", "-", "Not recorded", "Not provided", "N/A", "Pending"].includes(value)
+                );
+              }).length;
+              const totalDetailCount = dataCollectionRows.length;
+
+              const updateCollectedFiles = (
+                updater: (rows: MobileCollectedFileRow[]) => MobileCollectedFileRow[],
+              ) => {
+                setCollectedFileRowsByRecord((current) => ({
+                  ...current,
+                  [record.ref]: updater(current[record.ref] ?? defaultCollectedFiles()),
+                }));
+              };
+
+              const openCollectedFilePicker = (fileId: string | null) => {
+                setCollectedFilePickerTarget({ recordRef: record.ref, fileId });
+                window.setTimeout(() => collectedFileInputRef.current?.click(), 0);
+              };
+
+              const formatUploadSize = (bytes: number) =>
+                bytes >= 1024 * 1024
+                  ? `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+                  : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+
+              const handleCollectedFilePicked = (file?: File) => {
+                const target = collectedFilePickerTarget;
+                if (!file || !target || target.recordRef !== record.ref) return;
+                const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+                if (!["pdf", "jpg", "jpeg", "png"].includes(extension)) {
+                  toast.error(
+                    lang === "ml"
+                      ? "PDF, JPG അല്ലെങ്കിൽ PNG ഫയൽ മാത്രം അപ്‌ലോഡ് ചെയ്യുക."
+                      : "Upload a PDF, JPG or PNG file only.",
+                  );
+                  return;
+                }
+                const kind: MobileDocumentKind =
+                  extension === "pdf" ? "pdf" : extension === "png" ? "png" : "jpg";
+                const size = formatUploadSize(file.size);
+                if (target.fileId) {
+                  updateCollectedFiles((rows) =>
+                    rows.map((row) =>
+                      row.id === target.fileId
+                        ? { ...row, fileName: file.name, size, kind, uploaded: true }
+                        : row,
+                    ),
+                  );
+                } else {
+                  const title =
+                    file.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim() || file.name;
+                  updateCollectedFiles((rows) => [
+                    ...rows,
+                    {
+                      id: `upload-${Date.now()}`,
+                      titleEn: title,
+                      fileName: file.name,
+                      size,
+                      kind,
+                      uploaded: true,
+                    },
+                  ]);
+                }
+                setCollectedFilePickerTarget(null);
+              };
+
+              const handleDeleteCollectedFile = (file: MobileCollectedFileRow) => {
+                updateCollectedFiles((rows) =>
+                  file.id.startsWith("upload-")
+                    ? rows.filter((row) => row.id !== file.id)
+                    : rows.map((row) =>
+                        row.id === file.id
+                          ? { ...row, fileName: "", size: "", uploaded: false }
+                          : row,
+                      ),
+                );
+              };
+
               return (
                 <div className="space-y-3">
                   {/* 2 Tabs: Details and Files */}
@@ -7948,7 +8077,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           : "text-[#7C8AAE] hover:text-[#243D95] dark:text-slate-400 dark:hover:text-blue-300"
                       }`}
                     >
-                      <span>{lang === "ml" ? "അധിക വിവരങ്ങൾ" : "Additional Details"}</span>
+                      <span>{lang === "ml" ? "വിവരങ്ങൾ" : "Details"}</span>
                       <span
                         className={`rounded-full px-1.5 py-0.5 text-[10px] font-extrabold ${
                           collectedSubTab === "details"
@@ -7956,7 +8085,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
                         }`}
                       >
-                        {dataCollectionRows.length}
+                        {filledDetailCount}/{totalDetailCount}
                       </span>
                       <span
                         aria-hidden="true"
@@ -7976,7 +8105,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           : "text-[#7C8AAE] hover:text-[#243D95] dark:text-slate-400 dark:hover:text-blue-300"
                       }`}
                     >
-                      <span>{lang === "ml" ? "ആവശ്യമായ രേഖകൾ" : "Required Files"}</span>
+                      <span>{lang === "ml" ? "ഫയലുകൾ" : "Files"}</span>
                       <span
                         className={`rounded-full px-1.5 py-0.5 text-[10px] font-extrabold ${
                           collectedSubTab === "files"
@@ -7984,7 +8113,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
                         }`}
                       >
-                        {documentList.length + 1}
+                        {uploadedFileCount}/{totalFileCount}
                       </span>
                       <span
                         aria-hidden="true"
@@ -8032,105 +8161,141 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     </div>
                   )}
 
-                  {/* Required Files Tab - document rows with upload status indicators */}
+                  {/* Files tab - upload, change and delete support */}
                   {collectedSubTab === "files" && (
                     <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs divide-y divide-slate-100 dark:border-slate-800 dark:bg-slate-900 animate-in fade-in duration-150">
-                      <div className="flex items-center gap-2.5 bg-slate-50/70 px-3.5 py-2.5 dark:bg-slate-800/30">
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-[10.5px] font-semibold leading-tight text-slate-800 dark:text-slate-100">
-                            {lang === "ml" ? "റേഷൻ കാർഡ് / കുടുംബ തെളിവ്" : "Ration Card / Family Proof"}
-                          </p>
-                          <p className="mt-0.5 truncate text-[10.5px] font-normal leading-tight text-slate-500 dark:text-slate-400">
-                            {lang === "ml" ? "സ്ഥിരീകരണത്തിന് ആവശ്യമാണ്" : "Required for verification"}
-                          </p>
-                          <span className="mt-1 inline-flex items-center gap-1 text-[10px] font-medium text-slate-400 dark:text-slate-500">
-                            <FileX className="h-3 w-3" strokeWidth={2} />
-                            {lang === "ml" ? "അപ്‌ലോഡ് ചെയ്തിട്ടില്ല" : "Not uploaded"}
-                          </span>
-                        </div>
-                      </div>
-                      {documentList.map((doc) => {
+                      <input
+                        ref={collectedFileInputRef}
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        className="sr-only"
+                        onChange={(event) => {
+                          handleCollectedFilePicked(event.currentTarget.files?.[0]);
+                          event.currentTarget.value = "";
+                        }}
+                      />
+                      {collectedFileRows.map((file) => {
                         return (
-                          <div
-                            key={doc.fileName}
-                            className="relative flex items-center gap-2.5 px-3.5 py-2.5"
-                          >
+                          <div key={file.id} className="relative flex items-center gap-2.5 px-3.5 py-2.5">
                             <div className="min-w-0 flex-1">
                               <p className="truncate text-[10.5px] font-semibold leading-tight text-slate-800 dark:text-slate-100">
-                                {doc.titleEn}
+                                {lang === "ml" ? file.titleMl || file.titleEn : file.titleEn}
                               </p>
-                              <p className="mt-0.5 truncate text-[10.5px] font-normal leading-tight text-slate-500 dark:text-slate-400">
-                                {doc.fileName}
-                              </p>
-                              <div className="mt-1 flex items-center gap-1.5">
-                                <span className="text-[10.5px] font-medium text-slate-400 dark:text-slate-500">
-                                  {doc.size}
-                                </span>
-                                <span
-                                  className="flex h-3 w-3 items-center justify-center rounded-full bg-emerald-500 text-white shadow-[0_1px_1px_rgba(16,185,129,0.3)]"
-                                  title={lang === "ml" ? "അപ്‌ലോഡ് ചെയ്തു" : "Uploaded"}
-                                  aria-label={lang === "ml" ? "അപ്‌ലോഡ് ചെയ്തു" : "Uploaded"}
-                                >
-                                  <Check className="h-2 w-2 stroke-[3.4]" />
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* 3-dot action menu */}
-                            <div className="relative shrink-0">
-                              <button
-                                type="button"
-                                onClick={() => setOpenDocMenu(openDocMenu === doc.fileName ? null : doc.fileName)}
-                                className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors cursor-pointer"
-                                aria-label={lang === "ml" ? "കൂടുതൽ പ്രവർത്തനങ്ങൾ" : "More actions"}
-                                title={lang === "ml" ? "കൂടുതൽ പ്രവർത്തനങ്ങൾ" : "More actions"}
-                              >
-                                <MoreVertical className="h-4 w-4" />
-                              </button>
-                              {openDocMenu === doc.fileName && (
+                              {file.uploaded ? (
                                 <>
-                                  <div
-                                    className="fixed inset-0 z-30"
-                                    onClick={() => setOpenDocMenu(null)}
-                                  />
-                                  <div className="absolute right-0 top-9 z-40 w-36 overflow-hidden rounded-xl border border-slate-200/90 bg-white py-1 shadow-lg animate-in fade-in zoom-in-95 duration-150 dark:border-slate-800 dark:bg-slate-900">
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setOpenDocMenu(null);
-                                        handleViewDocument(doc.fileName);
-                                      }}
-                                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
+                                  <p className="mt-0.5 truncate text-[10.5px] font-normal leading-tight text-slate-500 dark:text-slate-400">
+                                    {file.fileName}
+                                  </p>
+                                  <div className="mt-1 flex items-center gap-1.5">
+                                    <span className="text-[10.5px] font-medium text-slate-400 dark:text-slate-500">
+                                      {file.size}
+                                    </span>
+                                    <span
+                                      className="flex h-2 w-2 items-center justify-center rounded-full bg-emerald-500 text-white shadow-[0_1px_1px_rgba(16,185,129,0.3)]"
+                                      title={lang === "ml" ? "അപ്‌ലോഡ് ചെയ്തു" : "Uploaded"}
+                                      aria-label={lang === "ml" ? "അപ്‌ലോഡ് ചെയ്തു" : "Uploaded"}
                                     >
-                                      <Eye className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
-                                      <span>{lang === "ml" ? "കാണുക" : "View"}</span>
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setOpenDocMenu(null);
-                                        handleShareDocument(doc.titleEn || doc.fileName);
-                                      }}
-                                      className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-2 text-left text-[12px] font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
-                                    >
-                                      <Share2 className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
-                                      <span>{lang === "ml" ? "പങ്കിടുക" : "Share"}</span>
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setOpenDocMenu(null);
-                                        handleDownloadDocument(doc.fileName);
-                                      }}
-                                      className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-2 text-left text-[12px] font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
-                                    >
-                                      <Download className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
-                                      <span>{lang === "ml" ? "ഡൗൺലോഡ്" : "Download"}</span>
-                                    </button>
+                                      <Check className="h-1 w-1 stroke-[3.6]" />
+                                    </span>
                                   </div>
                                 </>
+                              ) : (
+                                <div className="mt-1 flex items-center justify-between gap-2">
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-400 dark:text-slate-500">
+                                    <FileX className="h-3 w-3" strokeWidth={2} />
+                                    {lang === "ml" ? "അപ്‌ലോഡ് ചെയ്തിട്ടില്ല" : "Not uploaded"}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => openCollectedFilePicker(file.id)}
+                                    className="inline-flex shrink-0 items-center gap-1 rounded-md border border-orange-300 bg-white px-2 py-1 text-[9.5px] font-extrabold text-orange-700 transition-colors hover:bg-orange-100 cursor-pointer dark:border-orange-900/60 dark:bg-transparent dark:text-orange-300"
+                                  >
+                                    <Upload className="h-2.5 w-2.5 stroke-[2.4]" />
+                                    {lang === "ml" ? "അപ്‌ലോഡ്" : "Upload"}
+                                  </button>
+                                </div>
                               )}
                             </div>
+
+                            {file.uploaded && (
+                              <div className="relative shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => setOpenDocMenu(openDocMenu === file.id ? null : file.id)}
+                                  className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                                  aria-label={lang === "ml" ? "കൂടുതൽ പ്രവർത്തനങ്ങൾ" : "More actions"}
+                                  title={lang === "ml" ? "കൂടുതൽ പ്രവർത്തനങ്ങൾ" : "More actions"}
+                                >
+                                  <MoreVertical className="h-4 w-4" />
+                                </button>
+                                {openDocMenu === file.id && (
+                                  <>
+                                    <div
+                                      className="fixed inset-0 z-30"
+                                      onClick={() => setOpenDocMenu(null)}
+                                    />
+                                    <div className="absolute right-0 top-9 z-40 w-40 overflow-hidden rounded-xl border border-slate-200/90 bg-white py-1 shadow-lg animate-in fade-in zoom-in-95 duration-150 dark:border-slate-800 dark:bg-slate-900">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setOpenDocMenu(null);
+                                          handleViewDocument(file.fileName);
+                                        }}
+                                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
+                                      >
+                                        <Eye className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                                        <span>{lang === "ml" ? "കാണുക" : "View"}</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setOpenDocMenu(null);
+                                          handleShareDocument(file.titleEn || file.fileName);
+                                        }}
+                                        className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-2 text-left text-[12px] font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
+                                      >
+                                        <Share2 className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                                        <span>{lang === "ml" ? "പങ്കിടുക" : "Share"}</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setOpenDocMenu(null);
+                                          handleDownloadDocument(file.fileName);
+                                        }}
+                                        className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-2 text-left text-[12px] font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
+                                      >
+                                        <Download className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                                        <span>{lang === "ml" ? "ഡൗൺലോഡ്" : "Download"}</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setOpenDocMenu(null);
+                                          openCollectedFilePicker(file.id);
+                                        }}
+                                        className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-2 text-left text-[12px] font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
+                                      >
+                                        <RefreshCw className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                                        <span>{lang === "ml" ? "ഫയൽ മാറ്റുക" : "Change File"}</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setOpenDocMenu(null);
+                                          handleDeleteCollectedFile(file);
+                                          toast.success(lang === "ml" ? "ഫയൽ നീക്കം ചെയ്തു" : "File removed");
+                                        }}
+                                        className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-2 text-left text-[12px] font-semibold text-rose-600 hover:bg-rose-50 dark:border-slate-800 dark:text-rose-400 dark:hover:bg-rose-950/40 cursor-pointer"
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                        <span>{lang === "ml" ? "ഫയൽ നീക്കുക" : "Delete File"}</span>
+                                      </button>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            )}
                           </div>
                         );
                       })}
@@ -10314,6 +10479,190 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     mobileContentRef.current?.scrollTo({ top: 0 });
   };
 
+  const handleApplicationCardCall = (application: MobileApplicationRecord) => {
+    const phoneDigits = (application.phone || "").replace(/\D/g, "");
+    if (phoneDigits.length < 10) {
+      toast.error(lang === "ml" ? "ഫോൺ നമ്പർ ലഭ്യമല്ല" : "Phone number not available");
+      return;
+    }
+    if (typeof window !== "undefined") {
+      window.location.href = `tel:+91${phoneDigits.slice(-10)}`;
+    }
+  };
+
+  const handleApplicationCardShare = async (application: MobileApplicationRecord) => {
+    const title =
+      lang === "ml"
+        ? application.schemeNameMl || application.schemeNameEn
+        : application.schemeNameEn || application.schemeNameMl;
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    try {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share({ title, text: title, url });
+      } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+        await navigator.clipboard.writeText(`${title} ${url}`.trim());
+        toast.success(lang === "ml" ? "ലിങ്ക് പകർത്തി" : "Link copied to clipboard");
+      }
+    } catch {
+      // User cancelled the share sheet.
+    }
+  };
+
+  const renderMobileApplicationSimpleCard = (application: MobileApplicationRecord, index = 0) => {
+    const schemeTitle =
+      lang === "ml"
+        ? application.schemeNameMl || application.schemeNameEn
+        : application.schemeNameEn || application.schemeNameMl;
+    const applicantName =
+      lang === "ml"
+        ? application.applicantNameMl || application.applicantNameEn
+        : application.applicantNameEn || application.applicantNameMl;
+    const menuKey = `${application.ref}-${index}`;
+    const isMenuOpen = openApplicationMenuKey === menuKey;
+
+    const menuActions = [
+      {
+        id: "edit",
+        labelEn: "Edit",
+        labelMl: "തിരുത്തുക",
+        icon: Pencil,
+        onClick: () => handleEditApplicationDetails(application),
+      },
+      {
+        id: "view",
+        labelEn: "View",
+        labelMl: "കാണുക",
+        icon: Eye,
+        onClick: () => openMobileApplicationDetail(application),
+      },
+      {
+        id: "upload",
+        labelEn: "Upload Pending Files",
+        labelMl: "ബാക്കിയുള്ള രേഖകൾ അപ്ലോഡ് ചെയ്യുക",
+        icon: Upload,
+        onClick: () => openDocumentVerificationForApplication(application),
+      },
+      {
+        id: "call",
+        labelEn: "Call",
+        labelMl: "വിളിക്കുക",
+        icon: Phone,
+        onClick: () => handleApplicationCardCall(application),
+      },
+      {
+        id: "share",
+        labelEn: "Share Scheme",
+        labelMl: "പദ്ധതി പങ്കിടുക",
+        icon: Share2,
+        onClick: () => void handleApplicationCardShare(application),
+      },
+      {
+        id: "delete",
+        labelEn: "Delete",
+        labelMl: "നീക്കം ചെയ്യുക",
+        icon: Trash2,
+        onClick: () => {
+          setAppDetailReturnSubPage("applications");
+          setSelectedApplicationRecord(application);
+          setAppDeleteConfirmOpen(true);
+        },
+        danger: true,
+      },
+    ];
+
+    return (
+      <div
+        key={menuKey}
+        onClick={() => openMobileApplicationDetail(application)}
+        className="group relative cursor-pointer rounded-lg border border-slate-200/80 bg-white px-3 py-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all duration-200 hover:border-slate-300/80 hover:shadow-[0_8px_24px_-12px_rgba(15,23,42,0.18)] dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
+      >
+        <div className="flex min-w-0 items-center justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <h4 className="truncate text-[13px] font-extrabold leading-tight text-[#0a0f1d] transition-colors duration-150 group-hover:text-[#f15a0a] dark:text-white dark:group-hover:text-orange-400">
+              {schemeTitle}
+            </h4>
+            <p className="mt-0.5 truncate text-[10.5px] font-medium leading-tight text-slate-500 dark:text-slate-400">
+              {applicantName}
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            <MobileApplicationStatusBadge
+              status={application.workflowStatus ?? "application_received"}
+              lang={lang}
+              size="tiny"
+            />
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                const containerRect = mobileContentRef.current?.getBoundingClientRect();
+                const buttonRect = event.currentTarget.getBoundingClientRect();
+                setOpenApplicationMenuUp(
+                  containerRect ? buttonRect.bottom + 210 > containerRect.bottom : false,
+                );
+                setOpenApplicationMenuKey(isMenuOpen ? null : menuKey);
+              }}
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-colors cursor-pointer ${
+                isMenuOpen
+                  ? "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                  : "text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+              }`}
+              title={lang === "ml" ? "കൂടുതൽ പ്രവർത്തനങ്ങൾ" : "More actions"}
+              aria-label={lang === "ml" ? "കൂടുതൽ പ്രവർത്തനങ്ങൾ" : "More actions"}
+            >
+              <MoreVertical className="h-4 w-4 stroke-[2.2]" />
+            </button>
+          </div>
+        </div>
+
+        {isMenuOpen && (
+          <>
+            <div
+              className="fixed inset-0 z-40"
+              onClick={(event) => {
+                event.stopPropagation();
+                setOpenApplicationMenuKey(null);
+              }}
+            />
+            <div
+              className={`absolute right-2 z-50 w-[200px] rounded-lg border border-slate-200 bg-white py-1 shadow-xl dark:border-slate-700 dark:bg-slate-900 ${
+                openApplicationMenuUp ? "bottom-9" : "top-9"
+              }`}
+              onClick={(event) => event.stopPropagation()}
+            >
+              {menuActions.map((action) => {
+                const ActionIcon = action.icon;
+                return (
+                  <button
+                    key={action.id}
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setOpenApplicationMenuKey(null);
+                      action.onClick();
+                    }}
+                    className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] font-semibold transition-colors cursor-pointer ${
+                      action.danger
+                        ? "border-t border-slate-100 text-red-600 hover:bg-red-50 dark:border-slate-800 dark:text-red-400 dark:hover:bg-red-950/40"
+                        : "text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80"
+                    }`}
+                  >
+                    <ActionIcon
+                      className={`h-3.5 w-3.5 shrink-0 ${
+                        action.danger ? "text-red-500 dark:text-red-400" : "text-slate-500 dark:text-slate-400"
+                      }`}
+                    />
+                    <span className="min-w-0 flex-1 leading-snug">{lang === "ml" ? action.labelMl : action.labelEn}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
+
   const renderLatestSavedApplicationsSection = () => {
     if (latestSavedApplications.length === 0) return null;
 
@@ -11877,7 +12226,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         ? "px-3.5"
                         : "px-3"
                   } ${
-                    mobileSubPage === "create_scheme" ? "pt-0" : createFlowStep === "scheme_details" ? "pt-3" : mobileSubPage === "events_announcements" ? "pt-2.5" : "pt-1.5"
+                    mobileSubPage === "create_scheme" ? "pt-0" : createFlowStep === "scheme_details" ? "pt-2" : mobileSubPage === "events_announcements" ? "pt-2.5" : "pt-1.5"
                   } ${
                     !isGuest &&
                     !isMobileAuthOpen &&
@@ -16536,8 +16885,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
                 {/* List of Applications */}
                 <div className="space-y-1.5">
-                  {groupMobileApplicationsByApplicant(displayedMobileApplicationRecords).map((group) =>
-                    renderMobileApplicationApplicantCard(group),
+                  {displayedMobileApplicationRecords.map((application, index) =>
+                    renderMobileApplicationSimpleCard(application, index),
                   )}
                   {displayedMobileApplicationRecords.length === 0 && (
                     <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-8 text-center dark:border-slate-800 dark:bg-slate-900">
@@ -18314,24 +18663,28 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
                     {/* Step 4: Missing Scheme-Specific Details View */}
                     {createFlowStep === "scheme_details" && selectedEligibleScheme && (
-                      <div className="space-y-2.5 text-left animate-in fade-in duration-200">
+                      <div className="space-y-2 text-left animate-in fade-in duration-200">
                         {/* Unified Scheme Card with embedded Applicant details */}
-                        <div className="rounded-2xl border border-orange-200/80 bg-white p-3 shadow-2xs dark:border-orange-900/50 dark:bg-card space-y-2.5">
-                          <div className="flex items-start gap-2.5">
+                        <div className="rounded-2xl border border-orange-200/80 bg-white p-2.5 shadow-2xs dark:border-orange-900/50 dark:bg-card space-y-2">
+                          <div className="flex items-start gap-2">
                             <UserRound className="h-5 w-5 shrink-0 text-slate-400 dark:text-slate-500" strokeWidth={1.8} />
                             <div className="flex min-w-0 flex-1 items-start justify-between gap-2">
                               <div className="min-w-0 flex-1">
                                 <p className="break-words text-[13.5px] font-extrabold leading-snug text-foreground">
                                   {createFullName.trim() || "Applicant"}
                                 </p>
-                                <p className="mt-0.5 break-words text-[11px] font-medium leading-snug text-muted-foreground">
+                                <p className="break-words text-[10.5px] font-medium leading-snug text-muted-foreground">
                                   {lang === "ml"
-                                    ? [createMandalam ? getConstituencyName(createMandalam, "ml") : "", createDistrict ? getDistrictName(createDistrict, "ml") : ""].filter(Boolean).join(", ") || "കേരളം"
-                                    : [createMandalam.trim(), createDistrict.trim()].filter(Boolean).join(", ") || "Kerala"}
+                                    ? [createMandalam ? getConstituencyName(createMandalam, "ml") : "", createDistrict ? getDistrictName(createDistrict, "ml") : ""].filter(Boolean).join(", ")
+                                      || selectedApplicationRecord?.locationMl
+                                      || "—"
+                                    : [createMandalam.trim(), createDistrict.trim()].filter(Boolean).join(", ")
+                                      || selectedApplicationRecord?.locationEn
+                                      || "—"}
                                 </p>
                               </div>
-                              <span className="mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-full border border-orange-200 bg-white/80 px-2 py-1 text-[10px] font-bold text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/60 dark:text-orange-300">
-                                <Inbox className="h-3 w-3 shrink-0" strokeWidth={2} />
+                              <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-orange-200 bg-white/80 px-1.5 py-0.5 text-[9.5px] font-bold text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/60 dark:text-orange-300">
+                                <Inbox className="h-2.5 w-2.5 shrink-0" strokeWidth={2} />
                                 <span>
                                   {lang === "ml" ? "അപേക്ഷ ലഭിച്ചു" : "Application Received"}
                                 </span>
@@ -18342,7 +18695,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           <div className="border-t border-orange-100 dark:border-orange-900/40" aria-hidden="true" />
 
                           <div className="flex items-center gap-2">
-                            <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-orange-100 bg-white p-0.5 dark:border-orange-900/50 dark:bg-orange-950/20">
+                            <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-md border border-orange-100 bg-white p-0.5 dark:border-orange-900/50 dark:bg-orange-950/20">
                               <img
                                 src={getEligibleSchemeLogo(selectedEligibleScheme)}
                                 alt=""
@@ -18351,10 +18704,10 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                               />
                             </span>
                             <div className="min-w-0 flex-1">
-                              <p className="break-words text-[11.5px] font-bold leading-tight text-foreground">
+                              <p className="break-words text-[11px] font-bold leading-tight text-foreground">
                                 {lang === "ml" ? selectedEligibleScheme.titleMl : selectedEligibleScheme.titleEn}
                               </p>
-                              <p className="text-[10px] font-medium leading-none text-muted-foreground">
+                              <p className="text-[9.5px] font-medium leading-none text-muted-foreground">
                                 {lang === "ml"
                                   ? getSchemeCategoryLabel(selectedEligibleScheme).ml
                                   : getSchemeCategoryLabel(selectedEligibleScheme).en}
@@ -18364,10 +18717,10 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         </div>
 
                         {isPmKisanScheme(selectedEligibleScheme) && (
-                          <div className="rounded-2xl border border-orange-200/80 bg-white p-3 shadow-2xs dark:border-orange-900/50 dark:bg-card [&_input]:!rounded-md [&_select]:!rounded-md [&_input]:border-slate-300 [&_select]:border-slate-300 [&_input]:bg-white [&_select]:bg-white">
-                            <div className="space-y-3">
+                          <div className="rounded-2xl border border-orange-200/80 bg-white p-2.5 shadow-2xs dark:border-orange-900/50 dark:bg-card [&_input]:!rounded-md [&_select]:!rounded-md [&_input]:border-slate-300 [&_select]:border-slate-300 [&_input]:bg-white [&_select]:bg-white">
+                            <div className="space-y-2">
                               <div>
-                                <label htmlFor="pm_kisan_land_ownership" className="mb-1 block text-[11px] font-bold text-foreground">
+                                <label htmlFor="pm_kisan_land_ownership" className="mb-0.5 block text-[11px] font-bold text-foreground">
                                   {lang === "ml" ? "കാർഷിക ഭൂമി ഉടമസ്ഥത" : "Agricultural Land Ownership"}{" "}
                                   <span className="text-orange-600 dark:text-orange-400">*</span>
                                 </label>
@@ -18375,7 +18728,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                   id="pm_kisan_land_ownership"
                                   value={pmKisanDetails.landOwnership}
                                   onChange={(event) => updatePmKisanDetails({ landOwnership: event.target.value })}
-                                  className="w-full rounded-xl border border-border bg-background p-2.5 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500"
+                                  className="w-full rounded-xl border border-border bg-background px-2.5 py-2 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500"
                                 >
                                   <option value="">{lang === "ml" ? "-- തിരഞ്ഞെടുക്കുക --" : "-- Select --"}</option>
                                   {pmKisanLandOwnershipOptions.map((option) => (
@@ -18387,7 +18740,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                               </div>
 
                               <div>
-                                <label htmlFor="pm_kisan_landowner_name" className="mb-1 block text-[11px] font-bold text-foreground">
+                                <label htmlFor="pm_kisan_landowner_name" className="mb-0.5 block text-[11px] font-bold text-foreground">
                                   {lang === "ml" ? "ഭൂവുടമയുടെ പേര്" : "Landowner Name"}{" "}
                                   <span className="text-orange-600 dark:text-orange-400">*</span>
                                 </label>
@@ -18397,12 +18750,12 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                   value={pmKisanDetails.landownerName}
                                   onChange={(event) => updatePmKisanDetails({ landownerName: event.target.value })}
                                   placeholder={lang === "ml" ? "ഭൂവുടമയുടെ പേര് നൽകുക" : "Enter landowner name"}
-                                  className="w-full rounded-xl border border-border bg-background p-2.5 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500"
+                                  className="w-full rounded-xl border border-border bg-background px-2.5 py-2 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500"
                                 />
                               </div>
-                              <div className="space-y-3">
+                              <div className="space-y-2">
                                 <div>
-                                  <label htmlFor="pm_kisan_land_district" className="mb-1 block text-[11px] font-bold text-foreground">
+                                  <label htmlFor="pm_kisan_land_district" className="mb-0.5 block text-[11px] font-bold text-foreground">
                                     {lang === "ml" ? "ഭൂമി ജില്ല" : "Land District"}{" "}
                                     <span className="text-orange-600 dark:text-orange-400">*</span>
                                   </label>
@@ -18414,7 +18767,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       landTaluk: "",
                                       revenueVillage: "",
                                     })}
-                                    className="w-full rounded-xl border border-border bg-background p-2.5 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500"
+                                    className="w-full rounded-xl border border-border bg-background px-2.5 py-2 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500"
                                   >
                                     <option value="">{lang === "ml" ? "-- തിരഞ്ഞെടുക്കുക --" : "-- Select --"}</option>
                                     {districts.map((district) => (
@@ -18425,7 +18778,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                   </select>
                                 </div>
                                 <div>
-                                  <label htmlFor="pm_kisan_land_taluk" className="mb-1 block text-[11px] font-bold text-foreground">
+                                  <label htmlFor="pm_kisan_land_taluk" className="mb-0.5 block text-[11px] font-bold text-foreground">
                                     {lang === "ml" ? "താലൂക്ക്" : "Taluk"}{" "}
                                     <span className="text-orange-600 dark:text-orange-400">*</span>
                                   </label>
@@ -18437,7 +18790,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                       landTaluk: event.target.value,
                                       revenueVillage: "",
                                     })}
-                                    className="w-full rounded-xl border border-border bg-background p-2.5 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500 disabled:cursor-not-allowed disabled:opacity-60"
+                                    className="w-full rounded-xl border border-border bg-background px-2.5 py-2 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500 disabled:cursor-not-allowed disabled:opacity-60"
                                   >
                                     <option value="">{lang === "ml" ? "-- തിരഞ്ഞെടുക്കുക --" : "-- Select --"}</option>
                                     {pmKisanTalukOptions.map((taluk) => (
@@ -18450,7 +18803,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                               </div>
 
                               <div>
-                                <label htmlFor="pm_kisan_revenue_village" className="mb-1 block text-[11px] font-bold text-foreground">
+                                <label htmlFor="pm_kisan_revenue_village" className="mb-0.5 block text-[11px] font-bold text-foreground">
                                   {lang === "ml" ? "റവന്യൂ വില്ലേജ്" : "Revenue Village"}{" "}
                                   <span className="text-orange-600 dark:text-orange-400">*</span>
                                 </label>
@@ -18459,7 +18812,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                   value={pmKisanDetails.revenueVillage}
                                   disabled={!pmKisanDetails.landDistrict}
                                   onChange={(event) => updatePmKisanDetails({ revenueVillage: event.target.value })}
-                                  className="w-full rounded-xl border border-border bg-background p-2.5 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500 disabled:cursor-not-allowed disabled:opacity-60"
+                                  className="w-full rounded-xl border border-border bg-background px-2.5 py-2 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
                                   <option value="">{lang === "ml" ? "-- തിരഞ്ഞെടുക്കുക --" : "-- Select --"}</option>
                                   {pmKisanVillageOptions.map((village) => (
@@ -18469,9 +18822,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                   ))}
                                 </select>
                               </div>
-                              <div className="space-y-3">
+                              <div className="space-y-2">
                                 <div>
-                                  <label htmlFor="pm_kisan_survey_number" className="mb-1 block text-[11px] font-bold text-foreground">
+                                  <label htmlFor="pm_kisan_survey_number" className="mb-0.5 block text-[11px] font-bold text-foreground">
                                     {lang === "ml" ? "സർവേ / റീ-സർവേ നമ്പർ" : "Survey / Re-survey Number"}
                                   </label>
                                   <input
@@ -18480,11 +18833,11 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     value={pmKisanDetails.surveyNumber}
                                     onChange={(event) => updatePmKisanDetails({ surveyNumber: event.target.value })}
                                     placeholder="e.g. 218/14-B"
-                                    className="w-full rounded-xl border border-border bg-background p-2.5 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500"
+                                    className="w-full rounded-xl border border-border bg-background px-2.5 py-2 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500"
                                   />
                                 </div>
                                 <div>
-                                  <label htmlFor="pm_kisan_thandaper_number" className="mb-1 block text-[11px] font-bold text-foreground">
+                                  <label htmlFor="pm_kisan_thandaper_number" className="mb-0.5 block text-[11px] font-bold text-foreground">
                                     {lang === "ml" ? "തണ്ടപ്പേര് / ഭൂമി അക്കൗണ്ട് നമ്പർ" : "Thandaper / Land Account Number"}
                                   </label>
                                   <input
@@ -18493,13 +18846,13 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     value={pmKisanDetails.thandaperNumber}
                                     onChange={(event) => updatePmKisanDetails({ thandaperNumber: event.target.value })}
                                     placeholder="e.g. TP-4521/2024"
-                                    className="w-full rounded-xl border border-border bg-background p-2.5 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500"
+                                    className="w-full rounded-xl border border-border bg-background px-2.5 py-2 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500"
                                   />
                                 </div>
                               </div>
 
                               <div>
-                                <label htmlFor="pm_kisan_land_area" className="mb-1 block text-[11px] font-bold text-foreground">
+                                <label htmlFor="pm_kisan_land_area" className="mb-0.5 block text-[11px] font-bold text-foreground">
                                   {lang === "ml" ? "ആകെ കാർഷിക ഭൂമി വിസ്തൃതി" : "Total Agricultural Land Area"}{" "}
                                   <span className="text-orange-600 dark:text-orange-400">*</span>
                                 </label>
@@ -18513,13 +18866,13 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     value={pmKisanDetails.landArea}
                                     onChange={(event) => updatePmKisanDetails({ landArea: event.target.value })}
                                     placeholder="0.00"
-                                    className="w-full rounded-xl border border-border bg-background p-2.5 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500"
+                                    className="w-full rounded-xl border border-border bg-background px-2.5 py-2 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500"
                                   />
                                   <select
                                     aria-label={lang === "ml" ? "വിസ്തൃതി യൂണിറ്റ്" : "Land area unit"}
                                     value={pmKisanDetails.landAreaUnit}
                                     onChange={(event) => updatePmKisanDetails({ landAreaUnit: event.target.value })}
-                                    className="w-full rounded-xl border border-border bg-background p-2.5 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500"
+                                    className="w-full rounded-xl border border-border bg-background px-2.5 py-2 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500"
                                   >
                                     <option value="">{lang === "ml" ? "-- യൂണിറ്റ് --" : "-- Unit --"}</option>
                                     {pmKisanLandAreaUnitOptions.map((option) => (
@@ -18532,7 +18885,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                               </div>
 
                               <div>
-                                <label htmlFor="pm_kisan_land_acquired_date" className="mb-1 block text-[11px] font-bold text-foreground">
+                                <label htmlFor="pm_kisan_land_acquired_date" className="mb-0.5 block text-[11px] font-bold text-foreground">
                                   {lang === "ml" ? "ഭൂമി കൈവശം വന്ന തീയതി" : "Date of Land Acquisition"}
                                 </label>
                                 <input
@@ -18540,9 +18893,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                   type="date"
                                   value={pmKisanDetails.landAcquiredDate}
                                   onChange={(event) => updatePmKisanDetails({ landAcquiredDate: event.target.value })}
-                                  className="w-full rounded-xl border border-border bg-background p-2.5 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500"
+                                  className="w-full rounded-xl border border-border bg-background px-2.5 py-2 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500"
                                 />
-                                <p className="mt-1 text-[9.5px] font-medium text-muted-foreground">
+                                <p className="mt-0.5 text-[9.5px] font-medium text-muted-foreground">
                                   {lang === "ml" ? "സ്ഥിരീകരണത്തിനായി" : "For verification"}
                                 </p>
                               </div>
@@ -18558,9 +18911,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 </div>
                               )}
                               <div className="border-t border-border/70" aria-hidden="true" />
-                              <div className="space-y-3">
+                              <div className="space-y-2">
                                 <div>
-                                  <label htmlFor="pm_kisan_bank_name" className="mb-1 block text-[11px] font-bold text-foreground">
+                                  <label htmlFor="pm_kisan_bank_name" className="mb-0.5 block text-[11px] font-bold text-foreground">
                                     {lang === "ml" ? "ബാങ്കിന്റെ പേര്" : "Bank Name"}{" "}
                                     <span className="text-orange-600 dark:text-orange-400">*</span>
                                   </label>
@@ -18568,7 +18921,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     id="pm_kisan_bank_name"
                                     value={pmKisanDetails.bankName}
                                     onChange={(event) => updatePmKisanDetails({ bankName: event.target.value })}
-                                    className="w-full rounded-xl border border-border bg-background p-2.5 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500"
+                                    className="w-full rounded-xl border border-border bg-background px-2.5 py-2 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500"
                                   >
                                     <option value="">{lang === "ml" ? "-- തിരഞ്ഞെടുക്കുക --" : "-- Select --"}</option>
                                     {pmKisanBankOptions.map((option) => (
@@ -18579,7 +18932,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                   </select>
                                 </div>
                                 <div>
-                                  <label htmlFor="pm_kisan_bank_account_holder" className="mb-1 block text-[11px] font-bold text-foreground">
+                                  <label htmlFor="pm_kisan_bank_account_holder" className="mb-0.5 block text-[11px] font-bold text-foreground">
                                     {lang === "ml" ? "ബാങ്ക് അക്കൗണ്ട് ഉടമയുടെ പേര്" : "Bank Account Holder Name"}{" "}
                                     <span className="text-orange-600 dark:text-orange-400">*</span>
                                   </label>
@@ -18589,12 +18942,12 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     value={pmKisanDetails.bankAccountHolderName}
                                     onChange={(event) => updatePmKisanDetails({ bankAccountHolderName: event.target.value })}
                                     placeholder={lang === "ml" ? "അക്കൗണ്ട് ഉടമയുടെ പേര്" : "Account holder name"}
-                                    className="w-full rounded-xl border border-border bg-background p-2.5 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500"
+                                    className="w-full rounded-xl border border-border bg-background px-2.5 py-2 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500"
                                   />
                                 </div>
                               </div>
                               <div>
-                                <label htmlFor="pm_kisan_bank_account_number" className="mb-1 block text-[11px] font-bold text-foreground">
+                                <label htmlFor="pm_kisan_bank_account_number" className="mb-0.5 block text-[11px] font-bold text-foreground">
                                   {lang === "ml" ? "ബാങ്ക് അക്കൗണ്ട് നമ്പർ" : "Bank Account Number"}{" "}
                                   <span className="text-orange-600 dark:text-orange-400">*</span>
                                 </label>
@@ -18627,14 +18980,14 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                   </button>
                                 </div>
                                 {finalDetailsInvalidFields.includes("bankAccountNumber") && (
-                                  <p className="mt-1 text-[10px] font-semibold text-rose-600 dark:text-rose-400">
+                                  <p className="mt-0.5 text-[10px] font-semibold text-rose-600 dark:text-rose-400">
                                     {lang === "ml" ? "9 മുതൽ 18 അക്കങ്ങൾ വരെയുള്ള സാധുവായ അക്കൗണ്ട് നമ്പർ നൽകുക." : "Enter a valid account number with 9–18 digits."}
                                   </p>
                                 )}
                               </div>
 
                               <div>
-                                <label htmlFor="pm_kisan_bank_ifsc" className="mb-1 block text-[11px] font-bold text-foreground">
+                                <label htmlFor="pm_kisan_bank_ifsc" className="mb-0.5 block text-[11px] font-bold text-foreground">
                                   {lang === "ml" ? "ഐ.എഫ്.എസ്.സി കോഡ്" : "IFSC Code"}{" "}
                                   <span className="text-orange-600 dark:text-orange-400">*</span>
                                 </label>
@@ -18649,22 +19002,22 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                   }}
                                   placeholder="e.g. SBIN0001234"
                                   maxLength={11}
-                                  className={`w-full rounded-xl border p-2.5 text-xs uppercase text-foreground outline-none focus:ring-1 ${
+                                  className={`w-full rounded-xl border px-2.5 py-2 text-xs uppercase text-foreground outline-none focus:ring-1 ${
                                     finalDetailsInvalidFields.includes("bankIfscCode")
                                       ? "!border-rose-400 !bg-rose-50/60 focus:ring-rose-400 dark:!bg-rose-950/20"
                                       : "border-border bg-background focus:ring-orange-500"
                                   }`}
                                 />
                                 {finalDetailsInvalidFields.includes("bankIfscCode") && (
-                                  <p className="mt-1 text-[10px] font-semibold text-rose-600 dark:text-rose-400">
+                                  <p className="mt-0.5 text-[10px] font-semibold text-rose-600 dark:text-rose-400">
                                     {lang === "ml" ? "ഉദാ: SBIN0001234 എന്ന രീതിയിൽ 11 അക്ഷരമുള്ള സാധുവായ IFSC നൽകുക." : "Enter a valid 11-character IFSC code, e.g. SBIN0001234."}
                                   </p>
                                 )}
                               </div>
                               <div className="border-t border-border/70" aria-hidden="true" />
-                              <div className="space-y-3">
+                              <div className="space-y-2">
                                 <div>
-                                  <label htmlFor="pm_kisan_aadhaar_status" className="mb-1 block text-[11px] font-bold text-foreground">
+                                  <label htmlFor="pm_kisan_aadhaar_status" className="mb-0.5 block text-[11px] font-bold text-foreground">
                                     {lang === "ml" ? "ആധാർ പ്രാമാണീകരണ നില" : "Aadhaar Authentication Status"}{" "}
                                     <span className="text-orange-600 dark:text-orange-400">*</span>
                                   </label>
@@ -18672,7 +19025,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     id="pm_kisan_aadhaar_status"
                                     value={pmKisanDetails.aadhaarAuthStatus}
                                     onChange={(event) => updatePmKisanDetails({ aadhaarAuthStatus: event.target.value })}
-                                    className="w-full rounded-xl border border-border bg-background p-2.5 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500"
+                                    className="w-full rounded-xl border border-border bg-background px-2.5 py-2 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500"
                                   >
                                     <option value="">{lang === "ml" ? "-- തിരഞ്ഞെടുക്കുക --" : "-- Select --"}</option>
                                     {pmKisanAadhaarStatusOptions.map((option) => (
@@ -18683,7 +19036,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                   </select>
                                 </div>
                                 <div>
-                                  <label htmlFor="pm_kisan_ekyc_status" className="mb-1 block text-[11px] font-bold text-foreground">
+                                  <label htmlFor="pm_kisan_ekyc_status" className="mb-0.5 block text-[11px] font-bold text-foreground">
                                     {lang === "ml" ? "പിഎം-കിസാൻ ഇ-കെവൈസി നില" : "PM-KISAN eKYC Status"}{" "}
                                     <span className="text-orange-600 dark:text-orange-400">*</span>
                                   </label>
@@ -18691,7 +19044,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     id="pm_kisan_ekyc_status"
                                     value={pmKisanDetails.pmKisanEkycStatus}
                                     onChange={(event) => updatePmKisanDetails({ pmKisanEkycStatus: event.target.value })}
-                                    className="w-full rounded-xl border border-border bg-background p-2.5 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500"
+                                    className="w-full rounded-xl border border-border bg-background px-2.5 py-2 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500"
                                   >
                                     <option value="">{lang === "ml" ? "-- തിരഞ്ഞെടുക്കുക --" : "-- Select --"}</option>
                                     {pmKisanEkycStatusOptions.map((option) => (
@@ -18703,9 +19056,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 </div>
                               </div>
 
-                              <div className="space-y-3">
+                              <div className="space-y-2">
                                 <div>
-                                  <label htmlFor="pm_kisan_farmer_id" className="mb-1 block text-[11px] font-bold text-foreground">
+                                  <label htmlFor="pm_kisan_farmer_id" className="mb-0.5 block text-[11px] font-bold text-foreground">
                                     {lang === "ml" ? "കർഷക ഐഡി ലഭ്യത" : "Farmer ID Availability"}{" "}
                                     <span className="text-orange-600 dark:text-orange-400">*</span>
                                   </label>
@@ -18713,7 +19066,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     id="pm_kisan_farmer_id"
                                     value={pmKisanDetails.farmerIdAvailability}
                                     onChange={(event) => updatePmKisanDetails({ farmerIdAvailability: event.target.value })}
-                                    className="w-full rounded-xl border border-border bg-background p-2.5 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500"
+                                    className="w-full rounded-xl border border-border bg-background px-2.5 py-2 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500"
                                   >
                                     <option value="">{lang === "ml" ? "-- തിരഞ്ഞെടുക്കുക --" : "-- Select --"}</option>
                                     {pmKisanYesNoOptions.map((option) => (
@@ -18724,7 +19077,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                   </select>
                                 </div>
                                 <div>
-                                  <label htmlFor="pm_kisan_existing_beneficiary" className="mb-1 block text-[11px] font-bold text-foreground">
+                                  <label htmlFor="pm_kisan_existing_beneficiary" className="mb-0.5 block text-[11px] font-bold text-foreground">
                                     {lang === "ml" ? "നിലവിലെ ഗുണഭോക്താവ്" : "Existing PM-KISAN Beneficiary"}{" "}
                                     <span className="text-orange-600 dark:text-orange-400">*</span>
                                   </label>
@@ -18732,7 +19085,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     id="pm_kisan_existing_beneficiary"
                                     value={pmKisanDetails.existingBeneficiary}
                                     onChange={(event) => updatePmKisanDetails({ existingBeneficiary: event.target.value })}
-                                    className="w-full rounded-xl border border-border bg-background p-2.5 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500"
+                                    className="w-full rounded-xl border border-border bg-background px-2.5 py-2 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500"
                                   >
                                     <option value="">{lang === "ml" ? "-- തിരഞ്ഞെടുക്കുക --" : "-- Select --"}</option>
                                     {pmKisanYesNoOptions.map((option) => (
@@ -18744,7 +19097,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 </div>
                               </div>
                               <div>
-                                <label htmlFor="pm_kisan_registration_number" className="mb-1 block text-[11px] font-bold text-foreground">
+                                <label htmlFor="pm_kisan_registration_number" className="mb-0.5 block text-[11px] font-bold text-foreground">
                                   {lang === "ml" ? "പിഎം-കിസാൻ രജിസ്ട്രേഷൻ നമ്പർ" : "PM-KISAN Registration Number"}
                                   {pmKisanDetails.existingBeneficiary === "yes" && (
                                     <span className="text-orange-600 dark:text-orange-400"> *</span>
@@ -18756,9 +19109,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                   value={pmKisanDetails.pmKisanRegistrationNumber}
                                   onChange={(event) => updatePmKisanDetails({ pmKisanRegistrationNumber: event.target.value })}
                                   placeholder={lang === "ml" ? "രജിസ്ട്രേഷൻ നമ്പർ നൽകുക" : "Enter registration number"}
-                                  className="w-full rounded-xl border border-border bg-background p-2.5 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500"
+                                  className="w-full rounded-xl border border-border bg-background px-2.5 py-2 text-xs text-foreground outline-none focus:ring-1 focus:ring-orange-500"
                                 />
-                                <p className="mt-1 text-[9.5px] font-medium text-muted-foreground">
+                                <p className="mt-0.5 text-[9.5px] font-medium text-muted-foreground">
                                   {lang === "ml" ? "ഇതിനകം രജിസ്റ്റർ ചെയ്തിട്ടുണ്ടെങ്കിൽ" : "If already registered"}
                                 </p>
                               </div>
@@ -19996,7 +20349,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           )}
           </div>
 
-          {appDeleteConfirmOpen && mobileSubPage === "app_detail" ? (
+          {appDeleteConfirmOpen && (mobileSubPage === "app_detail" || activeTab === "applications") ? (
             <div
               className="absolute inset-0 z-[80] flex items-center justify-center bg-slate-900/60 p-5 backdrop-blur-xs animate-in fade-in duration-150"
               onClick={() => setAppDeleteConfirmOpen(false)}
@@ -22346,7 +22699,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       )}
                     </div>
 
-                    {/* 3 & 4. Category and Scheme in the Same Row (Multi-select) */}
+                    {/* 3 & 4. Category and Scheme in the Same Row (Multi-select) - Hidden in Scheme-wise Applications */}
+                    {mobileSubPage !== "reports" && (
                     <div className="grid grid-cols-2 gap-2">
                       {/* Category - Multi-select */}
                       <div className="space-y-0.5 relative">
@@ -22570,6 +22924,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         )}
                       </div>
                     </div>
+                    )}
 
                     {/* 5. Follow-up Filter (Multi-select) */}
                     <div className="space-y-0.5 relative">
@@ -22680,74 +23035,12 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         )}
                       </div>
 
-                      {/* Select Location Level (Admin) or Merged Accordion (Party Worker) */}
+                      {/* Ward Selection for Party Worker */}
                       {userRole === "party_worker" ? (
-                        /* Party Worker: Merged Accordion for Location Level & Assigned Scope */
+                        /* Party Worker: Ward Selection Multi-select Dropdown */
                         <div className="space-y-2 pt-0.5">
-                          <div className="space-y-1.5">
-                            <div className="space-y-0.5 relative">
-                              <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
-                                {lang === "ml" ? "സ്ഥല തലം തിരഞ്ഞെടുക്കുക (Select Location Level)" : "Select Location Level"}
-                              </label>
-                              <button
-                                type="button"
-                                onClick={() => setIsAppScopeAccordionOpen(!isAppScopeAccordionOpen)}
-                                className="w-full h-8.5 pl-3 pr-2.5 flex items-center justify-between text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-orange-300 dark:hover:border-slate-600 transition-colors cursor-pointer select-none shadow-2xs"
-                              >
-                                <span className="truncate">{lang === "ml" ? "ഏരിയ (Area President View)" : "Area (Area President Level)"}</span>
-                                <div className="flex items-center gap-1.5 shrink-0 text-slate-400">
-                                  <Lock className="h-3 w-3" />
-                                  <ChevronDown
-                                    className={`h-3.5 w-3.5 transition-transform duration-200 ${
-                                      isAppScopeAccordionOpen ? "rotate-180 text-orange-500" : ""
-                                    }`}
-                                  />
-                                </div>
-                              </button>
-                            </div>
-
-                            {isAppScopeAccordionOpen && (
-                              <div className="p-2.5 rounded-lg border border-orange-200/70 dark:border-slate-700 bg-orange-50/50 dark:bg-slate-800/50 shadow-2xs animate-in fade-in duration-150">
-                                <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 text-[10.5px]">
-                                  <div>
-                                    <span className="text-slate-400 dark:text-slate-400 font-medium block text-[9.5px]">
-                                      {lang === "ml" ? "മേഖല (Region)" : "Region"}
-                                    </span>
-                                    <span className="font-bold text-slate-800 dark:text-slate-200">
-                                      {lang === "ml" ? "സൗത്ത് റീജിയൺ" : "South Region"}
-                                    </span>
-                                  </div>
-                                  <div>
-                                    <span className="text-slate-400 dark:text-slate-400 font-medium block text-[9.5px]">
-                                      {lang === "ml" ? "ഓർഗ്. ജില്ല" : "Org. District"}
-                                    </span>
-                                    <span className="font-bold text-slate-800 dark:text-slate-200">
-                                      {lang === "ml" ? "തിരുവനന്തപുരം നോർത്ത്" : "Trivandrum North"}
-                                    </span>
-                                  </div>
-                                  <div>
-                                    <span className="text-slate-400 dark:text-slate-400 font-medium block text-[9.5px]">
-                                      {lang === "ml" ? "നിയമസഭാ മണ്ഡലം" : "Assembly Mandalam"}
-                                    </span>
-                                    <span className="font-bold text-slate-800 dark:text-slate-200">
-                                      {lang === "ml" ? "കഴക്കൂട്ടം" : "Kazhakkoottam"}
-                                    </span>
-                                  </div>
-                                  <div>
-                                    <span className="text-slate-400 dark:text-slate-400 font-medium block text-[9.5px]">
-                                      {lang === "ml" ? "ഏരിയ" : "Area"}
-                                    </span>
-                                    <span className="font-bold text-slate-800 dark:text-slate-200">
-                                      {lang === "ml" ? "കഴക്കൂട്ടം ഏരിയ" : "Kazhakkoottam Area"}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-
                           {/* Ward Selection Multi-select Dropdown */}
-                          <div className="space-y-0.5 relative pt-1">
+                          <div className="space-y-0.5 relative">
                             <label className="text-[10px] font-semibold text-slate-600 dark:text-slate-300 block">
                               {lang === "ml" ? "വാർഡ് / ബൂത്ത് തിരഞ്ഞെടുക്കുക" : "Select Ward / Booth"}
                             </label>
@@ -23544,74 +23837,12 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         )}
                       </div>
 
-                      {/* Select Location Level (Admin) or Merged Accordion (Party Worker) */}
+                      {/* Ward Selection for Party Worker */}
                       {userRole === "party_worker" ? (
-                        /* Party Worker: Merged Accordion for Location Level & Assigned Scope */
+                        /* Party Worker: Ward Selection Multi-select Dropdown */
                         <div className="space-y-2 pt-0.5">
-                          <div className="space-y-1.5">
-                            <div className="space-y-0.5 relative">
-                              <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
-                                {lang === "ml" ? "സ്ഥല തലം തിരഞ്ഞെടുക്കുക (Select Location Level)" : "Select Location Level"}
-                              </label>
-                              <button
-                                type="button"
-                                onClick={() => setIsHomeScopeAccordionOpen(!isHomeScopeAccordionOpen)}
-                                className="w-full h-8.5 pl-3 pr-2.5 flex items-center justify-between text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:border-orange-300 dark:hover:border-slate-600 transition-colors cursor-pointer select-none shadow-2xs"
-                              >
-                                <span className="truncate">{lang === "ml" ? "ഏരിയ (Area President View)" : "Area (Area President Level)"}</span>
-                                <div className="flex items-center gap-1.5 shrink-0 text-slate-400">
-                                  <Lock className="h-3 w-3" />
-                                  <ChevronDown
-                                    className={`h-3.5 w-3.5 transition-transform duration-200 ${
-                                      isHomeScopeAccordionOpen ? "rotate-180 text-orange-500" : ""
-                                    }`}
-                                  />
-                                </div>
-                              </button>
-                            </div>
-
-                            {isHomeScopeAccordionOpen && (
-                              <div className="p-2.5 rounded-lg border border-orange-200/70 dark:border-slate-700 bg-orange-50/50 dark:bg-slate-800/50 shadow-2xs animate-in fade-in duration-150">
-                                <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 text-[10.5px]">
-                                  <div>
-                                    <span className="text-slate-400 dark:text-slate-400 font-medium block text-[9.5px]">
-                                      {lang === "ml" ? "മേഖല (Region)" : "Region"}
-                                    </span>
-                                    <span className="font-bold text-slate-800 dark:text-slate-200">
-                                      {lang === "ml" ? "സൗത്ത് റീജിയൺ" : "South Region"}
-                                    </span>
-                                  </div>
-                                  <div>
-                                    <span className="text-slate-400 dark:text-slate-400 font-medium block text-[9.5px]">
-                                      {lang === "ml" ? "ഓർഗ്. ജില്ല" : "Org. District"}
-                                    </span>
-                                    <span className="font-bold text-slate-800 dark:text-slate-200">
-                                      {lang === "ml" ? "തിരുവനന്തപുരം നോർത്ത്" : "Trivandrum North"}
-                                    </span>
-                                  </div>
-                                  <div>
-                                    <span className="text-slate-400 dark:text-slate-400 font-medium block text-[9.5px]">
-                                      {lang === "ml" ? "നിയമസഭാ മണ്ഡലം" : "Assembly Mandalam"}
-                                    </span>
-                                    <span className="font-bold text-slate-800 dark:text-slate-200">
-                                      {lang === "ml" ? "കഴക്കൂട്ടം" : "Kazhakkoottam"}
-                                    </span>
-                                  </div>
-                                  <div>
-                                    <span className="text-slate-400 dark:text-slate-400 font-medium block text-[9.5px]">
-                                      {lang === "ml" ? "ഏരിയ" : "Area"}
-                                    </span>
-                                    <span className="font-bold text-slate-800 dark:text-slate-200">
-                                      {lang === "ml" ? "കഴക്കൂട്ടം ഏരിയ" : "Kazhakkoottam Area"}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-
                           {/* Ward Selection Multi-select Dropdown */}
-                          <div className="space-y-0.5 relative pt-1">
+                          <div className="space-y-0.5 relative">
                             <label className="text-[10px] font-semibold text-slate-600 dark:text-slate-300 block">
                               {lang === "ml" ? "വാർഡ് / ബൂത്ത് തിരഞ്ഞെടുക്കുക" : "Select Ward / Booth"}
                             </label>
