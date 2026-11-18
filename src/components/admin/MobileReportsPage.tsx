@@ -1846,9 +1846,6 @@ export function MobileReportsPage({
             </button>
           </div>
         </div>
-            </button>
-          </div>
-        </div>
 
         {/* Content Container */}
         <div className="px-3 pt-2 pb-4">
@@ -2264,18 +2261,18 @@ export function MobileReportsPage({
       {/* Top Header */}
       <header className={`sticky top-0 z-30 ${headerStyle === "period_controls" ? "bg-white" : "bg-[#FFFDF9]"} dark:bg-slate-900 border-b border-slate-200/60 dark:border-slate-800/60 px-3.5 py-1.5 shadow-2xs`}>
         {headerStyle === "period_controls" ? (
-          <div className="flex items-center justify-between w-full gap-1 min-h-[36px]">
+          <div className="flex items-center justify-between w-full gap-1">
             {/* Left Side: Period Title or Search Input */}
             {isSearchExpanded ? (
               <div className="relative flex-1 min-w-0 pr-1">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400 pointer-events-none" />
                 <input
                   type="text"
                   autoFocus
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={lang === "ml" ? "പദ്ധതികൾ തിരയുക..." : "Search schemes..."}
-                  className="w-full h-8 pl-8 pr-7 text-[11px] font-semibold rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs"
+                  className="w-full h-6 pl-7 pr-6 text-[11px] font-semibold rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs"
                 />
                 <button
                   type="button"
@@ -2283,20 +2280,21 @@ export function MobileReportsPage({
                     setIsSearchExpanded(false);
                     setSearchQuery("");
                   }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 cursor-pointer"
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 cursor-pointer"
                   title="Cancel Search"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-3 w-3" />
                 </button>
               </div>
             ) : (
-              <span
+              <button
+                type="button"
                 onClick={onOpenDatePicker}
-                className="font-extrabold text-[#0a0f1d] dark:text-white text-xs sm:text-sm tracking-tight truncate cursor-pointer hover:text-[#ff5500] transition-colors"
+                className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0"
                 title={lang === "ml" ? "തീയതി മാറ്റുക" : "Change Period"}
               >
                 {periodText || "October 2026"}
-              </span>
+              </button>
             )}
 
             {/* Date Controls (< > calendar), Search Icon & Filter Action */}
@@ -2307,27 +2305,27 @@ export function MobileReportsPage({
                   <button
                     type="button"
                     onClick={() => onStepPeriod?.(-1)}
-                    className="flex h-7 w-7 items-center justify-center rounded-full border border-orange-100 dark:border-slate-800 bg-orange-50/50 dark:bg-slate-900 text-orange-600 hover:bg-orange-100 dark:hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer shrink-0"
+                    className="flex h-6 w-6 items-center justify-center rounded-full border border-orange-100 dark:border-slate-800 bg-orange-50/50 dark:bg-slate-900 text-orange-600 hover:bg-orange-100 dark:hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer shrink-0"
                     title={lang === "ml" ? "മുമ്പത്തെ കാലയളവ്" : "Previous Period"}
                   >
-                    <ChevronLeft className="h-3.5 w-3.5 stroke-[2.5]" />
+                    <ChevronLeft className="h-3 w-3 stroke-[2.5]" />
                   </button>
 
                   {/* Next Period */}
                   <button
                     type="button"
                     onClick={() => onStepPeriod?.(1)}
-                    className="flex h-7 w-7 items-center justify-center rounded-full border border-orange-100 dark:border-slate-800 bg-orange-50/50 dark:bg-slate-900 text-orange-600 hover:bg-orange-100 dark:hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer shrink-0"
+                    className="flex h-6 w-6 items-center justify-center rounded-full border border-orange-100 dark:border-slate-800 bg-orange-50/50 dark:bg-slate-900 text-orange-600 hover:bg-orange-100 dark:hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer shrink-0"
                     title={lang === "ml" ? "അടുത്ത കാലയളവ്" : "Next Period"}
                   >
-                    <ChevronRight className="h-3.5 w-3.5 stroke-[2.5]" />
+                    <ChevronRight className="h-3 w-3 stroke-[2.5]" />
                   </button>
 
                   {/* Date Picker Button */}
                   <button
                     type="button"
                     onClick={onOpenDatePicker}
-                    className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[#ff5500] hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-2xs cursor-pointer shrink-0"
+                    className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[#ff5500] hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-2xs cursor-pointer shrink-0"
                     title={lang === "ml" ? "തീയതി തിരഞ്ഞെടുക്കുക" : "Select Date / Period"}
                   >
                     <Calendar className="h-3.5 w-3.5 stroke-[2.2]" />
@@ -2340,10 +2338,10 @@ export function MobileReportsPage({
                 <button
                   type="button"
                   onClick={() => setIsSearchExpanded(true)}
-                  className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[#ff5500] hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-2xs cursor-pointer shrink-0"
+                  className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[#ff5500] hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-2xs cursor-pointer shrink-0"
                   title="Search Schemes"
                 >
-                  <Search className="h-3.5 w-3.5 stroke-[2.2] text-[#ff5500]" />
+                  <Search className="h-3 w-3 stroke-[2.2] text-[#ff5500]" />
                 </button>
               )}
 
@@ -2353,7 +2351,7 @@ export function MobileReportsPage({
                 onClick={openFilterSheet}
                 aria-haspopup="dialog"
                 aria-expanded={isFilterSheetOpen}
-                className={`relative flex h-7 w-7 items-center justify-center rounded-full border transition-all shadow-2xs cursor-pointer shrink-0 ${
+                className={`relative flex h-6 w-6 items-center justify-center rounded-full border transition-all shadow-2xs cursor-pointer shrink-0 ${
                   activeFilterCount > 0
                     ? "border-orange-500 bg-orange-500 text-white ring-2 ring-orange-500/30 shadow-xs"
                     : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[#0a0f1d] dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
@@ -2361,12 +2359,12 @@ export function MobileReportsPage({
                 title={lang === "ml" ? "അപേക്ഷാ ഫിൽട്ടർ" : "Application Filter"}
               >
                 <Filter
-                  className={`h-3.5 w-3.5 stroke-[2.2] ${
+                  className={`h-3 w-3 stroke-[2.2] ${
                     activeFilterCount > 0 ? "text-white" : "text-[#ff5500]"
                   }`}
                 />
                 {activeFilterCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-red-600 px-0.5 text-[8px] font-black leading-none text-white ring-1.5 ring-white dark:ring-slate-900">
+                  <span className="absolute -top-1 -right-1 flex h-3 min-w-3 items-center justify-center rounded-full bg-red-600 px-0.5 text-[7px] font-black leading-none text-white ring-1 ring-white dark:ring-slate-900">
                     {activeFilterCount}
                   </span>
                 )}
