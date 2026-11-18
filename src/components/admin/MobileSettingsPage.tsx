@@ -56,11 +56,15 @@ import {
   organisationLevelLabel,
 } from "@/data/role-management";
 
+export type MobileApplicationViewMode = "application_card" | "scheme_wise";
+
 interface MobileSettingsPageProps {
   userRole: "state_admin" | "party_worker";
   onBack: () => void;
   onLogout: () => void;
   onImmersiveChange?: (immersive: boolean) => void;
+  applicationView?: MobileApplicationViewMode;
+  onApplicationViewChange?: (view: MobileApplicationViewMode) => void;
 }
 
 const profileOrganisationLevels = [
@@ -139,9 +143,22 @@ export function MobileSettingsPage({
   onBack,
   onLogout,
   onImmersiveChange,
+  applicationView,
+  onApplicationViewChange,
 }: MobileSettingsPageProps) {
   const { lang, setLang } = useLang();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [localAppView, setLocalAppView] = useState<MobileApplicationViewMode>(() => {
+    return applicationView ?? (userRole === "state_admin" ? "scheme_wise" : "application_card");
+  });
+
+  const currentAppView = applicationView ?? localAppView;
+
+  const handleAppViewChange = (view: MobileApplicationViewMode) => {
+    setLocalAppView(view);
+    onApplicationViewChange?.(view);
+  };
+
   const [activeView, setActiveView] = useState<"settings" | "roles" | "designations" | "user">(
     "settings",
   );
@@ -1148,6 +1165,83 @@ export function MobileSettingsPage({
             aria-label={isMalayalam ? "അറിയിപ്പുകൾ" : "Notifications"}
           />
         </label>
+
+        {/* Application View Setting */}
+        <div className="border-b border-border/70 px-4 py-3.5">
+          <div className="flex items-start gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-100 dark:bg-orange-950/60">
+              <ClipboardList className="h-4.5 w-4.5 text-orange-600 dark:text-orange-400" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <span className="block text-[11.5px] font-extrabold text-foreground">
+                {isMalayalam ? "അപേക്ഷാ കാഴ്‌ച" : "Application View"}
+              </span>
+              <span className="block text-[9.5px] text-muted-foreground mt-0.5">
+                {isMalayalam
+                  ? "അപേക്ഷകൾ എങ്ങനെ പ്രദർശിപ്പിക്കണമെന്ന് തിരഞ്ഞെടുക്കുക."
+                  : "Choose how applications are displayed."}
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-3 space-y-2 pl-12">
+            {/* Option 1: Application Card View */}
+            <label
+              className={`flex items-start gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer ${
+                currentAppView === "application_card"
+                  ? "border-[#ff5500]/60 bg-orange-50/70 dark:border-orange-500/50 dark:bg-orange-950/25 shadow-2xs"
+                  : "border-slate-200/80 bg-white hover:bg-slate-50/60 dark:border-slate-800 dark:bg-slate-900/40 dark:hover:bg-slate-800/40"
+              }`}
+            >
+              <input
+                type="radio"
+                name="application-view-mode"
+                value="application_card"
+                checked={currentAppView === "application_card"}
+                onChange={() => handleAppViewChange("application_card")}
+                className="mt-0.5 h-3.5 w-3.5 accent-[#ff5500] cursor-pointer shrink-0"
+              />
+              <div className="min-w-0 flex-1">
+                <span className="block text-[11px] font-bold text-foreground leading-tight">
+                  {isMalayalam ? "ആപ്ലിക്കേഷൻ കാർഡ് വ്യൂ" : "Application Card View"}
+                </span>
+                <span className="block text-[9px] text-muted-foreground mt-0.5 leading-snug">
+                  {isMalayalam
+                    ? "നിലവിലുള്ള ആപ്ലിക്കേഷൻ കാർഡുകൾ ഉപയോഗിച്ച് അപേക്ഷകന്റെ അടിസ്ഥാനത്തിൽ ഗ്രൂപ്പ് ചെയ്ത് പ്രദർശിപ്പിക്കുക."
+                    : "Display applications grouped by applicant using the existing application cards."}
+                </span>
+              </div>
+            </label>
+
+            {/* Option 2: Scheme-wise Application View */}
+            <label
+              className={`flex items-start gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer ${
+                currentAppView === "scheme_wise"
+                  ? "border-[#ff5500]/60 bg-orange-50/70 dark:border-orange-500/50 dark:bg-orange-950/25 shadow-2xs"
+                  : "border-slate-200/80 bg-white hover:bg-slate-50/60 dark:border-slate-800 dark:bg-slate-900/40 dark:hover:bg-slate-800/40"
+              }`}
+            >
+              <input
+                type="radio"
+                name="application-view-mode"
+                value="scheme_wise"
+                checked={currentAppView === "scheme_wise"}
+                onChange={() => handleAppViewChange("scheme_wise")}
+                className="mt-0.5 h-3.5 w-3.5 accent-[#ff5500] cursor-pointer shrink-0"
+              />
+              <div className="min-w-0 flex-1">
+                <span className="block text-[11px] font-bold text-foreground leading-tight">
+                  {isMalayalam ? "പദ്ധതി തിരിച്ചുള്ള കാഴ്‌ച" : "Scheme-wise Application View"}
+                </span>
+                <span className="block text-[9px] text-muted-foreground mt-0.5 leading-snug">
+                  {isMalayalam
+                    ? "സർക്കാർ പദ്ധതി തിരിച്ച് സ്റ്റാറ്റസ് എണ്ണത്തോടൊപ്പം അപേക്ഷകൾ ഗ്രൂപ്പ് ചെയ്ത് പ്രദർശിപ്പിക്കുക."
+                    : "Display applications grouped by government scheme, with application status counts."}
+                </span>
+              </div>
+            </label>
+          </div>
+        </div>
 
         <button
           type="button"

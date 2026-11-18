@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   ArrowLeft,
+  ChevronLeft,
   Search,
   Layers,
   FolderTree,
@@ -23,6 +24,16 @@ import {
   Filter,
   Check,
   RotateCcw,
+  FileSearch,
+  HandCoins,
+  XCircle,
+  MoreVertical,
+  ArrowUpDown,
+  Pencil,
+  Phone,
+  Sparkles,
+  Trash2,
+  Share2,
 } from "lucide-react";
 import { useLang } from "@/i18n/LanguageProvider";
 
@@ -54,6 +65,18 @@ export interface MobileReportsPageProps {
   onOpenApplicationFilter?: () => void;
   isFilterActive?: boolean;
   filterCount?: number;
+  headerStyle?: "default" | "period_controls";
+  periodText?: string;
+  onOpenDatePicker?: () => void;
+  onStepPeriod?: (direction: number) => void;
+  onDrilldownChange?: (isDrilldown: boolean) => void;
+  onEditApplication?: (application: MobileReportApplicationRecord) => void;
+  onCallApplication?: (application: MobileReportApplicationRecord) => void;
+  onCheckEligibility?: (application: MobileReportApplicationRecord) => void;
+  onDeleteApplication?: (application: MobileReportApplicationRecord) => void;
+  onOpenSchemeDetails?: (schemeName: string) => void;
+  onApplyScheme?: (schemeName: string) => void;
+  onShareScheme?: (schemeName: string) => void;
 }
 
 interface SchemeReportDef {
@@ -666,9 +689,53 @@ export function MobileReportsPage({
   onOpenApplicationFilter,
   isFilterActive = false,
   filterCount = 0,
+  headerStyle = "default",
+  periodText,
+  onOpenDatePicker,
+  onStepPeriod,
+  onDrilldownChange,
+  onEditApplication,
+  onCallApplication,
+  onCheckEligibility,
+  onDeleteApplication,
+  onOpenSchemeDetails,
+  onApplyScheme,
+  onShareScheme,
 }: MobileReportsPageProps) {
   const { lang } = useLang();
   const [selectedScheme, setSelectedScheme] = useState<SchemeReportDef | null>(null);
+  const [isSchemeMenuOpen, setIsSchemeMenuOpen] = useState(false);
+  const [schemeShareToast, setSchemeShareToast] = useState<string | null>(null);
+
+  const handleShareScheme = (schemeName: string) => {
+    if (onShareScheme) {
+      onShareScheme(schemeName);
+      return;
+    }
+    const shareText = `${schemeName} - Vikasita Keralam`;
+    if (typeof navigator !== "undefined" && navigator.share) {
+      navigator.share({
+        title: schemeName,
+        text: shareText,
+        url: window.location.href,
+      }).catch(() => {});
+    } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(shareText).then(() => {
+        setSchemeShareToast(lang === "ml" ? "പദ്ധതി ലിങ്ക് പകർത്തി!" : "Scheme link copied!");
+        setTimeout(() => setSchemeShareToast(null), 2200);
+      }).catch(() => {});
+    }
+  };
+
+  useEffect(() => {
+    onDrilldownChange?.(Boolean(selectedScheme));
+  }, [selectedScheme, onDrilldownChange]);
+
+  useEffect(() => {
+    return () => {
+      onDrilldownChange?.(false);
+    };
+  }, [onDrilldownChange]);
   const [selectedCategory, setSelectedCategory] = useState<CategoryReportDef | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
@@ -677,6 +744,10 @@ export function MobileReportsPage({
   const [schemeAppSearchQuery, setSchemeAppSearchQuery] = useState("");
   const [isSchemeAppSearchExpanded, setIsSchemeAppSearchExpanded] = useState(false);
   const [schemeStatusFilter, setSchemeStatusFilter] = useState<"all" | "approved" | "in_review" | "in_progress" | "pending" | "rejected">("all");
+  const [schemeSortOrder, setSchemeSortOrder] = useState<"newest" | "oldest">("newest");
+  const [isSchemeSortMenuOpen, setIsSchemeSortMenuOpen] = useState(false);
+  const [openAppMenuKey, setOpenAppMenuKey] = useState<string | null>(null);
+  const [openAppMenuUp, setOpenAppMenuUp] = useState(false);
 
   // Page-level Application Filter (work view + statuses + location)
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
@@ -1273,7 +1344,7 @@ export function MobileReportsPage({
                       <div className="max-h-36 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800">
                         <button
                           type="button"
-                          onClick={() => (multiple ? clearDraftLocation(field) : updateDraftRegion(""))}
+                          onClick={() => updateDraftLocation(field, "")}
                           className={`flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-[11px] font-semibold text-left transition-colors cursor-pointer ${
                             selectedValues.length === 0
                               ? "bg-orange-50 dark:bg-orange-950/40 text-[#EA580C] dark:text-orange-400"
@@ -1289,11 +1360,7 @@ export function MobileReportsPage({
                             <button
                               key={option.value}
                               type="button"
-                              onClick={() =>
-                                multiple
-                                  ? toggleDraftLocation(field, option.value)
-                                  : updateDraftRegion(option.value)
-                              }
+                              onClick={() => updateDraftLocation(field, option.value)}
                               className={`flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-[11px] font-semibold text-left transition-colors cursor-pointer ${
                                 isSelected
                                   ? "bg-orange-50 dark:bg-orange-950/40 text-[#EA580C] dark:text-orange-400"
@@ -1443,79 +1510,85 @@ export function MobileReportsPage({
     if (wst === "rejected" || st === "rejected") {
       return {
         label: lang === "ml" ? "നിരസിച്ചു" : "Rejected",
-        icon: AlertCircle,
-        className: "bg-rose-50 text-[#DC2626] border-rose-200/80 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/60",
+        icon: XCircle,
+        className: "border-rose-200/80 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300",
       };
     }
 
-    // 2. Pending: Document Verified
+    // 2. Beneficiary / Benefit Received / Disbursed
+    if (
+      wst === "beneficiary" ||
+      wst === "disbursed" ||
+      st === "beneficiary" ||
+      st === "disbursed"
+    ) {
+      return {
+        label: lang === "ml" ? "ആനുകൂല്യം ലഭിച്ചു" : "Benefit Received",
+        icon: HandCoins,
+        className: "border-emerald-200/80 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300",
+      };
+    }
+
+    // 3. Approved / Assisted
+    if (
+      wst === "approved" ||
+      wst === "assisted" ||
+      st === "approved" ||
+      st === "assisted"
+    ) {
+      return {
+        label: lang === "ml" ? "അംഗീകരിച്ചു" : "Approved",
+        icon: CheckCircle2,
+        className: "border-emerald-200/80 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300",
+      };
+    }
+
+    // 4. Documents Verified
     if (
       wst === "document_verification_completed" ||
       wst === "document_verified" ||
+      st === "document_verification_completed" ||
       st === "document_verified"
     ) {
       return {
-        label: lang === "ml" ? "രേഖകൾ പരിശോധിച്ചു" : "Document Verified",
+        label: lang === "ml" ? "രേഖകൾ പരിശോധിച്ചു" : "Documents Verified",
         icon: FileCheck,
-        className: "bg-amber-50 text-[#D97706] border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/60",
+        className: "border-teal-200/80 bg-teal-50 text-teal-700 dark:border-teal-900/60 dark:bg-teal-950/40 dark:text-teal-300",
       };
     }
 
-    // 3. Pending: Received / Application Received / Pending
-    if (
-      wst === "application_received" ||
-      wst === "received" ||
-      st === "received" ||
-      wst === "pending" ||
-      st === "pending"
-    ) {
+    // 5. Applied
+    if (wst === "applied" || st === "applied") {
       return {
-        label: lang === "ml" ? "ലഭിച്ചു" : "Received",
-        icon: Inbox,
-        className: "bg-amber-50 text-[#EA580C] border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/60",
+        label: lang === "ml" ? "അപേക്ഷിച്ചു" : "Applied",
+        icon: Send,
+        className: "border-sky-200/80 bg-sky-50 text-sky-700 dark:border-sky-900/60 dark:bg-sky-950/40 dark:text-sky-300",
       };
     }
 
-    // 4. In Review
+    // 6. Under Review / In Review / In Progress
     if (
       wst === "in_review" ||
       wst === "review" ||
       wst === "under_review" ||
       wst === "in_progress" ||
-      wst === "applied" ||
       st === "in_review" ||
       st === "review" ||
       st === "under_review" ||
       st === "in_progress"
     ) {
       return {
-        label: lang === "ml" ? "പരിശോധനയിൽ" : "In Review",
-        icon: Clock,
-        className: "bg-blue-50 text-[#2563EB] border-blue-200/80 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900/60",
+        label: lang === "ml" ? "പരിശോധനയിൽ" : "Under Review",
+        icon: FileSearch,
+        className: "border-orange-200/90 bg-orange-50 text-[#ff5500] dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300",
       };
     }
 
-    // 5. Approved / Beneficiary
-    if (
-      wst === "beneficiary" ||
-      wst === "approved" ||
-      wst === "assisted" ||
-      st === "beneficiary" ||
-      st === "approved" ||
-      st === "disbursed"
-    ) {
-      return {
-        label: lang === "ml" ? "അംഗീകരിച്ചു" : "Approved",
-        icon: CheckCircle2,
-        className: "bg-emerald-50 text-[#00875A] border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/60",
-      };
-    }
-
-    // Fallback: Received
+    // 7. Received / Application Received / Pending (Fallback)
     return {
       label: lang === "ml" ? "ലഭിച്ചു" : "Received",
       icon: Inbox,
-      className: "bg-amber-50 text-[#EA580C] border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/60",
+      className: "border-slate-200/90 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-200",
     };
   };
 
@@ -1566,10 +1639,24 @@ export function MobileReportsPage({
     };
   }, [schemeApplications, schemeStatusFilter, schemeAppSearchQuery]);
 
+  const sortedSchemeApplications = useMemo(() => {
+    return [...filteredSchemeApplications].sort((a, b) => {
+      const aTime = a.appliedDate ? Date.parse(a.appliedDate) : 0;
+      const bTime = b.appliedDate ? Date.parse(b.appliedDate) : 0;
+      let diff = 0;
+      if (!Number.isNaN(aTime) && !Number.isNaN(bTime) && aTime !== 0 && bTime !== 0 && aTime !== bTime) {
+        diff = aTime - bTime;
+      } else {
+        diff = (a.ref || "").localeCompare(b.ref || "");
+      }
+      return schemeSortOrder === "oldest" ? diff : -diff;
+    });
+  }, [filteredSchemeApplications, schemeSortOrder]);
+
   // Render Scheme Applications Drilldown View
   if (selectedScheme) {
     return (
-      <div className="flex flex-col min-h-full bg-white dark:bg-slate-950 pb-8 animate-in fade-in duration-200">
+      <div className="flex flex-col min-h-full bg-white dark:bg-slate-950 pb-10 animate-in fade-in duration-200">
         {/* Header */}
         <header className="sticky top-0 z-30 bg-[#FFFDF9] dark:bg-slate-900 border-b border-slate-200/60 dark:border-slate-800/60 px-3.5 py-1.5 shadow-2xs">
           <div className="relative flex h-9 items-center justify-between w-full">
@@ -1587,75 +1674,178 @@ export function MobileReportsPage({
             >
               <ArrowLeft className="h-3.5 w-3.5 stroke-[2.2]" />
             </button>
-            <h2 className="absolute inset-y-0 left-10 right-20 flex items-center justify-center text-center text-[12.5px] font-extrabold text-[#0F172A] dark:text-white pointer-events-none truncate leading-tight">
+            <h2 className="absolute inset-y-0 left-10 right-12 flex items-center justify-center text-center text-[12.5px] font-extrabold text-[#0F172A] dark:text-white pointer-events-none truncate leading-tight">
               {lang === "ml" ? selectedScheme.nameMl : selectedScheme.nameEn}
             </h2>
 
-            {/* Right Action Buttons: Search & Application Filter */}
-            <div className="flex items-center gap-1.5 shrink-0 z-10">
+            {/* Right Action: 3-dot Scheme Menu (View Scheme details, Apply Scheme, Share Scheme) */}
+            <div className="relative shrink-0 z-10">
               <button
                 type="button"
-                onClick={() => setIsSchemeAppSearchExpanded(!isSchemeAppSearchExpanded)}
+                onClick={() => setIsSchemeMenuOpen((prev) => !prev)}
                 className="flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-full bg-white text-[#1b255a] hover:bg-slate-50 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 cursor-pointer transition-colors border border-slate-200/80 dark:border-slate-700 shadow-2xs"
-                aria-label={lang === "ml" ? "തിരയുക" : "Search"}
-                title={lang === "ml" ? "തിരയുക" : "Search"}
+                aria-label={lang === "ml" ? "കൂടുതൽ ഓപ്ഷനുകൾ" : "More options"}
+                title={lang === "ml" ? "കൂടുതൽ ഓപ്ഷനുകൾ" : "More options"}
               >
-                <Search className="h-3.5 w-3.5 stroke-[2.2]" />
+                <MoreVertical className="h-3.5 w-3.5 stroke-[2.2] text-slate-700 dark:text-slate-200" />
               </button>
 
-              <button
-                type="button"
-                onClick={openFilterSheet}
-                aria-haspopup="dialog"
-                aria-expanded={isFilterSheetOpen}
-                className={`relative flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-full transition-all border shadow-2xs cursor-pointer ${
-                  activeFilterCount > 0
-                    ? "bg-orange-500 text-white border-orange-500 shadow-xs ring-2 ring-orange-500/20"
-                    : "bg-white text-[#1b255a] hover:bg-slate-50 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 border-slate-200/80 dark:border-slate-700"
-                }`}
-                title={lang === "ml" ? "അപേക്ഷാ ഫിൽട്ടർ" : "Application Filter"}
-                aria-label={lang === "ml" ? "അപേക്ഷാ ഫിൽട്ടർ" : "Application Filter"}
-              >
-                <Filter
-                  className={`h-3.5 w-3.5 stroke-[2.2] ${
-                    activeFilterCount > 0 ? "text-white" : "text-[#ff5500]"
-                  }`}
-                />
-                {activeFilterCount > 0 ? (
-                  <span className="absolute -top-1 -right-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-red-600 px-0.5 text-[8px] font-black leading-none text-white ring-1.5 ring-white dark:ring-slate-900">
-                    {activeFilterCount}
-                  </span>
-                ) : null}
-              </button>
+              {isSchemeMenuOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setIsSchemeMenuOpen(false)}
+                  />
+                  <div className="absolute right-0 top-full mt-1.5 z-50 w-52 rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-1.5 shadow-xl animate-in fade-in zoom-in-95 duration-150">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsSchemeMenuOpen(false);
+                        onOpenSchemeDetails?.(selectedScheme.nameEn);
+                      }}
+                      className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-orange-50 hover:text-orange-600 dark:hover:bg-slate-800 dark:hover:text-orange-400 transition-colors cursor-pointer"
+                    >
+                      <Eye className="h-3.5 w-3.5 text-orange-500 shrink-0" />
+                      <span>{lang === "ml" ? "പദ്ധതി വിവരങ്ങൾ കാണുക" : "View Scheme details"}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsSchemeMenuOpen(false);
+                        onApplyScheme?.(selectedScheme.nameEn);
+                      }}
+                      className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-orange-50 hover:text-orange-600 dark:hover:bg-slate-800 dark:hover:text-orange-400 transition-colors cursor-pointer"
+                    >
+                      <FileCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                      <span>{lang === "ml" ? "പദ്ധതിക്ക് അപേക്ഷിക്കുക" : "Apply Scheme"}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsSchemeMenuOpen(false);
+                        handleShareScheme(selectedScheme.nameEn);
+                      }}
+                      className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-orange-50 hover:text-orange-600 dark:hover:bg-slate-800 dark:hover:text-orange-400 transition-colors cursor-pointer"
+                    >
+                      <Share2 className="h-3.5 w-3.5 text-sky-600 shrink-0" />
+                      <span>{lang === "ml" ? "പദ്ധതി പങ്കിടുക" : "Share Scheme"}</span>
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
-
-          {/* Expandable Search Input */}
-          {isSchemeAppSearchExpanded && (
-            <div className="mt-2 pb-1 animate-in fade-in slide-in-from-top-1 duration-150">
-              <div className="relative flex items-center">
-                <Search className="absolute left-2.5 h-3.5 w-3.5 text-slate-400" />
-                <input
-                  type="text"
-                  value={schemeAppSearchQuery}
-                  onChange={(e) => setSchemeAppSearchQuery(e.target.value)}
-                  placeholder={lang === "ml" ? "അപേക്ഷകന്റെ പേര്, സ്ഥലം തിരയുക..." : "Search applicant, location..."}
-                  className="w-full pl-8 pr-7 py-1 text-xs rounded-lg bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-hidden focus:ring-1.5 focus:ring-blue-500"
-                  autoFocus
-                />
-                {schemeAppSearchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSchemeAppSearchQuery("")}
-                    className="absolute right-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs"
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
         </header>
+
+        {/* Date and Controls Section (October 2026, Arrows, Calendar, Search, Filter) */}
+        <div className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800/80 px-3.5 py-2 flex items-center justify-between gap-2">
+          {isSchemeAppSearchExpanded ? (
+            <div className="relative flex-1 animate-in fade-in slide-in-from-right-2 duration-150">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+              <input
+                type="text"
+                value={schemeAppSearchQuery}
+                onChange={(e) => setSchemeAppSearchQuery(e.target.value)}
+                placeholder={lang === "ml" ? "അപേക്ഷകന്റെ പേര്, സ്ഥലം തിരയുക..." : "Search applicant, location..."}
+                className="w-full pl-8 pr-7 py-1 text-xs rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-hidden focus:ring-1.5 focus:ring-orange-500"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSchemeAppSearchExpanded(false);
+                  setSchemeAppSearchQuery("");
+                }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 cursor-pointer"
+                title={lang === "ml" ? "തിരയൽ റദ്ദാക്കുക" : "Cancel Search"}
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ) : (
+            <span
+              onClick={onOpenDatePicker}
+              className="font-extrabold text-[#0a0f1d] dark:text-white text-xs sm:text-sm tracking-tight truncate cursor-pointer hover:text-[#ff5500] transition-colors"
+              title={lang === "ml" ? "തീയതി മാറ്റുക" : "Change Period"}
+            >
+              {periodText || "October 2026"}
+            </span>
+          )}
+
+          {/* Right Controls: < > 📅 🔍 ⑂ */}
+          <div className="flex items-center gap-1.5 min-w-0 shrink-0">
+            {!isSchemeAppSearchExpanded && (
+              <>
+                {/* Previous Period */}
+                <button
+                  type="button"
+                  onClick={() => onStepPeriod?.(-1)}
+                  className="flex h-7 w-7 items-center justify-center rounded-full border border-orange-100 dark:border-slate-800 bg-orange-50/50 dark:bg-slate-900 text-orange-600 hover:bg-orange-100 dark:hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer shrink-0"
+                  title={lang === "ml" ? "മുമ്പത്തെ കാലയളവ്" : "Previous Period"}
+                >
+                  <ChevronLeft className="h-3.5 w-3.5 stroke-[2.5]" />
+                </button>
+
+                {/* Next Period */}
+                <button
+                  type="button"
+                  onClick={() => onStepPeriod?.(1)}
+                  className="flex h-7 w-7 items-center justify-center rounded-full border border-orange-100 dark:border-slate-800 bg-orange-50/50 dark:bg-slate-900 text-orange-600 hover:bg-orange-100 dark:hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer shrink-0"
+                  title={lang === "ml" ? "അടുത്ത കാലയളവ്" : "Next Period"}
+                >
+                  <ChevronRight className="h-3.5 w-3.5 stroke-[2.5]" />
+                </button>
+
+                {/* Date Picker Button */}
+                <button
+                  type="button"
+                  onClick={onOpenDatePicker}
+                  className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[#ff5500] hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-2xs cursor-pointer shrink-0"
+                  title={lang === "ml" ? "തീയതി തിരഞ്ഞെടുക്കുക" : "Select Date / Period"}
+                >
+                  <Calendar className="h-3.5 w-3.5 stroke-[2.2]" />
+                </button>
+
+                {/* Search Icon Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsSchemeAppSearchExpanded(true)}
+                  className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[#ff5500] hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-2xs cursor-pointer shrink-0"
+                  title={lang === "ml" ? "തിരയുക" : "Search"}
+                >
+                  <Search className="h-3.5 w-3.5 stroke-[2.2] text-[#ff5500]" />
+                </button>
+              </>
+            )}
+
+            {/* Filter Icon Button */}
+            <button
+              type="button"
+              onClick={openFilterSheet}
+              aria-haspopup="dialog"
+              aria-expanded={isFilterSheetOpen}
+              className={`relative flex h-7 w-7 items-center justify-center rounded-full border transition-all shadow-2xs cursor-pointer shrink-0 ${
+                activeFilterCount > 0
+                  ? "border-orange-500 bg-orange-500 text-white ring-2 ring-orange-500/30 shadow-xs"
+                  : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[#0a0f1d] dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+              }`}
+              title={lang === "ml" ? "അപേക്ഷാ ഫിൽട്ടർ" : "Application Filter"}
+            >
+              <Filter
+                className={`h-3.5 w-3.5 stroke-[2.2] ${
+                  activeFilterCount > 0 ? "text-white" : "text-[#ff5500]"
+                }`}
+              />
+              {activeFilterCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-red-600 px-0.5 text-[8px] font-black leading-none text-white ring-1.5 ring-white dark:ring-slate-900">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
 
         {/* Content Container */}
         <div className="px-3 pt-2 pb-4">
@@ -1760,39 +1950,36 @@ export function MobileReportsPage({
 
           {/* Applications List */}
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between px-1">
-              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                {lang === "ml" ? "അപേക്ഷകർ" : "Applications"} ({filteredSchemeApplications.length})
-              </span>
-              {(schemeStatusFilter !== "all" || schemeAppSearchQuery || activeFilterCount > 0) && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSchemeStatusFilter("all");
-                    setSchemeAppSearchQuery("");
-                    clearLocalFilters();
-                  }}
-                  className="text-[9.5px] font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
-                >
-                  {lang === "ml" ? "ഫിൽട്ടർ ഒഴിവാക്കുക" : "Clear Filter"}
-                </button>
-              )}
-            </div>
-
-            {filteredSchemeApplications.length === 0 ? (
+            {sortedSchemeApplications.length === 0 ? (
               <div className="p-6 text-center rounded-xl bg-white dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800">
                 <Inbox className="h-7 w-7 mx-auto text-slate-300 dark:text-slate-600 mb-1.5" />
                 <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                   {lang === "ml" ? "അപേക്ഷകൾ ഒന്നും കണ്ടെത്തിയില്ല." : "No applications found."}
                 </p>
+                {(schemeStatusFilter !== "all" || schemeAppSearchQuery || activeFilterCount > 0) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSchemeStatusFilter("all");
+                      setSchemeAppSearchQuery("");
+                      clearLocalFilters();
+                    }}
+                    className="mt-2 text-xs font-bold text-orange-600 hover:underline cursor-pointer"
+                  >
+                    {lang === "ml" ? "ഫിൽട്ടർ ഒഴിവാക്കുക" : "Clear Filters"}
+                  </button>
+                )}
               </div>
             ) : (
-              filteredSchemeApplications.map((app, index) => {
+              sortedSchemeApplications.map((app, index) => {
                 const badge = getStatusBadge(app);
                 const BadgeIcon = badge.icon;
+                const menuKey = `${app.ref}-${index}`;
+                const isMenuOpen = openAppMenuKey === menuKey;
+
                 return (
                   <div
-                    key={`${app.ref}-${index}`}
+                    key={menuKey}
                     onClick={() => onSelectApplication(app)}
                     className="group relative px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:border-orange-300 dark:hover:border-orange-800 hover:shadow-xs transition-all cursor-pointer"
                   >
@@ -1813,13 +2000,119 @@ export function MobileReportsPage({
                         </div>
                       </div>
 
-                      {/* Right: Status badge (Decreased tag size) */}
-                      <span
-                        className={`inline-flex items-center gap-1 text-[8.5px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${badge.className}`}
-                      >
-                        <BadgeIcon className="h-2.5 w-2.5 stroke-[2.2]" />
-                        <span>{badge.label}</span>
-                      </span>
+                      {/* Right: Status badge & 3-dot action button */}
+                      <div className="flex shrink-0 items-center gap-1 self-center">
+                        <span
+                          className={`inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${badge.className}`}
+                        >
+                          <BadgeIcon className="h-3 w-3 stroke-[2]" />
+                          <span>{badge.label}</span>
+                        </span>
+
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              const isUp = window.innerHeight - rect.bottom < 180;
+                              setOpenAppMenuUp(isUp);
+                              setOpenAppMenuKey(isMenuOpen ? null : menuKey);
+                            }}
+                            className={`flex h-6.5 w-6.5 items-center justify-center rounded-full transition-colors cursor-pointer ${
+                              isMenuOpen
+                                ? "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200"
+                                : "text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                            }`}
+                            aria-label={lang === "ml" ? "കൂടുതൽ പ്രവർത്തനങ്ങൾ" : "More actions"}
+                            title={lang === "ml" ? "കൂടുതൽ പ്രവർത്തനങ്ങൾ" : "More actions"}
+                          >
+                            <MoreVertical className="h-3.5 w-3.5 stroke-[2.2]" />
+                          </button>
+
+                          {isMenuOpen && (
+                            <>
+                              <div
+                                className="fixed inset-0 z-40"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenAppMenuKey(null);
+                                }}
+                              />
+                              <div
+                                className={`absolute right-0 z-50 w-44 overflow-hidden rounded-xl border border-slate-200/90 bg-white py-1 shadow-xl dark:border-slate-800 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-150 ${
+                                  openAppMenuUp ? "bottom-7" : "top-7"
+                                }`}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setOpenAppMenuKey(null);
+                                    if (onEditApplication) {
+                                      onEditApplication(app);
+                                    } else {
+                                      onSelectApplication(app);
+                                    }
+                                  }}
+                                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
+                                >
+                                  <Pencil className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                                  <span>{lang === "ml" ? "തിരുത്തുക" : "Edit"}</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setOpenAppMenuKey(null);
+                                    onSelectApplication(app);
+                                  }}
+                                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
+                                >
+                                  <Eye className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                                  <span>{lang === "ml" ? "കാണുക" : "View"}</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setOpenAppMenuKey(null);
+                                    if (onCallApplication) {
+                                      onCallApplication(app);
+                                    } else if (app.phone) {
+                                      window.location.href = `tel:${app.phone.replace(/\D/g, "")}`;
+                                    }
+                                  }}
+                                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
+                                >
+                                  <Phone className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                                  <span>{lang === "ml" ? "വിളിക്കുക" : "Call"}</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setOpenAppMenuKey(null);
+                                    onCheckEligibility?.(app);
+                                  }}
+                                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
+                                >
+                                  <Sparkles className="h-3.5 w-3.5 text-orange-500" />
+                                  <span>{lang === "ml" ? "യോഗ്യത പരിശോധിക്കുക" : "Check Eligibility"}</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setOpenAppMenuKey(null);
+                                    onDeleteApplication?.(app);
+                                  }}
+                                  className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-1.5 text-left text-[11px] font-semibold text-red-600 hover:bg-red-50 dark:border-slate-800 dark:text-red-400 dark:hover:bg-red-950/40 cursor-pointer"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5 text-red-500 dark:text-red-400" />
+                                  <span>{lang === "ml" ? "നീക്കം ചെയ്യുക" : "Delete"}</span>
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 );
@@ -1827,6 +2120,11 @@ export function MobileReportsPage({
             )}
           </div>
         </div>
+        {schemeShareToast && (
+          <div className="fixed bottom-16 left-1/2 -translate-x-1/2 z-50 rounded-full bg-slate-900/90 text-white text-[11px] font-bold px-4 py-1.5 shadow-lg backdrop-blur-xs animate-in fade-in zoom-in-95">
+            {schemeShareToast}
+          </div>
+        )}
         {renderApplicationFilterSheet()}
       </div>
     );
@@ -1947,6 +2245,11 @@ export function MobileReportsPage({
             )}
           </div>
         </div>
+        {schemeShareToast && (
+          <div className="fixed bottom-16 left-1/2 -translate-x-1/2 z-50 rounded-full bg-slate-900/90 text-white text-[11px] font-bold px-4 py-1.5 shadow-lg backdrop-blur-xs animate-in fade-in zoom-in-95">
+            {schemeShareToast}
+          </div>
+        )}
         {renderApplicationFilterSheet()}
       </div>
     );
@@ -1954,69 +2257,181 @@ export function MobileReportsPage({
 
   // Root Reports Page View with 2 Tabs
   return (
-    <div className="flex flex-col min-h-full bg-white dark:bg-slate-950 pb-8 animate-in fade-in duration-200">
+    <div className="flex flex-col min-h-full bg-white dark:bg-slate-950 pb-20 animate-in fade-in duration-200">
       {/* Top Header */}
-      <header className="sticky top-0 z-30 bg-[#FFFDF9] dark:bg-slate-900 border-b border-slate-200/60 dark:border-slate-800/60 px-3.5 py-1.5 shadow-2xs">
-        <div className="relative flex h-9 items-center justify-between w-full">
-          {/* Back button */}
-          <button
-            type="button"
-            onClick={onBack}
-            className="flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-full bg-[#FFF7EC] text-[#1b255a] hover:bg-orange-100 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 cursor-pointer transition-colors border border-orange-100/80 dark:border-slate-700 shadow-2xs z-10"
-            aria-label={lang === "ml" ? "തിരികെ പോവുക" : "Go back"}
-            title={lang === "ml" ? "തിരികെ പോവുക" : "Go back"}
-          >
-            <ArrowLeft className="h-3.5 w-3.5 stroke-[2.2]" />
-          </button>
+      <header className={`sticky top-0 z-30 ${headerStyle === "period_controls" ? "bg-white" : "bg-[#FFFDF9]"} dark:bg-slate-900 border-b border-slate-200/60 dark:border-slate-800/60 px-3.5 py-1.5 shadow-2xs`}>
+        {headerStyle === "period_controls" ? (
+          <div className="flex items-center justify-between w-full gap-1 min-h-[36px]">
+            {/* Left Side: Period Title or Search Input */}
+            {isSearchExpanded ? (
+              <div className="relative flex-1 min-w-0 pr-1">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                <input
+                  type="text"
+                  autoFocus
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={lang === "ml" ? "പദ്ധതികൾ തിരയുക..." : "Search schemes..."}
+                  className="w-full h-8 pl-8 pr-7 text-[11px] font-semibold rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSearchExpanded(false);
+                    setSearchQuery("");
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 cursor-pointer"
+                  title="Cancel Search"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <span
+                onClick={onOpenDatePicker}
+                className="font-extrabold text-[#0a0f1d] dark:text-white text-xs sm:text-sm tracking-tight truncate cursor-pointer hover:text-[#ff5500] transition-colors"
+                title={lang === "ml" ? "തീയതി മാറ്റുക" : "Change Period"}
+              >
+                {periodText || "October 2026"}
+              </span>
+            )}
 
-          {/* Header Title */}
-          <h1 className="absolute inset-y-0 left-10 right-20 flex items-center justify-center text-center text-[12.5px] font-extrabold text-[#0F172A] dark:text-white pointer-events-none truncate leading-tight">
-            {lang === "ml" ? "പദ്ധതി തിരിച്ചുള്ള അപേക്ഷകൾ" : "Scheme-wise Applications"}
-          </h1>
+            {/* Date Controls (< > calendar), Search Icon & Filter Action */}
+            <div className="flex items-center gap-1.5 min-w-0 shrink-0">
+              {!isSearchExpanded && (
+                <>
+                  {/* Previous Period */}
+                  <button
+                    type="button"
+                    onClick={() => onStepPeriod?.(-1)}
+                    className="flex h-7 w-7 items-center justify-center rounded-full border border-orange-100 dark:border-slate-800 bg-orange-50/50 dark:bg-slate-900 text-orange-600 hover:bg-orange-100 dark:hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer shrink-0"
+                    title={lang === "ml" ? "മുമ്പത്തെ കാലയളവ്" : "Previous Period"}
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5 stroke-[2.5]" />
+                  </button>
 
-          {/* Right Action Buttons: Search & Application Filter */}
-          <div className="flex items-center gap-1.5 shrink-0 z-10">
-            {/* Quick Search Toggle */}
-            <button
-              type="button"
-              onClick={() => setIsSearchExpanded(!isSearchExpanded)}
-              className="flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-full bg-white text-[#1b255a] hover:bg-slate-50 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 cursor-pointer transition-colors border border-slate-200/80 dark:border-slate-700 shadow-2xs"
-              title={lang === "ml" ? "തിരയുക" : "Search"}
-              aria-label={lang === "ml" ? "തിരയുക" : "Search"}
-            >
-              <Search className="h-3.5 w-3.5 stroke-[2.2]" />
-            </button>
+                  {/* Next Period */}
+                  <button
+                    type="button"
+                    onClick={() => onStepPeriod?.(1)}
+                    className="flex h-7 w-7 items-center justify-center rounded-full border border-orange-100 dark:border-slate-800 bg-orange-50/50 dark:bg-slate-900 text-orange-600 hover:bg-orange-100 dark:hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer shrink-0"
+                    title={lang === "ml" ? "അടുത്ത കാലയളവ്" : "Next Period"}
+                  >
+                    <ChevronRight className="h-3.5 w-3.5 stroke-[2.5]" />
+                  </button>
 
-            {/* Application Filter Button */}
-            <button
-              type="button"
-              onClick={openFilterSheet}
-              aria-haspopup="dialog"
-              aria-expanded={isFilterSheetOpen}
-              className={`relative flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-full transition-all border shadow-2xs cursor-pointer ${
-                activeFilterCount > 0
-                  ? "bg-orange-500 text-white border-orange-500 shadow-xs ring-2 ring-orange-500/20"
-                  : "bg-white text-[#1b255a] hover:bg-slate-50 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 border-slate-200/80 dark:border-slate-700"
-              }`}
-              title={lang === "ml" ? "അപേക്ഷാ ഫിൽട്ടർ" : "Application Filter"}
-              aria-label={lang === "ml" ? "അപേക്ഷാ ഫിൽട്ടർ" : "Application Filter"}
-            >
-              <Filter
-                className={`h-3.5 w-3.5 stroke-[2.2] ${
-                  activeFilterCount > 0 ? "text-white" : "text-[#ff5500]"
+                  {/* Date Picker Button */}
+                  <button
+                    type="button"
+                    onClick={onOpenDatePicker}
+                    className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[#ff5500] hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-2xs cursor-pointer shrink-0"
+                    title={lang === "ml" ? "തീയതി തിരഞ്ഞെടുക്കുക" : "Select Date / Period"}
+                  >
+                    <Calendar className="h-3.5 w-3.5 stroke-[2.2]" />
+                  </button>
+                </>
+              )}
+
+              {/* Search Icon Button */}
+              {!isSearchExpanded && (
+                <button
+                  type="button"
+                  onClick={() => setIsSearchExpanded(true)}
+                  className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[#ff5500] hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-2xs cursor-pointer shrink-0"
+                  title="Search Schemes"
+                >
+                  <Search className="h-3.5 w-3.5 stroke-[2.2] text-[#ff5500]" />
+                </button>
+              )}
+
+              {/* Filter Icon Button */}
+              <button
+                type="button"
+                onClick={openFilterSheet}
+                aria-haspopup="dialog"
+                aria-expanded={isFilterSheetOpen}
+                className={`relative flex h-7 w-7 items-center justify-center rounded-full border transition-all shadow-2xs cursor-pointer shrink-0 ${
+                  activeFilterCount > 0
+                    ? "border-orange-500 bg-orange-500 text-white ring-2 ring-orange-500/30 shadow-xs"
+                    : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[#0a0f1d] dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
                 }`}
-              />
-              {activeFilterCount > 0 ? (
-                <span className="absolute -top-1 -right-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-red-600 px-0.5 text-[8px] font-black leading-none text-white ring-1.5 ring-white dark:ring-slate-900">
-                  {activeFilterCount}
-                </span>
-              ) : null}
-            </button>
+                title={lang === "ml" ? "അപേക്ഷാ ഫിൽട്ടർ" : "Application Filter"}
+              >
+                <Filter
+                  className={`h-3.5 w-3.5 stroke-[2.2] ${
+                    activeFilterCount > 0 ? "text-white" : "text-[#ff5500]"
+                  }`}
+                />
+                {activeFilterCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-red-600 px-0.5 text-[8px] font-black leading-none text-white ring-1.5 ring-white dark:ring-slate-900">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="relative flex h-9 items-center justify-between w-full">
+            {/* Back button */}
+            <button
+              type="button"
+              onClick={onBack}
+              className="flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-full bg-[#FFF7EC] text-[#1b255a] hover:bg-orange-100 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 cursor-pointer transition-colors border border-orange-100/80 dark:border-slate-700 shadow-2xs z-10"
+              aria-label={lang === "ml" ? "തിരികെ പോവുക" : "Go back"}
+              title={lang === "ml" ? "തിരികെ പോവുക" : "Go back"}
+            >
+              <ArrowLeft className="h-3.5 w-3.5 stroke-[2.2]" />
+            </button>
 
-        {/* Collapsible Search Input */}
-        {isSearchExpanded && (
+            {/* Header Title */}
+            <h1 className="absolute inset-y-0 left-10 right-20 flex items-center justify-center text-center text-[12.5px] font-extrabold text-[#0F172A] dark:text-white pointer-events-none truncate leading-tight">
+              {lang === "ml" ? "പദ്ധതി തിരിച്ചുള്ള അപേക്ഷകൾ" : "Scheme-wise Applications"}
+            </h1>
+
+            {/* Right Action Buttons: Search & Application Filter */}
+            <div className="flex items-center gap-1.5 shrink-0 z-10">
+              {/* Quick Search Toggle */}
+              <button
+                type="button"
+                onClick={() => setIsSearchExpanded(!isSearchExpanded)}
+                className="flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-full bg-white text-[#1b255a] hover:bg-slate-50 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 cursor-pointer transition-colors border border-slate-200/80 dark:border-slate-700 shadow-2xs"
+                title={lang === "ml" ? "തിരയുക" : "Search"}
+                aria-label={lang === "ml" ? "തിരയുക" : "Search"}
+              >
+                <Search className="h-3.5 w-3.5 stroke-[2.2]" />
+              </button>
+
+              {/* Application Filter Button */}
+              <button
+                type="button"
+                onClick={openFilterSheet}
+                aria-haspopup="dialog"
+                aria-expanded={isFilterSheetOpen}
+                className={`relative flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-full transition-all border shadow-2xs cursor-pointer ${
+                  activeFilterCount > 0
+                    ? "bg-orange-500 text-white border-orange-500 shadow-xs ring-2 ring-orange-500/20"
+                    : "bg-white text-[#1b255a] hover:bg-slate-50 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 border-slate-200/80 dark:border-slate-700"
+                }`}
+                title={lang === "ml" ? "അപേക്ഷാ ഫിൽട്ടർ" : "Application Filter"}
+                aria-label={lang === "ml" ? "അപേക്ഷാ ഫിൽട്ടർ" : "Application Filter"}
+              >
+                <Filter
+                  className={`h-3.5 w-3.5 stroke-[2.2] ${
+                    activeFilterCount > 0 ? "text-white" : "text-[#ff5500]"
+                  }`}
+                />
+                {activeFilterCount > 0 ? (
+                  <span className="absolute -top-1 -right-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-red-600 px-0.5 text-[8px] font-black leading-none text-white ring-1.5 ring-white dark:ring-slate-900">
+                    {activeFilterCount}
+                  </span>
+                ) : null}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Collapsible Search Input for Default Header */}
+        {headerStyle !== "period_controls" && isSearchExpanded && (
           <div className="relative mt-2 pt-1 border-t border-slate-200/60 dark:border-slate-800">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
             <input

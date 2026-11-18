@@ -41,7 +41,7 @@ import {
   type CreatedSchemePayload,
 } from "./MobileCreateSchemeFlow";
 import { MobileCreatePartyWorkerFlow } from "./MobileCreatePartyWorkerFlow";
-import { MobileSettingsPage } from "./MobileSettingsPage";
+import { MobileSettingsPage, type MobileApplicationViewMode } from "./MobileSettingsPage";
 import { MobileReportsPage } from "./MobileReportsPage";
 import { type FilterChip } from "./MobileAppliedFiltersScope";
 import { PartyFlagIcon } from "@/components/common/PartyFlagIcon";
@@ -3064,9 +3064,48 @@ function computeRawMetrics(
   return metricsByPeriod[period] || metricsByPeriod.this_month;
 }
 
+const APPLICATION_VIEW_STORAGE_KEY_PREFIX = "vikasita_mobile_application_view_";
+
+const getStoredApplicationView = (role: "state_admin" | "party_worker"): MobileApplicationViewMode => {
+  if (typeof window === "undefined") {
+    return role === "state_admin" ? "scheme_wise" : "application_card";
+  }
+  try {
+    const stored = window.localStorage.getItem(`${APPLICATION_VIEW_STORAGE_KEY_PREFIX}${role}`);
+    if (stored === "application_card" || stored === "scheme_wise") {
+      return stored;
+    }
+  } catch {
+    // fallback
+  }
+  return role === "state_admin" ? "scheme_wise" : "application_card";
+};
+
 export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, standalone = false }: AdminMobilePreviewModalProps) {
   const { lang } = useLang();
   const [userRole, setUserRole] = useState<"state_admin" | "party_worker">("state_admin");
+  const [applicationViewRoleOverrides, setApplicationViewRoleOverrides] = useState<Record<string, MobileApplicationViewMode>>(() => ({
+    state_admin: getStoredApplicationView("state_admin"),
+    party_worker: getStoredApplicationView("party_worker"),
+  }));
+
+  const effectiveApplicationView: MobileApplicationViewMode =
+    applicationViewRoleOverrides[userRole] ??
+    (userRole === "state_admin" ? "scheme_wise" : "application_card");
+
+  const handleApplicationViewChange = (newView: MobileApplicationViewMode) => {
+    setApplicationViewRoleOverrides((prev) => ({
+      ...prev,
+      [userRole]: newView,
+    }));
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.setItem(`${APPLICATION_VIEW_STORAGE_KEY_PREFIX}${userRole}`, newView);
+      } catch {
+        // ignore
+      }
+    }
+  };
   const [selectedDistrictIds, setSelectedDistrictIds] = useState<string[]>(["all"]);
   const [isDistrictDropdownOpen, setIsDistrictDropdownOpen] = useState<boolean>(false);
   const [districtSearchQuery, setDistrictSearchQuery] = useState<string>("");
@@ -3327,6 +3366,14 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   };
   const [partyWorkerTab, setPartyWorkerTab] = useState<"my_work" | "team">("my_work");
   const [activeTab, setActiveTab] = useState<AdminMobileTab>("overview");
+
+  const [isSchemeDrilldownActive, setIsSchemeDrilldownActive] = useState(false);
+
+  useEffect(() => {
+    if (activeTab !== "applications" || effectiveApplicationView !== "scheme_wise") {
+      setIsSchemeDrilldownActive(false);
+    }
+  }, [activeTab, effectiveApplicationView]);
 
   // Create Application Form State
   const [createFullName, setCreateFullName] = useState<string>("");
@@ -6171,6 +6218,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [isApplicantSortMenuOpen, setIsApplicantSortMenuOpen] = useState<boolean>(false);
   const [isApplicantProfileMenuOpen, setIsApplicantProfileMenuOpen] = useState<boolean>(false);
   const [isDeleteApplicantConfirmOpen, setIsDeleteApplicantConfirmOpen] = useState<boolean>(false);
+  const [openApplicantMenuId, setOpenApplicantMenuId] = useState<string | null>(null);
+  const [openApplicantMenuUp, setOpenApplicantMenuUp] = useState<boolean>(false);
   const [appDetailReturnSubPage, setAppDetailReturnSubPage] = useState<"applications" | "user_detail" | "reports">("applications");
   const [beneficiaryCategoryFilter, setBeneficiaryCategoryFilter] = useState<string>("ALL");
   const [currentSelectedDate, setCurrentSelectedDate] = useState<Date>(new Date(2026, 9, 12)); // 12/10/2026
@@ -11800,7 +11849,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         {/* Mobile App Standard Header or Application Details / Document Verification Back Header */}
 
           {/* Mobile App Standard Header or Application Details / Document Verification Back Header */}
-          {!isLogoutSplashScreen && (!isGuestEligibilityOpen || mobileSubPage === "scheme_details") && !isMobileAuthOpen && !(activeTab === "create" && createFlowStep === "checking") && !(activeTab === "create" && createFlowStep === "eligibility_result") && mobileSubPage !== "category_schemes" && mobileSubPage !== "create_scheme" && mobileSubPage !== "users" && mobileSubPage !== "applicants" && mobileSubPage !== "user_detail" && mobileSubPage !== "settings" && mobileSubPage !== "reports" && (
+          {!isLogoutSplashScreen && (!isGuestEligibilityOpen || mobileSubPage === "scheme_details") && !isMobileAuthOpen && !(activeTab === "create" && createFlowStep === "checking") && !(activeTab === "create" && createFlowStep === "eligibility_result") && mobileSubPage !== "category_schemes" && mobileSubPage !== "create_scheme" && mobileSubPage !== "users" && mobileSubPage !== "applicants" && mobileSubPage !== "user_detail" && mobileSubPage !== "settings" && mobileSubPage !== "reports" && !(activeTab === "applications" && effectiveApplicationView === "scheme_wise" && isSchemeDrilldownActive) && (
             mobileSubPage === "guest_popular_schemes" || mobileSubPage === "guest_schemes" || mobileSubPage === "app_detail" || mobileSubPage === "needs_attention" || mobileSubPage === "notifications" || mobileSubPage === "scheme_details" || mobileSubPage === "about" || mobileSubPage === "contact" || mobileSubPage === "events_announcements" || (activeTab === "create" && (createFlowStep === "scheme_details" || createFlowStep === "eligible_schemes" || createFlowStep === "form")) ? (
               <header className="relative z-40 w-full bg-[#FFFDF9] dark:bg-slate-900 border-b border-slate-200/60 dark:border-slate-800/60 shadow-2xs">
                 {mobileSubPage === "guest_popular_schemes" || mobileSubPage === "guest_schemes" ? (
@@ -12217,6 +12266,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               isMobileAuthOpen ||
               mobileSubPage === "create_scheme" ||
               mobileSubPage === "reports" ||
+              (activeTab === "applications" && effectiveApplicationView === "scheme_wise" && mobileSubPage !== "app_detail") ||
               (mobileSubPage === "settings" && isMobileSettingsFormOpen)
                 ? "p-0"
                 : `${
@@ -12323,6 +12373,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 }}
                 onLogout={handleLogout}
                 onImmersiveChange={setIsMobileSettingsFormOpen}
+                applicationView={effectiveApplicationView}
+                onApplicationViewChange={handleApplicationViewChange}
               />
             )}
 
@@ -12337,6 +12389,34 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   setAppDetailReturnSubPage("reports");
                   setMobileSubPage("app_detail");
                 }}
+                onEditApplication={(application) => {
+                  handleEditApplicationDetails(application as any);
+                }}
+                onCallApplication={(application) => {
+                  handleApplicationCardCall(application as any);
+                }}
+                onCheckEligibility={() => {
+                  setIsGuestEligibilityOpen(true);
+                }}
+                onDeleteApplication={(application) => {
+                  setSelectedApplicationRecord(application as any);
+                  setAppDeleteConfirmOpen(true);
+                }}
+                onOpenSchemeDetails={(schemeName) => {
+                  openMobileSchemeDetailsView(schemeName, "reports");
+                }}
+                onApplyScheme={() => {
+                  setActiveTab("create");
+                  setCreateFlowStep("form");
+                }}
+                onShareScheme={(schemeName) => {
+                  showDocumentActionNotice?.(lang === "ml" ? "പദ്ധതി പങ്കിട്ടു" : `Shared ${schemeName}`);
+                }}
+                headerStyle="period_controls"
+                periodText={getFormattedPeriodDisplay()}
+                onOpenDatePicker={() => setIsDatePickerOpen(true)}
+                onStepPeriod={handleStepPeriod}
+                onDrilldownChange={setIsSchemeDrilldownActive}
               />
             )}
 
@@ -15642,35 +15722,162 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         <div className="space-y-1.5 pt-0.5 px-3">
                           {filteredMobileApplicationUsers.map((user) => {
                             const avatar = getApplicantAvatarInfo(user.nameEn || user.nameMl || "");
+                            const isMenuOpen = openApplicantMenuId === user.id;
+
                             return (
-                              <button
+                              <div
                                 key={user.id}
-                                type="button"
                                 onClick={() => {
                                   setSelectedApplicationUserId(user.id);
                                   setMobileSubPage("user_detail");
                                 }}
-                                className="flex w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left shadow-2xs transition-all hover:border-orange-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-orange-800 cursor-pointer"
+                                className="group relative flex w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left shadow-2xs transition-all hover:border-orange-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-orange-800 cursor-pointer"
                               >
-                                <span className="flex min-w-0 items-center gap-2">
+                                <div className="flex min-w-0 flex-1 items-center gap-2">
                                   <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-extrabold shadow-2xs ${avatar.colorStyle}`}>
                                     {avatar.initials}
                                   </span>
-                                  <span className="min-w-0">
-                                    <span className="block truncate text-[12px] font-bold text-foreground leading-tight">
+                                  <div className="min-w-0 flex-1">
+                                    <span className="block truncate text-[12px] font-bold text-foreground leading-tight group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
                                       {lang === "ml" ? user.nameMl : user.nameEn}
                                     </span>
                                     <span className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground leading-none">
                                       <MapPin className="h-3 w-3 shrink-0 text-orange-500" />
                                       <span className="truncate">{lang === "ml" ? user.locationMl : user.locationEn}</span>
                                     </span>
-                                  </span>
-                                </span>
+                                  </div>
+                                </div>
 
-                                <span className="flex shrink-0 items-center">
-                                  <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
-                                </span>
-                              </button>
+                                <div className="relative shrink-0">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const rect = e.currentTarget.getBoundingClientRect();
+                                      const isUp = window.innerHeight - rect.bottom < 190;
+                                      setOpenApplicantMenuUp(isUp);
+                                      setOpenApplicantMenuId(isMenuOpen ? null : user.id);
+                                    }}
+                                    className={`flex h-7 w-7 items-center justify-center rounded-full transition-colors cursor-pointer ${
+                                      isMenuOpen
+                                        ? "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200"
+                                        : "text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                                    }`}
+                                    aria-label={lang === "ml" ? "കൂടുതൽ പ്രവർത്തനങ്ങൾ" : "More actions"}
+                                    title={lang === "ml" ? "കൂടുതൽ പ്രവർത്തനങ്ങൾ" : "More actions"}
+                                  >
+                                    <MoreVertical className="h-4 w-4 stroke-[2.2]" />
+                                  </button>
+
+                                  {isMenuOpen && (
+                                    <>
+                                      <div
+                                        className="fixed inset-0 z-40"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setOpenApplicantMenuId(null);
+                                        }}
+                                      />
+                                      <div
+                                        onClick={(e) => e.stopPropagation()}
+                                        className={`absolute right-0 z-50 w-38 rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-800 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-150 ${
+                                          openApplicantMenuUp ? "bottom-full mb-1" : "top-full mt-1"
+                                        }`}
+                                      >
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setOpenApplicantMenuId(null);
+                                            const userApps = [...savedApplicationRecords, ...mobileApplicationAllPreviewRecords].filter(
+                                              (app) => !deletedApplicationRefs.includes(app.ref) && app.applicantNameEn.trim().toLowerCase() === user.id
+                                            );
+                                            const appToEdit = userApps[0];
+                                            if (appToEdit) {
+                                              handleEditApplicationDetails(appToEdit);
+                                            } else {
+                                              handleAddAnotherApplicant();
+                                              setCreateFullName(user.nameEn);
+                                              const phoneDigits = (user.phone || "").replace(/\D/g, "");
+                                              setCreatePhone(
+                                                phoneDigits.length === 12 && phoneDigits.startsWith("91")
+                                                  ? phoneDigits.slice(2)
+                                                  : phoneDigits,
+                                              );
+                                              setCreateFlowStep("form");
+                                              setActiveTab("create");
+                                              setMobileSubPage("none");
+                                            }
+                                          }}
+                                          className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
+                                        >
+                                          <Pencil className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                                          <span>{lang === "ml" ? "തിരുത്തുക" : "Edit"}</span>
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setOpenApplicantMenuId(null);
+                                            setSelectedApplicationUserId(user.id);
+                                            setMobileSubPage("user_detail");
+                                          }}
+                                          className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
+                                        >
+                                          <Eye className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                                          <span>{lang === "ml" ? "കാണുക" : "View"}</span>
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setOpenApplicantMenuId(null);
+                                            const phoneDigits = (user.phone || "").replace(/\D/g, "");
+                                            if (phoneDigits) {
+                                              window.location.href = `tel:+91${phoneDigits.slice(-10)}`;
+                                            } else {
+                                              toast.info(lang === "ml" ? "ഫോൺ നമ്പർ ലഭ്യമല്ല" : "Phone number not available");
+                                            }
+                                          }}
+                                          className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
+                                        >
+                                          <Phone className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                                          <span>{lang === "ml" ? "വിളിക്കുക" : "Call"}</span>
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setOpenApplicantMenuId(null);
+                                            setIsGuestEligibilityOpen(true);
+                                          }}
+                                          className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
+                                        >
+                                          <Sparkles className="h-3.5 w-3.5 text-orange-500" />
+                                          <span>{lang === "ml" ? "യോഗ്യത പരിശോധിക്കുക" : "Check Eligibility"}</span>
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setOpenApplicantMenuId(null);
+                                            setSelectedApplicationUserId(user.id);
+                                            setIsDeleteApplicantConfirmOpen(true);
+                                          }}
+                                          className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-1.5 text-left text-[11px] font-semibold text-red-600 hover:bg-red-50 dark:border-slate-800 dark:text-red-400 dark:hover:bg-red-950/40 cursor-pointer"
+                                        >
+                                          <Trash2 className="h-3.5 w-3.5 text-red-500 dark:text-red-400" />
+                                          <span>{lang === "ml" ? "നീക്കം ചെയ്യുക" : "Delete"}</span>
+                                        </button>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
                             );
                           })}
 
@@ -16730,6 +16937,46 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             {activeTab === "applications" && (
               mobileSubPage === "app_detail" ? (
                 renderAppDetailSubpage()
+              ) : effectiveApplicationView === "scheme_wise" ? (
+                <MobileReportsPage
+                  onBack={() => setActiveTab("overview")}
+                  applications={[...savedApplicationRecords, ...mobileApplicationAllPreviewRecords].filter(
+                    (app) => !deletedApplicationRefs.includes(app.ref)
+                  )}
+                  onSelectApplication={(application) => {
+                    setSelectedApplicationRecord(application);
+                    setAppDetailReturnSubPage("applications");
+                    setMobileSubPage("app_detail");
+                  }}
+                  onEditApplication={(application) => {
+                    handleEditApplicationDetails(application as any);
+                  }}
+                  onCallApplication={(application) => {
+                    handleApplicationCardCall(application as any);
+                  }}
+                  onCheckEligibility={() => {
+                    setIsGuestEligibilityOpen(true);
+                  }}
+                  onDeleteApplication={(application) => {
+                    setSelectedApplicationRecord(application as any);
+                    setAppDeleteConfirmOpen(true);
+                  }}
+                  onOpenSchemeDetails={(schemeName) => {
+                    openMobileSchemeDetailsView(schemeName, "none");
+                  }}
+                  onApplyScheme={() => {
+                    setActiveTab("create");
+                    setCreateFlowStep("form");
+                  }}
+                  onShareScheme={(schemeName) => {
+                    showDocumentActionNotice?.(lang === "ml" ? "പദ്ധതി പങ്കിട്ടു" : `Shared ${schemeName}`);
+                  }}
+                  headerStyle="period_controls"
+                  periodText={getFormattedPeriodDisplay()}
+                  onOpenDatePicker={() => setIsDatePickerOpen(true)}
+                  onStepPeriod={handleStepPeriod}
+                  onDrilldownChange={setIsSchemeDrilldownActive}
+                />
               ) : (
                 <div className="space-y-2 animate-in fade-in duration-200">
                 {/* Applications Header with Period Selector, Search & Filter Pill */}
@@ -20400,10 +20647,15 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             </div>
           ) : null}
 
-          {isDeleteApplicantConfirmOpen && mobileSubPage === "user_detail" && selectedApplicationUser ? (
+          {isDeleteApplicantConfirmOpen && (mobileSubPage === "user_detail" || mobileSubPage === "applicants") && selectedApplicationUser ? (
             <div
               className="absolute inset-0 z-[80] flex items-center justify-center bg-slate-900/60 p-5 backdrop-blur-xs animate-in fade-in duration-150"
-              onClick={() => setIsDeleteApplicantConfirmOpen(false)}
+              onClick={() => {
+                setIsDeleteApplicantConfirmOpen(false);
+                if (mobileSubPage === "applicants") {
+                  setSelectedApplicationUserId(null);
+                }
+              }}
             >
               <div
                 className="w-full max-w-[300px] rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
@@ -20432,7 +20684,12 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 <div className="mt-4 flex gap-2">
                   <button
                     type="button"
-                    onClick={() => setIsDeleteApplicantConfirmOpen(false)}
+                    onClick={() => {
+                      setIsDeleteApplicantConfirmOpen(false);
+                      if (mobileSubPage === "applicants") {
+                        setSelectedApplicationUserId(null);
+                      }
+                    }}
                     className="min-h-9 flex-1 rounded-lg border border-slate-200 bg-white px-3 text-[11px] font-extrabold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer"
                   >
                     {lang === "ml" ? "റദ്ദാക്കുക" : "Cancel"}
@@ -20735,6 +20992,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             !isMobileAuthOpen &&
             mobileSubPage !== "app_detail" &&
             mobileSubPage !== "needs_attention" &&
+            !(activeTab === "applications" && effectiveApplicationView === "scheme_wise" && isSchemeDrilldownActive) &&
             (activeTab !== "create" || createFlowStep === "applicant_applications") &&
             (mobileSubPage === "none" ||
               mobileSubPage === "leaderboard" ||
@@ -23959,6 +24217,39 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       ) : (
                         /* Admin: Dynamic cascading fields matching location level */
                         <div className="space-y-2 pt-1 animate-in fade-in duration-200">
+                          {/* Location Level Selector */}
+                          <div className="space-y-0.5 relative">
+                            <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block truncate">
+                              {lang === "ml" ? "സ്ഥല തലം തിരഞ്ഞെടുക്കുക (Select Location Level)" : "Select Location Level"}
+                            </label>
+                            <div className="relative">
+                              <select
+                                value={homeLocationLevel}
+                                onChange={(e) => {
+                                  const newLevel = e.target.value as HomeLocationLevel;
+                                  setHomeLocationLevel(newLevel);
+                                  if (newLevel === "state") {
+                                    setHomeSelectedRegion("all");
+                                    setHomeSelectedOrgDistrict("all");
+                                    setHomeSelectedMandalam("all");
+                                    setHomeSelectedArea("all");
+                                    setHomeSelectedWard("all");
+                                    setHomeSelectedWardIds(["all"]);
+                                  }
+                                }}
+                                className="w-full h-8.5 pl-3 pr-8 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none truncate shadow-2xs"
+                              >
+                                <option value="state">{lang === "ml" ? "സംസ്ഥാനം (State)" : "State"}</option>
+                                <option value="region">{lang === "ml" ? "മേഖല (Region)" : "Region"}</option>
+                                <option value="org_district">{lang === "ml" ? "ഓർഗ്. ജില്ല (Org District)" : "Org District"}</option>
+                                <option value="mandalam">{lang === "ml" ? "നിയമസഭാ മണ്ഡലം (Assembly Mandalam)" : "Assembly Mandalam"}</option>
+                                <option value="area">{lang === "ml" ? "ഏരിയ (Area)" : "Area"}</option>
+                                <option value="ward">{lang === "ml" ? "വാർഡ് (Ward)" : "Ward"}</option>
+                              </select>
+                              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                            </div>
+                          </div>
+
                           {/* 1. State Level Display */}
                           {homeLocationLevel === "state" && (
                             <div className="p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between">
@@ -24211,120 +24502,33 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             </div>
                           )}
 
-                          {/* Ward (shown for ward level) with Multi-select Dropdown */}
+                          {/* Ward (shown for ward level) */}
                           {homeLocationLevel === "ward" && (
                             <div className="space-y-0.5 relative">
-                              <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
+                              <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block truncate">
                                 {lang === "ml" ? "വാർഡ് / ബൂത്ത് തിരഞ്ഞെടുക്കുക" : "Select Ward / Booth"}
                               </label>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setIsHomeWardDropdownOpen(!isHomeWardDropdownOpen);
-                                  setIsCategoryDropdownOpen(false);
-                                  setIsSchemeDropdownOpen(false);
-                                }}
-                                className="w-full flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-orange-300 transition-colors shadow-2xs"
-                              >
-                                <span className="truncate">
-                                  {homeSelectedWardIds.length === 0 || homeSelectedWardIds.includes("all") || homeSelectedWardIds.length === 7
-                                    ? (lang === "ml" ? "എല്ലാ വാർഡുകളും / ബൂത്തുകളും" : "All Wards / Booths")
-                                    : `${homeSelectedWardIds.length} ${lang === "ml" ? "വാർഡുകൾ/ബൂത്തുകൾ" : "wards selected"}`}
-                                </span>
-                                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isHomeWardDropdownOpen ? "rotate-180" : ""}`} />
-                              </button>
-
-                              {isHomeWardDropdownOpen && (
-                                <div className="absolute top-full left-0 right-0 mt-1 z-50 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-xl animate-in fade-in duration-150 space-y-1">
-                                  <div className="relative mb-1">
-                                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                                    <input
-                                      type="text"
-                                      value={homeWardSearchQuery}
-                                      onChange={(e) => setHomeWardSearchQuery(e.target.value)}
-                                      placeholder={lang === "ml" ? "വാർഡ്/ബൂത്ത് തിരയുക..." : "Search Ward/Booth..."}
-                                      className="w-full pl-8 pr-2.5 py-1 text-xs rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 outline-none focus:border-orange-500"
-                                    />
-                                  </div>
-                                  <div className="max-h-40 overflow-y-auto space-y-0.5">
-                                    {/* All Wards Option */}
-                                    <label
-                                      className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        const allW = ["ward_1", "ward_2", "ward_3", "ward_4", "ward_5", "booth_101", "booth_102"];
-                                        if (homeSelectedWardIds.includes("all") || homeSelectedWardIds.length === allW.length) {
-                                          setHomeSelectedWardIds([]);
-                                          setHomeSelectedWard("all");
-                                        } else {
-                                          setHomeSelectedWardIds(["all", ...allW]);
-                                          setHomeSelectedWard("all");
-                                        }
-                                      }}
-                                    >
-                                      <div
-                                        className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
-                                          homeSelectedWardIds.includes("all") || homeSelectedWardIds.length === 7
-                                            ? "bg-orange-500 border-orange-500 text-white"
-                                            : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
-                                        }`}
-                                      >
-                                        {(homeSelectedWardIds.includes("all") || homeSelectedWardIds.length === 7) && (
-                                          <Check className="w-3 h-3 text-white stroke-[3]" />
-                                        )}
-                                      </div>
-                                      <span>{lang === "ml" ? "എല്ലാ വാർഡുകളും / ബൂത്തുകളും" : "All Wards / Booths"}</span>
-                                    </label>
-
-                                    <div className="h-px bg-slate-100 dark:bg-slate-700 my-1" />
-
-                                    {[
-                                      { id: "ward_1", en: "Ward 1 — Kazhakoottam", ml: "വാർഡ് 1 — കഴക്കൂട്ടം" },
-                                      { id: "ward_2", en: "Ward 2 — Kariavattom", ml: "വാർഡ് 2 — കാര്യവട്ടം" },
-                                      { id: "ward_3", en: "Ward 3 — Chanthavila", ml: "വാർഡ് 3 — ചന്തവിള" },
-                                      { id: "ward_4", en: "Ward 4 — Pangappara", ml: "വാർഡ് 4 — പാങ്ങപ്പാറ" },
-                                      { id: "ward_5", en: "Ward 5 — Menamkulam", ml: "വാർഡ് 5 — മേനംകുളം" },
-                                      { id: "booth_101", en: "Booth 101 — Govt H.S", ml: "ബൂത്ത് 101 — ഗവ. എച്ച്.എസ്" },
-                                      { id: "booth_102", en: "Booth 102 — L.P.S Kariavattom", ml: "ബൂത്ത് 102 — എൽ.പി.എസ് കാര്യവട്ടം" },
-                                    ]
-                                      .filter((w) => w[lang].toLowerCase().includes(homeWardSearchQuery.toLowerCase()))
-                                      .map((w) => {
-                                        const allW = ["ward_1", "ward_2", "ward_3", "ward_4", "ward_5", "booth_101", "booth_102"];
-                                        const isExplicitAll = homeSelectedWardIds.includes("all") || homeSelectedWardIds.length === allW.length;
-                                        const isSelected = isExplicitAll || homeSelectedWardIds.includes(w.id);
-                                        return (
-                                          <label
-                                            key={w.id}
-                                            className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200 select-none"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              let updated: string[];
-                                              if (isExplicitAll) {
-                                                updated = allW.filter((id) => id !== w.id);
-                                              } else if (homeSelectedWardIds.includes(w.id)) {
-                                                updated = homeSelectedWardIds.filter((id) => id !== w.id && id !== "all");
-                                              } else {
-                                                updated = [...homeSelectedWardIds.filter((id) => id !== "all"), w.id];
-                                              }
-                                              if (updated.length === allW.length) updated = ["all", ...allW];
-                                              setHomeSelectedWardIds(updated);
-                                              setHomeSelectedWard(updated.length === 1 ? updated[0] : "all");
-                                            }}
-                                          >
-                                            <div
-                                              className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
-                                                isSelected ? "bg-orange-500 border-orange-500 text-white" : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
-                                              }`}
-                                            >
-                                              {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
-                                            </div>
-                                            <span>{w[lang]}</span>
-                                          </label>
-                                        );
-                                      })}
-                                  </div>
-                                </div>
-                              )}
+                              <div className="relative">
+                                <select
+                                  value={homeSelectedWard}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setHomeSelectedWard(val);
+                                    setHomeSelectedWardIds(val === "all" ? ["all"] : [val]);
+                                  }}
+                                  className="w-full h-8.5 pl-3 pr-8 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none truncate shadow-2xs"
+                                >
+                                  <option value="all">{lang === "ml" ? "എല്ലാ വാർഡുകളും / ബൂത്തുകളും" : "All Wards / Booths"}</option>
+                                  <option value="ward_1">{lang === "ml" ? "വാർഡ് 1 — കഴക്കൂട്ടം" : "Ward 1 — Kazhakoottam"}</option>
+                                  <option value="ward_2">{lang === "ml" ? "വാർഡ് 2 — കാര്യവട്ടം" : "Ward 2 — Kariavattom"}</option>
+                                  <option value="ward_3">{lang === "ml" ? "വാർഡ് 3 — ചന്തവിള" : "Ward 3 — Chanthavila"}</option>
+                                  <option value="ward_4">{lang === "ml" ? "വാർഡ് 4 — പാങ്ങപ്പാറ" : "Ward 4 — Pangappara"}</option>
+                                  <option value="ward_5">{lang === "ml" ? "വാർഡ് 5 — മേനംകുളം" : "Ward 5 — Menamkulam"}</option>
+                                  <option value="booth_101">{lang === "ml" ? "ബൂത്ത് 101 — ഗവ. എച്ച്.എസ്" : "Booth 101 — Govt H.S"}</option>
+                                  <option value="booth_102">{lang === "ml" ? "ബൂത്ത് 102 — എൽ.പി.എസ് കാര്യവട്ടം" : "Booth 102 — L.P.S Kariavattom"}</option>
+                                </select>
+                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                              </div>
                             </div>
                           )}
                         </div>
