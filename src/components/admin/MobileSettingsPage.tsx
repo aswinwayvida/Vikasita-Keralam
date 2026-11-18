@@ -159,6 +159,39 @@ export function MobileSettingsPage({
     onApplicationViewChange?.(view);
   };
 
+  const [isAppViewSheetOpen, setIsAppViewSheetOpen] = useState(false);
+  const [sheetBounds, setSheetBounds] = useState<{
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+  } | null>(null);
+
+  const getSheetBounds = (anchor?: HTMLElement | null) => {
+    let ancestor = anchor?.parentElement || null;
+    while (ancestor && ancestor !== document.body) {
+      const style = window.getComputedStyle(ancestor);
+      const rect = ancestor.getBoundingClientRect();
+      const isClippedFrame =
+        style.overflowX === "hidden" &&
+        style.overflowY === "hidden" &&
+        rect.width >= 280 &&
+        rect.height >= 400 &&
+        rect.width < window.innerWidth - 8 &&
+        rect.height <= window.innerHeight;
+      if (isClippedFrame) {
+        return { top: rect.top, left: rect.left, width: rect.width, height: rect.height };
+      }
+      ancestor = ancestor.parentElement;
+    }
+    return null;
+  };
+
+  const openAppViewSheet = (event?: React.MouseEvent<HTMLElement>) => {
+    setSheetBounds(getSheetBounds(event?.currentTarget));
+    setIsAppViewSheetOpen(true);
+  };
+
   const [activeView, setActiveView] = useState<"settings" | "roles" | "designations" | "user">(
     "settings",
   );
@@ -1167,81 +1200,32 @@ export function MobileSettingsPage({
         </label>
 
         {/* Application View Setting */}
-        <div className="border-b border-border/70 px-4 py-3.5">
-          <div className="flex items-start gap-3">
+        <button
+          type="button"
+          onClick={openAppViewSheet}
+          className="flex w-full items-center justify-between gap-3 border-b border-border/70 px-4 py-3 text-left transition-colors hover:bg-orange-50/60 dark:hover:bg-slate-800/70 cursor-pointer"
+        >
+          <span className="flex min-w-0 items-center gap-3">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-100 dark:bg-orange-950/60">
               <ClipboardList className="h-4.5 w-4.5 text-orange-600 dark:text-orange-400" />
             </span>
-            <div className="min-w-0 flex-1">
+            <span className="min-w-0">
               <span className="block text-[11.5px] font-extrabold text-foreground">
                 {isMalayalam ? "അപേക്ഷാ കാഴ്‌ച" : "Application View"}
               </span>
-              <span className="block text-[9.5px] text-muted-foreground mt-0.5">
-                {isMalayalam
-                  ? "അപേക്ഷകൾ എങ്ങനെ പ്രദർശിപ്പിക്കണമെന്ന് തിരഞ്ഞെടുക്കുക."
-                  : "Choose how applications are displayed."}
+              <span className="block text-[9.5px] text-muted-foreground">
+                {currentAppView === "scheme_wise"
+                  ? isMalayalam
+                    ? "പദ്ധതി തിരിച്ചുള്ള കാഴ്‌ച"
+                    : "Scheme-wise Application View"
+                  : isMalayalam
+                    ? "ആപ്ലിക്കേഷൻ കാർഡ് വ്യൂ"
+                    : "Application Card View"}
               </span>
-            </div>
-          </div>
-
-          <div className="mt-3 space-y-2 pl-12">
-            {/* Option 1: Application Card View */}
-            <label
-              className={`flex items-start gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer ${
-                currentAppView === "application_card"
-                  ? "border-[#ff5500]/60 bg-orange-50/70 dark:border-orange-500/50 dark:bg-orange-950/25 shadow-2xs"
-                  : "border-slate-200/80 bg-white hover:bg-slate-50/60 dark:border-slate-800 dark:bg-slate-900/40 dark:hover:bg-slate-800/40"
-              }`}
-            >
-              <input
-                type="radio"
-                name="application-view-mode"
-                value="application_card"
-                checked={currentAppView === "application_card"}
-                onChange={() => handleAppViewChange("application_card")}
-                className="mt-0.5 h-3.5 w-3.5 accent-[#ff5500] cursor-pointer shrink-0"
-              />
-              <div className="min-w-0 flex-1">
-                <span className="block text-[11px] font-bold text-foreground leading-tight">
-                  {isMalayalam ? "ആപ്ലിക്കേഷൻ കാർഡ് വ്യൂ" : "Application Card View"}
-                </span>
-                <span className="block text-[9px] text-muted-foreground mt-0.5 leading-snug">
-                  {isMalayalam
-                    ? "നിലവിലുള്ള ആപ്ലിക്കേഷൻ കാർഡുകൾ ഉപയോഗിച്ച് അപേക്ഷകന്റെ അടിസ്ഥാനത്തിൽ ഗ്രൂപ്പ് ചെയ്ത് പ്രദർശിപ്പിക്കുക."
-                    : "Display applications grouped by applicant using the existing application cards."}
-                </span>
-              </div>
-            </label>
-
-            {/* Option 2: Scheme-wise Application View */}
-            <label
-              className={`flex items-start gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer ${
-                currentAppView === "scheme_wise"
-                  ? "border-[#ff5500]/60 bg-orange-50/70 dark:border-orange-500/50 dark:bg-orange-950/25 shadow-2xs"
-                  : "border-slate-200/80 bg-white hover:bg-slate-50/60 dark:border-slate-800 dark:bg-slate-900/40 dark:hover:bg-slate-800/40"
-              }`}
-            >
-              <input
-                type="radio"
-                name="application-view-mode"
-                value="scheme_wise"
-                checked={currentAppView === "scheme_wise"}
-                onChange={() => handleAppViewChange("scheme_wise")}
-                className="mt-0.5 h-3.5 w-3.5 accent-[#ff5500] cursor-pointer shrink-0"
-              />
-              <div className="min-w-0 flex-1">
-                <span className="block text-[11px] font-bold text-foreground leading-tight">
-                  {isMalayalam ? "പദ്ധതി തിരിച്ചുള്ള കാഴ്‌ച" : "Scheme-wise Application View"}
-                </span>
-                <span className="block text-[9px] text-muted-foreground mt-0.5 leading-snug">
-                  {isMalayalam
-                    ? "സർക്കാർ പദ്ധതി തിരിച്ച് സ്റ്റാറ്റസ് എണ്ണത്തോടൊപ്പം അപേക്ഷകൾ ഗ്രൂപ്പ് ചെയ്ത് പ്രദർശിപ്പിക്കുക."
-                    : "Display applications grouped by government scheme, with application status counts."}
-                </span>
-              </div>
-            </label>
-          </div>
-        </div>
+            </span>
+          </span>
+          <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
+        </button>
 
         <button
           type="button"
@@ -1263,6 +1247,119 @@ export function MobileSettingsPage({
       <p className="pt-2 text-center text-[9px] font-semibold text-slate-400">
         Vikasita Keralam · {isMalayalam ? "പതിപ്പ്" : "Version"} 1.0.0
       </p>
+
+      {/* Application View Bottom Sheet Popup */}
+      {isAppViewSheetOpen && (
+        <div
+          className={`fixed ${sheetBounds ? "" : "inset-0"} z-[120] flex items-end bg-slate-950/50 backdrop-blur-[1px] animate-in fade-in duration-150`}
+          style={sheetBounds ?? undefined}
+          onClick={() => setIsAppViewSheetOpen(false)}
+        >
+          <div
+            className="w-full max-h-[85%] overflow-y-auto rounded-t-[24px] border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-2xl animate-in slide-in-from-bottom duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Grab Handle */}
+            <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto -mt-1 mb-3.5" />
+
+            {/* Header */}
+            <div className="flex items-center justify-between pb-2.5 mb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400">
+                  <ClipboardList className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-slate-900 dark:text-white">
+                    {isMalayalam ? "അപേക്ഷാ കാഴ്‌ച" : "Application View"}
+                  </h3>
+                  <p className="text-[9.5px] text-muted-foreground">
+                    {isMalayalam
+                      ? "അപേക്ഷകൾ എങ്ങനെ പ്രദർശിപ്പിക്കണമെന്ന് തിരഞ്ഞെടുക്കുക"
+                      : "Choose how applications are displayed"}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAppViewSheetOpen(false)}
+                className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                aria-label="Close"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+
+            {/* Options List */}
+            <div className="space-y-2.5 pt-1 pb-2">
+              {/* Option 1: Application Card View */}
+              <button
+                type="button"
+                onClick={() => {
+                  handleAppViewChange("application_card");
+                  setIsAppViewSheetOpen(false);
+                }}
+                className={`flex w-full items-start gap-3 p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                  currentAppView === "application_card"
+                    ? "border-[#ff5500] bg-orange-50/80 dark:border-orange-500 dark:bg-orange-950/30 shadow-xs"
+                    : "border-slate-200/80 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900/40 dark:hover:bg-slate-800/40"
+                }`}
+              >
+                <div className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800">
+                  {currentAppView === "application_card" && (
+                    <div className="h-2 w-2 rounded-full bg-[#ff5500]" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="block text-[11.5px] font-bold text-foreground leading-tight">
+                    {isMalayalam ? "ആപ്ലിക്കേഷൻ കാർഡ് വ്യൂ" : "Application Card View"}
+                  </span>
+                  <span className="block text-[9.5px] text-muted-foreground mt-1 leading-snug">
+                    {isMalayalam
+                      ? "നിലവിലുള്ള ആപ്ലിക്കേഷൻ കാർഡുകൾ ഉപയോഗിച്ച് അപേക്ഷകന്റെ അടിസ്ഥാനത്തിൽ ഗ്രൂപ്പ് ചെയ്ത് പ്രദർശിപ്പിക്കുക."
+                      : "Display applications grouped by applicant using the existing application cards."}
+                  </span>
+                </div>
+                {currentAppView === "application_card" && (
+                  <Check className="h-4 w-4 text-[#ff5500] shrink-0 self-center" />
+                )}
+              </button>
+
+              {/* Option 2: Scheme-wise Application View */}
+              <button
+                type="button"
+                onClick={() => {
+                  handleAppViewChange("scheme_wise");
+                  setIsAppViewSheetOpen(false);
+                }}
+                className={`flex w-full items-start gap-3 p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                  currentAppView === "scheme_wise"
+                    ? "border-[#ff5500] bg-orange-50/80 dark:border-orange-500 dark:bg-orange-950/30 shadow-xs"
+                    : "border-slate-200/80 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900/40 dark:hover:bg-slate-800/40"
+                }`}
+              >
+                <div className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800">
+                  {currentAppView === "scheme_wise" && (
+                    <div className="h-2 w-2 rounded-full bg-[#ff5500]" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="block text-[11.5px] font-bold text-foreground leading-tight">
+                    {isMalayalam ? "പദ്ധതി തിരിച്ചുള്ള കാഴ്‌ച" : "Scheme-wise Application View"}
+                  </span>
+                  <span className="block text-[9.5px] text-muted-foreground mt-1 leading-snug">
+                    {isMalayalam
+                      ? "സർക്കാർ പദ്ധതി തിരിച്ച് സ്റ്റാറ്റസ് എണ്ണത്തോടൊപ്പം അപേക്ഷകൾ ഗ്രൂപ്പ് ചെയ്ത് പ്രദർശിപ്പിക്കുക."
+                      : "Display applications grouped by government scheme, with application status counts."}
+                  </span>
+                </div>
+                {currentAppView === "scheme_wise" && (
+                  <Check className="h-4 w-4 text-[#ff5500] shrink-0 self-center" />
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
