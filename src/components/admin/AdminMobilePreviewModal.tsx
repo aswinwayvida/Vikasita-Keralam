@@ -8614,13 +8614,10 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 <button
                   type="button"
                   onClick={() => {
-                    const matched = schemes.find(
-                      (s) =>
-                        (getTitleEn(s) && getTitleEn(s).toLowerCase() === recSchemeEn) ||
-                        (getTitleMl(s) && getTitleMl(s) === recSchemeMl)
-                    ) || schemes[0];
-                    setSelectedScheme(matched);
-                    setMobileSubPage("scheme_details");
+                    openMobileSchemeDetailsView(
+                      matchedSchemeForDetail || record.schemeNameEn || schemeName,
+                      "app_detail"
+                    );
                   }}
                   className="min-w-0 text-left cursor-pointer hover:underline focus:outline-none block w-full"
                 >
@@ -12266,7 +12263,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               isMobileAuthOpen ||
               mobileSubPage === "create_scheme" ||
               mobileSubPage === "reports" ||
-              (activeTab === "applications" && effectiveApplicationView === "scheme_wise" && mobileSubPage !== "app_detail") ||
+              (activeTab === "applications" && effectiveApplicationView === "scheme_wise" && mobileSubPage !== "app_detail" && mobileSubPage !== "scheme_details") ||
               (mobileSubPage === "settings" && isMobileSettingsFormOpen)
                 ? "p-0"
                 : `${
@@ -16937,6 +16934,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             {activeTab === "applications" && (
               mobileSubPage === "app_detail" ? (
                 renderAppDetailSubpage()
+              ) : mobileSubPage === "scheme_details" ? (
+                renderSchemeDetailsSubpage()
               ) : effectiveApplicationView === "scheme_wise" ? (
                 <MobileReportsPage
                   onBack={() => setActiveTab("overview")}
