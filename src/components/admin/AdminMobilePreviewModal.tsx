@@ -1381,10 +1381,57 @@ const mobileApplicationRecordsByStatus = MOBILE_APPLICATION_LIST_VISIBLE_STATUSE
   {} as Record<MobileApplicationListVisibleStatus, MobileApplicationRecord[]>
 );
 
-const mobileApplicationAllPreviewRecords = Array.from({ length: 20 }, (_, index) => {
-  const status = MOBILE_APPLICATION_LIST_VISIBLE_STATUSES[index % MOBILE_APPLICATION_LIST_VISIBLE_STATUSES.length];
-  return mobileApplicationRecordsByStatus[status][index];
-});
+const createCustomMobileApplicationRecord = (
+  baseSeed: MobileApplicationRecordSeed,
+  schemeSeed: MobileApplicationRecordSeed,
+  workflowStatus: MobileApplicationListVisibleStatus,
+  index: number
+): MobileApplicationRecord => {
+  const combinedSeed: MobileApplicationRecordSeed = {
+    ...baseSeed,
+    schemeNameEn: schemeSeed.schemeNameEn,
+    schemeNameMl: schemeSeed.schemeNameMl,
+    categoryEn: schemeSeed.categoryEn,
+    categoryMl: schemeSeed.categoryMl,
+  };
+  return buildMobileApplicationRecord(combinedSeed, workflowStatus, index);
+};
+
+const mobileApplicationAllPreviewRecords: MobileApplicationRecord[] = [
+  // K. Krishnan (5 applications: 3 Approved, 2 Received/Pending)
+  buildMobileApplicationRecord(mobileApplicationRecordSeeds[0], "beneficiary", 0),
+  createCustomMobileApplicationRecord(mobileApplicationRecordSeeds[0], mobileApplicationRecordSeeds[2], "beneficiary", 21),
+  createCustomMobileApplicationRecord(mobileApplicationRecordSeeds[0], mobileApplicationRecordSeeds[6], "beneficiary", 22),
+  createCustomMobileApplicationRecord(mobileApplicationRecordSeeds[0], mobileApplicationRecordSeeds[1], "application_received", 23),
+  createCustomMobileApplicationRecord(mobileApplicationRecordSeeds[0], mobileApplicationRecordSeeds[7], "application_received", 24),
+
+  // Devaki Amma (3 applications: 2 Approved, 1 In Review)
+  buildMobileApplicationRecord(mobileApplicationRecordSeeds[4], "beneficiary", 4),
+  createCustomMobileApplicationRecord(mobileApplicationRecordSeeds[4], mobileApplicationRecordSeeds[19], "beneficiary", 25),
+  createCustomMobileApplicationRecord(mobileApplicationRecordSeeds[4], mobileApplicationRecordSeeds[12], "review", 26),
+
+  // Sunitha Kumari (3 applications: 1 Documents Verified, 1 In Review, 1 Rejected)
+  createCustomMobileApplicationRecord(mobileApplicationRecordSeeds[3], mobileApplicationRecordSeeds[10], "document_verification_completed", 27),
+  buildMobileApplicationRecord(mobileApplicationRecordSeeds[3], "review", 3),
+  createCustomMobileApplicationRecord(mobileApplicationRecordSeeds[3], mobileApplicationRecordSeeds[15], "rejected", 28),
+
+  // Muhammed Shafee (2 applications: 1 Documents Verified, 1 Submitted)
+  buildMobileApplicationRecord(mobileApplicationRecordSeeds[1], "document_verification_completed", 1),
+  createCustomMobileApplicationRecord(mobileApplicationRecordSeeds[1], mobileApplicationRecordSeeds[11], "applied", 29),
+
+  // Other single-application applicants
+  buildMobileApplicationRecord(mobileApplicationRecordSeeds[2], "applied", 2),
+  buildMobileApplicationRecord(mobileApplicationRecordSeeds[5], "rejected", 5),
+  buildMobileApplicationRecord(mobileApplicationRecordSeeds[6], "application_received", 6),
+  buildMobileApplicationRecord(mobileApplicationRecordSeeds[8], "document_verification_completed", 8),
+  buildMobileApplicationRecord(mobileApplicationRecordSeeds[9], "review", 9),
+  buildMobileApplicationRecord(mobileApplicationRecordSeeds[11], "rejected", 11),
+  buildMobileApplicationRecord(mobileApplicationRecordSeeds[12], "beneficiary", 12),
+  buildMobileApplicationRecord(mobileApplicationRecordSeeds[15], "review", 15),
+  buildMobileApplicationRecord(mobileApplicationRecordSeeds[16], "beneficiary", 16),
+  buildMobileApplicationRecord(mobileApplicationRecordSeeds[17], "rejected", 17),
+  buildMobileApplicationRecord(mobileApplicationRecordSeeds[18], "application_received", 18),
+];
 
 const mobileApplicationStatusMeta: Record<
   string,
@@ -1406,41 +1453,41 @@ const mobileApplicationStatusMeta: Record<
     labelEn: "Documents Verified",
     labelMl: "രേഖകൾ പരിശോധിച്ചു",
     icon: FileCheck,
-    className: "border-teal-200/80 bg-teal-50 text-teal-700 dark:border-teal-900/60 dark:bg-teal-950/40 dark:text-teal-300",
+    className: "border-purple-200/80 bg-purple-50 text-purple-700 dark:border-purple-900/60 dark:bg-purple-950/40 dark:text-purple-300",
   },
   document_verified: {
     labelEn: "Documents Verified",
     labelMl: "രേഖകൾ പരിശോധിച്ചു",
     icon: FileCheck,
-    className: "border-teal-200/80 bg-teal-50 text-teal-700 dark:border-teal-900/60 dark:bg-teal-950/40 dark:text-teal-300",
+    className: "border-purple-200/80 bg-purple-50 text-purple-700 dark:border-purple-900/60 dark:bg-purple-950/40 dark:text-purple-300",
   },
   applied: {
-    labelEn: "Applied",
-    labelMl: "അപേക്ഷിച്ചു",
+    labelEn: "Submitted",
+    labelMl: "സമർപ്പിച്ചു",
     icon: Send,
     className: "border-sky-200/80 bg-sky-50 text-sky-700 dark:border-sky-900/60 dark:bg-sky-950/40 dark:text-sky-300",
   },
   review: {
-    labelEn: "Under Review",
+    labelEn: "In Review",
     labelMl: "പരിശോധനയിൽ",
     icon: FileSearch,
     className: "border-orange-200/90 bg-orange-50 text-[#ff5500] dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300",
   },
   in_review: {
-    labelEn: "Under Review",
+    labelEn: "In Review",
     labelMl: "പരിശോധനയിൽ",
     icon: FileSearch,
     className: "border-orange-200/90 bg-orange-50 text-[#ff5500] dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300",
   },
   in_progress: {
-    labelEn: "Under Review",
+    labelEn: "In Review",
     labelMl: "പരിശോധനയിൽ",
     icon: FileSearch,
     className: "border-orange-200/90 bg-orange-50 text-[#ff5500] dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300",
   },
   beneficiary: {
-    labelEn: "Benefit Received",
-    labelMl: "ആനുകൂല്യം ലഭിച്ചു",
+    labelEn: "Approved",
+    labelMl: "അംഗീകരിച്ചു",
     icon: HandCoins,
     className: "border-emerald-200/80 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300",
   },
@@ -1469,8 +1516,8 @@ const mobileApplicationStatusMeta: Record<
     className: "border-blue-200/80 bg-blue-50 text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300",
   },
   disbursed: {
-    labelEn: "Benefit Received",
-    labelMl: "ആനുകൂല്യം ലഭിച്ചു",
+    labelEn: "Approved",
+    labelMl: "അംഗീകരിച്ചു",
     icon: HandCoins,
     className: "border-emerald-200/80 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300",
   },
@@ -3081,6 +3128,100 @@ const getStoredApplicationView = (role: "state_admin" | "party_worker"): MobileA
   return role === "state_admin" ? "scheme_wise" : "application_card";
 };
 
+// 3 Regions, 30 Organisational Districts, 140 Assembly Mandalams
+const REGION_ORGANISATIONAL_DISTRICTS: Record<string, string[]> = {
+  // Northern Region — 10 Organisational Districts, 48 Mandalams
+  "reg-north": [
+    "od-ksd",
+    "od-knr-north",
+    "od-knr-south",
+    "od-wyd",
+    "od-kkd-city",
+    "od-kkd-north",
+    "od-kkd-rural",
+    "od-mlp-central",
+    "od-mlp-east",
+    "od-mlp-west",
+  ],
+  // Central Region — 12 Organisational Districts, 53 Mandalams
+  "reg-central": [
+    "od-pkd-east",
+    "od-pkd-west",
+    "od-tsr-city",
+    "od-tsr-north",
+    "od-tsr-south",
+    "od-ekm-city",
+    "od-ekm-north",
+    "od-ekm-east",
+    "od-idk-north",
+    "od-idk-south",
+    "od-ktm-east",
+    "od-ktm-west",
+  ],
+  // Southern Region — 8 Organisational Districts, 39 Mandalams
+  "reg-south": [
+    "od-alp-north",
+    "od-alp-south",
+    "od-ptm",
+    "od-klm-east",
+    "od-klm-west",
+    "od-tvm-city",
+    "od-tvm-north",
+    "od-tvm-south",
+  ],
+};
+
+const ORGANISATIONAL_DISTRICT_MANDALAMS: Record<string, string[]> = {
+  // 1. Northern Region — 10 Organisational Districts, 48 Mandalams
+  "od-ksd": ["ksd-c1", "ksd-c2", "ksd-c3", "ksd-c4", "ksd-c5"], // Kasaragod: Manjeshwar, Kasaragod, Udma, Kanhangad, Trikaripur (5)
+  "od-knr-north": ["knr-c1", "knr-c2", "knr-c3", "knr-c4", "knr-c5"], // Kannur North: Payyannur, Kalliasseri, Taliparamba, Irikkur, Azhikode (5)
+  "od-knr-south": ["knr-c6", "knr-c7", "knr-c8", "knr-c9", "knr-c10", "knr-c11"], // Kannur South: Kannur, Dharmadam, Thalassery, Kuthuparamba, Mattannur, Peravoor (6)
+  "od-wyd": ["wyd-c1", "wyd-c2", "wyd-c3"], // Wayanad: Mananthavady, Sulthan Bathery, Kalpetta (3)
+  "od-kkd-city": ["kkd-c7", "kkd-c8", "kkd-c9", "kkd-c10"], // Kozhikode City: Elathur, Kozhikode North, Kozhikode South, Beypore (4)
+  "od-kkd-north": ["kkd-c1", "kkd-c2", "kkd-c3", "kkd-c4", "kkd-c5"], // Kozhikode North: Vadakara, Kuttiadi, Nadapuram, Quilandy, Perambra (5)
+  "od-kkd-rural": ["kkd-c6", "kkd-c11", "kkd-c12", "kkd-c13"], // Kozhikode Rural: Balussery, Kunnamangalam, Koduvally, Thiruvambady (4)
+  "od-mlp-central": ["mlp-c1", "mlp-c5", "mlp-c8", "mlp-c7", "mlp-c6"], // Malappuram Central: Kondotty, Manjeri, Malappuram, Mankada, Perinthalmanna (5)
+  "od-mlp-east": ["mlp-c2", "mlp-c3", "mlp-c4", "mlp-c9", "mlp-c10"], // Malappuram East: Eranad, Nilambur, Wandoor, Vengara, Vallikkunnu (5)
+  "od-mlp-west": ["mlp-c11", "mlp-c12", "mlp-c13", "mlp-c14", "mlp-c15", "mlp-c16"], // Malappuram West: Tirurangadi, Tanur, Tirur, Kottakkal, Thavanur, Ponnani (6)
+
+  // 2. Central Region — 12 Organisational Districts, 53 Mandalams
+  "od-pkd-east": ["pkd-c5", "pkd-c7", "pkd-c8", "pkd-c10", "pkd-c11", "pkd-c12"], // Palakkad East: Kongad, Malampuzha, Palakkad, Chittur, Nenmara, Alathur (6)
+  "od-pkd-west": ["pkd-c1", "pkd-c2", "pkd-c3", "pkd-c4", "pkd-c6", "pkd-c9"], // Palakkad West: Thrithala, Pattambi, Shornur, Ottapalam, Mannarkad, Tarur (6)
+  "od-tsr-city": ["tsr-c7", "tsr-c6", "tsr-c4", "tsr-c8"], // Thrissur City: Thrissur, Ollur, Manalur, Nattika (4)
+  "od-tsr-north": ["tsr-c1", "tsr-c2", "tsr-c3", "tsr-c5"], // Thrissur North: Chelakkara, Kunnamkulam, Guruvayoor, Wadakkanchery (4)
+  "od-tsr-south": ["tsr-c9", "tsr-c10", "tsr-c11", "tsr-c12", "tsr-c13"], // Thrissur South: Kaipamangalam, Irinjalakkuda, Puthukkad, Chalakkudy, Kodungallur (5)
+  "od-ekm-city": ["ekm-c7", "ekm-c8", "ekm-c14", "ekm-c9", "ekm-c6"], // Ernakulam City: Kochi, Ernakulam, Thripunithura, Thrikkakara, Vypen (5)
+  "od-ekm-north": ["ekm-c2", "ekm-c3", "ekm-c4", "ekm-c5"], // Ernakulam North: Angamaly, Aluva, Kalamassery, Paravur (4)
+  "od-ekm-east": ["ekm-c1", "ekm-c10", "ekm-c11", "ekm-c12", "ekm-c13"], // Ernakulam East: Perumbavoor, Kunnathunad, Piravom, Muvattupuzha, Kothamangalam (5)
+  "od-idk-north": ["idk-c1", "idk-c2", "idk-c3"], // Idukki North: Devikulam, Udumbanchola, Thodupuzha (3)
+  "od-idk-south": ["idk-c4", "idk-c5"], // Idukki South: Idukki, Peerumade (2)
+  "od-ktm-east": ["ktm-c9", "ktm-c8", "ktm-c7", "ktm-c6"], // Kottayam East: Poonjar, Kanjirappally, Changanassery, Puthuppally (4)
+  "od-ktm-west": ["ktm-c1", "ktm-c2", "ktm-c3", "ktm-c4", "ktm-c5"], // Kottayam West: Pala, Kaduthuruthy, Vaikom, Ettumanoor, Kottayam (5)
+
+  // 3. Southern Region — 8 Organisational Districts, 39 Mandalams
+  "od-alp-north": ["alp-c1", "alp-c2", "alp-c3", "alp-c4"], // Alappuzha North: Aroor, Cherthala, Alappuzha, Ambalapuzha (4)
+  "od-alp-south": ["alp-c5", "alp-c6", "alp-c7", "alp-c8", "alp-c9"], // Alappuzha South: Kuttanad, Haripad, Kayamkulam, Mavelikara, Chengannur (5)
+  "od-ptm": ["ptm-c1", "ptm-c2", "ptm-c3", "ptm-c4", "ptm-c5"], // Pathanamthitta: Thiruvalla, Ranni, Aranmula, Konni, Adoor (5)
+  "od-klm-east": ["klm-c3", "klm-c4", "klm-c5", "klm-c6", "klm-c7", "klm-c8"], // Kollam East: Kunnathur, Kottarakkara, Pathanapuram, Punalur, Chadayamangalam, Kundara (6)
+  "od-klm-west": ["klm-c1", "klm-c2", "klm-c9", "klm-c10", "klm-c11"], // Kollam West: Karunagappally, Chavara, Kollam, Eravipuram, Chathannur (5)
+  "od-tvm-city": ["tvm-c6", "tvm-c7", "tvm-c8", "tvm-c9"], // Thiruvananthapuram City: Kazhakkoottam, Vattiyoorkavu, Thiruvananthapuram, Nemom (4)
+  "od-tvm-north": ["tvm-c1", "tvm-c2", "tvm-c3", "tvm-c4", "tvm-c5", "tvm-c10"], // Thiruvananthapuram North: Varkala, Attingal, Chirayinkeezhu, Nedumangad, Vamanapuram, Aruvikkara (6)
+  "od-tvm-south": ["tvm-c11", "tvm-c12", "tvm-c13", "tvm-c14"], // Thiruvananthapuram South: Parassala, Kattakkada, Kovalam, Neyyattinkara (4)
+};
+
+const getAvailableMandalams = (selectedRegion: string, selectedOrgDistrict: string) => {
+  if (selectedOrgDistrict && selectedOrgDistrict !== "all") {
+    const mandalamIds = ORGANISATIONAL_DISTRICT_MANDALAMS[selectedOrgDistrict] || [];
+    return constituencies.filter((c) => mandalamIds.includes(c.id));
+  }
+  if (selectedRegion && selectedRegion !== "all") {
+    const allowedODs = REGION_ORGANISATIONAL_DISTRICTS[selectedRegion] || [];
+    const allMandalamIds = allowedODs.flatMap((odId) => ORGANISATIONAL_DISTRICT_MANDALAMS[odId] || []);
+    return constituencies.filter((c) => allMandalamIds.includes(c.id));
+  }
+  return constituencies;
+};
+
 export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, standalone = false }: AdminMobilePreviewModalProps) {
   const { lang } = useLang();
   const [userRole, setUserRole] = useState<"state_admin" | "party_worker">("state_admin");
@@ -3591,7 +3732,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
               {/* 3. Beneficiaries */}
               <div
-                onClick={() => setMobileSubPage("beneficiaries")}
+                onClick={() => openApplicationListWithStatus("beneficiary")}
                 className="rounded-lg border border-border bg-card py-1 px-2 flex flex-col justify-between shadow-2xs hover:border-emerald-500/70 transition-all cursor-pointer"
               >
                 <div className="flex items-center justify-between gap-1">
@@ -6217,10 +6358,22 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [applicantApplicationSort, setApplicantApplicationSort] = useState<"newest" | "oldest">("newest");
   const [isApplicantSortMenuOpen, setIsApplicantSortMenuOpen] = useState<boolean>(false);
   const [isApplicantProfileMenuOpen, setIsApplicantProfileMenuOpen] = useState<boolean>(false);
+  const [applicantProfileTab, setApplicantProfileTab] = useState<"applications" | "information">("applications");
+  const [applicantAppStatusFilter, setApplicantAppStatusFilter] = useState<"all" | "approved" | "in_review" | "pending" | "rejected">("all");
+  const [applicantProfileReturnSubPage, setApplicantProfileReturnSubPage] = useState<"applicants" | "app_detail">("applicants");
   const [isDeleteApplicantConfirmOpen, setIsDeleteApplicantConfirmOpen] = useState<boolean>(false);
   const [openApplicantMenuId, setOpenApplicantMenuId] = useState<string | null>(null);
   const [openApplicantMenuUp, setOpenApplicantMenuUp] = useState<boolean>(false);
-  const [appDetailReturnSubPage, setAppDetailReturnSubPage] = useState<"applications" | "user_detail" | "reports">("applications");
+  const [appDetailReturnSubPage, setAppDetailReturnSubPage] = useState<"applications" | "user_detail" | "reports" | "applicants">("applications");
+  const [applicantCountPopup, setApplicantCountPopup] = useState<{
+    applicantNameEn: string;
+    applicantNameMl: string;
+    statusLabelEn: string;
+    statusLabelMl: string;
+    badgeClassName: string;
+    count: number;
+    applications: MobileApplicationRecord[];
+  } | null>(null);
   const [beneficiaryCategoryFilter, setBeneficiaryCategoryFilter] = useState<string>("ALL");
   const [currentSelectedDate, setCurrentSelectedDate] = useState<Date>(new Date(2026, 9, 12)); // 12/10/2026
   const [selectedPeriod, setSelectedPeriod] = useState<string>("this_month");
@@ -7507,7 +7660,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     const isDocumentVerifiedStage = workflowStatus === "document_verification_completed";
     const isReceivedStage = workflowStatus === "application_received";
     const hasSchemeWebsite = Boolean(schemeWebsiteUrl);
-    const statusLabelEn = isDocumentVerifiedStage ? "Document Verified" : (workflowMeta?.labelEn ?? "Received");
+    const statusLabelEn = isDocumentVerifiedStage ? "Documents Verified" : (workflowMeta?.labelEn ?? "Received");
     const statusLabelMl = workflowMeta?.labelMl ?? "ലഭിച്ചു";
     const needsTrackingIdEntry =
       !record.trackingId &&
@@ -8520,13 +8673,47 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               {(() => {
                 const avatar = getApplicantAvatarInfo(applicantName || "");
                 return (
-                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[13px] font-extrabold shadow-2xs ${avatar.colorStyle}`}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedApplicationUserId(applicantProfileId);
+                      setApplicantProfileTab("applications");
+                      setApplicantAppStatusFilter("all");
+                      setApplicantProfileReturnSubPage("app_detail");
+                      setActiveTab("overview");
+                      setMobileSubPage("user_detail");
+                      setAppDetailView("overview");
+                      setAppDetailMenuOpen(false);
+                      mobileContentRef.current?.scrollTo({ top: 0 });
+                    }}
+                    title={lang === "ml" ? "അപേക്ഷക പ്രൊഫൈൽ കാണുക" : "View applicant profile"}
+                    aria-label={lang === "ml" ? "അപേക്ഷക പ്രൊഫൈൽ കാണുക" : "View applicant profile"}
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[13px] font-extrabold shadow-2xs transition-transform hover:scale-105 cursor-pointer ${avatar.colorStyle}`}
+                  >
                     {avatar.initials}
-                  </span>
+                  </button>
                 );
               })()}
               <div className="min-w-0">
-                <p className="text-[15px] font-black leading-snug text-[#0F172A] dark:text-white truncate">{applicantName}</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedApplicationUserId(applicantProfileId);
+                    setApplicantProfileTab("applications");
+                    setApplicantAppStatusFilter("all");
+                    setApplicantProfileReturnSubPage("app_detail");
+                    setActiveTab("overview");
+                    setMobileSubPage("user_detail");
+                    setAppDetailView("overview");
+                    setAppDetailMenuOpen(false);
+                    mobileContentRef.current?.scrollTo({ top: 0 });
+                  }}
+                  title={lang === "ml" ? "അപേക്ഷക പ്രൊഫൈൽ കാണുക" : "View applicant profile"}
+                  aria-label={lang === "ml" ? "അപേക്ഷക പ്രൊഫൈൽ കാണുക" : "View applicant profile"}
+                  className="block max-w-full truncate text-left text-[15px] font-black leading-snug text-[#0F172A] transition-colors duration-150 hover:text-[#f15a0a] hover:underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f15a0a]/40 dark:text-white dark:hover:text-orange-400 cursor-pointer"
+                >
+                  {applicantName}
+                </button>
                 <p className="mt-0.5 text-[12px] font-medium text-slate-500 dark:text-slate-400 truncate">{applicantLocation}</p>
               </div>
             </div>
@@ -8841,6 +9028,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   type="button"
                   onClick={() => {
                     setSelectedApplicationUserId(applicantProfileId);
+                    setApplicantProfileTab("applications");
+                    setApplicantAppStatusFilter("all");
+                    setApplicantProfileReturnSubPage("app_detail");
                     setActiveTab("overview");
                     setMobileSubPage("user_detail");
                     setAppDetailView("overview");
@@ -9841,6 +10031,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     setActiveTab("applications");
     setMobileSubPage("none");
     setApplicationStatusFilter(status);
+    setSelectedAppStatusFilters(status === "all" ? ["all"] : [status]);
     setApplicationSearchQuery("");
   };
 
@@ -9988,6 +10179,122 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       ? `${lang === "ml" ? "ട്രാക്കിംഗ് ഐഡി" : "Tracking ID"}: ${application.trackingId}`
       : `${lang === "ml" ? "സേവ്" : "Saved"}: ${application.appliedDate}`;
 
+  const getApplicantStatusCategory = (app: MobileApplicationRecord) => {
+    const wst = (app.workflowStatus || "").toLowerCase();
+    const st = (app.status || "").toLowerCase();
+
+    // 1. Approved / Beneficiary / Disbursed / Assisted
+    if (
+      wst === "beneficiary" ||
+      wst === "disbursed" ||
+      wst === "approved" ||
+      wst === "assisted" ||
+      st === "beneficiary" ||
+      st === "disbursed" ||
+      st === "approved" ||
+      st === "assisted"
+    ) {
+      return {
+        key: "approved",
+        labelEn: "Approved",
+        labelMl: "അംഗീകരിച്ചു",
+        className: "border-emerald-200/80 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300",
+        order: 1,
+      };
+    }
+
+    // 2. In Review / Under Review / In Progress
+    if (
+      wst === "review" ||
+      wst === "in_review" ||
+      wst === "under_review" ||
+      wst === "in_progress" ||
+      st === "review" ||
+      st === "in_review" ||
+      st === "under_review" ||
+      st === "in_progress"
+    ) {
+      return {
+        key: "in_review",
+        labelEn: "In Review",
+        labelMl: "പരിശോധനയിൽ",
+        className: "border-orange-200/90 bg-orange-50 text-[#ff5500] dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300",
+        order: 2,
+      };
+    }
+
+    // 3. Documents Verified
+    if (
+      wst === "document_verification_completed" ||
+      wst === "document_verified" ||
+      st === "document_verification_completed" ||
+      st === "document_verified"
+    ) {
+      return {
+        key: "document_verified",
+        labelEn: "Documents Verified",
+        labelMl: "രേഖകൾ പരിശോധിച്ചു",
+        className: "border-purple-200/80 bg-purple-50 text-purple-700 dark:border-purple-900/60 dark:bg-purple-950/40 dark:text-purple-300",
+        order: 3,
+      };
+    }
+
+    // 4. Submitted / Applied
+    if (wst === "applied" || st === "applied") {
+      return {
+        key: "applied",
+        labelEn: "Submitted",
+        labelMl: "സമർപ്പിച്ചു",
+        className: "border-sky-200/80 bg-sky-50 text-sky-700 dark:border-sky-900/60 dark:bg-sky-950/40 dark:text-sky-300",
+        order: 4,
+      };
+    }
+
+    // 5. Rejected
+    if (wst === "rejected" || st === "rejected") {
+      return {
+        key: "rejected",
+        labelEn: "Rejected",
+        labelMl: "നിരസിച്ചു",
+        className: "border-rose-200/80 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300",
+        order: 6,
+      };
+    }
+
+    // 6. Received / Application Received / Pending (default)
+    return {
+      key: "pending",
+      labelEn: "Pending / Received",
+      labelMl: "ലഭിച്ചു",
+      className: "border-slate-200/90 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-200",
+      order: 5,
+    };
+  };
+
+  const getApplicantStatusCounts = (applications: MobileApplicationRecord[]) => {
+    const map = new globalThis.Map<
+      string,
+      {
+        key: string;
+        labelEn: string;
+        labelMl: string;
+        className: string;
+        count: number;
+        order: number;
+      }
+    >();
+    for (const app of applications) {
+      const cat = getApplicantStatusCategory(app);
+      const existing = map.get(cat.key);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        map.set(cat.key, { ...cat, count: 1 });
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => a.order - b.order);
+  };
+
   const mobileApplicationUsers = (() => {
     const usersByName = new globalThis.Map<
       string,
@@ -10001,6 +10308,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         schemeNames: string[];
         schemeStatuses: MobileApplicationRecord["status"][];
         applicationCount: number;
+        applications: MobileApplicationRecord[];
       }
     >();
 
@@ -10011,6 +10319,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       const existing = usersByName.get(key);
       if (existing) {
         existing.applicationCount += 1;
+        existing.applications.push(application);
         if (!existing.phone && application.phone) existing.phone = application.phone;
         if (!existing.schemeNames.includes(application.schemeNameEn)) existing.schemeNames.push(application.schemeNameEn);
         if (!existing.schemeStatuses.includes(application.status)) existing.schemeStatuses.push(application.status);
@@ -10026,10 +10335,14 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         schemeNames: [application.schemeNameEn],
         schemeStatuses: [application.status],
         applicationCount: 1,
+        applications: [application],
       });
       });
 
-    return Array.from(usersByName.values()).sort(
+    return Array.from(usersByName.values()).map((user) => ({
+      ...user,
+      statusCounts: getApplicantStatusCounts(user.applications),
+    })).sort(
       (a, b) => b.applicationCount - a.applicationCount || a.nameEn.localeCompare(b.nameEn),
     );
   })();
@@ -10179,15 +10492,88 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       )
     : [];
 
-  const sortedSelectedApplicationUserApplications = [...selectedApplicationUserApplications].sort((a, b) => {
-    const aTime = Date.parse(a.appliedDate);
-    const bTime = Date.parse(b.appliedDate);
-    const difference =
-      Number.isNaN(aTime) || Number.isNaN(bTime)
-        ? a.appliedDate.localeCompare(b.appliedDate)
-        : aTime - bTime;
-    return applicantApplicationSort === "oldest" ? difference : -difference;
-  });
+  const getApplicantAppBucket = (app: MobileApplicationRecord): "approved" | "in_review" | "pending" | "rejected" => {
+    const wst = (app.workflowStatus || "").toLowerCase();
+    const st = (app.status || "").toLowerCase();
+
+    // 1. Rejected
+    if (wst === "rejected" || st === "rejected") {
+      return "rejected";
+    }
+
+    // 2. Approved / Beneficiary / Disbursed / Assisted
+    if (
+      wst === "beneficiary" ||
+      wst === "approved" ||
+      wst === "assisted" ||
+      wst === "disbursed" ||
+      st === "beneficiary" ||
+      st === "approved" ||
+      st === "assisted" ||
+      st === "disbursed"
+    ) {
+      return "approved";
+    }
+
+    // 3. In Review / Under Review / In Progress
+    if (
+      wst === "in_review" ||
+      wst === "review" ||
+      wst === "under_review" ||
+      wst === "in_progress" ||
+      st === "in_review" ||
+      st === "review" ||
+      st === "under_review" ||
+      st === "in_progress"
+    ) {
+      return "in_review";
+    }
+
+    // 4. Pending (Received, Document Verified, Applied/Submitted, Pending)
+    return "pending";
+  };
+
+  const applicantAppsStats = useMemo(() => {
+    let approved = 0;
+    let inReview = 0;
+    let pending = 0;
+    let rejected = 0;
+
+    for (const app of selectedApplicationUserApplications) {
+      const bucket = getApplicantAppBucket(app);
+      if (bucket === "approved") approved += 1;
+      else if (bucket === "in_review") inReview += 1;
+      else if (bucket === "pending") pending += 1;
+      else if (bucket === "rejected") rejected += 1;
+    }
+
+    return {
+      total: selectedApplicationUserApplications.length,
+      approved,
+      inReview,
+      pending,
+      rejected,
+    };
+  }, [selectedApplicationUserApplications]);
+
+  const displayedSelectedApplicationUserApplications = useMemo(() => {
+    const list =
+      applicantAppStatusFilter === "all"
+        ? selectedApplicationUserApplications
+        : selectedApplicationUserApplications.filter(
+            (app) => getApplicantAppBucket(app) === applicantAppStatusFilter
+          );
+
+    return [...list].sort((a, b) => {
+      const aTime = Date.parse(a.appliedDate);
+      const bTime = Date.parse(b.appliedDate);
+      const difference =
+        Number.isNaN(aTime) || Number.isNaN(bTime)
+          ? a.appliedDate.localeCompare(b.appliedDate)
+          : aTime - bTime;
+      return -difference;
+    });
+  }, [selectedApplicationUserApplications, applicantAppStatusFilter]);
 
   type MobileApplicationApplicantGroup = {
     key: string;
@@ -10486,6 +10872,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               onClick={(event) => {
                 event.stopPropagation();
                 setSelectedApplicationUserId(applicantProfileId);
+                setApplicantProfileTab("applications");
+                setApplicantAppStatusFilter("all");
                 setActiveTab("overview");
                 setMobileSubPage("user_detail");
                 mobileContentRef.current?.scrollTo({ top: 0 });
@@ -10496,9 +10884,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             >
               {lang === "ml" ? group.nameMl || group.nameEn : group.nameEn || group.nameMl}
             </button>
-            <p className="mt-0.5 flex min-w-0 items-center gap-1 text-[10.5px] font-medium leading-tight text-slate-500 dark:text-slate-400">
-              <MapPin className="h-3 w-3 shrink-0 text-slate-400 dark:text-slate-500" />
-              <span className="truncate">{lang === "ml" ? group.locationMl : group.locationEn}</span>
+            <p className="mt-0.5 min-w-0 truncate text-[10.5px] font-medium leading-tight text-slate-500 dark:text-slate-400">
+              {lang === "ml" ? group.locationMl : group.locationEn}
             </p>
           </div>
           {compact && (
@@ -11827,7 +12214,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       : selectedApplicationRecord?.schemeNameEn || selectedApplicationRecord?.schemeNameMl || "—";
   const successStatusLabelEn =
     successWorkflowStatus === "document_verification_completed"
-      ? "Document Verified"
+      ? "Documents Verified"
       : (successStatusMeta?.labelEn ?? "Received");
   const successStatusLabelMl = successStatusMeta?.labelMl ?? "ലഭിച്ചു";
 
@@ -12378,6 +12765,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             {mobileSubPage === "reports" && (
               <MobileReportsPage
                 onBack={() => setMobileSubPage("none")}
+                userRole={userRole}
                 applications={[...savedApplicationRecords, ...mobileApplicationAllPreviewRecords].filter(
                   (app) => !deletedApplicationRefs.includes(app.ref)
                 )}
@@ -15726,6 +16114,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 key={user.id}
                                 onClick={() => {
                                   setSelectedApplicationUserId(user.id);
+                                  setApplicantProfileTab("applications");
+                                  setApplicantAppStatusFilter("all");
+                                  setApplicantProfileReturnSubPage("applicants");
                                   setMobileSubPage("user_detail");
                                 }}
                                 className="group relative flex w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left shadow-2xs transition-all hover:border-orange-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-orange-800 cursor-pointer"
@@ -15738,14 +16129,52 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     <span className="block truncate text-[12px] font-bold text-foreground leading-tight group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
                                       {lang === "ml" ? user.nameMl : user.nameEn}
                                     </span>
-                                    <span className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground leading-none">
-                                      <MapPin className="h-3 w-3 shrink-0 text-orange-500" />
-                                      <span className="truncate">{lang === "ml" ? user.locationMl : user.locationEn}</span>
+                                    <span className="mt-0.5 block truncate text-[10px] text-muted-foreground leading-none">
+                                      {lang === "ml" ? user.locationMl : user.locationEn}
                                     </span>
                                   </div>
                                 </div>
 
-                                <div className="relative shrink-0">
+                                <div className="relative shrink-0 flex items-center gap-1.5">
+                                  {user.statusCounts && user.statusCounts.length > 0 && (
+                                    <div className="flex items-center gap-1">
+                                      {user.statusCounts.map((sc) => {
+                                        const matchingApps = user.applications.filter(
+                                          (app) => getApplicantStatusCategory(app).key === sc.key
+                                        );
+                                        const appsToUse = matchingApps.length > 0 ? matchingApps : user.applications;
+
+                                        return (
+                                          <button
+                                            type="button"
+                                            key={sc.key}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              if (appsToUse.length === 1) {
+                                                setAppDetailReturnSubPage("applicants");
+                                                openMobileApplicationDetail(appsToUse[0]);
+                                              } else {
+                                                setApplicantCountPopup({
+                                                  applicantNameEn: user.nameEn,
+                                                  applicantNameMl: user.nameMl,
+                                                  statusLabelEn: sc.labelEn,
+                                                  statusLabelMl: sc.labelMl,
+                                                  badgeClassName: sc.className,
+                                                  count: sc.count,
+                                                  applications: appsToUse,
+                                                });
+                                              }
+                                            }}
+                                            title={lang === "ml" ? `${sc.count} ${sc.labelMl}` : `${sc.count} ${sc.labelEn}`}
+                                            className={`flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10.5px] font-black leading-none border shadow-2xs transition-transform hover:scale-110 active:scale-95 cursor-pointer ${sc.className}`}
+                                          >
+                                            {sc.count}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+
                                   <button
                                     type="button"
                                     onClick={(e) => {
@@ -15818,6 +16247,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                             e.stopPropagation();
                                             setOpenApplicantMenuId(null);
                                             setSelectedApplicationUserId(user.id);
+                                            setApplicantProfileTab("applications");
+                                            setApplicantAppStatusFilter("all");
+                                            setApplicantProfileReturnSubPage("applicants");
                                             setMobileSubPage("user_detail");
                                           }}
                                           className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
@@ -15925,7 +16357,11 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             onClick={() => {
                               setIsApplicantProfileMenuOpen(false);
                               setIsApplicantSortMenuOpen(false);
-                              setMobileSubPage("applicants");
+                              if (applicantProfileReturnSubPage === "app_detail") {
+                                setMobileSubPage("app_detail");
+                              } else {
+                                setMobileSubPage("applicants");
+                              }
                             }}
                             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FFF7EC] text-[#1b255a] hover:bg-orange-100 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 transition-colors cursor-pointer shadow-2xs z-10 border border-orange-100/80 dark:border-slate-700"
                             aria-label={lang === "ml" ? "തിരികെ പോവുക" : "Go back"}
@@ -16030,117 +16466,297 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                               </div>
                             </div>
                           </div>
+                        </div>
+
+                        {/* 2 Tabs: Applications & Applicant Information */}
+                        <div
+                          role="tablist"
+                          aria-label={lang === "ml" ? "അപേക്ഷക പ്രൊഫൈൽ ടാബുകൾ" : "Applicant profile tabs"}
+                          className="grid grid-cols-2 border-b border-[#EADFD2] dark:border-slate-800 mt-2"
+                        >
                           <button
                             type="button"
-                            onClick={() => {
-                              const primaryApp = selectedApplicationUserApplications[0];
-                              if (!primaryApp) return;
-                              setPendingApplicantInfoView(true);
-                              setAppDetailReturnSubPage("user_detail");
-                              setSelectedApplicationRecord(primaryApp);
-                              setActiveTab("applications");
-                              setMobileSubPage("app_detail");
-                              setAppDetailView("applicant");
-                              mobileContentRef.current?.scrollTo({ top: 0 });
-                            }}
-                            className="mt-2.5 flex min-h-9 w-full items-center gap-2 border-t border-slate-100 pt-2.5 text-left transition-colors hover:text-[#243D95] dark:border-slate-800 dark:hover:text-blue-300 cursor-pointer"
+                            role="tab"
+                            aria-selected={applicantProfileTab === "applications"}
+                            onClick={() => setApplicantProfileTab("applications")}
+                            className={`relative flex items-center justify-center gap-1.5 pb-2.5 pt-1 text-[12.5px] font-extrabold tracking-tight transition-colors cursor-pointer ${
+                              applicantProfileTab === "applications"
+                                ? "text-[#243D95] dark:text-blue-300"
+                                : "text-[#7C8AAE] hover:text-[#243D95] dark:text-slate-400 dark:hover:text-blue-300"
+                            }`}
                           >
-                            <UserRound className="h-[18px] w-[18px] shrink-0 text-slate-500 dark:text-slate-400" strokeWidth={1.8} />
-                            <span className="min-w-0 flex-1 text-[12.5px] font-semibold text-[#0F172A] dark:text-white">
-                              {lang === "ml" ? "അപേക്ഷക വിവരങ്ങൾ" : "Applicant information"}
+                            <span>{lang === "ml" ? "അപേക്ഷകൾ" : "Applications"}</span>
+                            <span
+                              className={`rounded-full px-1.5 py-0.5 text-[10px] font-extrabold ${
+                                applicantProfileTab === "applications"
+                                  ? "bg-[#243D95]/10 text-[#243D95] dark:bg-blue-400/15 dark:text-blue-300"
+                                  : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                              }`}
+                            >
+                              {selectedApplicationUserApplications.length}
                             </span>
-                            <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
+                            <span
+                              aria-hidden="true"
+                              className={`absolute -bottom-px left-1/2 h-[2.5px] w-12 -translate-x-1/2 rounded-full transition-colors ${
+                                applicantProfileTab === "applications" ? "bg-[#243D95] dark:bg-blue-300" : "bg-transparent"
+                              }`}
+                            />
+                          </button>
+
+                          <button
+                            type="button"
+                            role="tab"
+                            aria-selected={applicantProfileTab === "information"}
+                            onClick={() => setApplicantProfileTab("information")}
+                            className={`relative flex items-center justify-center gap-1.5 pb-2.5 pt-1 text-[12.5px] font-extrabold tracking-tight transition-colors cursor-pointer ${
+                              applicantProfileTab === "information"
+                                ? "text-[#243D95] dark:text-blue-300"
+                                : "text-[#7C8AAE] hover:text-[#243D95] dark:text-slate-400 dark:hover:text-blue-300"
+                            }`}
+                          >
+                            <span>{lang === "ml" ? "അപേക്ഷക വിവരങ്ങൾ" : "Applicant Information"}</span>
+                            <span
+                              aria-hidden="true"
+                              className={`absolute -bottom-px left-1/2 h-[2.5px] w-12 -translate-x-1/2 rounded-full transition-colors ${
+                                applicantProfileTab === "information" ? "bg-[#243D95] dark:bg-blue-300" : "bg-transparent"
+                              }`}
+                            />
                           </button>
                         </div>
 
-                        <div className="space-y-1.5 pt-0.5">
-                          <div className="flex items-center justify-between gap-2.5 px-0.5">
-                            <p className="text-[12px] font-bold text-[#FF7900] dark:text-orange-400">
-                              {lang === "ml"
-                                ? `അപേക്ഷകൾ (${selectedApplicationUserApplications.length})`
-                                : `Applications (${selectedApplicationUserApplications.length})`}
-                            </p>
-                            <div className="relative shrink-0">
+                        {/* Tab 1: Applications */}
+                        {applicantProfileTab === "applications" && (
+                          <div className="space-y-1.5 pt-0.5 animate-in fade-in duration-150">
+                            {/* 5-Segment Summary Card: Applications, Approved, In Review, Pending, Rejected */}
+                            <div className="flex items-stretch rounded-2xl bg-[#FCFAF6] dark:bg-slate-900 border border-[#ECE7DF] dark:border-slate-800 shadow-2xs overflow-hidden divide-x divide-[#ECE7DF] dark:divide-slate-800 my-1">
+                              {/* 1. Applications */}
                               <button
                                 type="button"
-                                onClick={() => {
-                                  setIsApplicantProfileMenuOpen(false);
-                                  setIsApplicantSortMenuOpen((prev) => !prev);
-                                }}
-                                aria-haspopup="listbox"
-                                aria-expanded={isApplicantSortMenuOpen}
-                                aria-label={lang === "ml" ? "അപേക്ഷകൾ ക്രമീകരിക്കുക" : "Sort applications"}
-                                className={`flex h-7 items-center gap-1.5 rounded-full px-2 text-[10.5px] font-semibold transition-colors cursor-pointer ${
-                                  isApplicantSortMenuOpen
-                                    ? "bg-[#FFF2E6] text-[#C2410C] dark:bg-orange-950/50 dark:text-orange-300"
-                                    : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                                onClick={() => setApplicantAppStatusFilter("all")}
+                                className={`flex-1 py-2 px-1 flex flex-col items-center justify-center transition-colors cursor-pointer text-center min-w-0 ${
+                                  applicantAppStatusFilter === "all"
+                                    ? "bg-blue-50/70 dark:bg-blue-950/40"
+                                    : "hover:bg-black/[0.02] dark:hover:bg-white/[0.02]"
                                 }`}
+                                title={lang === "ml" ? "എല്ലാ അപേക്ഷകളും" : "All Applications"}
                               >
-                                <ArrowUpDown className="h-3.5 w-3.5 text-[#FF7900] dark:text-orange-400" />
-                                <span>{applicantApplicationSort === "newest"
-                                  ? lang === "ml" ? "പുതിയത് → പഴയത്" : "New to Old"
-                                  : lang === "ml" ? "പഴയത് → പുതിയത്" : "Old to New"}</span>
-                                <ChevronDown
-                                  className={`h-3 w-3 text-slate-400 transition-transform ${isApplicantSortMenuOpen ? "rotate-180" : ""}`}
-                                />
+                                <span className="text-[13.5px] font-extrabold text-[#0B2545] dark:text-blue-300 leading-none">
+                                  {applicantAppsStats.total}
+                                </span>
+                                <span className="text-[8.5px] font-medium text-slate-500 dark:text-slate-400 mt-1 whitespace-nowrap">
+                                  {lang === "ml" ? "അപേക്ഷകൾ" : "Applications"}
+                                </span>
                               </button>
-                              {isApplicantSortMenuOpen && (
-                                <>
-                                  <div
-                                    className="fixed inset-0 z-20"
-                                    aria-hidden="true"
-                                    onClick={() => setIsApplicantSortMenuOpen(false)}
-                                  />
-                                  <div
-                                    role="listbox"
-                                    aria-label={lang === "ml" ? "അപേക്ഷകൾ ക്രമീകരിക്കുക" : "Sort applications"}
-                                    className="absolute right-0 top-full z-30 mt-1 w-[126px] rounded-xl border border-slate-200 bg-white p-1 shadow-[0_10px_28px_-10px_rgba(15,23,42,0.28)] dark:border-slate-700 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-150"
-                                  >
-                                    {(["newest", "oldest"] as const).map((sortOption) => {
-                                      const isSelected = applicantApplicationSort === sortOption;
-                                      return (
-                                        <button
-                                          key={sortOption}
-                                          type="button"
-                                          role="option"
-                                          aria-selected={isSelected}
-                                          onClick={() => {
-                                            setApplicantApplicationSort(sortOption);
-                                            setIsApplicantSortMenuOpen(false);
-                                          }}
-                                          className={`flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left text-[10.5px] font-semibold transition-colors cursor-pointer ${
-                                            isSelected
-                                              ? "bg-[#FFF2E6] text-[#C2410C] dark:bg-orange-950/60 dark:text-orange-300"
-                                              : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
-                                          }`}
-                                        >
-                                          <span>
-                                            {sortOption === "newest"
-                                              ? lang === "ml" ? "പുതിയത് → പഴയത്" : "New to Old"
-                                              : lang === "ml" ? "പഴയത് → പുതിയത്" : "Old to New"}
-                                          </span>
-                                          {isSelected && <Check className="h-3 w-3 shrink-0" />}
-                                        </button>
-                                      );
-                                    })}
-                                  </div>
-                                </>
+
+                              {/* 2. Approved */}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setApplicantAppStatusFilter((prev) =>
+                                    prev === "approved" ? "all" : "approved"
+                                  )
+                                }
+                                className={`flex-1 py-2 px-1 flex flex-col items-center justify-center transition-colors cursor-pointer text-center min-w-0 ${
+                                  applicantAppStatusFilter === "approved"
+                                    ? "bg-emerald-50/70 dark:bg-emerald-950/40"
+                                    : "hover:bg-black/[0.02] dark:hover:bg-white/[0.02]"
+                                }`}
+                                title={lang === "ml" ? "അംഗീകരിച്ചവ" : "Approved"}
+                              >
+                                <span className="text-[13.5px] font-extrabold text-[#00875A] dark:text-emerald-400 leading-none">
+                                  {applicantAppsStats.approved}
+                                </span>
+                                <span className="text-[8.5px] font-medium text-slate-500 dark:text-slate-400 mt-1 whitespace-nowrap">
+                                  {lang === "ml" ? "അംഗീകാരം" : "Approved"}
+                                </span>
+                              </button>
+
+                              {/* 3. In Review */}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setApplicantAppStatusFilter((prev) =>
+                                    prev === "in_review" ? "all" : "in_review"
+                                  )
+                                }
+                                className={`flex-1 py-2 px-1 flex flex-col items-center justify-center transition-colors cursor-pointer text-center min-w-0 ${
+                                  applicantAppStatusFilter === "in_review"
+                                    ? "bg-sky-50/70 dark:bg-sky-950/40"
+                                    : "hover:bg-black/[0.02] dark:hover:bg-white/[0.02]"
+                                }`}
+                                title={lang === "ml" ? "പരിശോധനയിൽ" : "In Review"}
+                              >
+                                <span className="text-[13.5px] font-extrabold text-[#2563EB] dark:text-sky-400 leading-none">
+                                  {applicantAppsStats.inReview}
+                                </span>
+                                <span className="text-[8.5px] font-medium text-slate-500 dark:text-slate-400 mt-1 whitespace-nowrap">
+                                  {lang === "ml" ? "പരിശോധനയിൽ" : "In Review"}
+                                </span>
+                              </button>
+
+                              {/* 4. Pending */}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setApplicantAppStatusFilter((prev) =>
+                                    prev === "pending" ? "all" : "pending"
+                                  )
+                                }
+                                className={`flex-1 py-2 px-1 flex flex-col items-center justify-center transition-colors cursor-pointer text-center min-w-0 ${
+                                  applicantAppStatusFilter === "pending"
+                                    ? "bg-amber-50/70 dark:bg-amber-950/40"
+                                    : "hover:bg-black/[0.02] dark:hover:bg-white/[0.02]"
+                                }`}
+                                title={lang === "ml" ? "തീർപ്പില്ലാത്തവ" : "Pending"}
+                              >
+                                <span className="text-[13.5px] font-extrabold text-[#EA580C] dark:text-amber-400 leading-none">
+                                  {applicantAppsStats.pending}
+                                </span>
+                                <span className="text-[8.5px] font-medium text-slate-500 dark:text-slate-400 mt-1 whitespace-nowrap">
+                                  {lang === "ml" ? "തീർപ്പില്ലാത്തവ" : "Pending"}
+                                </span>
+                              </button>
+
+                              {/* 5. Rejected */}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setApplicantAppStatusFilter((prev) =>
+                                    prev === "rejected" ? "all" : "rejected"
+                                  )
+                                }
+                                className={`flex-1 py-2 px-1 flex flex-col items-center justify-center transition-colors cursor-pointer text-center min-w-0 ${
+                                  applicantAppStatusFilter === "rejected"
+                                    ? "bg-rose-50/70 dark:bg-rose-950/40"
+                                    : "hover:bg-black/[0.02] dark:hover:bg-white/[0.02]"
+                                }`}
+                                title={lang === "ml" ? "നിരസിച്ചവ" : "Rejected"}
+                              >
+                                <span className="text-[13.5px] font-extrabold text-[#DC2626] dark:text-rose-400 leading-none">
+                                  {applicantAppsStats.rejected}
+                                </span>
+                                <span className="text-[8.5px] font-medium text-slate-500 dark:text-slate-400 mt-1 whitespace-nowrap">
+                                  {lang === "ml" ? "നിരസിച്ചത്" : "Rejected"}
+                                </span>
+                              </button>
+                            </div>
+
+                            <div className="space-y-1.5">
+                              {displayedSelectedApplicationUserApplications.map((application) =>
+                                renderMobileApplicationListCard(application),
                               )}
                             </div>
-                          </div>
-                          <div className="space-y-1.5">
-                            {sortedSelectedApplicationUserApplications.map((application) =>
-                              renderMobileApplicationListCard(application),
+                            {displayedSelectedApplicationUserApplications.length === 0 && (
+                              <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-8 text-center dark:border-slate-800 dark:bg-slate-900">
+                                <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400">
+                                  {applicantAppStatusFilter === "all"
+                                    ? lang === "ml" ? "ഈ ഉപയോക്താവിന് അപേക്ഷകളില്ല." : "No applications found for this user."
+                                    : lang === "ml" ? "ഈ സ്റ്റാറ്റസിലുള്ള അപേക്ഷകളില്ല." : "No applications found with this status."}
+                                </p>
+                                {applicantAppStatusFilter !== "all" && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setApplicantAppStatusFilter("all")}
+                                    className="mt-2 text-[11px] font-bold text-[#243D95] underline cursor-pointer dark:text-blue-400"
+                                  >
+                                    {lang === "ml" ? "എല്ലാ അപേക്ഷകളും കാണുക" : "View all applications"}
+                                  </button>
+                                )}
+                              </div>
                             )}
                           </div>
-                          {selectedApplicationUserApplications.length === 0 && (
-                            <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-8 text-center dark:border-slate-800 dark:bg-slate-900">
-                              <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400">
-                                {lang === "ml" ? "ഈ ഉപയോക്താവിന് അപേക്ഷകളില്ല." : "No applications found for this user."}
-                              </p>
+                        )}
+
+                        {/* Tab 2: Applicant Information */}
+                        {applicantProfileTab === "information" && (() => {
+                          const primaryApp = selectedApplicationUserApplications[0];
+                          const matchingHelpdesk = helpdeskRequests.find(
+                            (r) =>
+                              (r.applicant && selectedApplicationUser.nameEn && r.applicant.toLowerCase() === selectedApplicationUser.nameEn.toLowerCase()) ||
+                              (r.contactMobile && selectedApplicationUser.phone && r.contactMobile.replace(/\D/g, "") === selectedApplicationUser.phone.replace(/\D/g, ""))
+                          );
+                          const helpdeskEligibility = matchingHelpdesk?.eligibility;
+                          const collected = primaryApp ? (applicationCollectedDetails[primaryApp.ref] as MobileApplicationCollectedDetails | undefined) : undefined;
+
+                          const locParts = (selectedApplicationUser.locationEn || "").split(",").map((s) => s.trim());
+                          const mandalamFallback = locParts.length > 1 ? locParts[locParts.length - 1] : locParts[0] || "Kazhakoottam";
+                          const districtFallback = locParts.length > 1 ? locParts[0] : (matchingHelpdesk?.district || "Thiruvananthapuram");
+
+                          const district = collected?.district || matchingHelpdesk?.location?.districtName || matchingHelpdesk?.district || districtFallback || "Thiruvananthapuram";
+                          const mandalam = collected?.mandalam || matchingHelpdesk?.location?.mandalamName || mandalamFallback || "Kazhakoottam";
+                          const localBodyType = collected?.localBodyType || "Not provided";
+                          const localBody = collected?.localBody || matchingHelpdesk?.location?.localBodyName || "Not provided";
+                          const ward = collected?.ward || matchingHelpdesk?.location?.wardName || "Not provided";
+
+                          const genderVal = collected?.gender || (helpdeskEligibility?.gender === "male" ? "Male" : helpdeskEligibility?.gender === "female" ? "Female" : "Female");
+                          const ageVal = (() => {
+                            if (collected?.dateOfBirth) {
+                              const parts = collected.dateOfBirth.split("/");
+                              if (parts.length === 3) {
+                                const yr = parseInt(parts[2], 10);
+                                if (!isNaN(yr)) return `${Math.max(18, 2026 - yr)} years`;
+                              }
+                            }
+                            if (helpdeskEligibility?.age) return `${helpdeskEligibility.age} years`;
+                            return "27 years";
+                          })();
+                          const dobVal =
+                            collected?.dateOfBirth ||
+                            (helpdeskEligibility?.age ? `01/01/${2026 - Number(helpdeskEligibility.age)}` : "01/01/1999");
+                          const socialCategoryVal = collected?.caste || (helpdeskEligibility?.socialCategory === "obc" ? "OBC / SEBC" : helpdeskEligibility?.socialCategory === "sc" ? "SC" : helpdeskEligibility?.socialCategory === "st" ? "ST" : "OBC / SEBC");
+                          const minorityVal = collected?.minorityStatus || (helpdeskEligibility?.minorityStatus === "yes" ? "Yes" : "No");
+                          const disabilityVal = collected?.disabilityStatus || (helpdeskEligibility?.disabilityStatus === "yes" ? "Yes" : "No");
+                          const studentVal = collected?.studentStatus || (helpdeskEligibility?.studentStatus === "yes" ? "Yes" : "No");
+                          const employmentVal = collected?.employmentStatus || (helpdeskEligibility?.employmentStatus === "self_employed" ? "Self-employed" : helpdeskEligibility?.employmentStatus === "employed" ? "Employed" : "Self-employed");
+                          const occupationVal = collected?.occupation || (helpdeskEligibility?.occupation === "selfEmployed" ? "Self-employed / Business" : "Self-employed / Business");
+                          const bplVal = collected?.bplStatus || (helpdeskEligibility?.bplStatus === "yes" ? "Yes" : "No");
+                          const incomeVal = collected?.annualFamilyIncome || (helpdeskEligibility?.annualFamilyIncome === "oneToTwoFive" ? "₹1–2.5 lakh" : "₹1–2.5 lakh");
+                          const maritalVal = collected?.maritalStatus || helpdeskEligibility?.maritalStatus || "Single";
+                          const religionVal = collected?.religion || helpdeskEligibility?.religion || "Hindu";
+                          const casteVal = collected?.caste || helpdeskEligibility?.casteCommunity || "OBC";
+
+                          const applicantRows = [
+                            { icon: MapPin, label: lang === "ml" ? "ജില്ല" : "District", value: district },
+                            { icon: Network, label: lang === "ml" ? "മണ്ഡലം" : "Mandalam", value: mandalam },
+                            { icon: Building2, label: lang === "ml" ? "തദ്ദേശ സ്ഥാപന തരം" : "Local body type", value: localBodyType },
+                            { icon: MapIcon, label: lang === "ml" ? "തദ്ദേശ സ്ഥാപനം" : "Local body", value: localBody },
+                            { icon: Home, label: lang === "ml" ? "വാർഡ്" : "Ward", value: ward },
+                            { icon: UserRound, label: lang === "ml" ? "ലിംഗം" : "Gender", value: genderVal },
+                            { icon: CalendarDays, label: lang === "ml" ? "ജനനത്തീയതി" : "Date of Birth", value: `${dobVal} (${ageVal})` },
+                            { icon: Users, label: lang === "ml" ? "സാമൂഹിക വിഭാഗം" : "Social Category", value: socialCategoryVal },
+                            { icon: Users2, label: lang === "ml" ? "ന്യൂനപക്ഷ പദവി" : "Minority Status", value: minorityVal },
+                            { icon: Accessibility, label: lang === "ml" ? "വൈകല്യ നില" : "Disability Status", value: disabilityVal },
+                            { icon: GraduationCap, label: lang === "ml" ? "വിദ്യാർത്ഥി നില" : "Student Status", value: studentVal },
+                            { icon: Briefcase, label: lang === "ml" ? "തൊഴിൽ നില" : "Employment Status", value: employmentVal },
+                            { icon: Store, label: lang === "ml" ? "തൊഴിൽ" : "Occupation", value: occupationVal },
+                            { icon: Home, label: lang === "ml" ? "കുടുംബ ബിപിഎൽ നില" : "Household BPL Status", value: bplVal },
+                            { icon: HandCoins, label: lang === "ml" ? "വാർഷിക കുടുംബ വരുമാനം" : "Annual Family Income", value: incomeVal },
+                            { icon: HeartHandshake, label: lang === "ml" ? "വിവാഹ നില" : "Marital Status", value: maritalVal },
+                            { icon: BookOpen, label: lang === "ml" ? "മതം" : "Religion", value: religionVal },
+                            { icon: Network, label: lang === "ml" ? "ജാതി / സമുദായം" : "Caste / Community", value: casteVal },
+                          ];
+
+                          return (
+                            <div className="pt-1 animate-in fade-in duration-150">
+                              <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs dark:border-slate-800 dark:bg-slate-900 divide-y divide-slate-100 dark:divide-slate-800/70">
+                                {applicantRows.map((row) => {
+                                  const RowIcon = row.icon;
+                                  return (
+                                    <div key={row.label} className="flex items-center justify-between gap-3 px-3.5 py-2">
+                                      <div className="flex min-w-0 items-center gap-2.5 text-slate-500 dark:text-slate-400">
+                                        <RowIcon className="h-[15px] w-[15px] shrink-0 text-orange-500 stroke-[2.2]" />
+                                        <span className="truncate text-[12px] font-medium">{row.label}</span>
+                                      </div>
+                                      <span className="max-w-[58%] shrink-0 truncate text-right text-[12px] font-bold text-[#0F172A] dark:text-white">
+                                        {row.value}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
                             </div>
-                          )}
-                        </div>
+                          );
+                        })()}
 
 
                       </div>
@@ -16939,6 +17555,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               ) : effectiveApplicationView === "scheme_wise" ? (
                 <MobileReportsPage
                   onBack={() => setActiveTab("overview")}
+                  userRole={userRole}
                   applications={[...savedApplicationRecords, ...mobileApplicationAllPreviewRecords].filter(
                     (app) => !deletedApplicationRefs.includes(app.ref)
                   )}
@@ -17005,14 +17622,24 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       </button>
                     </div>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => setIsDatePickerOpen(true)}
-                      className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0"
-                      title={lang === "ml" ? "തീയതി മാറ്റുക" : "Change Period"}
-                    >
-                      {getFormattedPeriodDisplay()}
-                    </button>
+                    <div className="flex items-center gap-1.5 min-w-0 truncate">
+                      <button
+                        type="button"
+                        onClick={() => setIsDatePickerOpen(true)}
+                        className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap"
+                        title={lang === "ml" ? "തീയതി മാറ്റുക" : "Change Period"}
+                      >
+                        {getFormattedPeriodDisplay()}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPartyWorkerTab(partyWorkerTab === "my_work" ? "team" : "my_work")}
+                        className="text-[10px] font-normal text-slate-500 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                        title={lang === "ml" ? "കാഴ്ച മാറ്റുക (My View / Team View)" : "Switch View (My View / Team View)"}
+                      >
+                        • {partyWorkerTab === "team" ? (lang === "ml" ? "ടീം കാഴ്ച" : "Team View") : (lang === "ml" ? "എന്റെ കാഴ്ച" : "My View")}
+                      </button>
+                    </div>
                   )}
 
                   {/* Date Controls (< > calendar), Search Icon & Filter Action in Header */}
@@ -17085,50 +17712,557 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 </div>
 
                 {/* Application intake KPIs */}
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setApplicationStatusFilter("document_verification_completed")}
-                    className={`flex min-h-[64px] items-center justify-between gap-2 rounded-xl border p-2.5 text-left shadow-2xs transition-all cursor-pointer ${
-                      applicationStatusFilter === "document_verification_completed"
-                        ? "border-emerald-300 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30"
-                        : "border-border bg-card hover:border-emerald-200"
-                    }`}
-                  >
-                    <span className="min-w-0">
-                      <span className="block text-[10px] font-bold leading-tight text-muted-foreground">
-                        {lang === "ml" ? "അപേക്ഷിക്കാൻ തയ്യാർ" : "Ready to Apply"}
-                      </span>
-                      <span className="mt-1 block font-display text-base font-bold leading-none text-foreground">
-                        {Math.max(1, Math.round(mobileApplicationRecordsByStatus.document_verification_completed.length * (partyWorkerMetrics.applicationsReceived / 45))).toLocaleString()}
-                      </span>
-                    </span>
-                    <img src={readyToSubmit3dIcon} alt="Ready to Apply" className="h-9 w-9 shrink-0 object-contain" />
-                  </button>
+                {(() => {
+                  const allowedIntakeStatuses = new Set([
+                    "all",
+                    "application_received",
+                    "document_verification_completed",
+                    "pending",
+                  ]);
 
-                  <button
-                    type="button"
-                    onClick={() => setApplicationStatusFilter("application_received")}
-                    className={`flex min-h-[64px] items-center justify-between gap-2 rounded-xl border p-2.5 text-left shadow-2xs transition-all cursor-pointer ${
-                      applicationStatusFilter === "application_received"
-                        ? "border-orange-300 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/30"
-                        : "border-border bg-card hover:border-orange-200"
-                    }`}
-                  >
-                    <span className="min-w-0">
-                      <span className="block text-[10px] font-bold leading-tight text-muted-foreground">
-                        {lang === "ml" ? "രേഖകൾ ബാക്കി" : "Document Pending"}
-                      </span>
-                      <span className="mt-1 block font-display text-base font-bold leading-none text-foreground">
-                        {Math.max(1, Math.round(mobileApplicationRecordsByStatus.application_received.length * (partyWorkerMetrics.applicationsReceived / 45))).toLocaleString()}
-                      </span>
-                    </span>
-                    <img src={documentsPending3dIcon} alt="Document Pending" className="h-9 w-9 shrink-0 object-contain" />
-                  </button>
-                </div>
+                  const hasDisallowedMultiStatus = selectedAppStatusFilters.some(
+                    (st) => !allowedIntakeStatuses.has(st)
+                  );
+
+                  const isDisallowedSingleStatus =
+                    !allowedIntakeStatuses.has(applicationStatusFilter);
+
+                  const showIntakeKpis = !hasDisallowedMultiStatus && !isDisallowedSingleStatus;
+
+                  if (!showIntakeKpis) return null;
+
+                  return (
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setApplicationStatusFilter((prev) =>
+                            prev === "document_verification_completed" ? "all" : "document_verification_completed"
+                          )
+                        }
+                        className={`flex min-h-[64px] items-center justify-between gap-2 rounded-xl border p-2.5 text-left shadow-2xs transition-all cursor-pointer ${
+                          applicationStatusFilter === "document_verification_completed"
+                            ? "border-emerald-300 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30"
+                            : "border-border bg-card hover:border-emerald-200"
+                        }`}
+                      >
+                        <span className="min-w-0">
+                          <span className="block text-[10px] font-bold leading-tight text-muted-foreground">
+                            {lang === "ml" ? "അപേക്ഷിക്കാൻ തയ്യാർ" : "Ready to Apply"}
+                          </span>
+                          <span className="mt-1 block font-display text-base font-bold leading-none text-foreground">
+                            {Math.max(1, Math.round(mobileApplicationRecordsByStatus.document_verification_completed.length * (partyWorkerMetrics.applicationsReceived / 45))).toLocaleString()}
+                          </span>
+                        </span>
+                        <img src={readyToSubmit3dIcon} alt="Ready to Apply" className="h-9 w-9 shrink-0 object-contain" />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setApplicationStatusFilter((prev) =>
+                            prev === "application_received" ? "all" : "application_received"
+                          )
+                        }
+                        className={`flex min-h-[64px] items-center justify-between gap-2 rounded-xl border p-2.5 text-left shadow-2xs transition-all cursor-pointer ${
+                          applicationStatusFilter === "application_received"
+                            ? "border-orange-300 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/30"
+                            : "border-border bg-card hover:border-orange-200"
+                        }`}
+                      >
+                        <span className="min-w-0">
+                          <span className="block text-[10px] font-bold leading-tight text-muted-foreground">
+                            {lang === "ml" ? "രേഖകൾ ബാക്കി" : "Document Pending"}
+                          </span>
+                          <span className="mt-1 block font-display text-base font-bold leading-none text-foreground">
+                            {Math.max(1, Math.round(mobileApplicationRecordsByStatus.application_received.length * (partyWorkerMetrics.applicationsReceived / 45))).toLocaleString()}
+                          </span>
+                        </span>
+                        <img src={documentsPending3dIcon} alt="Document Pending" className="h-9 w-9 shrink-0 object-contain" />
+                      </button>
+                    </div>
+                  );
+                })()}
 
                 {/* SLA Breaches Banner */}
                 {/* Removed per user request */}
+
+                {/* Applied Filters Bar (Row 1 Active Filter Chips & View) */}
+                {applicationTabActiveFilterCount > 0 && (
+                  <div className="flex flex-col bg-white dark:bg-slate-950 mb-2 shrink-0">
+                    {/* Row 1: Active Filter Chips & View */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto px-1 py-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden shrink-0 whitespace-nowrap">
+                      {/* Location Filters Chips */}
+                      {userRole === "state_admin" ? (
+                        <>
+                          {appSelectedRegion !== "all" && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/40 border border-orange-200/90 dark:border-orange-800/60 text-orange-800 dark:text-orange-300 font-semibold shrink-0 shadow-2xs text-[10.5px]">
+                              <MapPin className="h-2.5 w-2.5 text-orange-500 shrink-0" />
+                              <span>
+                                {appSelectedRegion === "reg-north"
+                                  ? (lang === "ml" ? "നോർത്തേൺ റീജിയൺ" : "Northern Region")
+                                  : appSelectedRegion === "reg-central"
+                                  ? (lang === "ml" ? "സെൻട്രൽ റീജിയൺ" : "Central Region")
+                                  : appSelectedRegion === "reg-south"
+                                  ? (lang === "ml" ? "സതേൺ റീജിയൺ" : "Southern Region")
+                                  : appSelectedRegion}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setAppSelectedRegion("all");
+                                  setAppSelectedOrgDistrict("all");
+                                  setAppSelectedMandalam("all");
+                                  setAppSelectedArea("all");
+                                  setAppSelectedWard("all");
+                                  setAppSelectedWardIds(["all"]);
+                                  setAppFilterLocation("all");
+                                }}
+                                className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-orange-200/80 dark:hover:bg-orange-900/60 text-orange-600 dark:text-orange-300 transition-colors cursor-pointer"
+                                title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                                aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                              >
+                                <X className="h-2.5 w-2.5 stroke-[2.5]" />
+                              </button>
+                            </span>
+                          )}
+
+                          {appSelectedOrgDistrict !== "all" && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/40 border border-orange-200/90 dark:border-orange-800/60 text-orange-800 dark:text-orange-300 font-semibold shrink-0 shadow-2xs text-[10.5px]">
+                              <MapPin className="h-2.5 w-2.5 text-orange-500 shrink-0" />
+                              <span>{organisationalDistricts.find((od) => od.id === appSelectedOrgDistrict)?.[lang] || appSelectedOrgDistrict}</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setAppSelectedOrgDistrict("all");
+                                  setAppSelectedMandalam("all");
+                                  setAppSelectedArea("all");
+                                  setAppSelectedWard("all");
+                                  setAppSelectedWardIds(["all"]);
+                                  setAppFilterLocation("all");
+                                }}
+                                className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-orange-200/80 dark:hover:bg-orange-900/60 text-orange-600 dark:text-orange-300 transition-colors cursor-pointer"
+                                title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                                aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                              >
+                                <X className="h-2.5 w-2.5 stroke-[2.5]" />
+                              </button>
+                            </span>
+                          )}
+
+                          {appSelectedMandalam !== "all" && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/40 border border-orange-200/90 dark:border-orange-800/60 text-orange-800 dark:text-orange-300 font-semibold shrink-0 shadow-2xs text-[10.5px]">
+                              <MapPin className="h-2.5 w-2.5 text-orange-500 shrink-0" />
+                              <span>{constituencies.find((c) => c.id === appSelectedMandalam)?.[lang] || appSelectedMandalam}</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setAppSelectedMandalam("all");
+                                  setAppSelectedArea("all");
+                                  setAppSelectedWard("all");
+                                  setAppSelectedWardIds(["all"]);
+                                  setAppFilterLocation("all");
+                                }}
+                                className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-orange-200/80 dark:hover:bg-orange-900/60 text-orange-600 dark:text-orange-300 transition-colors cursor-pointer"
+                                title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                                aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                              >
+                                <X className="h-2.5 w-2.5 stroke-[2.5]" />
+                              </button>
+                            </span>
+                          )}
+
+                          {appSelectedArea !== "all" && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/40 border border-orange-200/90 dark:border-orange-800/60 text-orange-800 dark:text-orange-300 font-semibold shrink-0 shadow-2xs text-[10.5px]">
+                              <MapPin className="h-2.5 w-2.5 text-orange-500 shrink-0" />
+                              <span>
+                                {appSelectedArea === "area-kazh-main"
+                                  ? (lang === "ml" ? "കഴക്കൂട്ടം" : "Kazhakkoottam Area")
+                                  : appSelectedArea === "area-kariavattom"
+                                  ? (lang === "ml" ? "കാര്യവട്ടം" : "Kariavattom Area")
+                                  : appSelectedArea === "area-technopark"
+                                  ? (lang === "ml" ? "ടെക്നോപാർക്ക്" : "Technopark Area")
+                                  : appSelectedArea === "area-chanthavila"
+                                  ? (lang === "ml" ? "ചന്തവിള" : "Chanthavila Area")
+                                  : appSelectedArea === "area-menamkulam"
+                                  ? (lang === "ml" ? "മേനംകുളം" : "Menamkulam Area")
+                                  : appSelectedArea}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setAppSelectedArea("all");
+                                  setAppSelectedWard("all");
+                                  setAppSelectedWardIds(["all"]);
+                                  setAppFilterLocation("all");
+                                }}
+                                className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-orange-200/80 dark:hover:bg-orange-900/60 text-orange-600 dark:text-orange-300 transition-colors cursor-pointer"
+                                title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                                aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                              >
+                                <X className="h-2.5 w-2.5 stroke-[2.5]" />
+                              </button>
+                            </span>
+                          )}
+                        </>
+                      ) : null}
+
+                      {/* Ward / Booth Chips for Admin & Party Worker */}
+                      {appSelectedWardIds.length > 0 && !appSelectedWardIds.includes("all") ? (
+                        appSelectedWardIds.map((wId) => {
+                          const wardMap: Record<string, { en: string; ml: string }> = {
+                            ward_1: { en: "Ward 1 — Kazhakoottam", ml: "വാർഡ് 1 — കഴക്കൂട്ടം" },
+                            ward_2: { en: "Ward 2 — Kariavattom", ml: "വാർഡ് 2 — കാര്യവട്ടം" },
+                            ward_3: { en: "Ward 3 — Chanthavila", ml: "വാർഡ് 3 — ചന്തവിള" },
+                            ward_4: { en: "Ward 4 — Pangappara", ml: "വാർഡ് 4 — പാങ്ങപ്പാറ" },
+                            ward_5: { en: "Ward 5 — Menamkulam", ml: "വാർഡ് 5 — മേനംകുളം" },
+                            booth_101: { en: "Booth 101 — Govt H.S", ml: "ബൂത്ത് 101 — ഗവ. എച്ച്.എസ്" },
+                            booth_102: { en: "Booth 102 — L.P.S Kariavattom", ml: "ബൂത്ത് 102 — എൽ.പി.എസ് കാര്യവട്ടം" },
+                          };
+                          const label = wardMap[wId]?.[lang] || wId;
+                          return (
+                            <span
+                              key={wId}
+                              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/40 border border-orange-200/90 dark:border-orange-800/60 text-orange-800 dark:text-orange-300 font-semibold shrink-0 shadow-2xs text-[10.5px]"
+                            >
+                              <MapPin className="h-2.5 w-2.5 text-orange-500 shrink-0" />
+                              <span>{label}</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = appSelectedWardIds.filter((id) => id !== wId);
+                                  setAppSelectedWardIds(updated.length === 0 ? ["all"] : updated);
+                                  setAppSelectedWard(updated.length === 1 ? updated[0] : "all");
+                                  setAppFilterLocation(updated.length === 1 ? updated[0] : "all");
+                                }}
+                                className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-orange-200/80 dark:hover:bg-orange-900/60 text-orange-600 dark:text-orange-300 transition-colors cursor-pointer"
+                                title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                                aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                              >
+                                <X className="h-2.5 w-2.5 stroke-[2.5]" />
+                              </button>
+                            </span>
+                          );
+                        })
+                      ) : appSelectedWard !== "all" ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/40 border border-orange-200/90 dark:border-orange-800/60 text-orange-800 dark:text-orange-300 font-semibold shrink-0 shadow-2xs text-[10.5px]">
+                          <MapPin className="h-2.5 w-2.5 text-orange-500 shrink-0" />
+                          <span>
+                            {appSelectedWard === "ward_1"
+                              ? (lang === "ml" ? "വാർഡ് 1 — കഴക്കൂട്ടം" : "Ward 1 — Kazhakoottam")
+                              : appSelectedWard}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAppSelectedWard("all");
+                              setAppSelectedWardIds(["all"]);
+                              setAppFilterLocation("all");
+                            }}
+                            className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-orange-200/80 dark:hover:bg-orange-900/60 text-orange-600 dark:text-orange-300 transition-colors cursor-pointer"
+                            title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                            aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                          >
+                            <X className="h-2.5 w-2.5 stroke-[2.5]" />
+                          </button>
+                        </span>
+                      ) : null}
+
+                      {/* Work View: Only shown as chip if switched away from default My View */}
+                      {partyWorkerTab === "team" && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/40 border border-blue-200/90 dark:border-blue-800/60 text-blue-800 dark:text-blue-300 font-semibold shrink-0 shadow-2xs text-[10.5px]">
+                          <Users className="h-2.5 w-2.5 text-blue-500 shrink-0" />
+                          <span>{lang === "ml" ? "ടീം കാഴ്ച" : "Team View"}</span>
+                          <button
+                            type="button"
+                            onClick={() => setPartyWorkerTab("my_work")}
+                            className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-blue-200/80 dark:hover:bg-blue-900/60 text-blue-600 dark:text-blue-300 transition-colors cursor-pointer"
+                            title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                            aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                          >
+                            <X className="h-2.5 w-2.5 stroke-[2.5]" />
+                          </button>
+                        </span>
+                      )}
+
+                      {/* Assigned Worker Filter (Team View only) */}
+                      {partyWorkerTab === "team" && appFilterAssignedWorker !== "all" && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-semibold shrink-0 shadow-2xs text-[10.5px]">
+                          <Users className="h-2.5 w-2.5 text-slate-500 shrink-0" />
+                          <span>
+                            {appFilterAssignedWorker === "unassigned"
+                              ? (lang === "ml" ? "ചുമതലപ്പെടുത്താത്തവ" : "Unassigned")
+                              : appFilterAssignedWorker === "dhyan"
+                              ? "Dhyan M S"
+                              : appFilterAssignedWorker === "anjali"
+                              ? "Anjali Nair"
+                              : appFilterAssignedWorker}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setAppFilterAssignedWorker("all")}
+                            className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
+                            title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                            aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                          >
+                            <X className="h-2.5 w-2.5 stroke-[2.5]" />
+                          </button>
+                        </span>
+                      )}
+
+                      {/* Application Status Filter Chips */}
+                      {selectedAppStatusFilters.length > 0 && !selectedAppStatusFilters.includes("all") ? (
+                        selectedAppStatusFilters.map((sId) => {
+                          const statusMap: Record<string, { en: string; ml: string }> = {
+                            application_received: { en: "Application Received", ml: "ലഭിച്ച അപേക്ഷകൾ" },
+                            document_verification_completed: { en: "Ready to Apply", ml: "രേഖാ പരിശോധന പൂർത്തിയായി" },
+                            applied: { en: "Applied", ml: "അപേക്ഷിച്ചു" },
+                            review: { en: "Review", ml: "പരിശോധനയിൽ" },
+                            beneficiary: { en: "Beneficiary", ml: "ഗുണഭോക്താവ്" },
+                            rejected: { en: "Rejected", ml: "നിരസിച്ചവ" },
+                          };
+                          const label = statusMap[sId]?.[lang] || sId;
+                          return (
+                            <span
+                              key={sId}
+                              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-semibold shrink-0 shadow-2xs text-[10.5px]"
+                            >
+                              <span>{label}</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = selectedAppStatusFilters.filter((id) => id !== sId);
+                                  setSelectedAppStatusFilters(updated);
+                                  setApplicationStatusFilter(updated.length === 1 ? (updated[0] as MobileApplicationStatusFilter) : "all");
+                                }}
+                                className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
+                                title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                                aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                              >
+                                <X className="h-2.5 w-2.5 stroke-[2.5]" />
+                              </button>
+                            </span>
+                          );
+                        })
+                      ) : applicationStatusFilter !== "all" ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-semibold shrink-0 shadow-2xs text-[10.5px]">
+                          <span>
+                            {applicationStatusFilter === "document_verification_completed"
+                              ? (lang === "ml" ? "അപേക്ഷിക്കാൻ തയ്യാർ" : "Ready to Apply")
+                              : applicationStatusFilter === "application_received"
+                              ? (lang === "ml" ? "രേഖകൾ ബാക്കി" : "Document Pending")
+                              : applicationStatusFilter}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setApplicationStatusFilter("all")}
+                            className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
+                            title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                            aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                          >
+                            <X className="h-2.5 w-2.5 stroke-[2.5]" />
+                          </button>
+                        </span>
+                      ) : null}
+
+                      {/* Category Filter Chips */}
+                      {appSelectedCategoryIds.length > 0 && !appSelectedCategoryIds.includes("all") ? (
+                        appSelectedCategoryIds.map((cId) => {
+                          const catMap: Record<string, { en: string; ml: string }> = {
+                            agriculture: { en: "Agriculture", ml: "കൃഷി & കർഷകക്ഷേമം" },
+                            healthcare: { en: "Health & Medical", ml: "ആരോഗ്യം & മെഡിക്കൽ" },
+                            housing: { en: "Housing & Shelter", ml: "ഭവനനിർമ്മാണം & പാർപ്പിടം" },
+                            pension: { en: "Pension & Welfare", ml: "പെൻഷൻ & സാമൂഹിക ക്ഷേമം" },
+                            education: { en: "Education & Scholarship", ml: "വിദ്യാഭ്യാസം & സ്കോളർഷിപ്പ്" },
+                          };
+                          const label = catMap[cId]?.[lang] || cId;
+                          return (
+                            <span
+                              key={cId}
+                              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-semibold shrink-0 shadow-2xs text-[10.5px]"
+                            >
+                              <span>{label}</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = appSelectedCategoryIds.filter((id) => id !== cId);
+                                  setAppSelectedCategoryIds(updated);
+                                  setAppSchemeCategoryFilter(updated.length === 1 ? updated[0] : "all");
+                                }}
+                                className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
+                                title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                                aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                              >
+                                <X className="h-2.5 w-2.5 stroke-[2.5]" />
+                              </button>
+                            </span>
+                          );
+                        })
+                      ) : appSchemeCategoryFilter !== "all" ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-semibold shrink-0 shadow-2xs text-[10.5px]">
+                          <span>
+                            {appSchemeCategoryFilter === "agriculture"
+                              ? (lang === "ml" ? "കൃഷി" : "Agriculture")
+                              : appSchemeCategoryFilter}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setAppSchemeCategoryFilter("all")}
+                            className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
+                            title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                            aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                          >
+                            <X className="h-2.5 w-2.5 stroke-[2.5]" />
+                          </button>
+                        </span>
+                      ) : null}
+
+                      {/* Scheme Filter Chips */}
+                      {appSelectedSchemeIds.length > 0 && !appSelectedSchemeIds.includes("all") ? (
+                        appSelectedSchemeIds.map((schId) => {
+                          const schemeMap: Record<string, { en: string; ml: string }> = {
+                            pmkisan: { en: "PM Kisan Samman Nidhi", ml: "പിഎം കിസാൻ സമ്മാൻ നിധി" },
+                            pmfby: { en: "PM Fasal Bima Yojana", ml: "പിഎം ഫസൽ ഭീമ യോജന" },
+                            ayushman: { en: "Ayushman Bharat — PMJAY", ml: "ആയുഷ്മാൻ ഭാരത് — PMJAY" },
+                          };
+                          const label = schemeMap[schId]?.[lang] || schId;
+                          return (
+                            <span
+                              key={schId}
+                              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-semibold shrink-0 shadow-2xs text-[10.5px]"
+                            >
+                              <span>{label}</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = appSelectedSchemeIds.filter((id) => id !== schId);
+                                  setAppSelectedSchemeIds(updated);
+                                  setFilterScheme(updated.length === 1 ? updated[0] : "all");
+                                }}
+                                className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
+                                title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                                aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                              >
+                                <X className="h-2.5 w-2.5 stroke-[2.5]" />
+                              </button>
+                            </span>
+                          );
+                        })
+                      ) : filterScheme !== "all" ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-semibold shrink-0 shadow-2xs text-[10.5px]">
+                          <span>
+                            {filterScheme === "pmkisan"
+                              ? (lang === "ml" ? "പിഎം കിസാൻ സമ്മാൻ നിധി" : "PM Kisan Samman Nidhi")
+                              : filterScheme === "pmfby"
+                              ? (lang === "ml" ? "പിഎം ഫസൽ ഭീമ യോജന" : "PM Fasal Bima Yojana")
+                              : filterScheme === "ayushman"
+                              ? (lang === "ml" ? "ആയുഷ്മാൻ ഭാരത് — PMJAY" : "Ayushman Bharat — PMJAY")
+                              : filterScheme}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setFilterScheme("all")}
+                            className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
+                            title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                            aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                          >
+                            <X className="h-2.5 w-2.5 stroke-[2.5]" />
+                          </button>
+                        </span>
+                      ) : null}
+
+                      {/* Follow-up Filter Chips */}
+                      {appSelectedFollowUpFilters.length > 0 && !appSelectedFollowUpFilters.includes("all") ? (
+                        appSelectedFollowUpFilters.map((flId) => {
+                          const flMap: Record<string, { en: string; ml: string }> = {
+                            overdue: { en: "Overdue", ml: "സമയം കഴിഞ്ഞവ (Overdue)" },
+                            today: { en: "Due Today", ml: "ഇന്നുള്ളവ (Due Today)" },
+                            upcoming: { en: "Upcoming", ml: "വരാനിരിക്കുന്നവ (Upcoming)" },
+                            none: { en: "No Follow-up Scheduled", ml: "തുടർനടപടി ഷെഡ്യൂൾ ചെയ്യാത്തവ" },
+                          };
+                          const label = flMap[flId]?.[lang] || flId;
+                          return (
+                            <span
+                              key={flId}
+                              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-semibold shrink-0 shadow-2xs text-[10.5px]"
+                            >
+                              <span>{label}</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = appSelectedFollowUpFilters.filter((id) => id !== flId);
+                                  setAppSelectedFollowUpFilters(updated);
+                                  setAppFilterFollowUp(updated.length === 1 ? updated[0] : "all");
+                                }}
+                                className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
+                                title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                                aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                              >
+                                <X className="h-2.5 w-2.5 stroke-[2.5]" />
+                              </button>
+                            </span>
+                          );
+                        })
+                      ) : appFilterFollowUp !== "all" ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-semibold shrink-0 shadow-2xs text-[10.5px]">
+                          <span>
+                            {appFilterFollowUp === "overdue"
+                              ? (lang === "ml" ? "സമയം കഴിഞ്ഞവ" : "Overdue")
+                              : appFilterFollowUp}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setAppFilterFollowUp("all")}
+                            className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
+                            title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                            aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                          >
+                            <X className="h-2.5 w-2.5 stroke-[2.5]" />
+                          </button>
+                        </span>
+                      ) : null}
+
+                      {/* Clear All Button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setApplicationStatusFilter("all");
+                          setSelectedAppStatusFilters([]);
+                          setAppSchemeCategoryFilter("all");
+                          setAppSelectedCategoryIds([]);
+                          setFilterScheme("all");
+                          setAppSelectedSchemeIds([]);
+                          setAppFilterFollowUp("all");
+                          setAppSelectedFollowUpFilters([]);
+                          setPartyWorkerTab("my_work");
+                          setAppFilterAssignedWorker("all");
+                          if (userRole === "party_worker") {
+                            setAppLocationLevel("area");
+                            setAppSelectedRegion("reg-south");
+                            setAppSelectedOrgDistrict("od-tvm-north");
+                            setAppSelectedMandalam("tvm-c6");
+                            setAppSelectedArea("area-kazh-main");
+                            setAppSelectedWard("all");
+                            setAppSelectedWardIds(["all"]);
+                            setAppFilterLocation("all");
+                          } else {
+                            setAppLocationLevel("state");
+                            setAppSelectedRegion("all");
+                            setAppSelectedOrgDistrict("all");
+                            setAppSelectedMandalam("all");
+                            setAppSelectedArea("all");
+                            setAppSelectedWard("all");
+                            setAppSelectedWardIds(["all"]);
+                            setAppFilterLocation("all");
+                          }
+                        }}
+                        className="shrink-0 text-[10.5px] font-bold text-orange-600 hover:text-orange-700 dark:text-orange-400 hover:underline px-1.5 py-0.5 transition-colors cursor-pointer"
+                      >
+                        {lang === "ml" ? "എല്ലാം ഒഴിവാക്കുക" : "Clear All"}
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* List of Applications */}
                 <div className="space-y-1.5">
@@ -20726,6 +21860,98 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             </div>
           ) : null}
 
+          {applicantCountPopup ? (
+            <div
+              className="absolute inset-0 z-50 flex items-end rounded-[36px] bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+              onClick={() => setApplicantCountPopup(null)}
+            >
+              <div
+                className="w-full max-h-[85%] overflow-y-auto rounded-t-[24px] border-t border-slate-100 bg-white px-4 pb-6 pt-3 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="mx-auto mb-2.5 h-1 w-10 rounded-full bg-slate-200 dark:bg-slate-700" />
+
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-[13.5px] font-black text-[#0F172A] dark:text-white truncate">
+                        {lang === "ml" ? applicantCountPopup.applicantNameMl : applicantCountPopup.applicantNameEn}
+                      </h4>
+                      <span
+                        className={`flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10.5px] font-black border shadow-2xs ${applicantCountPopup.badgeClassName}`}
+                      >
+                        {applicantCountPopup.count}
+                      </span>
+                    </div>
+                    <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
+                      {lang === "ml"
+                        ? `${applicantCountPopup.count} ${applicantCountPopup.statusLabelMl} അപേക്ഷകൾ`
+                        : `${applicantCountPopup.count} ${applicantCountPopup.statusLabelEn} Applications`}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setApplicantCountPopup(null)}
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 cursor-pointer"
+                  >
+                    <X className="h-3.5 w-3.5 stroke-[2.2]" />
+                  </button>
+                </div>
+
+                <div className="h-px w-full bg-slate-100 dark:bg-slate-800 mb-3" />
+
+                <div className="space-y-2">
+                  {applicantCountPopup.applications.map((app) => {
+                    const schemeTitle = lang === "ml" ? app.schemeNameMl : app.schemeNameEn;
+                    const ministryText = getApplicationMinistryText(app, lang);
+                    const cat = getMobileApplicationDisplayCategory(app);
+
+                    return (
+                      <div
+                        key={app.ref}
+                        onClick={() => {
+                          setApplicantCountPopup(null);
+                          setAppDetailReturnSubPage("applicants");
+                          openMobileApplicationDetail(app);
+                        }}
+                        className="group flex items-center justify-between gap-2.5 rounded-xl border border-slate-200/80 bg-white p-2.5 text-left shadow-2xs transition-all hover:border-orange-300 hover:shadow-xs dark:border-slate-800 dark:bg-slate-900 dark:hover:border-orange-800 cursor-pointer"
+                      >
+                        <div className="min-w-0 flex-1 space-y-0.5">
+                          <div className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                            <img
+                              src={getMobileCategoryIconSrc(cat.iconKey)}
+                              alt=""
+                              className="h-3 w-3 shrink-0 object-contain"
+                            />
+                            <span className="truncate">{lang === "ml" ? cat.displayMl : cat.displayEn}</span>
+                            <span className="text-slate-300 dark:text-slate-600">•</span>
+                            <span className="font-mono text-[9.5px] text-slate-400 dark:text-slate-500">{app.ref}</span>
+                          </div>
+                          <h5 className="truncate text-[12px] font-bold text-[#0F172A] dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors leading-tight">
+                            {schemeTitle}
+                          </h5>
+                          <div className="flex items-center gap-1 text-[9.5px] text-slate-400 dark:text-slate-500 truncate">
+                            <Building2 className="h-2.5 w-2.5 shrink-0" />
+                            <span className="truncate">{ministryText}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex shrink-0 items-center gap-1.5">
+                          <MobileApplicationStatusBadge
+                            status={app.workflowStatus ?? "application_received"}
+                            lang={lang}
+                            size="tiny"
+                          />
+                          <ChevronRight className="h-3.5 w-3.5 text-slate-300 group-hover:text-orange-500 transition-colors" />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           {helpdeskDetailRequest ? (
             <HelpdeskRequestDetailView
               request={helpdeskDetailRequest}
@@ -22724,10 +23950,16 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           ? (lang === "ml" ? "അപേക്ഷാ ഫിൽട്ടറുകൾ" : "Application Filters")
                           : (lang === "ml" ? "ഹോം ഫിൽട്ടറുകൾ" : "Home Filters")}
                       </span>
-                      {activeTab !== "applications" && (
-                        <p className="text-[10px] text-slate-400 dark:text-slate-400 font-semibold leading-none mt-0.5">
-                          {lang === "ml" ? "ഡാഷ്‌ബോർഡ് കാലയളവ്: ഒക്ടോബർ 2026" : "Dashboard period: October 2026"}
+                      {userRole === "party_worker" ? (
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold leading-none mt-1">
+                          {lang === "ml" ? "ഏരിയ പ്രസിഡന്റ്" : "Area President"}
                         </p>
+                      ) : (
+                        activeTab !== "applications" && (
+                          <p className="text-[10px] text-slate-400 dark:text-slate-400 font-semibold leading-none mt-0.5">
+                            {lang === "ml" ? "ഡാഷ്‌ബോർഡ് കാലയളവ്: ഒക്ടോബർ 2026" : "Dashboard period: October 2026"}
+                          </p>
+                        )
                       )}
                     </div>
                   </div>
@@ -22747,9 +23979,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   <div className="space-y-3 my-1 flex-1">
                     {/* 1. Work View: My Work / Team */}
                     <div className="space-y-1">
-                      <label className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 block">
-                        {lang === "ml" ? "തൊഴിൽ കാഴ്ച (Work View)" : "Work View"}
-                      </label>
                       <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700/60">
                         <button
                           type="button"
@@ -22854,7 +24083,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       <button
                         type="button"
                         onClick={() => setIsAppStatusDropdownOpen(!isAppStatusDropdownOpen)}
-                        className="w-full flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-orange-300 transition-colors"
+                        className="w-full h-9 flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-orange-300 transition-colors"
                       >
                         <span className="truncate">
                           {selectedAppStatusFilters.length === 0 || selectedAppStatusFilters.includes("all") || selectedAppStatusFilters.length === 6
@@ -22957,9 +24186,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       )}
                     </div>
 
-                    {/* 3 & 4. Category and Scheme in the Same Row (Multi-select) - Hidden in Scheme-wise Applications */}
+                    {/* 3 & 4. Category and Scheme (Multi-select) - Hidden in Scheme-wise Applications */}
                     {mobileSubPage !== "reports" && (
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-2">
                       {/* Category - Multi-select */}
                       <div className="space-y-0.5 relative">
                         <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block truncate">
@@ -22971,9 +24200,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             setIsAppCategoryDropdownOpen(!isAppCategoryDropdownOpen);
                             setIsAppSchemeDropdownOpen(false);
                           }}
-                          className="w-full flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-orange-300 transition-colors"
+                          className="w-full h-9 flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-orange-300 transition-colors"
                         >
-                          <span className="truncate text-[11px]">
+                          <span className="truncate">
                             {appSelectedCategoryIds.length === 0 || appSelectedCategoryIds.includes("all") || appSelectedCategoryIds.length === 5
                               ? (lang === "ml" ? "എല്ലാ വിഭാഗങ്ങളും" : "All Categories")
                               : `${appSelectedCategoryIds.length} ${lang === "ml" ? "വിഭാഗങ്ങൾ" : "categories"}`}
@@ -22982,7 +24211,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         </button>
 
                         {isAppCategoryDropdownOpen && (
-                          <div className="absolute top-full left-0 w-60 mt-1 z-50 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-xl animate-in fade-in duration-150 space-y-1">
+                          <div className="absolute top-full left-0 right-0 mt-1 z-50 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-xl animate-in fade-in duration-150 space-y-1">
                             <div className="relative mb-1">
                               <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
                               <input
@@ -23083,9 +24312,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             setIsAppSchemeDropdownOpen(!isAppSchemeDropdownOpen);
                             setIsAppCategoryDropdownOpen(false);
                           }}
-                          className="w-full flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-orange-300 transition-colors"
+                          className="w-full h-9 flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-orange-300 transition-colors"
                         >
-                          <span className="truncate text-[11px]">
+                          <span className="truncate">
                             {appSelectedSchemeIds.length === 0 || appSelectedSchemeIds.includes("all") || appSelectedSchemeIds.length === 3
                               ? (lang === "ml" ? "എല്ലാ പദ്ധതികളും" : "All Schemes")
                               : `${appSelectedSchemeIds.length} ${lang === "ml" ? "പദ്ധതികൾ" : "schemes"}`}
@@ -23094,7 +24323,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         </button>
 
                         {isAppSchemeDropdownOpen && (
-                          <div className="absolute top-full right-0 w-60 mt-1 z-50 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-xl animate-in fade-in duration-150 space-y-1">
+                          <div className="absolute top-full left-0 right-0 mt-1 z-50 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-xl animate-in fade-in duration-150 space-y-1">
                             <div className="relative mb-1">
                               <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
                               <input
@@ -23192,7 +24421,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       <button
                         type="button"
                         onClick={() => setIsAppFollowUpDropdownOpen(!isAppFollowUpDropdownOpen)}
-                        className="w-full flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-orange-300 transition-colors"
+                        className="w-full h-9 flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-orange-300 transition-colors"
                       >
                         <span className="truncate">
                           {appSelectedFollowUpFilters.length === 0 || appSelectedFollowUpFilters.includes("all") || appSelectedFollowUpFilters.length === 4
@@ -23280,19 +24509,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
                     {/* 6. Location Filter with Location Level Selection */}
                     <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                      <div className="flex items-center justify-between">
-                        <label className="text-[10.5px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                          <MapPin className="w-3.5 h-3.5 text-orange-500" />
-                          <span>{lang === "ml" ? "സ്ഥല ഫിൽട്ടർ (Location Filter)" : "Location Filter"}</span>
-                        </label>
-                        {userRole === "party_worker" && (
-                          <span className="inline-flex items-center gap-1 text-[9.5px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
-                            <Lock className="w-2.5 h-2.5" />
-                            {lang === "ml" ? "ഏരിയ തലം അസൈൻഡ്" : "Area President Level"}
-                          </span>
-                        )}
-                      </div>
-
                       {/* Ward Selection for Party Worker */}
                       {userRole === "party_worker" ? (
                         /* Party Worker: Ward Selection Multi-select Dropdown */
@@ -23305,7 +24521,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             <button
                               type="button"
                               onClick={() => setIsAppWardDropdownOpen(!isAppWardDropdownOpen)}
-                              className="w-full flex items-center justify-between rounded-lg border border-orange-300 dark:border-orange-500/50 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-orange-400 transition-colors shadow-2xs"
+                              className="w-full h-9 flex items-center justify-between rounded-lg border border-orange-300 dark:border-orange-500/50 bg-white dark:bg-slate-800 px-3 text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-orange-400 transition-colors shadow-2xs"
                             >
                               <span className="truncate">
                                 {appSelectedWardIds.length === 0 || appSelectedWardIds.includes("all") || appSelectedWardIds.length === 7
@@ -23455,8 +24671,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             </div>
                           )}
 
-                          {/* 2. Region only (when location level is "region") */}
-                          {appLocationLevel === "region" && (
+                          {/* Region (when location level is region, org_district, mandalam, area, ward) */}
+                          {appLocationLevel !== "state" && (
                             <div className="space-y-0.5 relative">
                               <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
                                 {lang === "ml" ? "മേഖല തിരഞ്ഞെടുക്കുക (Select Region)" : "Select Region"}
@@ -23471,95 +24687,63 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     setAppSelectedArea("all");
                                     setAppSelectedWard("all");
                                   }}
-                                  className="w-full h-8.5 pl-3 pr-8 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none"
+                                  className="w-full h-9 pl-3 pr-8 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none"
                                 >
                                   <option value="all">{lang === "ml" ? "എല്ലാ മേഖലകളും" : "All Regions"}</option>
-                                  <option value="reg-south">{lang === "ml" ? "സൗത്ത് റീജിയൺ" : "South Region"}</option>
+                                  <option value="reg-north">{lang === "ml" ? "നോർത്തേൺ റീജിയൺ" : "Northern Region"}</option>
                                   <option value="reg-central">{lang === "ml" ? "സെൻട്രൽ റീജിയൺ" : "Central Region"}</option>
-                                  <option value="reg-north">{lang === "ml" ? "നോർത്ത് റീജിയൺ" : "North Region"}</option>
+                                  <option value="reg-south">{lang === "ml" ? "സതേൺ റീജിയൺ" : "Southern Region"}</option>
                                 </select>
                                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
                               </div>
                             </div>
                           )}
 
-                          {/* Region and District shown in SAME ROW for org_district, mandalam, area, ward */}
+                          {/* Organisation District (for org_district, mandalam, area, ward) */}
                           {(appLocationLevel === "org_district" ||
                             appLocationLevel === "mandalam" ||
                             appLocationLevel === "area" ||
                             appLocationLevel === "ward") && (
-                            <div className="grid grid-cols-2 gap-2">
-                              {/* Region */}
-                              <div className="space-y-0.5 relative">
-                                <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block truncate">
-                                  {lang === "ml" ? "മേഖല (Region)" : "Select Region"}
-                                </label>
-                                <div className="relative">
-                                  <select
-                                    value={appSelectedRegion}
-                                    onChange={(e) => {
-                                      setAppSelectedRegion(e.target.value);
-                                      setAppSelectedOrgDistrict("all");
-                                      setAppSelectedMandalam("all");
-                                      setAppSelectedArea("all");
-                                      setAppSelectedWard("all");
-                                    }}
-                                    className="w-full h-8.5 pl-2.5 pr-7 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none truncate"
-                                  >
-                                    <option value="all">{lang === "ml" ? "എല്ലാ മേഖലകളും" : "All Regions"}</option>
-                                    <option value="reg-south">{lang === "ml" ? "സൗത്ത്" : "South Region"}</option>
-                                    <option value="reg-central">{lang === "ml" ? "സെൻട്രൽ" : "Central Region"}</option>
-                                    <option value="reg-north">{lang === "ml" ? "നോർത്ത്" : "North Region"}</option>
-                                  </select>
-                                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
-                                </div>
-                              </div>
-
-                              {/* Organisation District */}
-                              <div className="space-y-0.5 relative">
-                                <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block truncate">
-                                  {lang === "ml" ? "ഓർഗ്. ജില്ല (Org District)" : "Org District"}
-                                </label>
-                                <div className="relative">
-                                  <select
-                                    value={appSelectedOrgDistrict}
-                                    onChange={(e) => {
-                                      setAppSelectedOrgDistrict(e.target.value);
-                                      setAppSelectedMandalam("all");
-                                      setAppSelectedArea("all");
-                                      setAppSelectedWard("all");
-                                    }}
-                                    className="w-full h-8.5 pl-2.5 pr-7 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none truncate"
-                                  >
-                                    <option value="all">{lang === "ml" ? "എല്ലാ ജില്ലകളും" : "All Org Districts"}</option>
-                                    {organisationalDistricts
-                                      .filter((od) => {
-                                        if (appSelectedRegion === "all") return true;
-                                        const southIds = ["od-tvm-north", "od-tvm-south", "od-tvm-city", "od-klm-east", "od-klm-west", "od-ptm", "od-alp-north", "od-alp-south", "od-ktm-east", "od-ktm-west", "od-idk-north", "od-idk-south"];
-                                        const centralIds = ["od-ekm-city", "od-ekm-north", "od-ekm-east", "od-tsr-city", "od-tsr-north", "od-tsr-south", "od-pkd-east", "od-pkd-west"];
-                                        const northIds = ["od-mlp-central", "od-mlp-east", "od-mlp-west", "od-kkd-city", "od-kkd-rural", "od-knr", "od-ksd", "od-wyd"];
-                                        if (appSelectedRegion === "reg-south") return southIds.includes(od.id);
-                                        if (appSelectedRegion === "reg-central") return centralIds.includes(od.id);
-                                        if (appSelectedRegion === "reg-north") return northIds.includes(od.id);
-                                        return true;
-                                      })
-                                      .map((od) => (
-                                        <option key={od.id} value={od.id}>
-                                          {od[lang]}
-                                        </option>
-                                      ))}
-                                  </select>
-                                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
-                                </div>
+                            <div className="space-y-0.5 relative">
+                              <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
+                                {lang === "ml" ? "ഓർഗനൈസേഷണൽ ജില്ല (Org District)" : "Org District"}
+                              </label>
+                              <div className="relative">
+                                <select
+                                  value={appSelectedOrgDistrict}
+                                  onChange={(e) => {
+                                    setAppSelectedOrgDistrict(e.target.value);
+                                    setAppSelectedMandalam("all");
+                                    setAppSelectedArea("all");
+                                    setAppSelectedWard("all");
+                                  }}
+                                  className="w-full h-9 pl-3 pr-8 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none"
+                                >
+                                  <option value="all">{lang === "ml" ? "എല്ലാ ഓർഗ്. ജില്ലകളും" : "All Org Districts"}</option>
+                                  {organisationalDistricts
+                                    .filter((od) => {
+                                      if (appSelectedRegion === "all") return true;
+                                      const allowedODs = REGION_ORGANISATIONAL_DISTRICTS[appSelectedRegion] || [];
+                                      return allowedODs.includes(od.id);
+                                    })
+                                    .map((od) => (
+                                      <option key={od.id} value={od.id}>
+                                        {od[lang]}
+                                      </option>
+                                    ))}
+                                </select>
+                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
                               </div>
                             </div>
                           )}
 
-                          {/* Assembly Mandalam only (when location level is "mandalam") */}
-                          {appLocationLevel === "mandalam" && (
+                          {/* Assembly Mandalam (for mandalam, area, ward) */}
+                          {(appLocationLevel === "mandalam" ||
+                            appLocationLevel === "area" ||
+                            appLocationLevel === "ward") && (
                             <div className="space-y-0.5 relative">
                               <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
-                                {lang === "ml" ? "നിയമസഭാ മണ്ഡലം തിരഞ്ഞെടുക്കുക" : "Select Assembly Mandalam"}
+                                {lang === "ml" ? "നിയമസഭാ മണ്ഡലം തിരഞ്ഞെടുക്കുക" : "Assembly Mandalam"}
                               </label>
                               <div className="relative">
                                 <select
@@ -23569,120 +24753,43 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     setAppSelectedArea("all");
                                     setAppSelectedWard("all");
                                   }}
-                                  className="w-full h-8.5 pl-3 pr-8 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none"
+                                  className="w-full h-9 pl-3 pr-8 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none"
                                 >
-                                  <option value="all">{lang === "ml" ? "എല്ലാ മണ്ഡലങ്ങളും" : "All Assembly Mandalams"}</option>
-                                  {appSelectedOrgDistrict === "od-tvm-north" ? (
-                                    <>
-                                      <option value="tvm-c6">{lang === "ml" ? "കഴക്കൂട്ടം" : "Kazhakkoottam"}</option>
-                                      <option value="tvm-c1">{lang === "ml" ? "വർക്കല" : "Varkala"}</option>
-                                      <option value="tvm-c2">{lang === "ml" ? "ആറ്റിങ്ങൽ" : "Attingal"}</option>
-                                      <option value="tvm-c3">{lang === "ml" ? "ചിറയിൻകീഴ്" : "Chirayinkeezhu"}</option>
-                                      <option value="tvm-c4">{lang === "ml" ? "നെടുമങ്ങാട്" : "Nedumangad"}</option>
-                                      <option value="tvm-c5">{lang === "ml" ? "വാമനപുരം" : "Vamanapuram"}</option>
-                                    </>
-                                  ) : appSelectedOrgDistrict === "od-tvm-south" ? (
-                                    <>
-                                      <option value="tvm-c11">{lang === "ml" ? "പാറശ്ശാല" : "Parassala"}</option>
-                                      <option value="tvm-c12">{lang === "ml" ? "കാട്ടാക്കട" : "Kattakkada"}</option>
-                                      <option value="tvm-c13">{lang === "ml" ? "കോവളം" : "Kovalam"}</option>
-                                      <option value="tvm-c14">{lang === "ml" ? "നെയ്യാറ്റിൻകര" : "Neyyattinkara"}</option>
-                                    </>
-                                  ) : appSelectedOrgDistrict === "od-tvm-city" ? (
-                                    <>
-                                      <option value="tvm-c7">{lang === "ml" ? "വട്ടിയൂർക്കാവ്" : "Vattiyoorkavu"}</option>
-                                      <option value="tvm-c8">{lang === "ml" ? "തിരുവനന്തപുരം" : "Thiruvananthapuram"}</option>
-                                      <option value="tvm-c9">{lang === "ml" ? "നേമം" : "Nemom"}</option>
-                                    </>
-                                  ) : (
-                                    constituencies.slice(0, 15).map((c) => (
-                                      <option key={c.id} value={c.id}>
-                                        {c[lang]}
-                                      </option>
-                                    ))
-                                  )}
+                                  <option value="all">{lang === "ml" ? "എല്ലാ മണ്ഡലങ്ങളും" : "All Mandalams"}</option>
+                                  {getAvailableMandalams(appSelectedRegion, appSelectedOrgDistrict).map((c) => (
+                                    <option key={c.id} value={c.id}>
+                                      {c[lang]}
+                                    </option>
+                                  ))}
                                 </select>
                                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
                               </div>
                             </div>
                           )}
 
-                          {/* Assembly Mandalam and Area shown in SAME ROW for area, ward */}
+                          {/* Area (for area, ward) */}
                           {(appLocationLevel === "area" || appLocationLevel === "ward") && (
-                            <div className="grid grid-cols-2 gap-2">
-                              {/* Assembly Mandalam */}
-                              <div className="space-y-0.5 relative">
-                                <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block truncate">
-                                  {lang === "ml" ? "മണ്ഡലം (Mandalam)" : "Assembly Mandalam"}
-                                </label>
-                                <div className="relative">
-                                  <select
-                                    value={appSelectedMandalam}
-                                    onChange={(e) => {
-                                      setAppSelectedMandalam(e.target.value);
-                                      setAppSelectedArea("all");
-                                      setAppSelectedWard("all");
-                                    }}
-                                    className="w-full h-8.5 pl-2.5 pr-7 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none truncate"
-                                  >
-                                    <option value="all">{lang === "ml" ? "എല്ലാ മണ്ഡലങ്ങളും" : "All Mandalams"}</option>
-                                    {appSelectedOrgDistrict === "od-tvm-north" ? (
-                                      <>
-                                        <option value="tvm-c6">{lang === "ml" ? "കഴക്കൂട്ടം" : "Kazhakkoottam"}</option>
-                                        <option value="tvm-c1">{lang === "ml" ? "വർക്കല" : "Varkala"}</option>
-                                        <option value="tvm-c2">{lang === "ml" ? "ആറ്റിങ്ങൽ" : "Attingal"}</option>
-                                        <option value="tvm-c3">{lang === "ml" ? "ചിറയിൻകീഴ്" : "Chirayinkeezhu"}</option>
-                                        <option value="tvm-c4">{lang === "ml" ? "നെടുമങ്ങാട്" : "Nedumangad"}</option>
-                                        <option value="tvm-c5">{lang === "ml" ? "വാമനപുരം" : "Vamanapuram"}</option>
-                                      </>
-                                    ) : appSelectedOrgDistrict === "od-tvm-south" ? (
-                                      <>
-                                        <option value="tvm-c11">{lang === "ml" ? "പാറശ്ശാല" : "Parassala"}</option>
-                                        <option value="tvm-c12">{lang === "ml" ? "കാട്ടാക്കട" : "Kattakkada"}</option>
-                                        <option value="tvm-c13">{lang === "ml" ? "കോവളം" : "Kovalam"}</option>
-                                        <option value="tvm-c14">{lang === "ml" ? "നെയ്യാറ്റിൻകര" : "Neyyattinkara"}</option>
-                                      </>
-                                    ) : appSelectedOrgDistrict === "od-tvm-city" ? (
-                                      <>
-                                        <option value="tvm-c7">{lang === "ml" ? "വട്ടിയൂർക്കാവ്" : "Vattiyoorkavu"}</option>
-                                        <option value="tvm-c8">{lang === "ml" ? "തിരുവനന്തപുരം" : "Thiruvananthapuram"}</option>
-                                        <option value="tvm-c9">{lang === "ml" ? "നേമം" : "Nemom"}</option>
-                                      </>
-                                    ) : (
-                                      constituencies.slice(0, 15).map((c) => (
-                                        <option key={c.id} value={c.id}>
-                                          {c[lang]}
-                                        </option>
-                                      ))
-                                    )}
-                                  </select>
-                                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
-                                </div>
-                              </div>
-
-                              {/* Area */}
-                              <div className="space-y-0.5 relative">
-                                <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block truncate">
-                                  {lang === "ml" ? "ഏരിയ (Area)" : "Area"}
-                                </label>
-                                <div className="relative">
-                                  <select
-                                    value={appSelectedArea}
-                                    onChange={(e) => {
-                                      setAppSelectedArea(e.target.value);
-                                      setAppSelectedWard("all");
-                                    }}
-                                    className="w-full h-8.5 pl-2.5 pr-7 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none truncate"
-                                  >
-                                    <option value="all">{lang === "ml" ? "എല്ലാ ഏരിയകളും" : "All Areas"}</option>
-                                    <option value="area-kazh-main">{lang === "ml" ? "കഴക്കൂട്ടം" : "Kazhakkoottam Area"}</option>
-                                    <option value="area-kariavattom">{lang === "ml" ? "കാര്യവട്ടം" : "Kariavattom Area"}</option>
-                                    <option value="area-technopark">{lang === "ml" ? "ടെക്നോപാർക്ക്" : "Technopark Area"}</option>
-                                    <option value="area-chanthavila">{lang === "ml" ? "ചന്തവിള" : "Chanthavila Area"}</option>
-                                    <option value="area-menamkulam">{lang === "ml" ? "മേനംകുളം" : "Menamkulam Area"}</option>
-                                  </select>
-                                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
-                                </div>
+                            <div className="space-y-0.5 relative">
+                              <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
+                                {lang === "ml" ? "ഏരിയ തിരഞ്ഞെടുക്കുക (Area)" : "Area"}
+                              </label>
+                              <div className="relative">
+                                <select
+                                  value={appSelectedArea}
+                                  onChange={(e) => {
+                                    setAppSelectedArea(e.target.value);
+                                    setAppSelectedWard("all");
+                                  }}
+                                  className="w-full h-9 pl-3 pr-8 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none"
+                                >
+                                  <option value="all">{lang === "ml" ? "എല്ലാ ഏരിയകളും" : "All Areas"}</option>
+                                  <option value="area-kazh-main">{lang === "ml" ? "കഴക്കൂട്ടം" : "Kazhakkoottam Area"}</option>
+                                  <option value="area-kariavattom">{lang === "ml" ? "കാര്യവട്ടം" : "Kariavattom Area"}</option>
+                                  <option value="area-technopark">{lang === "ml" ? "ടെക്നോപാർക്ക്" : "Technopark Area"}</option>
+                                  <option value="area-chanthavila">{lang === "ml" ? "ചന്തവിള" : "Chanthavila Area"}</option>
+                                  <option value="area-menamkulam">{lang === "ml" ? "മേനംകുളം" : "Menamkulam Area"}</option>
+                                </select>
+                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
                               </div>
                             </div>
                           )}
@@ -23696,7 +24803,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                               <button
                                 type="button"
                                 onClick={() => setIsAppWardDropdownOpen(!isAppWardDropdownOpen)}
-                                className="w-full flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-orange-300 transition-colors"
+                                className="w-full h-9 px-3 flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-orange-300 transition-colors"
                               >
                                 <span className="truncate">
                                   {appSelectedWardIds.length === 0 || appSelectedWardIds.includes("all") || appSelectedWardIds.length === 7
@@ -23846,8 +24953,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       </div>
                     )}
 
-                    {/* 1. Scheme Category and Scheme Multiple selection dropdown in a single row */}
-                    <div className="grid grid-cols-2 gap-2">
+                    {/* 1. Scheme Category and Scheme Multiple selection dropdown */}
+                    <div className="space-y-2">
                       {/* Scheme Category - Multi-select */}
                       <div className="space-y-0.5 relative">
                         <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block truncate">
@@ -23860,7 +24967,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             setIsSchemeDropdownOpen(false);
                             setIsHomeWardDropdownOpen(false);
                           }}
-                          className="w-full h-8.5 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer flex items-center justify-between gap-1 shadow-2xs"
+                          className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer flex items-center justify-between gap-1 shadow-2xs"
                         >
                           <span className="truncate">
                             {selectedCategoryIds.length === 0 || selectedCategoryIds.includes("all") || selectedCategoryIds.length === 8
@@ -23872,7 +24979,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
                         {/* Category Popover */}
                         {isCategoryDropdownOpen && (
-                          <div className="absolute top-full left-0 w-56 sm:w-64 max-w-[calc(100vw-3rem)] mt-1 z-40 max-h-56 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl p-1.5 flex flex-col animate-in fade-in slide-in-from-top-1 duration-150">
+                          <div className="absolute top-full left-0 right-0 w-full mt-1 z-40 max-h-56 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl p-1.5 flex flex-col animate-in fade-in slide-in-from-top-1 duration-150">
                             {/* Search Bar */}
                             <div className="relative mb-1.5 shrink-0">
                               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2" />
@@ -23978,7 +25085,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             setIsCategoryDropdownOpen(false);
                             setIsHomeWardDropdownOpen(false);
                           }}
-                          className="w-full h-8.5 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer flex items-center justify-between gap-1 shadow-2xs"
+                          className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer flex items-center justify-between gap-1 shadow-2xs"
                         >
                           <span className="truncate">
                             {selectedSchemeIds.length === 0 || selectedSchemeIds.includes("all") || selectedSchemeIds.length === 3
@@ -23990,7 +25097,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
                         {/* Scheme Popover */}
                         {isSchemeDropdownOpen && (
-                          <div className="absolute top-full right-0 w-56 sm:w-64 max-w-[calc(100vw-3rem)] mt-1 z-40 max-h-56 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl p-1.5 flex flex-col animate-in fade-in slide-in-from-top-1 duration-150">
+                          <div className="absolute top-full left-0 right-0 w-full mt-1 z-40 max-h-56 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl p-1.5 flex flex-col animate-in fade-in slide-in-from-top-1 duration-150">
                             {/* Search Bar */}
                             <div className="relative mb-1.5 shrink-0">
                               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2" />
@@ -24082,19 +25189,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
                     {/* 2. Location Filter Section */}
                     <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                      <div className="flex items-center justify-between">
-                        <label className="text-[10.5px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                          <MapPin className="w-3.5 h-3.5 text-orange-500" />
-                          <span>{lang === "ml" ? "സ്ഥല ഫിൽട്ടർ (Location Filter)" : "Location Filter"}</span>
-                        </label>
-                        {userRole === "party_worker" && (
-                          <span className="inline-flex items-center gap-1 text-[9.5px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
-                            <Lock className="w-2.5 h-2.5" />
-                            {lang === "ml" ? "ഏരിയ തലം അസൈൻഡ്" : "Area President Level"}
-                          </span>
-                        )}
-                      </div>
-
                       {/* Ward Selection for Party Worker */}
                       {userRole === "party_worker" ? (
                         /* Party Worker: Ward Selection Multi-select Dropdown */
@@ -24111,7 +25205,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 setIsCategoryDropdownOpen(false);
                                 setIsSchemeDropdownOpen(false);
                               }}
-                              className="w-full flex items-center justify-between rounded-lg border border-orange-300 dark:border-orange-500/50 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-orange-400 transition-colors shadow-2xs"
+                              className="w-full h-9 px-3 flex items-center justify-between rounded-lg border border-orange-300 dark:border-orange-500/50 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-orange-400 transition-colors shadow-2xs"
                             >
                               <span className="truncate">
                                 {homeSelectedWardIds.length === 0 || homeSelectedWardIds.includes("all") || homeSelectedWardIds.length === 7
@@ -24237,7 +25331,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     setHomeSelectedWardIds(["all"]);
                                   }
                                 }}
-                                className="w-full h-8.5 pl-3 pr-8 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none truncate shadow-2xs"
+                                className="w-full h-9 pl-3 pr-8 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none truncate shadow-2xs"
                               >
                                 <option value="state">{lang === "ml" ? "സംസ്ഥാനം (State)" : "State"}</option>
                                 <option value="region">{lang === "ml" ? "മേഖല (Region)" : "Region"}</option>
@@ -24260,7 +25354,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     {lang === "ml" ? "കേരള സംസ്ഥാനം (സംസ്ഥാന തലം)" : "Kerala State (State-Wide)"}
                                   </span>
                                   <span className="text-[9.5px] text-slate-400 dark:text-slate-400">
-                                    {lang === "ml" ? "എല്ലാ ജില്ലകളും മണ്ഡലങ്ങളും ഉൾപ്പെടുന്നു" : "All 14 Revenue / 28 Organisation Districts"}
+                                    {lang === "ml" ? "എല്ലാ ജില്ലകളും മണ്ഡലങ്ങളും ഉൾപ്പെടുന്നു" : "All 14 Revenue / 30 Organisation Districts"}
                                   </span>
                                 </div>
                               </div>
@@ -24270,8 +25364,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             </div>
                           )}
 
-                          {/* 2. Region only (when location level is "region") */}
-                          {homeLocationLevel === "region" && (
+                          {/* Region (when location level is region, org_district, mandalam, area, ward) */}
+                          {homeLocationLevel !== "state" && (
                             <div className="space-y-0.5 relative">
                               <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
                                 {lang === "ml" ? "മേഖല തിരഞ്ഞെടുക്കുക (Select Region)" : "Select Region"}
@@ -24286,95 +25380,63 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     setHomeSelectedArea("all");
                                     setHomeSelectedWard("all");
                                   }}
-                                  className="w-full h-8.5 pl-3 pr-8 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none shadow-2xs"
+                                  className="w-full h-9 pl-3 pr-8 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none shadow-2xs"
                                 >
                                   <option value="all">{lang === "ml" ? "എല്ലാ മേഖലകളും" : "All Regions"}</option>
-                                  <option value="reg-south">{lang === "ml" ? "സൗത്ത് റീജിയൺ" : "South Region"}</option>
+                                  <option value="reg-north">{lang === "ml" ? "നോർത്തേൺ റീജിയൺ" : "Northern Region"}</option>
                                   <option value="reg-central">{lang === "ml" ? "സെൻട്രൽ റീജിയൺ" : "Central Region"}</option>
-                                  <option value="reg-north">{lang === "ml" ? "നോർത്ത് റീജിയൺ" : "North Region"}</option>
+                                  <option value="reg-south">{lang === "ml" ? "സതേൺ റീജിയൺ" : "Southern Region"}</option>
                                 </select>
                                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
                               </div>
                             </div>
                           )}
 
-                          {/* Region and District shown in SAME ROW for org_district, mandalam, area, ward */}
+                          {/* Organisation District (for org_district, mandalam, area, ward) */}
                           {(homeLocationLevel === "org_district" ||
                             homeLocationLevel === "mandalam" ||
                             homeLocationLevel === "area" ||
                             homeLocationLevel === "ward") && (
-                            <div className="grid grid-cols-2 gap-2">
-                              {/* Region */}
-                              <div className="space-y-0.5 relative">
-                                <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block truncate">
-                                  {lang === "ml" ? "മേഖല (Region)" : "Select Region"}
-                                </label>
-                                <div className="relative">
-                                  <select
-                                    value={homeSelectedRegion}
-                                    onChange={(e) => {
-                                      setHomeSelectedRegion(e.target.value);
-                                      setHomeSelectedOrgDistrict("all");
-                                      setHomeSelectedMandalam("all");
-                                      setHomeSelectedArea("all");
-                                      setHomeSelectedWard("all");
-                                    }}
-                                    className="w-full h-8.5 pl-2.5 pr-7 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none truncate shadow-2xs"
-                                  >
-                                    <option value="all">{lang === "ml" ? "എല്ലാ മേഖലകളും" : "All Regions"}</option>
-                                    <option value="reg-south">{lang === "ml" ? "സൗത്ത്" : "South Region"}</option>
-                                    <option value="reg-central">{lang === "ml" ? "സെൻട്രൽ" : "Central Region"}</option>
-                                    <option value="reg-north">{lang === "ml" ? "നോർത്ത്" : "North Region"}</option>
-                                  </select>
-                                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
-                                </div>
-                              </div>
-
-                              {/* Organisation District */}
-                              <div className="space-y-0.5 relative">
-                                <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block truncate">
-                                  {lang === "ml" ? "ഓർഗ്. ജില്ല (Org District)" : "Org District"}
-                                </label>
-                                <div className="relative">
-                                  <select
-                                    value={homeSelectedOrgDistrict}
-                                    onChange={(e) => {
-                                      setHomeSelectedOrgDistrict(e.target.value);
-                                      setHomeSelectedMandalam("all");
-                                      setHomeSelectedArea("all");
-                                      setHomeSelectedWard("all");
-                                    }}
-                                    className="w-full h-8.5 pl-2.5 pr-7 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none truncate shadow-2xs"
-                                  >
-                                    <option value="all">{lang === "ml" ? "എല്ലാ ജില്ലകളും" : "All Org Districts"}</option>
-                                    {organisationalDistricts
-                                      .filter((od) => {
-                                        if (homeSelectedRegion === "all") return true;
-                                        const southIds = ["od-tvm-north", "od-tvm-south", "od-tvm-city", "od-klm-east", "od-klm-west", "od-ptm", "od-alp-north", "od-alp-south", "od-ktm-east", "od-ktm-west", "od-idk-north", "od-idk-south"];
-                                        const centralIds = ["od-ekm-city", "od-ekm-north", "od-ekm-east", "od-tsr-city", "od-tsr-north", "od-tsr-south", "od-pkd-east", "od-pkd-west"];
-                                        const northIds = ["od-mlp-central", "od-mlp-east", "od-mlp-west", "od-kkd-city", "od-kkd-rural", "od-knr", "od-ksd", "od-wyd"];
-                                        if (homeSelectedRegion === "reg-south") return southIds.includes(od.id);
-                                        if (homeSelectedRegion === "reg-central") return centralIds.includes(od.id);
-                                        if (homeSelectedRegion === "reg-north") return northIds.includes(od.id);
-                                        return true;
-                                      })
-                                      .map((od) => (
-                                        <option key={od.id} value={od.id}>
-                                          {od[lang]}
-                                        </option>
-                                      ))}
-                                  </select>
-                                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
-                                </div>
+                            <div className="space-y-0.5 relative">
+                              <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
+                                {lang === "ml" ? "ഓർഗനൈസേഷണൽ ജില്ല (Org District)" : "Org District"}
+                              </label>
+                              <div className="relative">
+                                <select
+                                  value={homeSelectedOrgDistrict}
+                                  onChange={(e) => {
+                                    setHomeSelectedOrgDistrict(e.target.value);
+                                    setHomeSelectedMandalam("all");
+                                    setHomeSelectedArea("all");
+                                    setHomeSelectedWard("all");
+                                  }}
+                                  className="w-full h-9 pl-3 pr-8 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none shadow-2xs"
+                                >
+                                  <option value="all">{lang === "ml" ? "എല്ലാ ഓർഗ്. ജില്ലകളും" : "All Org Districts"}</option>
+                                  {organisationalDistricts
+                                    .filter((od) => {
+                                      if (homeSelectedRegion === "all") return true;
+                                      const allowedODs = REGION_ORGANISATIONAL_DISTRICTS[homeSelectedRegion] || [];
+                                      return allowedODs.includes(od.id);
+                                    })
+                                    .map((od) => (
+                                      <option key={od.id} value={od.id}>
+                                        {od[lang]}
+                                      </option>
+                                    ))}
+                                </select>
+                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
                               </div>
                             </div>
                           )}
 
-                          {/* Assembly Mandalam only (when location level is "mandalam") */}
-                          {homeLocationLevel === "mandalam" && (
+                          {/* Assembly Mandalam (for mandalam, area, ward) */}
+                          {(homeLocationLevel === "mandalam" ||
+                            homeLocationLevel === "area" ||
+                            homeLocationLevel === "ward") && (
                             <div className="space-y-0.5 relative">
                               <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
-                                {lang === "ml" ? "നിയമസഭാ മണ്ഡലം തിരഞ്ഞെടുക്കുക" : "Select Assembly Mandalam"}
+                                {lang === "ml" ? "നിയമസഭാ മണ്ഡലം തിരഞ്ഞെടുക്കുക" : "Assembly Mandalam"}
                               </label>
                               <div className="relative">
                                 <select
@@ -24384,120 +25446,43 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     setHomeSelectedArea("all");
                                     setHomeSelectedWard("all");
                                   }}
-                                  className="w-full h-8.5 pl-3 pr-8 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none shadow-2xs"
+                                  className="w-full h-9 pl-3 pr-8 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none shadow-2xs"
                                 >
-                                  <option value="all">{lang === "ml" ? "എല്ലാ മണ്ഡലങ്ങളും" : "All Assembly Mandalams"}</option>
-                                  {homeSelectedOrgDistrict === "od-tvm-north" ? (
-                                    <>
-                                      <option value="tvm-c6">{lang === "ml" ? "കഴക്കൂട്ടം" : "Kazhakkoottam"}</option>
-                                      <option value="tvm-c1">{lang === "ml" ? "വർക്കല" : "Varkala"}</option>
-                                      <option value="tvm-c2">{lang === "ml" ? "ആറ്റിങ്ങൽ" : "Attingal"}</option>
-                                      <option value="tvm-c3">{lang === "ml" ? "ചിറയിൻകീഴ്" : "Chirayinkeezhu"}</option>
-                                      <option value="tvm-c4">{lang === "ml" ? "നെടുമങ്ങാട്" : "Nedumangad"}</option>
-                                      <option value="tvm-c5">{lang === "ml" ? "വാമനപുരം" : "Vamanapuram"}</option>
-                                    </>
-                                  ) : homeSelectedOrgDistrict === "od-tvm-south" ? (
-                                    <>
-                                      <option value="tvm-c11">{lang === "ml" ? "പാറശ്ശാല" : "Parassala"}</option>
-                                      <option value="tvm-c12">{lang === "ml" ? "കാട്ടാക്കട" : "Kattakkada"}</option>
-                                      <option value="tvm-c13">{lang === "ml" ? "കോവളം" : "Kovalam"}</option>
-                                      <option value="tvm-c14">{lang === "ml" ? "നെയ്യാറ്റിൻകര" : "Neyyattinkara"}</option>
-                                    </>
-                                  ) : homeSelectedOrgDistrict === "od-tvm-city" ? (
-                                    <>
-                                      <option value="tvm-c7">{lang === "ml" ? "വട്ടിയൂർക്കാവ്" : "Vattiyoorkavu"}</option>
-                                      <option value="tvm-c8">{lang === "ml" ? "തിരുവനന്തപുരം" : "Thiruvananthapuram"}</option>
-                                      <option value="tvm-c9">{lang === "ml" ? "നേമം" : "Nemom"}</option>
-                                    </>
-                                  ) : (
-                                    constituencies.slice(0, 15).map((c) => (
-                                      <option key={c.id} value={c.id}>
-                                        {c[lang]}
-                                      </option>
-                                    ))
-                                  )}
+                                  <option value="all">{lang === "ml" ? "എല്ലാ മണ്ഡലങ്ങളും" : "All Mandalams"}</option>
+                                  {getAvailableMandalams(homeSelectedRegion, homeSelectedOrgDistrict).map((c) => (
+                                    <option key={c.id} value={c.id}>
+                                      {c[lang]}
+                                    </option>
+                                  ))}
                                 </select>
                                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
                               </div>
                             </div>
                           )}
 
-                          {/* Assembly Mandalam and Area shown in SAME ROW for area, ward */}
+                          {/* Area (for area, ward) */}
                           {(homeLocationLevel === "area" || homeLocationLevel === "ward") && (
-                            <div className="grid grid-cols-2 gap-2">
-                              {/* Assembly Mandalam */}
-                              <div className="space-y-0.5 relative">
-                                <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block truncate">
-                                  {lang === "ml" ? "മണ്ഡലം (Mandalam)" : "Assembly Mandalam"}
-                                </label>
-                                <div className="relative">
-                                  <select
-                                    value={homeSelectedMandalam}
-                                    onChange={(e) => {
-                                      setHomeSelectedMandalam(e.target.value);
-                                      setHomeSelectedArea("all");
-                                      setHomeSelectedWard("all");
-                                    }}
-                                    className="w-full h-8.5 pl-2.5 pr-7 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none truncate shadow-2xs"
-                                  >
-                                    <option value="all">{lang === "ml" ? "എല്ലാ മണ്ഡലങ്ങളും" : "All Mandalams"}</option>
-                                    {homeSelectedOrgDistrict === "od-tvm-north" ? (
-                                      <>
-                                        <option value="tvm-c6">{lang === "ml" ? "കഴക്കൂട്ടം" : "Kazhakkoottam"}</option>
-                                        <option value="tvm-c1">{lang === "ml" ? "വർക്കല" : "Varkala"}</option>
-                                        <option value="tvm-c2">{lang === "ml" ? "ആറ്റിങ്ങൽ" : "Attingal"}</option>
-                                        <option value="tvm-c3">{lang === "ml" ? "ചിറയിൻകീഴ്" : "Chirayinkeezhu"}</option>
-                                        <option value="tvm-c4">{lang === "ml" ? "നെടുമങ്ങാട്" : "Nedumangad"}</option>
-                                        <option value="tvm-c5">{lang === "ml" ? "വാമനപുരം" : "Vamanapuram"}</option>
-                                      </>
-                                    ) : homeSelectedOrgDistrict === "od-tvm-south" ? (
-                                      <>
-                                        <option value="tvm-c11">{lang === "ml" ? "പാറശ്ശാല" : "Parassala"}</option>
-                                        <option value="tvm-c12">{lang === "ml" ? "കാട്ടാക്കട" : "Kattakkada"}</option>
-                                        <option value="tvm-c13">{lang === "ml" ? "കോവളം" : "Kovalam"}</option>
-                                        <option value="tvm-c14">{lang === "ml" ? "നെയ്യാറ്റിൻകര" : "Neyyattinkara"}</option>
-                                      </>
-                                    ) : homeSelectedOrgDistrict === "od-tvm-city" ? (
-                                      <>
-                                        <option value="tvm-c7">{lang === "ml" ? "വട്ടിയൂർക്കാവ്" : "Vattiyoorkavu"}</option>
-                                        <option value="tvm-c8">{lang === "ml" ? "തിരുവനന്തപുരം" : "Thiruvananthapuram"}</option>
-                                        <option value="tvm-c9">{lang === "ml" ? "നേമം" : "Nemom"}</option>
-                                      </>
-                                    ) : (
-                                      constituencies.slice(0, 15).map((c) => (
-                                        <option key={c.id} value={c.id}>
-                                          {c[lang]}
-                                        </option>
-                                      ))
-                                    )}
-                                  </select>
-                                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
-                                </div>
-                              </div>
-
-                              {/* Area */}
-                              <div className="space-y-0.5 relative">
-                                <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block truncate">
-                                  {lang === "ml" ? "ഏരിയ (Area)" : "Area"}
-                                </label>
-                                <div className="relative">
-                                  <select
-                                    value={homeSelectedArea}
-                                    onChange={(e) => {
-                                      setHomeSelectedArea(e.target.value);
-                                      setHomeSelectedWard("all");
-                                    }}
-                                    className="w-full h-8.5 pl-2.5 pr-7 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none truncate shadow-2xs"
-                                  >
-                                    <option value="all">{lang === "ml" ? "എല്ലാ ഏരിയകളും" : "All Areas"}</option>
-                                    <option value="area-kazh-main">{lang === "ml" ? "കഴക്കൂട്ടം" : "Kazhakkoottam Area"}</option>
-                                    <option value="area-kariavattom">{lang === "ml" ? "കാര്യവട്ടം" : "Kariavattom Area"}</option>
-                                    <option value="area-technopark">{lang === "ml" ? "ടെക്നോപാർക്ക്" : "Technopark Area"}</option>
-                                    <option value="area-chanthavila">{lang === "ml" ? "ചന്തവിള" : "Chanthavila Area"}</option>
-                                    <option value="area-menamkulam">{lang === "ml" ? "മേനംകുളം" : "Menamkulam Area"}</option>
-                                  </select>
-                                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
-                                </div>
+                            <div className="space-y-0.5 relative">
+                              <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
+                                {lang === "ml" ? "ഏരിയ തിരഞ്ഞെടുക്കുക (Area)" : "Area"}
+                              </label>
+                              <div className="relative">
+                                <select
+                                  value={homeSelectedArea}
+                                  onChange={(e) => {
+                                    setHomeSelectedArea(e.target.value);
+                                    setHomeSelectedWard("all");
+                                  }}
+                                  className="w-full h-9 pl-3 pr-8 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none shadow-2xs"
+                                >
+                                  <option value="all">{lang === "ml" ? "എല്ലാ ഏരിയകളും" : "All Areas"}</option>
+                                  <option value="area-kazh-main">{lang === "ml" ? "കഴക്കൂട്ടം" : "Kazhakkoottam Area"}</option>
+                                  <option value="area-kariavattom">{lang === "ml" ? "കാര്യവട്ടം" : "Kariavattom Area"}</option>
+                                  <option value="area-technopark">{lang === "ml" ? "ടെക്നോപാർക്ക്" : "Technopark Area"}</option>
+                                  <option value="area-chanthavila">{lang === "ml" ? "ചന്തവിള" : "Chanthavila Area"}</option>
+                                  <option value="area-menamkulam">{lang === "ml" ? "മേനംകുളം" : "Menamkulam Area"}</option>
+                                </select>
+                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
                               </div>
                             </div>
                           )}
@@ -24516,7 +25501,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     setHomeSelectedWard(val);
                                     setHomeSelectedWardIds(val === "all" ? ["all"] : [val]);
                                   }}
-                                  className="w-full h-8.5 pl-3 pr-8 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none truncate shadow-2xs"
+                                  className="w-full h-9 pl-3 pr-8 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 cursor-pointer appearance-none truncate shadow-2xs"
                                 >
                                   <option value="all">{lang === "ml" ? "എല്ലാ വാർഡുകളും / ബൂത്തുകളും" : "All Wards / Booths"}</option>
                                   <option value="ward_1">{lang === "ml" ? "വാർഡ് 1 — കഴക്കൂട്ടം" : "Ward 1 — Kazhakoottam"}</option>

@@ -77,6 +77,7 @@ export interface MobileReportsPageProps {
   onOpenSchemeDetails?: (schemeName: string) => void;
   onApplyScheme?: (schemeName: string) => void;
   onShareScheme?: (schemeName: string) => void;
+  userRole?: "state_admin" | "party_worker";
 }
 
 interface SchemeReportDef {
@@ -137,7 +138,7 @@ const createEmptySchemeLocation = (): SchemeLocationFilter => ({
 });
 
 const createDefaultSchemeFilter = (): SchemeFilterState => ({
-  workView: "team",
+  workView: "my_work",
   statuses: [],
   locationLevel: "state",
   location: createEmptySchemeLocation(),
@@ -406,27 +407,86 @@ const REPORT_CATEGORIES: CategoryReportDef[] = [
 const normalizeStr = (s?: string) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
 const KERALA_REGIONS: SchemeLocationOption[] = [
-  { value: "south", en: "South Region", ml: "ദക്ഷിണ മേഖല" },
-  { value: "central", en: "Central Region", ml: "മധ്യ മേഖല" },
-  { value: "north", en: "North Region", ml: "ഉത്തര മേഖല" },
+  { value: "north", en: "Northern Region", ml: "നോർത്തേൺ റീജിയൺ" },
+  { value: "central", en: "Central Region", ml: "സെൻട്രൽ റീജിയൺ" },
+  { value: "south", en: "Southern Region", ml: "സതേൺ റീജിയൺ" },
 ];
 
 const KERALA_ORG_DISTRICTS: SchemeOrgDistrictOption[] = [
-  { value: "thiruvananthapuram", en: "Thiruvananthapuram", ml: "തിരുവനന്തപുരം", region: "south" },
-  { value: "kollam", en: "Kollam", ml: "കൊല്ലം", region: "south" },
-  { value: "pathanamthitta", en: "Pathanamthitta", ml: "പത്തനംതിട്ട", region: "south" },
-  { value: "alappuzha", en: "Alappuzha", ml: "ആലപ്പുഴ", region: "south" },
-  { value: "kottayam", en: "Kottayam", ml: "കോട്ടയം", region: "south" },
-  { value: "idukki", en: "Idukki", ml: "ഇടുക്കി", region: "south" },
-  { value: "ernakulam", en: "Ernakulam", ml: "എറണാകുളം", region: "south" },
-  { value: "thrissur", en: "Thrissur", ml: "തൃശൂർ", region: "central" },
-  { value: "palakkad", en: "Palakkad", ml: "പാലക്കാട്", region: "central" },
-  { value: "malappuram", en: "Malappuram", ml: "മലപ്പുറം", region: "central" },
-  { value: "kozhikode", en: "Kozhikode", ml: "കോഴിക്കോട്", region: "north" },
-  { value: "wayanad", en: "Wayanad", ml: "വയനാട്", region: "north" },
-  { value: "kannur", en: "Kannur", ml: "കണ്ണൂർ", region: "north" },
+  // 1. Northern Region (10 Organisational Districts, 48 Mandalams)
   { value: "kasaragod", en: "Kasaragod", ml: "കാസർഗോഡ്", region: "north" },
+  { value: "kannur_north", en: "Kannur North", ml: "കണ്ണൂർ നോർത്ത്", region: "north" },
+  { value: "kannur_south", en: "Kannur South", ml: "കണ്ണൂർ സൗത്ത്", region: "north" },
+  { value: "wayanad", en: "Wayanad", ml: "വയനാട്", region: "north" },
+  { value: "kozhikode_city", en: "Kozhikode City", ml: "കോഴിക്കോട് സിറ്റി", region: "north" },
+  { value: "kozhikode_north", en: "Kozhikode North", ml: "കോഴിക്കോട് നോർത്ത്", region: "north" },
+  { value: "kozhikode_rural", en: "Kozhikode Rural", ml: "കോഴിക്കോട് റൂറൽ", region: "north" },
+  { value: "malappuram_central", en: "Malappuram Central", ml: "മലപ്പുറം സെൻട്രൽ", region: "north" },
+  { value: "malappuram_east", en: "Malappuram East", ml: "മലപ്പുറം ഈസ്റ്റ്", region: "north" },
+  { value: "malappuram_west", en: "Malappuram West", ml: "മലപ്പുറം വെസ്റ്റ്", region: "north" },
+
+  // 2. Central Region (12 Organisational Districts, 53 Mandalams)
+  { value: "palakkad_east", en: "Palakkad East", ml: "പാലക്കാട് ഈസ്റ്റ്", region: "central" },
+  { value: "palakkad_west", en: "Palakkad West", ml: "പാലക്കാട് വെസ്റ്റ്", region: "central" },
+  { value: "thrissur_city", en: "Thrissur City", ml: "തൃശൂർ സിറ്റി", region: "central" },
+  { value: "thrissur_north", en: "Thrissur North", ml: "തൃശൂർ നോർത്ത്", region: "central" },
+  { value: "thrissur_south", en: "Thrissur South", ml: "തൃശൂർ സൗത്ത്", region: "central" },
+  { value: "ernakulam_city", en: "Ernakulam City", ml: "എറണാകുളം സിറ്റി", region: "central" },
+  { value: "ernakulam_north", en: "Ernakulam North", ml: "എറണാകുളം നോർത്ത്", region: "central" },
+  { value: "ernakulam_east", en: "Ernakulam East", ml: "എറണാകുളം ഈസ്റ്റ്", region: "central" },
+  { value: "idukki_north", en: "Idukki North", ml: "ഇടുക്കി നോർത്ത്", region: "central" },
+  { value: "idukki_south", en: "Idukki South", ml: "ഇടുക്കി സൗത്ത്", region: "central" },
+  { value: "kottayam_east", en: "Kottayam East", ml: "കോട്ടയം ഈസ്റ്റ്", region: "central" },
+  { value: "kottayam_west", en: "Kottayam West", ml: "കോട്ടയം വെസ്റ്റ്", region: "central" },
+
+  // 3. Southern Region (8 Organisational Districts, 39 Mandalams)
+  { value: "alappuzha_north", en: "Alappuzha North", ml: "ആലപ്പുഴ നോർത്ത്", region: "south" },
+  { value: "alappuzha_south", en: "Alappuzha South", ml: "ആലപ്പുഴ സൗത്ത്", region: "south" },
+  { value: "pathanamthitta", en: "Pathanamthitta", ml: "പത്തനംതിട്ട", region: "south" },
+  { value: "kollam_east", en: "Kollam East", ml: "കൊല്ലം ഈസ്റ്റ്", region: "south" },
+  { value: "kollam_west", en: "Kollam West", ml: "കൊല്ലം വെസ്റ്റ്", region: "south" },
+  { value: "thiruvananthapuram_city", en: "Thiruvananthapuram City", ml: "തിരുവനന്തപുരം സിറ്റി", region: "south" },
+  { value: "thiruvananthapuram_north", en: "Thiruvananthapuram North", ml: "തിരുവനന്തപുരം നോർത്ത്", region: "south" },
+  { value: "thiruvananthapuram_south", en: "Thiruvananthapuram South", ml: "തിരുവനന്തപുരം സൗത്ത്", region: "south" },
 ];
+
+const ORGANISATIONAL_DISTRICT_MANDALAMS: Record<string, string[]> = {
+  // Northern Region
+  "kasaragod": ["Manjeshwar", "Kasaragod", "Udma", "Kanhangad", "Trikaripur"],
+  "kannur_north": ["Payyannur", "Kalliasseri", "Taliparamba", "Irikkur", "Azhikode"],
+  "kannur_south": ["Kannur", "Dharmadam", "Thalassery", "Kuthuparamba", "Mattannur", "Peravoor"],
+  "wayanad": ["Mananthavady", "Sulthan Bathery", "Kalpetta"],
+  "kozhikode_city": ["Elathur", "Kozhikode North", "Kozhikode South", "Beypore"],
+  "kozhikode_north": ["Vadakara", "Kuttiadi", "Nadapuram", "Quilandy", "Perambra"],
+  "kozhikode_rural": ["Balussery", "Kunnamangalam", "Koduvally", "Thiruvambady"],
+  "malappuram_central": ["Kondotty", "Manjeri", "Malappuram", "Mankada", "Perinthalmanna"],
+  "malappuram_east": ["Eranad", "Nilambur", "Wandoor", "Vengara", "Vallikkunnu"],
+  "malappuram_west": ["Tirurangadi", "Tanur", "Tirur", "Kottakkal", "Thavanur", "Ponnani"],
+
+  // Central Region
+  "palakkad_east": ["Kongad", "Malampuzha", "Palakkad", "Chittur", "Nenmara", "Alathur"],
+  "palakkad_west": ["Thrithala", "Pattambi", "Shornur", "Ottapalam", "Mannarkad", "Tarur"],
+  "thrissur_city": ["Thrissur", "Ollur", "Manalur", "Nattika"],
+  "thrissur_north": ["Chelakkara", "Kunnamkulam", "Guruvayoor", "Wadakkanchery"],
+  "thrissur_south": ["Kaipamangalam", "Irinjalakkuda", "Puthukkad", "Chalakkudy", "Kodungallur"],
+  "ernakulam_city": ["Kochi", "Ernakulam", "Thripunithura", "Thrikkakara", "Vypen"],
+  "ernakulam_north": ["Angamaly", "Aluva", "Kalamassery", "Paravur"],
+  "ernakulam_east": ["Perumbavoor", "Kunnathunad", "Piravom", "Muvattupuzha", "Kothamangalam"],
+  "idukki_north": ["Devikulam", "Udumbanchola", "Thodupuzha"],
+  "idukki_south": ["Idukki", "Peerumade"],
+  "kottayam_east": ["Poonjar", "Kanjirappally", "Changanassery", "Puthuppally"],
+  "kottayam_west": ["Pala", "Kaduthuruthy", "Vaikom", "Ettumanoor", "Kottayam"],
+
+  // Southern Region
+  "alappuzha_north": ["Aroor", "Cherthala", "Alappuzha", "Ambalapuzha"],
+  "alappuzha_south": ["Kuttanad", "Haripad", "Kayamkulam", "Mavelikara", "Chengannur"],
+  "pathanamthitta": ["Thiruvalla", "Ranni", "Aranmula", "Konni", "Adoor"],
+  "kollam_east": ["Kunnathur", "Kottarakkara", "Pathanapuram", "Punalur", "Chadayamangalam", "Kundara"],
+  "kollam_west": ["Karunagappally", "Chavara", "Kollam", "Eravipuram", "Chathannur"],
+  "thiruvananthapuram_city": ["Kazhakkoottam", "Vattiyoorkavu", "Thiruvananthapuram", "Nemom"],
+  "thiruvananthapuram_north": ["Varkala", "Attingal", "Chirayinkeezhu", "Nedumangad", "Vamanapuram", "Aruvikkara"],
+  "thiruvananthapuram_south": ["Parassala", "Kattakkada", "Kovalam", "Neyyattinkara"]
+};
 
 const KERALA_AREAS: SchemeLocationOption[] = [
   { value: "north_area", en: "North Area", ml: "വടക്കൻ ഏരിയ" },
@@ -476,8 +536,24 @@ const splitSchemeLocation = (locationEn?: string, locationMl?: string) => {
 
 const getSchemeOrgDistrictDef = (districtEn?: string) => {
   const key = normalizeLocationValue(districtEn);
-  return KERALA_ORG_DISTRICTS.find(
+  if (!key) return undefined;
+  const directMatch = KERALA_ORG_DISTRICTS.find(
     (district) => district.value === key || normalizeLocationValue(district.en) === key
+  );
+  if (directMatch) return directMatch;
+
+  // Check if any mandalam matches, returning its parent district
+  for (const [distKey, mandalams] of Object.entries(ORGANISATIONAL_DISTRICT_MANDALAMS)) {
+    if (mandalams.some((m) => normalizeLocationValue(m) === key)) {
+      return KERALA_ORG_DISTRICTS.find((d) => d.value === distKey);
+    }
+  }
+
+  // Fallback substring matching for legacy district names
+  return KERALA_ORG_DISTRICTS.find(
+    (district) =>
+      normalizeLocationValue(district.en).includes(key) ||
+      key.includes(normalizeLocationValue(district.en))
   );
 };
 
@@ -497,7 +573,10 @@ const getSchemeLocationLabel = (options: SchemeLocationOption[], value: string, 
 
 const getApplicationLocationHierarchy = (app: MobileReportApplicationRecord) => {
   const { localityEn, districtEn } = splitSchemeLocation(app.locationEn, app.locationMl);
-  const district = getSchemeOrgDistrictDef(districtEn);
+  let district = getSchemeOrgDistrictDef(districtEn);
+  if (!district && localityEn) {
+    district = getSchemeOrgDistrictDef(localityEn);
+  }
   const districtKey = district?.value || normalizeLocationValue(districtEn);
   const seed = hashLocationValue(
     `${app.ref}|${app.trackingId || ""}|${app.applicantNameEn}|${app.locationEn || ""}`
@@ -701,6 +780,7 @@ export function MobileReportsPage({
   onOpenSchemeDetails,
   onApplyScheme,
   onShareScheme,
+  userRole = "state_admin",
 }: MobileReportsPageProps) {
   const { lang } = useLang();
   const [selectedScheme, setSelectedScheme] = useState<SchemeReportDef | null>(null);
@@ -759,9 +839,20 @@ export function MobileReportsPage({
 
   const mandalamOptionsByDistrict = useMemo(() => {
     const map = new Map<string, Map<string, SchemeLocationOption>>();
+
+    // Initialize with all mandalams from ORGANISATIONAL_DISTRICT_MANDALAMS
+    for (const [distKey, mandalams] of Object.entries(ORGANISATIONAL_DISTRICT_MANDALAMS)) {
+      if (!map.has(distKey)) map.set(distKey, new Map());
+      const distMap = map.get(distKey)!;
+      for (const m of mandalams) {
+        const val = normalizeLocationValue(m);
+        distMap.set(val, { value: val, en: m, ml: m });
+      }
+    }
+
     const addLocation = (locationEn?: string, locationMl?: string) => {
       const { localityEn, localityMl, districtEn } = splitSchemeLocation(locationEn, locationMl);
-      const district = getSchemeOrgDistrictDef(districtEn);
+      const district = getSchemeOrgDistrictDef(districtEn) || (localityEn ? getSchemeOrgDistrictDef(localityEn) : undefined);
       const districtKey = district?.value || normalizeLocationValue(districtEn);
       if (!districtKey) return;
       if (!map.has(districtKey)) map.set(districtKey, new Map());
@@ -776,17 +867,6 @@ export function MobileReportsPage({
     for (const app of applications) addLocation(app.locationEn, app.locationMl);
     for (const person of KERALA_APPLICANT_POOL) addLocation(person.locationEn, person.locationMl);
 
-    for (const district of KERALA_ORG_DISTRICTS) {
-      if (!map.has(district.value)) map.set(district.value, new Map());
-      const options = map.get(district.value)!;
-      if (options.size === 0) {
-        options.set(district.value, {
-          value: district.value,
-          en: `${district.en} Mandalam`,
-          ml: `${district.ml} മണ്ഡലം`,
-        });
-      }
-    }
     return map;
   }, [applications]);
 
@@ -826,11 +906,11 @@ export function MobileReportsPage({
     appliedLocation.ward
   );
   const hasLocalFilters =
-    appliedSchemeFilter.workView !== "team" ||
+    appliedSchemeFilter.workView !== "my_work" ||
     appliedSchemeFilter.statuses.length > 0 ||
     hasLocationFilters;
   const localFilterCount =
-    (appliedSchemeFilter.workView !== "team" ? 1 : 0) +
+    (appliedSchemeFilter.workView !== "my_work" ? 1 : 0) +
     (appliedSchemeFilter.statuses.length > 0 ? 1 : 0) +
     (hasLocationFilters ? 1 : 0);
   const activeFilterCount = (isFilterActive ? filterCount : 0) + localFilterCount;
@@ -890,7 +970,6 @@ export function MobileReportsPage({
 
   // Apply the page-level filter (work view + statuses + location) to each scheme roster
   const filteredByScheme = useMemo(() => {
-    if (!hasLocalFilters) return applicationsByScheme;
     const statuses = new Set(appliedSchemeFilter.statuses);
     const selectedLocation = appliedSchemeFilter.location;
     const map = new Map<string, MobileReportApplicationRecord[]>();
@@ -916,7 +995,7 @@ export function MobileReportsPage({
       );
     }
     return map;
-  }, [applicationsByScheme, hasLocalFilters, appliedSchemeFilter]);
+  }, [applicationsByScheme, appliedSchemeFilter]);
 
   // Group applications by Category from schemes
   const applicationsByCategory = useMemo(() => {
@@ -1052,6 +1131,136 @@ export function MobileReportsPage({
     { id: "rejected", en: "Rejected", ml: "നിരസിച്ചവ" },
   ];
 
+  const removeLocationFilter = (key: string) => {
+    setAppliedSchemeFilter((prev) => {
+      const nextLocation = { ...prev.location, [key]: "" };
+      if (key === "region") {
+        nextLocation.orgDistrict = "";
+        nextLocation.mandalam = "";
+        nextLocation.area = "";
+        nextLocation.ward = "";
+      } else if (key === "orgDistrict") {
+        nextLocation.mandalam = "";
+        nextLocation.area = "";
+        nextLocation.ward = "";
+      } else if (key === "mandalam") {
+        nextLocation.area = "";
+        nextLocation.ward = "";
+      } else if (key === "area") {
+        nextLocation.ward = "";
+      }
+      return { ...prev, location: nextLocation };
+    });
+  };
+
+  const removeStatusFilter = (statusId: SchemeStatusBucket) => {
+    setAppliedSchemeFilter((prev) => ({
+      ...prev,
+      statuses: prev.statuses.filter((s) => s !== statusId),
+    }));
+  };
+
+  const resetWorkView = () => {
+    setAppliedSchemeFilter((prev) => ({
+      ...prev,
+      workView: "my_work",
+    }));
+    setDraftSchemeFilter((prev) => ({
+      ...prev,
+      workView: "my_work",
+    }));
+  };
+
+  const renderAppliedFiltersRow = () => {
+    // Default no needs to show that section Applied Filter section and state wide,
+    // if any changes done in the filter then only show that section.
+    if (!hasLocalFilters) {
+      return null;
+    }
+
+    const isWorker = userRole === "party_worker";
+
+    return (
+      <div className="flex flex-col border-b border-slate-200/70 dark:border-slate-800 bg-[#FAF7F2]/90 dark:bg-slate-900/80 shrink-0">
+        {/* Active Filter Chips & View */}
+        <div className="flex items-center gap-1.5 overflow-x-auto px-2.5 py-1.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden shrink-0 whitespace-nowrap">
+          {/* Show location chips if location was changed from default */}
+          {hasLocationFilters && (
+            appliedLocationChips.map((chip) => (
+              <span
+                key={chip.key}
+                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/40 border border-orange-200/90 dark:border-orange-800/60 text-orange-800 dark:text-orange-300 font-semibold shrink-0 shadow-2xs text-[10.5px]"
+              >
+                <MapPin className="h-2.5 w-2.5 text-orange-500 shrink-0" />
+                <span>{chip.label}</span>
+                <button
+                  type="button"
+                  onClick={() => removeLocationFilter(chip.key)}
+                  className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-orange-200/80 dark:hover:bg-orange-900/60 text-orange-600 dark:text-orange-300 transition-colors cursor-pointer"
+                  title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                  aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                >
+                  <X className="h-2.5 w-2.5 stroke-[2.5]" />
+                </button>
+              </span>
+            ))
+          )}
+
+          {/* Work View: Only shown as dismissible chip if switched away from default My View */}
+          {appliedSchemeFilter.workView === "team" && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/40 border border-blue-200/90 dark:border-blue-800/60 text-blue-800 dark:text-blue-300 font-semibold shrink-0 shadow-2xs text-[10.5px]">
+              <Users className="h-2.5 w-2.5 text-blue-500 shrink-0" />
+              <span>{lang === "ml" ? "ടീം കാഴ്ച" : "Team View"}</span>
+              <button
+                type="button"
+                onClick={resetWorkView}
+                className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-blue-200/80 dark:hover:bg-blue-900/60 text-blue-600 dark:text-blue-300 transition-colors cursor-pointer"
+                title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+              >
+                <X className="h-2.5 w-2.5 stroke-[2.5]" />
+              </button>
+            </span>
+          )}
+
+          {/* Status Filter chips */}
+          {appliedSchemeFilter.statuses.map((statusId) => {
+            const opt = statusFilterOptions.find((o) => o.id === statusId);
+            const label = opt ? (lang === "ml" ? opt.ml : opt.en) : statusId;
+            return (
+              <span
+                key={statusId}
+                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-semibold shrink-0 shadow-2xs text-[10.5px]"
+              >
+                <span>{label}</span>
+                <button
+                  type="button"
+                  onClick={() => removeStatusFilter(statusId)}
+                  className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
+                  title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                  aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                >
+                  <X className="h-2.5 w-2.5 stroke-[2.5]" />
+                </button>
+              </span>
+            );
+          })}
+
+          {/* Clear All action when any non-default filter is applied */}
+          {hasLocalFilters && (
+            <button
+              type="button"
+              onClick={clearLocalFilters}
+              className="shrink-0 text-[10.5px] font-bold text-orange-600 hover:text-orange-700 dark:text-orange-400 hover:underline px-1.5 py-0.5 transition-colors cursor-pointer"
+            >
+              {lang === "ml" ? "എല്ലാം ഒഴിവാക്കുക" : "Clear All"}
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const renderApplicationFilterSheet = () => {
     if (!isFilterSheetOpen) return null;
     const draftLocation = draftSchemeFilter.location;
@@ -1063,21 +1272,8 @@ export function MobileReportsPage({
       draftLocation.ward
     );
     const draftCount =
-      (draftSchemeFilter.workView !== "team" ? 1 : 0) +
-      (draftSchemeFilter.statuses.length > 0 ? 1 : 0) +
+      (draftSchemeFilter.workView !== "my_work" ? 1 : 0) +
       (draftHasLocation ? 1 : 0);
-    const draftStatusSummary =
-      draftSchemeFilter.statuses.length === 0
-        ? (lang === "ml" ? "എല്ലാ അപേക്ഷകളും" : "All Applications")
-        : draftSchemeFilter.statuses.length === 1
-          ? (() => {
-              const option = statusFilterOptions.find((item) => item.id === draftSchemeFilter.statuses[0]);
-              if (!option) return "1";
-              return lang === "ml" ? option.ml : option.en;
-            })()
-          : lang === "ml"
-            ? `${draftSchemeFilter.statuses.length} എണ്ണം തിരഞ്ഞെടുത്തു`
-            : `${draftSchemeFilter.statuses.length} selected`;
 
     return (
       <div
@@ -1113,12 +1309,9 @@ export function MobileReportsPage({
 
           {/* Work View */}
           <div className="space-y-1 mb-2.5">
-            <label className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 block">
-              {lang === "ml" ? "വർക്ക് വ്യൂ" : "Work View"}
-            </label>
             <div className="grid grid-cols-2 gap-0.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 p-0.5">
               {([
-                { id: "my_work" as SchemeWorkView, en: "My Work", ml: "എന്റെ ജോലി", icon: Inbox },
+                { id: "my_work" as SchemeWorkView, en: "My View", ml: "എന്റെ കാഴ്ച", icon: Inbox },
                 { id: "team" as SchemeWorkView, en: "Team", ml: "ടീം", icon: Users },
               ]).map((option) => {
                 const WorkIcon = option.icon;
@@ -1142,80 +1335,8 @@ export function MobileReportsPage({
             </div>
           </div>
 
-          {/* Application Status - multi-select dropdown */}
-          <div className="space-y-1.5 mb-3">
-            <label className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 block">
-              {lang === "ml" ? "അപേക്ഷാ നില" : "Application Status"}
-            </label>
-            <button
-              type="button"
-              onClick={() => setIsStatusMenuOpen((open) => !open)}
-              aria-expanded={isStatusMenuOpen}
-              className="flex w-full items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-2 text-left cursor-pointer"
-            >
-              <span className="truncate text-[11.5px] font-bold text-slate-800 dark:text-slate-100">
-                {draftStatusSummary}
-              </span>
-              <ChevronDown
-                className={`h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform ${
-                  isStatusMenuOpen ? "rotate-180" : ""
-                }`}
-              />
-            </button>
-            {isStatusMenuOpen && (
-              <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setDraftSchemeFilter((prev) => ({ ...prev, statuses: [] }))}
-                  className={`flex w-full items-center justify-between gap-2 px-2.5 py-2 text-[11px] font-semibold text-left transition-colors cursor-pointer ${
-                    draftSchemeFilter.statuses.length === 0
-                      ? "bg-orange-50 dark:bg-orange-950/40 text-[#EA580C] dark:text-orange-400"
-                      : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/60"
-                  }`}
-                >
-                  <span>{lang === "ml" ? "എല്ലാ അപേക്ഷകളും" : "All Applications"}</span>
-                  {draftSchemeFilter.statuses.length === 0 && (
-                    <Check className="h-3 w-3 shrink-0 stroke-[3]" />
-                  )}
-                </button>
-                {statusFilterOptions.map((option) => {
-                  const isChecked = draftSchemeFilter.statuses.includes(option.id);
-                  return (
-                    <button
-                      key={option.id}
-                      type="button"
-                      onClick={() => toggleDraftStatus(option.id)}
-                      className={`flex w-full items-center gap-2 px-2.5 py-2 text-[11px] font-semibold text-left transition-colors cursor-pointer ${
-                        isChecked
-                          ? "bg-orange-50/70 dark:bg-orange-950/30 text-slate-900 dark:text-white"
-                          : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/60"
-                      }`}
-                    >
-                      <span
-                        className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[4px] border ${
-                          isChecked
-                            ? "border-[#EA580C] bg-[#EA580C] text-white"
-                            : "border-slate-300 dark:border-slate-600"
-                        }`}
-                      >
-                        {isChecked && <Check className="h-2.5 w-2.5 stroke-[3.4]" />}
-                      </span>
-                      <span className="truncate">{lang === "ml" ? option.ml : option.en}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
           {/* Location Filter */}
           <div className="space-y-2 mb-3">
-            <div className="flex items-center gap-1.5">
-              <MapPin className="h-3.5 w-3.5 text-[#ff5500]" />
-              <span className="text-[11px] font-extrabold text-slate-800 dark:text-slate-100">
-                {lang === "ml" ? "ലൊക്കേഷൻ ഫിൽട്ടർ" : "Location Filter"}
-              </span>
-            </div>
             <div className="space-y-1.5">
               <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
                 {lang === "ml" ? "ലൊക്കേഷൻ ലെവൽ തിരഞ്ഞെടുക്കുക" : "Select Location Level"}
@@ -1224,7 +1345,7 @@ export function MobileReportsPage({
                 type="button"
                 onClick={() => setOpenLocationField((open) => (open === "level" ? null : "level"))}
                 aria-expanded={openLocationField === "level"}
-                className="flex w-full items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-left cursor-pointer"
+                className="flex w-full h-9 items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-left cursor-pointer"
               >
                 <span className="truncate text-[11px] font-bold text-slate-800 dark:text-slate-100">
                   {lang === "ml"
@@ -1282,14 +1403,22 @@ export function MobileReportsPage({
                 ? KERALA_ORG_DISTRICTS.filter((district) => district.region === selectedLocation.region)
                 : KERALA_ORG_DISTRICTS;
               const selectedDistrictMandalams = new Map<string, SchemeLocationOption>();
-              for (const district of selectedLocation.orgDistrict) {
-                for (const option of mandalamOptionsByDistrict.get(district)?.values() || []) {
+              if (selectedLocation.orgDistrict) {
+                for (const option of mandalamOptionsByDistrict.get(selectedLocation.orgDistrict)?.values() || []) {
                   if (!selectedDistrictMandalams.has(option.value)) {
                     selectedDistrictMandalams.set(option.value, option);
                   }
                 }
+              } else if (selectedLocation.region) {
+                for (const dist of orgDistrictOptions) {
+                  for (const option of mandalamOptionsByDistrict.get(dist.value)?.values() || []) {
+                    if (!selectedDistrictMandalams.has(option.value)) {
+                      selectedDistrictMandalams.set(option.value, option);
+                    }
+                  }
+                }
               }
-              const mandalamOptions = selectedLocation.orgDistrict.length
+              const mandalamOptions = (selectedLocation.orgDistrict || selectedLocation.region)
                 ? Array.from(selectedDistrictMandalams.values()).sort((a, b) => a.en.localeCompare(b.en))
                 : allMandalamOptions;
 
@@ -1329,7 +1458,7 @@ export function MobileReportsPage({
                       type="button"
                       onClick={() => setOpenLocationField((open) => (open === field ? null : field))}
                       aria-expanded={isOpen}
-                      className="flex w-full items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-left cursor-pointer"
+                      className="flex w-full h-9 items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-left cursor-pointer"
                     >
                       <span className="truncate text-[11px] font-bold text-slate-800 dark:text-slate-100">
                         {selectedLabel}
@@ -1393,43 +1522,38 @@ export function MobileReportsPage({
               if (rank === 0) return null;
 
               return (
-                <div className="space-y-1.5">
-                  <div className={`grid gap-1.5 ${rank >= 2 ? "grid-cols-2" : "grid-cols-1"}`}>
-                    {renderLocationDropdown({
-                      field: "region",
-                      label: lang === "ml" ? "മേഖല തിരഞ്ഞെടുക്കുക" : "Select Region",
-                      allLabel: lang === "ml" ? "എല്ലാ മേഖലകളും" : "All Regions",
-                      value: selectedLocation.region,
-                      options: KERALA_REGIONS,
+                <div className="space-y-2">
+                  {renderLocationDropdown({
+                    field: "region",
+                    label: lang === "ml" ? "മേഖല തിരഞ്ഞെടുക്കുക" : "Select Region",
+                    allLabel: lang === "ml" ? "എല്ലാ മേഖലകളും" : "All Regions",
+                    value: selectedLocation.region,
+                    options: KERALA_REGIONS,
+                  })}
+                  {rank >= 2 &&
+                    renderLocationDropdown({
+                      field: "orgDistrict",
+                      label: lang === "ml" ? "ഓർഗനൈസേഷൻ ജില്ല" : "Org District",
+                      allLabel: lang === "ml" ? "എല്ലാ ഓർഗ് ജില്ലകളും" : "All Org Districts",
+                      value: selectedLocation.orgDistrict,
+                      options: orgDistrictOptions,
                     })}
-                    {rank >= 2 &&
-                      renderLocationDropdown({
-                        field: "orgDistrict",
-                        label: lang === "ml" ? "ഓർഗനൈസേഷൻ ജില്ല" : "Org District",
-                        allLabel: lang === "ml" ? "എല്ലാ ഓർഗ് ജില്ലകളും" : "All Org Districts",
-                        value: selectedLocation.orgDistrict,
-                        options: orgDistrictOptions,
-                      })}
-                  </div>
-                  {rank >= 3 && (
-                    <div className={`grid gap-1.5 ${rank >= 4 ? "grid-cols-2" : "grid-cols-1"}`}>
-                      {renderLocationDropdown({
-                        field: "mandalam",
-                        label: lang === "ml" ? "അസംബ്ലി മണ്ഡലം" : "Assembly Mandalam",
-                        allLabel: lang === "ml" ? "എല്ലാ മണ്ഡലങ്ങളും" : "All Mandalams",
-                        value: selectedLocation.mandalam,
-                        options: mandalamOptions,
-                      })}
-                      {rank >= 4 &&
-                        renderLocationDropdown({
-                          field: "area",
-                          label: lang === "ml" ? "ഏരിയ" : "Area",
-                          allLabel: lang === "ml" ? "എല്ലാ ഏരിയകളും" : "All Areas",
-                          value: selectedLocation.area,
-                          options: KERALA_AREAS,
-                        })}
-                    </div>
-                  )}
+                  {rank >= 3 &&
+                    renderLocationDropdown({
+                      field: "mandalam",
+                      label: lang === "ml" ? "അസംബ്ലി മണ്ഡലം" : "Assembly Mandalam",
+                      allLabel: lang === "ml" ? "എല്ലാ മണ്ഡലങ്ങളും" : "All Mandalams",
+                      value: selectedLocation.mandalam,
+                      options: mandalamOptions,
+                    })}
+                  {rank >= 4 &&
+                    renderLocationDropdown({
+                      field: "area",
+                      label: lang === "ml" ? "ഏരിയ" : "Area",
+                      allLabel: lang === "ml" ? "എല്ലാ ഏരിയകളും" : "All Areas",
+                      value: selectedLocation.area,
+                      options: KERALA_AREAS,
+                    })}
                   {rank >= 5 &&
                     renderLocationDropdown({
                       field: "ward",
@@ -1523,7 +1647,7 @@ export function MobileReportsPage({
       st === "disbursed"
     ) {
       return {
-        label: lang === "ml" ? "ആനുകൂല്യം ലഭിച്ചു" : "Benefit Received",
+        label: lang === "ml" ? "അംഗീകരിച്ചു" : "Approved",
         icon: HandCoins,
         className: "border-emerald-200/80 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300",
       };
@@ -1553,14 +1677,14 @@ export function MobileReportsPage({
       return {
         label: lang === "ml" ? "രേഖകൾ പരിശോധിച്ചു" : "Documents Verified",
         icon: FileCheck,
-        className: "border-teal-200/80 bg-teal-50 text-teal-700 dark:border-teal-900/60 dark:bg-teal-950/40 dark:text-teal-300",
+        className: "border-purple-200/80 bg-purple-50 text-purple-700 dark:border-purple-900/60 dark:bg-purple-950/40 dark:text-purple-300",
       };
     }
 
     // 5. Applied
     if (wst === "applied" || st === "applied") {
       return {
-        label: lang === "ml" ? "അപേക്ഷിച്ചു" : "Applied",
+        label: lang === "ml" ? "സമർപ്പിച്ചു" : "Submitted",
         icon: Send,
         className: "border-sky-200/80 bg-sky-50 text-sky-700 dark:border-sky-900/60 dark:bg-sky-950/40 dark:text-sky-300",
       };
@@ -1578,7 +1702,7 @@ export function MobileReportsPage({
       st === "in_progress"
     ) {
       return {
-        label: lang === "ml" ? "പരിശോധനയിൽ" : "Under Review",
+        label: lang === "ml" ? "പരിശോധനയിൽ" : "In Review",
         icon: FileSearch,
         className: "border-orange-200/90 bg-orange-50 text-[#ff5500] dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300",
       };
@@ -1765,13 +1889,27 @@ export function MobileReportsPage({
               </button>
             </div>
           ) : (
-            <span
-              onClick={onOpenDatePicker}
-              className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0"
-              title={lang === "ml" ? "തീയതി മാറ്റുക" : "Change Period"}
-            >
-              {periodText || "October 2026"}
-            </span>
+            <div className="flex items-center gap-1.5 min-w-0 truncate">
+              <span
+                onClick={onOpenDatePicker}
+                className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap"
+                title={lang === "ml" ? "തീയതി മാറ്റുക" : "Change Period"}
+              >
+                {periodText || "October 2026"}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  const nextView = appliedSchemeFilter.workView === "my_work" ? "team" : "my_work";
+                  setAppliedSchemeFilter((prev) => ({ ...prev, workView: nextView }));
+                  setDraftSchemeFilter((prev) => ({ ...prev, workView: nextView }));
+                }}
+                className="text-[10px] font-normal text-slate-500 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                title={lang === "ml" ? "കാഴ്ച മാറ്റുക (My View / Team View)" : "Switch View (My View / Team View)"}
+              >
+                • {appliedSchemeFilter.workView === "team" ? (lang === "ml" ? "ടീം കാഴ്ച" : "Team View") : (lang === "ml" ? "എന്റെ കാഴ്ച" : "My View")}
+              </button>
+            </div>
           )}
 
           {/* Right Controls: < > 📅 🔍 ⑂ */}
@@ -1846,6 +1984,9 @@ export function MobileReportsPage({
             </button>
           </div>
         </div>
+
+        {/* Applied Filters Bar (Single Row) */}
+        {renderAppliedFiltersRow()}
 
         {/* Content Container */}
         <div className="px-3 pt-2 pb-4">
@@ -1993,9 +2134,8 @@ export function MobileReportsPage({
                           <h4 className="text-[11.5px] font-bold text-slate-900 dark:text-white truncate group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors leading-tight">
                             {lang === "ml" ? app.applicantNameMl : app.applicantNameEn}
                           </h4>
-                          <div className="flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                            <MapPin className="h-2.5 w-2.5 text-slate-400 shrink-0" />
-                            <span className="truncate">{lang === "ml" ? app.locationMl : app.locationEn}</span>
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                            {lang === "ml" ? app.locationMl : app.locationEn}
                           </div>
                         </div>
                       </div>
@@ -2231,9 +2371,8 @@ export function MobileReportsPage({
                           <h4 className="text-[12.5px] font-bold text-slate-900 dark:text-white truncate group-hover:text-[#243D95] transition-colors leading-tight">
                             {lang === "ml" ? app.applicantNameMl : app.applicantNameEn}
                           </h4>
-                          <div className="flex items-center gap-1 text-[10.5px] text-slate-500 dark:text-slate-400 mt-0.5">
-                            <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
-                            <span className="truncate">{lang === "ml" ? app.locationMl : app.locationEn}</span>
+                          <div className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                            {lang === "ml" ? app.locationMl : app.locationEn}
                           </div>
                         </div>
                       </div>
@@ -2287,14 +2426,28 @@ export function MobileReportsPage({
                 </button>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={onOpenDatePicker}
-                className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0"
-                title={lang === "ml" ? "തീയതി മാറ്റുക" : "Change Period"}
-              >
-                {periodText || "October 2026"}
-              </button>
+              <div className="flex items-center gap-1.5 min-w-0 truncate">
+                <button
+                  type="button"
+                  onClick={onOpenDatePicker}
+                  className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap"
+                  title={lang === "ml" ? "തീയതി മാറ്റുക" : "Change Period"}
+                >
+                  {periodText || "October 2026"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextView = appliedSchemeFilter.workView === "my_work" ? "team" : "my_work";
+                    setAppliedSchemeFilter((prev) => ({ ...prev, workView: nextView }));
+                    setDraftSchemeFilter((prev) => ({ ...prev, workView: nextView }));
+                  }}
+                  className="text-[10px] font-normal text-slate-500 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                  title={lang === "ml" ? "കാഴ്ച മാറ്റുക (My View / Team View)" : "Switch View (My View / Team View)"}
+                >
+                  • {appliedSchemeFilter.workView === "team" ? (lang === "ml" ? "ടീം കാഴ്ച" : "Team View") : (lang === "ml" ? "എന്റെ കാഴ്ച" : "My View")}
+                </button>
+              </div>
             )}
 
             {/* Date Controls (< > calendar), Search Icon & Filter Action */}
@@ -2456,6 +2609,8 @@ export function MobileReportsPage({
         )}
       </header>
 
+      {/* Applied Filters Bar (Single Row) */}
+      {renderAppliedFiltersRow()}
 
       {/* Main Body - Scheme-wise Applications List */}
       <div className="p-2.5 space-y-2">
