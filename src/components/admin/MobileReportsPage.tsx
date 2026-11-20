@@ -881,21 +881,32 @@ export function MobileReportsPage({
   }, [mandalamOptionsByDistrict]);
 
   const appliedLocation = appliedSchemeFilter.location;
+  const targetLevel = appliedSchemeFilter.locationLevel;
   const appliedLocationChips: Array<{ key: string; label: string }> = [];
-  if (appliedLocation.region) {
-    appliedLocationChips.push({ key: "region", label: getSchemeLocationLabel(KERALA_REGIONS, appliedLocation.region, lang) });
-  }
-  if (appliedLocation.orgDistrict) {
-    appliedLocationChips.push({ key: "orgDistrict", label: getSchemeLocationLabel(KERALA_ORG_DISTRICTS, appliedLocation.orgDistrict, lang) });
-  }
-  if (appliedLocation.mandalam) {
-    appliedLocationChips.push({ key: "mandalam", label: getSchemeLocationLabel(allMandalamOptions, appliedLocation.mandalam, lang) });
-  }
-  if (appliedLocation.area) {
-    appliedLocationChips.push({ key: "area", label: getSchemeLocationLabel(KERALA_AREAS, appliedLocation.area, lang) });
-  }
-  if (appliedLocation.ward) {
+
+  if (targetLevel === "ward" && appliedLocation.ward) {
     appliedLocationChips.push({ key: "ward", label: getSchemeLocationLabel(KERALA_WARDS, appliedLocation.ward, lang) });
+  } else if (targetLevel === "area" && appliedLocation.area) {
+    appliedLocationChips.push({ key: "area", label: getSchemeLocationLabel(KERALA_AREAS, appliedLocation.area, lang) });
+  } else if (targetLevel === "mandalam" && appliedLocation.mandalam) {
+    appliedLocationChips.push({ key: "mandalam", label: getSchemeLocationLabel(allMandalamOptions, appliedLocation.mandalam, lang) });
+  } else if (targetLevel === "org_district" && appliedLocation.orgDistrict) {
+    appliedLocationChips.push({ key: "orgDistrict", label: getSchemeLocationLabel(KERALA_ORG_DISTRICTS, appliedLocation.orgDistrict, lang) });
+  } else if (targetLevel === "region" && appliedLocation.region) {
+    appliedLocationChips.push({ key: "region", label: getSchemeLocationLabel(KERALA_REGIONS, appliedLocation.region, lang) });
+  } else {
+    // Fallback: show only the single finest selected location name
+    if (appliedLocation.ward) {
+      appliedLocationChips.push({ key: "ward", label: getSchemeLocationLabel(KERALA_WARDS, appliedLocation.ward, lang) });
+    } else if (appliedLocation.area) {
+      appliedLocationChips.push({ key: "area", label: getSchemeLocationLabel(KERALA_AREAS, appliedLocation.area, lang) });
+    } else if (appliedLocation.mandalam) {
+      appliedLocationChips.push({ key: "mandalam", label: getSchemeLocationLabel(allMandalamOptions, appliedLocation.mandalam, lang) });
+    } else if (appliedLocation.orgDistrict) {
+      appliedLocationChips.push({ key: "orgDistrict", label: getSchemeLocationLabel(KERALA_ORG_DISTRICTS, appliedLocation.orgDistrict, lang) });
+    } else if (appliedLocation.region) {
+      appliedLocationChips.push({ key: "region", label: getSchemeLocationLabel(KERALA_REGIONS, appliedLocation.region, lang) });
+    }
   }
 
   const hasLocationFilters = Boolean(
@@ -1131,26 +1142,12 @@ export function MobileReportsPage({
     { id: "rejected", en: "Rejected", ml: "നിരസിച്ചവ" },
   ];
 
-  const removeLocationFilter = (key: string) => {
-    setAppliedSchemeFilter((prev) => {
-      const nextLocation = { ...prev.location, [key]: "" };
-      if (key === "region") {
-        nextLocation.orgDistrict = "";
-        nextLocation.mandalam = "";
-        nextLocation.area = "";
-        nextLocation.ward = "";
-      } else if (key === "orgDistrict") {
-        nextLocation.mandalam = "";
-        nextLocation.area = "";
-        nextLocation.ward = "";
-      } else if (key === "mandalam") {
-        nextLocation.area = "";
-        nextLocation.ward = "";
-      } else if (key === "area") {
-        nextLocation.ward = "";
-      }
-      return { ...prev, location: nextLocation };
-    });
+  const removeLocationFilter = (_key: string) => {
+    setAppliedSchemeFilter((prev) => ({
+      ...prev,
+      locationLevel: "state",
+      location: createEmptySchemeLocation(),
+    }));
   };
 
   const removeStatusFilter = (statusId: SchemeStatusBucket) => {

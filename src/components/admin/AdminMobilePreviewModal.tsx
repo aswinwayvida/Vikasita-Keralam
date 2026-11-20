@@ -18137,149 +18137,72 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   <div className="flex flex-col bg-white dark:bg-slate-950 mb-2 shrink-0">
                     {/* Row 1: Active Filter Chips & View */}
                     <div className="flex items-center gap-1.5 overflow-x-auto px-1 py-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden shrink-0 whitespace-nowrap">
-                      {/* Location Filters Chips */}
-                      {userRole === "state_admin" ? (
-                        <>
-                          {appSelectedRegion !== "all" && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/40 border border-orange-200/90 dark:border-orange-800/60 text-orange-800 dark:text-orange-300 font-semibold shrink-0 shadow-2xs text-[10.5px]">
-                              <MapPin className="h-2.5 w-2.5 text-orange-500 shrink-0" />
-                              <span>
-                                {appSelectedRegion === "reg-north"
-                                  ? (lang === "ml" ? "നോർത്തേൺ റീജിയൺ" : "Northern Region")
-                                  : appSelectedRegion === "reg-central"
-                                  ? (lang === "ml" ? "സെൻട്രൽ റീജിയൺ" : "Central Region")
-                                  : appSelectedRegion === "reg-south"
-                                  ? (lang === "ml" ? "സതേൺ റീജിയൺ" : "Southern Region")
-                                  : appSelectedRegion}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setAppSelectedRegion("all");
-                                  setAppSelectedOrgDistrict("all");
-                                  setAppSelectedMandalam("all");
-                                  setAppSelectedArea("all");
-                                  setAppSelectedWard("all");
-                                  setAppSelectedWardIds(["all"]);
-                                  setAppFilterLocation("all");
-                                }}
-                                className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-orange-200/80 dark:hover:bg-orange-900/60 text-orange-600 dark:text-orange-300 transition-colors cursor-pointer"
-                                title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
-                                aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
-                              >
-                                <X className="h-2.5 w-2.5 stroke-[2.5]" />
-                              </button>
-                            </span>
-                          )}
+                      {/* Location Filters Chips: Show ONLY the single location name selected on the basis of Location Level */}
+                      {(() => {
+                        const resetAllLocations = () => {
+                          setAppLocationLevel("state");
+                          setAppSelectedRegion("all");
+                          setAppSelectedOrgDistrict("all");
+                          setAppSelectedMandalam("all");
+                          setAppSelectedArea("all");
+                          setAppSelectedWard("all");
+                          setAppSelectedWardIds(["all"]);
+                          setAppFilterLocation("all");
+                        };
 
-                          {appSelectedOrgDistrict !== "all" && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/40 border border-orange-200/90 dark:border-orange-800/60 text-orange-800 dark:text-orange-300 font-semibold shrink-0 shadow-2xs text-[10.5px]">
-                              <MapPin className="h-2.5 w-2.5 text-orange-500 shrink-0" />
-                              <span>{organisationalDistricts.find((od) => od.id === appSelectedOrgDistrict)?.[lang] || appSelectedOrgDistrict}</span>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setAppSelectedOrgDistrict("all");
-                                  setAppSelectedMandalam("all");
-                                  setAppSelectedArea("all");
-                                  setAppSelectedWard("all");
-                                  setAppSelectedWardIds(["all"]);
-                                  setAppFilterLocation("all");
-                                }}
-                                className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-orange-200/80 dark:hover:bg-orange-900/60 text-orange-600 dark:text-orange-300 transition-colors cursor-pointer"
-                                title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
-                                aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
-                              >
-                                <X className="h-2.5 w-2.5 stroke-[2.5]" />
-                              </button>
-                            </span>
-                          )}
+                        const isWardSelected = (appSelectedWardIds.length > 0 && !appSelectedWardIds.includes("all")) || appSelectedWard !== "all";
+                        const isAreaSelected = appSelectedArea !== "all";
+                        const isMandalamSelected = appSelectedMandalam !== "all";
+                        const isOrgDistrictSelected = appSelectedOrgDistrict !== "all";
+                        const isRegionSelected = appSelectedRegion !== "all";
 
-                          {appSelectedMandalam !== "all" && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/40 border border-orange-200/90 dark:border-orange-800/60 text-orange-800 dark:text-orange-300 font-semibold shrink-0 shadow-2xs text-[10.5px]">
-                              <MapPin className="h-2.5 w-2.5 text-orange-500 shrink-0" />
-                              <span>{constituencies.find((c) => c.id === appSelectedMandalam)?.[lang] || appSelectedMandalam}</span>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setAppSelectedMandalam("all");
-                                  setAppSelectedArea("all");
-                                  setAppSelectedWard("all");
-                                  setAppSelectedWardIds(["all"]);
-                                  setAppFilterLocation("all");
-                                }}
-                                className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-orange-200/80 dark:hover:bg-orange-900/60 text-orange-600 dark:text-orange-300 transition-colors cursor-pointer"
-                                title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
-                                aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
-                              >
-                                <X className="h-2.5 w-2.5 stroke-[2.5]" />
-                              </button>
-                            </span>
-                          )}
+                        const level = appLocationLevel;
 
-                          {appSelectedArea !== "all" && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/40 border border-orange-200/90 dark:border-orange-800/60 text-orange-800 dark:text-orange-300 font-semibold shrink-0 shadow-2xs text-[10.5px]">
-                              <MapPin className="h-2.5 w-2.5 text-orange-500 shrink-0" />
-                              <span>
-                                {appSelectedArea === "area-kazh-main"
-                                  ? (lang === "ml" ? "കഴക്കൂട്ടം" : "Kazhakkoottam Area")
-                                  : appSelectedArea === "area-kariavattom"
-                                  ? (lang === "ml" ? "കാര്യവട്ടം" : "Kariavattom Area")
-                                  : appSelectedArea === "area-technopark"
-                                  ? (lang === "ml" ? "ടെക്നോപാർക്ക്" : "Technopark Area")
-                                  : appSelectedArea === "area-chanthavila"
-                                  ? (lang === "ml" ? "ചന്തവിള" : "Chanthavila Area")
-                                  : appSelectedArea === "area-menamkulam"
-                                  ? (lang === "ml" ? "മേനംകുളം" : "Menamkulam Area")
-                                  : appSelectedArea}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setAppSelectedArea("all");
-                                  setAppSelectedWard("all");
-                                  setAppSelectedWardIds(["all"]);
-                                  setAppFilterLocation("all");
-                                }}
-                                className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-orange-200/80 dark:hover:bg-orange-900/60 text-orange-600 dark:text-orange-300 transition-colors cursor-pointer"
-                                title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
-                                aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
-                              >
-                                <X className="h-2.5 w-2.5 stroke-[2.5]" />
-                              </button>
-                            </span>
-                          )}
-                        </>
-                      ) : null}
-
-                      {/* Ward / Booth Chips for Admin & Party Worker */}
-                      {appSelectedWardIds.length > 0 && !appSelectedWardIds.includes("all") ? (
-                        appSelectedWardIds.map((wId) => {
-                          const wardMap: Record<string, { en: string; ml: string }> = {
-                            ward_1: { en: "Ward 1 — Kazhakoottam", ml: "വാർഡ് 1 — കഴക്കൂട്ടം" },
-                            ward_2: { en: "Ward 2 — Kariavattom", ml: "വാർഡ് 2 — കാര്യവട്ടം" },
-                            ward_3: { en: "Ward 3 — Chanthavila", ml: "വാർഡ് 3 — ചന്തവിള" },
-                            ward_4: { en: "Ward 4 — Pangappara", ml: "വാർഡ് 4 — പാങ്ങപ്പാറ" },
-                            ward_5: { en: "Ward 5 — Menamkulam", ml: "വാർഡ് 5 — മേനംകുളം" },
-                            booth_101: { en: "Booth 101 — Govt H.S", ml: "ബൂത്ത് 101 — ഗവ. എച്ച്.എസ്" },
-                            booth_102: { en: "Booth 102 — L.P.S Kariavattom", ml: "ബൂത്ത് 102 — എൽ.പി.എസ് കാര്യവട്ടം" },
-                          };
-                          const label = wardMap[wId]?.[lang] || wId;
+                        // 1. Ward / Booth Level
+                        if ((level === "ward" || (!level && isWardSelected)) && isWardSelected) {
+                          if (appSelectedWardIds.length > 0 && !appSelectedWardIds.includes("all")) {
+                            return appSelectedWardIds.map((wId) => {
+                              const wardMap: Record<string, { en: string; ml: string }> = {
+                                ward_1: { en: "Ward 1 — Kazhakoottam", ml: "വാർഡ് 1 — കഴക്കൂട്ടം" },
+                                ward_2: { en: "Ward 2 — Kariavattom", ml: "വാർഡ് 2 — കാര്യവട്ടം" },
+                                ward_3: { en: "Ward 3 — Chanthavila", ml: "വാർഡ് 3 — ചന്തവിള" },
+                                ward_4: { en: "Ward 4 — Pangappara", ml: "വാർഡ് 4 — പാങ്ങപ്പാറ" },
+                                ward_5: { en: "Ward 5 — Menamkulam", ml: "വാർഡ് 5 — മേനംകുളം" },
+                                booth_101: { en: "Booth 101 — Govt H.S", ml: "ബൂത്ത് 101 — ഗവ. എച്ച്.എസ്" },
+                                booth_102: { en: "Booth 102 — L.P.S Kariavattom", ml: "ബൂത്ത് 102 — എൽ.പി.എസ് കാര്യവട്ടം" },
+                              };
+                              const label = wardMap[wId]?.[lang] || wId;
+                              return (
+                                <span
+                                  key={wId}
+                                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/40 border border-orange-200/90 dark:border-orange-800/60 text-orange-800 dark:text-orange-300 font-semibold shrink-0 shadow-2xs text-[10.5px]"
+                                >
+                                  <MapPin className="h-2.5 w-2.5 text-orange-500 shrink-0" />
+                                  <span>{label}</span>
+                                  <button
+                                    type="button"
+                                    onClick={resetAllLocations}
+                                    className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-orange-200/80 dark:hover:bg-orange-900/60 text-orange-600 dark:text-orange-300 transition-colors cursor-pointer"
+                                    title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                                    aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                                  >
+                                    <X className="h-2.5 w-2.5 stroke-[2.5]" />
+                                  </button>
+                                </span>
+                              );
+                            });
+                          }
                           return (
-                            <span
-                              key={wId}
-                              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/40 border border-orange-200/90 dark:border-orange-800/60 text-orange-800 dark:text-orange-300 font-semibold shrink-0 shadow-2xs text-[10.5px]"
-                            >
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/40 border border-orange-200/90 dark:border-orange-800/60 text-orange-800 dark:text-orange-300 font-semibold shrink-0 shadow-2xs text-[10.5px]">
                               <MapPin className="h-2.5 w-2.5 text-orange-500 shrink-0" />
-                              <span>{label}</span>
+                              <span>
+                                {appSelectedWard === "ward_1"
+                                  ? (lang === "ml" ? "വാർഡ് 1 — കഴക്കൂട്ടം" : "Ward 1 — Kazhakoottam")
+                                  : appSelectedWard}
+                              </span>
                               <button
                                 type="button"
-                                onClick={() => {
-                                  const updated = appSelectedWardIds.filter((id) => id !== wId);
-                                  setAppSelectedWardIds(updated.length === 0 ? ["all"] : updated);
-                                  setAppSelectedWard(updated.length === 1 ? updated[0] : "all");
-                                  setAppFilterLocation(updated.length === 1 ? updated[0] : "all");
-                                }}
+                                onClick={resetAllLocations}
                                 className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-orange-200/80 dark:hover:bg-orange-900/60 text-orange-600 dark:text-orange-300 transition-colors cursor-pointer"
                                 title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
                                 aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
@@ -18288,30 +18211,102 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                               </button>
                             </span>
                           );
-                        })
-                      ) : appSelectedWard !== "all" ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/40 border border-orange-200/90 dark:border-orange-800/60 text-orange-800 dark:text-orange-300 font-semibold shrink-0 shadow-2xs text-[10.5px]">
-                          <MapPin className="h-2.5 w-2.5 text-orange-500 shrink-0" />
-                          <span>
-                            {appSelectedWard === "ward_1"
-                              ? (lang === "ml" ? "വാർഡ് 1 — കഴക്കൂട്ടം" : "Ward 1 — Kazhakoottam")
-                              : appSelectedWard}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setAppSelectedWard("all");
-                              setAppSelectedWardIds(["all"]);
-                              setAppFilterLocation("all");
-                            }}
-                            className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-orange-200/80 dark:hover:bg-orange-900/60 text-orange-600 dark:text-orange-300 transition-colors cursor-pointer"
-                            title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
-                            aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
-                          >
-                            <X className="h-2.5 w-2.5 stroke-[2.5]" />
-                          </button>
-                        </span>
-                      ) : null}
+                        }
+
+                        // 2. Area Level
+                        if ((level === "area" || (!level && isAreaSelected)) && isAreaSelected) {
+                          const areaLabels: Record<string, { en: string; ml: string }> = {
+                            "area-kazh-main": { en: "Kazhakkoottam Area", ml: "കഴക്കൂട്ടം" },
+                            "area-kariavattom": { en: "Kariavattom Area", ml: "കാര്യവട്ടം" },
+                            "area-technopark": { en: "Technopark Area", ml: "ടെക്നോപാർക്ക്" },
+                            "area-chanthavila": { en: "Chanthavila Area", ml: "ചന്തവിള" },
+                            "area-menamkulam": { en: "Menamkulam Area", ml: "മേനംകുളം" },
+                          };
+                          const label = areaLabels[appSelectedArea]?.[lang] || appSelectedArea;
+                          return (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/40 border border-orange-200/90 dark:border-orange-800/60 text-orange-800 dark:text-orange-300 font-semibold shrink-0 shadow-2xs text-[10.5px]">
+                              <MapPin className="h-2.5 w-2.5 text-orange-500 shrink-0" />
+                              <span>{label}</span>
+                              <button
+                                type="button"
+                                onClick={resetAllLocations}
+                                className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-orange-200/80 dark:hover:bg-orange-900/60 text-orange-600 dark:text-orange-300 transition-colors cursor-pointer"
+                                title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                                aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                              >
+                                <X className="h-2.5 w-2.5 stroke-[2.5]" />
+                              </button>
+                            </span>
+                          );
+                        }
+
+                        // 3. Mandalam Level
+                        if ((level === "mandalam" || (!level && isMandalamSelected)) && isMandalamSelected) {
+                          const label = constituencies.find((c) => c.id === appSelectedMandalam)?.[lang] || appSelectedMandalam;
+                          return (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/40 border border-orange-200/90 dark:border-orange-800/60 text-orange-800 dark:text-orange-300 font-semibold shrink-0 shadow-2xs text-[10.5px]">
+                              <MapPin className="h-2.5 w-2.5 text-orange-500 shrink-0" />
+                              <span>{label}</span>
+                              <button
+                                type="button"
+                                onClick={resetAllLocations}
+                                className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-orange-200/80 dark:hover:bg-orange-900/60 text-orange-600 dark:text-orange-300 transition-colors cursor-pointer"
+                                title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                                aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                              >
+                                <X className="h-2.5 w-2.5 stroke-[2.5]" />
+                              </button>
+                            </span>
+                          );
+                        }
+
+                        // 4. Org District Level
+                        if ((level === "org_district" || (!level && isOrgDistrictSelected)) && isOrgDistrictSelected) {
+                          const label = organisationalDistricts.find((od) => od.id === appSelectedOrgDistrict)?.[lang] || appSelectedOrgDistrict;
+                          return (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/40 border border-orange-200/90 dark:border-orange-800/60 text-orange-800 dark:text-orange-300 font-semibold shrink-0 shadow-2xs text-[10.5px]">
+                              <MapPin className="h-2.5 w-2.5 text-orange-500 shrink-0" />
+                              <span>{label}</span>
+                              <button
+                                type="button"
+                                onClick={resetAllLocations}
+                                className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-orange-200/80 dark:hover:bg-orange-900/60 text-orange-600 dark:text-orange-300 transition-colors cursor-pointer"
+                                title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                                aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                              >
+                                <X className="h-2.5 w-2.5 stroke-[2.5]" />
+                              </button>
+                            </span>
+                          );
+                        }
+
+                        // 5. Region Level
+                        if ((level === "region" || (!level && isRegionSelected)) && isRegionSelected) {
+                          const regionLabels: Record<string, { en: string; ml: string }> = {
+                            "reg-north": { en: "Northern Region", ml: "നോർത്തേൺ റീജിയൺ" },
+                            "reg-central": { en: "Central Region", ml: "സെൻട്രൽ റീജിയൺ" },
+                            "reg-south": { en: "Southern Region", ml: "സതേൺ റീജിയൺ" },
+                          };
+                          const label = regionLabels[appSelectedRegion]?.[lang] || appSelectedRegion;
+                          return (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/40 border border-orange-200/90 dark:border-orange-800/60 text-orange-800 dark:text-orange-300 font-semibold shrink-0 shadow-2xs text-[10.5px]">
+                              <MapPin className="h-2.5 w-2.5 text-orange-500 shrink-0" />
+                              <span>{label}</span>
+                              <button
+                                type="button"
+                                onClick={resetAllLocations}
+                                className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-orange-200/80 dark:hover:bg-orange-900/60 text-orange-600 dark:text-orange-300 transition-colors cursor-pointer"
+                                title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                                aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                              >
+                                <X className="h-2.5 w-2.5 stroke-[2.5]" />
+                              </button>
+                            </span>
+                          );
+                        }
+
+                        return null;
+                      })()}
 
                       {/* Work View: Only shown as chip if switched away from default My View */}
                       {partyWorkerTab === "team" && (
