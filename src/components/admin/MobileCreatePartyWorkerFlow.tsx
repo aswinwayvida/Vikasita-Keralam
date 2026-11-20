@@ -957,9 +957,12 @@ export function MobileCreatePartyWorkerFlow({
   const workerFilterWardOptions = draftWorkerFilters.localBodyId
     ? getWardsForLocalBody(draftWorkerFilters.localBodyId)
     : [];
+  const isUserView = actorRole !== "state_admin";
   const workerFilterBoothOptions = draftWorkerFilters.constituencyId
     ? boothDirectory.filter((item) => item.constituencyId === draftWorkerFilters.constituencyId)
-    : [];
+    : isUserView
+      ? boothDirectory
+      : [];
   const appliedWorkerFilterCount = countActiveWorkerFilters(appliedWorkerFilters);
 
   const locationLine = (language: Lang) => {
@@ -3244,13 +3247,13 @@ export function MobileCreatePartyWorkerFlow({
       { id: "Inactive", en: "Inactive", ml: "നിഷ്ക്രിയം" },
     ];
     const level = draftWorkerFilters.level;
-    const showDistrict = level !== "all" && level !== "state" && level !== "org_unit";
-    const showConstituency = level === "assembly_constituency" || level === "booth";
-    const showLocalBodyType = level === "local_body" || level === "ward";
-    const showLocalBody = level === "local_body" || level === "ward";
-    const showWard = level === "ward";
-    const showBooth = level === "booth";
-    const showOrgUnit = level === "org_unit";
+    const showDistrict = !isUserView && level !== "all" && level !== "state" && level !== "org_unit";
+    const showConstituency = !isUserView && (level === "assembly_constituency" || level === "booth");
+    const showLocalBodyType = !isUserView && (level === "local_body" || level === "ward");
+    const showLocalBody = !isUserView && (level === "local_body" || level === "ward");
+    const showWard = !isUserView && level === "ward";
+    const showBooth = isUserView || level === "booth";
+    const showOrgUnit = !isUserView && level === "org_unit";
     const selectedLevel = assignmentLevels.find((item) => item.id === level);
     const draftFilterCount = countActiveWorkerFilters(draftWorkerFilters);
 
@@ -3332,14 +3335,17 @@ export function MobileCreatePartyWorkerFlow({
               <PickerButton
                 label={tr("Location Level", "ലൊക്കേഷൻ ലെവൽ")}
                 value={
-                  level === "all"
-                    ? tr("All levels", "എല്ലാ ലെവലുകളും")
-                    : selectedLevel
-                      ? selectedLevel[lang]
-                      : ""
+                  isUserView
+                    ? tr("Area", "ഏരിയ")
+                    : level === "all"
+                      ? tr("All levels", "എല്ലാ ലെവലുകളും")
+                      : selectedLevel
+                        ? selectedLevel[lang]
+                        : ""
                 }
                 placeholder={tr("All levels", "എല്ലാ ലെവലുകളും")}
-                onClick={() => openPicker("worker_filter_level")}
+                disabled={isUserView}
+                onClick={isUserView ? () => {} : () => openPicker("worker_filter_level")}
               />
 
               {level === "state" ? (
@@ -3442,12 +3448,12 @@ export function MobileCreatePartyWorkerFlow({
                   value={
                     workerFilterBooth
                       ? workerFilterBooth[lang === "ml" ? "nameMl" : "nameEn"]
-                      : draftWorkerFilters.constituencyId
-                        ? tr("Any booth", "ഏത് ബൂത്തും")
+                      : isUserView || draftWorkerFilters.constituencyId
+                        ? tr("All booths", "എല്ലാ ബൂത്തുകളും")
                         : tr("Select a constituency first", "ആദ്യം മണ്ഡലം തിരഞ്ഞെടുക്കുക")
                   }
-                  placeholder={tr("Any booth", "ഏത് ബൂത്തും")}
-                  disabled={!draftWorkerFilters.constituencyId}
+                  placeholder={tr("All booths", "എല്ലാ ബൂത്തുകളും")}
+                  disabled={!isUserView && !draftWorkerFilters.constituencyId}
                   onClick={() => openPicker("worker_filter_booth")}
                 />
               ) : null}
