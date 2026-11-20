@@ -654,7 +654,6 @@ export function MobileUsersListTab({
                 {/* Location & Contact Info Row */}
                 <div className="grid grid-cols-2 gap-1.5 pt-1 border-t border-border/40 text-[9.5px]">
                   <div className="flex items-center gap-1 text-muted-foreground truncate">
-                    <MapPin className="h-3 w-3 text-orange-500 shrink-0" />
                     <span className="truncate font-medium">
                       {lang === "ml" ? user.constituencyMl : user.constituencyEn},{" "}
                       {lang === "ml" ? user.districtNameMl : user.districtNameEn}

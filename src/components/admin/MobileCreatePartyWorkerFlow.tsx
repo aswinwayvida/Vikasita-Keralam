@@ -3207,8 +3207,7 @@ export function MobileCreatePartyWorkerFlow({
                   <p className="mt-0.5 truncate text-[9px] font-bold text-[#C2410C] dark:text-orange-300">
                     {designation || tr("User", "ഉപയോക്താവ്")}
                   </p>
-                  <p className="mt-0.5 flex min-w-0 items-center gap-1 text-[8px] font-semibold text-slate-500 dark:text-slate-400">
-                    <MapPin className="h-2.5 w-2.5 shrink-0 text-[#ff5500]" />
+                  <p className="mt-0.5 flex min-w-0 items-center gap-1 text-[8.5px] font-medium text-slate-500 dark:text-slate-400">
                     <span className="truncate">
                       {area || tr("Area not recorded", "പ്രദേശം രേഖപ്പെടുത്തിയിട്ടില്ല")}
                     </span>
@@ -3277,19 +3276,18 @@ export function MobileCreatePartyWorkerFlow({
           </div>
 
           <div className="min-h-0 flex-1 space-y-3.5 overflow-y-auto px-3.5 py-3 [scrollbar-width:thin]">
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <PickerButton
-                label={tr("Assignment Level", "അസൈൻമെന്റ് ലെവൽ")}
+                label={tr("Roles", "റോൾ")}
                 value={
-                  level === "all"
-                    ? tr("All levels", "എല്ലാ ലെവലുകളും")
-                    : selectedLevel
-                      ? selectedLevel[lang]
-                      : ""
+                  draftWorkerFilters.appRole === "all" || !workerFilterAppRole
+                    ? tr("All roles", "എല്ലാ റോളുകളും")
+                    : workerFilterAppRole[lang]
                 }
-                placeholder={tr("All levels", "എല്ലാ ലെവലുകളും")}
-                onClick={() => openPicker("worker_filter_level")}
+                placeholder={tr("All roles", "എല്ലാ റോളുകളും")}
+                onClick={() => openPicker("worker_filter_app_role")}
               />
+
               <PickerButton
                 label={tr("Designation", "പദവി")}
                 value={
@@ -3301,29 +3299,39 @@ export function MobileCreatePartyWorkerFlow({
                 hint={
                   level === "all"
                     ? tr(
-                        "Designations are narrowed by assignment level.",
-                        "അസൈൻമെന്റ് ലെവൽ അനുസരിച്ച് പദവികൾ ചുരുക്കുന്നു.",
+                        "Designations are narrowed by location level.",
+                        "ലൊക്കേഷൻ ലെവൽ അനുസരിച്ച് പദവികൾ ചുരുക്കുന്നു.",
                       )
                     : undefined
                 }
                 onClick={() => openPicker("worker_filter_designation")}
               />
-            </div>
 
-            <div className="rounded-xl border border-orange-100/80 bg-[#FFFDF9] p-2.5 dark:border-slate-800 dark:bg-slate-950/40">
-              <p className="mb-1.5 text-[9px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                {tr("Assigned Location", "അസൈൻ ചെയ്ത പ്രദേശം")}
-              </p>
+              <PickerButton
+                label={tr("User Status", "ഉപയോക്തൃ നില")}
+                value={
+                  statusOptions.find((o) => o.id === draftWorkerFilters.status)?.[lang] ||
+                  tr("All status", "എല്ലാ നിലകളും")
+                }
+                placeholder={tr("All status", "എല്ലാ നിലകളും")}
+                onClick={() => openPicker("worker_filter_status")}
+              />
 
-              {level === "all" ? (
-                <div className="rounded-lg border border-dashed border-orange-200 bg-white/70 px-3 py-2.5 text-[9.5px] font-semibold text-slate-500 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-400">
-                  {tr(
-                    "Choose an assignment level to filter by area.",
-                    "പ്രദേശം അനുസരിച്ച് ഫിൽട്ടർ ചെയ്യാൻ അസൈൻമെന്റ് ലെവൽ തിരഞ്ഞെടുക്കുക.",
-                  )}
-                </div>
-              ) : level === "state" ? (
-                <div className="flex items-center gap-2 rounded-lg border border-orange-100 bg-white px-2.5 py-2 dark:border-slate-700 dark:bg-slate-900">
+              <PickerButton
+                label={tr("Location Level", "ലൊക്കേഷൻ ലെവൽ")}
+                value={
+                  level === "all"
+                    ? tr("All levels", "എല്ലാ ലെവലുകളും")
+                    : selectedLevel
+                      ? selectedLevel[lang]
+                      : ""
+                }
+                placeholder={tr("All levels", "എല്ലാ ലെവലുകളും")}
+                onClick={() => openPicker("worker_filter_level")}
+              />
+
+              {level === "state" ? (
+                <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-slate-800 dark:bg-slate-900">
                   <Landmark className="h-4 w-4 shrink-0 text-[#ff5500] dark:text-orange-300" />
                   <div className="min-w-0">
                     <p className="text-[11px] font-extrabold text-slate-900 dark:text-white">
@@ -3334,178 +3342,119 @@ export function MobileCreatePartyWorkerFlow({
                     </p>
                   </div>
                 </div>
-              ) : (
-                <div className="space-y-2">
-                  {showDistrict ? (
-                    <PickerButton
-                      label={tr("District", "ജില്ല")}
-                      value={
-                        workerFilterDistrict
-                          ? workerFilterDistrict[lang]
-                          : tr("Any district", "ഏത് ജില്ലയും")
-                      }
-                      placeholder={tr("Any district", "ഏത് ജില്ലയും")}
-                      onClick={() => openPicker("worker_filter_district")}
-                    />
-                  ) : null}
+              ) : null}
 
-                  {showConstituency ? (
-                    <PickerButton
-                      label={tr("Assembly Constituency", "നിയോജകമണ്ഡലം")}
-                      value={
-                        workerFilterConstituency
-                          ? workerFilterConstituency[lang]
-                          : draftWorkerFilters.districtId
-                            ? tr("Any constituency", "ഏത് മണ്ഡലവും")
-                            : tr("Select a district first", "ആദ്യം ജില്ല തിരഞ്ഞെടുക്കുക")
-                      }
-                      placeholder={tr("Any constituency", "ഏത് മണ്ഡലവും")}
-                      disabled={!draftWorkerFilters.districtId}
-                      onClick={() => openPicker("worker_filter_constituency")}
-                    />
-                  ) : null}
-
-                  {showLocalBodyType ? (
-                    <PickerButton
-                      label={tr("Local Body Type", "തദ്ദേശ സ്ഥാപന തരം")}
-                      value={
-                        workerFilterLocalBodyType
-                          ? workerFilterLocalBodyType[lang]
-                          : draftWorkerFilters.districtId
-                            ? tr("Any type", "ഏത് തരവും")
-                            : tr("Select a district first", "ആദ്യം ജില്ല തിരഞ്ഞെടുക്കുക")
-                      }
-                      placeholder={tr("Any type", "ഏത് തരവും")}
-                      disabled={!draftWorkerFilters.districtId}
-                      onClick={() => openPicker("worker_filter_local_body_type")}
-                    />
-                  ) : null}
-
-                  {showLocalBody ? (
-                    <PickerButton
-                      label={tr("Local Body", "തദ്ദേശ സ്ഥാപനം")}
-                      value={
-                        workerFilterLocalBody
-                          ? workerFilterLocalBody[lang]
-                          : draftWorkerFilters.districtId && draftWorkerFilters.localBodyType
-                            ? tr("Any local body", "ഏത് തദ്ദേശ സ്ഥാപനവും")
-                            : tr(
-                                "Select district and type first",
-                                "ആദ്യം ജില്ലയും തരവും തിരഞ്ഞെടുക്കുക",
-                              )
-                      }
-                      placeholder={tr("Any local body", "ഏത് തദ്ദേശ സ്ഥാപനവും")}
-                      disabled={!draftWorkerFilters.districtId || !draftWorkerFilters.localBodyType}
-                      onClick={() => openPicker("worker_filter_local_body")}
-                    />
-                  ) : null}
-
-                  {showWard ? (
-                    <PickerButton
-                      label={tr("Ward", "വാർഡ്")}
-                      value={
-                        workerFilterWard
-                          ? workerFilterWard[lang === "ml" ? "displayMl" : "displayEn"]
-                          : draftWorkerFilters.localBodyId
-                            ? tr("Any ward", "ഏത് വാർഡും")
-                            : tr("Select a local body first", "ആദ്യം തദ്ദേശ സ്ഥാപനം തിരഞ്ഞെടുക്കുക")
-                      }
-                      placeholder={tr("Any ward", "ഏത് വാർഡും")}
-                      disabled={!draftWorkerFilters.localBodyId}
-                      onClick={() => openPicker("worker_filter_ward")}
-                    />
-                  ) : null}
-
-                  {showBooth ? (
-                    <PickerButton
-                      label={tr("Booth", "ബൂത്ത്")}
-                      value={
-                        workerFilterBooth
-                          ? workerFilterBooth[lang === "ml" ? "nameMl" : "nameEn"]
-                          : draftWorkerFilters.constituencyId
-                            ? tr("Any booth", "ഏത് ബൂത്തും")
-                            : tr("Select a constituency first", "ആദ്യം മണ്ഡലം തിരഞ്ഞെടുക്കുക")
-                      }
-                      placeholder={tr("Any booth", "ഏത് ബൂത്തും")}
-                      disabled={!draftWorkerFilters.constituencyId}
-                      onClick={() => openPicker("worker_filter_booth")}
-                    />
-                  ) : null}
-
-                  {showOrgUnit ? (
-                    <PickerButton
-                      label={tr("Party Organisational Unit", "പാർട്ടി ഓർഗനൈസേഷണൽ യൂണിറ്റ്")}
-                      value={
-                        workerFilterOrgUnit
-                          ? getPartyOrgPath(workerFilterOrgUnit.id, lang)
-                          : tr("All party units", "എല്ലാ പാർട്ടി യൂണിറ്റുകളും")
-                      }
-                      placeholder={tr("All party units", "എല്ലാ പാർട്ടി യൂണിറ്റുകളും")}
-                      hint={tr(
-                        "Uses the administrator-configured party hierarchy.",
-                        "അഡ്മിനിസ്ട്രേറ്റർ ക്രമീകരിച്ച പാർട്ടി ഘടന ഉപയോഗിക്കുന്നു.",
-                      )}
-                      onClick={() => openPicker("worker_filter_org_unit")}
-                    />
-                  ) : null}
-                </div>
-              )}
-            </div>
-
-            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
-              <button
-                type="button"
-                onClick={() => setWorkerMoreFiltersOpen((prev) => !prev)}
-                className="flex w-full items-center gap-2 px-2.5 py-2.5 text-left"
-              >
-                <Layers className="h-4 w-4 shrink-0 text-[#ff5500] dark:text-orange-300" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-[11px] font-extrabold text-slate-800 dark:text-slate-100">
-                    {tr("More Filters", "കൂടുതൽ ഫിൽട്ടറുകൾ")}
-                  </p>
-                  {!workerMoreFiltersOpen && (draftWorkerFilters.appRole !== "all" || draftWorkerFilters.status !== "all") ? (
-                    <p className="mt-0.5 truncate text-[9px] font-medium text-slate-500 dark:text-slate-400">
-                      {[
-                        draftWorkerFilters.status !== "all"
-                          ? `${tr("Status", "നില")}: ${statusOptions.find((o) => o.id === draftWorkerFilters.status)?.[lang] || draftWorkerFilters.status}`
-                          : null,
-                        draftWorkerFilters.appRole !== "all"
-                          ? `${tr("App role", "ആപ്പ് റോൾ")}: ${workerFilterAppRole?.[lang]}`
-                          : null,
-                      ]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </p>
-                  ) : null}
-                </div>
-                <ChevronDown
-                  className={`h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform ${
-                    workerMoreFiltersOpen ? "rotate-180" : ""
-                  }`}
+              {showDistrict ? (
+                <PickerButton
+                  label={tr("District", "ജില്ല")}
+                  value={
+                    workerFilterDistrict
+                      ? workerFilterDistrict[lang]
+                      : tr("Any district", "ഏത് ജില്ലയും")
+                  }
+                  placeholder={tr("Any district", "ഏത് ജില്ലയും")}
+                  onClick={() => openPicker("worker_filter_district")}
                 />
-              </button>
-              {workerMoreFiltersOpen ? (
-                <div className="space-y-2 border-t border-slate-100 p-2.5 dark:border-slate-800">
-                  <PickerButton
-                    label={tr("User Status", "ഉപയോക്തൃ നില")}
-                    value={
-                      statusOptions.find((o) => o.id === draftWorkerFilters.status)?.[lang] ||
-                      tr("All", "എല്ലാം")
-                    }
-                    placeholder={tr("All", "എല്ലാം")}
-                    onClick={() => openPicker("worker_filter_status")}
-                  />
-                  <PickerButton
-                    label={tr("App Role", "ആപ്പ് റോൾ")}
-                    value={
-                      draftWorkerFilters.appRole === "all" || !workerFilterAppRole
-                        ? tr("All roles", "എല്ലാ റോളുകളും")
-                        : workerFilterAppRole[lang]
-                    }
-                    placeholder={tr("All roles", "എല്ലാ റോളുകളും")}
-                    onClick={() => openPicker("worker_filter_app_role")}
-                  />
-                </div>
+              ) : null}
+
+              {showConstituency ? (
+                <PickerButton
+                  label={tr("Assembly Constituency", "നിയോജകമണ്ഡലം")}
+                  value={
+                    workerFilterConstituency
+                      ? workerFilterConstituency[lang]
+                      : draftWorkerFilters.districtId
+                        ? tr("Any constituency", "ഏത് മണ്ഡലവും")
+                        : tr("Select a district first", "ആദ്യം ജില്ല തിരഞ്ഞെടുക്കുക")
+                  }
+                  placeholder={tr("Any constituency", "ഏത് മണ്ഡലവും")}
+                  disabled={!draftWorkerFilters.districtId}
+                  onClick={() => openPicker("worker_filter_constituency")}
+                />
+              ) : null}
+
+              {showLocalBodyType ? (
+                <PickerButton
+                  label={tr("Local Body Type", "തദ്ദേശ സ്ഥാപന തരം")}
+                  value={
+                    workerFilterLocalBodyType
+                      ? workerFilterLocalBodyType[lang]
+                      : draftWorkerFilters.districtId
+                        ? tr("Any type", "ഏത് തരവും")
+                        : tr("Select a district first", "ആദ്യം ജില്ല തിരഞ്ഞെടുക്കുക")
+                  }
+                  placeholder={tr("Any type", "ഏത് തരവും")}
+                  disabled={!draftWorkerFilters.districtId}
+                  onClick={() => openPicker("worker_filter_local_body_type")}
+                />
+              ) : null}
+
+              {showLocalBody ? (
+                <PickerButton
+                  label={tr("Local Body", "തദ്ദേശ സ്ഥാപനം")}
+                  value={
+                    workerFilterLocalBody
+                      ? workerFilterLocalBody[lang]
+                      : draftWorkerFilters.districtId && draftWorkerFilters.localBodyType
+                        ? tr("Any local body", "ഏത് തദ്ദേശ സ്ഥാപനവും")
+                        : tr(
+                            "Select district and type first",
+                            "ആദ്യം ജില്ലയും തരവും തിരഞ്ഞെടുക്കുക",
+                          )
+                  }
+                  placeholder={tr("Any local body", "ഏത് തദ്ദേശ സ്ഥാപനവും")}
+                  disabled={!draftWorkerFilters.districtId || !draftWorkerFilters.localBodyType}
+                  onClick={() => openPicker("worker_filter_local_body")}
+                />
+              ) : null}
+
+              {showWard ? (
+                <PickerButton
+                  label={tr("Ward", "വാർഡ്")}
+                  value={
+                    workerFilterWard
+                      ? workerFilterWard[lang === "ml" ? "displayMl" : "displayEn"]
+                      : draftWorkerFilters.localBodyId
+                        ? tr("Any ward", "ഏത് വാർഡും")
+                        : tr("Select a local body first", "ആദ്യം തദ്ദേശ സ്ഥാപനം തിരഞ്ഞെടുക്കുക")
+                  }
+                  placeholder={tr("Any ward", "ഏത് വാർഡും")}
+                  disabled={!draftWorkerFilters.localBodyId}
+                  onClick={() => openPicker("worker_filter_ward")}
+                />
+              ) : null}
+
+              {showBooth ? (
+                <PickerButton
+                  label={tr("Booth", "ബൂത്ത്")}
+                  value={
+                    workerFilterBooth
+                      ? workerFilterBooth[lang === "ml" ? "nameMl" : "nameEn"]
+                      : draftWorkerFilters.constituencyId
+                        ? tr("Any booth", "ഏത് ബൂത്തും")
+                        : tr("Select a constituency first", "ആദ്യം മണ്ഡലം തിരഞ്ഞെടുക്കുക")
+                  }
+                  placeholder={tr("Any booth", "ഏത് ബൂത്തും")}
+                  disabled={!draftWorkerFilters.constituencyId}
+                  onClick={() => openPicker("worker_filter_booth")}
+                />
+              ) : null}
+
+              {showOrgUnit ? (
+                <PickerButton
+                  label={tr("Party Organisational Unit", "പാർട്ടി ഓർഗനൈസേഷണൽ യൂണിറ്റ്")}
+                  value={
+                    workerFilterOrgUnit
+                      ? getPartyOrgPath(workerFilterOrgUnit.id, lang)
+                      : tr("All party units", "എല്ലാ പാർട്ടി യൂണിറ്റുകളും")
+                  }
+                  placeholder={tr("All party units", "എല്ലാ പാർട്ടി യൂണിറ്റുകളും")}
+                  hint={tr(
+                    "Uses the administrator-configured party hierarchy.",
+                    "അഡ്മിനിസ്ട്രേറ്റർ ക്രമീകരിച്ച പാർട്ടി ഘടന ഉപയോഗിക്കുന്നു.",
+                  )}
+                  onClick={() => openPicker("worker_filter_org_unit")}
+                />
               ) : null}
             </div>
           </div>
@@ -4465,30 +4414,30 @@ export function MobileCreatePartyWorkerFlow({
               </h1>
             </div>
             {phase === "list" ? (
-              <div className="relative z-20 flex shrink-0 items-center gap-0.5">
+              <div className="relative z-20 flex shrink-0 items-center gap-1">
                 <button
                   type="button"
                   onClick={() => {
                     if (workerSearchOpen) setWorkerSearch("");
                     setWorkerSearchOpen((prev) => !prev);
                   }}
-                  className={`flex h-7 w-7 items-center justify-center rounded-full transition-colors active:scale-95 ${
+                  className={`flex h-7 w-7 items-center justify-center rounded-full border transition-colors active:scale-95 shadow-2xs ${
                     workerSearchOpen
-                      ? "bg-[#FFF2E6] text-[#C2410C] dark:bg-orange-950/40 dark:text-orange-300"
-                      : "text-[#1B255A] hover:bg-orange-50 dark:text-white dark:hover:bg-slate-800"
+                      ? "bg-[#ff5500] text-white border-orange-600"
+                      : "bg-white text-[#ff5500] border-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:text-orange-400 dark:border-slate-700"
                   }`}
                   aria-label={tr("Search users", "ഉപയോക്താക്കളെ തിരയുക")}
                   aria-expanded={workerSearchOpen}
                 >
-                  <Search className="h-4 w-4 stroke-[2.2]" />
+                  <Search className={`h-3.5 w-3.5 stroke-[2.2] ${workerSearchOpen ? "text-white" : "text-[#ff5500] dark:text-orange-400"}`} />
                 </button>
                 <button
                   type="button"
                   onClick={openWorkerFilters}
-                  className={`relative flex h-7 w-7 items-center justify-center rounded-full transition-colors active:scale-95 ${
+                  className={`relative flex h-7 w-7 items-center justify-center rounded-full border transition-colors active:scale-95 shadow-2xs ${
                     appliedWorkerFilterCount > 0
-                      ? "bg-[#FFF2E6] text-[#C2410C] dark:bg-orange-950/40 dark:text-orange-300"
-                      : "text-[#1B255A] hover:bg-orange-50 dark:text-white dark:hover:bg-slate-800"
+                      ? "bg-[#ff5500] text-white border-orange-600"
+                      : "bg-white text-[#ff5500] border-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:text-orange-400 dark:border-slate-700"
                   }`}
                   aria-label={
                     appliedWorkerFilterCount > 0
@@ -4499,9 +4448,9 @@ export function MobileCreatePartyWorkerFlow({
                       : tr("Filter users", "ഉപയോക്താക്കളെ ഫിൽട്ടർ ചെയ്യുക")
                   }
                 >
-                  <Filter className="h-4 w-4 stroke-[2.2]" />
+                  <Filter className={`h-3.5 w-3.5 stroke-[2.2] ${appliedWorkerFilterCount > 0 ? "text-white" : "text-[#ff5500] dark:text-orange-400"}`} />
                   {appliedWorkerFilterCount > 0 ? (
-                    <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#ff5500] px-1 text-[9px] font-black leading-none text-white ring-2 ring-[#FFFDF9] dark:ring-slate-900">
+                    <span className="absolute -right-1 -top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-[#ff5500] px-1 text-[8px] font-black leading-none text-white ring-1.5 ring-white dark:ring-slate-900">
                       {appliedWorkerFilterCount}
                     </span>
                   ) : null}

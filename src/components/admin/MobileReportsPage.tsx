@@ -1890,13 +1890,6 @@ export function MobileReportsPage({
             </div>
           ) : (
             <div className="flex items-center gap-1.5 min-w-0 truncate">
-              <span
-                onClick={onOpenDatePicker}
-                className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap"
-                title={lang === "ml" ? "തീയതി മാറ്റുക" : "Change Period"}
-              >
-                {periodText || "October 2026"}
-              </span>
               <button
                 type="button"
                 onClick={() => {
@@ -1904,10 +1897,18 @@ export function MobileReportsPage({
                   setAppliedSchemeFilter((prev) => ({ ...prev, workView: nextView }));
                   setDraftSchemeFilter((prev) => ({ ...prev, workView: nextView }));
                 }}
-                className="text-[10px] font-normal text-slate-500 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap shrink-0"
                 title={lang === "ml" ? "കാഴ്ച മാറ്റുക (My View / Team View)" : "Switch View (My View / Team View)"}
               >
-                • {appliedSchemeFilter.workView === "team" ? (lang === "ml" ? "ടീം കാഴ്ച" : "Team View") : (lang === "ml" ? "എന്റെ കാഴ്ച" : "My View")}
+                {appliedSchemeFilter.workView === "team" ? (lang === "ml" ? "ടീം കാഴ്ച" : "Team View") : (lang === "ml" ? "എന്റെ കാഴ്ച" : "My View")}
+              </button>
+              <button
+                type="button"
+                onClick={onOpenDatePicker}
+                className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                title={lang === "ml" ? "തീയതി മാറ്റുക" : "Change Period"}
+              >
+                • {periodText || "October 2026"}
               </button>
             </div>
           )}
@@ -2429,23 +2430,23 @@ export function MobileReportsPage({
               <div className="flex items-center gap-1.5 min-w-0 truncate">
                 <button
                   type="button"
-                  onClick={onOpenDatePicker}
-                  className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap"
-                  title={lang === "ml" ? "തീയതി മാറ്റുക" : "Change Period"}
-                >
-                  {periodText || "October 2026"}
-                </button>
-                <button
-                  type="button"
                   onClick={() => {
                     const nextView = appliedSchemeFilter.workView === "my_work" ? "team" : "my_work";
                     setAppliedSchemeFilter((prev) => ({ ...prev, workView: nextView }));
                     setDraftSchemeFilter((prev) => ({ ...prev, workView: nextView }));
                   }}
-                  className="text-[10px] font-normal text-slate-500 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                  className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap shrink-0"
                   title={lang === "ml" ? "കാഴ്ച മാറ്റുക (My View / Team View)" : "Switch View (My View / Team View)"}
                 >
-                  • {appliedSchemeFilter.workView === "team" ? (lang === "ml" ? "ടീം കാഴ്ച" : "Team View") : (lang === "ml" ? "എന്റെ കാഴ്ച" : "My View")}
+                  {appliedSchemeFilter.workView === "team" ? (lang === "ml" ? "ടീം കാഴ്ച" : "Team View") : (lang === "ml" ? "എന്റെ കാഴ്ച" : "My View")}
+                </button>
+                <button
+                  type="button"
+                  onClick={onOpenDatePicker}
+                  className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                  title={lang === "ml" ? "തീയതി മാറ്റുക" : "Change Period"}
+                >
+                  • {periodText || "October 2026"}
                 </button>
               </div>
             )}
