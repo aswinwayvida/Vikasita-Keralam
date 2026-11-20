@@ -10564,6 +10564,39 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       });
       });
 
+    const noAppUsers = [
+      {
+        id: "subhashini v",
+        nameEn: "Subhashini V",
+        nameMl: "സുഭാഷിണി വി",
+        locationEn: "Thrissur Town, Thrissur",
+        locationMl: "തൃശ്ശൂർ ടൗൺ, തൃശ്ശൂർ",
+        phone: "+91 98471 23456",
+        schemeNames: [],
+        schemeStatuses: [],
+        applicationCount: 0,
+        applications: [],
+      },
+      {
+        id: "gokul das",
+        nameEn: "Gokul Das",
+        nameMl: "ഗോകുൽ ദാസ്",
+        locationEn: "Kochi, Ernakulam",
+        locationMl: "കൊച്ചി, എറണാകുളം",
+        phone: "+91 98472 34567",
+        schemeNames: [],
+        schemeStatuses: [],
+        applicationCount: 0,
+        applications: [],
+      },
+    ];
+
+    noAppUsers.forEach((u) => {
+      if (!usersByName.has(u.id)) {
+        usersByName.set(u.id, u);
+      }
+    });
+
     return Array.from(usersByName.values()).map((user) => ({
       ...user,
       statusCounts: getApplicantStatusCounts(user.applications),
