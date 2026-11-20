@@ -1696,6 +1696,7 @@ export function RoleAccessSettings({
       ),
     );
   };
+  const [isUserFilterSheetOpen, setIsUserFilterSheetOpen] = useState(false);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
@@ -2752,32 +2753,171 @@ export function RoleAccessSettings({
             </button>
 
             {activeTab === "users" && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    className={cn(
-                      "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer",
-                      activeFilterCount > 0
-                        ? "border-primary bg-primary/10 text-primary font-bold"
-                        : "border-border bg-background text-foreground hover:bg-muted",
-                    )}
-                  >
-                    <Filter className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span>{tr("Filter", "ഫിൽട്ടർ")}</span>
-                    {activeFilterCount > 0 && (
-                      <span className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                        {activeFilterCount}
-                      </span>
-                    )}
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64 p-3 text-xs space-y-3 max-h-96 overflow-y-auto">
-                  <div className="flex items-center justify-between pb-1.5 border-b border-border">
-                    <span className="font-bold text-foreground text-xs">{tr("Filter Users", "ഉപയോക്താക്കളെ ഫിൽട്ടർ ചെയ്യുക")}</span>
-                    {activeFilterCount > 0 && (
-                      <button
+              <>
+                <button
+                  type="button"
+                  onClick={() => setIsUserFilterSheetOpen(true)}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer",
+                    activeFilterCount > 0
+                      ? "border-primary bg-primary/10 text-primary font-bold"
+                      : "border-border bg-background text-foreground hover:bg-muted",
+                  )}
+                >
+                  <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span>{tr("Filter", "ഫിൽട്ടർ")}</span>
+                  {activeFilterCount > 0 && (
+                    <span className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </button>
+
+                <Sheet open={isUserFilterSheetOpen} onOpenChange={setIsUserFilterSheetOpen}>
+                  <SheetContent side="right" className="w-full sm:max-w-md flex flex-col h-full p-0 gap-0 bg-white dark:bg-card border-l border-border z-50">
+                    <SheetHeader className="p-5 border-b border-border bg-white dark:bg-card text-left space-y-1">
+                      <div className="flex items-center justify-between pr-6">
+                        <SheetTitle className="text-base font-bold flex items-center gap-2 text-foreground">
+                          <Filter className="h-5 w-5 text-primary" />
+                          <span>{tr("Filter Users", "ഉപയോക്താക്കളെ ഫിൽട്ടർ ചെയ്യുക")}</span>
+                        </SheetTitle>
+                        {activeFilterCount > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedRoles([]);
+                              setSelectedStatuses([]);
+                              setSelectedDistricts([]);
+                              setSelectedLocalBodies([]);
+                              setSelectedDesignations([]);
+                              setSelectedRegions([]);
+                              setSelectedOrgDistricts([]);
+                              setSelectedMandalams([]);
+                              setSelectedAreas([]);
+                              setSelectedBooths([]);
+                            }}
+                            className="text-xs font-semibold text-primary hover:underline cursor-pointer"
+                          >
+                            {tr("Reset All", "എല്ലാം റീസെറ്റ് ചെയ്യുക")}
+                          </button>
+                        )}
+                      </div>
+                      <SheetDescription className="text-xs text-muted-foreground">
+                        {tr(
+                          "Filter desktop users by designation, location, role, and status.",
+                          "തസ്തിക, ലൊക്കേഷൻ, റോൾ, സ്റ്റാറ്റസ് എന്നിവ അനുസരിച്ച് ഉപയോക്താക്കളെ ഫിൽട്ടർ ചെയ്യുക.",
+                        )}
+                      </SheetDescription>
+                    </SheetHeader>
+
+                    <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                      {/* Designation Filter Dropdown */}
+                      <FilterDropdownSelector
+                        title={tr("DESIGNATION", "തസ്തിക")}
+                        placeholder={tr("Select Designation", "തസ്തിക തിരഞ്ഞെടുക്കുക")}
+                        options={availableDesignations}
+                        selectedValues={selectedDesignations}
+                        onChange={setSelectedDesignations}
+                        tr={tr}
+                      />
+
+                      {/* Region Filter Dropdown */}
+                      <FilterDropdownSelector
+                        title={tr("REGION", "മേഖല")}
+                        placeholder={tr("Select Region", "മേഖല തിരഞ്ഞെടുക്കുക")}
+                        options={availableRegions}
+                        selectedValues={selectedRegions}
+                        onChange={setSelectedRegions}
+                        tr={tr}
+                      />
+
+                      {/* Org District Filter Dropdown */}
+                      <FilterDropdownSelector
+                        title={tr("ORG DISTRICT", "സംഘടനാ ജില്ല")}
+                        placeholder={tr("Select Org District", "സംഘടനാ ജില്ല തിരഞ്ഞെടുക്കുക")}
+                        options={availableOrgDistricts}
+                        selectedValues={selectedOrgDistricts}
+                        onChange={setSelectedOrgDistricts}
+                        tr={tr}
+                      />
+
+                      {/* Mandalam Filter Dropdown */}
+                      <FilterDropdownSelector
+                        title={tr("MANDALAM", "മണ്ഡലം")}
+                        placeholder={tr("Select Mandalam", "മണ്ഡലം തിരഞ്ഞെടുക്കുക")}
+                        options={availableMandalams}
+                        selectedValues={selectedMandalams}
+                        onChange={setSelectedMandalams}
+                        tr={tr}
+                      />
+
+                      {/* Area Filter Dropdown */}
+                      <FilterDropdownSelector
+                        title={tr("AREA", "ഏരിയ")}
+                        placeholder={tr("Select Area", "ഏരിയ തിരഞ്ഞെടുക്കുക")}
+                        options={availableAreas}
+                        selectedValues={selectedAreas}
+                        onChange={setSelectedAreas}
+                        tr={tr}
+                      />
+
+                      {/* Booth Filter Dropdown */}
+                      <FilterDropdownSelector
+                        title={tr("BOOTH", "ബൂത്ത്")}
+                        placeholder={tr("Select Booth", "ബൂത്ത് തിരഞ്ഞെടുക്കുക")}
+                        options={availableBooths}
+                        selectedValues={selectedBooths}
+                        onChange={setSelectedBooths}
+                        tr={tr}
+                      />
+
+                      {/* Role Filter Dropdown */}
+                      <FilterDropdownSelector
+                        title={tr("Roles", "റോളുകൾ")}
+                        placeholder={tr("Select Roles", "റോളുകൾ തിരഞ്ഞെടുക്കുക")}
+                        options={DESKTOP_ROLES}
+                        selectedValues={selectedRoles}
+                        onChange={setSelectedRoles}
+                        tr={tr}
+                      />
+
+                      {/* Status Filter Dropdown */}
+                      <FilterDropdownSelector
+                        title={tr("Status", "സ്റ്റാറ്റസ്")}
+                        placeholder={tr("Select Status", "സ്റ്റാറ്റസ് തിരഞ്ഞെടുക്കുക")}
+                        options={["Active", "Inactive"]}
+                        selectedValues={selectedStatuses.map((s) => (s === "active" ? "Active" : s === "inactive" ? "Inactive" : s))}
+                        onChange={(vals) =>
+                          setSelectedStatuses(vals.map((v) => (v === "Active" ? "active" : v === "Inactive" ? "inactive" : v)))
+                        }
+                        tr={tr}
+                      />
+
+                      {/* District Filter Dropdown */}
+                      <FilterDropdownSelector
+                        title={tr("District", "ജില്ല")}
+                        placeholder={tr("Select District", "ജില്ല തിരഞ്ഞെടുക്കുക")}
+                        options={availableDistricts}
+                        selectedValues={selectedDistricts}
+                        onChange={setSelectedDistricts}
+                        tr={tr}
+                      />
+
+                      {/* Local Body Filter Dropdown */}
+                      <FilterDropdownSelector
+                        title={tr("Local Body", "തദ്ദേശ സ്ഥാപനം")}
+                        placeholder={tr("Select Local Body", "തദ്ദേശ സ്ഥാപനം തിരഞ്ഞെടുക്കുക")}
+                        options={availableLocalBodies}
+                        selectedValues={selectedLocalBodies}
+                        onChange={setSelectedLocalBodies}
+                        tr={tr}
+                      />
+                    </div>
+
+                    <SheetFooter className="p-4 border-t border-border bg-slate-50 dark:bg-slate-900 flex items-center justify-between gap-3 shrink-0">
+                      <Button
                         type="button"
+                        variant="outline"
                         onClick={() => {
                           setSelectedRoles([]);
                           setSelectedStatuses([]);
@@ -2790,116 +2930,21 @@ export function RoleAccessSettings({
                           setSelectedAreas([]);
                           setSelectedBooths([]);
                         }}
-                        className="text-[11px] font-semibold text-primary hover:underline cursor-pointer"
+                        className="flex-1 cursor-pointer"
                       >
-                        {tr("Reset All", "എല്ലാം റീസെറ്റ് ചെയ്യുക")}
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Designation Filter Dropdown */}
-                  <FilterDropdownSelector
-                    title={tr("DESIGNATION", "തസ്തിക")}
-                    placeholder={tr("Select Designation", "തസ്തിക തിരഞ്ഞെടുക്കുക")}
-                    options={availableDesignations}
-                    selectedValues={selectedDesignations}
-                    onChange={setSelectedDesignations}
-                    tr={tr}
-                  />
-
-                  {/* Region Filter Dropdown */}
-                  <FilterDropdownSelector
-                    title={tr("REGION", "മേഖല")}
-                    placeholder={tr("Select Region", "മേഖല തിരഞ്ഞെടുക്കുക")}
-                    options={availableRegions}
-                    selectedValues={selectedRegions}
-                    onChange={setSelectedRegions}
-                    tr={tr}
-                  />
-
-                  {/* Org District Filter Dropdown */}
-                  <FilterDropdownSelector
-                    title={tr("ORG DISTRICT", "സംഘടനാ ജില്ല")}
-                    placeholder={tr("Select Org District", "സംഘടനാ ജില്ല തിരഞ്ഞെടുക്കുക")}
-                    options={availableOrgDistricts}
-                    selectedValues={selectedOrgDistricts}
-                    onChange={setSelectedOrgDistricts}
-                    tr={tr}
-                  />
-
-                  {/* Mandalam Filter Dropdown */}
-                  <FilterDropdownSelector
-                    title={tr("MANDALAM", "മണ്ഡലം")}
-                    placeholder={tr("Select Mandalam", "മണ്ഡലം തിരഞ്ഞെടുക്കുക")}
-                    options={availableMandalams}
-                    selectedValues={selectedMandalams}
-                    onChange={setSelectedMandalams}
-                    tr={tr}
-                  />
-
-                  {/* Area Filter Dropdown */}
-                  <FilterDropdownSelector
-                    title={tr("AREA", "ഏരിയ")}
-                    placeholder={tr("Select Area", "ഏരിയ തിരഞ്ഞെടുക്കുക")}
-                    options={availableAreas}
-                    selectedValues={selectedAreas}
-                    onChange={setSelectedAreas}
-                    tr={tr}
-                  />
-
-                  {/* Booth Filter Dropdown */}
-                  <FilterDropdownSelector
-                    title={tr("BOOTH", "ബൂത്ത്")}
-                    placeholder={tr("Select Booth", "ബൂത്ത് തിരഞ്ഞെടുക്കുക")}
-                    options={availableBooths}
-                    selectedValues={selectedBooths}
-                    onChange={setSelectedBooths}
-                    tr={tr}
-                  />
-
-                  {/* Role Filter Dropdown */}
-                  <FilterDropdownSelector
-                    title={tr("Roles", "റോളുകൾ")}
-                    placeholder={tr("Select Roles", "റോളുകൾ തിരഞ്ഞെടുക്കുക")}
-                    options={DESKTOP_ROLES}
-                    selectedValues={selectedRoles}
-                    onChange={setSelectedRoles}
-                    tr={tr}
-                  />
-
-                  {/* Status Filter Dropdown */}
-                  <FilterDropdownSelector
-                    title={tr("Status", "സ്റ്റാറ്റസ്")}
-                    placeholder={tr("Select Status", "സ്റ്റാറ്റസ് തിരഞ്ഞെടുക്കുക")}
-                    options={["Active", "Inactive"]}
-                    selectedValues={selectedStatuses.map((s) => (s === "active" ? "Active" : s === "inactive" ? "Inactive" : s))}
-                    onChange={(vals) =>
-                      setSelectedStatuses(vals.map((v) => (v === "Active" ? "active" : v === "Inactive" ? "inactive" : v)))
-                    }
-                    tr={tr}
-                  />
-
-                  {/* District Filter Dropdown */}
-                  <FilterDropdownSelector
-                    title={tr("District", "ജില്ല")}
-                    placeholder={tr("Select District", "ജില്ല തിരഞ്ഞെടുക്കുക")}
-                    options={availableDistricts}
-                    selectedValues={selectedDistricts}
-                    onChange={setSelectedDistricts}
-                    tr={tr}
-                  />
-
-                  {/* Local Body Filter Dropdown */}
-                  <FilterDropdownSelector
-                    title={tr("Local Body", "തദ്ദേശ സ്ഥാപനം")}
-                    placeholder={tr("Select Local Body", "തദ്ദേശ സ്ഥാപനം തിരഞ്ഞെടുക്കുക")}
-                    options={availableLocalBodies}
-                    selectedValues={selectedLocalBodies}
-                    onChange={setSelectedLocalBodies}
-                    tr={tr}
-                  />
-                </DropdownMenuContent>
-              </DropdownMenu>
+                        {tr("Reset All", "റീസെറ്റ് ചെയ്യുക")}
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => setIsUserFilterSheetOpen(false)}
+                        className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                      >
+                        {tr("Apply Filters", "ഫിൽട്ടറുകൾ പ്രയോഗിക്കുക")}
+                      </Button>
+                    </SheetFooter>
+                  </SheetContent>
+                </Sheet>
+              </>
             )}
 
             {activeTab === "roles" ? (

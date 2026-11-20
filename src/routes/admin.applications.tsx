@@ -430,6 +430,7 @@ function ApplicationsPage() {
   );
   const [draggedColumnIndex, setDraggedColumnIndex] = useState<number | null>(null);
   const [isManageColumnsOpen, setIsManageColumnsOpen] = useState(false);
+  const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
 
   const [viewMode, setViewMode] = useState<"table" | "cards">(() => {
     if (typeof window !== "undefined" && window.innerWidth >= 768) {
@@ -919,134 +920,148 @@ function ApplicationsPage() {
               <Columns3 className="h-4 w-4" />
             </button>
 
-            {/* Filter Button with Multi-Select Dropdowns & Date Range Inside Filter Popover */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer shrink-0",
-                    activeFilterCount > 0
-                      ? "border-primary bg-primary/10 text-primary font-bold"
-                      : "border-border bg-background text-foreground hover:bg-muted"
-                  )}
-                >
-                  <Filter className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span>{tr("Filter", "ഫിൽട്ടർ")}</span>
-                  {activeFilterCount > 0 && (
-                    <span className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                      {activeFilterCount}
-                    </span>
-                  )}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="w-72 p-3 text-xs space-y-3.5 max-h-[85vh] overflow-y-auto z-50 bg-white border border-border shadow-xl rounded-xl"
-              >
-                <div className="flex items-center justify-between pb-1.5 border-b border-border">
-                  <span className="font-bold text-foreground text-xs">
-                    {tr("Filter Applications", "അപേക്ഷകളെ ഫിൽട്ടർ ചെയ്യുക")}
-                  </span>
-                  {activeFilterCount > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedStatuses([]);
-                        setSelectedSchemes([]);
-                        setSelectedCategories([]);
-                        setSelectedDistricts([]);
-                        setSelectedAreas([]);
-                        setSelectedCreatedBys([]);
-                        setDateFilter("all");
-                      }}
-                      className="text-[11px] font-semibold text-primary hover:underline cursor-pointer"
-                    >
-                      {tr("Reset All", "എല്ലാം റീസെറ്റ് ചെയ്യുക")}
-                    </button>
-                  )}
-                </div>
+            {/* Filter Button with Multi-Select Dropdowns & Date Range Inside Filter Right-Sided Popup Sheet */}
+            <button
+              type="button"
+              onClick={() => setIsFilterSheetOpen(true)}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer shrink-0",
+                activeFilterCount > 0
+                  ? "border-primary bg-primary/10 text-primary font-bold"
+                  : "border-border bg-background text-foreground hover:bg-muted"
+              )}
+            >
+              <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+              <span>{tr("Filter", "ഫിൽട്ടർ")}</span>
+              {activeFilterCount > 0 && (
+                <span className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
 
-                {/* Date Range Filter */}
-                <div className="space-y-1">
-                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                    {tr("DATE RANGE", "തീയതി")}
+            <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
+              <SheetContent side="right" className="w-full sm:max-w-md flex flex-col h-full p-0 gap-0 bg-white dark:bg-card border-l border-border z-50">
+                <SheetHeader className="p-4 border-b border-border flex flex-row items-center justify-between space-y-0">
+                  <div>
+                    <SheetTitle className="text-base font-bold text-foreground flex items-center gap-2">
+                      <Filter className="h-4 w-4 text-primary" />
+                      {tr("Filter Applications", "അപേക്ഷകളെ ഫിൽട്ടർ ചെയ്യുക")}
+                    </SheetTitle>
+                    <SheetDescription className="text-xs text-muted-foreground mt-0.5">
+                      {tr("Refine application records by category, status, district, and dates.", "വിഭാഗം, സ്റ്റാറ്റസ്, ജില്ല, തീയതികൾ എന്നിവ പ്രകാരം അപേക്ഷകൾ ക്രമീകരിക്കുക.")}
+                    </SheetDescription>
                   </div>
-                  <select
-                    value={dateFilter}
-                    onChange={(e) => setDateFilter(e.target.value)}
-                    className="w-full h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer"
-                  >
-                    <option value="all">{lang === "ml" ? "എല്ലാ തീയതികളും (All Time)" : "All Time"}</option>
-                    <option value="today">{lang === "ml" ? "ഇന്ന്" : "Today"}</option>
-                    <option value="week">{lang === "ml" ? "കഴിഞ്ഞ 1 ആഴ്ച" : "Last Week"}</option>
-                    <option value="month">{lang === "ml" ? "കഴിഞ്ഞ 1 മാസം" : "Last Month"}</option>
-                    <option value="6months">{lang === "ml" ? "കഴിഞ്ഞ 6 മാസം" : "Last 6 Months"}</option>
-                    <option value="year">{lang === "ml" ? "കഴിഞ്ഞ 1 വർഷം" : "Last Year"}</option>
-                  </select>
+                </SheetHeader>
+
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
+                  {/* Date Range Filter */}
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                      {tr("DATE RANGE", "തീയതി")}
+                    </label>
+                    <select
+                      value={dateFilter}
+                      onChange={(e) => setDateFilter(e.target.value)}
+                      className="w-full h-9 rounded-lg border border-border bg-background px-3 text-xs font-semibold text-foreground focus:border-primary focus:outline-none cursor-pointer"
+                    >
+                      <option value="all">{lang === "ml" ? "എല്ലാ തീയതികളും (All Time)" : "All Time"}</option>
+                      <option value="today">{lang === "ml" ? "ഇന്ന്" : "Today"}</option>
+                      <option value="week">{lang === "ml" ? "കഴിഞ്ഞ 1 ആഴ്ച" : "Last Week"}</option>
+                      <option value="month">{lang === "ml" ? "കഴിഞ്ഞ 1 മാസം" : "Last Month"}</option>
+                      <option value="6months">{lang === "ml" ? "കഴിഞ്ഞ 6 മാസം" : "Last 6 Months"}</option>
+                      <option value="year">{lang === "ml" ? "കഴിഞ്ഞ 1 വർഷം" : "Last Year"}</option>
+                    </select>
+                  </div>
+
+                  {/* Status Filter */}
+                  <FilterDropdownSelector
+                    title={tr("STATUS", "സ്റ്റാറ്റസ്")}
+                    placeholder={tr("Select Status", "സ്റ്റാറ്റസ് തിരഞ്ഞെടുക്കുക")}
+                    options={availableStatuses}
+                    selectedValues={selectedStatuses}
+                    onChange={setSelectedStatuses}
+                    tr={tr}
+                  />
+
+                  {/* Scheme Filter */}
+                  <FilterDropdownSelector
+                    title={tr("SCHEME", "പദ്ധതി")}
+                    placeholder={tr("Select Scheme", "പദ്ധതി തിരഞ്ഞെടുക്കുക")}
+                    options={availableSchemes}
+                    selectedValues={selectedSchemes}
+                    onChange={setSelectedSchemes}
+                    tr={tr}
+                  />
+
+                  {/* Scheme Category Filter */}
+                  <FilterDropdownSelector
+                    title={tr("SCHEME CATEGORY", "പദ്ധതി വിഭാഗം")}
+                    placeholder={tr("Select Category", "വിഭാഗം തിരഞ്ഞെടുക്കുക")}
+                    options={availableCategories}
+                    selectedValues={selectedCategories}
+                    onChange={setSelectedCategories}
+                    tr={tr}
+                  />
+
+                  {/* District / Org District Filter */}
+                  <FilterDropdownSelector
+                    title={tr("ORG DISTRICT", "സംഘടനാ ജില്ല")}
+                    placeholder={tr("Select District", "ജില്ല തിരഞ്ഞെടുക്കുക")}
+                    options={availableDistricts}
+                    selectedValues={selectedDistricts}
+                    onChange={setSelectedDistricts}
+                    tr={tr}
+                  />
+
+                  {/* Area Filter */}
+                  <FilterDropdownSelector
+                    title={tr("AREA", "പ്രദേശം")}
+                    placeholder={tr("Select Area", "പ്രദേശം തിരഞ്ഞെടുക്കുക")}
+                    options={availableAreas}
+                    selectedValues={selectedAreas}
+                    onChange={setSelectedAreas}
+                    tr={tr}
+                  />
+
+                  {/* Created By Filter */}
+                  <FilterDropdownSelector
+                    title={tr("CREATED BY", "സൃഷ്ടിച്ചത്")}
+                    placeholder={tr("Select Officer", "ഉദ്യോഗസ്ഥനെ തിരഞ്ഞെടുക്കുക")}
+                    options={availableCreatedBys}
+                    selectedValues={selectedCreatedBys}
+                    onChange={setSelectedCreatedBys}
+                    tr={tr}
+                  />
                 </div>
 
-                {/* Status Filter */}
-                <FilterDropdownSelector
-                  title={tr("STATUS", "സ്റ്റാറ്റസ്")}
-                  placeholder={tr("Select Status", "സ്റ്റാറ്റസ് തിരഞ്ഞെടുക്കുക")}
-                  options={availableStatuses}
-                  selectedValues={selectedStatuses}
-                  onChange={setSelectedStatuses}
-                  tr={tr}
-                />
-
-                {/* Scheme Filter */}
-                <FilterDropdownSelector
-                  title={tr("SCHEME", "പദ്ധതി")}
-                  placeholder={tr("Select Scheme", "പദ്ധതി തിരഞ്ഞെടുക്കുക")}
-                  options={availableSchemes}
-                  selectedValues={selectedSchemes}
-                  onChange={setSelectedSchemes}
-                  tr={tr}
-                />
-
-                {/* Scheme Category Filter */}
-                <FilterDropdownSelector
-                  title={tr("SCHEME CATEGORY", "പദ്ധതി വിഭാഗം")}
-                  placeholder={tr("Select Category", "വിഭാഗം തിരഞ്ഞെടുക്കുക")}
-                  options={availableCategories}
-                  selectedValues={selectedCategories}
-                  onChange={setSelectedCategories}
-                  tr={tr}
-                />
-
-                {/* District / Org District Filter */}
-                <FilterDropdownSelector
-                  title={tr("ORG DISTRICT", "സംഘടനാ ജില്ല")}
-                  placeholder={tr("Select District", "ജില്ല തിരഞ്ഞെടുക്കുക")}
-                  options={availableDistricts}
-                  selectedValues={selectedDistricts}
-                  onChange={setSelectedDistricts}
-                  tr={tr}
-                />
-
-                {/* Area Filter */}
-                <FilterDropdownSelector
-                  title={tr("AREA", "പ്രദേശം")}
-                  placeholder={tr("Select Area", "പ്രദേശം തിരഞ്ഞെടുക്കുക")}
-                  options={availableAreas}
-                  selectedValues={selectedAreas}
-                  onChange={setSelectedAreas}
-                  tr={tr}
-                />
-
-                {/* Created By Filter */}
-                <FilterDropdownSelector
-                  title={tr("CREATED BY", "സൃഷ്ടിച്ചത്")}
-                  placeholder={tr("Select Officer", "ഉദ്യോഗസ്ഥനെ തിരഞ്ഞെടുക്കുക")}
-                  options={availableCreatedBys}
-                  selectedValues={selectedCreatedBys}
-                  onChange={setSelectedCreatedBys}
-                  tr={tr}
-                />
-              </DropdownMenuContent>
-            </DropdownMenu>
+                <SheetFooter className="p-4 border-t border-border flex items-center justify-between gap-3 bg-muted/20">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedStatuses([]);
+                      setSelectedSchemes([]);
+                      setSelectedCategories([]);
+                      setSelectedDistricts([]);
+                      setSelectedAreas([]);
+                      setSelectedCreatedBys([]);
+                      setDateFilter("all");
+                    }}
+                    className="w-1/2 h-9 text-xs font-semibold cursor-pointer"
+                  >
+                    {tr("Reset All", "എല്ലാം റീസെറ്റ് ചെയ്യുക")}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => setIsFilterSheetOpen(false)}
+                    className="w-1/2 h-9 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                  >
+                    {tr("Apply Filters", "ഫിൽട്ടറുകൾ പ്രയോഗിക്കുക")}
+                  </Button>
+                </SheetFooter>
+              </SheetContent>
+            </Sheet>
 
             {/* New Application Button + 3-Dot Menu (Import / Export) */}
             <div className="flex items-center gap-1 shrink-0">

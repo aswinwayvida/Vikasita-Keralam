@@ -427,6 +427,7 @@ function BeneficiariesPage() {
 
   const tr = (en: string, ml: string) => (lang === "ml" ? ml : en);
 
+  const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
   const [selectedMandalams, setSelectedMandalams] = useState<string[]>([]);
@@ -637,49 +638,58 @@ function BeneficiariesPage() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Filter Dropdown Popover */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className={cn(
-                    "flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors shrink-0 cursor-pointer",
-                    activeFilterCount > 0
-                      ? "border-amber-400 bg-[#FFF8F0] text-amber-950 font-bold"
-                      : "border-border bg-background text-foreground hover:bg-muted"
-                  )}
-                >
-                  <Filter className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span>{lang === "ml" ? "ഫിൽട്ടറുകൾ" : "Filter"}</span>
-                  {activeFilterCount > 0 && (
-                    <span className="ml-1 rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold text-white leading-none">
-                      {activeFilterCount}
-                    </span>
-                  )}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-72 p-3 space-y-3 shadow-xl border-border">
-                <div className="flex items-center justify-between border-b border-border pb-2">
-                  <h3 className="text-xs font-bold text-foreground">
-                    {lang === "ml" ? "അപേക്ഷകരെ ഫിൽട്ടർ ചെയ്യുക" : "Filter Applicants"}
-                  </h3>
-                  {activeFilterCount > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedStatuses([]);
-                        setSelectedDistricts([]);
-                        setSelectedMandalams([]);
-                        setSelectedCreatedBys([]);
-                      }}
-                      className="text-[11px] font-bold text-amber-600 hover:text-amber-700 hover:underline cursor-pointer"
-                    >
-                      {lang === "ml" ? "എല്ലാം റീസെറ്റ് ചെയ്യുക" : "Reset All"}
-                    </button>
-                  )}
-                </div>
+            {/* Filter Right-Sided Sheet Popup */}
+            <button
+              type="button"
+              onClick={() => setIsFilterSheetOpen(true)}
+              className={cn(
+                "flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors shrink-0 cursor-pointer",
+                activeFilterCount > 0
+                  ? "border-amber-400 bg-[#FFF8F0] text-amber-950 font-bold"
+                  : "border-border bg-background text-foreground hover:bg-muted"
+              )}
+            >
+              <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+              <span>{lang === "ml" ? "ഫിൽട്ടറുകൾ" : "Filter"}</span>
+              {activeFilterCount > 0 && (
+                <span className="ml-1 rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold text-white leading-none">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
 
-                <div className="space-y-2.5">
+            <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
+              <SheetContent side="right" className="w-full sm:max-w-md flex flex-col h-full p-0 gap-0 bg-white dark:bg-card border-l border-border z-50">
+                <SheetHeader className="p-5 border-b border-border bg-white dark:bg-card text-left space-y-1">
+                  <div className="flex items-center justify-between pr-6">
+                    <SheetTitle className="text-base font-bold flex items-center gap-2 text-foreground">
+                      <Filter className="h-5 w-5 text-primary" />
+                      <span>{lang === "ml" ? "അപേക്ഷകരെ ഫിൽട്ടർ ചെയ്യുക" : "Filter Applicants"}</span>
+                    </SheetTitle>
+                    {activeFilterCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedStatuses([]);
+                          setSelectedDistricts([]);
+                          setSelectedMandalams([]);
+                          setSelectedCreatedBys([]);
+                        }}
+                        className="text-xs font-semibold text-primary hover:underline cursor-pointer"
+                      >
+                        {lang === "ml" ? "എല്ലാം റീസെറ്റ് ചെയ്യുക" : "Reset All"}
+                      </button>
+                    )}
+                  </div>
+                  <SheetDescription className="text-xs text-muted-foreground">
+                    {tr(
+                      "Filter applicant profiles by district, mandalam, creator, and status.",
+                      "ജില്ല, മണ്ഡലം, സൃഷ്ടിച്ചത്, സ്റ്റാറ്റസ് എന്നിവ അനുസരിച്ച് അപേക്ഷകരെ ഫിൽട്ടർ ചെയ്യുക.",
+                    )}
+                  </SheetDescription>
+                </SheetHeader>
+
+                <div className="flex-1 overflow-y-auto p-5 space-y-4">
                   <FilterDropdownSelector
                     title={lang === "ml" ? "ജില്ല" : "DISTRICT"}
                     placeholder={tr("Select District", "ജില്ല തിരഞ്ഞെടുക്കുക")}
@@ -713,8 +723,31 @@ function BeneficiariesPage() {
                     tr={tr}
                   />
                 </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
+
+                <SheetFooter className="p-4 border-t border-border bg-slate-50 dark:bg-slate-900 flex items-center justify-between gap-3 shrink-0">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedStatuses([]);
+                      setSelectedDistricts([]);
+                      setSelectedMandalams([]);
+                      setSelectedCreatedBys([]);
+                    }}
+                    className="flex-1 cursor-pointer"
+                  >
+                    {lang === "ml" ? "റീസെറ്റ് ചെയ്യുക" : "Reset All"}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => setIsFilterSheetOpen(false)}
+                    className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                  >
+                    {lang === "ml" ? "ഫിൽട്ടറുകൾ പ്രയോഗിക്കുക" : "Apply Filters"}
+                  </Button>
+                </SheetFooter>
+              </SheetContent>
+            </Sheet>
 
             {/* Create New Applicant Button */}
             <Button

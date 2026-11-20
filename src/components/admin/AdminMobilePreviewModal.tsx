@@ -10408,7 +10408,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     const wst = (app.workflowStatus || "").toLowerCase();
     const st = (app.status || "").toLowerCase();
 
-    // 1. Approved / Beneficiary / Disbursed / Assisted
+    // 1. Approved / Beneficiary / Disbursed / Assisted (#00875A Emerald Green)
     if (
       wst === "beneficiary" ||
       wst === "disbursed" ||
@@ -10423,12 +10423,12 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         key: "approved",
         labelEn: "Approved",
         labelMl: "അംഗീകരിച്ചു",
-        className: "border-emerald-200/80 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300",
+        className: "border-[#00875A] bg-[#00875A] text-white",
         order: 1,
       };
     }
 
-    // 2. In Review / Under Review / In Progress
+    // 2. In Review / Under Review / In Progress (Pastel Yellow with white count text)
     if (
       wst === "review" ||
       wst === "in_review" ||
@@ -10443,12 +10443,12 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         key: "in_review",
         labelEn: "In Review",
         labelMl: "പരിശോധനയിൽ",
-        className: "border-orange-200/90 bg-orange-50 text-[#ff5500] dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300",
+        className: "border-[#f59e0b] bg-[#f59e0b] text-white",
         order: 2,
       };
     }
 
-    // 3. Documents Verified
+    // 3. Documents Verified (#243D95 Brand Blue)
     if (
       wst === "document_verification_completed" ||
       wst === "document_verified" ||
@@ -10459,39 +10459,39 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         key: "document_verified",
         labelEn: "Documents Verified",
         labelMl: "രേഖകൾ പരിശോധിച്ചു",
-        className: "border-purple-200/80 bg-purple-50 text-purple-700 dark:border-purple-900/60 dark:bg-purple-950/40 dark:text-purple-300",
+        className: "border-[#243D95] bg-[#243D95] text-white",
         order: 3,
       };
     }
 
-    // 4. Submitted / Applied
-    if (wst === "applied" || st === "applied") {
+    // 4. Submitted / Applied / Pending (Brand Orange #ff5500 with white count text)
+    if (wst === "applied" || st === "applied" || wst === "pending" || st === "pending") {
       return {
         key: "applied",
-        labelEn: "Submitted",
-        labelMl: "സമർപ്പിച്ചു",
-        className: "border-sky-200/80 bg-sky-50 text-sky-700 dark:border-sky-900/60 dark:bg-sky-950/40 dark:text-sky-300",
+        labelEn: "Pending",
+        labelMl: "തീർപ്പുകൽപ്പിക്കാത്തവ",
+        className: "border-[#ff5500] bg-[#ff5500] text-white",
         order: 4,
       };
     }
 
-    // 5. Rejected
+    // 5. Rejected (#FF2C2C Red with white count text)
     if (wst === "rejected" || st === "rejected") {
       return {
         key: "rejected",
         labelEn: "Rejected",
         labelMl: "നിരസിച്ചു",
-        className: "border-rose-200/80 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300",
+        className: "border-[#FF2C2C] bg-[#FF2C2C] text-white",
         order: 6,
       };
     }
 
-    // 6. Received / Application Received / Pending (default)
+    // 6. Received / Application Received / Default (Grey with white count text)
     return {
-      key: "pending",
-      labelEn: "Pending / Received",
+      key: "received",
+      labelEn: "Received",
       labelMl: "ലഭിച്ചു",
-      className: "border-slate-200/90 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-200",
+      className: "border-[#64748B] bg-[#64748B] text-white",
       order: 5,
     };
   };
