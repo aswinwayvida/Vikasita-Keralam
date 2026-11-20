@@ -16312,90 +16312,25 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         {/* Header matching Schemes List Header style */}
                         <div className="w-full bg-white dark:bg-slate-950 border-b border-slate-200/60 dark:border-slate-800/60 shadow-2xs px-3.5 py-2 transition-all">
                           <div className="relative flex h-8 items-center justify-between w-full">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setMobileSubPage("none");
-                                setUserSearchQuery("");
-                                setIsApplicantSearchExpanded(false);
-                              }}
-                              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FFF7EC] text-[#1b255a] hover:bg-orange-100 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 transition-colors cursor-pointer shadow-2xs z-10 border border-orange-100/80 dark:border-slate-700"
-                              title={lang === "ml" ? "തിരികെ പോവുക" : "Go back"}
-                            >
-                              <ArrowLeft className="h-3.5 w-3.5 stroke-[2.2]" />
-                            </button>
-
-                            <h3 className="absolute inset-x-0 text-center text-[13.5px] font-extrabold text-[#0f172a] dark:text-slate-100 pointer-events-none px-16 truncate">
-                              {lang === "ml"
-                                ? `അപേക്ഷക ലിസ്റ്റ് (${filteredMobileApplicationUsers.length})`
-                                : `Applicants List (${filteredMobileApplicationUsers.length})`}
-                            </h3>
-
-                            <div className="flex items-center gap-1.5 z-10 shrink-0">
-                              <button
-                                type="button"
-                                onClick={() => setIsApplicantSearchExpanded(!isApplicantSearchExpanded)}
-                                className={`flex h-7 w-7 items-center justify-center rounded-full transition-colors cursor-pointer shadow-2xs border ${
-                                  isApplicantSearchExpanded
-                                    ? "bg-orange-500 text-white border-orange-500"
-                                    : "bg-white text-[#ff5500] hover:bg-slate-50 border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-orange-400"
-                                }`}
-                                title={lang === "ml" ? "തിരയുക" : "Search"}
-                              >
-                                <Search className="h-3.5 w-3.5 stroke-[2.2]" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setApplicantPendingWorkView(applicantWorkView);
-                                  setApplicantPendingLocationLevel(applicantLocationLevel);
-                                  setApplicantPendingRegion(applicantRegionFilter);
-                                  setApplicantPendingOrgDistrict(applicantOrgDistrictFilter);
-                                  setApplicantPendingMandalam(applicantMandalamFilter);
-                                  setApplicantPendingArea(applicantAreaFilter);
-                                  setApplicantPendingWard(applicantWardFilter);
-                                  setApplicantPendingDistrict(applicantDistrictFilter);
-                                  setApplicantPendingScheme(applicantSchemeFilter);
-                                  setApplicantPendingSchemeStatus(applicantSchemeStatusFilter);
-                                  setIsApplicantFilterOpen(true);
-                                }}
-                                className="relative flex h-7 w-7 items-center justify-center rounded-full bg-white text-[#ff5500] hover:bg-slate-50 dark:bg-slate-800 dark:text-orange-400 border border-slate-200 dark:border-slate-700 cursor-pointer shadow-2xs"
-                                title={lang === "ml" ? "ഫിൽട്ടർ ചെയ്യുക" : "Filter"}
-                              >
-                                <Filter className="h-3.5 w-3.5 stroke-[2.2]" />
-                                {applicantActiveFilterCount > 0 && (
-                                  <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[#ff5500] text-[9px] font-extrabold text-white shadow-xs">
-                                    {applicantActiveFilterCount}
-                                  </span>
-                                )}
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Date Filter & Period Control Bar (refer Attachment 2) */}
-                        <div className="px-3.5 pt-1 pb-1.5 border-b border-border/80 bg-white dark:bg-slate-950">
-                          <div className="flex items-center justify-between gap-1">
-                            {/* Left Side: Formatted Period Display or Search Bar */}
                             {isApplicantSearchExpanded ? (
-                              <div className="relative flex-1 min-w-0 pr-1 flex items-center gap-1.5">
-                                <div className="relative flex-1">
-                                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400 pointer-events-none" />
+                              <div className="relative flex-1 flex items-center gap-2 w-full animate-in fade-in duration-150">
+                                <div className="relative flex-1 flex items-center">
+                                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
                                   <input
                                     type="text"
                                     autoFocus
                                     value={userSearchQuery}
                                     onChange={(e) => setUserSearchQuery(e.target.value)}
                                     placeholder={lang === "ml" ? "പേര്, സ്ഥലം, ഫോൺ സെർച്ച് ചെയ്യുക..." : "Search name, location, phone..."}
-                                    className="w-full h-6 pl-7 pr-6 text-[11px] font-semibold rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs"
+                                    className="w-full h-7.5 pl-8 pr-7 text-xs font-semibold rounded-full border border-orange-200 dark:border-slate-700 bg-[#FFF7EC] dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs"
                                   />
                                   {userSearchQuery && (
                                     <button
                                       type="button"
                                       onClick={() => setUserSearchQuery("")}
-                                      className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 cursor-pointer"
+                                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 cursor-pointer"
                                     >
-                                      <X className="h-3 w-3" />
+                                      <X className="h-3.5 w-3.5" />
                                     </button>
                                   )}
                                 </div>
@@ -16411,65 +16346,124 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 </button>
                               </div>
                             ) : (
-                              <div className="flex items-center gap-1.5 min-w-0 truncate">
+                              <>
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    const next = applicantWorkView === "my_work" ? "team" : "my_work";
-                                    setApplicantWorkView(next);
-                                    setPartyWorkerTab(next);
+                                    setMobileSubPage("none");
+                                    setUserSearchQuery("");
+                                    setIsApplicantSearchExpanded(false);
                                   }}
-                                  className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap shrink-0"
-                                  title={lang === "ml" ? "കാഴ്ച മാറ്റുക (My View / Team View)" : "Switch View (My View / Team View)"}
+                                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FFF7EC] text-[#1b255a] hover:bg-orange-100 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 transition-colors cursor-pointer shadow-2xs z-10 border border-orange-100/80 dark:border-slate-700"
+                                  title={lang === "ml" ? "തിരികെ പോവുക" : "Go back"}
                                 >
-                                  {applicantWorkView === "team" ? (lang === "ml" ? "ടീം കാഴ്ച" : "Team View") : (lang === "ml" ? "എന്റെ കാഴ്ച" : "My View")}
+                                  <ArrowLeft className="h-3.5 w-3.5 stroke-[2.2]" />
                                 </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setIsDatePickerOpen(true)}
-                                  className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap shrink-0"
-                                  title={lang === "ml" ? "തീയതി മാറ്റുക" : "Change Period"}
-                                >
-                                  • {getFormattedPeriodDisplay()}
-                                </button>
-                              </div>
+
+                                <h3 className="absolute inset-x-0 text-center text-[13.5px] font-extrabold text-[#0f172a] dark:text-slate-100 pointer-events-none px-16 truncate">
+                                  {lang === "ml"
+                                    ? `അപേക്ഷക ലിസ്റ്റ് (${filteredMobileApplicationUsers.length})`
+                                    : `Applicants List (${filteredMobileApplicationUsers.length})`}
+                                </h3>
+
+                                <div className="flex items-center gap-1.5 z-10 shrink-0">
+                                  <button
+                                    type="button"
+                                    onClick={() => setIsApplicantSearchExpanded(true)}
+                                    className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-[#ff5500] hover:bg-slate-50 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-orange-400 transition-colors cursor-pointer shadow-2xs"
+                                    title={lang === "ml" ? "തിരയുക" : "Search"}
+                                  >
+                                    <Search className="h-3.5 w-3.5 stroke-[2.2]" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setApplicantPendingWorkView(applicantWorkView);
+                                      setApplicantPendingLocationLevel(applicantLocationLevel);
+                                      setApplicantPendingRegion(applicantRegionFilter);
+                                      setApplicantPendingOrgDistrict(applicantOrgDistrictFilter);
+                                      setApplicantPendingMandalam(applicantMandalamFilter);
+                                      setApplicantPendingArea(applicantAreaFilter);
+                                      setApplicantPendingWard(applicantWardFilter);
+                                      setApplicantPendingDistrict(applicantDistrictFilter);
+                                      setApplicantPendingScheme(applicantSchemeFilter);
+                                      setApplicantPendingSchemeStatus(applicantSchemeStatusFilter);
+                                      setIsApplicantFilterOpen(true);
+                                    }}
+                                    className="relative flex h-7 w-7 items-center justify-center rounded-full bg-white text-[#ff5500] hover:bg-slate-50 dark:bg-slate-800 dark:text-orange-400 border border-slate-200 dark:border-slate-700 cursor-pointer shadow-2xs"
+                                    title={lang === "ml" ? "ഫിൽട്ടർ ചെയ്യുക" : "Filter"}
+                                  >
+                                    <Filter className="h-3.5 w-3.5 stroke-[2.2]" />
+                                    {applicantActiveFilterCount > 0 && (
+                                      <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[#ff5500] text-[9px] font-extrabold text-white shadow-xs">
+                                        {applicantActiveFilterCount}
+                                      </span>
+                                    )}
+                                  </button>
+                                </div>
+                              </>
                             )}
+                          </div>
+                        </div>
+
+                        {/* Date Filter & Period Control Bar (refer Attachment 2) */}
+                        <div className="px-3.5 pt-1 pb-1.5 border-b border-border/80 bg-white dark:bg-slate-950">
+                          <div className="flex items-center justify-between gap-1">
+                            {/* Left Side: Formatted Period Display */}
+                            <div className="flex items-center gap-1.5 min-w-0 truncate">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const next = applicantWorkView === "my_work" ? "team" : "my_work";
+                                  setApplicantWorkView(next);
+                                  setPartyWorkerTab(next);
+                                }}
+                                className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                                title={lang === "ml" ? "കാഴ്ച മാറ്റുക (My View / Team View)" : "Switch View (My View / Team View)"}
+                              >
+                                {applicantWorkView === "team" ? (lang === "ml" ? "ടീം കാഴ്ച" : "Team View") : (lang === "ml" ? "എന്റെ കാഴ്ച" : "My View")}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setIsDatePickerOpen(true)}
+                                className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                                title={lang === "ml" ? "തീയതി മാറ്റുക" : "Change Period"}
+                              >
+                                • {getFormattedPeriodDisplay()}
+                              </button>
+                            </div>
 
                             {/* Date Controls (< > calendar) */}
                             <div className="flex items-center gap-1.5 min-w-0 shrink-0">
-                              {!isApplicantSearchExpanded && (
-                                <>
-                                  {/* Previous Period */}
-                                  <button
-                                    type="button"
-                                    onClick={() => handleStepPeriod(-1)}
-                                    className="flex h-6 w-6 items-center justify-center rounded-full border border-orange-100 dark:border-slate-800 bg-orange-50/50 dark:bg-slate-900 text-orange-600 hover:bg-orange-100 dark:hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer shrink-0"
-                                    title={lang === "ml" ? "മുമ്പത്തെ കാലയളവ്" : "Previous Period"}
-                                  >
-                                    <ChevronLeft className="h-3 w-3 stroke-[2.5]" />
-                                  </button>
+                              {/* Previous Period */}
+                              <button
+                                type="button"
+                                onClick={() => handleStepPeriod(-1)}
+                                className="flex h-6 w-6 items-center justify-center rounded-full border border-orange-100 dark:border-slate-800 bg-orange-50/50 dark:bg-slate-900 text-orange-600 hover:bg-orange-100 dark:hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer shrink-0"
+                                title={lang === "ml" ? "മുമ്പത്തെ കാലയളവ്" : "Previous Period"}
+                              >
+                                <ChevronLeft className="h-3 w-3 stroke-[2.5]" />
+                              </button>
 
-                                  {/* Next Period */}
-                                  <button
-                                    type="button"
-                                    onClick={() => handleStepPeriod(1)}
-                                    className="flex h-6 w-6 items-center justify-center rounded-full border border-orange-100 dark:border-slate-800 bg-orange-50/50 dark:bg-slate-900 text-orange-600 hover:bg-orange-100 dark:hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer shrink-0"
-                                    title={lang === "ml" ? "അടുത്ത കാലയളവ്" : "Next Period"}
-                                  >
-                                    <ChevronRight className="h-3 w-3 stroke-[2.5]" />
-                                  </button>
+                              {/* Next Period */}
+                              <button
+                                type="button"
+                                onClick={() => handleStepPeriod(1)}
+                                className="flex h-6 w-6 items-center justify-center rounded-full border border-orange-100 dark:border-slate-800 bg-orange-50/50 dark:bg-slate-900 text-orange-600 hover:bg-orange-100 dark:hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer shrink-0"
+                                title={lang === "ml" ? "അടുത്ത കാലയളവ്" : "Next Period"}
+                              >
+                                <ChevronRight className="h-3 w-3 stroke-[2.5]" />
+                              </button>
 
-                                  {/* Date Picker Button */}
-                                  <button
-                                    type="button"
-                                    onClick={() => setIsDatePickerOpen(true)}
-                                    className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[#ff5500] hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-2xs cursor-pointer shrink-0"
-                                    title={lang === "ml" ? "തീയതി തിരഞ്ഞെടുക്കുക" : "Select Date / Period"}
-                                  >
-                                    <Calendar className="h-3.5 w-3.5 stroke-[2.2]" />
-                                  </button>
-                                </>
-                              )}
+                              {/* Date Picker Button */}
+                              <button
+                                type="button"
+                                onClick={() => setIsDatePickerOpen(true)}
+                                className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[#ff5500] hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-2xs cursor-pointer shrink-0"
+                                title={lang === "ml" ? "തീയതി തിരഞ്ഞെടുക്കുക" : "Select Date / Period"}
+                              >
+                                <Calendar className="h-3.5 w-3.5 stroke-[2.2]" />
+                              </button>
                             </div>
                           </div>
                         </div>
