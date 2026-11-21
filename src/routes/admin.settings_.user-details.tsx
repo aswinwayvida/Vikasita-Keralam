@@ -2,36 +2,13 @@ import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
-  Check,
-  ChevronDown,
-  ClipboardList,
-  FileText,
-  Headset,
   Pencil,
-  ShieldCheck,
-  UserRound,
-  Users,
-  Users2,
   Phone,
   Calendar,
   Building2,
-  MoreVertical,
-  Power,
-  Trash2,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  loadManagedRoles,
-  type ManagedRole,
-} from "@/data/role-management";
 import {
   loadManagedDesktopUsers,
   getUserAvatarUrl,
@@ -58,97 +35,6 @@ export const Route = createFileRoute("/admin/settings_/user-details")({
   }),
   component: UserDetailsPage,
 });
-
-interface MatrixColumn {
-  id: string;
-  labelEn: string;
-  labelMl: string;
-}
-
-interface MatrixRow {
-  moduleId: string;
-  labelEn: string;
-  labelMl: string;
-  icon: typeof FileText;
-  columns: MatrixColumn[];
-}
-
-const primaryMatrixColumns: MatrixColumn[] = [
-  { id: "create", labelEn: "CREATE", labelMl: "സൃഷ്ടിക്കുക" },
-  { id: "view", labelEn: "VIEW", labelMl: "കാണുക" },
-  { id: "edit", labelEn: "EDIT", labelMl: "തിരുത്തുക" },
-  { id: "delete", labelEn: "DELETE", labelMl: "നീക്കം ചെയ്യുക" },
-];
-
-const primaryMatrixRows: MatrixRow[] = [
-  {
-    moduleId: "applicant_profile",
-    labelEn: "Applicant Profile",
-    labelMl: "അപേക്ഷകന്റെ പ്രൊഫൈൽ",
-    icon: UserRound,
-    columns: primaryMatrixColumns,
-  },
-  {
-    moduleId: "applications",
-    labelEn: "Applications",
-    labelMl: "അപേക്ഷകൾ",
-    icon: ClipboardList,
-    columns: primaryMatrixColumns,
-  },
-  {
-    moduleId: "schemes",
-    labelEn: "Schemes",
-    labelMl: "പദ്ധതികൾ",
-    icon: FileText,
-    columns: primaryMatrixColumns,
-  },
-  {
-    moduleId: "roles",
-    labelEn: "Role & Access",
-    labelMl: "റോളും ആക്‌സസും",
-    icon: ShieldCheck,
-    columns: primaryMatrixColumns,
-  },
-  {
-    moduleId: "designations",
-    labelEn: "Designation",
-    labelMl: "തസ്തിക",
-    icon: Users2,
-    columns: primaryMatrixColumns,
-  },
-  {
-    moduleId: "party_workers",
-    labelEn: "Users",
-    labelMl: "ഉപയോക്താക്കൾ",
-    icon: Users,
-    columns: primaryMatrixColumns,
-  },
-];
-
-const secondaryMatrixColumns: MatrixColumn[] = [
-  { id: "view", labelEn: "VIEW", labelMl: "കാണുക" },
-  { id: "assign", labelEn: "ASSIGN", labelMl: "അസൈൻ ചെയ്യുക" },
-  { id: "respond", labelEn: "RESPOND", labelMl: "മറുപടി നൽകുക" },
-];
-
-const secondaryMatrixRows: MatrixRow[] = [
-  {
-    moduleId: "help_desk",
-    labelEn: "Request",
-    labelMl: "അഭ്യർത്ഥന",
-    icon: Headset,
-    columns: secondaryMatrixColumns,
-  },
-  {
-    moduleId: "team",
-    labelEn: "Team",
-    labelMl: "ടീം",
-    icon: Users,
-    columns: [
-      { id: "view", labelEn: "VIEW", labelMl: "കാണുക" },
-    ],
-  },
-];
 
 function UserDetailsPage() {
   const { lang } = useLang();
