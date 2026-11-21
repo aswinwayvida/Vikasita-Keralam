@@ -3840,11 +3840,16 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           <div className="space-y-2">
             {/* Header Row: Date Title Left + Action Buttons Right (<, >, Calendar, Filter) - Matching Admin View */}
             <div className="flex items-center justify-between gap-2 pt-0.5 pb-0.5 my-0">
-              {/* Left Side: Bold Date/Period Title */}
+              {/* Left Side: My View Label */}
+              <span className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#ff5500] tracking-tight leading-none shrink-0">
+                {lang === "ml" ? "എന്റെ കാഴ്ച" : "My View"}
+              </span>
+
+              {/* Center: Bold Date/Period Title */}
               <button
                 type="button"
                 onClick={() => setIsDatePickerOpen(true)}
-                className="font-display text-[14px] font-extrabold text-[#0a0f1d] dark:text-slate-100 tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0"
+                className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-slate-100 tracking-tight leading-none text-center hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0 flex-1 px-1"
                 title="Click to Open Date Picker"
               >
                 {getFormattedPeriodDisplay()}
@@ -4544,11 +4549,16 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           <div className="space-y-3">
             {/* Header Row: Date Title Left + Action Buttons Right (<, >, Calendar, Filter) - Matching My Work tab exactly */}
             <div className="flex items-center justify-between gap-2 pt-0.5 pb-0.5 my-0">
-              {/* Left Side: Bold Date/Period Title with same exact font sizing as My Work */}
+              {/* Left Side: Team View Label */}
+              <span className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#ff5500] tracking-tight leading-none shrink-0">
+                {lang === "ml" ? "ടീം കാഴ്ച" : "Team View"}
+              </span>
+
+              {/* Center: Bold Date/Period Title */}
               <button
                 type="button"
                 onClick={() => setIsDatePickerOpen(true)}
-                className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0"
+                className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-center hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0 flex-1 px-1"
                 title="Click to Open Date Picker"
               >
                 {getFormattedPeriodDisplay()}
@@ -6475,6 +6485,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   };
 
     const [mobileSubPage, setMobileSubPage] = useState<"none" | "leaderboard" | "needs_attention" | "recent_activity" | "beneficiaries" | "users" | "applicants" | "user_detail" | "notifications" | "applications" | "events_announcements" | "app_detail" | "category_schemes" | "scheme_details" | "guest_popular_schemes" | "guest_schemes" | "about" | "contact" | "create_scheme" | "settings" | "reports">("none");
+  const [selectedSchemeForReportsId, setSelectedSchemeForReportsId] = useState<string | null>(null);
   const [contactTab, setContactTab] = useState<"state" | "district">("state");
   const [contactSelectedDistrict, setContactSelectedDistrict] = useState("Thiruvananthapuram");
   const [contactDistrictPickerOpen, setContactDistrictPickerOpen] = useState(false);
@@ -6524,6 +6535,25 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [appDateFilter, setAppDateFilter] = useState<string>("all");
   const [appCustomStartDate, setAppCustomStartDate] = useState<string>("");
   const [appCustomEndDate, setAppCustomEndDate] = useState<string>("");
+
+  const applicationTabActiveFilterCount = [
+    selectedAppStatusFilters.length > 0 && !selectedAppStatusFilters.includes("all"),
+    appSelectedCategoryIds.length > 0 && !appSelectedCategoryIds.includes("all"),
+    appSelectedSchemeIds.length > 0 && !appSelectedSchemeIds.includes("all"),
+    appSelectedFollowUpFilters.length > 0 && !appSelectedFollowUpFilters.includes("all"),
+    appFilterAssignedWorker !== "all",
+    appFilterLocation !== "all",
+    appLocationLevel !== "state",
+    appSelectedRegion !== "all",
+    appSelectedOrgDistrict !== "all",
+    appSelectedMandalam !== "all",
+    appSelectedArea !== "all",
+    appSelectedWard !== "all",
+    applicationStatusFilter !== "all",
+    appSchemeCategoryFilter !== "all",
+    appAssistanceStatusFilter !== "all",
+    appDateFilter !== "all",
+  ].filter(Boolean).length;
   const matchAppSearch = (
     status: MobileApplicationListStatus,
     nameEn: string,
@@ -6573,6 +6603,20 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [applicantPendingRegion, setApplicantPendingRegion] = useState<string>("all");
   const [applicantDistrictFilter, setApplicantDistrictFilter] = useState<string>("all");
   const [applicantPendingDistrict, setApplicantPendingDistrict] = useState<string>("all");
+
+  const openApplicantFilterModal = () => {
+    setApplicantPendingWorkView(applicantWorkView);
+    setApplicantPendingLocationLevel(applicantLocationLevel);
+    setApplicantPendingRegion(applicantRegionFilter);
+    setApplicantPendingOrgDistrict(applicantOrgDistrictFilter);
+    setApplicantPendingMandalam(applicantMandalamFilter);
+    setApplicantPendingArea(applicantAreaFilter);
+    setApplicantPendingWard(applicantWardFilter);
+    setApplicantPendingDistrict(applicantDistrictFilter);
+    setApplicantPendingScheme(applicantSchemeFilter);
+    setApplicantPendingSchemeStatus(applicantSchemeStatusFilter);
+    setIsApplicantFilterOpen(true);
+  };
   const [applicantMandalamFilter, setApplicantMandalamFilter] = useState<string>("all");
   const [applicantPendingMandalam, setApplicantPendingMandalam] = useState<string>("all");
   const [applicantLocalBodyFilter, setApplicantLocalBodyFilter] = useState<string>("all");
@@ -12950,7 +12994,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           {/* Scrollable Main Content Area based on Selected Bottom Tab */}
           <div
             ref={mobileContentRef}
-            className={`flex-1 ${mobileSubPage === "create_scheme" || (mobileSubPage === "settings" && isMobileSettingsFormOpen) ? "overflow-hidden" : "overflow-y-auto"} [ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden relative bg-white ${
+            className={`flex-1 ${mobileSubPage === "create_scheme" || (mobileSubPage === "settings" && isMobileSettingsFormOpen) ? "overflow-hidden" : "overflow-y-auto"} [ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden relative bg-white dark:bg-slate-950 ${
               (isGuestEligibilityOpen && mobileSubPage !== "scheme_details") ||
               isMobileAuthOpen ||
               mobileSubPage === "create_scheme" ||
@@ -13071,6 +13115,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               <MobileReportsPage
                 onBack={() => setMobileSubPage("none")}
                 userRole={userRole}
+                initialSelectedSchemeId={selectedSchemeForReportsId}
                 applications={[...savedApplicationRecords, ...mobileApplicationAllPreviewRecords].filter(
                   (app) => !deletedApplicationRefs.includes(app.ref)
                 )}
@@ -13119,11 +13164,16 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     <div className="space-y-3 animate-in fade-in duration-200">
                     {/* Header Row: Date Title Left + Action Buttons Right (<, >, Calendar, Filter) - Matching Users Tab */}
                     <div className="flex items-center justify-between gap-2 pt-0.5 pb-1 my-0">
-                      {/* Left Side: Bold Date/Period Title */}
+                      {/* Left Side: My View Label */}
+                      <span className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#ff5500] tracking-tight leading-none shrink-0">
+                        {lang === "ml" ? "എന്റെ കാഴ്ച" : "My View"}
+                      </span>
+
+                      {/* Center: Bold Date/Period Title */}
                       <button
                         type="button"
                         onClick={() => setIsDatePickerOpen(true)}
-                        className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0"
+                        className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-center hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0 flex-1 px-1"
                         title="Click to Open Date Picker"
                       >
                         {getFormattedPeriodDisplay()}
@@ -16377,19 +16427,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                   </button>
                                   <button
                                     type="button"
-                                    onClick={() => {
-                                      setApplicantPendingWorkView(applicantWorkView);
-                                      setApplicantPendingLocationLevel(applicantLocationLevel);
-                                      setApplicantPendingRegion(applicantRegionFilter);
-                                      setApplicantPendingOrgDistrict(applicantOrgDistrictFilter);
-                                      setApplicantPendingMandalam(applicantMandalamFilter);
-                                      setApplicantPendingArea(applicantAreaFilter);
-                                      setApplicantPendingWard(applicantWardFilter);
-                                      setApplicantPendingDistrict(applicantDistrictFilter);
-                                      setApplicantPendingScheme(applicantSchemeFilter);
-                                      setApplicantPendingSchemeStatus(applicantSchemeStatusFilter);
-                                      setIsApplicantFilterOpen(true);
-                                    }}
+                                    onClick={openApplicantFilterModal}
                                     className="relative flex h-7 w-7 items-center justify-center rounded-full bg-white text-[#ff5500] hover:bg-slate-50 dark:bg-slate-800 dark:text-orange-400 border border-slate-200 dark:border-slate-700 cursor-pointer shadow-2xs"
                                     title={lang === "ml" ? "ഫിൽട്ടർ ചെയ്യുക" : "Filter"}
                                   >
@@ -16406,32 +16444,30 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           </div>
                         </div>
 
-                        {/* Date Filter & Period Control Bar (refer Attachment 2) */}
+                        {/* Date Filter & Period Control Bar */}
                         <div className="px-3.5 pt-1 pb-1.5 border-b border-border/80 bg-white dark:bg-slate-950">
                           <div className="flex items-center justify-between gap-1">
-                            {/* Left Side: Formatted Period Display */}
-                            <div className="flex items-center gap-1.5 min-w-0 truncate">
+                            {/* Left Side: My View Label Button (clicks open filter popup) */}
+                            <span className="shrink-0">
                               <button
                                 type="button"
-                                onClick={() => {
-                                  const next = applicantWorkView === "my_work" ? "team" : "my_work";
-                                  setApplicantWorkView(next);
-                                  setPartyWorkerTab(next);
-                                }}
-                                className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap shrink-0"
-                                title={lang === "ml" ? "കാഴ്ച മാറ്റുക (My View / Team View)" : "Switch View (My View / Team View)"}
+                                onClick={openApplicantFilterModal}
+                                className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#ff5500] tracking-tight leading-none text-left cursor-pointer whitespace-nowrap"
+                                title={lang === "ml" ? "ഫിൽട്ടർ കാണിക്കുക" : "Show Filter Popup"}
                               >
                                 {applicantWorkView === "team" ? (lang === "ml" ? "ടീം കാഴ്ച" : "Team View") : (lang === "ml" ? "എന്റെ കാഴ്ച" : "My View")}
                               </button>
-                              <button
-                                type="button"
-                                onClick={() => setIsDatePickerOpen(true)}
-                                className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap shrink-0"
-                                title={lang === "ml" ? "തീയതി മാറ്റുക" : "Change Period"}
-                              >
-                                • {getFormattedPeriodDisplay()}
-                              </button>
-                            </div>
+                            </span>
+
+                            {/* Center: Date / Period Title */}
+                            <button
+                              type="button"
+                              onClick={() => setIsDatePickerOpen(true)}
+                              className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-center hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0 flex-1 px-1"
+                              title={lang === "ml" ? "തീയതി മാറ്റുക" : "Change Period"}
+                            >
+                              {getFormattedPeriodDisplay()}
+                            </button>
 
                             {/* Date Controls (< > calendar) */}
                             <div className="flex items-center gap-1.5 min-w-0 shrink-0">
@@ -17928,6 +17964,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 <MobileReportsPage
                   onBack={() => setActiveTab("overview")}
                   userRole={userRole}
+                  initialSelectedSchemeId={selectedSchemeForReportsId}
                   applications={[...savedApplicationRecords, ...mobileApplicationAllPreviewRecords].filter(
                     (app) => !deletedApplicationRefs.includes(app.ref)
                   )}
@@ -17997,19 +18034,19 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     <div className="flex items-center gap-1.5 min-w-0 truncate">
                       <button
                         type="button"
-                        onClick={() => setPartyWorkerTab(partyWorkerTab === "my_work" ? "team" : "my_work")}
-                        className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap shrink-0"
-                        title={lang === "ml" ? "കാഴ്ച മാറ്റുക (My View / Team View)" : "Switch View (My View / Team View)"}
+                        onClick={() => setShowFilterMenu(!showFilterMenu)}
+                        className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#ff5500] tracking-tight leading-none text-left cursor-pointer whitespace-nowrap shrink-0"
+                        title={lang === "ml" ? "ഫിൽട്ടർ കാണിക്കുക" : "Show Filter Popup"}
                       >
                         {partyWorkerTab === "team" ? (lang === "ml" ? "ടീം കാഴ്ച" : "Team View") : (lang === "ml" ? "എന്റെ കാഴ്ച" : "My View")}
                       </button>
                       <button
                         type="button"
                         onClick={() => setIsDatePickerOpen(true)}
-                        className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                        className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-center hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0 flex-1 px-1"
                         title={lang === "ml" ? "തീയതി മാറ്റുക" : "Change Period"}
                       >
-                        • {getFormattedPeriodDisplay()}
+                        {getFormattedPeriodDisplay()}
                       </button>
                     </div>
                   )}
@@ -22108,7 +22145,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
           {appDeleteConfirmOpen && (mobileSubPage === "app_detail" || activeTab === "applications") ? (
             <div
-              className="absolute inset-0 z-[80] flex items-center justify-center bg-slate-900/60 p-5 backdrop-blur-xs animate-in fade-in duration-150"
+              className="absolute inset-0 z-[80] flex items-center justify-center bg-slate-900/60 p-5 animate-in fade-in duration-150"
               onClick={() => setAppDeleteConfirmOpen(false)}
             >
               <div
@@ -22159,7 +22196,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
           {isDeleteApplicantConfirmOpen && (mobileSubPage === "user_detail" || mobileSubPage === "applicants") && selectedApplicationUser ? (
             <div
-              className="absolute inset-0 z-[80] flex items-center justify-center bg-slate-900/60 p-5 backdrop-blur-xs animate-in fade-in duration-150"
+              className="absolute inset-0 z-[80] flex items-center justify-center bg-slate-900/60 p-5 animate-in fade-in duration-150"
               onClick={() => {
                 setIsDeleteApplicantConfirmOpen(false);
                 if (mobileSubPage === "applicants") {
@@ -22238,7 +22275,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
           {applicantCountPopup ? (
             <div
-              className="absolute inset-0 z-50 flex items-end rounded-[36px] bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+              className="absolute inset-0 z-50 flex items-end rounded-[36px] bg-black/60 animate-in fade-in duration-200"
               onClick={() => setApplicantCountPopup(null)}
             >
               <div
@@ -22647,7 +22684,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           {/* Scheme Details Edit Sheet */}
           {isSchemeEditSheetOpen && (
             <div
-              className="absolute inset-0 z-[120] flex items-end bg-black/55 backdrop-blur-[1px] animate-in fade-in duration-150"
+              className="absolute inset-0 z-[120] flex items-end bg-black/55 animate-in fade-in duration-150"
               onClick={() => setIsSchemeEditSheetOpen(false)}
             >
               <div
@@ -22821,6 +22858,59 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               onClose={() => setIsCreatePartyWorkerModalOpen(false)}
               actorRole={userRole === "state_admin" ? "state_admin" : "party_worker"}
               initialPhase={partyWorkerStartPhase}
+              onSelectScheme={(scheme) => {
+                setIsCreatePartyWorkerModalOpen(false);
+                setSelectedSchemeForReportsId(scheme.id || "pm_kisan");
+                setActiveTab("applications");
+                setApplicationViewMode("scheme_wise");
+              }}
+              onSelectApplication={(app) => {
+                setIsCreatePartyWorkerModalOpen(false);
+                setSelectedApplicationRecord({
+                  ref: app.refId || "PMSV-2026-9281",
+                  trackingId: app.refId || "PMSV-2026-9281",
+                  schemeNameEn: app.titleEn || "PM Kisan Samman Nidhi",
+                  schemeNameMl: app.titleMl || "പിഎം കിസാൻ സമ്മാൻ നിധി",
+                  categoryEn: app.categoryEn || "Agriculture",
+                  categoryMl: app.categoryMl || "കൃഷി",
+                  status: app.status === "approved" ? "approved" : app.status === "pending" ? "pending" : "in_review",
+                  applicantNameEn: app.applicantName || "K. Krishnan",
+                  applicantNameMl: app.applicantName || "കെ. കൃഷ്ണൻ",
+                  aadhaar: "XXXX-XXXX-9281",
+                  phone: app.applicantPhone || "+91 98765 43210",
+                  locationEn: app.applicantLocation || "Palakkad North, Palakkad",
+                  locationMl: app.applicantLocation || "പാലക്കാട് നോർത്ത്, പാലക്കാട്",
+                  annualIncome: "₹1,50,000",
+                  appliedDate: app.date || "23 Oct 2026",
+                  currentStep: app.status === "approved" ? 4 : 2,
+                  pendingDocs: app.status === "approved" ? [] : ["Income Certificate.pdf"],
+                  nextActionEn: app.status === "approved" ? "Application approved" : "Under verification",
+                  nextActionMl: app.status === "approved" ? "അപേക്ഷ അംഗീകരിച്ചു" : "പരിശോധനയിൽ",
+                  auditLog: [
+                    {
+                      titleEn: "Application Submitted",
+                      titleMl: "അപേക്ഷ സമർപ്പിച്ചു",
+                      date: app.date || "23 Oct 2026",
+                      actorEn: app.applicantName || "K. Krishnan",
+                      actorMl: app.applicantName || "കെ. കൃഷ്ണൻ",
+                      status: "completed",
+                    },
+                    {
+                      titleEn: "Documents Verified",
+                      titleMl: "രേഖകൾ പരിശോധിച്ചു",
+                      date: app.date || "23 Oct 2026",
+                      actorEn: "Anil Thomas",
+                      actorMl: "അനിൽ തോമസ്",
+                      status: "completed",
+                    },
+                  ],
+                  assistedByEn: "Anil Thomas",
+                  assistedByMl: "അനിൽ തോമസ്",
+                });
+                setAppDetailReturnSubPage("users");
+                setAppDetailView("overview");
+                setMobileSubPage("app_detail");
+              }}
               onCreated={() => {
                 toast.success(
                   lang === "ml"
@@ -22851,7 +22941,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           {/* Tracking ID bottom sheet */}
           {isTrackingSheetOpen && (
             <div
-              className="absolute inset-0 z-[70] flex items-end bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 rounded-[36px]"
+              className="absolute inset-0 z-[70] flex items-end bg-black/60 animate-in fade-in duration-200 rounded-[36px]"
               onClick={() => setIsTrackingSheetOpen(false)}
             >
               <div
@@ -22918,7 +23008,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           {/* Tracking ID saved success dialog */}
           {isTrackingSuccessOpen && (
             <div
-              className="absolute inset-0 z-[80] flex items-center justify-center rounded-[36px] bg-black/60 px-2.5 py-3 backdrop-blur-xs animate-in fade-in duration-200"
+              className="absolute inset-0 z-[80] flex items-center justify-center rounded-[36px] bg-black/60 px-2.5 py-3 animate-in fade-in duration-200"
               role="dialog"
               aria-modal="true"
               aria-labelledby="tracking-success-title"
@@ -23031,7 +23121,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           {/* Confirm scheme decision bottom sheet */}
           {isDecisionSheetOpen && (
             <div
-              className="absolute inset-0 z-[72] flex items-end bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 rounded-[36px]"
+              className="absolute inset-0 z-[72] flex items-end bg-black/60 animate-in fade-in duration-200 rounded-[36px]"
               onClick={handleCloseDecisionSheet}
             >
               <div
@@ -23167,7 +23257,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             const PreviewIcon = meta.Icon;
             return (
               <div
-                className="absolute inset-0 z-[75] flex items-end bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 rounded-[36px]"
+                className="absolute inset-0 z-[75] flex items-end bg-black/60 animate-in fade-in duration-200 rounded-[36px]"
                 onClick={() => setPreviewDocument(null)}
               >
                 <div
@@ -23258,7 +23348,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
           {/* SahAI Help Chatbot Overlay Modal */}
           {isSahAiOpen && (
-            <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-xs flex flex-col justify-end animate-in fade-in duration-200">
+            <div className="absolute inset-0 z-50 bg-black/60 flex flex-col justify-end animate-in fade-in duration-200">
               <div className="bg-background border-t border-border rounded-t-3xl p-4 max-h-[85%] h-[480px] flex flex-col shadow-2xl animate-in slide-in-from-bottom duration-300">
                 {/* Header */}
                 <div className="flex items-center justify-between pb-3 border-b border-border">
@@ -23337,7 +23427,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           {/* Application guide popups: How to Apply / Required Details */}
           {appDetailGuide && mobileSubPage === "app_detail" && appDetailView === "overview" && (
             <div
-              className="absolute inset-0 z-[75] flex items-end overflow-hidden rounded-[36px] bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+              className="absolute inset-0 z-[75] flex items-end overflow-hidden rounded-[36px] bg-black/60 animate-in fade-in duration-200"
               onClick={() => setAppDetailGuide(null)}
             >
               <div
@@ -23469,7 +23559,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         </ul>
                       </section>
 
-                      <section className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700">
+                      <section className="rounded-xl border border-slate-200 bg-white dark:bg-slate-800/80 p-3 dark:border-slate-700">
                         <h4 className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
                           {lang === "ml" ? "ആവശ്യമായ രേഖകൾ" : "Files required"}
                         </h4>
@@ -23502,7 +23592,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           {/* Scheme guide popups: How to Apply / Required Details */}
           {schemeDetailGuide && mobileSubPage === "scheme_details" && schemeDetailsGuideMeta && (
             <div
-              className="absolute inset-0 z-[75] flex items-end overflow-hidden rounded-[36px] bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+              className="absolute inset-0 z-[75] flex items-end overflow-hidden rounded-[36px] bg-black/60 animate-in fade-in duration-200"
               onClick={() => setSchemeDetailGuide(null)}
             >
               <div
@@ -23578,7 +23668,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         </ul>
                       </section>
 
-                      <section className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700">
+                      <section className="rounded-xl border border-slate-200 bg-white dark:bg-slate-800/80 p-3 dark:border-slate-700">
                         <h4 className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
                           {lang === "ml" ? "ആവശ്യമായ രേഖകൾ" : "Files required"}
                         </h4>
@@ -23614,7 +23704,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           {/* Schedule Follow-up Bottom Sheet */}
           {isFollowUpSheetOpen && (
             <div
-              className="absolute inset-0 z-[70] flex items-end overflow-hidden bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 rounded-[36px]"
+              className="absolute inset-0 z-[70] flex items-end overflow-hidden bg-black/60 animate-in fade-in duration-200 rounded-[36px]"
               onClick={() => setIsFollowUpSheetOpen(false)}
             >
               <div
@@ -23741,7 +23831,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           {/* More Navigation Menu Popup Modal */}
           {showMoreMenu && (
             <div 
-              className="absolute inset-0 z-50 flex items-end bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200 rounded-[36px] overflow-hidden"
+              className="absolute inset-0 z-50 flex items-end bg-black/60 transition-opacity animate-in fade-in duration-200 rounded-[36px] overflow-hidden"
               onClick={() => setShowMoreMenu(false)}
             >
               <div 
@@ -23869,7 +23959,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           {/* Helpdesk filter bottom sheet (refer Attachment 10) */}
           {isHelpdeskFilterOpen && (
             <div
-              className="absolute inset-0 z-50 flex items-end rounded-[36px] bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+              className="absolute inset-0 z-50 flex items-end rounded-[36px] bg-black/60 animate-in fade-in duration-200"
               onClick={() => setIsHelpdeskFilterOpen(false)}
             >
               <div
@@ -23963,7 +24053,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   {userRole === "state_admin" && (
                     <>
                       {/* 2. Select Region */}
-                      {helpdeskPendingLocationLevel !== "state" && (
+                      {helpdeskPendingLocationLevel === "region" && (
                         <PickerButton
                           label={lang === "ml" ? "മേഖല തിരഞ്ഞെടുക്കുക" : "Select Region"}
                           value={getRegionLabel(helpdeskPendingRegion)}
@@ -24181,7 +24271,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           {/* Applicants filter bottom sheet (refer Attachment 1 & 2) */}
           {isApplicantFilterOpen && (mobileSubPage === "users" || mobileSubPage === "applicants") && (
             <div
-              className="absolute inset-0 z-50 flex items-end rounded-[36px] bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+              className="absolute inset-0 z-50 flex items-end rounded-[36px] bg-black/60 animate-in fade-in duration-200"
               onClick={() => setIsApplicantFilterOpen(false)}
             >
               <div
@@ -24275,7 +24365,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   {userRole === "state_admin" && (
                     <>
                       {/* 2. Select Region */}
-                      {applicantPendingLocationLevel !== "state" && (
+                      {applicantPendingLocationLevel === "region" && (
                         <PickerButton
                           label={lang === "ml" ? "മേഖല തിരഞ്ഞെടുക്കുക" : "Select Region"}
                           value={getRegionLabel(applicantPendingRegion)}
@@ -24475,7 +24565,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           {/* Interactive Filter Modal Overlay - Home Filters UI matching reference mock */}
           {showFilterMenu && (
             <div 
-              className="absolute inset-0 z-50 flex items-end bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200 rounded-[36px] overflow-hidden"
+              className="absolute inset-0 z-50 flex items-end bg-black/60 transition-opacity animate-in fade-in duration-200 rounded-[36px] overflow-hidden"
               onClick={() => {
                 setAppliedGeoMode(geoMode);
                 if (geoMode === "assembly") {
@@ -24861,8 +24951,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             }
                           />
 
-                          {/* Region (when location level is region, org_district, mandalam, area, ward) */}
-                          {appLocationLevel !== "state" && (
+                          {/* Region (when location level is region) */}
+                          {appLocationLevel === "region" && (
                             <PickerButton
                               label={lang === "ml" ? "മേഖല തിരഞ്ഞെടുക്കുക (Select Region)" : "Select Region"}
                               value={getRegionLabel(appSelectedRegion)}
@@ -25183,8 +25273,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             </div>
                           )}
 
-                          {/* Region (when location level is region, org_district, mandalam, area, ward) */}
-                          {homeLocationLevel !== "state" && (
+                          {/* Region (when location level is region) */}
+                          {homeLocationLevel === "region" && (
                             <PickerButton
                               label={lang === "ml" ? "മേഖല തിരഞ്ഞെടുക്കുക (Select Region)" : "Select Region"}
                               value={getRegionLabel(homeSelectedRegion)}
@@ -25489,7 +25579,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
           {/* Address Searchable Bottom Sheet Overlay Modal */}
           {activeAddressSheet && (
-            <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-xs flex flex-col justify-end animate-in fade-in duration-200">
+            <div className="absolute inset-0 z-50 bg-black/60 flex flex-col justify-end animate-in fade-in duration-200">
               <div className="bg-background border-t border-border rounded-t-3xl p-4 max-h-[80%] flex flex-col shadow-2xl animate-in slide-in-from-bottom duration-300">
                 {/* Header */}
                 <div className="flex items-center justify-between pb-3 border-b border-border">
@@ -25658,7 +25748,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       {/* Contact Us number picker */}
       {contactCallPickerLocation && (
         <div
-          className="absolute inset-0 z-[95] flex items-end bg-black/45 backdrop-blur-[1px] animate-in fade-in duration-150"
+          className="absolute inset-0 z-[95] flex items-end bg-black/45 animate-in fade-in duration-150"
           onClick={() => setContactCallPickerLocationId(null)}
           role="presentation"
         >
@@ -25741,7 +25831,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
       {/* Custom Bottom-Sheet Picker Drawer */}
       {activeModalPicker && (
-        <div className="absolute inset-0 z-[120] flex flex-col justify-end bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+        <div className="absolute inset-0 z-[120] flex flex-col justify-end bg-slate-900/60 animate-in fade-in duration-200">
           <div className="flex max-h-[85%] w-full flex-col rounded-t-3xl bg-white p-4 shadow-2xl dark:bg-slate-900 animate-in slide-in-from-bottom duration-250 border-t border-slate-200 dark:border-slate-800">
             {/* Handle */}
             <div className="mb-3 flex justify-center">
@@ -25820,7 +25910,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
       {/* Support Request Modal */}
       {showSupportModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 animate-in fade-in duration-200">
           <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]">
             {/* Modal Header */}
             <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
@@ -26097,7 +26187,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       {/* Mark as Document Verified Skip Popup Modal */}
       {isSkipDocumentVerifyModalOpen && (
         <div
-          className="absolute inset-0 z-[80] flex flex-col justify-end bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 rounded-[36px]"
+          className="absolute inset-0 z-[80] flex flex-col justify-end bg-black/60 animate-in fade-in duration-200 rounded-[36px]"
           onClick={() => setIsSkipDocumentVerifyModalOpen(false)}
         >
           <div
@@ -26275,7 +26365,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-2 sm:p-4 overflow-y-auto [ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-2 sm:p-4 overflow-y-auto [ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden animate-in fade-in duration-200">
       {/* Modal Shell Container */}
       <div className="relative flex flex-col items-center max-w-full my-auto">
         {/* Top Control Bar for Modal */}
@@ -26346,7 +26436,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
           {/* Scheme Filter Bottom Sheet Modal */}
           {schemeFilterSheetOpen && (
-            <div className="absolute inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+            <div className="absolute inset-0 z-50 flex flex-col justify-end bg-black/60 animate-in fade-in duration-200">
               <div className="bg-white dark:bg-slate-900 rounded-t-2xl p-4 space-y-4 max-h-[85%] overflow-y-auto border-t border-slate-200 dark:border-slate-800 shadow-xl animate-in slide-in-from-bottom duration-250">
                 <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
                   <h3 className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
@@ -26459,7 +26549,7 @@ function AssignUserSheet({
 
   return (
     <div
-      className={`${standalone ? "fixed" : "absolute"} inset-0 z-[95] flex items-end bg-black/55 backdrop-blur-[1px] animate-in fade-in duration-150`}
+      className={`${standalone ? "fixed" : "absolute"} inset-0 z-[95] flex items-end bg-black/55 animate-in fade-in duration-150`}
       onClick={onClose}
     >
       <div

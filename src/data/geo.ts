@@ -1,7 +1,56 @@
 export type District = { id: string; ml: string; en: string };
+export type Region = { id: string; ml: string; en: string; count: number };
 export type Constituency = { id: string; districtId: string; ml: string; en: string };
 export type LocalBodyType = "panchayat" | "municipality" | "corporation";
 export type Panchayat = { id: string; districtId: string; constituencyId: string; ml: string; en: string; type: LocalBodyType };
+
+export const regions: Region[] = [
+  { id: "reg-north", en: "Northern Region", ml: "വടക്കൻ മേഖല", count: 10 },
+  { id: "reg-central", en: "Central Region", ml: "മധ്യ മേഖല", count: 12 },
+  { id: "reg-south", en: "Southern Region", ml: "തെക്കൻ മേഖല", count: 8 },
+];
+
+export const REGION_ORGANISATIONAL_DISTRICTS: Record<string, string[]> = {
+  // Northern Region — 10 Organisational Districts
+  "reg-north": [
+    "od-ksd",
+    "od-knr-north",
+    "od-knr-south",
+    "od-wyd",
+    "od-kkd-city",
+    "od-kkd-north",
+    "od-kkd-rural",
+    "od-mlp-central",
+    "od-mlp-east",
+    "od-mlp-west",
+  ],
+  // Central Region — 12 Organisational Districts
+  "reg-central": [
+    "od-pkd-east",
+    "od-pkd-west",
+    "od-tsr-city",
+    "od-tsr-north",
+    "od-tsr-south",
+    "od-ekm-city",
+    "od-ekm-north",
+    "od-ekm-east",
+    "od-idk-north",
+    "od-idk-south",
+    "od-ktm-east",
+    "od-ktm-west",
+  ],
+  // Southern Region — 8 Organisational Districts
+  "reg-south": [
+    "od-alp-north",
+    "od-alp-south",
+    "od-ptm",
+    "od-klm-east",
+    "od-klm-west",
+    "od-tvm-city",
+    "od-tvm-north",
+    "od-tvm-south",
+  ],
+};
 
 export type WardItem = {
   id: string;

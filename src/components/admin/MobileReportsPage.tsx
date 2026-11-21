@@ -62,6 +62,7 @@ export interface MobileReportsPageProps {
   onBack: () => void;
   applications: MobileReportApplicationRecord[];
   onSelectApplication: (application: MobileReportApplicationRecord) => void;
+  initialSelectedSchemeId?: string | null;
   onOpenApplicationFilter?: () => void;
   isFilterActive?: boolean;
   filterCount?: number;
@@ -765,6 +766,7 @@ export function MobileReportsPage({
   onBack,
   applications = [],
   onSelectApplication,
+  initialSelectedSchemeId,
   onOpenApplicationFilter,
   isFilterActive = false,
   filterCount = 0,
@@ -783,9 +785,31 @@ export function MobileReportsPage({
   userRole = "state_admin",
 }: MobileReportsPageProps) {
   const { lang } = useLang();
-  const [selectedScheme, setSelectedScheme] = useState<SchemeReportDef | null>(null);
+  const [selectedScheme, setSelectedScheme] = useState<SchemeReportDef | null>(() => {
+    if (initialSelectedSchemeId) {
+      const norm = (str: string) => str.toLowerCase().replace(/[-_]/g, "");
+      const targetNorm = norm(initialSelectedSchemeId);
+      return REPORT_SCHEMES.find(
+        (s) => norm(s.id) === targetNorm || norm(s.nameEn).includes(targetNorm) || targetNorm.includes(norm(s.id))
+      ) || null;
+    }
+    return null;
+  });
   const [isSchemeMenuOpen, setIsSchemeMenuOpen] = useState(false);
   const [schemeShareToast, setSchemeShareToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (initialSelectedSchemeId) {
+      const norm = (str: string) => str.toLowerCase().replace(/[-_]/g, "");
+      const targetNorm = norm(initialSelectedSchemeId);
+      const found = REPORT_SCHEMES.find(
+        (s) => norm(s.id) === targetNorm || norm(s.nameEn).includes(targetNorm) || targetNorm.includes(norm(s.id))
+      );
+      if (found) {
+        setSelectedScheme(found);
+      }
+    }
+  }, [initialSelectedSchemeId]);
 
   const handleShareScheme = (schemeName: string) => {
     if (onShareScheme) {
@@ -1274,7 +1298,7 @@ export function MobileReportsPage({
 
     return (
       <div
-        className={`fixed ${filterSheetBounds ? "" : "inset-0"} z-[120] flex items-end bg-slate-950/50 backdrop-blur-[1px] animate-in fade-in duration-150`}
+        className={`fixed ${filterSheetBounds ? "" : "inset-0"} z-[120] flex items-end bg-slate-950/50 animate-in fade-in duration-150`}
         style={filterSheetBounds ?? undefined}
         onClick={() => setIsFilterSheetOpen(false)}
       >
@@ -1894,7 +1918,7 @@ export function MobileReportsPage({
                   setAppliedSchemeFilter((prev) => ({ ...prev, workView: nextView }));
                   setDraftSchemeFilter((prev) => ({ ...prev, workView: nextView }));
                 }}
-                className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#ff5500] tracking-tight leading-none text-left cursor-pointer whitespace-nowrap shrink-0"
                 title={lang === "ml" ? "കാഴ്ച മാറ്റുക (My View / Team View)" : "Switch View (My View / Team View)"}
               >
                 {appliedSchemeFilter.workView === "team" ? (lang === "ml" ? "ടീം കാഴ്ച" : "Team View") : (lang === "ml" ? "എന്റെ കാഴ്ച" : "My View")}
@@ -2432,7 +2456,7 @@ export function MobileReportsPage({
                     setAppliedSchemeFilter((prev) => ({ ...prev, workView: nextView }));
                     setDraftSchemeFilter((prev) => ({ ...prev, workView: nextView }));
                   }}
-                  className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                  className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#ff5500] tracking-tight leading-none text-left cursor-pointer whitespace-nowrap shrink-0"
                   title={lang === "ml" ? "കാഴ്ച മാറ്റുക (My View / Team View)" : "Switch View (My View / Team View)"}
                 >
                   {appliedSchemeFilter.workView === "team" ? (lang === "ml" ? "ടീം കാഴ്ച" : "Team View") : (lang === "ml" ? "എന്റെ കാഴ്ച" : "My View")}

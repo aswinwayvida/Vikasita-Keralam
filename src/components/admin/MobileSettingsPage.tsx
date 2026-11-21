@@ -1,6 +1,8 @@
 import { useRef, useState, type ChangeEvent } from "react";
 import {
   ArrowLeft,
+  Briefcase,
+  Building2,
   Camera,
   Check,
   ChevronDown,
@@ -8,13 +10,17 @@ import {
   ClipboardList,
   FileText,
   Filter,
+  GitFork,
   Headset,
+  Landmark,
   LogOut,
   MapPin,
   MoreVertical,
   Pencil,
+  Phone,
   Plus,
   Search,
+  Shield,
   ShieldCheck,
   Trash2,
   UserRound,
@@ -590,7 +596,7 @@ export function MobileSettingsPage({
 
         {designationDialog ? (
           <div
-            className="absolute inset-0 z-[120] flex items-end bg-slate-950/50 backdrop-blur-[1px] animate-in fade-in duration-150"
+            className="absolute inset-0 z-[120] flex items-end bg-slate-950/50 animate-in fade-in duration-150"
             onClick={() => setDesignationDialog(null)}
           >
             <div
@@ -691,7 +697,7 @@ export function MobileSettingsPage({
 
         {designationDeleteTarget ? (
           <div
-            className="absolute inset-0 z-[120] flex items-end bg-slate-950/50 backdrop-blur-[1px] animate-in fade-in duration-150"
+            className="absolute inset-0 z-[120] flex items-end bg-slate-950/50 animate-in fade-in duration-150"
             onClick={() => setDesignationDeleteTarget(null)}
           >
             <div
@@ -729,16 +735,76 @@ export function MobileSettingsPage({
     );
   }
   if (activeView === "user") {
-    const presetId = isPartyWorker ? "party_worker" : "state_admin";
-    const grantedPermissions =
-      rolePresets.find((preset) => preset.id === presetId)?.permissions ?? [];
-    const profileDistrict = isPartyWorker
-      ? isMalayalam
-        ? "തിരുവനന്തപുരം"
-        : "Thiruvananthapuram"
-      : isMalayalam
-        ? "എല്ലാ ജില്ലകളും"
-        : "All districts";
+    const profileDetailsList = [
+      {
+        icon: Phone,
+        labelEn: "Mobile Number",
+        labelMl: "മൊബൈൽ നമ്പർ",
+        value: profileMobile || "+91 9633360168",
+      },
+      {
+        icon: Building2,
+        labelEn: "Organisation Level",
+        labelMl: "ഓർഗനൈസേഷൻ ലെവൽ",
+        value: isPartyWorker
+          ? isMalayalam ? "മണ്ഡലം" : "Mandalam"
+          : (isMalayalam ? profileLevelLabel.ml : profileLevelLabel.en),
+      },
+      {
+        icon: Briefcase,
+        labelEn: "Designation",
+        labelMl: "പദവി",
+        value: isPartyWorker
+          ? isMalayalam ? "മണ്ഡലം പ്രസിഡന്റ്" : "Mandalam President"
+          : roleLabel,
+      },
+      {
+        icon: UserRound,
+        labelEn: "Role",
+        labelMl: "റോൾ",
+        value: isPartyWorker
+          ? isMalayalam ? "കൺസ്റ്റിറ്റ്യുവൻസി അഡ്മിൻ" : "Constituency Admin"
+          : (isMalayalam ? "സ്റ്റേറ്റ് അഡ്മിൻ" : "State Admin"),
+      },
+      {
+        icon: Shield,
+        labelEn: "Role Level",
+        labelMl: "റോൾ ലെവൽ",
+        value: isPartyWorker
+          ? isMalayalam ? "മണ്ഡലം" : "Mandalam"
+          : (isMalayalam ? "സ്റ്റേറ്റ്" : "State"),
+      },
+      {
+        icon: MapPin,
+        labelEn: "Region",
+        labelMl: "മേഖല",
+        value: isMalayalam ? "സൗത്തേൺ റീജിയൺ" : "Southern Region",
+      },
+      {
+        icon: Building2,
+        labelEn: "Organisational District",
+        labelMl: "ഓർഗനൈസേഷണൽ ജില്ല",
+        value: isMalayalam ? "പത്തനംതിട്ട" : "Pathanamthitta",
+      },
+      {
+        icon: GitFork,
+        labelEn: "Mandalam",
+        labelMl: "മണ്ഡലം",
+        value: isMalayalam ? "കോന്നി മണ്ഡലം" : "Konni Mandalam",
+      },
+      {
+        icon: MapPin,
+        labelEn: "Area",
+        labelMl: "ഏരിയ",
+        value: isMalayalam ? "അടൂർ" : "Adoor",
+      },
+      {
+        icon: Landmark,
+        labelEn: "Local Body",
+        labelMl: "തദ്ദേശ സ്വയംഭരണ സ്ഥാപനം",
+        value: isMalayalam ? "പത്തനംതിട്ട" : "Pathanamthitta",
+      },
+    ];
 
     return (
       <div className="relative flex h-full min-h-0 w-full flex-col animate-in fade-in duration-200">
@@ -772,7 +838,7 @@ export function MobileSettingsPage({
                     setProfileMenuOpen(false);
                     profilePhotoInputRef.current?.click();
                   }}
-                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[10.5px] font-bold text-slate-700 transition hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-800"
+                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[10.5px] font-bold text-slate-700 transition hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer"
                 >
                   <Camera className="h-3.5 w-3.5 shrink-0 text-[#C2410C] dark:text-orange-300" />
                   {isMalayalam ? "പ്രൊഫൈൽ ചിത്രം അപ്‌ലോഡ് ചെയ്യുക" : "Upload Profile picture"}
@@ -780,135 +846,88 @@ export function MobileSettingsPage({
                 <button
                   type="button"
                   onClick={openEditDetails}
-                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[10.5px] font-bold text-slate-700 transition hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-800"
+                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[10.5px] font-bold text-slate-700 transition hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer"
                 >
                   <Pencil className="h-3.5 w-3.5 shrink-0 text-[#C2410C] dark:text-orange-300" />
                   {isMalayalam ? "വിവരങ്ങൾ തിരുത്തുക" : "Edit Details"}
-                </button>
-                <button
-                  type="button"
-                  onClick={openAccessArea}
-                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[10.5px] font-bold text-slate-700 transition hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-800"
-                >
-                  <MapPin className="h-3.5 w-3.5 shrink-0 text-[#C2410C] dark:text-orange-300" />
-                  {isMalayalam ? "ആക്സസ് പ്രദേശം മാറ്റുക" : "Change access area"}
                 </button>
               </div>
             ) : null}
           </div>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto pb-2 [ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <section className="mt-2 divide-y divide-orange-100/80 overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-2xs dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
-            <div className="p-3">
-              <input
-                ref={profilePhotoInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/*"
-                className="hidden"
-                onChange={handleProfilePhotoChange}
-              />
-              <div className="flex items-start gap-3">
-                <div className="relative shrink-0">
-                  <div className="h-14 w-14 overflow-hidden rounded-full bg-orange-50 shadow-sm ring-2 ring-white dark:bg-slate-800 dark:ring-slate-900">
-                    <img
-                      src={profilePhoto || avatarUrl}
-                      alt={displayName}
-                      className="h-full w-full rounded-full object-cover"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => profilePhotoInputRef.current?.click()}
-                    className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#ff5500] text-white shadow-md ring-2 ring-white transition active:scale-95 dark:ring-slate-900"
-                    aria-label={
-                      isMalayalam ? "പ്രൊഫൈൽ ചിത്രം അപ്‌ലോഡ് ചെയ്യുക" : "Upload profile picture"
-                    }
-                    title={
-                      isMalayalam ? "പ്രൊഫൈൽ ചിത്രം അപ്‌ലോഡ് ചെയ്യുക" : "Upload profile picture"
-                    }
-                  >
-                    <Camera className="h-2.5 w-2.5 stroke-[2.5]" />
-                  </button>
+        <div className="min-h-0 flex-1 overflow-y-auto p-3 pb-6 [ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <section className="overflow-hidden rounded-2xl border border-orange-100 bg-white p-3.5 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
+            <input
+              ref={profilePhotoInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/*"
+              className="hidden"
+              onChange={handleProfilePhotoChange}
+            />
+            <div className="flex items-start gap-3">
+              <div className="relative shrink-0">
+                <div className="h-14 w-14 overflow-hidden rounded-full bg-orange-50 shadow-sm ring-2 ring-white dark:bg-slate-800 dark:ring-slate-900">
+                  <img
+                    src={profilePhoto || avatarUrl}
+                    alt={displayName}
+                    className="h-full w-full rounded-full object-cover"
+                  />
                 </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <h2 className="text-[15px] font-extrabold leading-tight text-slate-900 dark:text-white">
-                      {displayName}
-                    </h2>
-                    <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-black text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
-                      {isMalayalam ? "സജീവം" : "Active"}
-                    </span>
-                  </div>
-                  <p className="mt-0.5 text-[10px] font-bold text-[#C2410C] dark:text-orange-300">
-                    {roleLabel}
-                  </p>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => profilePhotoInputRef.current?.click()}
+                  className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#ff5500] text-white shadow-md ring-2 ring-white transition active:scale-95 dark:ring-slate-900 cursor-pointer"
+                  aria-label={
+                    isMalayalam ? "പ്രൊഫൈൽ ചിത്രം അപ്‌ലോഡ് ചെയ്യുക" : "Upload profile picture"
+                  }
+                  title={
+                    isMalayalam ? "പ്രൊഫൈൽ ചിത്രം അപ്‌ലോഡ് ചെയ്യുക" : "Upload profile picture"
+                  }
+                >
+                  <Camera className="h-2.5 w-2.5 stroke-[2.5]" />
+                </button>
               </div>
-
-              <div className="mt-3 space-y-1.5 rounded-xl border border-slate-200 bg-slate-50/70 p-2.5 dark:border-slate-700 dark:bg-slate-800/40">
-                <SummaryRow
-                  label={isMalayalam ? "ലെവൽ" : "Level"}
-                  value={isMalayalam ? profileLevelLabel.ml : profileLevelLabel.en}
-                />
-                <SummaryRow
-                  label={isMalayalam ? "അസൈൻമെന്റ്" : "Assignment"}
-                  value={profileAssignment}
-                />
-                <SummaryRow label={isMalayalam ? "മൊബൈൽ" : "Mobile"} value={profileMobile} />
-                <SummaryRow label={isMalayalam ? "ജില്ല" : "District"} value={profileDistrict} />
-              </div>
-            </div>
-
-            <div className="px-3 py-2.5">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex min-w-0 items-center gap-2">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-orange-50 text-[#ff5500] dark:bg-orange-950/40 dark:text-orange-300">
-                    <ShieldCheck className="h-3.5 w-3.5" />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-2">
+                  <h2 className="text-[15px] font-extrabold leading-tight text-slate-900 dark:text-white">
+                    {displayName}
+                  </h2>
+                  <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-black text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                    {isMalayalam ? "സജീവം" : "Active"}
                   </span>
-                  <div className="min-w-0">
-                    <p className="text-[12px] font-extrabold leading-tight text-slate-900 dark:text-white">
-                      {isMalayalam ? "അനുമതികൾ" : "Permissions"}
-                    </p>
-                    <p className="mt-px text-[8.5px] font-medium text-slate-500 dark:text-slate-400">
-                      {isMalayalam
-                        ? "ഈ പ്രവർത്തകന് നൽകിയ ആക്സസ്"
-                        : "Access assigned to this worker"}
-                    </p>
-                  </div>
                 </div>
-              </div>
-
-              <ProfileModulePermissionsTable
-                grantedPermissions={grantedPermissions}
-                isMalayalam={isMalayalam}
-              />
-            </div>
-
-            <div className="p-3">
-              <ProfileSectionHeading
-                icon={MapPin}
-                title={isMalayalam ? "ആക്സസ് പ്രദേശങ്ങൾ" : "Access Areas"}
-                subtitle={
-                  isMalayalam
-                    ? "പ്രവർത്തകനൊപ്പം സൂക്ഷിച്ച സ്കോപ്പ് ഗ്രാന്റുകൾ"
-                    : "Scoped grants saved with the worker"
-                }
-              />
-              <div className="mt-2.5 space-y-2">
-                <p className="rounded-xl border border-dashed border-slate-200 px-3 py-3 text-center text-[9.5px] font-semibold text-slate-500 dark:border-slate-700">
-                  {isMalayalam
-                    ? "അധിക ആക്സസ് പ്രദേശങ്ങളില്ല. അസൈൻമെന്റിൽ മാത്രം ആക്സസ്."
-                    : "No extra access areas. Access is limited to the assignment."}
+                <p className="mt-0.5 text-[10px] font-bold text-[#C2410C] dark:text-orange-300">
+                  {roleLabel}
                 </p>
               </div>
             </div>
+          </section>
+
+          {/* Details Card matching Attachment 2 */}
+          <section className="mt-3 overflow-hidden rounded-2xl border border-orange-100/90 bg-white shadow-2xs divide-y divide-orange-100/60 dark:border-slate-800 dark:bg-slate-900 dark:divide-slate-800/80">
+            {profileDetailsList.map((item, idx) => {
+              const IconComponent = item.icon;
+              return (
+                <div key={idx} className="flex items-center justify-between px-3.5 py-2.5 text-xs">
+                  <div className="flex items-center gap-2.5">
+                    <IconComponent className="h-4 w-4 shrink-0 text-[#ff5500] stroke-[2]" />
+                    <span className="text-[11.5px] font-semibold text-slate-500 dark:text-slate-400">
+                      {isMalayalam ? item.labelMl : item.labelEn}
+                    </span>
+                  </div>
+                  <span className="text-[11.5px] font-extrabold text-[#1e293b] dark:text-slate-100 text-right">
+                    {item.value}
+                  </span>
+                </div>
+              );
+            })}
           </section>
         </div>
 
         {editDetailsOpen ? (
           <div
-            className="absolute inset-0 z-[120] flex items-end bg-slate-950/50 backdrop-blur-[1px] animate-in fade-in duration-150"
+            className="absolute inset-0 z-[120] flex items-end bg-slate-950/50 animate-in fade-in duration-150"
             onClick={() => setEditDetailsOpen(false)}
           >
             <div
@@ -1000,7 +1019,7 @@ export function MobileSettingsPage({
 
         {accessAreaOpen ? (
           <div
-            className="absolute inset-0 z-[120] flex items-end bg-slate-950/50 backdrop-blur-[1px] animate-in fade-in duration-150"
+            className="absolute inset-0 z-[120] flex items-end bg-slate-950/50 animate-in fade-in duration-150"
             onClick={() => setAccessAreaOpen(false)}
           >
             <div
@@ -1251,7 +1270,7 @@ export function MobileSettingsPage({
       {/* Application View Bottom Sheet Popup */}
       {isAppViewSheetOpen && (
         <div
-          className={`fixed ${sheetBounds ? "" : "inset-0"} z-[120] flex items-end bg-slate-950/50 backdrop-blur-[1px] animate-in fade-in duration-150`}
+          className={`fixed ${sheetBounds ? "" : "inset-0"} z-[120] flex items-end bg-slate-950/50 animate-in fade-in duration-150`}
           style={sheetBounds ?? undefined}
           onClick={() => setIsAppViewSheetOpen(false)}
         >

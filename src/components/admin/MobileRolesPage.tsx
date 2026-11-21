@@ -833,7 +833,7 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
 
       {deleteTarget ? (
         <div
-          className="absolute inset-0 z-[130] flex items-end bg-slate-950/50 backdrop-blur-[1px] animate-in fade-in duration-150"
+          className="absolute inset-0 z-[130] flex items-end bg-slate-950/50 animate-in fade-in duration-150"
           onClick={() => setDeleteTarget(null)}
         >
           <div

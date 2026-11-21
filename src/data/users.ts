@@ -41,16 +41,21 @@ export function getUserDesignation(user: Partial<AppUser> | null | undefined): s
 }
 
 export function getUserRegion(user: Partial<AppUser> & { regionEn?: string } | null | undefined): string {
-  if (!user) return "South Region";
-  if (user.regionEn) return user.regionEn;
-  const dist = (user.districtNameEn || "").toLowerCase();
-  if (dist.includes("thiruvananthapuram") || dist.includes("kollam") || dist.includes("pathanamthitta")) {
-    return "South Region";
+  if (!user) return "Southern Region";
+  if (user.regionEn) {
+    if (user.regionEn === "South Region" || user.regionEn === "Southern Region") return "Southern Region";
+    if (user.regionEn === "Central Region") return "Central Region";
+    if (user.regionEn === "North Region" || user.regionEn === "Northern Region") return "Northern Region";
+    return user.regionEn;
   }
-  if (dist.includes("ernakulam") || dist.includes("thrissur") || dist.includes("palakkad")) {
+  const dist = (user.districtNameEn || "").toLowerCase();
+  if (dist.includes("kasaragod") || dist.includes("kannur") || dist.includes("wayanad") || dist.includes("kozhikode") || dist.includes("malappuram")) {
+    return "Northern Region";
+  }
+  if (dist.includes("palakkad") || dist.includes("thrissur") || dist.includes("ernakulam") || dist.includes("idukki") || dist.includes("kottayam")) {
     return "Central Region";
   }
-  return "North Region";
+  return "Southern Region";
 }
 
 const ORG_DISTRICTS_MAP: Record<string, string[]> = {

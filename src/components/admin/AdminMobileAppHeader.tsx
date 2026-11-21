@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Menu,
   Bell,
@@ -21,6 +21,8 @@ import {
   Info,
   PhoneCall,
   Search,
+  Moon,
+  Sun,
 } from "lucide-react";
 import { useLang } from "@/i18n/LanguageProvider";
 import { AdminMobileTab } from "./AdminMobileAppBottomNav";
@@ -70,6 +72,33 @@ export function AdminMobileAppHeader({
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [guestSearchQuery, setGuestSearchQuery] = useState("");
 
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    if (typeof document !== "undefined") {
+      return document.documentElement.classList.contains("dark");
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    const checkDark = () => {
+      setIsDarkMode(document.documentElement.classList.contains("dark"));
+    };
+    checkDark();
+    const observer = new MutationObserver(checkDark);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+
+  const toggleDarkMode = () => {
+    if (document.documentElement.classList.contains("dark")) {
+      document.documentElement.classList.remove("dark");
+      setIsDarkMode(false);
+    } else {
+      document.documentElement.classList.add("dark");
+      setIsDarkMode(true);
+    }
+  };
+
   return (
     <header className="relative z-40 w-full bg-[#FFFDF9] dark:bg-slate-900 border-b border-slate-200/60 dark:border-slate-800/60 shadow-2xs">
       {/* Standard Header Bar Height (60px / h-15) */}
@@ -92,7 +121,12 @@ export function AdminMobileAppHeader({
             <img
               src="/images/vikasita-logo.png"
               alt="Vikasita Keralam"
-              className="h-11 sm:h-12 w-auto object-contain max-w-[210px] sm:max-w-[240px] shrink-0 drop-shadow-2xs"
+              className="h-11 sm:h-12 w-auto object-contain max-w-[210px] sm:max-w-[240px] shrink-0 drop-shadow-2xs dark:hidden block"
+            />
+            <img
+              src="/images/vikasita-logo-dark.png"
+              alt="Vikasita Keralam"
+              className="h-11 sm:h-12 w-auto object-contain max-w-[210px] sm:max-w-[240px] shrink-0 drop-shadow-2xs hidden dark:block mix-blend-screen"
             />
           </div>
         </div>
@@ -249,6 +283,31 @@ export function AdminMobileAppHeader({
                         </span>
                       </button>
 
+                      {/* Dark Mode Toggle Option */}
+                      <button
+                        type="button"
+                        onClick={toggleDarkMode}
+                        className="flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-foreground hover:bg-amber-50 dark:hover:bg-slate-800 font-medium transition-all cursor-pointer"
+                      >
+                        <span className="flex items-center gap-2">
+                          {isDarkMode ? (
+                            <Moon className="h-4 w-4 text-purple-500 dark:text-purple-400" />
+                          ) : (
+                            <Sun className="h-4 w-4 text-amber-500" />
+                          )}
+                          <span>{lang === "ml" ? "ഡാർക്ക് മോഡ്" : "Dark Mode"}</span>
+                        </span>
+                        <span
+                          className={`text-[9.5px] font-bold uppercase px-2 py-0.5 rounded-md border transition-colors ${
+                            isDarkMode
+                              ? "bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800"
+                              : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                          }`}
+                        >
+                          {isDarkMode ? (lang === "ml" ? "ഓൺ" : "ON") : (lang === "ml" ? "ഓഫ്" : "OFF")}
+                        </span>
+                      </button>
+
                       <button
                         type="button"
                         onClick={() => {
@@ -298,7 +357,7 @@ export function AdminMobileAppHeader({
 
       {/* Guest Mobile Navigation Sidebar Drawer (DesignLib style) */}
       {isGuest && isMenuOpen && (
-        <div className="absolute top-0 left-0 w-full h-[680px] z-50 flex bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+        <div className="absolute top-0 left-0 w-full h-[680px] z-50 flex bg-slate-900/60 animate-in fade-in duration-150">
           <div className="w-[85%] max-w-[300px] h-full bg-white dark:bg-slate-900 p-4 flex flex-col justify-between shadow-2xl border-r border-slate-200 dark:border-slate-800 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             <div className="space-y-4">
               {/* Header Logo & Close Button */}
@@ -306,7 +365,12 @@ export function AdminMobileAppHeader({
                 <img
                   src="/images/vikasita-logo.png"
                   alt="Vikasita Keralam"
-                  className="h-12 sm:h-14 w-auto max-w-[220px] object-contain drop-shadow-2xs"
+                  className="h-12 sm:h-14 w-auto max-w-[220px] object-contain drop-shadow-2xs dark:hidden block"
+                />
+                <img
+                  src="/images/vikasita-logo-dark.png"
+                  alt="Vikasita Keralam"
+                  className="h-12 sm:h-14 w-auto max-w-[220px] object-contain drop-shadow-2xs hidden dark:block mix-blend-screen"
                 />
                 <button
                   onClick={() => setMenuOpen(false)}
@@ -410,7 +474,7 @@ export function AdminMobileAppHeader({
 
       {/* Logged-in Full Mobile Navigation Drawer */}
       {!isGuest && isMenuOpen && (
-        <div className="absolute top-0 left-0 w-full h-[680px] z-50 flex bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+        <div className="absolute top-0 left-0 w-full h-[680px] z-50 flex bg-slate-900/60 animate-in fade-in duration-150">
           <div className="w-[85%] max-w-[320px] h-full bg-white dark:bg-slate-900 p-4 flex flex-col justify-between shadow-2xl border-r border-slate-200 dark:border-slate-800 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             <div className="space-y-3.5">
               {/* Logo & Close Header */}
@@ -418,7 +482,12 @@ export function AdminMobileAppHeader({
                 <img
                   src="/images/vikasita-logo.png"
                   alt="Vikasita Keralam"
-                  className="h-12 sm:h-14 w-auto max-w-[220px] object-contain block drop-shadow-2xs"
+                  className="h-12 sm:h-14 w-auto max-w-[220px] object-contain drop-shadow-2xs dark:hidden block"
+                />
+                <img
+                  src="/images/vikasita-logo-dark.png"
+                  alt="Vikasita Keralam"
+                  className="h-12 sm:h-14 w-auto max-w-[220px] object-contain drop-shadow-2xs hidden dark:block mix-blend-screen"
                 />
                 <button
                   onClick={() => setMenuOpen(false)}

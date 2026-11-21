@@ -2653,7 +2653,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
       {/* RULE MODAL */}
       {/* --------------------------------------------------------------------- */}
       {showRuleModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-card border border-border rounded-2xl p-4 w-full max-w-sm space-y-3 shadow-xl max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between border-b border-border/80 pb-2">
               <h3 className="text-xs font-black text-foreground">
@@ -2824,7 +2824,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
       {/* CHOOSE FIELD TYPE BOTTOM SHEET */}
       {/* --------------------------------------------------------------------- */}
       {showFieldTypeSheet && (
-        <div className="absolute inset-0 z-[70] flex items-end bg-black/50 backdrop-blur-[1px]">
+        <div className="absolute inset-0 z-[70] flex items-end bg-black/50">
           <button
             type="button"
             aria-label="Close field type picker"
@@ -2892,7 +2892,7 @@ export const MobileCreateSchemeFlow: React.FC<CreateSchemeFlowProps> = ({
       {/* FIELD EDITOR BOTTOM SHEET */}
       {/* --------------------------------------------------------------------- */}
       {showFieldModal && (
-        <div className="absolute inset-0 z-[80] flex items-end bg-black/60 backdrop-blur-[1px]">
+        <div className="absolute inset-0 z-[80] flex items-end bg-black/60">
           <button
             type="button"
             aria-label="Close field editor"

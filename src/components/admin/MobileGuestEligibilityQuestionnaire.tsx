@@ -212,28 +212,28 @@ function ChoiceCard({
       onClick={onClick}
       className={`flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-all active:scale-[0.995] ${
         selected
-          ? "border-[#243D95] bg-blue-50/70 shadow-[0_0_0_1px_rgba(36,61,149,0.12)]"
-          : "border-slate-200 bg-white hover:border-blue-200 hover:bg-blue-50/30"
+          ? "border-[#243D95] bg-blue-50/70 dark:bg-blue-950/60 dark:border-blue-500 shadow-[0_0_0_1px_rgba(36,61,149,0.12)]"
+          : "border-slate-200 bg-white dark:bg-slate-900 dark:border-slate-800 dark:hover:bg-slate-800/80 hover:border-blue-200 hover:bg-blue-50/30"
       }`}
     >
       <span
         className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${
           selected
-            ? "border-[#243D95] bg-[#243D95] text-white"
-            : "border-slate-300 bg-white text-transparent"
+            ? "border-[#243D95] bg-[#243D95] dark:border-blue-500 dark:bg-blue-600 text-white"
+            : "border-slate-300 bg-white text-transparent dark:border-slate-600 dark:bg-slate-800"
         }`}
       >
         <Check className="h-3 w-3 stroke-[3]" />
       </span>
       <span className="min-w-0">
         <span
-          className={`block text-[12.5px] font-extrabold ${selected ? "text-[#243D95]" : "text-slate-800"}`}
+          className={`block text-[12.5px] font-extrabold ${selected ? "text-[#243D95] dark:text-blue-300" : "text-slate-800 dark:text-slate-100"}`}
         >
           {label}
         </span>
         {helper ? (
           <span
-            className={`mt-0.5 block text-[10px] font-medium leading-snug ${selected ? "text-blue-900" : "text-slate-500"}`}
+            className={`mt-0.5 block text-[10px] font-medium leading-snug ${selected ? "text-blue-900 dark:text-blue-200" : "text-slate-500 dark:text-slate-400"}`}
           >
             {helper}
           </span>
@@ -276,7 +276,7 @@ function SearchableSelect({
   });
   return (
     <div className="space-y-1">
-      <label className="block text-[10.5px] font-extrabold text-slate-700">{label}</label>
+      <label className="block text-[10.5px] font-extrabold text-slate-700 dark:text-slate-300">{label}</label>
       <button
         type="button"
         disabled={disabled}
@@ -284,35 +284,35 @@ function SearchableSelect({
         onClick={onToggle}
         className={`flex w-full min-w-0 items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-left text-[11.5px] transition-colors ${
           disabled
-            ? "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400"
-            : "cursor-pointer border-slate-200 bg-white text-slate-800 hover:border-orange-300"
+            ? "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-600"
+            : "cursor-pointer border-slate-200 bg-white text-slate-800 hover:border-orange-300 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-orange-500"
         }`}
       >
         <span
-          className={`block min-w-0 truncate ${valueLabel ? "font-bold text-slate-800" : "text-slate-400"}`}
+          className={`block min-w-0 truncate ${valueLabel ? "font-bold text-slate-800 dark:text-slate-100" : "text-slate-400 dark:text-slate-500"}`}
         >
           {valueLabel || placeholder}
         </span>
         <ChevronDown
-          className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`}
+          className={`h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500 transition-transform ${open ? "rotate-180" : ""}`}
         />
       </button>
       {open && !disabled ? (
-        <div className="overflow-hidden rounded-xl border border-orange-200 bg-white shadow-md">
-          <div className="flex items-center gap-2 border-b border-slate-100 px-3 py-2">
-            <Search className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+        <div className="overflow-hidden rounded-xl border border-orange-200 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-md">
+          <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 px-3 py-2">
+            <Search className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500" />
             <input
               autoFocus
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder={searchPlaceholder}
-              className="min-w-0 flex-1 bg-transparent text-[11.5px] font-medium text-slate-800 outline-none placeholder:text-slate-400"
+              className="min-w-0 flex-1 bg-transparent text-[11.5px] font-medium text-slate-800 dark:text-slate-100 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
             />
             {query ? (
               <button
                 type="button"
                 onClick={() => setQuery("")}
-                className="text-[9.5px] font-bold text-orange-600"
+                className="text-[9.5px] font-bold text-orange-600 dark:text-orange-400"
               >
                 Clear
               </button>
@@ -320,7 +320,7 @@ function SearchableSelect({
           </div>
           <div className="max-h-52 overflow-y-auto p-1.5">
             {filtered.length === 0 ? (
-              <p className="px-2 py-4 text-center text-[10.5px] font-medium text-slate-500">
+              <p className="px-2 py-4 text-center text-[10.5px] font-medium text-slate-500 dark:text-slate-400">
                 No matches found
               </p>
             ) : (
@@ -333,14 +333,14 @@ function SearchableSelect({
                     onClick={() => onSelect(option.value)}
                     className={`flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left transition-colors ${
                       isSelected
-                        ? "bg-orange-50 text-orange-900"
-                        : "text-slate-700 hover:bg-slate-50"
+                        ? "bg-orange-50 text-orange-900 dark:bg-orange-950/50 dark:text-orange-300"
+                        : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                     }`}
                   >
                     <span className="min-w-0">
                       <span className="block text-[11px] font-bold">{option.label}</span>
                       {option.hint ? (
-                        <span className="mt-0.5 block text-[9px] text-slate-500">
+                        <span className="mt-0.5 block text-[9px] text-slate-500 dark:text-slate-400">
                           {option.hint}
                         </span>
                       ) : null}
@@ -790,11 +790,11 @@ export function MobileGuestEligibilityQuestionnaire({
     return (
       <div className="relative mx-auto flex h-16 w-16 items-center justify-center">
         {/* Subtle background aura */}
-        <div className="absolute inset-0 rounded-full bg-[#243D95]/10 blur-xs" />
+        <div className="absolute inset-0 rounded-full bg-[#243D95]/10 dark:bg-blue-500/10 blur-xs" />
         {/* Decorative subtle dashed ring */}
         <div className="absolute inset-0 rounded-full border border-dashed border-[#243D95]/30 dark:border-blue-400/30" />
         {/* 3D Icon Container */}
-        <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-blue-50/80 p-1.5 ring-1 ring-[#243D95]/15 shadow-xs">
+        <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-blue-50/80 dark:bg-slate-800/90 p-1.5 ring-1 ring-[#243D95]/15 dark:ring-blue-500/30 shadow-xs">
           {icon ? (
             <img
               src={icon.src}
@@ -809,7 +809,7 @@ export function MobileGuestEligibilityQuestionnaire({
 
   const QuestionHeader = ({ title }: { title: string; helper?: string }) => (
     <div className="text-center">
-      <h2 className="text-[17px] font-extrabold leading-snug text-slate-900">{title}</h2>
+      <h2 className="text-[17px] font-extrabold leading-snug text-slate-900 dark:text-white">{title}</h2>
     </div>
   );
 
@@ -861,7 +861,7 @@ export function MobileGuestEligibilityQuestionnaire({
                 value={answers.dob}
                 max={today}
                 onChange={(event) => handleDobChange(event.target.value)}
-                className={`w-full rounded-xl border bg-white px-3.5 py-3 text-[13px] font-medium text-slate-800 outline-none transition-all focus:border-[#243D95] focus:ring-2 focus:ring-[#243D95]/15 cursor-pointer ${
+                className={`w-full rounded-xl border bg-white dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100 px-3.5 py-3 text-[13px] font-medium text-slate-800 outline-none transition-all focus:border-[#243D95] focus:ring-2 focus:ring-[#243D95]/15 cursor-pointer ${
                   dobError ? "border-rose-400" : "border-slate-200"
                 }`}
               />
@@ -871,12 +871,12 @@ export function MobileGuestEligibilityQuestionnaire({
             ) : null}
           </div>
           {answers.age !== null ? (
-            <div className="rounded-xl border border-blue-100 bg-blue-50/60 px-3.5 py-3 animate-in fade-in duration-200">
-              <p className="text-[10.5px] font-bold text-[#243D95]">{t("Age", "പ്രായം")}</p>
-              <p className="mt-0.5 text-[13px] font-extrabold text-slate-900">
+            <div className="rounded-xl border border-blue-100 bg-blue-50/60 dark:border-blue-900/60 dark:bg-blue-950/40 px-3.5 py-3 animate-in fade-in duration-200">
+              <p className="text-[10.5px] font-bold text-[#243D95] dark:text-blue-300">{t("Age", "പ്രായം")}</p>
+              <p className="mt-0.5 text-[13px] font-extrabold text-slate-900 dark:text-white">
                 {t(`${answers.age} years`, `${answers.age} വയസ്സ്`)}
               </p>
-              <p className="mt-1 text-[9.5px] font-medium text-slate-500">
+              <p className="mt-1 text-[9.5px] font-medium text-slate-500 dark:text-slate-400">
                 {t(
                   "Age is calculated automatically based on your date of birth.",
                   "നിങ്ങളുടെ ജനന തീയതിയെ അടിസ്ഥാനമാക്കി പ്രായം കണക്കാക്കി.",
@@ -947,8 +947,8 @@ export function MobileGuestEligibilityQuestionnaire({
           </div>
 
           {answers.religion === "other_religion" ? (
-            <div className="mt-2.5 space-y-1.5 rounded-xl border border-blue-200 bg-blue-50/50 p-3">
-              <label htmlFor="specify-religion-input" className="block text-[10.5px] font-extrabold text-[#243D95]">
+            <div className="mt-2.5 space-y-1.5 rounded-xl border border-blue-200 bg-blue-50/50 dark:border-blue-900/60 dark:bg-blue-950/40 p-3">
+              <label htmlFor="specify-religion-input" className="block text-[10.5px] font-extrabold text-[#243D95] dark:text-blue-300">
                 {t("Specify Religion", "മതം വ്യക്തമാക്കുക")}
               </label>
               <input
@@ -957,7 +957,7 @@ export function MobileGuestEligibilityQuestionnaire({
                 value={customReligionText}
                 onChange={(e) => setCustomReligionText(e.target.value)}
                 placeholder={t("Enter your religion...", "നിങ്ങളുടെ മതം ഇവിടെ നൽകുക...")}
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-medium text-slate-800 outline-none focus:border-[#243D95]"
+                className="w-full rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-slate-800 dark:text-slate-100 outline-none focus:border-[#243D95]"
               />
             </div>
           ) : null}
@@ -1028,12 +1028,12 @@ export function MobileGuestEligibilityQuestionnaire({
             ))}
           </div>
           {answers.disabilityStatus === "yes" ? (
-            <div className="space-y-2 rounded-xl border border-orange-200 bg-orange-50/50 p-3">
+            <div className="space-y-2 rounded-xl border border-orange-200 bg-orange-50/50 dark:border-orange-900/60 dark:bg-orange-950/30 p-3">
               <div>
-                <p className="text-[11px] font-extrabold text-slate-900">
+                <p className="text-[11px] font-extrabold text-slate-900 dark:text-white">
                   {t("Disability percentage", "ഭിന്നശേഷി ശതമാനം")}
                 </p>
-                <p className="mt-0.5 text-[9.5px] font-medium leading-snug text-slate-500">
+                <p className="mt-0.5 text-[9.5px] font-medium leading-snug text-slate-500 dark:text-slate-400">
                   {t(
                     "Choose the approximate range on your certificate. You can select Not sure.",
                     "സർട്ടിഫിക്കറ്റിലെ ഏകദേശ പരിധി തിരഞ്ഞെടുക്കുക. അറിയില്ല എന്നും തിരഞ്ഞെടുക്കാം.",
@@ -1191,8 +1191,8 @@ export function MobileGuestEligibilityQuestionnaire({
           </div>
 
           {currentSelection === "other" ? (
-            <div className="mt-2.5 space-y-1.5 rounded-xl border border-blue-200 bg-blue-50/50 p-3">
-              <label htmlFor="specify-details-input" className="block text-[10.5px] font-extrabold text-[#243D95]">
+            <div className="mt-2.5 space-y-1.5 rounded-xl border border-blue-200 bg-blue-50/50 dark:border-blue-900/60 dark:bg-blue-950/40 p-3">
+              <label htmlFor="specify-details-input" className="block text-[10.5px] font-extrabold text-[#243D95] dark:text-blue-300">
                 {t("Specify Details", "വിശദാംശങ്ങൾ വ്യക്തമാക്കുക")}
               </label>
               <input
@@ -1201,7 +1201,7 @@ export function MobileGuestEligibilityQuestionnaire({
                 value={customOccupationText}
                 onChange={(e) => setCustomOccupationText(e.target.value)}
                 placeholder={t("Enter specific details...", "വിശദാംശങ്ങൾ ഇവിടെ നൽകുക...")}
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-medium text-slate-800 outline-none focus:border-[#243D95]"
+                className="w-full rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 px-3 py-2 text-[11px] font-medium text-slate-800 dark:text-slate-100 outline-none focus:border-[#243D95]"
               />
             </div>
           ) : null}
@@ -1291,7 +1291,7 @@ export function MobileGuestEligibilityQuestionnaire({
               />
             ))}
           </div>
-          <p className="text-[9.5px] font-medium leading-relaxed text-slate-500">
+          <p className="text-[9.5px] font-medium leading-relaxed text-slate-500 dark:text-slate-400">
             {t(
               "These ranges follow the existing eligibility rules. Missing information is treated as More information needed, not as ineligible.",
               "ഈ പരിധികൾ നിലവിലുള്ള യോഗ്യതാ നിയമങ്ങളെ അടിസ്ഥാനമാക്കിയുള്ളതാണ്. വിവരം ലഭ്യമല്ലെങ്കിൽ 'കൂടുതൽ വിവരം ആവശ്യം' എന്നാണ് പരിഗണിക്കുക.",
@@ -1405,19 +1405,19 @@ export function MobileGuestEligibilityQuestionnaire({
   };
 
   const renderHeader = (title: string, progress: boolean) => (
-    <div className="sticky top-0 z-20 shrink-0 border-b border-slate-200 bg-[#FFFDF9]/95 px-3 pb-2 pt-1.5 backdrop-blur">
+    <div className="sticky top-0 z-20 shrink-0 border-b border-slate-200 dark:border-slate-800 bg-[#FFFDF9]/95 dark:bg-slate-950/95 px-3 pb-2 pt-1.5 backdrop-blur">
       <div className="flex items-center justify-between gap-2">
         <button
           type="button"
           onClick={goBack}
           disabled={view === "loading"}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-700 transition-colors hover:bg-slate-100 disabled:opacity-40"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-700 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40"
           aria-label={t("Back", "തിരികെ")}
         >
           <ArrowLeft className="h-4.5 w-4.5 stroke-[2.2]" />
         </button>
         <div className="min-w-0 flex-1 text-center">
-          <h1 className="truncate text-[12.5px] font-extrabold text-slate-900">
+          <h1 className="truncate text-[12.5px] font-extrabold text-slate-900 dark:text-white">
             {view === "questions" ? `${title} (${currentDisplayStep}/${activeTotalSteps})` : title}
           </h1>
         </div>
@@ -1428,8 +1428,8 @@ export function MobileGuestEligibilityQuestionnaire({
               onClick={() => setShowHeaderSearch((prev) => !prev)}
               className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors ${
                 showHeaderSearch || resultQuery
-                  ? "bg-blue-100 text-[#243D95]"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  ? "bg-blue-100 text-[#243D95] dark:bg-blue-950 dark:text-blue-300"
+                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
               }`}
               aria-label={t("Search schemes", "പദ്ധതികൾ തിരയുക")}
             >
@@ -1439,7 +1439,7 @@ export function MobileGuestEligibilityQuestionnaire({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-600 dark:text-slate-400 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
             aria-label={t("Close eligibility check", "യോഗ്യതാ പരിശോധന അടയ്ക്കുക")}
           >
             <X className="h-4 w-4 stroke-[2.2]" />
@@ -1447,20 +1447,20 @@ export function MobileGuestEligibilityQuestionnaire({
         </div>
       </div>
       {(showHeaderSearch || resultQuery) && (view === "results" || view === "browse") && (
-        <div className="mt-2 flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 shadow-2xs">
-          <Search className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+        <div className="mt-2 flex items-center gap-2 rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 px-3 py-1.5 shadow-2xs">
+          <Search className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500" />
           <input
             autoFocus
             value={resultQuery}
             onChange={(event) => setResultQuery(event.target.value)}
             placeholder={t("Search schemes...", "പദ്ധതികൾ തിരയുക...")}
-            className="min-w-0 flex-1 bg-transparent text-[11px] font-medium text-slate-800 outline-none placeholder:text-slate-400"
+            className="min-w-0 flex-1 bg-transparent text-[11px] font-medium text-slate-800 dark:text-slate-100 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
           />
           {resultQuery ? (
             <button
               type="button"
               onClick={() => setResultQuery("")}
-              className="text-[9.5px] font-bold text-[#243D95]"
+              className="text-[9.5px] font-bold text-[#243D95] dark:text-blue-400"
             >
               {t("Clear", "മായ്ക്കുക")}
             </button>
@@ -1476,7 +1476,7 @@ export function MobileGuestEligibilityQuestionnaire({
         filteredResults.length > 0 ? (
           <>
             <div className="flex items-center justify-between gap-2 pb-0.5 pr-3 pt-0.5">
-              <p className="text-[12px] font-semibold text-slate-500">
+              <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400">
                 {t(
                   `${filteredResults.length} eligible scheme${filteredResults.length === 1 ? "" : "s"}`,
                   `${filteredResults.length} അനുയോജ്യ പദ്ധതികൾ`,
@@ -1485,7 +1485,7 @@ export function MobileGuestEligibilityQuestionnaire({
               <button
                 type="button"
                 onClick={toggleSelectAllResults}
-                className="flex shrink-0 items-center gap-1.5 cursor-pointer text-[12px] font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300"
+                className="flex shrink-0 items-center gap-1.5 cursor-pointer text-[12px] font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
               >
                 <span>{t("Select all", "എല്ലാം തിരഞ്ഞെടുക്കുക")}</span>
                 <span
@@ -1505,12 +1505,12 @@ export function MobileGuestEligibilityQuestionnaire({
             </div>
           </>
         ) : (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-6 text-center">
-            <Search className="mx-auto h-8 w-8 text-slate-300" />
-            <p className="mt-2 text-[11px] font-bold text-slate-700">
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white dark:border-slate-800 dark:bg-slate-900 px-4 py-6 text-center">
+            <Search className="mx-auto h-8 w-8 text-slate-300 dark:text-slate-600" />
+            <p className="mt-2 text-[11px] font-bold text-slate-700 dark:text-slate-200">
               {t("No eligible schemes found", "അനുയോജ്യമായ പദ്ധതികൾ കണ്ടെത്തിയില്ല")}
             </p>
-            <p className="mt-1 text-[9.5px] font-medium text-slate-500">
+            <p className="mt-1 text-[9.5px] font-medium text-slate-500 dark:text-slate-400">
               {t(
                 "Try a different search, or explore all schemes below.",
                 "മറ്റൊരു തിരയൽ ശ്രമിക്കുകയോ താഴെയുള്ള എല്ലാ പദ്ധതികളും കാണുകയോ ചെയ്യുക.",
@@ -1519,22 +1519,22 @@ export function MobileGuestEligibilityQuestionnaire({
             <button
               type="button"
               onClick={() => setResultQuery("")}
-              className="mt-2.5 rounded-lg border border-orange-200 bg-orange-50 px-3 py-1.5 text-[9.5px] font-extrabold text-orange-700"
+              className="mt-2.5 rounded-lg border border-orange-200 bg-orange-50 dark:border-orange-900/60 dark:bg-orange-950/40 px-3 py-1.5 text-[9.5px] font-extrabold text-orange-700 dark:text-orange-300"
             >
               {t("Clear search", "തിരയൽ മായ്ക്കുക")}
             </button>
           </div>
         )
       ) : (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-6 text-center">
-          <SearchCheck className="mx-auto h-9 w-9 text-slate-300" />
-          <h3 className="mt-2 text-[13px] font-extrabold text-slate-900">
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-white dark:border-slate-800 dark:bg-slate-900 px-4 py-6 text-center">
+          <SearchCheck className="mx-auto h-9 w-9 text-slate-300 dark:text-slate-600" />
+          <h3 className="mt-2 text-[13px] font-extrabold text-slate-900 dark:text-white">
             {t(
               "No schemes matched your answers",
               "നിങ്ങളുടെ ഉത്തരങ്ങളുമായി പൊരുത്തപ്പെടുന്ന പദ്ധതികളില്ല",
             )}
           </h3>
-          <p className="mt-1 text-[10px] font-medium leading-relaxed text-slate-500">
+          <p className="mt-1 text-[10px] font-medium leading-relaxed text-slate-500 dark:text-slate-400">
             {t(
               "Try editing your answers, or browse all schemes to explore other options.",
               "ഉത്തരങ്ങൾ തിരുത്തുകയോ എല്ലാ പദ്ധതികളും കാണുകയോ ചെയ്യുക.",
@@ -1547,25 +1547,25 @@ export function MobileGuestEligibilityQuestionnaire({
                 setView("questions");
                 setStep(1);
               }}
-              className="rounded-xl border border-slate-200 bg-white px-2 py-2 text-[10px] font-extrabold text-slate-700 hover:bg-slate-50"
+              className="rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-800 px-2 py-2 text-[10px] font-extrabold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
             >
               {t("Edit Answers", "ഉത്തരങ്ങൾ തിരുത്തുക")}
             </button>
             <button
               type="button"
               onClick={() => setView("browse")}
-              className="rounded-xl border border-orange-300 bg-orange-50 px-2 py-2 text-[10px] font-extrabold text-orange-700 hover:bg-orange-100"
+              className="rounded-xl border border-orange-300 bg-orange-50 dark:border-orange-900/60 dark:bg-orange-950/40 px-2 py-2 text-[10px] font-extrabold text-orange-700 dark:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-900/60"
             >
               {t("Explore All Schemes", "എല്ലാ പദ്ധതികളും കാണുക")}
             </button>
           </div>
         </div>
       )}
-      <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-center">
-        <h3 className="text-[12px] font-extrabold text-slate-900">
+      <div className="rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 px-4 py-3.5 text-center">
+        <h3 className="text-[12px] font-extrabold text-slate-900 dark:text-white">
           {t("Looking for another scheme?", "മറ്റൊരു പദ്ധതി തിരയുകയാണോ?")}
         </h3>
-        <p className="mt-1 text-[9.5px] font-medium leading-relaxed text-slate-500">
+        <p className="mt-1 text-[9.5px] font-medium leading-relaxed text-slate-500 dark:text-slate-400">
           {t(
             "Browse all schemes with search and filters. Your answers stay saved.",
             "തിരയലും ഫിൽട്ടറുകളും ഉപയോഗിച്ച് എല്ലാ പദ്ധതികളും കാണുക. നിങ്ങളുടെ ഉത്തരങ്ങൾ സൂക്ഷിക്കും.",
@@ -1574,7 +1574,7 @@ export function MobileGuestEligibilityQuestionnaire({
         <button
           type="button"
           onClick={() => setView("browse")}
-          className="mt-2.5 inline-flex items-center justify-center gap-1.5 rounded-xl border border-orange-300 bg-orange-50 px-3 py-2 text-[10.5px] font-extrabold text-orange-700 transition-colors hover:bg-orange-100"
+          className="mt-2.5 inline-flex items-center justify-center gap-1.5 rounded-xl border border-orange-300 bg-orange-50 dark:border-orange-900/60 dark:bg-orange-950/40 px-3 py-2 text-[10.5px] font-extrabold text-orange-700 dark:text-orange-300 transition-colors hover:bg-orange-100 dark:hover:bg-orange-900/60"
         >
           {t("Explore All Schemes", "എല്ലാ പദ്ധതികളും കാണുക")}
           <ArrowRight className="h-3.5 w-3.5 stroke-[2.5]" />
@@ -1590,7 +1590,7 @@ export function MobileGuestEligibilityQuestionnaire({
           <button
             type="button"
             onClick={() => setBrowseCategory("all")}
-            className={`shrink-0 rounded-full border px-2.5 py-1 text-[9.5px] font-extrabold transition-colors ${browseCategory === "all" ? "border-orange-400 bg-orange-500 text-white" : "border-slate-200 bg-white text-slate-600 hover:border-orange-200"}`}
+            className={`shrink-0 rounded-full border px-2.5 py-1 text-[9.5px] font-extrabold transition-colors ${browseCategory === "all" ? "border-orange-400 bg-orange-500 text-white" : "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:border-orange-200"}`}
           >
             {t("All", "എല്ലാം")}
           </button>
@@ -1601,7 +1601,7 @@ export function MobileGuestEligibilityQuestionnaire({
                 key={category}
                 type="button"
                 onClick={() => setBrowseCategory(category)}
-                className={`shrink-0 rounded-full border px-2.5 py-1 text-[9.5px] font-extrabold transition-colors ${browseCategory === category ? "border-orange-400 bg-orange-500 text-white" : "border-slate-200 bg-white text-slate-600 hover:border-orange-200"}`}
+                className={`shrink-0 rounded-full border px-2.5 py-1 text-[9.5px] font-extrabold transition-colors ${browseCategory === category ? "border-orange-400 bg-orange-500 text-white" : "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:border-orange-200"}`}
               >
                 {lang === "ml" ? meta.ml : meta.en}
               </button>
@@ -1609,13 +1609,13 @@ export function MobileGuestEligibilityQuestionnaire({
           })}
         </div>
         <div className="flex items-center justify-between gap-2 py-1 pr-3">
-          <p className="text-[12px] font-semibold text-slate-500">
+          <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400">
             {t(`${browsedSchemes.length} schemes`, `${browsedSchemes.length} പദ്ധതികൾ`)}
           </p>
           <button
             type="button"
             onClick={toggleSelectAllBrowsed}
-            className="flex shrink-0 items-center gap-1.5 cursor-pointer text-[12px] font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300"
+            className="flex shrink-0 items-center gap-1.5 cursor-pointer text-[12px] font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
           >
             <span>{t("Select all", "എല്ലാം തിരഞ്ഞെടുക്കുക")}</span>
             <span
@@ -1632,12 +1632,12 @@ export function MobileGuestEligibilityQuestionnaire({
         </div>
       </div>
       {browsedSchemes.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-6 text-center">
-          <Search className="mx-auto h-8 w-8 text-slate-300" />
-          <p className="mt-2 text-[11px] font-bold text-slate-700">
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-white dark:border-slate-800 dark:bg-slate-900 px-4 py-6 text-center">
+          <Search className="mx-auto h-8 w-8 text-slate-300 dark:text-slate-600" />
+          <p className="mt-2 text-[11px] font-bold text-slate-700 dark:text-slate-200">
             {t("No schemes found", "പദ്ധതികൾ കണ്ടെത്തിയില്ല")}
           </p>
-          <p className="mt-1 text-[9.5px] font-medium text-slate-500">
+          <p className="mt-1 text-[9.5px] font-medium text-slate-500 dark:text-slate-400">
             {t("Try a different search or category.", "മറ്റൊരു തിരയലോ വിഭാഗമോ ശ്രമിക്കുക.")}
           </p>
         </div>
@@ -1652,8 +1652,8 @@ export function MobileGuestEligibilityQuestionnaire({
   const renderSelectionFooter = () => {
     const count = selectedSchemeIds.length;
     return (
-      <div className="relative z-30 shrink-0 border-t border-slate-200 bg-white px-4 pb-3 pt-2 shadow-[0_-6px_18px_rgba(15,23,42,0.07)]">
-        <p className="mb-1.5 text-center text-[9.5px] font-bold text-slate-600">
+      <div className="relative z-30 shrink-0 border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 px-4 pb-3 pt-2 shadow-[0_-6px_18px_rgba(15,23,42,0.07)]">
+        <p className="mb-1.5 text-center text-[9.5px] font-bold text-slate-600 dark:text-slate-400">
           {count === 1
             ? t("1 scheme selected", "1 പദ്ധതി തിരഞ്ഞെടുത്തു")
             : t(`${count} schemes selected`, `${count} പദ്ധതികൾ തിരഞ്ഞെടുത്തു`)}
@@ -1665,7 +1665,7 @@ export function MobileGuestEligibilityQuestionnaire({
           className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[12px] font-extrabold text-white shadow-md transition-all ${
             count > 0
               ? "bg-orange-500 hover:bg-orange-600 active:scale-[0.99]"
-              : "cursor-not-allowed bg-slate-300 shadow-none"
+              : "cursor-not-allowed bg-slate-300 dark:bg-slate-800 dark:text-slate-500 shadow-none"
           }`}
         >
           <HeartHandshake className="h-4 w-4 stroke-[2.5]" />
@@ -1677,12 +1677,12 @@ export function MobileGuestEligibilityQuestionnaire({
 
   const renderAssistanceOtp = () => (
     <>
-      <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 px-3.5 pb-2.5 pt-2.5">
+      <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 dark:border-slate-800 px-3.5 pb-2.5 pt-2.5">
         <div className="min-w-0">
-          <h2 className="text-[14px] font-extrabold text-slate-900">
+          <h2 className="text-[14px] font-extrabold text-slate-900 dark:text-white">
             {t("OTP Verification", "OTP സ്ഥിരീകരണം")}
           </h2>
-          <p className="mt-0.5 text-[10px] font-medium leading-relaxed text-slate-500">
+          <p className="mt-0.5 text-[10px] font-medium leading-relaxed text-slate-500 dark:text-slate-400">
             {t(
               "Enter the 6-digit verification code sent to your mobile.",
               "നിങ്ങളുടെ മൊബൈലിലേക്ക് അയച്ച 6 അക്ക സ്ഥിരീകരണ കോഡ് നൽകുക.",
@@ -1693,7 +1693,7 @@ export function MobileGuestEligibilityQuestionnaire({
           type="button"
           onClick={closeAssistance}
           disabled={assistanceSending}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 disabled:opacity-40"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-500 dark:text-slate-400 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-200 disabled:opacity-40"
           aria-label={t("Close request assistance", "സഹായ അഭ്യർത്ഥന അടയ്ക്കുക")}
         >
           <X className="h-4 w-4 stroke-[2.2]" />
@@ -1701,19 +1701,19 @@ export function MobileGuestEligibilityQuestionnaire({
       </div>
 
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3.5 py-3">
-        <div className="rounded-xl border border-orange-200 bg-orange-50/70 p-3 text-center">
-          <p className="text-[11px] font-semibold text-orange-950">
+        <div className="rounded-xl border border-orange-200 bg-orange-50/70 dark:border-orange-900/60 dark:bg-orange-950/40 p-3 text-center">
+          <p className="text-[11px] font-semibold text-orange-950 dark:text-orange-200">
             {t("Verification code sent to", "OTP അയച്ച മൊബൈൽ നമ്പർ")}
           </p>
           <div className="mt-1 flex items-center justify-center gap-2">
-            <span className="text-[13px] font-bold text-slate-900">+91 {assistanceMobile}</span>
+            <span className="text-[13px] font-bold text-slate-900 dark:text-white">+91 {assistanceMobile}</span>
             <button
               type="button"
               onClick={() => {
                 setAssistanceStep("form");
                 setAssistanceOtpError("");
               }}
-              className="text-[10.5px] font-extrabold text-orange-600 underline hover:text-orange-700"
+              className="text-[10.5px] font-extrabold text-orange-600 underline hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
             >
               {t("Change", "മാറ്റുക")}
             </button>
@@ -1721,7 +1721,7 @@ export function MobileGuestEligibilityQuestionnaire({
         </div>
 
         <div className="space-y-1.5 pt-1">
-          <label className="block text-center text-[11px] font-extrabold text-slate-700">
+          <label className="block text-center text-[11px] font-extrabold text-slate-700 dark:text-slate-300">
             {t("Enter 6-digit OTP", "6 അക്ക OTP നൽകുക")}
           </label>
           <input
@@ -1738,14 +1738,14 @@ export function MobileGuestEligibilityQuestionnaire({
               if (event.key === "Enter") verifyAndSubmitAssistance();
             }}
             placeholder="123456"
-            className="w-full rounded-xl border border-slate-200 bg-white py-2.5 text-center text-lg font-bold tracking-[0.35em] text-slate-900 outline-none transition-colors focus:border-orange-500"
+            className="w-full rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white py-2.5 text-center text-lg font-bold tracking-[0.35em] text-slate-900 outline-none transition-colors focus:border-orange-500"
           />
           {assistanceOtpError ? (
-            <p className="text-center text-[10px] font-semibold text-rose-600">
+            <p className="text-center text-[10px] font-semibold text-rose-600 dark:text-rose-400">
               {assistanceOtpError}
             </p>
           ) : (
-            <p className="text-center text-[9.5px] font-medium text-slate-400">
+            <p className="text-center text-[9.5px] font-medium text-slate-400 dark:text-slate-500">
               {t("Demo OTP: 123456", "ഡെമോ OTP: 123456")}
             </p>
           )}
@@ -1758,20 +1758,20 @@ export function MobileGuestEligibilityQuestionnaire({
               setAssistanceOtp("123456");
               setAssistanceOtpError("");
             }}
-            className="text-[10.5px] font-semibold text-slate-500 hover:text-orange-600"
+            className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400"
           >
             {t("Didn't receive code? Resend OTP", "കോഡ് ലഭിച്ചില്ലേ? OTP വീണ്ടും അയക്കുക")}
           </button>
         </div>
 
         {assistanceSubmitError ? (
-          <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-[9.5px] font-semibold text-rose-700">
+          <div className="rounded-xl border border-rose-200 bg-rose-50 dark:border-rose-900/60 dark:bg-rose-950/40 px-3 py-2 text-[9.5px] font-semibold text-rose-700 dark:text-rose-300">
             {assistanceSubmitError}
           </div>
         ) : null}
       </div>
 
-      <div className="shrink-0 border-t border-slate-200 bg-white px-3.5 pb-3 pt-2">
+      <div className="shrink-0 border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 px-3.5 pb-3 pt-2">
         <button
           type="button"
           onClick={verifyAndSubmitAssistance}
@@ -1798,24 +1798,24 @@ export function MobileGuestEligibilityQuestionnaire({
   const renderAssistanceSuccess = () => (
     <div className="flex flex-col items-center justify-center px-6 pb-6 pt-3 text-center animate-in fade-in zoom-in-95 duration-200">
       {/* Top Grab Handle */}
-      <div className="h-1.5 w-12 rounded-full bg-slate-300/80 mb-3" />
+      <div className="h-1.5 w-12 rounded-full bg-slate-300/80 dark:bg-slate-700 mb-3" />
 
       {/* 3D Leader Illustration Image without border box */}
       <div className="relative w-full max-w-[260px] h-48 sm:h-52 flex items-center justify-center my-1 overflow-hidden">
         <img
           src="/images/request_sent_leader.png"
           alt="Request sent party leader"
-          className="h-full w-auto object-contain mix-blend-multiply"
+          className="h-full w-auto object-contain mix-blend-multiply dark:brightness-95 dark:mix-blend-normal"
         />
       </div>
 
       {/* Title */}
-      <h2 className="mt-3 text-[22px] font-black tracking-tight text-[#0f172a]">
+      <h2 className="mt-3 text-[22px] font-black tracking-tight text-[#0f172a] dark:text-white">
         {t("Help Request Submitted!", "സഹായ അഭ്യർത്ഥന സമർപ്പിച്ചു!")}
       </h2>
 
       {/* Subtitle */}
-      <p className="mt-2 text-[13px] font-semibold leading-relaxed text-slate-500 max-w-[330px]">
+      <p className="mt-2 text-[13px] font-semibold leading-relaxed text-slate-500 dark:text-slate-400 max-w-[330px]">
         {t(
           "Your request has been received. A party worker will review it and reach out to assist you.",
           "നിങ്ങളുടെ അഭ്യർത്ഥന ലഭിച്ചിട്ടുണ്ട്. ഒരു പാർട്ടി പ്രവർത്തകൻ ഇത് പരിശോധിച്ച് സഹായിക്കാൻ നിങ്ങളെ ബന്ധപ്പെടും.",
@@ -1831,7 +1831,7 @@ export function MobileGuestEligibilityQuestionnaire({
           if (onHelpRequestSent) {
             onHelpRequestSent();
           } else {
-            setView("questionnaire");
+            setView("questions");
           }
         }}
         className="mt-6 w-full rounded-2xl bg-[#ff5500] hover:bg-[#e04b00] active:scale-[0.99] py-3.5 text-[15px] font-extrabold text-white shadow-md shadow-orange-500/20 transition-all cursor-pointer"
@@ -1846,11 +1846,11 @@ export function MobileGuestEligibilityQuestionnaire({
     const count = selectedSchemeIds.length;
     return (
       <div
-        className="absolute inset-0 z-50 flex flex-col justify-end bg-slate-950/45 backdrop-blur-[2px]"
+        className="absolute inset-0 z-50 flex flex-col justify-end bg-slate-950/45 dark:bg-slate-950/75"
         onClick={closeAssistance}
       >
         <div
-          className="flex max-h-[92%] w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl"
+          className="flex max-h-[92%] w-full flex-col overflow-hidden rounded-t-3xl bg-white dark:bg-slate-950 dark:border-t dark:border-slate-800 shadow-2xl"
           onClick={(event) => event.stopPropagation()}
         >
           {assistanceStep === "success" ? (
@@ -1859,9 +1859,9 @@ export function MobileGuestEligibilityQuestionnaire({
             renderAssistanceOtp()
           ) : (
             <>
-              <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 px-3.5 py-3">
+              <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 px-3.5 py-3">
                 <div className="min-w-0">
-                  <h2 className="text-[14px] font-extrabold text-slate-900">
+                  <h2 className="text-[14px] font-extrabold text-slate-900 dark:text-white">
                     {t("Request assistance", "സഹായം അഭ്യർത്ഥിക്കുക")}
                   </h2>
                 </div>
@@ -1869,7 +1869,7 @@ export function MobileGuestEligibilityQuestionnaire({
                   type="button"
                   onClick={closeAssistance}
                   disabled={assistanceSending}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 disabled:opacity-40"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-500 dark:text-slate-400 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-200 disabled:opacity-40"
                   aria-label={t("Close request assistance", "സഹായ അഭ്യർത്ഥന അടയ്ക്കുക")}
                 >
                   <X className="h-4 w-4 stroke-[2.2]" />
@@ -1879,7 +1879,7 @@ export function MobileGuestEligibilityQuestionnaire({
                 <div className="space-y-1">
                   <label
                     htmlFor="guest-assistance-name"
-                    className="block text-[10.5px] font-extrabold text-slate-700"
+                    className="block text-[10.5px] font-extrabold text-slate-700 dark:text-slate-300"
                   >
                     {t("Full name", "മുഴുവൻ പേര്")} <span className="text-rose-500">*</span>
                   </label>
@@ -1892,12 +1892,12 @@ export function MobileGuestEligibilityQuestionnaire({
                       setAssistanceErrors((current) => ({ ...current, name: "" }));
                     }}
                     placeholder={t("Enter your full name", "നിങ്ങളുടെ മുഴുവൻ പേര് നൽകുക")}
-                    className={`w-full rounded-xl border bg-white px-3 py-2 text-[11.5px] font-semibold text-slate-800 outline-none transition-colors focus:border-orange-400 ${
-                      assistanceErrors.name ? "border-rose-400" : "border-slate-200"
+                    className={`w-full rounded-xl border bg-white dark:bg-slate-900 dark:text-slate-100 px-3 py-2 text-[11.5px] font-semibold text-slate-800 outline-none transition-colors focus:border-orange-400 ${
+                      assistanceErrors.name ? "border-rose-400" : "border-slate-200 dark:border-slate-800"
                     }`}
                   />
                   {assistanceErrors.name ? (
-                    <p className="text-[9.5px] font-semibold text-rose-600">
+                    <p className="text-[9.5px] font-semibold text-rose-600 dark:text-rose-400">
                       {assistanceErrors.name}
                     </p>
                   ) : null}
@@ -1906,7 +1906,7 @@ export function MobileGuestEligibilityQuestionnaire({
                 <div className="space-y-1">
                   <label
                     htmlFor="guest-assistance-mobile"
-                    className="block text-[10.5px] font-extrabold text-slate-700"
+                    className="block text-[10.5px] font-extrabold text-slate-700 dark:text-slate-300"
                   >
                     {t("Mobile number", "മൊബൈൽ നമ്പർ")} <span className="text-rose-500">*</span>
                   </label>
@@ -1921,12 +1921,12 @@ export function MobileGuestEligibilityQuestionnaire({
                       setAssistanceErrors((current) => ({ ...current, mobile: "" }));
                     }}
                     placeholder={t("10-digit mobile number", "10 അക്ക മൊബൈൽ നമ്പർ")}
-                    className={`w-full rounded-xl border bg-white px-3 py-2 text-[11.5px] font-semibold text-slate-800 outline-none transition-colors focus:border-orange-400 ${
-                      assistanceErrors.mobile ? "border-rose-400" : "border-slate-200"
+                    className={`w-full rounded-xl border bg-white dark:bg-slate-900 dark:text-slate-100 px-3 py-2 text-[11.5px] font-semibold text-slate-800 outline-none transition-colors focus:border-orange-400 ${
+                      assistanceErrors.mobile ? "border-rose-400" : "border-slate-200 dark:border-slate-800"
                     }`}
                   />
                   {assistanceErrors.mobile ? (
-                    <p className="text-[9.5px] font-semibold text-rose-600">
+                    <p className="text-[9.5px] font-semibold text-rose-600 dark:text-rose-400">
                       {assistanceErrors.mobile}
                     </p>
                   ) : null}
@@ -1957,7 +1957,7 @@ export function MobileGuestEligibilityQuestionnaire({
                         onSelect={handleAssistanceDistrictChange}
                       />
                       {assistanceErrors.district ? (
-                        <p className="text-[9.5px] font-semibold text-rose-600">
+                        <p className="text-[9.5px] font-semibold text-rose-600 dark:text-rose-400">
                           {assistanceErrors.district}
                         </p>
                       ) : null}
@@ -1988,7 +1988,7 @@ export function MobileGuestEligibilityQuestionnaire({
                         onSelect={handleAssistanceLocalBodyTypeChange}
                       />
                       {assistanceErrors.localBodyType ? (
-                        <p className="text-[9.5px] font-semibold text-rose-600">
+                        <p className="text-[9.5px] font-semibold text-rose-600 dark:text-rose-400">
                           {assistanceErrors.localBodyType}
                         </p>
                       ) : null}
@@ -2018,7 +2018,7 @@ export function MobileGuestEligibilityQuestionnaire({
                     onSelect={handleAssistanceLocalBodyChange}
                   />
                   {assistanceErrors.localBody ? (
-                    <p className="text-[9.5px] font-semibold text-rose-600">
+                    <p className="text-[9.5px] font-semibold text-rose-600 dark:text-rose-400">
                       {assistanceErrors.localBody}
                     </p>
                   ) : null}
@@ -2046,7 +2046,7 @@ export function MobileGuestEligibilityQuestionnaire({
                     onSelect={handleAssistanceWardChange}
                   />
                   {assistanceErrors.ward ? (
-                    <p className="text-[9.5px] font-semibold text-rose-600">
+                    <p className="text-[9.5px] font-semibold text-rose-600 dark:text-rose-400">
                       {assistanceErrors.ward}
                     </p>
                   ) : null}
@@ -2054,7 +2054,7 @@ export function MobileGuestEligibilityQuestionnaire({
                 <div className="space-y-1">
                   <label
                     htmlFor="guest-assistance-notes"
-                    className="block text-[10.5px] font-extrabold text-slate-700"
+                    className="block text-[10.5px] font-extrabold text-slate-700 dark:text-slate-300"
                   >
                     {t("Notes (optional)", "കുറിപ്പുകൾ (ഐച്ഛികം)")}
                   </label>
@@ -2067,31 +2067,31 @@ export function MobileGuestEligibilityQuestionnaire({
                       "Anything the party leader should know",
                       "പാർട്ടി നേതാവ് അറിയേണ്ട കാര്യങ്ങൾ",
                     )}
-                    className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-medium leading-relaxed text-slate-800 outline-none transition-colors focus:border-orange-400"
+                    className="w-full resize-none rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-[11px] font-medium leading-relaxed text-slate-800 dark:text-slate-100 outline-none transition-colors focus:border-orange-400"
                   />
                 </div>
-                <div className="overflow-hidden rounded-xl border border-orange-200 bg-orange-50/70">
+                <div className="overflow-hidden rounded-xl border border-orange-200 bg-orange-50/70 dark:border-orange-900/60 dark:bg-orange-950/40">
                   <button
                     type="button"
                     onClick={() => setSchemeNamesExpanded((current) => !current)}
                     className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left"
                   >
-                    <span className="flex items-center gap-1.5 text-[10.5px] font-extrabold text-orange-800">
+                    <span className="flex items-center gap-1.5 text-[10.5px] font-extrabold text-orange-800 dark:text-orange-300">
                       <HeartHandshake className="h-3.5 w-3.5" />
                       {count === 1
                         ? t("1 scheme selected", "1 പദ്ധതി തിരഞ്ഞെടുത്തു")
                         : t(`${count} schemes selected`, `${count} പദ്ധതികൾ തിരഞ്ഞെടുത്തു`)}
                     </span>
                     <ChevronDown
-                      className={`h-4 w-4 shrink-0 text-orange-700 transition-transform ${schemeNamesExpanded ? "rotate-180" : ""}`}
+                      className={`h-4 w-4 shrink-0 text-orange-700 dark:text-orange-400 transition-transform ${schemeNamesExpanded ? "rotate-180" : ""}`}
                     />
                   </button>
                   {schemeNamesExpanded ? (
-                    <ul className="space-y-1 border-t border-orange-200/70 px-3 py-2">
+                    <ul className="space-y-1 border-t border-orange-200/70 dark:border-orange-900/60 px-3 py-2">
                       {selectedSchemes.map((scheme) => (
                         <li
                           key={scheme.id}
-                          className="flex items-start gap-1.5 text-[10px] font-semibold text-orange-900"
+                          className="flex items-start gap-1.5 text-[10px] font-semibold text-orange-900 dark:text-orange-200"
                         >
                           <Check className="mt-0.5 h-3 w-3 shrink-0 stroke-[3]" />
                           <span>{lang === "ml" ? scheme.ml : scheme.en}</span>
@@ -2102,17 +2102,17 @@ export function MobileGuestEligibilityQuestionnaire({
                 </div>
 
                 {assistanceErrors.schemes ? (
-                  <p className="text-[9.5px] font-semibold text-rose-600">
+                  <p className="text-[9.5px] font-semibold text-rose-600 dark:text-rose-400">
                     {assistanceErrors.schemes}
                   </p>
                 ) : null}
                 {assistanceSubmitError ? (
-                  <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-[9.5px] font-semibold leading-relaxed text-rose-700">
+                  <div className="rounded-xl border border-rose-200 bg-rose-50 dark:border-rose-900/60 dark:bg-rose-950/40 px-3 py-2 text-[9.5px] font-semibold leading-relaxed text-rose-700 dark:text-rose-300">
                     {assistanceSubmitError}
                   </div>
                 ) : null}
               </div>
-              <div className="shrink-0 border-t border-slate-200 bg-white px-3.5 pb-3 pt-2">
+              <div className="shrink-0 border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 px-3.5 pb-3 pt-2">
                 <button
                   type="button"
                   onClick={submitAssistance}
@@ -2144,23 +2144,23 @@ export function MobileGuestEligibilityQuestionnaire({
 
   const renderSuccess = () => (
     <div className="flex min-h-[440px] flex-col items-center justify-center px-3 py-6 text-center animate-in fade-in zoom-in-95 duration-300">
-      <div className="w-full max-w-[320px] rounded-3xl border border-emerald-100 bg-gradient-to-b from-emerald-50/90 via-white to-orange-50/30 p-5 shadow-xs">
+      <div className="w-full max-w-[320px] rounded-3xl border border-emerald-100 dark:border-emerald-900/60 bg-gradient-to-b from-emerald-50/90 via-white to-orange-50/30 dark:from-emerald-950/40 dark:via-slate-900 dark:to-orange-950/20 p-5 shadow-xs">
         {/* Animated Check Icon */}
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 ring-4 ring-emerald-100">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 ring-4 ring-emerald-100 dark:ring-emerald-900/50">
           <Check className="h-7 w-7 stroke-[3]" />
         </div>
 
         {/* Status Badge */}
-        <div className="mt-3.5 inline-flex items-center gap-1.5 rounded-full bg-emerald-100/90 px-3 py-0.5 text-[9.5px] font-extrabold uppercase tracking-wider text-emerald-800">
+        <div className="mt-3.5 inline-flex items-center gap-1.5 rounded-full bg-emerald-100/90 dark:bg-emerald-950/80 px-3 py-0.5 text-[9.5px] font-extrabold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse" />
           {t("Request Completed", "അഭ്യർത്ഥന പൂർത്തിയായി")}
         </div>
 
-        <h2 className="mt-2 text-[17px] font-extrabold leading-tight text-slate-900">
+        <h2 className="mt-2 text-[17px] font-extrabold leading-tight text-slate-900 dark:text-white">
           {t("Help Request Sent!", "സഹായ അഭ്യർത്ഥന അയച്ചു!")}
         </h2>
 
-        <p className="mt-1.5 text-[11px] font-medium leading-relaxed text-slate-600">
+        <p className="mt-1.5 text-[11px] font-medium leading-relaxed text-slate-600 dark:text-slate-400">
           {t(
             "Your request has been sent to party leaders for assistance. They will contact you shortly.",
             "സഹായത്തിനായി നിങ്ങളുടെ വിവരങ്ങൾ പാർട്ടി നേതാക്കൾക്ക് കൈമാറി. അവർ നിങ്ങളെ ഉടൻ ബന്ധപ്പെടും.",
@@ -2169,7 +2169,7 @@ export function MobileGuestEligibilityQuestionnaire({
 
         {/* Reference ID Box */}
         {requestReference ? (
-          <div className="mt-3.5 rounded-xl border border-slate-200/80 bg-slate-900 p-2.5 text-white shadow-inner">
+          <div className="mt-3.5 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-900 p-2.5 text-white shadow-inner">
             <p className="text-[8.5px] font-bold tracking-wider text-slate-400 uppercase">
               {t("Reference ID", "റഫറൻസ് നമ്പർ")}
             </p>
@@ -2180,11 +2180,11 @@ export function MobileGuestEligibilityQuestionnaire({
         ) : null}
 
         {/* Summary Pill */}
-        <div className="mt-2.5 flex items-center justify-between rounded-xl bg-slate-100/80 px-3 py-1.5 text-[10.5px]">
-          <span className="font-semibold text-slate-600">
+        <div className="mt-2.5 flex items-center justify-between rounded-xl bg-slate-100/80 dark:bg-slate-800/80 px-3 py-1.5 text-[10.5px]">
+          <span className="font-semibold text-slate-600 dark:text-slate-400">
             {t("Schemes selected", "തിരഞ്ഞെടുത്ത പദ്ധതികൾ")}
           </span>
-          <span className="font-extrabold text-slate-900">
+          <span className="font-extrabold text-slate-900 dark:text-white">
             {selectedSchemeIds.length}{" "}
             {t(selectedSchemeIds.length === 1 ? "scheme" : "schemes", "പദ്ധതികൾ")}
           </span>
@@ -2202,7 +2202,7 @@ export function MobileGuestEligibilityQuestionnaire({
           {t("Go to Home", "ഹോം പേജിലേക്ക് പോകുക")}
         </button>
 
-        <p className="text-[9px] font-medium text-slate-400">
+        <p className="text-[9px] font-medium text-slate-400 dark:text-slate-500">
           {t("Returning to the guest home page…", "അതിഥി ഹോം പേജിലേക്ക് മടങ്ങുന്നു…")}
         </p>
       </div>
@@ -2211,13 +2211,13 @@ export function MobileGuestEligibilityQuestionnaire({
 
   const renderLoading = () => (
     <div className="flex min-h-[360px] flex-col items-center justify-center px-6 text-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-orange-50 text-orange-500">
+      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-orange-50 dark:bg-orange-950/50 text-orange-500 dark:text-orange-400">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
-      <h2 className="mt-3 text-[15px] font-extrabold text-slate-900">
+      <h2 className="mt-3 text-[15px] font-extrabold text-slate-900 dark:text-white">
         {t("Checking suitable schemes", "അനുയോജ്യമായ പദ്ധതികൾ പരിശോധിക്കുന്നു")}
       </h2>
-      <p className="mt-1.5 max-w-[240px] text-[10.5px] font-medium leading-relaxed text-slate-500">
+      <p className="mt-1.5 max-w-[240px] text-[10.5px] font-medium leading-relaxed text-slate-500 dark:text-slate-400">
         {t(
           "We are comparing your answers with the existing eligibility rules.",
           "നിങ്ങളുടെ ഉത്തരങ്ങൾ നിലവിലുള്ള യോഗ്യതാ നിയമങ്ങളുമായി താരതമ്യം ചെയ്യുന്നു.",
@@ -2228,13 +2228,13 @@ export function MobileGuestEligibilityQuestionnaire({
 
   const renderError = () => (
     <div className="flex min-h-[360px] flex-col items-center justify-center px-6 text-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-rose-50 text-rose-500">
+      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-rose-50 dark:bg-rose-950/50 text-rose-500 dark:text-rose-400">
         <RefreshCw className="h-8 w-8" />
       </div>
-      <h2 className="mt-3 text-[15px] font-extrabold text-slate-900">
+      <h2 className="mt-3 text-[15px] font-extrabold text-slate-900 dark:text-white">
         {t("Something went wrong", "എന്തോ കുഴപ്പം സംഭവിച്ചു")}
       </h2>
-      <p className="mt-1.5 max-w-[260px] text-[10.5px] font-medium leading-relaxed text-slate-600">
+      <p className="mt-1.5 max-w-[260px] text-[10.5px] font-medium leading-relaxed text-slate-600 dark:text-slate-400">
         {resultError}
       </p>
       <button
@@ -2249,7 +2249,7 @@ export function MobileGuestEligibilityQuestionnaire({
   );
 
   return (
-    <div className="relative flex h-full flex-col overflow-hidden bg-[#FAFAFA]">
+    <div className="relative flex h-full flex-col overflow-hidden bg-[#FAFAFA] dark:bg-slate-950">
       {view === "questions"
         ? renderHeader(t("Check Eligibility", "യോഗ്യത പരിശോധിക്കുക"), true)
         : renderHeader(
@@ -2282,7 +2282,7 @@ export function MobileGuestEligibilityQuestionnaire({
       </div>
       {view === "results" || view === "browse" ? renderSelectionFooter() : null}
       {view === "questions" ? (
-        <div className="relative z-30 shrink-0 border-t border-slate-200 bg-white px-4 pb-3 pt-2.5">
+        <div className="relative z-30 shrink-0 border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 px-4 pb-3 pt-2.5">
           <button
             type="button"
             disabled={!canContinue}
@@ -2290,7 +2290,7 @@ export function MobileGuestEligibilityQuestionnaire({
             className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[12px] font-extrabold text-white transition-all ${
               canContinue
                 ? "bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-[0.99]"
-                : "cursor-not-allowed bg-slate-300"
+                : "cursor-not-allowed bg-slate-300 dark:bg-slate-800 dark:text-slate-500"
             }`}
           >
             {step === TOTAL_STEPS ? <SearchCheck className="h-4 w-4 stroke-[2.5]" /> : null}
@@ -2298,7 +2298,7 @@ export function MobileGuestEligibilityQuestionnaire({
               ? t("Show Matching Schemes", "അനുയോജ്യ പദ്ധതികൾ കാണിക്കുക")
               : t("Continue", "തുടരുക")}
           </button>
-          <p className="mt-1 text-center text-[8.5px] font-medium leading-snug text-slate-400">
+          <p className="mt-1 text-center text-[8.5px] font-medium leading-snug text-slate-400 dark:text-slate-500">
             {t(
               "Your details help us find suitable schemes.",
               "നിങ്ങളുടെ വിവരങ്ങൾ അനുയോജ്യമായ പദ്ധതികൾ കണ്ടെത്താൻ സഹായിക്കും.",

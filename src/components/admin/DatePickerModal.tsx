@@ -262,8 +262,8 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
   };
 
   const overlayClass = inlineInApp
-    ? "absolute inset-0 z-50 flex items-end bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200 rounded-[36px] overflow-hidden"
-    : "fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200";
+    ? "absolute inset-0 z-50 flex items-end bg-black/60 transition-opacity animate-in fade-in duration-200 rounded-[36px] overflow-hidden"
+    : "fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 transition-opacity animate-in fade-in duration-200";
 
   // Compute range bounds for calendar highlight
   const minRange = rangeStart !== null && rangeEnd !== null ? Math.min(rangeStart, rangeEnd) : rangeStart;
@@ -272,7 +272,11 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
   return (
     <div className={overlayClass} onClick={onClose}>
       <div 
-        className="w-full max-w-md rounded-t-[28px] sm:rounded-3xl bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-2xl transition-all border-t border-x border-slate-200/80 dark:border-slate-800 animate-in slide-in-from-bottom-full duration-300 max-h-[88%] overflow-y-auto"
+        className={
+          inlineInApp
+            ? "w-full rounded-t-[28px] rounded-b-none bg-white dark:bg-slate-900 p-4 shadow-2xl transition-all border-t border-slate-200/80 dark:border-slate-800 animate-in slide-in-from-bottom-full duration-300 max-h-[92%] overflow-y-auto"
+            : "w-full max-w-md rounded-t-[28px] sm:rounded-3xl bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-2xl transition-all border-t border-x border-slate-200/80 dark:border-slate-800 animate-in slide-in-from-bottom-full duration-300 max-h-[88%] overflow-y-auto"
+        }
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Handle Bar for Mobile Sheet Feel */}

@@ -299,9 +299,12 @@ export const partyDesignations: PartyDesignation[] = [
     ml: "പഞ്ചായത്ത് കൺവീനർ",
     level: "local_body",
   },
-  { id: "ward-president", en: "Ward President", ml: "വാർഡ് പ്രസിഡന്റ്", level: "ward" },
-  { id: "ward-lead", en: "Ward Lead", ml: "വാർഡ് ലീഡ്", level: "ward" },
-  { id: "ward-in-charge", en: "Ward In-Charge", ml: "വാർഡ് ഇൻ-ചാർജ്", level: "ward" },
+  { id: "ward-president", en: "President", ml: "പ്രസിഡന്റ്", level: "ward" },
+  { id: "ward-vice-president", en: "Vice President", ml: "വൈസ് പ്രസിഡന്റ്", level: "ward" },
+  { id: "ward-secretary", en: "Secretary", ml: "സെക്രട്ടറി", level: "ward" },
+  { id: "ward-convenor", en: "Convenor", ml: "കൺവീനർ", level: "ward" },
+  { id: "ward-committee-member", en: "Committee Member", ml: "കമ്മിറ്റി അംഗം", level: "ward" },
+  { id: "ward-worker", en: "Ward Worker", ml: "വാർഡ് പ്രവർത്തകൻ", level: "ward" },
   {
     id: "mandalam-in-charge",
     en: "Mandalam In-Charge",
@@ -373,9 +376,14 @@ export function getBoothsForConstituency(constituencyId: string) {
   return boothDirectory.filter((booth) => booth.constituencyId === constituencyId);
 }
 
-export function getLocalBodies(districtId: string, type: LocalBodyType | "") {
-  if (!districtId || !type) return [];
-  return panchayats.filter((body) => body.districtId === districtId && body.type === type);
+export function getLocalBodies(districtId: string, type: LocalBodyType | "", constituencyId?: string) {
+  if (!districtId && !constituencyId) return [];
+  return panchayats.filter((body) => {
+    if (districtId && body.districtId !== districtId) return false;
+    if (constituencyId && body.constituencyId !== constituencyId) return false;
+    if (type && body.type !== type) return false;
+    return true;
+  });
 }
 
 /* -------------------------------------------------------------------------- */

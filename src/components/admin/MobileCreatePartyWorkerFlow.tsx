@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { DatePickerModal } from "./DatePickerModal";
 import partyWorkerAvatar from "@/assets/create-partyworker-3d-avatar.jpg";
 import createScheme3dAvatar from "@/assets/create-scheme-3d-avatar.jpg";
 import {
@@ -7,18 +8,26 @@ import {
   Briefcase,
   Building,
   Building2,
+  Calendar,
   Camera,
   Check,
+  CheckCircle2,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   ClipboardList,
+  Copy,
+  Eye,
   FileText,
   Filter,
   GitFork,
   Headset,
+  HelpCircle,
   Home,
+  Inbox,
   Landmark,
   Layers,
+  Leaf,
   MapPin,
   MoreVertical,
   Pencil,
@@ -28,8 +37,10 @@ import {
   Search,
   Shield,
   ShieldCheck,
+  Sprout,
   Trash2,
   User,
+  UserCheck,
   UserRound,
   UserX,
   Users,
@@ -54,6 +65,8 @@ import {
   getWardsForLocalBody,
   organisationalDistricts,
   panchayats,
+  regions,
+  REGION_ORGANISATIONAL_DISTRICTS,
   type LocalBodyType,
 } from "@/data/geo";
 import { orgHierarchyData } from "@/data/admin-dashboard-metrics";
@@ -115,6 +128,8 @@ interface MobileCreatePartyWorkerFlowProps {
   lang: Lang;
   onClose: () => void;
   onCreated?: (worker: WorkerProfile) => void;
+  onSelectApplication?: (app: any) => void;
+  onSelectScheme?: (scheme: any) => void;
   actorRole?: ActorRole;
   canOpenExistingWorker?: boolean;
   initialPhase?: "form" | "list";
@@ -179,6 +194,7 @@ type PickerKey =
   | "filter_local_body_type"
   | "filter_local_body"
   | "worker_filter_level"
+  | "worker_filter_region"
   | "worker_filter_designation"
   | "worker_filter_district"
   | "worker_filter_constituency"
@@ -387,6 +403,23 @@ function findExistingWorker(mobile: string) {
   return user ? profileFromAppUser(user) : null;
 }
 
+function getWorkerApplicationStats(worker: { id: string; name: string; mobile?: string }) {
+  const seed = (worker.id + (worker.name || "") + (worker.mobile || "")).split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const total = (seed % 15) + 4;
+  const approved = Math.floor(total * 0.45) + (seed % 2);
+  const rejected = Math.max(0, Math.floor(total * 0.15) - (seed % 2));
+  const inReview = Math.floor(total * 0.25);
+  const pending = Math.max(0, total - (approved + rejected + inReview));
+
+  return {
+    total,
+    approved,
+    rejected,
+    inReview,
+    pending,
+  };
+}
+
 function workerAreaLabel(worker: WorkerProfile, lang: Lang) {
   const designationLevel = partyDesignations.find(
     (item) => item.en === worker.designationEn || item.ml === worker.designationMl,
@@ -473,6 +506,7 @@ type WorkerListFilters = {
   status: "all" | "Active" | "Inactive";
   level: AssignmentLevel | "all";
   designationId: string;
+  regionId: string;
   districtId: string;
   constituencyId: string;
   localBodyType: LocalBodyType | "";
@@ -509,6 +543,7 @@ const defaultWorkerListFilters: WorkerListFilters = {
   status: "all",
   level: "all",
   designationId: "all",
+  regionId: "",
   districtId: "",
   constituencyId: "",
   localBodyType: "",
@@ -524,6 +559,7 @@ function countActiveWorkerFilters(filters: WorkerListFilters) {
   if (filters.status !== "all") count += 1;
   if (filters.level !== "all") count += 1;
   if (filters.designationId !== "all") count += 1;
+  if (filters.regionId) count += 1;
   if (filters.districtId) count += 1;
   if (filters.constituencyId) count += 1;
   if (filters.localBodyType) count += 1;
@@ -568,15 +604,42 @@ function workerMatchesListFilters(worker: WorkerProfile, filters: WorkerListFilt
   const locationText = `${worker.locationLines.en} ${worker.locationLines.ml}`.toLowerCase();
   const contains = (value?: string) => Boolean(value && locationText.includes(value.toLowerCase()));
 
+  if (filters.regionId) {
+    const regId = filters.regionId;
+    const workerReg = getUserRegion({
+      districtNameEn: worker.districtNameEn,
+      districtNameMl: worker.districtNameMl,
+      regionEn: worker.regionNamesEn?.[0],
+    });
+    let match = false;
+    if (regId === "reg-north" && (workerReg === "Northern Region" || workerReg === "North Region" || worker.regionIds?.includes("reg-north"))) match = true;
+    if (regId === "reg-central" && (workerReg === "Central Region" || worker.regionIds?.includes("reg-central"))) match = true;
+    if (regId === "reg-south" && (workerReg === "Southern Region" || workerReg === "South Region" || worker.regionIds?.includes("reg-south"))) match = true;
+    if (!match) return false;
+  }
+
   if (filters.districtId) {
     const selectedDistrict = districts.find((item) => item.id === filters.districtId);
-    if (!selectedDistrict) return false;
-    const matchesDistrict =
-      worker.districtId === selectedDistrict.id ||
-      worker.districtNameEn === selectedDistrict.en ||
-      worker.districtNameMl === selectedDistrict.ml ||
-      contains(selectedDistrict.en) ||
-      contains(selectedDistrict.ml);
+    const selectedOrgDistrict = organisationalDistricts.find((item) => item.id === filters.districtId);
+    if (!selectedDistrict && !selectedOrgDistrict) return false;
+
+    let matchesDistrict = false;
+    if (selectedDistrict) {
+      matchesDistrict =
+        worker.districtId === selectedDistrict.id ||
+        worker.districtNameEn === selectedDistrict.en ||
+        worker.districtNameMl === selectedDistrict.ml ||
+        contains(selectedDistrict.en) ||
+        contains(selectedDistrict.ml);
+    }
+    if (!matchesDistrict && selectedOrgDistrict) {
+      matchesDistrict =
+        worker.orgDistrictId === selectedOrgDistrict.id ||
+        worker.orgDistrictNameEn === selectedOrgDistrict.en ||
+        worker.orgDistrictNameMl === selectedOrgDistrict.ml ||
+        contains(selectedOrgDistrict.en) ||
+        contains(selectedOrgDistrict.ml);
+    }
     if (!matchesDistrict) return false;
   }
 
@@ -674,6 +737,8 @@ export function MobileCreatePartyWorkerFlow({
   lang,
   onClose,
   onCreated,
+  onSelectApplication,
+  onSelectScheme,
   actorRole = "state_admin",
   canOpenExistingWorker = true,
   initialPhase = "form",
@@ -686,6 +751,143 @@ export function MobileCreatePartyWorkerFlow({
   const [editingWorkerId, setEditingWorkerId] = useState<string | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [profileActiveTab, setProfileActiveTab] = useState<"informations" | "applications">("informations");
+  const [assistedViewMode, setAssistedViewMode] = useState<"applications" | "schemes">("applications");
+  const [assistedDateRange, setAssistedDateRange] = useState<string>("this_month");
+  const [assistedStatusFilter, setAssistedStatusFilter] = useState<string>("all");
+  const [assistedFilterOpen, setAssistedFilterOpen] = useState(false);
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [selectedAssistedApp, setSelectedAssistedApp] = useState<any | null>(null);
+  const [openCardMenuId, setOpenCardMenuId] = useState<string | null>(null);
+  const [copiedTrackingId, setCopiedTrackingId] = useState(false);
+  const [assistedAppList, setAssistedAppList] = useState<any[]>([
+    {
+      id: "app-1",
+      categoryEn: "Agriculture",
+      categoryMl: "കൃഷി",
+      titleEn: "PM Kisan Samman Nidhi",
+      titleMl: "പിഎം കിസാൻ സമ്മാൻ നിധി",
+      ministryEn: "Ministry of Agriculture & Farmers Welfare, Govt. of India",
+      ministryMl: "കാർഷിക കർഷക ക്ഷേമ മന്ത്രാലയം, ഭാരത സർക്കാർ",
+      status: "approved",
+      statusLabelEn: "Approved",
+      statusLabelMl: "അംഗീകരിച്ചു",
+      date: "23 Oct 2026",
+      periodKey: "oct2026",
+      applicantName: "K. Krishnan",
+      applicantLocation: "Palakkad North, Palakkad",
+      applicantPhone: "9876543210",
+      refId: "PMSV-2026-9281",
+    },
+    {
+      id: "app-2",
+      categoryEn: "Agriculture Credit",
+      categoryMl: "കാർഷിക വായ്പ",
+      titleEn: "Kisan Credit Card (KCC) Scheme",
+      titleMl: "കിസാൻ ക്രെഡിറ്റ് കാർഡ് (KCC) പദ്ധതി",
+      ministryEn: "NABARD & Ministry of Agriculture",
+      ministryMl: "നബാർഡ് & കൃഷി മന്ത്രാലയം",
+      status: "approved",
+      statusLabelEn: "Approved",
+      statusLabelMl: "അംഗീകരിച്ചു",
+      date: "23 Oct 2026",
+      periodKey: "oct2026",
+      applicantName: "K. Krishnan",
+      applicantLocation: "Palakkad North, Palakkad",
+      applicantPhone: "9876543210",
+      refId: "KCC-2026-89415",
+    },
+    {
+      id: "app-3",
+      categoryEn: "Business",
+      categoryMl: "ബിസിനസ്സ്",
+      titleEn: "PM SVANidhi",
+      titleMl: "പിഎം സ്വനിധി",
+      ministryEn: "Ministry of Housing & Urban Affairs",
+      ministryMl: "ഭവന നഗരകാര്യ മന്ത്രാലയം",
+      status: "approved",
+      statusLabelEn: "Approved",
+      statusLabelMl: "അംഗീകരിച്ചു",
+      date: "23 Oct 2026",
+      periodKey: "oct2026",
+      applicantName: "K. Krishnan",
+      applicantLocation: "Palakkad North, Palakkad",
+      applicantPhone: "9876543210",
+      refId: "PMSV-2026-89418",
+    },
+    {
+      id: "app-4",
+      categoryEn: "Agriculture",
+      categoryMl: "കൃഷി",
+      titleEn: "Pradhan Mantri Fasal Bima Yojana (PMFBY)",
+      titleMl: "പ്രധാനമന്ത്രി ഫസൽ ഭീമ യോജന (PMFBY)",
+      ministryEn: "Ministry of Agriculture",
+      ministryMl: "കൃഷി മന്ത്രാലയം",
+      status: "pending",
+      statusLabelEn: "Received",
+      statusLabelMl: "ലഭിച്ചു",
+      date: "18 Oct 2026",
+      periodKey: "oct2026",
+      applicantName: "K. Krishnan",
+      applicantLocation: "Palakkad North, Palakkad",
+      applicantPhone: "9876543210",
+      refId: "PMFB-2026-87102",
+    },
+    {
+      id: "app-5",
+      categoryEn: "Business Loan",
+      categoryMl: "ബിസിനസ് വായ്പ",
+      titleEn: "Pradhan Mantri Mudra Yojana (PMMY)",
+      titleMl: "പ്രധാനമന്ത്രി മുദ്ര യോജന (PMMY)",
+      ministryEn: "Ministry of Finance",
+      ministryMl: "ധനകാര്യ മന്ത്രാലയം",
+      status: "pending",
+      statusLabelEn: "Received",
+      statusLabelMl: "ലഭിച്ചു",
+      date: "18 Oct 2026",
+      periodKey: "oct2026",
+      applicantName: "K. Krishnan",
+      applicantLocation: "Palakkad North, Palakkad",
+      applicantPhone: "9876543210",
+      refId: "PMMY-2026-87105",
+    },
+    {
+      id: "app-6",
+      categoryEn: "Pension",
+      categoryMl: "പെൻഷൻ",
+      titleEn: "Atal Pension Yojana (APY)",
+      titleMl: "അടൽ പെൻഷൻ യോജന (APY)",
+      ministryEn: "Ministry of Finance",
+      ministryMl: "ധനകാര്യ മന്ത്രാലയം",
+      status: "approved",
+      statusLabelEn: "Approved",
+      statusLabelMl: "അംഗീകരിച്ചു",
+      date: "12 Oct 2026",
+      periodKey: "oct2026",
+      applicantName: "Devaki Amma",
+      applicantLocation: "Manalur, Thrissur",
+      applicantPhone: "9876543211",
+      refId: "APY-2026-85201",
+    },
+    {
+      id: "app-7",
+      categoryEn: "Pension",
+      categoryMl: "പെൻഷൻ",
+      titleEn: "Indira Gandhi National Old Age Pension",
+      titleMl: "ഇന്ദിരാഗാന്ധി ദേശീയ വാർദ്ധക്യകാല പെൻഷൻ",
+      ministryEn: "Ministry of Rural Development",
+      ministryMl: "ഗ്രാമീണ വികസന മന്ത്രാലയം",
+      status: "approved",
+      statusLabelEn: "Approved",
+      statusLabelMl: "അംഗീകരിച്ചു",
+      date: "10 Oct 2026",
+      periodKey: "oct2026",
+      applicantName: "Devaki Amma",
+      applicantLocation: "Manalur, Thrissur",
+      applicantPhone: "9876543211",
+      refId: "IGNO-2026-84110",
+    },
+  ]);
+  const [selectedAssistedScheme, setSelectedAssistedScheme] = useState<any | null>(null);
   const [profilePhotoBusy, setProfilePhotoBusy] = useState(false);
   const [profilePhotoError, setProfilePhotoError] = useState("");
   const [focusAccessAreas, setFocusAccessAreas] = useState(false);
@@ -913,7 +1115,10 @@ export function MobileCreatePartyWorkerFlow({
   const workerFilterDesignation = allDesignationChoices.find(
     (item) => item.id === draftWorkerFilters.designationId,
   );
-  const workerFilterDistrict = districts.find((item) => item.id === draftWorkerFilters.districtId);
+  const workerFilterRegion = regions.find((item) => item.id === draftWorkerFilters.regionId);
+  const workerFilterDistrict =
+    districts.find((item) => item.id === draftWorkerFilters.districtId) ||
+    organisationalDistricts.find((item) => item.id === draftWorkerFilters.districtId);
   const workerFilterConstituency = constituencies.find(
     (item) => item.id === draftWorkerFilters.constituencyId,
   );
@@ -935,24 +1140,39 @@ export function MobileCreatePartyWorkerFlow({
   const workerFilterAppRole = rolePresets.find((item) => item.id === draftWorkerFilters.appRole);
   const workerFilterDesignationOptions = useMemo<PartyDesignation[]>(() => {
     const filterLevel = draftWorkerFilters.level === "all" ? "" : draftWorkerFilters.level;
-    const standard = partyDesignations.filter((item) => !filterLevel || item.level === filterLevel);
+    const standard = partyDesignations.filter((item) => {
+      if (!filterLevel) return true;
+      if (filterLevel === "mandalam" || filterLevel === "assembly_constituency") {
+        return item.level === "mandalam" || item.level === "assembly_constituency";
+      }
+      return item.level === filterLevel;
+    });
     const custom = managedRoles
       .filter(
         (role) =>
           !role.system &&
           role.status === "Active" &&
           !isRetiredCustomRole(role) &&
-          (!filterLevel || role.assignmentLevels.includes(filterLevel)),
+          (!filterLevel || role.assignmentLevels.includes(filterLevel as AssignmentLevel)),
       )
-      .map((role) => managedRoleDesignation(role, filterLevel));
+      .map((role) => managedRoleDesignation(role, filterLevel as AssignmentLevel));
     return [...standard, ...custom];
   }, [draftWorkerFilters.level, managedRoles]);
-  const workerFilterConstituencyOptions = draftWorkerFilters.districtId
-    ? constituencies.filter((item) => item.districtId === draftWorkerFilters.districtId)
-    : [];
+  const workerFilterConstituencyOptions = useMemo(() => {
+    const distId = draftWorkerFilters.districtId;
+    if (!distId || distId === "all") return constituencies;
+    const revDist = districts.find(
+      (d) => d.id === distId || distId === `od-${d.id}` || distId.startsWith(`od-${d.id}-`),
+    );
+    if (revDist) {
+      return constituencies.filter((item) => item.districtId === revDist.id);
+    }
+    return constituencies.filter((item) => item.districtId === distId);
+  }, [draftWorkerFilters.districtId]);
   const workerFilterLocalBodyOptions = getLocalBodies(
     draftWorkerFilters.districtId,
     draftWorkerFilters.localBodyType,
+    draftWorkerFilters.constituencyId,
   );
   const workerFilterWardOptions = draftWorkerFilters.localBodyId
     ? getWardsForLocalBody(draftWorkerFilters.localBodyId)
@@ -1555,6 +1775,7 @@ export function MobileCreatePartyWorkerFlow({
   };
 
   const clearedWorkerFilterLocations = () => ({
+    regionId: "",
     districtId: "",
     constituencyId: "",
     localBodyType: "" as const,
@@ -1563,6 +1784,23 @@ export function MobileCreatePartyWorkerFlow({
     boothId: "",
     orgUnitId: "",
   });
+
+  const handleWorkerFilterRegionChange = (nextId: string) => {
+    setDraftWorkerFilters((prev) => {
+      const value = nextId === "all" ? "" : nextId;
+      if (prev.regionId === value) return prev;
+      return {
+        ...prev,
+        regionId: value,
+        districtId: "",
+        constituencyId: "",
+        localBodyType: "",
+        localBodyId: "",
+        wardId: "",
+        boothId: "",
+      };
+    });
+  };
 
   const handleWorkerFilterLevelChange = (nextLevel: AssignmentLevel | "all") => {
     setDraftWorkerFilters((prev) => {
@@ -1618,7 +1856,18 @@ export function MobileCreatePartyWorkerFlow({
     setDraftWorkerFilters((prev) => {
       const value = nextId === "all" ? "" : nextId;
       if (prev.constituencyId === value) return prev;
-      return { ...prev, constituencyId: value, boothId: "" };
+      const constObj = constituencies.find((c) => c.id === value);
+      const matchedOrgDistrictId = constObj
+        ? (organisationalDistricts.find(
+            (od) => od.id === `od-${constObj.districtId}` || od.id.startsWith(`od-${constObj.districtId}-`),
+          )?.id || constObj.districtId)
+        : prev.districtId;
+      return {
+        ...prev,
+        districtId: prev.districtId || matchedOrgDistrictId,
+        constituencyId: value,
+        boothId: "",
+      };
     });
   };
 
@@ -1984,22 +2233,69 @@ export function MobileCreatePartyWorkerFlow({
         setErrors((prev) => ({ ...prev, org_unit: "" }));
       };
     } else if (picker === "worker_filter_level") {
-      title = tr("Assignment Level", "അസൈൻമെന്റ് ലെവൽ");
+      title = tr("Location Level", "ലൊക്കേഷൻ ലെവൽ");
       options = [
         {
           id: "all",
           label: tr("All levels", "എല്ലാ ലെവലുകളും"),
           search: "all levels any",
         },
-        ...assignmentLevels.map((item) => ({
-          id: item.id,
-          label: lang === "ml" ? item.ml : item.en,
-          hint: lang === "ml" ? item.hintMl : item.hintEn,
-          search: `${item.en} ${item.ml} ${item.hintEn} ${item.hintMl}`,
-        })),
+        {
+          id: "state",
+          label: tr("State", "സംസ്ഥാനം"),
+          hint: tr("Kerala statewide", "സംസ്ഥാന വ്യാപകം"),
+          search: "state kerala സംസ്ഥാനം",
+        },
+        {
+          id: "region",
+          label: tr("Region", "റീജിയൺ"),
+          hint: tr("Regional clusters", "റീജിയണൽ ക്ലസ്റ്ററുകൾ"),
+          search: "region regions northern central southern വടക്കൻ മധ്യ തെക്കൻ റീജിയൺ",
+        },
+        {
+          id: "org_district",
+          label: tr("Organisational District", "ഓർഗനൈസേഷണൽ ജില്ല"),
+          hint: tr("Organisational districts", "ഓർഗനൈസേഷണൽ ജില്ലകൾ"),
+          search: "organisational district ഓർഗനൈസേഷണൽ ജില്ല",
+        },
+        {
+          id: "mandalam",
+          label: tr("Assembly Mandalam", "അസംബ്ലി മണ്ഡലം"),
+          hint: tr("Assembly mandalams", "അസംബ്ലി മണ്ഡലങ്ങൾ"),
+          search: "assembly mandalam constituency അസംബ്ലി മണ്ഡലം",
+        },
+        {
+          id: "area",
+          label: tr("Area", "ഏരിയ"),
+          hint: tr("Area level", "ഏരിയ ലെവൽ"),
+          search: "area ഏരിയ",
+        },
+        {
+          id: "ward",
+          label: tr("Ward", "വാർഡ്"),
+          hint: tr("Ward level", "വാർഡ് ലെവൽ"),
+          search: "ward വാർഡ്",
+        },
       ];
       selectedId = draftWorkerFilters.level;
       onPick = (id) => handleWorkerFilterLevelChange(id as AssignmentLevel | "all");
+    } else if (picker === "worker_filter_region") {
+      title = tr("Region", "റീജിയൺ");
+      options = [
+        {
+          id: "all",
+          label: tr("All Regions", "എല്ലാ റീജിയണുകളും"),
+          search: "all regions any",
+        },
+        ...regions.map((item) => ({
+          id: item.id,
+          label: lang === "ml" ? item.ml : item.en,
+          hint: tr(`${item.count} Organisational Districts`, `${item.count} ഓർഗനൈസേഷണൽ ജില്ലകൾ`),
+          search: `${item.en} ${item.ml}`,
+        })),
+      ];
+      selectedId = draftWorkerFilters.regionId || "all";
+      onPick = handleWorkerFilterRegionChange;
     } else if (picker === "worker_filter_designation") {
       title = tr("Designation", "പദവി");
       options = [
@@ -2018,18 +2314,25 @@ export function MobileCreatePartyWorkerFlow({
       selectedId = draftWorkerFilters.designationId;
       onPick = handleWorkerFilterDesignationChange;
     } else if (picker === "worker_filter_district") {
-      title = tr("District", "ജില്ല");
+      title = tr("Organisational District", "ഓർഗനൈസേഷണൽ ജില്ല");
       options = [
         {
           id: "all",
-          label: tr("All districts", "എല്ലാ ജില്ലകളും"),
+          label: tr("All Organisational Districts", "എല്ലാ ഓർഗനൈസേഷണൽ ജില്ലകളും"),
           search: "all districts any",
         },
-        ...districts.map((item) => ({
-          id: item.id,
-          label: lang === "ml" ? item.ml : item.en,
-          search: `${item.en} ${item.ml}`,
-        })),
+        ...organisationalDistricts.map((item) => {
+          const regKey = Object.keys(REGION_ORGANISATIONAL_DISTRICTS).find((rk) =>
+            REGION_ORGANISATIONAL_DISTRICTS[rk].includes(item.id),
+          );
+          const regObj = regions.find((r) => r.id === regKey);
+          return {
+            id: item.id,
+            label: lang === "ml" ? item.ml : item.en,
+            hint: regObj ? (lang === "ml" ? regObj.ml : regObj.en) : undefined,
+            search: `${item.en} ${item.ml} ${regObj?.en || ""} ${regObj?.ml || ""}`,
+          };
+        }),
       ];
       selectedId = draftWorkerFilters.districtId || "all";
       onPick = handleWorkerFilterDistrictChange;
@@ -2041,11 +2344,27 @@ export function MobileCreatePartyWorkerFlow({
           label: tr("All constituencies", "എല്ലാ മണ്ഡലങ്ങളും"),
           search: "all constituencies any",
         },
-        ...workerFilterConstituencyOptions.map((item) => ({
-          id: item.id,
-          label: lang === "ml" ? item.ml : item.en,
-          search: `${item.en} ${item.ml}`,
-        })),
+        ...workerFilterConstituencyOptions.map((item) => {
+          const dist = districts.find((d) => d.id === item.districtId);
+          const regKey = Object.keys(REGION_ORGANISATIONAL_DISTRICTS).find((rk) =>
+            REGION_ORGANISATIONAL_DISTRICTS[rk].some(
+              (odId) => odId === `od-${item.districtId}` || odId.startsWith(`od-${item.districtId}-`),
+            ),
+          );
+          const regObj = regions.find((r) => r.id === regKey);
+          const hintText = [
+            dist ? (lang === "ml" ? dist.ml : dist.en) : "",
+            regObj ? (lang === "ml" ? regObj.ml : regObj.en) : "",
+          ]
+            .filter(Boolean)
+            .join(" · ");
+          return {
+            id: item.id,
+            label: lang === "ml" ? item.ml : item.en,
+            hint: hintText,
+            search: `${item.en} ${item.ml} ${dist?.en || ""} ${dist?.ml || ""} ${regObj?.en || ""} ${regObj?.ml || ""}`,
+          };
+        }),
       ];
       selectedId = draftWorkerFilters.constituencyId || "all";
       onPick = handleWorkerFilterConstituencyChange;
@@ -2270,7 +2589,7 @@ export function MobileCreatePartyWorkerFlow({
 
     return (
       <div
-        className="absolute inset-0 z-[115] flex items-end bg-black/55 backdrop-blur-[1px] animate-in fade-in duration-150"
+        className="absolute inset-0 z-[115] flex items-end bg-black/55 animate-in fade-in duration-150"
         onClick={() => setPicker(null)}
       >
         <div
@@ -3188,48 +3507,56 @@ export function MobileCreatePartyWorkerFlow({
             const designation = lang === "ml" ? worker.designationMl : worker.designationEn;
             const area = workerAreaLabel(worker, lang);
             const isActive = worker.status !== "Deactivated";
+            const stats = getWorkerApplicationStats(worker);
 
             return (
               <button
                 key={`${worker.id}-${worker.mobile}`}
                 type="button"
                 onClick={() => openWorkerProfile(worker)}
-                className="flex w-full items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left shadow-2xs transition hover:border-slate-300 hover:bg-[#FFFCF7] active:scale-[0.995] dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
+                className="flex w-full flex-col gap-1.5 rounded-xl border border-slate-200 bg-white p-2.5 text-left shadow-2xs transition hover:border-[#ff5500]/40 hover:bg-[#FFFCF7] active:scale-[0.995] dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
               >
-                <div className="relative shrink-0">
-                  <div className="h-9 w-9 overflow-hidden rounded-full bg-orange-50 shadow-sm ring-1 ring-orange-100 dark:bg-slate-800 dark:ring-slate-800">
-                    <img
-                      src={worker.photoUrl || partyWorkerAvatar}
-                      alt=""
-                      className={`h-full w-full rounded-full object-cover ${
-                        worker.photoUrl ? "" : "scale-[1.22]"
-                      }`}
-                    />
+                <div className="flex w-full items-center gap-2.5">
+                  <div className="relative shrink-0">
+                    <div className="h-9 w-9 overflow-hidden rounded-full bg-orange-50 shadow-sm ring-1 ring-orange-100 dark:bg-slate-800 dark:ring-slate-800">
+                      <img
+                        src={worker.photoUrl || partyWorkerAvatar}
+                        alt=""
+                        className={`h-full w-full rounded-full object-cover ${
+                          worker.photoUrl ? "" : "scale-[1.22]"
+                        }`}
+                      />
+                    </div>
                   </div>
-                  <span
-                    className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white shadow-xs dark:border-slate-900 ${
-                      isActive ? "bg-emerald-500" : "bg-rose-500"
-                    }`}
-                    title={isActive ? tr("Active", "സജീവം") : tr("Inactive", "നിഷ്ക്രിയം")}
-                  />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <h2 className="min-w-0 flex-1 truncate text-[11.5px] font-extrabold leading-tight text-slate-900 dark:text-white">
-                      {lang === "ml" ? worker.nameMl || worker.name : worker.name}
-                    </h2>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <h2 className="min-w-0 flex-1 truncate text-[11.5px] font-extrabold leading-tight text-slate-900 dark:text-white">
+                        {lang === "ml" ? worker.nameMl || worker.name : worker.name}
+                      </h2>
+                    </div>
+                    <p className="mt-0.5 truncate text-[9px] font-bold text-[#C2410C] dark:text-orange-300">
+                      {designation || tr("User", "ഉപയോക്താവ്")}
+                    </p>
+                    <p className="mt-0.5 flex min-w-0 items-center gap-1 text-[8.5px] font-medium text-slate-500 dark:text-slate-400">
+                      <span className="truncate">
+                        {area || tr("Area not recorded", "പ്രദേശം രേഖപ്പെടുത്തിയിട്ടില്ല")}
+                      </span>
+                    </p>
                   </div>
-                  <p className="mt-0.5 truncate text-[9px] font-bold text-[#C2410C] dark:text-orange-300">
-                    {designation || tr("User", "ഉപയോക്താവ്")}
-                  </p>
-                  <p className="mt-0.5 flex min-w-0 items-center gap-1 text-[8.5px] font-medium text-slate-500 dark:text-slate-400">
-                    <span className="truncate">
-                      {area || tr("Area not recorded", "പ്രദേശം രേഖപ്പെടുത്തിയിട്ടില്ല")}
+                  <div className="flex items-center gap-1 shrink-0">
+                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px] font-black leading-none border border-[#00875A] bg-[#00875A] text-white shadow-2xs" title={tr(`Approved: ${stats.approved}`, `അംഗീകരിച്ചു: ${stats.approved}`)}>
+                      {stats.approved}
                     </span>
-                  </p>
-                </div>
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500">
-                  <ChevronRight className="h-3.5 w-3.5" />
+                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px] font-black leading-none border border-[#f59e0b] bg-[#f59e0b] text-white shadow-2xs" title={tr(`Pending in Review: ${stats.inReview + stats.pending}`, `പരിശോധനയിൽ: ${stats.inReview + stats.pending}`)}>
+                      {stats.inReview + stats.pending}
+                    </span>
+                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px] font-black leading-none border border-[#FF2C2C] bg-[#FF2C2C] text-white shadow-2xs" title={tr(`Rejected: ${stats.rejected}`, `നിരസിച്ചു: ${stats.rejected}`)}>
+                      {stats.rejected}
+                    </span>
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500">
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    </div>
+                  </div>
                 </div>
               </button>
             );
@@ -3247,19 +3574,32 @@ export function MobileCreatePartyWorkerFlow({
       { id: "Inactive", en: "Inactive", ml: "നിഷ്ക്രിയം" },
     ];
     const level = draftWorkerFilters.level;
-    const showDistrict = !isUserView && level !== "all" && level !== "state" && level !== "org_unit";
-    const showConstituency = !isUserView && (level === "assembly_constituency" || level === "booth");
-    const showLocalBodyType = !isUserView && (level === "local_body" || level === "ward");
-    const showLocalBody = !isUserView && (level === "local_body" || level === "ward");
-    const showWard = !isUserView && level === "ward";
-    const showBooth = isUserView || level === "booth";
-    const showOrgUnit = !isUserView && level === "org_unit";
-    const selectedLevel = assignmentLevels.find((item) => item.id === level);
+    const showRegion = level === "region";
+    const showDistrict = level === "org_district" || level === "district" || level === "mandalam" || level === "assembly_constituency" || level === "area" || level === "ward" || level === "booth";
+    const showConstituency = level === "mandalam" || level === "assembly_constituency" || level === "area" || level === "ward" || level === "booth";
+    const showLocalBodyType = level === "local_body";
+    const showLocalBody = level === "local_body" || level === "area" || level === "ward";
+    const showWard = level === "ward";
+    const showBooth = level === "booth";
+    const showOrgUnit = level === "org_unit";
+    const filterLevelDisplayMap: Record<string, { en: string; ml: string }> = {
+      state: { en: "State", ml: "സംസ്ഥാനം" },
+      region: { en: "Region", ml: "റീജിയൺ" },
+      org_district: { en: "Organisational District", ml: "ഓർഗനൈസേഷണൽ ജില്ല" },
+      district: { en: "Organisational District", ml: "ഓർഗനൈസേഷണൽ ജില്ല" },
+      mandalam: { en: "Assembly Mandalam", ml: "അസംബ്ലി മണ്ഡലം" },
+      assembly_constituency: { en: "Assembly Mandalam", ml: "അസംബ്ലി മണ്ഡലം" },
+      area: { en: "Area", ml: "ഏരിയ" },
+      ward: { en: "Ward", ml: "വാർഡ്" },
+      booth: { en: "Booth", ml: "ബൂത്ത്" },
+      org_unit: { en: "Party Organisational Unit", ml: "പാർട്ടി ഓർഗനൈസേഷണൽ യൂണിറ്റ്" },
+    };
+    const selectedLevelDisplay = filterLevelDisplayMap[level]?.[lang] || assignmentLevels.find((item) => item.id === level)?.[lang];
     const draftFilterCount = countActiveWorkerFilters(draftWorkerFilters);
 
     return (
       <div
-        className="absolute inset-0 z-[110] flex items-end bg-black/55 backdrop-blur-[1px] animate-in fade-in duration-150"
+        className="absolute inset-0 z-[110] flex items-end bg-black/55 animate-in fade-in duration-150"
         onClick={closeWorkerFilters}
       >
         <div
@@ -3293,55 +3633,13 @@ export function MobileCreatePartyWorkerFlow({
           <div className="min-h-0 flex-1 space-y-3.5 overflow-y-auto px-3.5 py-3 [scrollbar-width:thin]">
             <div className="space-y-2.5">
               <PickerButton
-                label={tr("Roles", "റോൾ")}
-                value={
-                  draftWorkerFilters.appRole === "all" || !workerFilterAppRole
-                    ? tr("All roles", "എല്ലാ റോളുകളും")
-                    : workerFilterAppRole[lang]
-                }
-                placeholder={tr("All roles", "എല്ലാ റോളുകളും")}
-                onClick={() => openPicker("worker_filter_app_role")}
-              />
-
-              <PickerButton
-                label={tr("Designation", "പദവി")}
-                value={
-                  draftWorkerFilters.designationId === "all" || !workerFilterDesignation
-                    ? tr("All designations", "എല്ലാ പദവികളും")
-                    : workerFilterDesignation[lang]
-                }
-                placeholder={tr("All designations", "എല്ലാ പദവികളും")}
-                hint={
-                  level === "all"
-                    ? tr(
-                        "Designations are narrowed by location level.",
-                        "ലൊക്കേഷൻ ലെവൽ അനുസരിച്ച് പദവികൾ ചുരുക്കുന്നു.",
-                      )
-                    : undefined
-                }
-                onClick={() => openPicker("worker_filter_designation")}
-              />
-
-              <PickerButton
-                label={tr("User Status", "ഉപയോക്തൃ നില")}
-                value={
-                  statusOptions.find((o) => o.id === draftWorkerFilters.status)?.[lang] ||
-                  tr("All status", "എല്ലാ നിലകളും")
-                }
-                placeholder={tr("All status", "എല്ലാ നിലകളും")}
-                onClick={() => openPicker("worker_filter_status")}
-              />
-
-              <PickerButton
                 label={tr("Location Level", "ലൊക്കേഷൻ ലെവൽ")}
                 value={
                   isUserView
                     ? tr("Area", "ഏരിയ")
                     : level === "all"
                       ? tr("All levels", "എല്ലാ ലെവലുകളും")
-                      : selectedLevel
-                        ? selectedLevel[lang]
-                        : ""
+                      : selectedLevelDisplay || ""
                 }
                 placeholder={tr("All levels", "എല്ലാ ലെവലുകളും")}
                 disabled={isUserView}
@@ -3362,15 +3660,28 @@ export function MobileCreatePartyWorkerFlow({
                 </div>
               ) : null}
 
+              {showRegion ? (
+                <PickerButton
+                  label={tr("Select Region", "റീജിയൺ തിരഞ്ഞെടുക്കുക")}
+                  value={
+                    workerFilterRegion
+                      ? workerFilterRegion[lang]
+                      : tr("All Regions", "എല്ലാ റീജിയണുകളും")
+                  }
+                  placeholder={tr("All Regions", "എല്ലാ റീജിയണുകളും")}
+                  onClick={() => openPicker("worker_filter_region")}
+                />
+              ) : null}
+
               {showDistrict ? (
                 <PickerButton
-                  label={tr("District", "ജില്ല")}
+                  label={tr("Organisational District", "ഓർഗനൈസേഷണൽ ജില്ല")}
                   value={
                     workerFilterDistrict
                       ? workerFilterDistrict[lang]
-                      : tr("Any district", "ഏത് ജില്ലയും")
+                      : tr("All Org Districts", "എല്ലാ ഓർഗനൈസേഷണൽ ജില്ലകളും")
                   }
-                  placeholder={tr("Any district", "ഏത് ജില്ലയും")}
+                  placeholder={tr("All Org Districts", "എല്ലാ ഓർഗനൈസേഷണൽ ജില്ലകളും")}
                   onClick={() => openPicker("worker_filter_district")}
                 />
               ) : null}
@@ -3381,12 +3692,10 @@ export function MobileCreatePartyWorkerFlow({
                   value={
                     workerFilterConstituency
                       ? workerFilterConstituency[lang]
-                      : draftWorkerFilters.districtId
-                        ? tr("Any constituency", "ഏത് മണ്ഡലവും")
-                        : tr("Select a district first", "ആദ്യം ജില്ല തിരഞ്ഞെടുക്കുക")
+                      : tr("All constituencies", "എല്ലാ മണ്ഡലങ്ങളും")
                   }
-                  placeholder={tr("Any constituency", "ഏത് മണ്ഡലവും")}
-                  disabled={!draftWorkerFilters.districtId}
+                  placeholder={tr("All constituencies", "എല്ലാ മണ്ഡലങ്ങളും")}
+                  disabled={false}
                   onClick={() => openPicker("worker_filter_constituency")}
                 />
               ) : null}
@@ -3409,19 +3718,21 @@ export function MobileCreatePartyWorkerFlow({
 
               {showLocalBody ? (
                 <PickerButton
-                  label={tr("Local Body", "തദ്ദേശ സ്ഥാപനം")}
+                  label={level === "ward" || level === "area" ? tr("Area", "ഏരിയ") : tr("Local Body", "തദ്ദേശ സ്ഥാപനം")}
                   value={
                     workerFilterLocalBody
                       ? workerFilterLocalBody[lang]
-                      : draftWorkerFilters.districtId && draftWorkerFilters.localBodyType
-                        ? tr("Any local body", "ഏത് തദ്ദേശ സ്ഥാപനവും")
+                      : draftWorkerFilters.districtId || draftWorkerFilters.constituencyId
+                        ? level === "ward" || level === "area"
+                          ? tr("Any area", "ഏത് ഏരിയയും")
+                          : tr("Any local body", "ഏത് തദ്ദേശ സ്ഥാപനവും")
                         : tr(
-                            "Select district and type first",
-                            "ആദ്യം ജില്ലയും തരവും തിരഞ്ഞെടുക്കുക",
+                            "Select a district first",
+                            "ആദ്യം ജില്ല തിരഞ്ഞെടുക്കുക",
                           )
                   }
-                  placeholder={tr("Any local body", "ഏത് തദ്ദേശ സ്ഥാപനവും")}
-                  disabled={!draftWorkerFilters.districtId || !draftWorkerFilters.localBodyType}
+                  placeholder={level === "ward" || level === "area" ? tr("Any area", "ഏത് ഏരിയയും") : tr("Any local body", "ഏത് തദ്ദേശ സ്ഥാപനവും")}
+                  disabled={!draftWorkerFilters.districtId && !draftWorkerFilters.constituencyId}
                   onClick={() => openPicker("worker_filter_local_body")}
                 />
               ) : null}
@@ -3434,7 +3745,7 @@ export function MobileCreatePartyWorkerFlow({
                       ? workerFilterWard[lang === "ml" ? "displayMl" : "displayEn"]
                       : draftWorkerFilters.localBodyId
                         ? tr("Any ward", "ഏത് വാർഡും")
-                        : tr("Select a local body first", "ആദ്യം തദ്ദേശ സ്ഥാപനം തിരഞ്ഞെടുക്കുക")
+                        : tr("Select an area first", "ആദ്യം ഏരിയ തിരഞ്ഞെടുക്കുക")
                   }
                   placeholder={tr("Any ward", "ഏത് വാർഡും")}
                   disabled={!draftWorkerFilters.localBodyId}
@@ -3448,12 +3759,12 @@ export function MobileCreatePartyWorkerFlow({
                   value={
                     workerFilterBooth
                       ? workerFilterBooth[lang === "ml" ? "nameMl" : "nameEn"]
-                      : isUserView || draftWorkerFilters.constituencyId
+                      : draftWorkerFilters.constituencyId
                         ? tr("All booths", "എല്ലാ ബൂത്തുകളും")
                         : tr("Select a constituency first", "ആദ്യം മണ്ഡലം തിരഞ്ഞെടുക്കുക")
                   }
                   placeholder={tr("All booths", "എല്ലാ ബൂത്തുകളും")}
-                  disabled={!isUserView && !draftWorkerFilters.constituencyId}
+                  disabled={!draftWorkerFilters.constituencyId}
                   onClick={() => openPicker("worker_filter_booth")}
                 />
               ) : null}
@@ -3474,6 +3785,46 @@ export function MobileCreatePartyWorkerFlow({
                   onClick={() => openPicker("worker_filter_org_unit")}
                 />
               ) : null}
+
+              <PickerButton
+                label={tr("Designation", "പദവി")}
+                value={
+                  draftWorkerFilters.designationId === "all" || !workerFilterDesignation
+                    ? tr("All designations", "എല്ലാ പദവികളും")
+                    : workerFilterDesignation[lang]
+                }
+                placeholder={tr("All designations", "എല്ലാ പദവികളും")}
+                hint={
+                  level === "all"
+                    ? tr(
+                        "Designations are narrowed by location level.",
+                        "ലൊക്കേഷൻ ലെവൽ അനുസരിച്ച് പദവികൾ ചുരുക്കുന്നു.",
+                      )
+                    : undefined
+                }
+                onClick={() => openPicker("worker_filter_designation")}
+              />
+
+              <PickerButton
+                label={tr("Roles", "റോൾ")}
+                value={
+                  draftWorkerFilters.appRole === "all" || !workerFilterAppRole
+                    ? tr("All roles", "എല്ലാ റോളുകളും")
+                    : workerFilterAppRole[lang]
+                }
+                placeholder={tr("All roles", "എല്ലാ റോളുകളും")}
+                onClick={() => openPicker("worker_filter_app_role")}
+              />
+
+              <PickerButton
+                label={tr("User Status", "ഉപയോക്തൃ നില")}
+                value={
+                  statusOptions.find((o) => o.id === draftWorkerFilters.status)?.[lang] ||
+                  tr("All status", "എല്ലാ നിലകളും")
+                }
+                placeholder={tr("All status", "എല്ലാ നിലകളും")}
+                onClick={() => openPicker("worker_filter_status")}
+              />
             </div>
           </div>
 
@@ -3887,7 +4238,7 @@ export function MobileCreatePartyWorkerFlow({
     );
 
     return (
-      <section className="bg-white dark:bg-slate-900">
+      <section className="relative bg-white dark:bg-slate-900 min-h-full">
         <div>
           <input
             ref={profilePhotoInputRef}
@@ -3907,7 +4258,6 @@ export function MobileCreatePartyWorkerFlow({
                   }`}
                 />
               </div>
-              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900" title={tr("Active", "സജീവം")} />
             </div>
             <div className="min-w-0 flex-1 pt-0.5">
               <div className="flex items-start justify-between gap-2">
@@ -4026,147 +4376,632 @@ export function MobileCreatePartyWorkerFlow({
             </div>
           )}
 
-          {/* Tab 2: Assisted Applications (Scheme-wise Applications Cards) */}
+          {/* Tab 2: Assisted Applications */}
           {profileActiveTab === "applications" && (
-            <div className="pt-1.5 space-y-1.5">
-              {[
-                {
-                  id: "pm-kisan",
-                  titleEn: "PM Kisan Samman Nidhi",
-                  titleMl: "പിഎം കിസാൻ സമ്മാൻ നിധി",
-                  categoryEn: "Agriculture",
-                  categoryMl: "കൃഷി",
-                  logo: "/images/popular-schemes/pm_kisan.png",
-                  total: 3,
-                  approved: 0,
-                  inReview: 1,
-                  pending: 2,
-                  rejected: 0,
-                },
-                {
-                  id: "pmfby",
-                  titleEn: "Pradhan Mantri Fasal Bima Yojana (PMFBY)",
-                  titleMl: "പ്രധാനമന്ത്രി ഫസൽ ഭീമ യോജന (PMFBY)",
-                  categoryEn: "Agriculture",
-                  categoryMl: "കൃഷി",
-                  logo: "/images/popular-schemes/pm_kisan.png",
-                  total: 5,
-                  approved: 0,
-                  inReview: 1,
-                  pending: 4,
-                  rejected: 0,
-                },
-                {
-                  id: "kcc",
-                  titleEn: "Kisan Credit Card (KCC) Scheme",
-                  titleMl: "കിസാൻ ക്രെഡിറ്റ് കാർഡ് (KCC) പദ്ധതി",
-                  categoryEn: "Agriculture Credit",
-                  categoryMl: "കാർഷിക വായ്പ",
-                  logo: "/images/popular-schemes/pm_kisan.png",
-                  total: 4,
-                  approved: 0,
-                  inReview: 2,
-                  pending: 2,
-                  rejected: 0,
-                },
-                {
-                  id: "pmjdy",
-                  titleEn: "Pradhan Mantri Jan Dhan Yojana (PMJDY)",
-                  titleMl: "പ്രധാനമന്ത്രി ജൻ ധൻ യോജന (PMJDY)",
-                  categoryEn: "Banking",
-                  categoryMl: "ബാങ്കിംഗ്",
-                  logo: "/images/popular-schemes/pm_jan_dhan.png",
-                  total: 4,
-                  approved: 0,
-                  inReview: 2,
-                  pending: 2,
-                  rejected: 0,
-                },
-                {
-                  id: "apy",
-                  titleEn: "Atal Pension Yojana (APY)",
-                  titleMl: "അടൽ പെൻഷൻ യോജന (APY)",
-                  categoryEn: "Banking & Pension",
-                  categoryMl: "ബാങ്കിംഗ് & പെൻഷൻ",
-                  logo: "/images/popular-schemes/atal_pension.png",
-                  total: 3,
-                  approved: 0,
-                  inReview: 1,
-                  pending: 2,
-                  rejected: 0,
-                },
-              ].map((scheme) => (
-                <div
-                  key={scheme.id}
-                  className="rounded-lg border border-slate-200/90 bg-white p-2 shadow-2xs dark:border-slate-800 dark:bg-slate-900"
-                >
-                  {/* Top section: Icon, Title, Category, ChevronRight */}
-                  <div className="flex items-center justify-between gap-1.5">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <div className="h-7 w-7 shrink-0 rounded-md bg-white dark:bg-slate-800 p-0.5 flex items-center justify-center border border-slate-100 dark:border-slate-700 overflow-hidden shadow-2xs">
-                        <img src={scheme.logo} alt="" className="h-full w-full object-contain" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <h4 className="text-[11px] font-extrabold leading-tight text-[#1B255A] dark:text-white truncate">
-                          {lang === "ml" ? scheme.titleMl : scheme.titleEn}
-                        </h4>
-                        <p className="text-[9px] font-medium text-[#8E9BBA] dark:text-slate-400 truncate">
-                          {lang === "ml" ? scheme.categoryMl : scheme.categoryEn}
-                        </p>
-                      </div>
-                    </div>
-                    <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[#1B255A] dark:text-slate-300 stroke-[2]" />
+            <div className="pt-1.5 space-y-2">
+              {/* Header Control Row: View Selection Dropdown + Bullet Date Label (Left) + Circular Action Controls (Right) */}
+              <div className="flex items-center justify-between gap-1.5 pt-0.5 pb-0.5">
+                {/* Left side: View Selection Dropdown + Selected Bullet Date Label */}
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <div className="relative flex shrink-0 items-center rounded-xl border border-slate-200/90 bg-white px-2 py-1 shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
+                    <select
+                      value={assistedViewMode}
+                      onChange={(e) => setAssistedViewMode(e.target.value as "applications" | "schemes")}
+                      className="appearance-none bg-transparent text-[11px] font-extrabold text-[#1B255A] focus:outline-none dark:text-blue-300 cursor-pointer pr-4"
+                    >
+                      <option value="applications">{tr("Applications View", "അപേക്ഷകളുടെ വ്യൂ")}</option>
+                      <option value="schemes">{tr("Scheme-wise View", "പദ്ധതി അധിഷ്ഠിത വ്യൂ")}</option>
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-1.5 h-3.5 w-3.5 text-slate-400" />
                   </div>
 
-                  {/* Bottom section: 5-KPI Segmented Pill Container (Applications | Approved | Rejected | In Review | Pending) */}
-                  <div className="mt-1.5 flex items-stretch rounded-md bg-[#F8FAFC] dark:bg-slate-800/60 border border-[#F1F5F9] dark:border-slate-800 overflow-hidden divide-x divide-[#E2E8F0] dark:divide-slate-700/60">
-                    <div className="flex-1 py-0.5 px-0.5 flex flex-col items-center justify-center text-center">
-                      <span className="text-[11px] font-extrabold text-[#1B255A] dark:text-blue-300 leading-none">
-                        {scheme.total}
+                  {assistedDateRange !== "all" && assistedDateRange !== "all_time" && (
+                    <div className="flex items-center gap-1 text-xs font-black text-[#1B255A] dark:text-white truncate">
+                      <span className="text-black dark:text-white font-extrabold text-sm leading-none">▪</span>
+                      <span className="truncate">
+                        {assistedDateRange === "oct2026" || assistedDateRange === "this_month"
+                          ? "October 2026"
+                          : assistedDateRange === "sep2026" || assistedDateRange === "last_month"
+                          ? "September 2026"
+                          : assistedDateRange === "this_year"
+                          ? "2026"
+                          : assistedDateRange === "last_year"
+                          ? "2025"
+                          : assistedDateRange === "today"
+                          ? "Today"
+                          : assistedDateRange === "yesterday"
+                          ? "Yesterday"
+                          : assistedDateRange === "this_week"
+                          ? "This Week"
+                          : assistedDateRange === "last_week"
+                          ? "Last Week"
+                          : "October 2026"}
                       </span>
-                      <span className="text-[7px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">
+                    </div>
+                  )}
+                </div>
+
+                {/* Right side: Circular Action Controls (<, >, Calendar) */}
+                <div className="flex items-center gap-1 shrink-0 relative">
+                  {/* Prev Period */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const periods = ["all", "this_month", "oct2026", "sep2026", "this_year"];
+                      const currentIndex = periods.indexOf(assistedDateRange);
+                      const prevIndex = (currentIndex - 1 + periods.length) % periods.length;
+                      setAssistedDateRange(periods[prevIndex]);
+                    }}
+                    className="flex h-6 w-6 items-center justify-center rounded-full border border-orange-200 bg-orange-50/50 text-[#ff5500] hover:bg-orange-100 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-400 active:scale-95 transition-all shadow-2xs cursor-pointer"
+                    title={tr("Previous Period", "മുൻപത്തെ സമയം")}
+                  >
+                    <ChevronLeft className="h-3 w-3 stroke-[2.5]" />
+                  </button>
+
+                  {/* Next Period */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const periods = ["all", "this_month", "oct2026", "sep2026", "this_year"];
+                      const currentIndex = periods.indexOf(assistedDateRange);
+                      const nextIndex = (currentIndex + 1) % periods.length;
+                      setAssistedDateRange(periods[nextIndex]);
+                    }}
+                    className="flex h-6 w-6 items-center justify-center rounded-full border border-orange-200 bg-orange-50/50 text-[#ff5500] hover:bg-orange-100 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-400 active:scale-95 transition-all shadow-2xs cursor-pointer"
+                    title={tr("Next Period", "അടുത്ത സമയം")}
+                  >
+                    <ChevronRight className="h-3 w-3 stroke-[2.5]" />
+                  </button>
+
+                  {/* Calendar Date Picker Modal Trigger */}
+                  <button
+                    type="button"
+                    onClick={() => setDatePickerOpen(true)}
+                    className={`flex h-6.5 w-6.5 items-center justify-center rounded-full border transition-all active:scale-95 shadow-2xs cursor-pointer ${
+                      datePickerOpen || (assistedDateRange !== "all" && assistedDateRange !== "all_time")
+                        ? "bg-[#ff5500] text-white border-orange-600"
+                        : "border-orange-200 bg-orange-50/50 text-[#ff5500] hover:bg-orange-100 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-400"
+                    }`}
+                    title={tr("Date Range Filter", "തീയതി ഫിൽട്ടർ")}
+                  >
+                    <Calendar className="h-3.5 w-3.5 stroke-[2.2]" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Select Period & Date Bottom Sheet Modal (Home date picker modal reused with zero left/right/bottom space) */}
+              <DatePickerModal
+                isOpen={datePickerOpen}
+                onClose={() => setDatePickerOpen(false)}
+                selectedPeriod={assistedDateRange}
+                onSelectPeriod={(period) => {
+                  setAssistedDateRange(period);
+                  setDatePickerOpen(false);
+                }}
+                inlineInApp={true}
+              />
+
+              {assistedViewMode === "applications" ? (
+                /* Applications View (Attachment 2) */
+                <div className="space-y-1.5">
+                  {/* Top 5-Metric Box - Clean Dividers, No Orange Highlights per Applicant Profile UI */}
+                  <div className="flex items-stretch rounded-xl border border-slate-200/90 bg-[#F8FAFC] dark:border-slate-800 dark:bg-slate-900/90 overflow-hidden divide-x divide-slate-200/70 dark:divide-slate-800 shadow-2xs">
+                    <button
+                      type="button"
+                      onClick={() => setAssistedStatusFilter("all")}
+                      className="flex-1 py-1.5 px-1 flex flex-col items-center justify-center text-center transition-all cursor-pointer hover:bg-slate-100/60 dark:hover:bg-slate-800/40"
+                    >
+                      <span className="text-[12px] font-black text-slate-900 dark:text-white leading-none">5</span>
+                      <span className="text-[7.5px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">
                         {tr("Applications", "അപേക്ഷകൾ")}
                       </span>
-                    </div>
+                    </button>
 
-                    <div className="flex-1 py-0.5 px-0.5 flex flex-col items-center justify-center text-center">
-                      <span className="text-[11px] font-extrabold text-[#00875A] dark:text-emerald-400 leading-none">
-                        {scheme.approved}
-                      </span>
-                      <span className="text-[7px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">
+                    <button
+                      type="button"
+                      onClick={() => setAssistedStatusFilter("approved")}
+                      className="flex-1 py-1.5 px-1 flex flex-col items-center justify-center text-center transition-all cursor-pointer hover:bg-slate-100/60 dark:hover:bg-slate-800/40"
+                    >
+                      <span className="text-[12px] font-black text-[#00875A] dark:text-emerald-400 leading-none">3</span>
+                      <span className="text-[7.5px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">
                         {tr("Approved", "അംഗീകരിച്ചു")}
                       </span>
-                    </div>
+                    </button>
 
-                    <div className="flex-1 py-0.5 px-0.5 flex flex-col items-center justify-center text-center">
-                      <span className="text-[11px] font-extrabold text-[#DC2626] dark:text-rose-400 leading-none">
-                        {scheme.rejected}
-                      </span>
-                      <span className="text-[7px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">
-                        {tr("Rejected", "നിരസിച്ചു")}
-                      </span>
-                    </div>
-
-                    <div className="flex-1 py-0.5 px-0.5 flex flex-col items-center justify-center text-center">
-                      <span className="text-[11px] font-extrabold text-[#2563EB] dark:text-blue-400 leading-none">
-                        {scheme.inReview}
-                      </span>
-                      <span className="text-[7px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">
+                    <button
+                      type="button"
+                      onClick={() => setAssistedStatusFilter("in_review")}
+                      className="flex-1 py-1.5 px-1 flex flex-col items-center justify-center text-center transition-all cursor-pointer hover:bg-slate-100/60 dark:hover:bg-slate-800/40"
+                    >
+                      <span className="text-[12px] font-black text-[#2563EB] dark:text-blue-400 leading-none">0</span>
+                      <span className="text-[7.5px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">
                         {tr("In Review", "പരിശോധനയിൽ")}
                       </span>
-                    </div>
+                    </button>
 
-                    <div className="flex-1 py-0.5 px-0.5 flex flex-col items-center justify-center text-center">
-                      <span className="text-[11px] font-extrabold text-[#EA580C] dark:text-amber-400 leading-none">
-                        {scheme.pending}
-                      </span>
-                      <span className="text-[7px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">
+                    <button
+                      type="button"
+                      onClick={() => setAssistedStatusFilter("pending")}
+                      className="flex-1 py-1.5 px-1 flex flex-col items-center justify-center text-center transition-all cursor-pointer hover:bg-slate-100/60 dark:hover:bg-slate-800/40"
+                    >
+                      <span className="text-[12px] font-black text-[#EA580C] dark:text-amber-400 leading-none">2</span>
+                      <span className="text-[7.5px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">
                         {tr("Pending", "തീർപ്പില്ലാത്തവ")}
                       </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setAssistedStatusFilter("rejected")}
+                      className="flex-1 py-1.5 px-1 flex flex-col items-center justify-center text-center transition-all cursor-pointer hover:bg-slate-100/60 dark:hover:bg-slate-800/40"
+                    >
+                      <span className="text-[12px] font-black text-[#DC2626] dark:text-rose-400 leading-none">0</span>
+                      <span className="text-[7.5px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">
+                        {tr("Rejected", "നിരസിച്ചു")}
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* Individual Application Cards (Attachment media_1795239761903_0840ab4a.jpg) */}
+                  {assistedAppList
+                    .filter((app) => {
+                      if (assistedStatusFilter !== "all" && app.status !== assistedStatusFilter) return false;
+                      if (assistedDateRange !== "all") {
+                        if (
+                          (assistedDateRange === "this_month" || assistedDateRange === "oct2026") &&
+                          (app.periodKey === "this_month" || app.periodKey === "oct2026")
+                        ) {
+                          return true;
+                        }
+                        if (app.periodKey !== assistedDateRange) return false;
+                      }
+                      return true;
+                    })
+                    .map((app) => {
+                      const isMenuOpen = openCardMenuId === app.id;
+
+                      return (
+                        <div
+                          key={app.id}
+                          onClick={() => {
+                            setOpenCardMenuId(null);
+                            if (onSelectApplication) {
+                              onSelectApplication(app);
+                            } else {
+                              setSelectedAssistedApp(app);
+                            }
+                          }}
+                          className="relative rounded-2xl border border-slate-200/90 bg-white px-3.5 py-2.5 shadow-2xs dark:border-slate-800 dark:bg-slate-900 cursor-pointer hover:border-orange-300 dark:hover:border-orange-700 active:scale-[0.99] transition-all"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            {/* Left Side: Scheme Name + Applicant Name */}
+                            <div className="min-w-0 flex-1">
+                              <h4 className="text-[11.5px] font-extrabold leading-snug text-slate-900 dark:text-white line-clamp-1">
+                                {lang === "ml" ? app.titleMl : app.titleEn}
+                              </h4>
+                              <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500 mt-0.5 truncate">
+                                {app.applicantName}
+                              </p>
+                            </div>
+
+                            {/* Right Side: Status Badge + Date + 3 Dots Button */}
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <div className="flex flex-col items-end gap-0.5">
+                                <span
+                                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-extrabold border ${
+                                    app.status === "approved"
+                                      ? "bg-[#E6F8F2] text-[#00875A] border-emerald-200/70 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
+                                      : "bg-[#F1F3FB] text-[#4A5578] border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
+                                  }`}
+                                >
+                                  {app.status === "approved" ? (
+                                    <CheckCircle2 className="h-3 w-3 text-[#00875A] dark:text-emerald-400 shrink-0" />
+                                  ) : (
+                                    <Inbox className="h-3 w-3 text-[#4A5578] dark:text-slate-400 shrink-0" />
+                                  )}
+                                  {lang === "ml" ? app.statusLabelMl : app.statusLabelEn}
+                                </span>
+                                <span className="text-[8px] font-medium text-slate-400 dark:text-slate-500 pr-0.5">
+                                  {app.date}
+                                </span>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenCardMenuId(isMenuOpen ? null : app.id);
+                                }}
+                                className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 dark:text-slate-500 transition cursor-pointer"
+                                title="Actions"
+                              >
+                                <MoreVertical className="h-4 w-4 stroke-[2.2]" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* 3 Dot Actions Dropdown Menu */}
+                          {isMenuOpen && (
+                            <div
+                              onClick={(e) => e.stopPropagation()}
+                              className="absolute right-2 top-10 z-40 w-32 rounded-xl border border-slate-200/90 bg-white p-1 shadow-xl dark:border-slate-800 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-100 space-y-0.5"
+                            >
+                              {/* View Action */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setOpenCardMenuId(null);
+                                  if (onSelectApplication) {
+                                    onSelectApplication(app);
+                                  } else {
+                                    setSelectedAssistedApp(app);
+                                  }
+                                }}
+                                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                              >
+                                <Eye className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                                <span>{tr("View", "വ്യൂ")}</span>
+                              </button>
+
+                              {/* Call Action */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setOpenCardMenuId(null);
+                                  window.location.href = `tel:+91${app.applicantPhone || "9876543210"}`;
+                                }}
+                                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                              >
+                                <Phone className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                                <span>{tr("Call", "വിളിക്കുക")}</span>
+                              </button>
+
+                              {/* Delete Action */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setOpenCardMenuId(null);
+                                  setAssistedAppList((prev) => prev.filter((item) => item.id !== app.id));
+                                }}
+                                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer"
+                              >
+                                <Trash2 className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
+                                <span>{tr("Delete", "ഡിലീറ്റ്")}</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
+              ) : (
+                /* Scheme-wise View (Current View / Attachment 1) */
+                <div className="space-y-1.5">
+                  {[
+                    {
+                      id: "pm-kisan",
+                      titleEn: "PM Kisan Samman Nidhi",
+                      titleMl: "പിഎം കിസാൻ സമ്മാൻ നിധി",
+                      categoryEn: "Agriculture",
+                      categoryMl: "കൃഷി",
+                      logo: "/images/popular-schemes/pm_kisan.png",
+                      total: 3,
+                      approved: 0,
+                      inReview: 1,
+                      pending: 2,
+                      rejected: 0,
+                    },
+                    {
+                      id: "pmfby",
+                      titleEn: "Pradhan Mantri Fasal Bima Yojana (PMFBY)",
+                      titleMl: "പ്രധാനമന്ത്രി ഫസൽ ഭീമ യോജന (PMFBY)",
+                      categoryEn: "Agriculture",
+                      categoryMl: "കൃഷി",
+                      logo: "/images/popular-schemes/pm_kisan.png",
+                      total: 5,
+                      approved: 0,
+                      inReview: 1,
+                      pending: 4,
+                      rejected: 0,
+                    },
+                    {
+                      id: "kcc",
+                      titleEn: "Kisan Credit Card (KCC) Scheme",
+                      titleMl: "കിസാൻ ക്രെഡിറ്റ് കാർഡ് (KCC) പദ്ധതി",
+                      categoryEn: "Agriculture Credit",
+                      categoryMl: "കാർഷിക വായ്പ",
+                      logo: "/images/popular-schemes/pm_kisan.png",
+                      total: 4,
+                      approved: 0,
+                      inReview: 2,
+                      pending: 2,
+                      rejected: 0,
+                    },
+                    {
+                      id: "pmjdy",
+                      titleEn: "Pradhan Mantri Jan Dhan Yojana (PMJDY)",
+                      titleMl: "പ്രധാനമന്ത്രി ജൻ ധൻ യോജന (PMJDY)",
+                      categoryEn: "Banking",
+                      categoryMl: "ബാങ്കിംഗ്",
+                      logo: "/images/popular-schemes/pm_jan_dhan.png",
+                      total: 4,
+                      approved: 0,
+                      inReview: 2,
+                      pending: 2,
+                      rejected: 0,
+                    },
+                    {
+                      id: "apy",
+                      titleEn: "Atal Pension Yojana (APY)",
+                      titleMl: "അടൽ പെൻഷൻ യോജന (APY)",
+                      categoryEn: "Banking & Pension",
+                      categoryMl: "ബാങ്കിംഗ് & പെൻഷൻ",
+                      logo: "/images/popular-schemes/atal_pension.png",
+                      total: 3,
+                      approved: 0,
+                      inReview: 1,
+                      pending: 2,
+                      rejected: 0,
+                    },
+                  ].map((scheme) => (
+                    <div
+                      key={scheme.id}
+                      onClick={() => {
+                        if (onSelectScheme) {
+                          onSelectScheme(scheme);
+                        } else {
+                          setSelectedAssistedScheme(scheme);
+                        }
+                      }}
+                      className="rounded-lg border border-slate-200/90 bg-white p-2 shadow-2xs dark:border-slate-800 dark:bg-slate-900 cursor-pointer hover:border-orange-300 dark:hover:border-orange-700 active:scale-[0.99] transition-all"
+                    >
+                      {/* Top section: Icon, Title, Category, ChevronRight */}
+                      <div className="flex items-center justify-between gap-1.5">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <div className="h-7 w-7 shrink-0 rounded-md bg-white dark:bg-slate-800 p-0.5 flex items-center justify-center border border-slate-100 dark:border-slate-700 overflow-hidden shadow-2xs">
+                            <img src={scheme.logo} alt="" className="h-full w-full object-contain" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="text-[11px] font-extrabold leading-tight text-[#1B255A] dark:text-white truncate">
+                              {lang === "ml" ? scheme.titleMl : scheme.titleEn}
+                            </h4>
+                            <p className="text-[9px] font-medium text-[#8E9BBA] dark:text-slate-400 truncate">
+                              {lang === "ml" ? scheme.categoryMl : scheme.categoryEn}
+                            </p>
+                          </div>
+                        </div>
+                        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[#1B255A] dark:text-slate-300 stroke-[2]" />
+                      </div>
+
+                      {/* Bottom section: 5-KPI Segmented Pill Container */}
+                      <div className="mt-1.5 flex items-stretch rounded-md bg-[#F8FAFC] dark:bg-slate-800/60 border border-[#F1F5F9] dark:border-slate-800 overflow-hidden divide-x divide-[#E2E8F0] dark:divide-slate-700/60">
+                        <div className="flex-1 py-0.5 px-0.5 flex flex-col items-center justify-center text-center">
+                          <span className="text-[11px] font-extrabold text-[#1B255A] dark:text-blue-300 leading-none">
+                            {scheme.total}
+                          </span>
+                          <span className="text-[7px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">
+                            {tr("Applications", "അപേക്ഷകൾ")}
+                          </span>
+                        </div>
+
+                        <div className="flex-1 py-0.5 px-0.5 flex flex-col items-center justify-center text-center">
+                          <span className="text-[11px] font-extrabold text-[#00875A] dark:text-emerald-400 leading-none">
+                            {scheme.approved}
+                          </span>
+                          <span className="text-[7px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">
+                            {tr("Approved", "അംഗീകരിച്ചു")}
+                          </span>
+                        </div>
+
+                        <div className="flex-1 py-0.5 px-0.5 flex flex-col items-center justify-center text-center">
+                          <span className="text-[11px] font-extrabold text-[#DC2626] dark:text-rose-400 leading-none">
+                            {scheme.rejected}
+                          </span>
+                          <span className="text-[7px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">
+                            {tr("Rejected", "നിരസിച്ചു")}
+                          </span>
+                        </div>
+
+                        <div className="flex-1 py-0.5 px-0.5 flex flex-col items-center justify-center text-center">
+                          <span className="text-[11px] font-extrabold text-[#2563EB] dark:text-blue-400 leading-none">
+                            {scheme.inReview}
+                          </span>
+                          <span className="text-[7px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">
+                            {tr("In Review", "പരിശോധനയിൽ")}
+                          </span>
+                        </div>
+
+                        <div className="flex-1 py-0.5 px-0.5 flex flex-col items-center justify-center text-center">
+                          <span className="text-[11px] font-extrabold text-[#EA580C] dark:text-amber-400 leading-none">
+                            {scheme.pending}
+                          </span>
+                          <span className="text-[7px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">
+                            {tr("Pending", "തീർപ്പില്ലാത്തവ")}
+                          </span>
+                        </div>
+                      </div>
                     </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Full Subpage View for Selected Scheme (Attachment 2 UI) */}
+          {selectedAssistedScheme && (
+            <div className="absolute inset-0 z-[120] flex flex-col bg-white dark:bg-slate-950 animate-in fade-in duration-200">
+              {/* Header */}
+              <header className="sticky top-0 z-30 bg-[#FFFDF9] dark:bg-slate-900 border-b border-slate-200/60 dark:border-slate-800/60 px-3.5 py-1.5 shadow-2xs">
+                <div className="relative flex h-9 items-center justify-between w-full">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedAssistedScheme(null)}
+                    className="flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-full bg-[#FFF7EC] text-[#1b255a] hover:bg-orange-100 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 cursor-pointer transition-colors border border-orange-100/80 dark:border-slate-700 shadow-2xs z-10"
+                    aria-label={tr("Back", "മടങ്ങുക")}
+                  >
+                    <ArrowLeft className="h-3.5 w-3.5 stroke-[2.2]" />
+                  </button>
+                  <h2 className="absolute inset-y-0 left-10 right-12 flex items-center justify-center text-center text-[12.5px] font-extrabold text-[#0F172A] dark:text-white pointer-events-none truncate leading-tight">
+                    {lang === "ml" ? selectedAssistedScheme.titleMl : selectedAssistedScheme.titleEn}
+                  </h2>
+                  <button
+                    type="button"
+                    className="flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-full bg-white text-[#1b255a] hover:bg-slate-50 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 cursor-pointer transition-colors border border-slate-200/80 dark:border-slate-700 shadow-2xs"
+                  >
+                    <MoreVertical className="h-3.5 w-3.5 stroke-[2.2] text-slate-700 dark:text-slate-200" />
+                  </button>
+                </div>
+              </header>
+
+              {/* Subheader: My View • October 2026 */}
+              <div className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800/80 px-3.5 py-1.5 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 min-w-0 truncate">
+                  <span className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#ff5500] tracking-tight">
+                    {tr("My View", "എന്റെ കാഴ്ച")}
+                  </span>
+                  <span className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight">
+                    October 2026
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button type="button" className="flex h-6 w-6 items-center justify-center rounded-full border border-orange-100 dark:border-slate-800 bg-orange-50/50 dark:bg-slate-900 text-orange-600">
+                    <ChevronLeft className="h-3 w-3 stroke-[2.5]" />
+                  </button>
+                  <button type="button" className="flex h-6 w-6 items-center justify-center rounded-full border border-orange-100 dark:border-slate-800 bg-orange-50/50 dark:bg-slate-900 text-orange-600">
+                    <ChevronRight className="h-3 w-3 stroke-[2.5]" />
+                  </button>
+                  <button type="button" className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[#ff5500]">
+                    <Calendar className="h-3.5 w-3.5 stroke-[2.2]" />
+                  </button>
+                  <button type="button" className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[#ff5500]">
+                    <Search className="h-3 w-3 stroke-[2.2]" />
+                  </button>
+                  <button type="button" className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[#ff5500]">
+                    <Filter className="h-3 w-3 stroke-[2.2]" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Body: 5-KPI Segmented Pill & Applicant Cards List */}
+              <div className="flex-1 overflow-y-auto p-3.5 space-y-3">
+                {/* 5-KPI Segmented Pill Container */}
+                <div className="flex items-stretch rounded-xl bg-[#F8FAFC] dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-800 overflow-hidden divide-x divide-[#E2E8F0] dark:divide-slate-800 shadow-2xs py-1">
+                  <div className="flex-1 py-1 px-0.5 flex flex-col items-center justify-center text-center">
+                    <span className="text-[12px] font-black text-[#1B255A] dark:text-blue-300 leading-none">{selectedAssistedScheme.total}</span>
+                    <span className="text-[8px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">{tr("Applications", "അപേക്ഷകൾ")}</span>
+                  </div>
+                  <div className="flex-1 py-1 px-0.5 flex flex-col items-center justify-center text-center">
+                    <span className="text-[12px] font-black text-[#00875A] dark:text-emerald-400 leading-none">{selectedAssistedScheme.approved}</span>
+                    <span className="text-[8px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">{tr("Approved", "അംഗീകരിച്ചു")}</span>
+                  </div>
+                  <div className="flex-1 py-1 px-0.5 flex flex-col items-center justify-center text-center">
+                    <span className="text-[12px] font-black text-[#2563EB] dark:text-blue-400 leading-none">{selectedAssistedScheme.inReview}</span>
+                    <span className="text-[8px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">{tr("In Review", "പരിശോധനയിൽ")}</span>
+                  </div>
+                  <div className="flex-1 py-1 px-0.5 flex flex-col items-center justify-center text-center">
+                    <span className="text-[12px] font-black text-[#EA580C] dark:text-amber-400 leading-none">{selectedAssistedScheme.pending}</span>
+                    <span className="text-[8px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">{tr("Pending", "തീർപ്പില്ലാത്തവ")}</span>
+                  </div>
+                  <div className="flex-1 py-1 px-0.5 flex flex-col items-center justify-center text-center">
+                    <span className="text-[12px] font-black text-[#DC2626] dark:text-rose-400 leading-none">{selectedAssistedScheme.rejected}</span>
+                    <span className="text-[8px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">{tr("Rejected", "നിരസിച്ചു")}</span>
                   </div>
                 </div>
-              ))}
+
+                {/* Applicant Cards List */}
+                <div className="space-y-2.5">
+                  {[
+                    {
+                      id: "app-r1",
+                      initials: "RA",
+                      nameEn: "Ravi Kumar",
+                      nameMl: "രവി കുമാർ",
+                      locationEn: "Ollur, Thrissur",
+                      locationMl: "ഒല്ലൂർ, തൃശൂർ",
+                      statusLabelEn: "Documents Verified",
+                      statusLabelMl: "രേഖകൾ പരിശോധിച്ചു",
+                      badgeStyle: "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800",
+                      icon: FileCheck,
+                      refId: "PMSV-2026-9281",
+                      status: "in_review",
+                    },
+                    {
+                      id: "app-s1",
+                      initials: "SU",
+                      nameEn: "Sunitha Kumari",
+                      nameMl: "സുനിത കുമാരി",
+                      locationEn: "Kottayam East, Kottayam",
+                      locationMl: "കോട്ടയം ഈസ്റ്റ്, കോട്ടയം",
+                      statusLabelEn: "In Review",
+                      statusLabelMl: "പരിശോധനയിൽ",
+                      badgeStyle: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800",
+                      icon: Hourglass,
+                      refId: "PMSV-2026-9282",
+                      status: "in_review",
+                    },
+                    {
+                      id: "app-d1",
+                      initials: "DE",
+                      nameEn: "Deepa Lakshmi",
+                      nameMl: "ദീപ ലക്ഷ്മി",
+                      locationEn: "Nedumangad, Thiruvananthapuram",
+                      locationMl: "നെടുമങ്ങാട്, തിരുവനന്തപുരം",
+                      statusLabelEn: "Received",
+                      statusLabelMl: "ലഭിച്ചു",
+                      badgeStyle: "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800",
+                      icon: Inbox,
+                      refId: "PMSV-2026-9283",
+                      status: "pending",
+                    },
+                  ].map((app) => {
+                    const BadgeIcon = app.icon;
+                    return (
+                      <div
+                        key={app.id}
+                        onClick={() => {
+                          if (onSelectApplication) {
+                            onSelectApplication({
+                              refId: app.refId,
+                              titleEn: selectedAssistedScheme.titleEn,
+                              titleMl: selectedAssistedScheme.titleMl,
+                              categoryEn: selectedAssistedScheme.categoryEn,
+                              categoryMl: selectedAssistedScheme.categoryMl,
+                              status: app.status,
+                              applicantName: lang === "ml" ? app.nameMl : app.nameEn,
+                              applicantLocation: lang === "ml" ? app.locationMl : app.locationEn,
+                              date: "23 Oct 2026",
+                            });
+                          }
+                        }}
+                        className="flex items-center justify-between p-3 rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="h-9 w-9 shrink-0 rounded-full bg-amber-100/80 dark:bg-amber-900/40 border border-amber-200/60 dark:border-amber-700/60 text-amber-800 dark:text-amber-200 flex items-center justify-center font-bold text-xs">
+                            {app.initials}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-extrabold text-[12.5px] text-[#0f172a] dark:text-white leading-tight truncate">
+                              {lang === "ml" ? app.nameMl : app.nameEn}
+                            </h4>
+                            <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                              {lang === "ml" ? app.locationMl : app.locationEn}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className={`px-2.5 py-1 rounded-full border text-[10px] font-bold flex items-center gap-1 ${app.badgeStyle}`}>
+                            <BadgeIcon className="h-3 w-3 stroke-[2.2]" />
+                            {lang === "ml" ? app.statusLabelMl : app.statusLabelEn}
+                          </span>
+                          <button type="button" className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                            <MoreVertical className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -4206,7 +5041,7 @@ export function MobileCreatePartyWorkerFlow({
     };
     return (
       <div
-        className="absolute inset-0 z-[100] flex items-end bg-black/60 backdrop-blur-[1px] animate-in fade-in duration-150"
+        className="absolute inset-0 z-[100] flex items-end bg-black/60 animate-in fade-in duration-150"
         onClick={() => setIsAccessSheetOpen(false)}
       >
         <div
@@ -4727,6 +5562,241 @@ export function MobileCreatePartyWorkerFlow({
       {renderPicker()}
       {renderAccessSheet()}
       {renderWorkerFilters()}
+
+      {/* Application Details View Screen Overlay (Matching image media_1795239859823_d55f80fb.png) */}
+      {selectedAssistedApp && (
+        <div
+          className="absolute inset-0 z-[200] flex flex-col bg-[#F8FAFC] dark:bg-slate-900 animate-in fade-in duration-150 overflow-y-auto min-h-full"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header Bar */}
+          <div className="sticky top-0 z-20 flex items-center justify-between border-b border-slate-200/80 bg-white/95 backdrop-blur-md px-4 py-3 dark:border-slate-800 dark:bg-slate-900/95">
+            <button
+              type="button"
+              onClick={() => setSelectedAssistedApp(null)}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
+              title="Back"
+            >
+              <ChevronLeft className="h-5 w-5 stroke-[2.5]" />
+            </button>
+            <h2 className="text-sm font-extrabold text-slate-900 dark:text-white">
+              {tr("Application Details", "അപേക്ഷയുടെ വിവരങ്ങൾ")}
+            </h2>
+            <button
+              type="button"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition cursor-pointer"
+            >
+              <MoreVertical className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Application Details Content */}
+          <div className="p-4 space-y-3.5 max-w-md mx-auto w-full pb-12">
+            {/* 1. Applicant Header Card */}
+            <div className="flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-amber-100/90 text-xs font-black text-amber-900 dark:bg-amber-950 dark:text-amber-200">
+                {selectedAssistedApp.applicantName
+                  ? selectedAssistedApp.applicantName
+                      .split(" ")
+                      .map((n: string) => n[0])
+                      .join("")
+                      .substring(0, 2)
+                      .toUpperCase()
+                  : "KK"}
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm font-extrabold text-slate-900 dark:text-white truncate">
+                  {selectedAssistedApp.applicantName}
+                </h3>
+                <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                  {selectedAssistedApp.applicantLocation || "Palakkad North, Palakkad"}
+                </p>
+              </div>
+            </div>
+
+            {/* 2. Scheme & Ministry Card */}
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs dark:border-slate-800 dark:bg-slate-900 space-y-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10.5px] font-extrabold text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300">
+                  <Sprout className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                  {lang === "ml" ? selectedAssistedApp.categoryMl || "കൃഷി" : selectedAssistedApp.categoryEn || "Agriculture"}
+                </span>
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10.5px] font-extrabold ${
+                    selectedAssistedApp.status === "approved"
+                      ? "border-emerald-200 bg-emerald-50/90 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300"
+                      : "border-slate-200 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                  }`}
+                >
+                  {selectedAssistedApp.status === "approved" ? (
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                  ) : (
+                    <Inbox className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                  )}
+                  {lang === "ml" ? selectedAssistedApp.statusLabelMl : selectedAssistedApp.statusLabelEn}
+                </span>
+              </div>
+
+              <div>
+                <h2 className="text-sm font-extrabold text-slate-900 dark:text-white leading-snug">
+                  {lang === "ml" ? selectedAssistedApp.titleMl : selectedAssistedApp.titleEn}
+                </h2>
+                <p className="mt-1 text-[11px] font-medium text-slate-400 dark:text-slate-400 leading-snug">
+                  {lang === "ml" ? selectedAssistedApp.ministryMl : selectedAssistedApp.ministryEn}
+                </p>
+              </div>
+            </div>
+
+            {/* 3. Tracking ID Card */}
+            <div className="rounded-2xl bg-slate-100/80 dark:bg-slate-800/60 p-3.5 space-y-1">
+              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-400">
+                {tr("Tracking ID", "ട്രാക്കിംഗ് ഐഡി")}
+              </span>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-black text-slate-900 dark:text-white tracking-wide">
+                  {selectedAssistedApp.refId}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (navigator.clipboard) {
+                      navigator.clipboard.writeText(selectedAssistedApp.refId);
+                    }
+                    setCopiedTrackingId(true);
+                    setTimeout(() => setCopiedTrackingId(false), 2000);
+                  }}
+                  className="p-1 rounded-lg hover:bg-slate-200/80 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition cursor-pointer"
+                  title="Copy Tracking ID"
+                >
+                  {copiedTrackingId ? (
+                    <Check className="h-4 w-4 text-emerald-600" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* 4. Details List Rows */}
+            <div className="rounded-2xl border border-slate-200/80 bg-white shadow-2xs dark:border-slate-800 dark:bg-slate-900 divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden">
+              {/* Applicant information */}
+              <div className="flex items-center justify-between p-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer">
+                <div className="flex items-center gap-3">
+                  <User className="h-4.5 w-4.5 text-slate-500 dark:text-slate-400" />
+                  <span className="text-xs font-extrabold text-slate-800 dark:text-slate-200">
+                    {tr("Applicant information", "അപേക്ഷകന്റെ വിവരങ്ങൾ")}
+                  </span>
+                </div>
+                <ChevronRight className="h-4 w-4 text-slate-400" />
+              </div>
+
+              {/* Collected Details & Files */}
+              <div className="flex items-center justify-between p-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer">
+                <div className="flex items-center gap-3">
+                  <ClipboardList className="h-4.5 w-4.5 text-slate-500 dark:text-slate-400" />
+                  <div>
+                    <span className="block text-xs font-extrabold text-slate-800 dark:text-slate-200">
+                      {tr("Collected Details & Files", "ശേഖരിച്ച വിവരങ്ങളും ഫയലുകളും")}
+                    </span>
+                    <span className="block text-[10px] font-medium text-slate-400">
+                      {tr("3 files uploaded", "3 ഫയലുകൾ അപ്‌ലോഡ് ചെയ്തു")}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Eye className="h-4 w-4 text-slate-400" />
+                  <ChevronRight className="h-4 w-4 text-slate-400" />
+                </div>
+              </div>
+
+              {/* Other Scheme Applications */}
+              <div className="flex items-center justify-between p-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer">
+                <div className="flex items-center gap-3">
+                  <Layers className="h-4.5 w-4.5 text-slate-500 dark:text-slate-400" />
+                  <div>
+                    <span className="block text-xs font-extrabold text-slate-800 dark:text-slate-200">
+                      {tr("Other Scheme Applications", "മറ്റ് പദ്ധതി അപേക്ഷകൾ")}
+                    </span>
+                    <span className="block text-[10px] font-medium text-slate-400">
+                      {tr("4 more applications", "4 അപേക്ഷകൾ കൂടി")}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-100/90 text-[10px] font-black text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+                    4
+                  </span>
+                  <ChevronRight className="h-4 w-4 text-slate-400" />
+                </div>
+              </div>
+
+              {/* Assisted by */}
+              <div className="flex items-center justify-between p-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer">
+                <div className="flex items-center gap-3">
+                  <UserCheck className="h-4.5 w-4.5 text-slate-500 dark:text-slate-400" />
+                  <div>
+                    <span className="block text-[10px] font-semibold text-slate-400">
+                      {tr("Assisted by", "സഹായിച്ചത്")}{" "}
+                      <span className="font-normal">(Last updated 23 Oct 2026)</span>
+                    </span>
+                    <span className="block text-xs font-extrabold text-slate-800 dark:text-slate-200 mt-0.5">
+                      Anil Thomas
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 5. Quick Action Cards Grid */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* How to Apply */}
+              <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-2xs dark:border-slate-800 dark:bg-slate-900 space-y-1 hover:border-orange-200 transition cursor-pointer">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-50 text-blue-600 dark:bg-blue-950/80 dark:text-blue-400 mb-2">
+                  <HelpCircle className="h-4 w-4" />
+                </div>
+                <h4 className="text-xs font-extrabold text-slate-900 dark:text-white">
+                  {tr("How to Apply", "എങ്ങനെ അപേക്ഷിക്കാം")}
+                </h4>
+                <p className="text-[10px] font-medium text-slate-400">
+                  {tr("Step-by-step process", "ഘട്ടം ഘട്ടമായുള്ള പ്രക്രിയ")}
+                </p>
+              </div>
+
+              {/* Required Details */}
+              <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-2xs dark:border-slate-800 dark:bg-slate-900 space-y-1 hover:border-orange-200 transition cursor-pointer">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-50 text-blue-600 dark:bg-blue-950/80 dark:text-blue-400 mb-2">
+                  <FileText className="h-4 w-4" />
+                </div>
+                <h4 className="text-xs font-extrabold text-slate-900 dark:text-white">
+                  {tr("Required Details", "ആവശ്യമായ വിവരങ്ങൾ")}
+                </h4>
+                <p className="text-[10px] font-medium text-slate-400">
+                  {tr("Details and files", "വിവരങ്ങളും ഫയലുകളും")}
+                </p>
+              </div>
+            </div>
+
+            {/* 6. Contact Support Banner */}
+            <div className="flex items-center justify-between gap-2 rounded-2xl border border-amber-200/80 bg-amber-50/70 p-3.5 dark:border-amber-900/60 dark:bg-amber-950/30">
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-300">
+                  <PhoneCall className="h-4.5 w-4.5" />
+                </div>
+                <p className="text-xs font-extrabold text-slate-900 dark:text-white leading-tight max-w-[150px]">
+                  {tr("Need help with this application?", "ഈ അപേക്ഷയിൽ സഹായം വേണമെന്നുണ്ടോ?")}
+                </p>
+              </div>
+              <a
+                href={`tel:${selectedAssistedApp.applicantPhone || "1800123456"}`}
+                className="inline-flex items-center gap-0.5 text-xs font-extrabold text-amber-700 hover:underline dark:text-amber-400 shrink-0"
+              >
+                <span>{tr("Contact support", "സപ്പോർട്ടുമായി ബന്ധപ്പെടുക")}</span>
+                <ChevronRight className="h-3.5 w-3.5" />
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
