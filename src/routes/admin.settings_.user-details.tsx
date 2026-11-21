@@ -192,57 +192,18 @@ function UserDetailsPage() {
     );
   }
 
-  const region = getUserRegion(targetUser);
-  const orgDistrict = getUserOrgDistrict(targetUser);
-  const mandalam = getUserMandalam(targetUser);
-  const area = getUserArea(targetUser);
-  const booth = getUserBooth(targetUser);
-  const designation = getUserDesignation(targetUser);
-
-  const activePerms = new Set(userRole?.permissions || []);
-  const isAdminRole = (targetUser.assignedRole || "Admin").toLowerCase().includes("admin");
-
-  const handleToggleStatus = () => {
-    const nextStatus = status === "Active" ? "Inactive" : "Active";
-    setStatus(nextStatus);
-    toast.success(
-      nextStatus === "Active"
-        ? tr("User activated successfully", "ഉപയോക്താവിനെ സജീവമാക്കി")
-        : tr("User deactivated successfully", "ഉപയോക്താവിനെ നിർജ്ജീവമാക്കി")
-    );
-  };
+  const region = getUserRegion(targetUser as any);
+  const orgDistrict = getUserOrgDistrict(targetUser as any);
+  const mandalam = getUserMandalam(targetUser as any);
+  const area = getUserArea(targetUser as any);
+  const booth = getUserBooth(targetUser as any);
+  const designation = getUserDesignation(targetUser as any);
 
   const handleDeleteUser = () => {
     if (window.confirm(tr("Are you sure you want to delete this user?", "ഈ ഉപയോക്താവിനെ നീക്കം ചെയ്യാൻ ആഗ്രഹിക്കുന്നുണ്ടോ?"))) {
       toast.success(tr("User deleted successfully", "ഉപയോക്താവിനെ നീക്കം ചെയ്തു"));
       void navigate({ to: "/admin/volunteers" });
     }
-  };
-
-  // Helper to check if permission is active for module & column
-  const isPermChecked = (moduleId: string, colId: string): boolean => {
-    if (isAdminRole) {
-      if (moduleId === "applications" || moduleId === "schemes" || moduleId === "party_workers") {
-        return colId !== "delete";
-      }
-      if (moduleId === "help_desk") {
-        return true;
-      }
-      if (activePerms.has(`${moduleId}:${colId}`) || activePerms.has(`${moduleId}:create`)) {
-        return true;
-      }
-      return false;
-    }
-    return (
-      activePerms.has(`${moduleId}:${colId}`) ||
-      activePerms.has(`${moduleId}:create`) ||
-      activePerms.has(`${moduleId}:view`)
-    );
-  };
-
-  const getModuleDataAccessLabel = (moduleId: string): string => {
-    if (moduleId === "help_desk") return "Own + Peers Records";
-    return "Own Records";
   };
 
   return (
