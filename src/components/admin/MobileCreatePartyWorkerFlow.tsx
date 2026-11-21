@@ -4855,14 +4855,12 @@ export function MobileCreatePartyWorkerFlow({
 
               {/* Subheader: My View • October 2026 */}
               <div className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800/80 px-3.5 py-1.5 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5 min-w-0 truncate">
-                  <span className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#ff5500] tracking-tight">
-                    {tr("My View", "എന്റെ കാഴ്ച")}
-                  </span>
-                  <span className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight">
-                    October 2026
-                  </span>
-                </div>
+                <span className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#ff5500] tracking-tight leading-none shrink-0">
+                  {tr("My View", "എന്റെ കാഴ്ച")}
+                </span>
+                <span className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-center truncate min-w-0 flex-1 px-1">
+                  October 2026
+                </span>
                 <div className="flex items-center gap-1.5 shrink-0">
                   <button type="button" className="flex h-6 w-6 items-center justify-center rounded-full border border-orange-100 dark:border-slate-800 bg-orange-50/50 dark:bg-slate-900 text-orange-600">
                     <ChevronLeft className="h-3 w-3 stroke-[2.5]" />

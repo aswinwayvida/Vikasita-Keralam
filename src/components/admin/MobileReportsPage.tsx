@@ -1910,7 +1910,7 @@ export function MobileReportsPage({
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-1.5 min-w-0 truncate">
+            <>
               <button
                 type="button"
                 onClick={() => {
@@ -1926,12 +1926,12 @@ export function MobileReportsPage({
               <button
                 type="button"
                 onClick={onOpenDatePicker}
-                className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-center hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0 flex-1 px-1"
                 title={lang === "ml" ? "തീയതി മാറ്റുക" : "Change Period"}
               >
-                • {periodText || "October 2026"}
+                {periodText || "October 2026"}
               </button>
-            </div>
+            </>
           )}
 
           {/* Right Controls: < > 📅 🔍 ⑂ */}
@@ -2448,7 +2448,7 @@ export function MobileReportsPage({
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 min-w-0 truncate">
+              <>
                 <button
                   type="button"
                   onClick={() => {
@@ -2464,12 +2464,12 @@ export function MobileReportsPage({
                 <button
                   type="button"
                   onClick={onOpenDatePicker}
-                  className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                  className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-center hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0 flex-1 px-1"
                   title={lang === "ml" ? "തീയതി മാറ്റുക" : "Change Period"}
                 >
-                  • {periodText || "October 2026"}
+                  {periodText || "October 2026"}
                 </button>
-              </div>
+              </>
             )}
 
             {/* Date Controls (< > calendar), Search Icon & Filter Action */}

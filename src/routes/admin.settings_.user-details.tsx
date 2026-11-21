@@ -6,9 +6,19 @@ import {
   Phone,
   Calendar,
   Building2,
+  MoreVertical,
+  Power,
+  Trash2,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   loadManagedDesktopUsers,
   getUserAvatarUrl,
@@ -52,9 +62,19 @@ function UserDetailsPage() {
     return users[0]; // fallback to first user
   }, [users, userId]);
 
-  const [status] = useState<"Active" | "Inactive">(
+  const [status, setStatus] = useState<"Active" | "Inactive">(
     targetUser?.status === "Active" || targetUser?.status === "Verified" ? "Active" : "Inactive"
   );
+
+  const handleToggleStatus = () => {
+    const nextStatus = status === "Active" ? "Inactive" : "Active";
+    setStatus(nextStatus);
+    toast.success(
+      nextStatus === "Active"
+        ? tr("User activated successfully", "ഉപയോക്താവിനെ സജീവമാക്കി")
+        : tr("User deactivated successfully", "ഉപയോക്താവിനെ നിർജ്ജീവമാക്കി")
+    );
+  };
 
   if (!targetUser) {
     return (
