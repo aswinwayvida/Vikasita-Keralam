@@ -166,17 +166,9 @@ function UserDetailsPage() {
     return users[0]; // fallback to first user
   }, [users, userId]);
 
-  const [status, setStatus] = useState<"Active" | "Inactive">(
+  const [status] = useState<"Active" | "Inactive">(
     targetUser?.status === "Active" || targetUser?.status === "Verified" ? "Active" : "Inactive"
   );
-
-  // Load roles data to show role permissions matrix
-  const roles = useMemo(() => loadManagedRoles(), []);
-  const userRole: ManagedRole | undefined = useMemo(() => {
-    if (!targetUser) return undefined;
-    const roleName = targetUser.assignedRole || "Admin";
-    return roles.find((r) => r.name.toLowerCase() === roleName.toLowerCase()) || roles[0];
-  }, [roles, targetUser]);
 
   if (!targetUser) {
     return (
