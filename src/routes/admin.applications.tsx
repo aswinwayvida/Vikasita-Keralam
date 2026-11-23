@@ -332,11 +332,11 @@ type ApplicationColumnKey =
   | "actions";
 
 const APPLICATION_COLUMNS: { key: ApplicationColumnKey; en: string; ml: string }[] = [
-  { key: "appDate", en: "Application date", ml: "അപേക്ഷാ തീയതി" },
-  { key: "applicant", en: "Applicant Name", ml: "അപേക്ഷകന്റെ പേര്" },
+  { key: "appDate", en: "Date", ml: "അപേക്ഷാ തീയതി" },
+  { key: "applicant", en: "Applicant", ml: "അപേക്ഷകന്റെ പേര്" },
   { key: "trackingId", en: "Tracking ID", ml: "ട്രാക്കിംഗ് ഐഡി" },
-  { key: "scheme", en: "Scheme and Scheme Category", ml: "പദ്ധതിയും വിഭാഗവും" },
-  { key: "areaOrgDistrict", en: "Area & Org District", ml: "പ്രദേശവും ഓർഗ് ജില്ലയും" },
+  { key: "scheme", en: "Scheme & Category", ml: "പദ്ധതിയും വിഭാഗവും" },
+  { key: "areaOrgDistrict", en: "Location", ml: "പ്രദേശവും ഓർഗ് ജില്ലയും" },
   { key: "createdBy", en: "Created By", ml: "സൃഷ്ടിച്ചത്" },
   { key: "status", en: "Status", ml: "സ്റ്റാറ്റസ്" },
   { key: "applyLink", en: "Apply Link", ml: "അപേക്ഷാ ലിങ്ക്" },
@@ -828,12 +828,12 @@ function ApplicationsPage() {
     (dateFilter !== "all" ? 1 : 0);
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-6 pb-8 [font-family:'Instrument_Sans',sans-serif]">
       {/* Merged Single Section Container */}
-      <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-5">
+      <div className="rounded-2xl border border-border bg-card p-4 sm:p-4 shadow-xs space-y-3 sm:space-y-2">
         
         {/* Top Header Row with Title & Filter / Actions */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b sm:border-b-0 border-border/80 pb-2 sm:pb-0">
           <div className="flex flex-wrap items-center gap-3">
             <h2 className="font-display text-base font-bold text-foreground">
               {lang === "ml" ? "അപേക്ഷകളുടെ ലിസ്റ്റ്" : "Applications List"}
@@ -1209,7 +1209,7 @@ function ApplicationsPage() {
         {viewMode === "table" && (
           <div className="overflow-x-auto rounded-xl">
             <table className="w-full text-left text-xs">
-              <thead className="bg-muted/50 font-bold text-muted-foreground border-b border-border">
+              <thead className="bg-slate-50/70 dark:bg-slate-900/70 font-bold text-muted-foreground border-b border-border">
                 <tr>
                   <th className="w-10 p-3">
                     <Checkbox
@@ -1262,7 +1262,7 @@ function ApplicationsPage() {
                         switch (colKey) {
                           case "appDate":
                             return (
-                              <td key="appDate" className="p-3 font-mono font-bold text-foreground">
+                              <td key="appDate" className="p-3 font-bold text-foreground">
                                 {new Date(record.submittedAt || record.createdAt).toLocaleDateString("en-GB", {
                                   day: "2-digit",
                                   month: "short",

@@ -74,6 +74,7 @@ export interface MobileReportsPageProps {
   onEditApplication?: (application: MobileReportApplicationRecord) => void;
   onCallApplication?: (application: MobileReportApplicationRecord) => void;
   onCheckEligibility?: (application: MobileReportApplicationRecord) => void;
+  onDocumentVerification?: (application: MobileReportApplicationRecord) => void;
   onDeleteApplication?: (application: MobileReportApplicationRecord) => void;
   onOpenSchemeDetails?: (schemeName: string) => void;
   onApplyScheme?: (schemeName: string) => void;
@@ -778,6 +779,7 @@ export function MobileReportsPage({
   onEditApplication,
   onCallApplication,
   onCheckEligibility,
+  onDocumentVerification,
   onDeleteApplication,
   onOpenSchemeDetails,
   onApplyScheme,
@@ -2013,7 +2015,7 @@ export function MobileReportsPage({
         {/* Content Container */}
         <div className="px-3 pt-2 pb-4">
           {/* Unified 5-KPI Segmented Card Bar (Compact height, adjusted padding and gap) */}
-          {/* Order: Applications, Approved, In Review, Pending, Rejected */}
+          {/* Order: Applications, Approved, Rejected, In Review, Pending */}
           <div className="flex items-stretch rounded-xl bg-[#FCFAF6] dark:bg-slate-900 border border-[#ECE7DF] dark:border-slate-800 shadow-2xs mb-2.5 overflow-hidden divide-x divide-[#ECE7DF] dark:divide-slate-800">
             {/* 1. Applications */}
             <button
@@ -2053,7 +2055,26 @@ export function MobileReportsPage({
               </span>
             </button>
 
-            {/* 3. In Review (renamed from In progress) */}
+            {/* 3. Rejected */}
+            <button
+              type="button"
+              onClick={() => setSchemeStatusFilter(schemeStatusFilter === "rejected" ? "all" : "rejected")}
+              className={`flex-1 py-1.5 px-0.5 flex flex-col items-center justify-center transition-colors cursor-pointer text-center ${
+                schemeStatusFilter === "rejected"
+                  ? "bg-rose-50/70 dark:bg-rose-950/40"
+                  : "hover:bg-black/[0.02] dark:hover:bg-white/[0.02]"
+              }`}
+              title={lang === "ml" ? "നിരസിച്ചവ" : "Rejected"}
+            >
+              <span className="text-[13.5px] font-extrabold text-[#DC2626] dark:text-rose-400 leading-none">
+                {rejectedSchemeApps}
+              </span>
+              <span className="text-[8px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">
+                {lang === "ml" ? "നിരസിച്ചത്" : "Rejected"}
+              </span>
+            </button>
+
+            {/* 4. In Review */}
             <button
               type="button"
               onClick={() => setSchemeStatusFilter(schemeStatusFilter === "in_review" ? "all" : "in_review")}
@@ -2072,7 +2093,7 @@ export function MobileReportsPage({
               </span>
             </button>
 
-            {/* 4. Pending */}
+            {/* 5. Pending */}
             <button
               type="button"
               onClick={() => setSchemeStatusFilter(schemeStatusFilter === "pending" ? "all" : "pending")}
@@ -2088,25 +2109,6 @@ export function MobileReportsPage({
               </span>
               <span className="text-[8px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">
                 {lang === "ml" ? "തീർപ്പില്ലാത്തവ" : "Pending"}
-              </span>
-            </button>
-
-            {/* 5. Rejected */}
-            <button
-              type="button"
-              onClick={() => setSchemeStatusFilter(schemeStatusFilter === "rejected" ? "all" : "rejected")}
-              className={`flex-1 py-1.5 px-0.5 flex flex-col items-center justify-center transition-colors cursor-pointer text-center ${
-                schemeStatusFilter === "rejected"
-                  ? "bg-rose-50/70 dark:bg-rose-950/40"
-                  : "hover:bg-black/[0.02] dark:hover:bg-white/[0.02]"
-              }`}
-              title={lang === "ml" ? "നിരസിച്ചവ" : "Rejected"}
-            >
-              <span className="text-[13.5px] font-extrabold text-[#DC2626] dark:text-rose-400 leading-none">
-                {rejectedSchemeApps}
-              </span>
-              <span className="text-[8px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">
-                {lang === "ml" ? "നിരസിച്ചത്" : "Rejected"}
               </span>
             </button>
           </div>
@@ -2252,12 +2254,16 @@ export function MobileReportsPage({
                                   type="button"
                                   onClick={() => {
                                     setOpenAppMenuKey(null);
-                                    onCheckEligibility?.(app);
+                                    if (onDocumentVerification) {
+                                      onDocumentVerification(app);
+                                    } else {
+                                      onCheckEligibility?.(app);
+                                    }
                                   }}
                                   className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
                                 >
-                                  <Sparkles className="h-3.5 w-3.5 text-orange-500" />
-                                  <span>{lang === "ml" ? "യോഗ്യത പരിശോധിക്കുക" : "Check Eligibility"}</span>
+                                  <FileCheck className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                                  <span>{lang === "ml" ? "രേഖാ പരിശോധന" : "Update Document verification"}</span>
                                 </button>
                                 <button
                                   type="button"
@@ -2721,7 +2727,26 @@ export function MobileReportsPage({
                     </span>
                   </button>
 
-                  {/* 3. In Review */}
+                  {/* 3. Rejected */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedScheme(scheme);
+                      setSchemeStatusFilter("rejected");
+                    }}
+                    className="flex-1 py-1 px-0.5 flex flex-col items-center justify-center transition-colors cursor-pointer text-center hover:bg-rose-50/70 dark:hover:bg-rose-950/40"
+                    title={lang === "ml" ? "നിരസിച്ചവ" : "Rejected"}
+                  >
+                    <span className="text-[11.5px] font-extrabold text-[#DC2626] dark:text-rose-400 leading-none">
+                      {stats.rejected}
+                    </span>
+                    <span className="text-[7.5px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap leading-none">
+                      {lang === "ml" ? "നിരസിച്ചത്" : "Rejected"}
+                    </span>
+                  </button>
+
+                  {/* 4. In Review */}
                   <button
                     type="button"
                     onClick={(e) => {
@@ -2740,7 +2765,7 @@ export function MobileReportsPage({
                     </span>
                   </button>
 
-                  {/* 4. Pending */}
+                  {/* 5. Pending */}
                   <button
                     type="button"
                     onClick={(e) => {
@@ -2756,25 +2781,6 @@ export function MobileReportsPage({
                     </span>
                     <span className="text-[7.5px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap leading-none">
                       {lang === "ml" ? "തീർപ്പില്ലാത്തവ" : "Pending"}
-                    </span>
-                  </button>
-
-                  {/* 5. Rejected */}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedScheme(scheme);
-                      setSchemeStatusFilter("rejected");
-                    }}
-                    className="flex-1 py-1 px-0.5 flex flex-col items-center justify-center transition-colors cursor-pointer text-center hover:bg-rose-50/70 dark:hover:bg-rose-950/40"
-                    title={lang === "ml" ? "നിരസിച്ചവ" : "Rejected"}
-                  >
-                    <span className="text-[11.5px] font-extrabold text-[#DC2626] dark:text-rose-400 leading-none">
-                      {stats.rejected}
-                    </span>
-                    <span className="text-[7.5px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap leading-none">
-                      {lang === "ml" ? "നിരസിച്ചത്" : "Rejected"}
                     </span>
                   </button>
                 </div>

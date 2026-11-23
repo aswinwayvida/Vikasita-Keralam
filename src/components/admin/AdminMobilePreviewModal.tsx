@@ -3676,7 +3676,11 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
   const openGuestEligibility = () => {
     setIsSahAiOpen(false);
-    setIsGuestEligibilityOpen(true);
+    const userApps = [...savedApplicationRecords, ...mobileApplicationAllPreviewRecords].filter(
+                                               (app) => !deletedApplicationRefs.includes(app.ref) && app.applicantNameEn.trim().toLowerCase() === user.id
+                                             );
+                                             const appRecord = userApps[0] || mobileApplicationAllPreviewRecords[0];
+                                             openDocumentVerificationForApplication(appRecord);
     setIsMobileAuthOpen(false);
     setMobileSubPage("none");
   };
@@ -7518,6 +7522,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     setActiveTab("create");
     setMobileSubPage("none");
     setCreateFlowStep("form");
+    setCreateProfileStep(1);
     mobileContentRef.current?.scrollTo({ top: 0 });
   };
 
@@ -9763,7 +9768,11 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
     const handlePrimaryAction = () => {
       if (isGuest) {
-        setIsGuestEligibilityOpen(true);
+        const userApps = [...savedApplicationRecords, ...mobileApplicationAllPreviewRecords].filter(
+                                               (app) => !deletedApplicationRefs.includes(app.ref) && app.applicantNameEn.trim().toLowerCase() === user.id
+                                             );
+                                             const appRecord = userApps[0] || mobileApplicationAllPreviewRecords[0];
+                                             openDocumentVerificationForApplication(appRecord);
         setSelectedSchemeName(detail.fullSchemeNameEn);
         setMobileSubPage("none");
         return;
@@ -10146,7 +10155,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 </>
               ) : (
                 <>
-                  <span>{lang === "ml" ? "യോഗ്യത പരിശോധിക്കുക" : "Check Eligibility"}</span>
+                  <span>{lang === "ml" ? "രേഖാ പരിശോധന" : "Update Document verification"}</span>
                   <ChevronRight className="h-3.5 w-3.5 stroke-[2.5]" />
                 </>
               )}
@@ -12426,7 +12435,11 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         <div className="px-1">
           <div
             onClick={() => {
-              setIsGuestEligibilityOpen(true);
+              const userApps = [...savedApplicationRecords, ...mobileApplicationAllPreviewRecords].filter(
+                                               (app) => !deletedApplicationRefs.includes(app.ref) && app.applicantNameEn.trim().toLowerCase() === user.id
+                                             );
+                                             const appRecord = userApps[0] || mobileApplicationAllPreviewRecords[0];
+                                             openDocumentVerificationForApplication(appRecord);
             }}
             className="group relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#243D95]/10 via-blue-500/5 to-[#243D95]/15 border border-white dark:border-slate-800/80 p-3.5 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 active:scale-[0.99]"
           >
@@ -12902,11 +12915,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 type="button"
                                 onClick={() => {
                                   setAppInfoMenuOpen(false);
-                                  if (appDetailView === "documents") {
-                                    openDocumentVerificationForApplication();
-                                  } else {
-                                    handleEditApplicationDetails();
-                                  }
+                                  handleEditApplicationDetails(selectedApplicationRecord);
                                 }}
                                 className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11.5px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
                               >
@@ -13130,8 +13139,11 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 onCallApplication={(application) => {
                   handleApplicationCardCall(application as any);
                 }}
-                onCheckEligibility={() => {
-                  setIsGuestEligibilityOpen(true);
+                onDocumentVerification={(application) => {
+                  openDocumentVerificationForApplication(application as any);
+                }}
+                onCheckEligibility={(application) => {
+                  openDocumentVerificationForApplication(application as any);
                 }}
                 onDeleteApplication={(application) => {
                   setSelectedApplicationRecord(application as any);
@@ -16681,12 +16693,16 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             setOpenApplicantMenuId(null);
-                                            setIsGuestEligibilityOpen(true);
+                                            const userApps = [...savedApplicationRecords, ...mobileApplicationAllPreviewRecords].filter(
+                                              (app) => !deletedApplicationRefs.includes(app.ref) && app.applicantNameEn.trim().toLowerCase() === user.id
+                                            );
+                                            const appRecord = userApps[0] || mobileApplicationAllPreviewRecords[0];
+                                            openDocumentVerificationForApplication(appRecord);
                                           }}
                                           className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
                                         >
-                                          <Sparkles className="h-3.5 w-3.5 text-orange-500" />
-                                          <span>{lang === "ml" ? "യോഗ്യത പരിശോധിക്കുക" : "Check Eligibility"}</span>
+                                          <FileCheck className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                                          <span>{lang === "ml" ? "രേഖാ പരിശോധന" : "Update Document verification"}</span>
                                         </button>
 
                                         <button
@@ -16935,7 +16951,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         {/* Tab 1: Applications */}
                         {applicantProfileTab === "applications" && (
                           <div className="space-y-1.5 pt-0.5 animate-in fade-in duration-150">
-                            {/* 5-Segment Summary Card: Applications, Approved, In Review, Pending, Rejected */}
+                            {/* 5-Segment Summary Card: Applications, Approved, Rejected, In Review, Pending */}
                             <div className="flex items-stretch rounded-2xl bg-[#FCFAF6] dark:bg-slate-900 border border-[#ECE7DF] dark:border-slate-800 shadow-2xs overflow-hidden divide-x divide-[#ECE7DF] dark:divide-slate-800 my-1">
                               {/* 1. Applications */}
                               <button
@@ -16979,7 +16995,30 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 </span>
                               </button>
 
-                              {/* 3. In Review */}
+                              {/* 3. Rejected */}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setApplicantAppStatusFilter((prev) =>
+                                    prev === "rejected" ? "all" : "rejected"
+                                  )
+                                }
+                                className={`flex-1 py-2 px-1 flex flex-col items-center justify-center transition-colors cursor-pointer text-center min-w-0 ${
+                                  applicantAppStatusFilter === "rejected"
+                                    ? "bg-rose-50/70 dark:bg-rose-950/40"
+                                    : "hover:bg-black/[0.02] dark:hover:bg-white/[0.02]"
+                                }`}
+                                title={lang === "ml" ? "നിരസിച്ചവ" : "Rejected"}
+                              >
+                                <span className="text-[13.5px] font-extrabold text-[#DC2626] dark:text-rose-400 leading-none">
+                                  {applicantAppsStats.rejected}
+                                </span>
+                                <span className="text-[8.5px] font-medium text-slate-500 dark:text-slate-400 mt-1 whitespace-nowrap">
+                                  {lang === "ml" ? "നിരസിച്ചത്" : "Rejected"}
+                                </span>
+                              </button>
+
+                              {/* 4. In Review */}
                               <button
                                 type="button"
                                 onClick={() =>
@@ -17002,7 +17041,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 </span>
                               </button>
 
-                              {/* 4. Pending */}
+                              {/* 5. Pending */}
                               <button
                                 type="button"
                                 onClick={() =>
@@ -17022,29 +17061,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 </span>
                                 <span className="text-[8.5px] font-medium text-slate-500 dark:text-slate-400 mt-1 whitespace-nowrap">
                                   {lang === "ml" ? "തീർപ്പില്ലാത്തവ" : "Pending"}
-                                </span>
-                              </button>
-
-                              {/* 5. Rejected */}
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setApplicantAppStatusFilter((prev) =>
-                                    prev === "rejected" ? "all" : "rejected"
-                                  )
-                                }
-                                className={`flex-1 py-2 px-1 flex flex-col items-center justify-center transition-colors cursor-pointer text-center min-w-0 ${
-                                  applicantAppStatusFilter === "rejected"
-                                    ? "bg-rose-50/70 dark:bg-rose-950/40"
-                                    : "hover:bg-black/[0.02] dark:hover:bg-white/[0.02]"
-                                }`}
-                                title={lang === "ml" ? "നിരസിച്ചവ" : "Rejected"}
-                              >
-                                <span className="text-[13.5px] font-extrabold text-[#DC2626] dark:text-rose-400 leading-none">
-                                  {applicantAppsStats.rejected}
-                                </span>
-                                <span className="text-[8.5px] font-medium text-slate-500 dark:text-slate-400 mt-1 whitespace-nowrap">
-                                  {lang === "ml" ? "നിരസിച്ചത്" : "Rejected"}
                                 </span>
                               </button>
                             </div>
@@ -17979,8 +17995,11 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   onCallApplication={(application) => {
                     handleApplicationCardCall(application as any);
                   }}
-                  onCheckEligibility={() => {
-                    setIsGuestEligibilityOpen(true);
+                  onDocumentVerification={(application) => {
+                    openDocumentVerificationForApplication(application as any);
+                  }}
+                  onCheckEligibility={(application) => {
+                    openDocumentVerificationForApplication(application as any);
                   }}
                   onDeleteApplication={(application) => {
                     setSelectedApplicationRecord(application as any);

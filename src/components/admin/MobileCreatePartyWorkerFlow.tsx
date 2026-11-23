@@ -4485,6 +4485,7 @@ export function MobileCreatePartyWorkerFlow({
                 /* Applications View (Attachment 2) */
                 <div className="space-y-1.5">
                   {/* Top 5-Metric Box - Clean Dividers, No Orange Highlights per Applicant Profile UI */}
+                  {/* Order: Applications, Approved, Rejected, In Review, Pending */}
                   <div className="flex items-stretch rounded-xl border border-slate-200/90 bg-[#F8FAFC] dark:border-slate-800 dark:bg-slate-900/90 overflow-hidden divide-x divide-slate-200/70 dark:divide-slate-800 shadow-2xs">
                     <button
                       type="button"
@@ -4510,6 +4511,17 @@ export function MobileCreatePartyWorkerFlow({
 
                     <button
                       type="button"
+                      onClick={() => setAssistedStatusFilter("rejected")}
+                      className="flex-1 py-1.5 px-1 flex flex-col items-center justify-center text-center transition-all cursor-pointer hover:bg-slate-100/60 dark:hover:bg-slate-800/40"
+                    >
+                      <span className="text-[12px] font-black text-[#DC2626] dark:text-rose-400 leading-none">0</span>
+                      <span className="text-[7.5px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">
+                        {tr("Rejected", "നിരസിച്ചു")}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
                       onClick={() => setAssistedStatusFilter("in_review")}
                       className="flex-1 py-1.5 px-1 flex flex-col items-center justify-center text-center transition-all cursor-pointer hover:bg-slate-100/60 dark:hover:bg-slate-800/40"
                     >
@@ -4527,17 +4539,6 @@ export function MobileCreatePartyWorkerFlow({
                       <span className="text-[12px] font-black text-[#EA580C] dark:text-amber-400 leading-none">2</span>
                       <span className="text-[7.5px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">
                         {tr("Pending", "തീർപ്പില്ലാത്തവ")}
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setAssistedStatusFilter("rejected")}
-                      className="flex-1 py-1.5 px-1 flex flex-col items-center justify-center text-center transition-all cursor-pointer hover:bg-slate-100/60 dark:hover:bg-slate-800/40"
-                    >
-                      <span className="text-[12px] font-black text-[#DC2626] dark:text-rose-400 leading-none">0</span>
-                      <span className="text-[7.5px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">
-                        {tr("Rejected", "നിരസിച്ചു")}
                       </span>
                     </button>
                   </div>
@@ -4882,7 +4883,7 @@ export function MobileCreatePartyWorkerFlow({
 
               {/* Body: 5-KPI Segmented Pill & Applicant Cards List */}
               <div className="flex-1 overflow-y-auto p-3.5 space-y-3">
-                {/* 5-KPI Segmented Pill Container */}
+                {/* 5-KPI Segmented Pill Container: Applications, Approved, Rejected, In Review, Pending */}
                 <div className="flex items-stretch rounded-xl bg-[#F8FAFC] dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-800 overflow-hidden divide-x divide-[#E2E8F0] dark:divide-slate-800 shadow-2xs py-1">
                   <div className="flex-1 py-1 px-0.5 flex flex-col items-center justify-center text-center">
                     <span className="text-[12px] font-black text-[#1B255A] dark:text-blue-300 leading-none">{selectedAssistedScheme.total}</span>
@@ -4893,16 +4894,16 @@ export function MobileCreatePartyWorkerFlow({
                     <span className="text-[8px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">{tr("Approved", "അംഗീകരിച്ചു")}</span>
                   </div>
                   <div className="flex-1 py-1 px-0.5 flex flex-col items-center justify-center text-center">
+                    <span className="text-[12px] font-black text-[#DC2626] dark:text-rose-400 leading-none">{selectedAssistedScheme.rejected}</span>
+                    <span className="text-[8px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">{tr("Rejected", "നിരസിച്ചു")}</span>
+                  </div>
+                  <div className="flex-1 py-1 px-0.5 flex flex-col items-center justify-center text-center">
                     <span className="text-[12px] font-black text-[#2563EB] dark:text-blue-400 leading-none">{selectedAssistedScheme.inReview}</span>
                     <span className="text-[8px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">{tr("In Review", "പരിശോധനയിൽ")}</span>
                   </div>
                   <div className="flex-1 py-1 px-0.5 flex flex-col items-center justify-center text-center">
                     <span className="text-[12px] font-black text-[#EA580C] dark:text-amber-400 leading-none">{selectedAssistedScheme.pending}</span>
                     <span className="text-[8px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">{tr("Pending", "തീർപ്പില്ലാത്തവ")}</span>
-                  </div>
-                  <div className="flex-1 py-1 px-0.5 flex flex-col items-center justify-center text-center">
-                    <span className="text-[12px] font-black text-[#DC2626] dark:text-rose-400 leading-none">{selectedAssistedScheme.rejected}</span>
-                    <span className="text-[8px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">{tr("Rejected", "നിരസിച്ചു")}</span>
                   </div>
                 </div>
 
