@@ -101,12 +101,12 @@ type SchemeColumnKey =
   | "applications"
   | "approved"
   | "rejected"
+  | "inReview"
   | "pending"
-  | "inProgress"
   | "actions";
 
 const SCHEME_COLUMNS: { key: SchemeColumnKey; en: string; ml: string }[] = [
-  { key: "scheme", en: "Scheme Name", ml: "പദ്ധതിയുടെ പേര്" },
+  { key: "scheme", en: "Name", ml: "പേര്" },
   { key: "category", en: "Category", ml: "വിഭാഗം" },
   { key: "portal", en: "Apply Link", ml: "പോർട്ടൽ തുറക്കുക" },
   { key: "website", en: "Official Website", ml: "ഔദ്യോഗിക വെബ്‌സൈറ്റ്" },
@@ -114,8 +114,8 @@ const SCHEME_COLUMNS: { key: SchemeColumnKey; en: string; ml: string }[] = [
   { key: "applications", en: "Applications", ml: "അപേക്ഷകൾ" },
   { key: "approved", en: "Approved", ml: "അംഗീകരിച്ചത്" },
   { key: "rejected", en: "Rejected", ml: "നിരസിച്ചത്" },
+  { key: "inReview", en: "In Review", ml: "പരിശോധനയിൽ" },
   { key: "pending", en: "Pending", ml: "തീർപ്പുകൽപ്പിക്കാത്തത്" },
-  { key: "inProgress", en: "In Progress", ml: "പുരോഗതിയിൽ" },
   { key: "actions", en: "Actions", ml: "നടപടികൾ" },
 ];
 
@@ -253,6 +253,19 @@ function ModePill({ mode }: { mode: string }) {
       External portal
     </span>
   );
+}
+
+function getPageNumbers(current: number, total: number): (number | string)[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+  if (current <= 4) {
+    return [1, 2, 3, 4, 5, "...", total];
+  }
+  if (current >= total - 3) {
+    return [1, "...", total - 4, total - 3, total - 2, total - 1, total];
+  }
+  return [1, "...", current - 1, current, current + 1, "...", total];
 }
 
 // Exactly matching the FilterDropdownSelector UI used for User Filter in RoleAccessSettings.tsx
@@ -875,7 +888,11 @@ function SchemesPage() {
   const [selectedBeneficiaries, setSelectedBeneficiaries] = useState<string[]>([]);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
+  const pageSize = 12;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [topSearchQuery, selectedCategories, selectedMinistries, selectedStatuses, selectedBeneficiaries]);
 
   const allMinistryOptions = useMemo(() => {
     const dynamic = Array.from(new Set(schemes.map((s) => s.ministry.en)));
@@ -893,8 +910,8 @@ function SchemesPage() {
         const totalApps = 38 + ((index * 17) % 148);
         const approved = Math.floor(totalApps * 0.55);
         const rejected = Math.floor(totalApps * 0.12);
-        const inProgress = Math.floor(totalApps * 0.18);
-        const pending = totalApps - approved - rejected - inProgress;
+        const inReview = Math.floor(totalApps * 0.18);
+        const pending = totalApps - approved - rejected - inReview;
 
         return {
           ...scheme,
@@ -910,7 +927,7 @@ function SchemesPage() {
           approved,
           rejected,
           pending,
-          inProgress,
+          inReview,
           sync: index % 7 === 0 ? "Needs checking" : "Up to date",
           categoryDisplay,
           ministryDisplay: scheme.ministry.en,
@@ -1129,11 +1146,11 @@ function SchemesPage() {
   }, []);
 
   return (
-    <div className="w-full min-w-0 max-w-full space-y-6 pb-8 md:max-w-[calc(100vw-var(--sidebar-width)-4.5rem)]">
+    <div className="w-full min-w-0 max-w-full space-y-3 pb-6 [font-family:'Instrument_Sans',sans-serif]">
       {/* Merged Single Section Container */}
       <div className="w-full max-w-full min-w-0 overflow-hidden rounded-2xl border border-border bg-card shadow-xs">
         {/* Top Header Row with Title & Filter / Export / Import / Add Scheme Buttons */}
-        <div className="flex min-w-0 flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 p-4 sm:p-5">
+        <div className="flex min-w-0 flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 p-3 sm:px-3 sm:py-2">
           <div className="flex min-w-0 flex-wrap items-center gap-3">
             <h2 className="font-display text-base font-bold text-foreground">
               {lang === "ml"
@@ -1254,7 +1271,7 @@ function SchemesPage() {
                 type="button"
                 onClick={() => setIsFilterOpen(true)}
                 className={cn(
-                  "inline-flex items-center gap-1.5 rounded-xl sm:rounded-lg border px-3.5 py-1.5 text-[13px] leading-tight font-semibold transition-colors shrink-0 cursor-pointer",
+                  "inline-flex h-8 items-center gap-1.5 rounded-xl sm:rounded-lg border px-3.5 text-xs font-bold transition-colors shrink-0 cursor-pointer",
                   activeFilterCount > 0
                     ? "border-primary bg-primary/10 text-primary font-bold"
                     : "border-border bg-background text-foreground hover:bg-muted",
@@ -1274,7 +1291,7 @@ function SchemesPage() {
             <div className="flex items-center gap-2 shrink-0">
               <Link
                 to="/admin/schemes/new"
-                className="hidden sm:inline-flex items-center gap-1.5 rounded-xl sm:rounded-lg bg-primary px-4 py-1.5 text-[13px] leading-tight font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shrink-0"
+                className="hidden sm:inline-flex h-8 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 px-3.5 text-xs font-bold shadow-xs items-center gap-1.5 cursor-pointer shrink-0 transition-colors"
               >
                 <Plus className="h-4 w-4" />
                 {lang === "ml" ? "പുതിയ പദ്ധതി ചേർക്കുക" : "Add scheme"}
@@ -1320,7 +1337,7 @@ function SchemesPage() {
 
         {/* Cards View */}
         {viewMode === "cards" && (
-          <div className="p-4 sm:p-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+          <div className="p-3 sm:p-4 md:p-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-2.5">
             {paginatedFiltered.map((record) => {
               const isSelected = selectedSchemeIds.has(record.id);
               return (
@@ -1329,11 +1346,11 @@ function SchemesPage() {
                   onClick={() =>
                     navigate({ to: "/admin/schemes/$schemeId", params: { schemeId: record.id } })
                   }
-                  className={`rounded-xl border bg-card p-4 space-y-3 shadow-2xs hover:border-primary/40 hover:shadow-xs transition-all cursor-pointer ${
+                  className={`rounded-xl border bg-card p-3.5 md:p-3 space-y-2.5 shadow-2xs hover:border-primary/40 hover:shadow-xs transition-all cursor-pointer ${
                     isSelected ? "border-primary/50 bg-primary/[0.04]" : "border-border/80"
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-2 border-b border-border/40 pb-2.5">
+                  <div className="flex items-start justify-between gap-2 border-b border-border/40 pb-2 md:pb-1.5">
                     <div className="flex items-start gap-2.5 min-w-0">
                       <div onClick={(e) => e.stopPropagation()} className="pt-0.5">
                         <Checkbox
@@ -1396,10 +1413,10 @@ function SchemesPage() {
         {/* Data Table View */}
         {viewMode === "table" && (
           <div className="w-full max-w-full min-w-0 overflow-x-auto desktop-hide-scrollbar">
-            <table className="w-full table-fixed text-left text-xs">
-              <thead className="bg-muted/50 border-b border-border text-[10px] font-bold uppercase tracking-[0.03em] text-muted-foreground">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50/70 dark:bg-slate-900/70 font-bold text-muted-foreground border-b border-border">
                 <tr>
-                  <th className="w-10 py-3 pl-4 pr-1 text-center">
+                  <th className="p-3 w-10 text-center">
                     <Checkbox
                       checked={
                         paginatedFiltered.length > 0 &&
@@ -1427,67 +1444,67 @@ function SchemesPage() {
                     switch (colKey) {
                       case "scheme":
                         return (
-                          <th key="scheme" className="whitespace-nowrap py-3 pl-2 pr-3">
-                            {lang === "ml" ? "പദ്ധതിയുടെ പേര്" : "SCHEME NAME"}
+                          <th key="scheme" className="p-3 whitespace-nowrap">
+                            {lang === "ml" ? "പേര്" : "NAME"}
                           </th>
                         );
                       case "category":
                         return (
-                          <th key="category" className="w-[150px] whitespace-nowrap px-2 py-3">
+                          <th key="category" className="p-3 whitespace-nowrap">
                             {lang === "ml" ? "വിഭാഗം" : "CATEGORY"}
                           </th>
                         );
                       case "portal":
                         return (
-                          <th key="portal" className="w-[84px] whitespace-nowrap px-2 py-3">
+                          <th key="portal" className="p-3 whitespace-nowrap">
                             {lang === "ml" ? "പോർട്ടൽ തുറക്കുക" : "APPLY LINK"}
                           </th>
                         );
                       case "website":
                         return (
-                          <th key="website" className="w-[114px] whitespace-nowrap px-2 py-3">
+                          <th key="website" className="p-3 whitespace-nowrap">
                             {lang === "ml" ? "ഔദ്യോഗിക വെബ്‌സൈറ്റ്" : "OFFICIAL WEBSITE"}
                           </th>
                         );
                       case "status":
                         return (
-                          <th key="status" className="w-[68px] whitespace-nowrap px-2 py-3">
+                          <th key="status" className="p-3 whitespace-nowrap">
                             {lang === "ml" ? "സ്റ്റാറ്റസ്" : "STATUS"}
                           </th>
                         );
                       case "applications":
                         return (
-                          <th key="applications" className="w-[98px] whitespace-nowrap px-2 py-3 text-right">
+                          <th key="applications" className="p-3 whitespace-nowrap text-center">
                             {lang === "ml" ? "അപേക്ഷകൾ" : "APPLICATIONS"}
                           </th>
                         );
                       case "approved":
                         return (
-                          <th key="approved" className="w-[80px] whitespace-nowrap px-2 py-3 text-right">
+                          <th key="approved" className="p-3 whitespace-nowrap text-center">
                             {lang === "ml" ? "അംഗീകരിച്ചത്" : "APPROVED"}
                           </th>
                         );
                       case "rejected":
                         return (
-                          <th key="rejected" className="w-[74px] whitespace-nowrap px-2 py-3 text-right">
+                          <th key="rejected" className="p-3 whitespace-nowrap text-center">
                             {lang === "ml" ? "നിരസിച്ചത്" : "REJECTED"}
+                          </th>
+                        );
+                      case "inReview":
+                        return (
+                          <th key="inReview" className="p-3 whitespace-nowrap text-center">
+                            {lang === "ml" ? "പരിശോധനയിൽ" : "IN REVIEW"}
                           </th>
                         );
                       case "pending":
                         return (
-                          <th key="pending" className="w-[72px] whitespace-nowrap px-2 py-3 text-right">
+                          <th key="pending" className="p-3 whitespace-nowrap text-center">
                             {lang === "ml" ? "തീർപ്പുകൽപ്പിക്കാത്തത്" : "PENDING"}
-                          </th>
-                        );
-                      case "inProgress":
-                        return (
-                          <th key="inProgress" className="w-[84px] whitespace-nowrap px-2 py-3 text-right">
-                            {lang === "ml" ? "പുരോഗതിയിൽ" : "IN PROGRESS"}
                           </th>
                         );
                       case "actions":
                         return (
-                          <th key="actions" className="w-16 whitespace-nowrap py-3 pl-2 pr-3 text-right">
+                          <th key="actions" className="p-3 whitespace-nowrap text-center">
                             {lang === "ml" ? "നടപടികൾ" : "ACTIONS"}
                           </th>
                         );
@@ -1511,7 +1528,7 @@ function SchemesPage() {
                       }`}
                     >
                       <td
-                        className="w-10 py-4 pl-4 pr-1 text-center"
+                        className="p-3 text-center w-10"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <Checkbox
@@ -1531,8 +1548,8 @@ function SchemesPage() {
                         switch (colKey) {
                           case "scheme":
                             return (
-                              <td key="scheme" className="py-4 pl-2 pr-3">
-                                <div className="flex items-center gap-2">
+                              <td key="scheme" className="p-3">
+                                <div className="flex items-center gap-2.5">
                                   <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-white p-1 shadow-2xs">
                                     <img
                                       src={schemeLogoUrls[record.id] ?? schemeLogoFallback}
@@ -1546,7 +1563,7 @@ function SchemesPage() {
                                     />
                                   </span>
                                   <div className="min-w-0 space-y-0.5">
-                                    <p className="font-bold leading-tight text-foreground">
+                                    <p className="font-bold leading-tight text-foreground hover:text-primary transition-colors">
                                       {record[lang]}
                                     </p>
                                     <p className="text-[11px] font-medium leading-tight text-muted-foreground">
@@ -1558,13 +1575,13 @@ function SchemesPage() {
                             );
                           case "category":
                             return (
-                              <td key="category" className="whitespace-nowrap px-2 py-4">
+                              <td key="category" className="p-3 whitespace-nowrap">
                                 <CategoryTag category={record.category} lang={lang} />
                               </td>
                             );
                           case "portal":
                             return (
-                              <td key="portal" className="whitespace-nowrap px-2 py-4">
+                              <td key="portal" className="p-3 whitespace-nowrap">
                                 <a
                                   href={`https://www.myscheme.gov.in/search?q=${encodeURIComponent(record.en)}`}
                                   target="_blank"
@@ -1579,7 +1596,7 @@ function SchemesPage() {
                             );
                           case "website":
                             return (
-                              <td key="website" className="whitespace-nowrap px-2 py-4">
+                              <td key="website" className="p-3 whitespace-nowrap">
                                 <a
                                   href={
                                     record.id === "pmkisan"
@@ -1606,7 +1623,7 @@ function SchemesPage() {
                             );
                           case "status":
                             return (
-                              <td key="status" className="whitespace-nowrap px-2 py-4">
+                              <td key="status" className="p-3 whitespace-nowrap">
                                 <span
                                   className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-extrabold border ${
                                     record.status === "Active"
@@ -1622,42 +1639,52 @@ function SchemesPage() {
                             );
                           case "applications":
                             return (
-                              <td key="applications" className="whitespace-nowrap px-2 py-4 text-right font-mono font-bold text-foreground">
-                                {record.applications.toLocaleString()}
+                              <td key="applications" className="p-3 text-center whitespace-nowrap">
+                                <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-2 text-xs font-mono font-bold text-foreground bg-amber-500/10 rounded-full">
+                                  {record.applications.toLocaleString()}
+                                </span>
                               </td>
                             );
                           case "approved":
                             return (
-                              <td key="approved" className="whitespace-nowrap px-2 py-4 text-right font-mono font-bold text-emerald-600">
-                                {record.approved.toLocaleString()}
+                              <td key="approved" className="p-3 text-center whitespace-nowrap">
+                                <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-2 text-xs font-mono font-bold text-emerald-600 bg-emerald-500/10 rounded-full">
+                                  {record.approved.toLocaleString()}
+                                </span>
                               </td>
                             );
                           case "rejected":
                             return (
-                              <td key="rejected" className="whitespace-nowrap px-2 py-4 text-right font-mono font-bold text-rose-600">
-                                {record.rejected.toLocaleString()}
+                              <td key="rejected" className="p-3 text-center whitespace-nowrap">
+                                <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-2 text-xs font-mono font-bold text-rose-600 bg-rose-500/10 rounded-full">
+                                  {record.rejected.toLocaleString()}
+                                </span>
+                              </td>
+                            );
+                          case "inReview":
+                            return (
+                              <td key="inReview" className="p-3 text-center whitespace-nowrap">
+                                <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-2 text-xs font-mono font-bold text-sky-600 bg-sky-500/10 rounded-full">
+                                  {record.inReview.toLocaleString()}
+                                </span>
                               </td>
                             );
                           case "pending":
                             return (
-                              <td key="pending" className="whitespace-nowrap px-2 py-4 text-right font-mono font-bold text-amber-600">
-                                {record.pending.toLocaleString()}
-                              </td>
-                            );
-                          case "inProgress":
-                            return (
-                              <td key="inProgress" className="whitespace-nowrap px-2 py-4 text-right font-mono font-bold text-sky-600">
-                                {record.inProgress.toLocaleString()}
+                              <td key="pending" className="p-3 text-center whitespace-nowrap">
+                                <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-2 text-xs font-mono font-bold text-amber-600 bg-amber-500/10 rounded-full">
+                                  {record.pending.toLocaleString()}
+                                </span>
                               </td>
                             );
                           case "actions":
                             return (
                               <td
                                 key="actions"
-                                className="w-16 py-4 pl-2 pr-3 text-right"
+                                className="p-3 text-center whitespace-nowrap"
                                 onClick={(event) => event.stopPropagation()}
                               >
-                                <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
+                                <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                       <button
@@ -1755,20 +1782,26 @@ function SchemesPage() {
               </button>
 
               <div className="flex items-center gap-1 px-1">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <button
-                    key={page}
-                    type="button"
-                    onClick={() => setCurrentPage(page)}
-                    className={`h-7 w-7 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                      currentPage === page
-                        ? "bg-primary text-primary-foreground shadow-xs"
-                        : "hover:bg-muted text-muted-foreground"
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
+                {getPageNumbers(currentPage, totalPages).map((page, idx) =>
+                  page === "..." ? (
+                    <span key={`ellipsis-${idx}`} className="px-1 text-slate-400 font-bold">
+                      ...
+                    </span>
+                  ) : (
+                    <button
+                      key={page}
+                      type="button"
+                      onClick={() => setCurrentPage(Number(page))}
+                      className={`h-7 w-7 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        currentPage === page
+                          ? "bg-primary text-primary-foreground shadow-xs"
+                          : "hover:bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ),
+                )}
               </div>
 
               <button

@@ -3844,10 +3844,15 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           <div className="space-y-2">
             {/* Header Row: Date Title Left + Action Buttons Right (<, >, Calendar, Filter) - Matching Admin View */}
             <div className="flex items-center justify-between gap-2 pt-0.5 pb-0.5 my-0">
-              {/* Left Side: My View Label */}
-              <span className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#ff5500] tracking-tight leading-none shrink-0">
-                {lang === "ml" ? "എന്റെ കാഴ്ച" : "My View"}
-              </span>
+              {/* Left Side: My View Label Button (clicks open filter popup) */}
+              <button
+                type="button"
+                onClick={() => setShowFilterMenu(true)}
+                className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#ff5500] hover:text-[#e04b00] tracking-tight leading-none shrink-0 cursor-pointer text-left transition-colors"
+                title={lang === "ml" ? "ഫിൽട്ടർ കാണിക്കുക" : "Show Filter Popup"}
+              >
+                {partyWorkerTab === "team" ? (lang === "ml" ? "ടീം കാഴ്ച" : "Team View") : (lang === "ml" ? "എന്റെ കാഴ്ച" : "My View")}
+              </button>
 
               {/* Center: Bold Date/Period Title */}
               <button
@@ -13176,10 +13181,15 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     <div className="space-y-3 animate-in fade-in duration-200">
                     {/* Header Row: Date Title Left + Action Buttons Right (<, >, Calendar, Filter) - Matching Users Tab */}
                     <div className="flex items-center justify-between gap-2 pt-0.5 pb-1 my-0">
-                      {/* Left Side: My View Label */}
-                      <span className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#ff5500] tracking-tight leading-none shrink-0">
+                      {/* Left Side: My View Label Button (clicks open filter popup) */}
+                      <button
+                        type="button"
+                        onClick={() => setShowFilterMenu(true)}
+                        className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#ff5500] hover:text-[#e04b00] tracking-tight leading-none shrink-0 cursor-pointer text-left transition-colors"
+                        title={lang === "ml" ? "ഫിൽട്ടർ കാണിക്കുക" : "Show Filter Popup"}
+                      >
                         {lang === "ml" ? "എന്റെ കാഴ്ച" : "My View"}
-                      </span>
+                      </button>
 
                       {/* Center: Bold Date/Period Title */}
                       <button
@@ -21762,14 +21772,14 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         {/* Title or Expandable Search Bar */}
                         {isHelpdeskSearchExpanded ? (
                           <div className="relative flex-1 min-w-0 pr-1">
-                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400 pointer-events-none" />
                             <input
                               type="text"
                               autoFocus
                               value={helpdeskSearchQuery}
                               onChange={(e) => setHelpdeskSearchQuery(e.target.value)}
                               placeholder={lang === "ml" ? "പേര്, മണ്ഡലം, ജില്ല തിരയുക..." : "Search name, mandalam, district..."}
-                              className="w-full h-8 pl-8 pr-7 text-[11px] font-semibold rounded-full border border-amber-200/80 dark:border-slate-800 bg-[#fffcfa] dark:bg-slate-900 text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs"
+                              className="w-full h-7 pl-7 pr-6 text-[10px] font-semibold rounded-full border border-amber-200/80 dark:border-slate-800 bg-[#fffcfa] dark:bg-slate-900 text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs"
                             />
                             <button
                               type="button"
@@ -21777,35 +21787,75 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 setIsHelpdeskSearchExpanded(false);
                                 setHelpdeskSearchQuery("");
                               }}
-                              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5"
+                              className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5"
                               title="Cancel Search"
                             >
-                              <X className="h-4 w-4" />
+                              <X className="h-3.5 w-3.5" />
                             </button>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <HeartHandshake className="h-4 w-4 text-[#243D95] dark:text-blue-300 shrink-0" />
-                            <h3 className="font-extrabold text-xs sm:text-sm text-foreground truncate">
-                              {lang === "ml"
-                                ? `പൊതുജന സഹായ അഭ്യർത്ഥനകൾ (${helpdeskRequests.length})`
-                                : `Public Help Requests (${helpdeskRequests.length})`}
-                            </h3>
-                          </div>
+                          <>
+                            {/* Title without HeartHandshake icon */}
+                            <div className="flex items-center gap-1 shrink-0">
+                              <h3 className="font-extrabold text-[11px] sm:text-xs text-foreground whitespace-nowrap">
+                                {lang === "ml"
+                                  ? `അഭ്യർത്ഥനകൾ (${helpdeskRequests.length})`
+                                  : `Requests (${helpdeskRequests.length})`}
+                              </h3>
+                            </div>
+
+                            {/* Center: Date / Period Title */}
+                            <button
+                              type="button"
+                              onClick={() => setIsDatePickerOpen(true)}
+                              className="font-display text-[10px] sm:text-[11px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-center hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0 flex-1 px-0.5"
+                              title={lang === "ml" ? "തീയതി മാറ്റുക" : "Change Period"}
+                            >
+                              {getFormattedPeriodDisplay()}
+                            </button>
+                          </>
                         )}
 
-                        <div className="flex items-center gap-1 shrink-0">
+                        <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
                           {/* Search Icon Button */}
                           {!isHelpdeskSearchExpanded && (
                             <button
                               type="button"
                               onClick={() => setIsHelpdeskSearchExpanded(true)}
-                              className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-white text-[#ff5500] hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-orange-400 transition-all shadow-2xs cursor-pointer shrink-0"
+                              className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 bg-white text-[#ff5500] hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-orange-400 transition-all shadow-2xs cursor-pointer shrink-0"
                               title="Search Help Requests"
                             >
-                              <Search className="h-3.5 w-3.5 stroke-[2.2] text-[#ff5500]" />
+                              <Search className="h-3 w-3 stroke-[2] text-[#ff5500]" />
                             </button>
                           )}
+
+                          {/* Date Picker Controls (Previous, Next, Calendar) */}
+                          <button
+                            type="button"
+                            onClick={() => handleStepPeriod(-1)}
+                            className="flex h-6 w-6 items-center justify-center rounded-full border border-orange-100 dark:border-slate-800 bg-orange-50/50 dark:bg-slate-900 text-orange-600 hover:bg-orange-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shadow-2xs shrink-0"
+                            title={lang === "ml" ? "മുൻകാലയളവ്" : "Previous Period"}
+                          >
+                            <ChevronLeft className="h-3 w-3 stroke-[2.2]" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleStepPeriod(1)}
+                            className="flex h-6 w-6 items-center justify-center rounded-full border border-orange-100 dark:border-slate-800 bg-orange-50/50 dark:bg-slate-900 text-orange-600 hover:bg-orange-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shadow-2xs shrink-0"
+                            title={lang === "ml" ? "അടുത്ത കാലയളവ്" : "Next Period"}
+                          >
+                            <ChevronRight className="h-3 w-3 stroke-[2.2]" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setIsDatePickerOpen(true)}
+                            className="flex h-6 w-6 items-center justify-center rounded-full border border-orange-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 text-[#ff5500] hover:bg-orange-50 dark:hover:bg-orange-950/30 transition-colors cursor-pointer shadow-2xs shrink-0"
+                            title={lang === "ml" ? "തീയതി മാറ്റുക" : "Open Date Picker"}
+                          >
+                            <Calendar className="h-3 w-3 stroke-[2]" />
+                          </button>
 
                           {/* Filter Icon Button */}
                           <button
@@ -21821,20 +21871,20 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                               setHelpdeskPendingScheme(helpdeskSelectedScheme);
                               setIsHelpdeskFilterOpen(!isHelpdeskFilterOpen);
                             }}
-                            className={`relative flex h-7 w-7 items-center justify-center rounded-full border transition-all shadow-2xs cursor-pointer shrink-0 ${
+                            className={`relative flex h-6 w-6 items-center justify-center rounded-full border transition-all shadow-2xs cursor-pointer shrink-0 ${
                               isHelpdeskFilterOpen || helpdeskActiveFilterCount > 0
                                 ? "border-orange-500 bg-orange-500 text-white ring-2 ring-orange-500/30 shadow-xs"
                                 : "border-slate-200 bg-white text-[#ff5500] hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-orange-400"
                             }`}
                             title={lang === "ml" ? "ഫിൽട്ടർ" : "Filter"}
                           >
-                            <Filter className={`h-3.5 w-3.5 stroke-[2.2] shrink-0 ${
+                            <Filter className={`h-3 w-3 stroke-[2] shrink-0 ${
                               isHelpdeskFilterOpen || helpdeskActiveFilterCount > 0
                                 ? "text-white"
                                 : "text-[#ff5500]"
                             }`} />
                             {helpdeskActiveFilterCount > 0 && (
-                              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[9px] font-black text-white ring-1.5 ring-white dark:ring-slate-900 shadow-xs">
+                              <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-600 text-[8px] font-black text-white ring-1 ring-white dark:ring-slate-900 shadow-xs">
                                 {helpdeskActiveFilterCount}
                               </span>
                             )}

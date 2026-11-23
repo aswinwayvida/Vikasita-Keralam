@@ -63,24 +63,26 @@ export type BeneficiaryColumnKey =
   | "applicantName"
   | "district"
   | "mandalam"
+  | "areaWard"
   | "applications"
   | "approved"
   | "rejected"
+  | "inReview"
   | "pending"
   | "createdBy"
-  | "status"
   | "actions";
 
 const BENEFICIARY_COLUMNS: { key: BeneficiaryColumnKey; en: string; ml: string }[] = [
-  { key: "applicantName", en: "Applicant Name", ml: "അപേക്ഷകന്റെ പേര്" },
+  { key: "applicantName", en: "Name", ml: "പേര്" },
   { key: "district", en: "District", ml: "ജില്ല" },
   { key: "mandalam", en: "Mandalam", ml: "മണ്ഡലം" },
+  { key: "areaWard", en: "Area & Ward", ml: "ഏരിയ & വാർഡ്" },
   { key: "applications", en: "Applications", ml: "അപേക്ഷകൾ" },
   { key: "approved", en: "Approved", ml: "അംഗീകരിച്ചവ" },
   { key: "rejected", en: "Rejected", ml: "നിരസിച്ചവ" },
+  { key: "inReview", en: "In Review", ml: "പരിശോധനയിൽ" },
   { key: "pending", en: "Pending", ml: "തീർപ്പുകൽപ്പിക്കാത്തവ" },
   { key: "createdBy", en: "Created By", ml: "സൃഷ്ടിച്ചത്" },
-  { key: "status", en: "Status", ml: "സ്റ്റാറ്റസ്" },
   { key: "actions", en: "Actions", ml: "നടപടികൾ" },
 ];
 
@@ -94,25 +96,52 @@ export interface BeneficiaryApplicant {
   applicantName: string;
   district: string;
   mandalam?: string;
+  areaWard?: string;
   applicationsCount: number;
   approvedCount: number;
   rejectedCount: number;
+  inReviewCount: number;
   pendingCount: number;
   createdBy: string;
   status: "Active" | "Verified" | "Pending" | "In Review";
   mobile?: string;
 }
 
-const mockBeneficiaries: BeneficiaryApplicant[] = [
-  { id: "BEN-8921", applicantName: "Soman P", district: "Thiruvananthapuram", mandalam: "Nemom", applicationsCount: 5, approvedCount: 3, rejectedCount: 1, pendingCount: 1, createdBy: "District desk", status: "Active", mobile: "+91 98470 12345" },
-  { id: "BEN-8922", applicantName: "Lakshmi Amma", district: "Thiruvananthapuram", mandalam: "Vattiyoorkavu", applicationsCount: 4, approvedCount: 4, rejectedCount: 0, pendingCount: 0, createdBy: "Anitha K.", status: "Verified", mobile: "+91 94471 23456" },
-  { id: "BEN-8923", applicantName: "Abdul Rahman", district: "Kollam", mandalam: "Kollam", applicationsCount: 6, approvedCount: 2, rejectedCount: 2, pendingCount: 2, createdBy: "Rahul M.", status: "In Review", mobile: "+91 97452 34567" },
-  { id: "BEN-8924", applicantName: "Sunitha Kumari", district: "Kottayam", mandalam: "Kottayam", applicationsCount: 3, approvedCount: 2, rejectedCount: 0, pendingCount: 1, createdBy: "Nithya S.", status: "Active", mobile: "+91 98953 45678" },
-  { id: "BEN-8925", applicantName: "K. Krishnan", district: "Palakkad", mandalam: "Palakkad", applicationsCount: 7, approvedCount: 5, rejectedCount: 1, pendingCount: 1, createdBy: "Citizen Self", status: "Verified", mobile: "+91 94004 56789" },
-  { id: "BEN-8926", applicantName: "Ananya Ramesh", district: "Ernakulam", mandalam: "Ernakulam", applicationsCount: 2, approvedCount: 1, rejectedCount: 0, pendingCount: 1, createdBy: "Support Admin", status: "Pending", mobile: "+91 98465 67890" },
-  { id: "BEN-8927", applicantName: "Joseph K", district: "Kollam", mandalam: "Chathannoor", applicationsCount: 4, approvedCount: 3, rejectedCount: 1, pendingCount: 0, createdBy: "District desk", status: "Verified", mobile: "+91 94466 78901" },
-  { id: "BEN-8928", applicantName: "Radhamani V", district: "Thiruvananthapuram", mandalam: "Kazhakoottam", applicationsCount: 3, approvedCount: 2, rejectedCount: 0, pendingCount: 1, createdBy: "Anitha K.", status: "Active", mobile: "+91 97477 89012" },
+const baseApplicantNames = [
+  { name: "Soman P", district: "Thiruvananthapuram", mandalam: "Nemom" },
+  { name: "Lakshmi Amma", district: "Thiruvananthapuram", mandalam: "Vattiyoorkavu" },
+  { name: "Abdul Rahman", district: "Kollam", mandalam: "Kollam" },
+  { name: "Sunitha Kumari", district: "Kottayam", mandalam: "Kottayam" },
+  { name: "K. Krishnan", district: "Palakkad", mandalam: "Palakkad" },
+  { name: "Ananya Ramesh", district: "Ernakulam", mandalam: "Ernakulam" },
+  { name: "Joseph K", district: "Kollam", mandalam: "Chathannoor" },
+  { name: "Radhamani V", district: "Thiruvananthapuram", mandalam: "Kazhakoottam" },
+  { name: "Deepa Nair", district: "Idukki", mandalam: "Central" },
+  { name: "Biju Menon", district: "Thrissur", mandalam: "Thrissur North" },
+  { name: "Sreelatha Joseph", district: "Thrissur", mandalam: "Palakkad Rural" },
+  { name: "Jayan Kumar", district: "Thiruvananthapuram", mandalam: "Urban" },
 ];
+
+export const mockBeneficiaries: BeneficiaryApplicant[] = Array.from({ length: 36 }, (_, i) => {
+  const base = baseApplicantNames[i % baseApplicantNames.length];
+  const statuses: BeneficiaryApplicant["status"][] = ["Active", "Verified", "In Review", "Pending"];
+  const reviewers = ["District desk", "Anitha K.", "Rahul M.", "Nithya S.", "Support Admin", "Citizen Self"];
+  return {
+    id: `BEN-${8921 + i}`,
+    applicantName: `${base.name}${i >= 12 ? ` (${Math.floor(i / 12) + 1})` : ""}`,
+    district: base.district,
+    mandalam: base.mandalam,
+    areaWard: `${base.mandalam} North, Ward ${12 + (i % 30)}`,
+    applicationsCount: 2 + (i % 6),
+    approvedCount: 1 + (i % 4),
+    rejectedCount: i % 2,
+    inReviewCount: i % 3,
+    pendingCount: (i + 1) % 3,
+    createdBy: reviewers[i % reviewers.length],
+    status: statuses[i % statuses.length],
+    mobile: `+91 9447${String(12345 + i * 111).slice(0, 5)}`,
+  };
+});
 
 const availableReviewers = [
   "District desk",
@@ -280,11 +309,34 @@ function FilterDropdownSelector({
   );
 }
 
+function getPageNumbers(current: number, total: number): (number | string)[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+  if (current <= 4) {
+    return [1, 2, 3, 4, 5, "...", total];
+  }
+  if (current >= total - 3) {
+    return [1, "...", total - 4, total - 3, total - 2, total - 1, total];
+  }
+  return [1, "...", current - 1, current, current + 1, "...", total];
+}
 function BeneficiariesPage() {
   const { lang } = useLang();
   const navigate = useNavigate();
   const [beneficiariesList, setBeneficiariesList] = useState<BeneficiaryApplicant[]>(mockBeneficiaries);
   const [editingApplicant, setEditingApplicant] = useState<BeneficiaryApplicant | null>(null);
+  useEffect(() => {
+    const root = document.documentElement;
+    const desktopQuery = window.matchMedia("(min-width: 640px)");
+    const sync = () => root.classList.toggle("desktop-hide-page-scrollbar", desktopQuery.matches);
+    sync();
+    desktopQuery.addEventListener("change", sync);
+    return () => {
+      desktopQuery.removeEventListener("change", sync);
+      root.classList.remove("desktop-hide-page-scrollbar");
+    };
+  }, []);
   const [viewingApplicant, setViewingApplicant] = useState<BeneficiaryApplicant | null>(null);
   const [timeRange, setTimeRange] = useState("30days");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -490,6 +542,32 @@ function BeneficiariesPage() {
     selectedCreatedBys,
   ]);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 12;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    topSearchQuery,
+    selectedDistricts,
+    selectedMandalams,
+    selectedCreatedBys,
+    selectedStatuses,
+  ]);
+
+  const totalPages = useMemo(() => Math.ceil(filteredBeneficiaries.length / pageSize) || 1, [filteredBeneficiaries.length, pageSize]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(1);
+    }
+  }, [currentPage, totalPages]);
+
+  const visibleBeneficiaries = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredBeneficiaries.slice(start, start + pageSize);
+  }, [filteredBeneficiaries, currentPage, pageSize]);
+
   function toggleSelectAll() {
     if (selectedIds.size === filteredBeneficiaries.length) {
       setSelectedIds(new Set());
@@ -508,14 +586,14 @@ function BeneficiariesPage() {
   }
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-3 pb-6 [font-family:'Instrument_Sans',sans-serif]">
       {/* Merged Single Section Container */}
       <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-xs">
         
         {/* Top Header Row with Filter & Create New Applicant Buttons on the Right */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 p-4 sm:p-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 p-3 sm:px-4 sm:py-2.5">
           <div className="flex flex-wrap items-center gap-3">
-            <h2 className="font-display text-base font-bold text-foreground">
+            <h2 className="text-base font-bold text-foreground">
               {lang === "ml" ? "അപേക്ഷകരുടെ പട്ടിക" : "Applicants List"}
             </h2>
 
@@ -793,7 +871,7 @@ function BeneficiariesPage() {
         {/* Data Table View */}
         <div className="overflow-x-auto desktop-hide-scrollbar">
           <table className="w-full text-left text-xs">
-            <thead className="bg-muted/50 font-bold text-muted-foreground border-b border-border">
+            <thead className="bg-slate-50/70 dark:bg-slate-900/70 font-bold text-muted-foreground border-b border-border">
               <tr>
                 <th className="py-3.5 pl-4 sm:pl-5 pr-2 w-10 text-center">
                   <Checkbox
@@ -809,7 +887,7 @@ function BeneficiariesPage() {
                   return (
                     <th
                       key={colKey}
-                      className={`p-3 ${colKey === "applications" || colKey === "approved" || colKey === "rejected" || colKey === "pending" || colKey === "actions" ? "text-center" : ""}`}
+                      className={`p-3 ${colKey === "applications" || colKey === "approved" || colKey === "rejected" || colKey === "inReview" || colKey === "pending" || colKey === "actions" ? "text-center" : ""}`}
                     >
                       {lang === "ml" ? meta.ml : meta.en.toUpperCase()}
                     </th>
@@ -818,7 +896,7 @@ function BeneficiariesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60 font-semibold">
-              {filteredBeneficiaries.map((b) => {
+              {visibleBeneficiaries.map((b) => {
                 const isSelected = selectedIds.has(b.id);
                 return (
                   <tr
@@ -837,23 +915,44 @@ function BeneficiariesPage() {
                     {columnOrder.map((colKey) => {
                       if (!visibleColumns.has(colKey)) return null;
                       switch (colKey) {
-                        case "applicantName":
+                        case "applicantName": {
+                          const initials = b.applicantName
+                            ? b.applicantName
+                                .trim()
+                                .split(/\s+/)
+                                .map((n) => n[0])
+                                .join("")
+                                .slice(0, 2)
+                                .toUpperCase()
+                            : "A";
                           return (
                             <td key="applicantName" className="p-3">
-                              <Link
-                                to="/admin/applicants/$applicantId"
-                                params={{ applicantId: b.id }}
-                                className="font-bold text-foreground hover:text-primary hover:underline cursor-pointer"
-                              >
-                                {b.applicantName}
-                              </Link>
-                              <p className="text-[10px] font-mono text-muted-foreground">{b.mobile || b.id}</p>
+                              <div className="flex items-center gap-2.5">
+                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-100/80 dark:bg-orange-950/60 border border-orange-200/80 dark:border-orange-900/50 text-[#ff5500] dark:text-orange-400 font-extrabold text-xs shadow-2xs">
+                                  {initials}
+                                </div>
+                                <div className="min-w-0">
+                                  <Link
+                                    to="/admin/applicants/$applicantId"
+                                    params={{ applicantId: b.id }}
+                                    className="font-bold text-foreground hover:text-primary hover:underline cursor-pointer block truncate"
+                                  >
+                                    {b.applicantName}
+                                  </Link>
+                                  <p className="text-[10px] font-mono text-muted-foreground leading-tight">
+                                    {b.mobile || b.id}
+                                  </p>
+                                </div>
+                              </div>
                             </td>
                           );
+                        }
                         case "district":
                           return <td key="district" className="p-3 text-muted-foreground">{b.district}</td>;
                         case "mandalam":
                           return <td key="mandalam" className="p-3 text-muted-foreground">{b.mandalam || "—"}</td>;
+                        case "areaWard":
+                          return <td key="areaWard" className="p-3 text-muted-foreground font-medium">{b.areaWard || "—"}</td>;
                         case "applications":
                           return (
                             <td key="applications" className="p-3 text-center font-mono font-bold text-foreground">
@@ -878,6 +977,14 @@ function BeneficiariesPage() {
                               </span>
                             </td>
                           );
+                        case "inReview":
+                          return (
+                            <td key="inReview" className="p-3 text-center font-mono font-bold text-sky-600">
+                              <span className="inline-block px-2 py-0.5 rounded-md bg-sky-500/10">
+                                {b.inReviewCount}
+                              </span>
+                            </td>
+                          );
                         case "pending":
                           return (
                             <td key="pending" className="p-3 text-center font-mono font-bold text-amber-600">
@@ -888,22 +995,6 @@ function BeneficiariesPage() {
                           );
                         case "createdBy":
                           return <td key="createdBy" className="p-3 text-muted-foreground">{b.createdBy}</td>;
-                        case "status":
-                          return (
-                            <td key="status" className="p-3">
-                              <span
-                                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-extrabold border ${
-                                  b.status === "Active" || b.status === "Verified"
-                                    ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                                    : b.status === "Pending"
-                                    ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
-                                    : "bg-sky-500/10 text-sky-600 border-sky-500/20"
-                                }`}
-                              >
-                                {b.status}
-                              </span>
-                            </td>
-                          );
                           case "actions":
                             return (
                               <td key="actions" className="p-3 text-center" onClick={(e) => e.stopPropagation()}>
@@ -1001,6 +1092,60 @@ function BeneficiariesPage() {
               </tbody>
             </table>
           </div>
+
+        {/* Pagination Footer */}
+        {filteredBeneficiaries.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border p-3 text-xs text-muted-foreground font-semibold bg-muted/20">
+            <div>
+              {lang === "ml"
+                ? `${filteredBeneficiaries.length} അപേക്ഷകരിൽ ${Math.min((currentPage - 1) * pageSize + 1, filteredBeneficiaries.length)} മുതൽ ${Math.min(currentPage * pageSize, filteredBeneficiaries.length)} വരെ കാണിക്കുന്നു`
+                : `Showing ${Math.min((currentPage - 1) * pageSize + 1, filteredBeneficiaries.length)} to ${Math.min(currentPage * pageSize, filteredBeneficiaries.length)} of ${filteredBeneficiaries.length} applicants`}
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-bold text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+              >
+                {lang === "ml" ? "മുൻപത്തെ" : "Previous"}
+              </button>
+
+              <div className="flex items-center gap-1 px-1">
+                {getPageNumbers(currentPage, totalPages).map((page, idx) =>
+                  page === "..." ? (
+                    <span key={`ellipsis-${idx}`} className="px-1 text-slate-400 font-bold">
+                      ...
+                    </span>
+                  ) : (
+                    <button
+                      key={page}
+                      type="button"
+                      onClick={() => setCurrentPage(Number(page))}
+                      className={`h-7 w-7 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        currentPage === page
+                          ? "bg-primary text-primary-foreground shadow-xs"
+                          : "border border-border bg-background text-foreground hover:bg-muted"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  )
+                )}
+              </div>
+
+              <button
+                type="button"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-bold text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+              >
+                {lang === "ml" ? "അടുത്തത്" : "Next"}
+              </button>
+            </div>
+          </div>
+        )}
 
       </div>
 

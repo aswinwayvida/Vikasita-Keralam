@@ -972,18 +972,6 @@ export function MobileSettingsPage({
                 </div>
                 <div>
                   <label className="mb-1 block text-[10.5px] font-bold text-foreground">
-                    {isMalayalam ? "പദവി / റോൾ" : "Designation / Role"}
-                  </label>
-                  <Input
-                    value={editDraft.role}
-                    onChange={(event) =>
-                      setEditDraft((draft) => ({ ...draft, role: event.target.value }))
-                    }
-                    className="h-9 rounded-lg border-border bg-background px-2.5 text-[11.5px] font-medium text-foreground shadow-none focus:border-orange-400 focus:ring-1 focus:ring-orange-500 md:text-[11.5px]"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-[10.5px] font-bold text-foreground">
                     {isMalayalam ? "മൊബൈൽ നമ്പർ" : "Mobile Number"}
                   </label>
                   <Input

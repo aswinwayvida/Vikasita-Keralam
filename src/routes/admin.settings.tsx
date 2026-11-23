@@ -99,7 +99,7 @@ function GeneralSettings({ lang }: { lang: "en" | "ml" }) {
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-sm">
-            <thead className="bg-muted/40">
+            <thead className="bg-slate-50/70 dark:bg-slate-900/70 border-b border-border">
               <tr className="text-left text-[10px] uppercase tracking-wide text-muted-foreground">
                 <th className="px-4 py-2.5">Role</th>
                 {perms.map((perm) => (

@@ -140,7 +140,7 @@ function AdminIssues() {
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-muted/40">
+            <thead className="bg-slate-50/70 dark:bg-slate-900/70 border-b border-border">
               <tr className="text-left text-[11px] uppercase tracking-wide text-muted-foreground">
                 <th className="px-4 py-2.5">ID</th>
                 <th className="px-4 py-2.5">{lang === "ml" ? "പ്രശ്നം" : "Issue"}</th>

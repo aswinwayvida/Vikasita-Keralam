@@ -309,7 +309,7 @@ function SchemeDetails() {
                 />
                 <div className="overflow-hidden rounded-xl border border-border">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-muted/40 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                    <thead className="bg-slate-50/70 dark:bg-slate-900/70 border-b border-border text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
                       <tr>
                         <th className="w-12 px-3 py-2">#</th>
                         <th className="px-3 py-2">{lang === "ml" ? "യോഗ്യതാ ഫീൽഡ്" : "Eligibility Field"}</th>
@@ -480,7 +480,7 @@ function SchemeDetails() {
                 />
                 <div className="overflow-hidden rounded-xl border border-border">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-muted/40 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                    <thead className="bg-slate-50/70 dark:bg-slate-900/70 border-b border-border text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
                       <tr>
                         <th className="w-12 px-3 py-2">#</th>
                         <th className="px-3 py-2">{lang === "ml" ? "യോഗ്യതാ ഫീൽഡ്" : "Eligibility Field"}</th>

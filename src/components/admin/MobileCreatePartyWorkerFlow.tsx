@@ -4856,9 +4856,14 @@ export function MobileCreatePartyWorkerFlow({
 
               {/* Subheader: My View • October 2026 */}
               <div className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800/80 px-3.5 py-1.5 flex items-center justify-between gap-2">
-                <span className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#ff5500] tracking-tight leading-none shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setAssistedFilterOpen(true)}
+                  className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#ff5500] hover:text-[#e04b00] tracking-tight leading-none shrink-0 cursor-pointer text-left transition-colors"
+                  title={tr("Show Filter Popup", "ഫിൽട്ടർ കാണിക്കുക")}
+                >
                   {tr("My View", "എന്റെ കാഴ്ച")}
-                </span>
+                </button>
                 <span className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-center truncate min-w-0 flex-1 px-1">
                   October 2026
                 </span>

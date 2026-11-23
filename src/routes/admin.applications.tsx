@@ -363,6 +363,20 @@ type RichApplicationRecord = AdminApplication & {
   applyUrl: string;
 };
 
+
+function getPageNumbers(current: number, total: number): (number | string)[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+  if (current <= 4) {
+    return [1, 2, 3, 4, 5, "...", total];
+  }
+  if (current >= total - 3) {
+    return [1, "...", total - 4, total - 3, total - 2, total - 1, total];
+  }
+  return [1, "...", current - 1, current, current + 1, "...", total];
+}
+
 function ApplicationsPage() {
   const { lang } = useLang();
   const navigate = useNavigate();
@@ -443,6 +457,18 @@ function ApplicationsPage() {
     if (typeof window !== "undefined") {
       setViewMode(window.innerWidth >= 768 ? "table" : "cards");
     }
+  }, []);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const desktopQuery = window.matchMedia("(min-width: 640px)");
+    const sync = () => root.classList.toggle("desktop-hide-page-scrollbar", desktopQuery.matches);
+    sync();
+    desktopQuery.addEventListener("change", sync);
+    return () => {
+      desktopQuery.removeEventListener("change", sync);
+      root.classList.remove("desktop-hide-page-scrollbar");
+    };
   }, []);
 
   const handleDeleteRecord = (id: string) => {
@@ -796,7 +822,34 @@ function ApplicationsPage() {
     dateFilter,
   ]);
 
-  const visible = filtered.slice(0, 50);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 12;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    topSearchQuery,
+    selectedStatuses,
+    selectedSchemes,
+    selectedCategories,
+    selectedDistricts,
+    selectedAreas,
+    selectedCreatedBys,
+    dateFilter,
+  ]);
+
+  const totalPages = useMemo(() => Math.ceil(filtered.length / pageSize) || 1, [filtered.length, pageSize]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(1);
+    }
+  }, [currentPage, totalPages]);
+
+  const visible = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, currentPage, pageSize]);
   const allVisibleSelected =
     visible.length > 0 && visible.every((record) => selectedIds.has(record.id));
 
@@ -830,12 +883,12 @@ function ApplicationsPage() {
   return (
     <div className="space-y-6 pb-8 [font-family:'Instrument_Sans',sans-serif]">
       {/* Merged Single Section Container */}
-      <div className="rounded-2xl border border-border bg-card p-4 sm:p-4 shadow-xs space-y-3 sm:space-y-2">
+      <div className="rounded-2xl border border-border bg-card p-3 sm:p-3 shadow-xs space-y-2">
         
         {/* Top Header Row with Title & Filter / Actions */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b sm:border-b-0 border-border/80 pb-2 sm:pb-0">
           <div className="flex flex-wrap items-center gap-3">
-            <h2 className="font-display text-base font-bold text-foreground">
+            <h2 className="text-base font-bold text-foreground">
               {lang === "ml" ? "അപേക്ഷകളുടെ ലിസ്റ്റ്" : "Applications List"}
             </h2>
 
@@ -1207,7 +1260,7 @@ function ApplicationsPage() {
 
         {/* Data Table View */}
         {viewMode === "table" && (
-          <div className="overflow-x-auto rounded-xl">
+          <div className="overflow-x-auto rounded-xl desktop-hide-scrollbar">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50/70 dark:bg-slate-900/70 font-bold text-muted-foreground border-b border-border">
                 <tr>
@@ -1459,6 +1512,60 @@ function ApplicationsPage() {
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Pagination Footer */}
+        {filtered.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border pt-3 px-1 text-xs text-muted-foreground font-semibold">
+            <div>
+              {lang === "ml"
+                ? `${filtered.length} അപേക്ഷകളിൽ ${Math.min((currentPage - 1) * pageSize + 1, filtered.length)} മുതൽ ${Math.min(currentPage * pageSize, filtered.length)} വരെ കാണിക്കുന്നു`
+                : `Showing ${Math.min((currentPage - 1) * pageSize + 1, filtered.length)} to ${Math.min(currentPage * pageSize, filtered.length)} of ${filtered.length} applications`}
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-bold text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+              >
+                {lang === "ml" ? "മുൻപത്തെ" : "Previous"}
+              </button>
+
+              <div className="flex items-center gap-1 px-1">
+                {getPageNumbers(currentPage, totalPages).map((page, idx) =>
+                  page === "..." ? (
+                    <span key={`ellipsis-${idx}`} className="px-1 text-slate-400 font-bold">
+                      ...
+                    </span>
+                  ) : (
+                    <button
+                      key={page}
+                      type="button"
+                      onClick={() => setCurrentPage(Number(page))}
+                      className={`h-7 w-7 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        currentPage === page
+                          ? "bg-primary text-primary-foreground shadow-xs"
+                          : "hover:bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  )
+                )}
+              </div>
+
+              <button
+                type="button"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-bold text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+              >
+                {lang === "ml" ? "അടുത്തത്" : "Next"}
+              </button>
+            </div>
           </div>
         )}
 

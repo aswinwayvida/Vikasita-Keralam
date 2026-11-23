@@ -570,7 +570,7 @@ function ApplicantProfileDetailsPage() {
 
           <div className="overflow-x-auto rounded-xl border border-border">
             <table className="w-full text-left text-xs">
-              <thead className="bg-muted/40 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              <thead className="bg-slate-50/70 dark:bg-slate-900/70 border-b border-border text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                 <tr>
                   <th className="px-3.5 py-2.5"># Application ID</th>
                   <th className="px-3.5 py-2.5">{lang === "ml" ? "പദ്ധതിയുടെ പേര്" : "Scheme Name"}</th>

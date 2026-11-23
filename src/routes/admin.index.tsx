@@ -10,6 +10,7 @@ import {
   Building2,
   Calendar,
   CheckCircle2,
+  ChevronLeft,
   ChevronRight,
   Clock3,
   Database,
@@ -73,6 +74,24 @@ export function AdminDashboard() {
   const { lang, setLang } = useLang();
   const [currentRole, setCurrentRole] = useState<UserRole>("STATE_ADMIN");
   const [period, setPeriod] = useState("30d");
+  const [dashboardDate, setDashboardDate] = useState<Date>(new Date(2026, 9, 1));
+
+  const handleStepMonth = (direction: -1 | 1) => {
+    setDashboardDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + direction, 1));
+  };
+
+  const formatDashboardMonth = (date: Date, language: "en" | "ml") => {
+    const monthNamesEn = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+    const monthNamesMl = [
+      "ജനുവരി", "ഫെബ്രുവരി", "മാർച്ച്", "ഏപ്രിൽ", "മേയ്", "ജൂൺ",
+      "ജൂലൈ", "ഓഗസ്റ്റ്", "സെപ്റ്റംബർ", "ഒക്ടോബർ", "നവംബർ", "ഡിസംബർ"
+    ];
+    const monthStr = language === "ml" ? monthNamesMl[date.getMonth()] : monthNamesEn[date.getMonth()];
+    return `${monthStr} ${date.getFullYear()}`;
+  };
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [selectedScheme, setSelectedScheme] = useState("ALL");
   const [selectedStatus, setSelectedStatus] = useState("ALL");
@@ -152,63 +171,60 @@ export function AdminDashboard() {
   return (
     <div className="space-y-6 pb-12 text-foreground">
       {/* Merged Single Section Container */}
-      <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-5">
+      <div className="rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-xs space-y-3">
         {/* Top Header Row with Title & Period / Filter Controls */}
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between border-b border-border/80 pb-4">
+        <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between border-b border-border/80 pb-2.5">
           <div className="space-y-0.5 max-w-2xl">
             <h1 className="font-display text-[20px] font-bold text-foreground flex items-center gap-2">
-              <span>{lang === "ml" ? "പൗരസഹായം" : "Citizen Assistance"}</span>
+              <span>{lang === "ml" ? "അവലോകനം" : "Overview"}</span>
               <span className="inline-block text-[20px] animate-bounce hover:scale-125 transition-transform duration-300 cursor-pointer">🪷</span>
             </h1>
-            <p className="text-[14px] text-muted-foreground">
-              {lang === "ml"
-                ? "പൗരസഹായം, കേസുകൾ, പദ്ധതികൾ, പ്രകടനം എന്നിവ ഏകോപിപ്പിക്കുക."
-                : "Track citizen assistance, cases, schemes, and performance."}
-            </p>
           </div>
 
-          {/* Period & Filter Controls (Right-aligned next to Title/Subtitle) */}
+          {/* Period & Filter Controls */}
           <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-start lg:self-center">
-            {/* 1. Period Selector with Calendar Button */}
-            <div className="relative inline-flex items-center">
-              <Calendar className="absolute left-3 h-4 w-4 text-muted-foreground pointer-events-none" />
-              <select
-                value={period}
-                onChange={(e) => setPeriod(e.target.value)}
-                className="h-9.5 rounded-xl border border-border bg-background pl-9 pr-8 text-xs font-bold text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs appearance-none cursor-pointer"
+            {/* Date Picker Control */}
+            <div className="inline-flex h-9.5 items-center rounded-xl border border-border bg-background p-1 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => handleStepMonth(-1)}
+                title={lang === "ml" ? "മുൻ മാസം" : "Previous Month"}
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
               >
-                <option value="today">{lang === "ml" ? "ഇന്ന്" : "Today"}</option>
-                <option value="7d">{lang === "ml" ? "7 ദിവസങ്ങൾ" : "7 Days"}</option>
-                <option value="30d">{lang === "ml" ? "30 ദിവസങ്ങൾ" : "30 Days"}</option>
-                <option value="this_month">{lang === "ml" ? "ഈ മാസം" : "This Month"}</option>
-                <option value="last_month">{lang === "ml" ? "കഴിഞ്ഞ മാസം" : "Last Month"}</option>
-                <option value="this_quarter">{lang === "ml" ? "ഈ പാദം" : "This Quarter"}</option>
-                <option value="custom">{lang === "ml" ? "കസ്റ്റം" : "Custom"}</option>
-              </select>
-              <ChevronRight className="absolute right-2.5 h-3.5 w-3.5 rotate-90 text-muted-foreground pointer-events-none" />
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsDatePickerOpen(true)}
+                title={lang === "ml" ? "കലണ്ടർ ഡേറ്റ് പിക്കർ തുറക്കുക" : "Open Calendar Date Picker"}
+                className="inline-flex h-7 items-center gap-2 rounded-lg px-2.5 text-xs font-bold text-foreground hover:bg-muted transition-colors cursor-pointer"
+              >
+                <Calendar className="h-4 w-4 text-primary" />
+                <span className="whitespace-nowrap">{formatDashboardMonth(dashboardDate, lang)}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleStepMonth(1)}
+                title={lang === "ml" ? "അടുത്ത മാസം" : "Next Month"}
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
             </div>
 
-            <button
-              onClick={() => setIsDatePickerOpen(true)}
-              className="h-9.5 rounded-xl border border-border bg-background px-3 text-xs font-bold text-foreground hover:bg-muted shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
-              title={lang === "ml" ? "കലണ്ടർ ഡേറ്റ് പിക്കർ തുറക്കുക" : "Open Calendar Date Picker"}
-            >
-              <Calendar className="h-4 w-4 text-primary" />
-              <span>{lang === "ml" ? "കലണ്ടർ" : "Calendar"}</span>
-            </button>
-
-            {/* 2. Single Grouped Filters Control */}
+            {/* Filter Control */}
             <div className="relative" ref={filterRef}>
               <button
+                type="button"
                 onClick={() => setIsFilterOpen(!isFilterOpen)}
-                className={`h-9.5 rounded-xl border px-3.5 text-xs font-bold shadow-2xs transition-all flex items-center gap-2 ${
+                className={`h-9.5 rounded-xl border px-3.5 text-xs font-bold shadow-2xs transition-all flex items-center gap-2 cursor-pointer ${
                   activeFiltersCount > 0 || isFilterOpen
                     ? "border-primary bg-primary/5 text-primary"
                     : "border-border bg-background text-foreground hover:bg-muted"
                 }`}
               >
                 <Filter className="h-3.5 w-3.5" />
-                <span>{lang === "ml" ? "ഭൂമിശാസ്ത്ര വിഭജനം (Geography Scope)" : "Geography Scope"}</span>
+                <span>{lang === "ml" ? "ഫിൽട്ടറുകൾ" : "Filter"}</span>
                 {activeFiltersCount > 0 && (
                   <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-extrabold text-primary-foreground">
                     {activeFiltersCount}
@@ -216,123 +232,138 @@ export function AdminDashboard() {
                 )}
               </button>
 
-              {/* Filter Panel Popover / Drawer */}
+              {/* Filter Right-Sided Drawer Popup */}
               {isFilterOpen && (
-                <div className="absolute right-0 top-11 z-50 w-[320px] sm:w-[380px] max-w-[calc(100vw-32px)] rounded-2xl border border-border bg-card p-4 shadow-xl space-y-4 animate-in fade-in-50 zoom-in-95">
-                  <div className="flex items-center justify-between border-b border-border pb-2.5">
-                    <span className="text-xs font-extrabold text-foreground uppercase tracking-wider">
-                      {lang === "ml" ? "ഭൂമിശാസ്ത്രപരമായ പരിധി" : "Geography Scope"}
-                    </span>
-                    <button
-                      onClick={() => setIsFilterOpen(false)}
-                      className="rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
+                <div
+                  className="fixed inset-0 z-[100] flex justify-end bg-black/50 transition-opacity animate-in fade-in duration-200"
+                  onClick={() => setIsFilterOpen(false)}
+                >
+                  <div
+                    className="w-full max-w-sm h-full bg-card p-5 shadow-2xl transition-all border-l border-border animate-in slide-in-from-right duration-300 overflow-y-auto flex flex-col justify-between"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="space-y-5">
+                      {/* Header */}
+                      <div className="flex items-center justify-between border-b border-border pb-3">
+                        <div className="flex items-center gap-2">
+                          <Filter className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-extrabold text-foreground uppercase tracking-wider">
+                            {lang === "ml" ? "ഫിൽട്ടറുകൾ" : "FILTER"}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setIsFilterOpen(false)}
+                          className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-colors cursor-pointer"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
 
-                  {/* Geography Drill-Down */}
-                  <div className="space-y-2">
-                    <span className="text-[10px] font-extrabold text-primary uppercase tracking-wider block">
-                      {lang === "ml" ? "ഭൂമിശാസ്ത്രപരമായ വിഭജനം" : "Geography Drill-Down"}
-                    </span>
+                      {/* Geography Drill-Down */}
+                      <div className="space-y-3">
+                        <span className="text-[10px] font-extrabold text-primary uppercase tracking-wider block">
+                          {lang === "ml" ? "ഭൂമിശാസ്ത്രപരമായ വിഭജനം" : "Geography Drill-Down"}
+                        </span>
 
-                    {/* State */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-muted-foreground">
-                        {lang === "ml" ? "സംസ്ഥാനം" : "State"}
-                      </label>
-                      <input
-                        type="text"
-                        disabled
-                        value={lang === "ml" ? "കേരള സംസ്ഥാനം" : "Kerala State"}
-                        className="w-full rounded-xl border border-border bg-muted/50 px-3 py-1.5 text-xs font-bold text-foreground cursor-not-allowed opacity-80"
-                      />
+                        {/* State */}
+                        <div className="space-y-1.5">
+                          <label className="text-[11px] font-bold text-muted-foreground">
+                            {lang === "ml" ? "സംസ്ഥാനം" : "State"}
+                          </label>
+                          <input
+                            type="text"
+                            disabled
+                            value={lang === "ml" ? "കേരള സംസ്ഥാനം" : "Kerala State"}
+                            className="w-full rounded-xl border border-border bg-muted/50 px-3 py-2 text-xs font-bold text-foreground cursor-not-allowed opacity-80"
+                          />
+                        </div>
+
+                        {/* District */}
+                        <div className="space-y-1.5">
+                          <label className="text-[11px] font-bold text-muted-foreground">
+                            {lang === "ml" ? "ജില്ല" : "District"}
+                          </label>
+                          <select
+                            value={selectedDistrict}
+                            onChange={(e) => {
+                              setSelectedDistrict(e.target.value);
+                              setSelectedMandalam("ALL");
+                              setSelectedBooth("ALL");
+                            }}
+                            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-foreground focus:border-primary focus:outline-none cursor-pointer"
+                          >
+                            {districtOptions.map((opt) => (
+                              <option key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Mandalam */}
+                        <div className="space-y-1.5">
+                          <label className="text-[11px] font-bold text-muted-foreground">
+                            {lang === "ml" ? "മണ്ഡലം" : "Mandalam"}
+                          </label>
+                          <select
+                            disabled={selectedDistrict === "ALL"}
+                            value={selectedMandalam}
+                            onChange={(e) => {
+                              setSelectedMandalam(e.target.value);
+                              setSelectedBooth("ALL");
+                            }}
+                            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-foreground focus:border-primary focus:outline-none disabled:bg-muted/40 disabled:text-muted-foreground disabled:cursor-not-allowed cursor-pointer"
+                          >
+                            <option value="ALL">{lang === "ml" ? "എല്ലാ മണ്ഡലങ്ങളും" : "All Mandalams"}</option>
+                            {filteredMandalams.map((m) => (
+                              <option key={m.id} value={m.id}>
+                                {m[lang]}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Booth */}
+                        <div className="space-y-1.5">
+                          <label className="text-[11px] font-bold text-muted-foreground">
+                            {lang === "ml" ? "ബൂത്ത്" : "Booth"}
+                          </label>
+                          <select
+                            disabled={selectedMandalam === "ALL"}
+                            value={selectedBooth}
+                            onChange={(e) => setSelectedBooth(e.target.value)}
+                            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-foreground focus:border-primary focus:outline-none disabled:bg-muted/40 disabled:text-muted-foreground disabled:cursor-not-allowed cursor-pointer"
+                          >
+                            <option value="ALL">{lang === "ml" ? "എല്ലാ ബൂത്തുകളും" : "All Booths"}</option>
+                            {selectedMandalam !== "ALL" &&
+                              boothOptions.map((b) => (
+                                <option key={b.value} value={b.value}>
+                                  {b.label}
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+                      </div>
                     </div>
 
-                    {/* District */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-muted-foreground">
-                        {lang === "ml" ? "ജില്ല" : "District"}
-                      </label>
-                      <select
-                        value={selectedDistrict}
-                        onChange={(e) => {
-                          setSelectedDistrict(e.target.value);
-                          setSelectedMandalam("ALL");
-                          setSelectedBooth("ALL");
-                        }}
-                        className="w-full rounded-xl border border-border bg-background px-3 py-1.5 text-xs font-bold text-foreground focus:border-primary focus:outline-none"
+                    {/* Panel Footer Buttons */}
+                    <div className="flex items-center justify-between border-t border-border pt-4 mt-auto">
+                      <button
+                        type="button"
+                        onClick={handleResetFilters}
+                        className="text-xs font-bold text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                       >
-                        {districtOptions.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Mandalam */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-muted-foreground">
-                        {lang === "ml" ? "മണ്ഡലം" : "Mandalam"}
-                      </label>
-                      <select
-                        disabled={selectedDistrict === "ALL"}
-                        value={selectedMandalam}
-                        onChange={(e) => {
-                          setSelectedMandalam(e.target.value);
-                          setSelectedBooth("ALL");
-                        }}
-                        className="w-full rounded-xl border border-border bg-background px-3 py-1.5 text-xs font-bold text-foreground focus:border-primary focus:outline-none disabled:bg-muted/40 disabled:text-muted-foreground disabled:cursor-not-allowed"
+                        {lang === "ml" ? "റീസെറ്റ്" : "Reset"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsFilterOpen(false)}
+                        className="rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-primary-foreground hover:opacity-95 shadow-xs transition-all cursor-pointer"
                       >
-                        <option value="ALL">{lang === "ml" ? "എല്ലാ മണ്ഡലങ്ങളും" : "All Mandalams"}</option>
-                        {filteredMandalams.map((m) => (
-                          <option key={m.id} value={m.id}>
-                            {m[lang]}
-                          </option>
-                        ))}
-                      </select>
+                        {lang === "ml" ? "ഫിൽട്ടറുകൾ പ്രയോഗിക്കുക" : "Apply Filters"}
+                      </button>
                     </div>
-
-                    {/* Booth */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-muted-foreground">
-                        {lang === "ml" ? "ബൂത്ത്" : "Booth"}
-                      </label>
-                      <select
-                        disabled={selectedMandalam === "ALL"}
-                        value={selectedBooth}
-                        onChange={(e) => setSelectedBooth(e.target.value)}
-                        className="w-full rounded-xl border border-border bg-background px-3 py-1.5 text-xs font-bold text-foreground focus:border-primary focus:outline-none disabled:bg-muted/40 disabled:text-muted-foreground disabled:cursor-not-allowed"
-                      >
-                        <option value="ALL">{lang === "ml" ? "എല്ലാ ബൂത്തുകളും" : "All Booths"}</option>
-                        {selectedMandalam !== "ALL" &&
-                          boothOptions.map((b) => (
-                            <option key={b.value} value={b.value}>
-                              {b.label}
-                            </option>
-                          ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Panel Footer Buttons */}
-                  <div className="flex items-center justify-between border-t border-border pt-3">
-                    <button
-                      type="button"
-                      onClick={handleResetFilters}
-                      className="text-xs font-bold text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {lang === "ml" ? "റീസെറ്റ്" : "Reset"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsFilterOpen(false)}
-                      className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:opacity-95 shadow-xs transition-all"
-                    >
-                      {lang === "ml" ? "ഫിൽട്ടറുകൾ പ്രയോഗിക്കുക" : "Apply Filters"}
-                    </button>
                   </div>
                 </div>
               )}
@@ -401,7 +432,7 @@ export function AdminDashboard() {
       {/* ========================================================================= */}
       {/* 2. EXECUTIVE 8 KPI CARDS (MATCHING REFERENCE DESIGN WITH 3D ICONS)       */}
       {/* ========================================================================= */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-2.5">
         {/* Card 1: Application Received */}
         <div className="group rounded-xl border border-amber-200/50 dark:border-border bg-card p-2.5 sm:px-3.5 sm:py-2.5 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between">
           <div className="flex items-center justify-between gap-2">
@@ -543,7 +574,7 @@ export function AdminDashboard() {
 
           <div className="overflow-x-auto rounded-xl border border-border">
             <table className="w-full text-left text-xs">
-              <thead className="bg-muted/50 font-bold text-muted-foreground border-b border-border">
+              <thead className="bg-slate-50/70 dark:bg-slate-900/70 font-bold text-muted-foreground border-b border-border">
                 <tr>
                   <th className="p-3">{lang === "ml" ? "ജില്ല" : "DISTRICT"}</th>
                   <th className="p-3 text-right">{lang === "ml" ? "ആകെ അപേക്ഷകൾ" : "TOTAL REQUESTS"}</th>

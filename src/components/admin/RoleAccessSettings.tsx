@@ -1,3 +1,16 @@
+
+function getPageNumbers(current: number, total: number): (number | string)[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+  if (current <= 4) {
+    return [1, 2, 3, 4, 5, "...", total];
+  }
+  if (current >= total - 3) {
+    return [1, "...", total - 4, total - 3, total - 2, total - 1, total];
+  }
+  return [1, "...", current - 1, current, current + 1, "...", total];
+}
 import { useMemo, useState, useEffect } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
@@ -561,6 +574,15 @@ export function RoleAccessSettings({
   const [statusTarget, setStatusTarget] = useState<ManagedRole | null>(null);
   const [reviewAcknowledged, setReviewAcknowledged] = useState(false);
   const [activeTab, setActiveTab] = useState<"roles" | "users" | "designations" | "location">(defaultTab);
+  const [userPage, setUserPage] = useState(1);
+  const [rolePage, setRolePage] = useState(1);
+  const [designationPage, setDesignationPage] = useState(1);
+
+  useEffect(() => {
+    setUserPage(1);
+    setRolePage(1);
+    setDesignationPage(1);
+  }, [topSearchQuery, activeTab]);
   const [locationSubTab, setLocationSubTab] = useState<
     "org-levels" | "region" | "org-district" | "mandalam" | "area" | "booth"
   >("org-levels");
@@ -614,6 +636,12 @@ export function RoleAccessSettings({
   });
   const [designationSearch, setDesignationSearch] = useState("");
   const [selectedOrgLevelFilter, setSelectedOrgLevelFilter] = useState("All");
+
+  useEffect(() => {
+    setUserPage(1);
+    setRolePage(1);
+    setDesignationPage(1);
+  }, [topSearchQuery, selectedOrgLevelFilter, activeTab]);
 
   const commitDesignations = (next: ManagedDesignation[]) => {
     // Ensure rank corresponds to index + 1
@@ -855,6 +883,12 @@ export function RoleAccessSettings({
       return matchesSearch && matchesLevel;
     });
   }, [designationsList, topSearchQuery, selectedOrgLevelFilter]);
+
+  const totalDesignationPages = Math.max(1, Math.ceil(filteredDesignations.length / 12));
+  const paginatedDesignations = useMemo(() => {
+    const start = (designationPage - 1) * 12;
+    return filteredDesignations.slice(start, start + 12);
+  }, [filteredDesignations, designationPage]);
 
   const getDesignationUserCount = (desigName: string): number => {
     if (!desigName) return 0;
@@ -2035,6 +2069,12 @@ export function RoleAccessSettings({
     lang,
   ]);
 
+  const totalUserPages = Math.max(1, Math.ceil(filteredUsers.length / 12));
+  const paginatedUsers = useMemo(() => {
+    const start = (userPage - 1) * 12;
+    return filteredUsers.slice(start, start + 12);
+  }, [filteredUsers, userPage]);
+
   const handleExportData = () => {
     if (activeTab === "roles") {
       const headers = "Role ID,Name,Description,Status,Assigned Users,Created At\n";
@@ -2282,6 +2322,12 @@ export function RoleAccessSettings({
     });
   }, [pageRoles, topSearchQuery]);
 
+  const totalRolePages = Math.max(1, Math.ceil(displayedRoles.length / 12));
+  const paginatedRoles = useMemo(() => {
+    const start = (rolePage - 1) * 12;
+    return displayedRoles.slice(start, start + 12);
+  }, [displayedRoles, rolePage]);
+
   const editingRole = roles.find((role) => role.id === editingId) || null;
   const affectedUsers = editingRole?.assignedUsers || 0;
 
@@ -2489,7 +2535,7 @@ export function RoleAccessSettings({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 [font-family:'Instrument_Sans',sans-serif]">
       <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 px-4 py-2.5 sm:px-5">
           {activeTab === "location" ? (
@@ -2952,10 +2998,10 @@ export function RoleAccessSettings({
                 <Link
                   to="/admin/settings/new-role"
                   search={{ editRoleId: undefined }}
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 text-[12px] font-semibold leading-tight text-primary-foreground transition-colors hover:bg-primary/90"
+                  className="h-8 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 px-3.5 text-xs font-bold shadow-xs inline-flex items-center gap-1.5 cursor-pointer shrink-0"
                 >
                   <Plus className="h-4 w-4" />
-                  {tr("Create New Role", "പുതിയ റോൾ സൃഷ്ടിക്കുക")}
+                  <span>{tr("Create New Role", "പുതിയ റോൾ സൃഷ്ടിക്കുക")}</span>
                 </Link>
 
                 <DropdownMenu>
@@ -2986,10 +3032,10 @@ export function RoleAccessSettings({
                 <button
                   type="button"
                   onClick={openCreateUser}
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 text-[12px] font-semibold leading-tight text-primary-foreground transition-colors hover:bg-primary/90 cursor-pointer"
+                  className="h-8 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 px-3.5 text-xs font-bold shadow-xs inline-flex items-center gap-1.5 cursor-pointer shrink-0"
                 >
                   <Plus className="h-4 w-4" />
-                  {tr("Create User", "ഉപയോക്താവിനെ ചേർക്കുക")}
+                  <span>{tr("Create User", "ഉപയോക്താവിനെ ചേർക്കുക")}</span>
                 </button>
 
                 <DropdownMenu>
@@ -3020,10 +3066,10 @@ export function RoleAccessSettings({
                 <button
                   type="button"
                   onClick={handleOpenCreateDesignation}
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 text-[12px] font-semibold leading-tight text-primary-foreground transition-colors hover:bg-primary/90 cursor-pointer"
+                  className="h-8 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 px-3.5 text-xs font-bold shadow-xs inline-flex items-center gap-1.5 cursor-pointer shrink-0"
                 >
                   <Plus className="h-4 w-4" />
-                  {tr("Create New Designation", "പുതിയ തസ്തിക സൃഷ്ടിക്കുക")}
+                  <span>{tr("Create New Designation", "പുതിയ തസ്തിക സൃഷ്ടിക്കുക")}</span>
                 </button>
 
                 <DropdownMenu>
@@ -3054,7 +3100,7 @@ export function RoleAccessSettings({
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 text-[12px] font-semibold leading-tight text-primary-foreground transition-colors hover:bg-primary/90 cursor-pointer shadow-2xs"
+                    className="h-8 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 px-3.5 text-xs font-bold shadow-xs inline-flex items-center gap-1.5 cursor-pointer shrink-0"
                   >
                     <Plus className="h-4 w-4" />
                     <span>{tr("Create Location", "ലൊക്കേഷൻ നിർമ്മിക്കുക")}</span>
@@ -3151,7 +3197,7 @@ export function RoleAccessSettings({
               <div className="overflow-x-auto desktop-hide-scrollbar">
             {locationSubTab === "org-levels" && (
               <table className="w-full text-left text-xs">
-                <thead className="border-b border-border bg-muted/50 font-bold text-muted-foreground">
+                <thead className="bg-slate-50/70 dark:bg-slate-900/70 font-bold text-muted-foreground border-b border-border">
                   <tr>
                     <th className="p-3">{tr("LEVEL NAME", "തലത്തിന്റെ പേര്")}</th>
                     <th className="p-3">{tr("SCOPE", "പരിധി")}</th>
@@ -3243,7 +3289,7 @@ export function RoleAccessSettings({
 
             {locationSubTab === "region" && (
               <table className="w-full text-left text-xs">
-                <thead className="border-b border-border bg-muted/50 font-bold text-muted-foreground">
+                <thead className="bg-slate-50/70 dark:bg-slate-900/70 font-bold text-muted-foreground border-b border-border">
                   <tr>
                     <th className="p-3">{tr("REGION NAME", "മേഖലയുടെ പേര്")}</th>
                     <th className="p-3">{tr("SCOPE", "പരിധി")}</th>
@@ -3335,7 +3381,7 @@ export function RoleAccessSettings({
 
             {locationSubTab === "org-district" && (
               <table className="w-full text-left text-xs">
-                <thead className="border-b border-border bg-muted/50 font-bold text-muted-foreground">
+                <thead className="bg-slate-50/70 dark:bg-slate-900/70 font-bold text-muted-foreground border-b border-border">
                   <tr>
                     <th className="p-3">{tr("ORGANISATION DISTRICT NAME", "സംഘടനാ ജില്ല")}</th>
                     <th className="p-3">{tr("REGION", "മേഖല")}</th>
@@ -3433,7 +3479,7 @@ export function RoleAccessSettings({
 
             {locationSubTab === "mandalam" && (
               <table className="w-full text-left text-xs">
-                <thead className="border-b border-border bg-muted/50 font-bold text-muted-foreground">
+                <thead className="bg-slate-50/70 dark:bg-slate-900/70 font-bold text-muted-foreground border-b border-border">
                   <tr>
                     <th className="p-3">{tr("MANDALAM NAME", "മണ്ഡലം")}</th>
                     <th className="p-3">{tr("REGION", "മേഖല")}</th>
@@ -3535,7 +3581,7 @@ export function RoleAccessSettings({
 
             {locationSubTab === "area" && (
               <table className="w-full text-left text-xs">
-                <thead className="border-b border-border bg-muted/50 font-bold text-muted-foreground">
+                <thead className="bg-slate-50/70 dark:bg-slate-900/70 font-bold text-muted-foreground border-b border-border">
                   <tr>
                     <th className="p-3">{tr("AREA NAME", "ഏരിയ")}</th>
                     <th className="p-3">{tr("REGION", "മേഖല")}</th>
@@ -3633,7 +3679,7 @@ export function RoleAccessSettings({
 
             {locationSubTab === "booth" && (
               <table className="w-full text-left text-xs">
-                <thead className="border-b border-border bg-muted/50 font-bold text-muted-foreground">
+                <thead className="bg-slate-50/70 dark:bg-slate-900/70 font-bold text-muted-foreground border-b border-border">
                   <tr>
                     <th className="p-3">{tr("BOOTH NAME", "ബൂത്ത് പേര്")}</th>
                     <th className="p-3">{tr("REGION", "മേഖല")}</th>
@@ -3732,9 +3778,10 @@ export function RoleAccessSettings({
         </div>
       )
     ) : activeTab === "roles" ? (
-          <div className="overflow-x-auto desktop-hide-scrollbar">
+          <div className="space-y-0">
+            <div className="overflow-x-auto desktop-hide-scrollbar">
             <table className="w-full text-left text-xs">
-              <thead className="border-b border-border bg-muted/50 font-bold text-muted-foreground">
+              <thead className="bg-slate-50/70 dark:bg-slate-900/70 font-bold text-muted-foreground border-b border-border">
                 <tr>
                   <th className="p-3 w-10">
                     <Checkbox
@@ -3758,7 +3805,7 @@ export function RoleAccessSettings({
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60 font-semibold">
-                {displayedRoles.map((role) => (
+                {paginatedRoles.map((role) => (
                   <tr
                     key={role.id}
                     className={cn(
@@ -3886,10 +3933,66 @@ export function RoleAccessSettings({
               </tbody>
             </table>
           </div>
+
+          {/* Roles Pagination Footer */}
+          {displayedRoles.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border p-3 text-xs text-muted-foreground font-semibold bg-muted/20">
+              <div>
+                {lang === "ml"
+                  ? `${displayedRoles.length} റോളുകളിൽ ${Math.min((rolePage - 1) * 12 + 1, displayedRoles.length)} മുതൽ ${Math.min(rolePage * 12, displayedRoles.length)} വരെ കാണിക്കുന്നു`
+                  : `Showing ${Math.min((rolePage - 1) * 12 + 1, displayedRoles.length)} to ${Math.min(rolePage * 12, displayedRoles.length)} of ${displayedRoles.length} roles`}
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  disabled={rolePage === 1}
+                  onClick={() => setRolePage((p) => Math.max(1, p - 1))}
+                  className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-bold text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                >
+                  {lang === "ml" ? "മുൻപത്തെ" : "Previous"}
+                </button>
+
+                <div className="flex items-center gap-1 px-1">
+                  {getPageNumbers(rolePage, totalRolePages).map((page, idx) =>
+                    page === "..." ? (
+                      <span key={`ellipsis-role-${idx}`} className="px-1 text-slate-400 font-bold">
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        key={`role-page-${page}`}
+                        type="button"
+                        onClick={() => setRolePage(Number(page))}
+                        className={`h-7 w-7 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                          rolePage === page
+                            ? "bg-primary text-primary-foreground shadow-xs"
+                            : "border border-border bg-background text-foreground hover:bg-muted"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    )
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  disabled={rolePage === totalRolePages}
+                  onClick={() => setRolePage((p) => Math.min(totalRolePages, p + 1))}
+                  className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-bold text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                >
+                  {lang === "ml" ? "അടുത്തത്" : "Next"}
+                </button>
+              </div>
+            </div>
+          )}
+          </div>
         ) : activeTab === "users" ? (
-          <div className="overflow-x-auto desktop-hide-scrollbar">
+          <div className="space-y-0">
+            <div className="overflow-x-auto desktop-hide-scrollbar">
             <table className="w-full text-left text-xs">
-              <thead className="border-b border-border bg-muted/50 font-bold text-muted-foreground">
+              <thead className="bg-slate-50/70 dark:bg-slate-900/70 font-bold text-muted-foreground border-b border-border">
                 <tr>
                   <th className="p-3 w-10">
                     <Checkbox
@@ -3913,7 +4016,7 @@ export function RoleAccessSettings({
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60 font-semibold">
-                {filteredUsers.map((user) => (
+                {paginatedUsers.map((user) => (
                   <tr
                     key={user.id}
                     className={cn(
@@ -4086,11 +4189,66 @@ export function RoleAccessSettings({
               </tbody>
             </table>
           </div>
+
+          {/* Users Pagination Footer */}
+          {filteredUsers.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border p-3 text-xs text-muted-foreground font-semibold bg-muted/20">
+              <div>
+                {lang === "ml"
+                  ? `${filteredUsers.length} ഉപയോക്താക്കളിൽ ${Math.min((userPage - 1) * 12 + 1, filteredUsers.length)} മുതൽ ${Math.min(userPage * 12, filteredUsers.length)} വരെ കാണിക്കുന്നു`
+                  : `Showing ${Math.min((userPage - 1) * 12 + 1, filteredUsers.length)} to ${Math.min(userPage * 12, filteredUsers.length)} of ${filteredUsers.length} users`}
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  disabled={userPage === 1}
+                  onClick={() => setUserPage((p) => Math.max(1, p - 1))}
+                  className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-bold text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                >
+                  {lang === "ml" ? "മുൻപത്തെ" : "Previous"}
+                </button>
+
+                <div className="flex items-center gap-1 px-1">
+                  {getPageNumbers(userPage, totalUserPages).map((page, idx) =>
+                    page === "..." ? (
+                      <span key={`ellipsis-user-${idx}`} className="px-1 text-slate-400 font-bold">
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        key={`user-page-${page}`}
+                        type="button"
+                        onClick={() => setUserPage(Number(page))}
+                        className={`h-7 w-7 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                          userPage === page
+                            ? "bg-primary text-primary-foreground shadow-xs"
+                            : "border border-border bg-background text-foreground hover:bg-muted"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    )
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  disabled={userPage === totalUserPages}
+                  onClick={() => setUserPage((p) => Math.min(totalUserPages, p + 1))}
+                  className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-bold text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                >
+                  {lang === "ml" ? "അടുത്തത്" : "Next"}
+                </button>
+              </div>
+            </div>
+          )}
+          </div>
         ) : (
           <div className="space-y-3">
             <div className="overflow-x-auto desktop-hide-scrollbar">
               <table className="w-full text-left text-xs">
-                <thead className="border-b border-border bg-muted/50 font-bold text-muted-foreground">
+                <thead className="bg-slate-50/70 dark:bg-slate-900/70 font-bold text-muted-foreground border-b border-border">
                   <tr>
                     <th className="p-3 w-10">
                       <Checkbox
@@ -4128,7 +4286,7 @@ export function RoleAccessSettings({
                       </td>
                     </tr>
                   ) : (
-                    filteredDesignations.map((desig, desigIdx) => {
+                    paginatedDesignations.map((desig, desigIdx) => {
                       const isSelected = selectedDesignationIds.includes(desig.id);
                       const realIndex = designationsList.findIndex((d) => d.id === desig.id);
                       const userCount = getDesignationUserCount(desig.name);
@@ -4305,6 +4463,60 @@ export function RoleAccessSettings({
                 </tbody>
             </table>
           </div>
+
+          {/* Designations Pagination Footer */}
+          {filteredDesignations.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border p-3 text-xs text-muted-foreground font-semibold bg-muted/20">
+              <div>
+                {lang === "ml"
+                  ? `${filteredDesignations.length} തസ്തികകളിൽ ${Math.min((designationPage - 1) * 12 + 1, filteredDesignations.length)} മുതൽ ${Math.min(designationPage * 12, filteredDesignations.length)} വരെ കാണിക്കുന്നു`
+                  : `Showing ${Math.min((designationPage - 1) * 12 + 1, filteredDesignations.length)} to ${Math.min(designationPage * 12, filteredDesignations.length)} of ${filteredDesignations.length} designations`}
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  disabled={designationPage === 1}
+                  onClick={() => setDesignationPage((p) => Math.max(1, p - 1))}
+                  className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-bold text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                >
+                  {lang === "ml" ? "മുൻപത്തെ" : "Previous"}
+                </button>
+
+                <div className="flex items-center gap-1 px-1">
+                  {getPageNumbers(designationPage, totalDesignationPages).map((page, idx) =>
+                    page === "..." ? (
+                      <span key={`ellipsis-desig-${idx}`} className="px-1 text-slate-400 font-bold">
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        key={`desig-page-${page}`}
+                        type="button"
+                        onClick={() => setDesignationPage(Number(page))}
+                        className={`h-7 w-7 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                          designationPage === page
+                            ? "bg-primary text-primary-foreground shadow-xs"
+                            : "border border-border bg-background text-foreground hover:bg-muted"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    )
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  disabled={designationPage === totalDesignationPages}
+                  onClick={() => setDesignationPage((p) => Math.min(totalDesignationPages, p + 1))}
+                  className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-bold text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                >
+                  {lang === "ml" ? "അടുത്തത്" : "Next"}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
       </div>
