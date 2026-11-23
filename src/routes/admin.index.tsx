@@ -1,4 +1,13 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { cn } from "@/lib/utils";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   AlertCircle,
@@ -70,6 +79,463 @@ export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
 });
 
+
+type DashboardDatePreset =
+  | "allTime"
+  | "today"
+  | "thisWeek"
+  | "thisMonth"
+  | "thisYear"
+  | "yesterday"
+  | "lastWeek"
+  | "lastMonth"
+  | "lastYear";
+
+type DashboardDateFilterMode = "single" | "range";
+
+const DASHBOARD_DATE_REFERENCE = new Date(2026, 9, 8);
+
+const DASHBOARD_DATE_PRESETS_ROW1: { key: DashboardDatePreset; en: string; ml: string }[] = [
+  { key: "allTime", en: "All time", ml: "എല്ലാ സമയവും" },
+  { key: "today", en: "Today", ml: "ഇന്ന്" },
+  { key: "yesterday", en: "Yesterday", ml: "ഇന്നലെ" },
+  { key: "thisWeek", en: "This week", ml: "ഈ ആഴ്ച" },
+  { key: "lastWeek", en: "Last week", ml: "കഴിഞ്ഞ ആഴ്ച" },
+];
+
+const DASHBOARD_DATE_PRESETS_ROW2: { key: DashboardDatePreset; en: string; ml: string }[] = [
+  { key: "thisMonth", en: "This month", ml: "ഈ മാസം" },
+  { key: "lastMonth", en: "Last month", ml: "കഴിഞ്ഞ മാസം" },
+  { key: "thisYear", en: "This year", ml: "ഈ വർഷം" },
+  { key: "lastYear", en: "Last year", ml: "കഴിഞ്ഞ വർഷം" },
+];
+
+function isSameDashboardDate(a: Date | null | undefined, b: Date | null | undefined) {
+  return Boolean(
+    a &&
+      b &&
+      a.getFullYear() === b.getFullYear() &&
+      a.getMonth() === b.getMonth() &&
+      a.getDate() === b.getDate(),
+  );
+}
+
+function DashboardDateFilter({ lang }: { lang: "en" | "ml" }) {
+  const tr = (en: string, ml: string) => (lang === "ml" ? ml : en);
+  const locale = lang === "ml" ? "ml-IN" : "en-GB";
+  const [isOpen, setIsOpen] = useState(false);
+  const [appliedDate, setAppliedDate] = useState(() => new Date(DASHBOARD_DATE_REFERENCE));
+  const [appliedPreset, setAppliedPreset] = useState<DashboardDatePreset | null>("thisMonth");
+  const [draftDate, setDraftDate] = useState(() => new Date(DASHBOARD_DATE_REFERENCE));
+  const [draftPreset, setDraftPreset] = useState<DashboardDatePreset | null>("thisMonth");
+  const [draftMode, setDraftMode] = useState<DashboardDateFilterMode>("single");
+  const [draftRangeStart, setDraftRangeStart] = useState<Date | null>(null);
+  const [draftRangeEnd, setDraftRangeEnd] = useState<Date | null>(null);
+  const [viewMonth, setViewMonth] = useState(
+    () => new Date(DASHBOARD_DATE_REFERENCE.getFullYear(), DASHBOARD_DATE_REFERENCE.getMonth(), 1),
+  );
+
+  const formatMonth = (date: Date) =>
+    date.toLocaleDateString(locale, { month: "long", year: "numeric" });
+  const formatFullDate = (date: Date) =>
+    date.toLocaleDateString(locale, {
+      weekday: "long",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  const formatShortDate = (date: Date) =>
+    date.toLocaleDateString(locale, {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+
+  const weekdayLabels = useMemo(
+    () =>
+      Array.from({ length: 7 }, (_, index) =>
+        new Date(2026, 9, 4 + index).toLocaleDateString(locale, { weekday: "narrow" }),
+      ),
+    [locale],
+  );
+
+  const calendarDays = useMemo(() => {
+    const year = viewMonth.getFullYear();
+    const month = viewMonth.getMonth();
+    const leadingDays = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const cells: Array<Date | null> = Array.from({ length: leadingDays }, () => null);
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      cells.push(new Date(year, month, day));
+    }
+    while (cells.length % 7 !== 0) cells.push(null);
+    return cells;
+  }, [viewMonth]);
+
+  const presetDate = (preset: DashboardDatePreset) => {
+    const reference = new Date(DASHBOARD_DATE_REFERENCE);
+    const year = reference.getFullYear();
+    const month = reference.getMonth();
+    const day = reference.getDate();
+    const startOfWeek = new Date(year, month, day - reference.getDay());
+
+    switch (preset) {
+      case "today":
+        return reference;
+      case "yesterday":
+        return new Date(year, month, day - 1);
+      case "thisWeek":
+        return startOfWeek;
+      case "lastWeek":
+        return new Date(year, month, day - reference.getDay() - 7);
+      case "thisMonth":
+        return reference;
+      case "lastMonth":
+        return new Date(year, month - 1, day);
+      case "thisYear":
+        return new Date(year, 0, day);
+      case "lastYear":
+        return new Date(year - 1, 0, day);
+      case "allTime":
+      default:
+        return reference;
+    }
+  };
+
+  const resetDraft = () => {
+    setDraftDate(new Date(appliedDate));
+    setDraftPreset(appliedPreset);
+    setDraftMode("single");
+    setDraftRangeStart(null);
+    setDraftRangeEnd(null);
+    setViewMonth(new Date(appliedDate.getFullYear(), appliedDate.getMonth(), 1));
+  };
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) resetDraft();
+    setIsOpen(nextOpen);
+  };
+
+  const handlePresetSelect = (preset: DashboardDatePreset) => {
+    const nextDate = presetDate(preset);
+    setDraftPreset(preset);
+    setDraftDate(nextDate);
+    setDraftMode("single");
+    setDraftRangeStart(nextDate);
+    setDraftRangeEnd(null);
+    setViewMonth(new Date(nextDate.getFullYear(), nextDate.getMonth(), 1));
+  };
+
+  const handleModeChange = (mode: DashboardDateFilterMode) => {
+    setDraftMode(mode);
+    setDraftPreset(null);
+    if (mode === "range") {
+      setDraftRangeStart(null);
+      setDraftRangeEnd(null);
+    }
+  };
+
+  const handleDaySelect = (date: Date) => {
+    if (draftMode === "single") {
+      setDraftDate(date);
+      setDraftPreset(null);
+      return;
+    }
+
+    if (!draftRangeStart || draftRangeEnd) {
+      setDraftRangeStart(date);
+      setDraftRangeEnd(null);
+      return;
+    }
+
+    if (date.getTime() < draftRangeStart.getTime()) {
+      setDraftRangeStart(date);
+      setDraftRangeEnd(null);
+      return;
+    }
+
+    setDraftRangeEnd(date);
+  };
+
+  const stepAppliedMonth = (offset: number) => {
+    setAppliedDate((current) => {
+      const targetMonth = new Date(current.getFullYear(), current.getMonth() + offset, 1);
+      const lastDay = new Date(
+        targetMonth.getFullYear(),
+        targetMonth.getMonth() + 1,
+        0,
+      ).getDate();
+      return new Date(
+        targetMonth.getFullYear(),
+        targetMonth.getMonth(),
+        Math.min(current.getDate(), lastDay),
+      );
+    });
+    setAppliedPreset(null);
+  };
+
+  const stepViewMonth = (offset: number) => {
+    setViewMonth((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1));
+  };
+
+  const applySelection = () => {
+    if (draftMode === "single") {
+      setAppliedDate(draftDate);
+      setAppliedPreset(draftPreset);
+    } else if (draftRangeStart && draftRangeEnd) {
+      setAppliedDate(draftRangeEnd);
+      setAppliedPreset(null);
+    }
+    setIsOpen(false);
+  };
+
+  const rangeStart = draftRangeStart;
+  const rangeEnd = draftRangeEnd;
+  const rangeStartTime = rangeStart?.getTime() ?? null;
+  const rangeEndTime = rangeEnd?.getTime() ?? null;
+  const appliedDateLabel =
+    appliedPreset === "thisMonth" ? formatMonth(appliedDate) : formatShortDate(appliedDate);
+  const draftSummary =
+    draftMode === "single"
+      ? formatFullDate(draftDate)
+      : `${rangeStart ? formatShortDate(rangeStart) : tr("Start date", "ആരംഭ തീയതി")} – ${
+          rangeEnd ? formatShortDate(rangeEnd) : tr("End date", "അവസാന തീയതി")
+        }`;
+
+  return (
+    <div className="flex h-8 items-center rounded-xl sm:rounded-lg border border-border bg-background p-0.5 shadow-2xs shrink-0">
+      <button
+        type="button"
+        onClick={() => stepAppliedMonth(-1)}
+        aria-label={tr("Previous month", "മുൻ മാസം")}
+        title={tr("Previous month", "മുൻ മാസം")}
+        className="flex h-7 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+      >
+        <ChevronLeft className="h-3.5 w-3.5" />
+      </button>
+
+      <Sheet open={isOpen} onOpenChange={handleOpenChange}>
+        <button
+          type="button"
+          onClick={() => handleOpenChange(true)}
+          className="inline-flex h-7 items-center gap-1.5 rounded-md px-1.5 text-[12px] font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+          title={tr("Select date", "തീയതി തിരഞ്ഞെടുക്കുക")}
+        >
+          <Calendar className="h-3.5 w-3.5 text-primary" />
+          <span className="whitespace-nowrap">{appliedDateLabel}</span>
+        </button>
+
+        <SheetContent
+          side="right"
+          className="flex h-full w-full flex-col gap-0 border-l border-border bg-white p-0 sm:max-w-[420px] z-50"
+        >
+          <SheetHeader className="space-y-1 border-b border-slate-100 px-5 py-4 pr-12 text-left">
+            <SheetTitle className="flex items-center gap-2 text-base font-bold text-[#101828]">
+              <Calendar className="h-4 w-4 text-primary" />
+              <span>{tr("Date filter", "തീയതി ഫിൽട്ടർ")}</span>
+            </SheetTitle>
+            <SheetDescription className="text-xs text-slate-500">
+              {tr(
+                "Choose a preset, single date, or date range.",
+                "ഒരു പ്രീസെറ്റ്, ഒരു തീയതി അല്ലെങ്കിൽ തീയതി പരിധി തിരഞ്ഞെടുക്കുക.",
+              )}
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="flex-1 overflow-y-auto">
+            <div className="px-4 pt-4 space-y-1.5">
+              <div className="flex flex-wrap items-center gap-1.5">
+                {DASHBOARD_DATE_PRESETS_ROW1.map((preset) => {
+                  const isActive = draftPreset === preset.key;
+                  return (
+                    <button
+                      key={preset.key}
+                      type="button"
+                      onClick={() => handlePresetSelect(preset.key)}
+                      className={cn(
+                        "rounded-full border px-2.5 py-[3px] text-[10.5px] leading-4 font-semibold transition-colors cursor-pointer",
+                        isActive
+                          ? "border-primary bg-primary text-primary-foreground shadow-2xs"
+                          : "border-[#f2dfca] bg-[#fffaf3] text-slate-700 hover:border-primary/40 hover:bg-orange-50",
+                      )}
+                    >
+                      {lang === "ml" ? preset.ml : preset.en}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {DASHBOARD_DATE_PRESETS_ROW2.map((preset) => {
+                  const isActive = draftPreset === preset.key;
+                  return (
+                    <button
+                      key={preset.key}
+                      type="button"
+                      onClick={() => handlePresetSelect(preset.key)}
+                      className={cn(
+                        "rounded-full border px-2.5 py-[3px] text-[10.5px] leading-4 font-semibold transition-colors cursor-pointer",
+                        isActive
+                          ? "border-primary bg-primary text-primary-foreground shadow-2xs"
+                          : "border-[#f2dfca] bg-[#fffaf3] text-slate-700 hover:border-primary/40 hover:bg-orange-50",
+                      )}
+                    >
+                      {lang === "ml" ? preset.ml : preset.en}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="mx-4 mt-3 border-t border-slate-100" />
+
+            <div className="space-y-1.5 px-4 pt-3">
+              <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-2">
+                <span className="text-[11px] font-semibold text-slate-500">
+                  {tr("Select date", "തീയതി തിരഞ്ഞെടുക്കുക")}
+                </span>
+                <div className="flex items-center gap-4 text-[11px] font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => handleModeChange("single")}
+                    className={cn(
+                      "border-b-2 pb-0.5 transition-colors cursor-pointer",
+                      draftMode === "single"
+                        ? "border-primary text-primary font-bold"
+                        : "border-transparent text-slate-500 hover:text-foreground",
+                    )}
+                  >
+                    {tr("Single Date", "ഒരു തീയതി")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleModeChange("range")}
+                    className={cn(
+                      "border-b-2 pb-0.5 transition-colors cursor-pointer",
+                      draftMode === "range"
+                        ? "border-primary text-primary font-bold"
+                        : "border-transparent text-slate-500 hover:text-foreground",
+                    )}
+                  >
+                    {tr("Date Range", "തീയതി പരിധി")}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-4 pt-3 pb-2">
+              <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-[15px] font-bold tracking-tight text-[#101828]">
+                    {formatMonth(viewMonth)}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => stepViewMonth(-1)}
+                      className="flex h-7 w-7 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-foreground transition-colors cursor-pointer"
+                      aria-label={tr("Previous month", "മുൻ മാസം")}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => stepViewMonth(1)}
+                      className="flex h-7 w-7 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-foreground transition-colors cursor-pointer"
+                      aria-label={tr("Next month", "അടുത്ത മാസം")}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-7 gap-y-1 text-center">
+                  {weekdayLabels.map((label, index) => (
+                    <span
+                      key={`${label}-${index}`}
+                      className="pb-1 text-[10px] font-bold uppercase text-slate-400"
+                    >
+                      {label}
+                    </span>
+                  ))}
+
+                  {calendarDays.map((day, index) => {
+                    if (!day) return <span key={`empty-${index}`} className="h-10" />;
+
+                    const dayTime = day.getTime();
+                    const isSelected =
+                      draftMode === "single"
+                        ? isSameDashboardDate(day, draftDate)
+                        : isSameDashboardDate(day, rangeStart) || isSameDashboardDate(day, rangeEnd);
+                    const isInRange =
+                      draftMode === "range" &&
+                      rangeStartTime !== null &&
+                      rangeEndTime !== null &&
+                      dayTime > Math.min(rangeStartTime, rangeEndTime) &&
+                      dayTime < Math.max(rangeStartTime, rangeEndTime);
+
+                    return (
+                      <div key={day.toISOString()} className="flex h-[34px] items-center justify-center">
+                        <button
+                          type="button"
+                          onClick={() => handleDaySelect(day)}
+                          aria-label={formatFullDate(day)}
+                          className={cn(
+                            "flex h-8 w-8 items-center justify-center rounded-full text-[12px] font-semibold transition-colors cursor-pointer",
+                            isSelected
+                              ? "bg-primary text-primary-foreground shadow-sm"
+                              : isInRange
+                                ? "bg-orange-50 text-primary hover:bg-orange-100"
+                                : "text-[#344054] hover:bg-orange-50 hover:text-primary",
+                          )}
+                        >
+                          {day.getDate()}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <SheetFooter className="flex shrink-0 flex-row items-center justify-between gap-3 border-t border-slate-100 bg-white px-4 py-3">
+            <div className="mr-auto text-xs font-normal text-slate-600">
+              {draftSummary}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleOpenChange(false)}
+                className="rounded-lg border border-slate-200 bg-white px-4 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+              >
+                {tr("Cancel", "റദ്ദാക്കുക")}
+              </button>
+              <button
+                type="button"
+                onClick={applySelection}
+                disabled={draftMode === "range" && (!rangeStart || !rangeEnd)}
+                className="inline-flex h-8 min-w-16 items-center justify-center rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 transition-colors cursor-pointer"
+              >
+                {tr("Done", "പൂർത്തിയായി")}
+              </button>
+            </div>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+
+      <button
+        type="button"
+        onClick={() => stepAppliedMonth(1)}
+        aria-label={tr("Next month", "അടുത്ത മാസം")}
+        title={tr("Next month", "അടുത്ത മാസം")}
+        className="flex h-7 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+      >
+        <ChevronRight className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
+
 export function AdminDashboard() {
   const { lang, setLang } = useLang();
   const [currentRole, setCurrentRole] = useState<UserRole>("STATE_ADMIN");
@@ -99,8 +565,11 @@ export function AdminDashboard() {
   const [beneficiaryTab, setBeneficiaryTab] = useState<"district" | "recent">("district");
 
   // Geography Drill-Down State
+  const [selectedLocationLevel, setSelectedLocationLevel] = useState("BOOTH");
+  const [selectedRegion, setSelectedRegion] = useState("ALL");
   const [selectedDistrict, setSelectedDistrict] = useState("ALL");
   const [selectedMandalam, setSelectedMandalam] = useState("ALL");
+  const [selectedArea, setSelectedArea] = useState("ALL");
   const [selectedBooth, setSelectedBooth] = useState("ALL");
 
   // Mobile App Preview State
@@ -132,12 +601,35 @@ export function AdminDashboard() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const locationLevelOptions = [
+    { value: "STATE", label: lang === "ml" ? "സംസ്ഥാനം" : "State" },
+    { value: "REGION", label: lang === "ml" ? "റീജിയൻ" : "Region" },
+    { value: "DISTRICT", label: lang === "ml" ? "ഓർഗനൈസേഷൻ ജില്ല" : "Org District" },
+    { value: "MANDALAM", label: lang === "ml" ? "നിയമസഭാ മണ്ഡലം" : "Assembly Mandalam" },
+    { value: "AREA", label: lang === "ml" ? "ഏരിയ" : "Area" },
+    { value: "BOOTH", label: lang === "ml" ? "വാർഡ് / ബൂത്ത്" : "Ward / Booth" },
+  ];
+
   const districtOptions = [
-    { value: "ALL", label: lang === "ml" ? "എല്ലാ കേരളവും (എല്ലാ ജില്ലകളും)" : "All Kerala (All Districts)" },
+    { value: "ALL", label: lang === "ml" ? "എല്ലാ ഓർഗനൈസേഷൻ ജില്ലകളും" : "All Org Districts" },
     ...districts.map((d) => ({
       value: d.id,
       label: d[lang],
     })),
+  ];
+
+  const regionOptions = [
+    { value: "ALL", label: lang === "ml" ? "എല്ലാ റീജിയണുകളും" : "All Regions" },
+    { value: "SOUTH", label: lang === "ml" ? "തെക്കൻ റീജിയൻ" : "South Region" },
+    { value: "CENTRAL", label: lang === "ml" ? "മധ്യ റീജിയൻ" : "Central Region" },
+    { value: "NORTH", label: lang === "ml" ? "വടക്കൻ റീജിയൻ" : "North Region" },
+  ];
+
+  const areaOptions = [
+    { value: "ALL", label: lang === "ml" ? "എല്ലാ ഏരിയകളും" : "All Areas" },
+    { value: "AREA_1", label: lang === "ml" ? "ഏരിയ 01" : "Area 01" },
+    { value: "AREA_2", label: lang === "ml" ? "ഏരിയ 02" : "Area 02" },
+    { value: "AREA_3", label: lang === "ml" ? "ഏരിയ 03" : "Area 03" },
   ];
 
   const filteredMandalams = selectedDistrict === "ALL" 
@@ -145,13 +637,15 @@ export function AdminDashboard() {
     : constituencies.filter((c) => c.districtId === selectedDistrict);
 
   const boothOptions = [
-    { value: "Booth 01", label: lang === "ml" ? "ബൂത്ത് 01 - കമ്മ്യൂണിറ്റി ഹാൾ" : "Booth 01 - Community Hall" },
-    { value: "Booth 02", label: lang === "ml" ? "ബൂത്ത് 02 - ജി.എച്ച്.എസ്.എസ് സ്കൂൾ" : "Booth 02 - GHSS School" },
-    { value: "Booth 03", label: lang === "ml" ? "ബൂത്ത് 03 - പഞ്ചായത്ത് ഓഫീസ്" : "Booth 03 - Panchayat Office" },
-    { value: "Booth 04", label: lang === "ml" ? "ബൂത്ത് 04 - ടൗൺ ലൈബ്രറി" : "Booth 04 - Town Library" },
+    { value: "ALL", label: lang === "ml" ? "എല്ലാ വാർഡുകളും / ബൂത്തുകളും" : "All Wards / Booths" },
+    { value: "Booth 01", label: lang === "ml" ? "വാർഡ് 01 / ബൂത്ത് 01" : "Ward 01 / Booth 01" },
+    { value: "Booth 02", label: lang === "ml" ? "വാർഡ് 02 / ബൂത്ത് 02" : "Ward 02 / Booth 02" },
+    { value: "Booth 03", label: lang === "ml" ? "വാർഡ് 03 / ബൂത്ത് 03" : "Ward 03 / Booth 03" },
+    { value: "Booth 04", label: lang === "ml" ? "വാർഡ് 04 / ബൂത്ത് 04" : "Ward 04 / Booth 04" },
   ];
 
   const activeFiltersCount =
+    (selectedLocationLevel !== "STATE" ? 1 : 0) +
     (selectedScheme !== "ALL" ? 1 : 0) +
     (selectedStatus !== "ALL" ? 1 : 0) +
     (searchQuery.trim() !== "" ? 1 : 0) +
@@ -160,11 +654,14 @@ export function AdminDashboard() {
     (selectedBooth !== "ALL" ? 1 : 0);
 
   const handleResetFilters = () => {
+    setSelectedLocationLevel("STATE");
     setSelectedScheme("ALL");
     setSelectedStatus("ALL");
     setSearchQuery("");
+    setSelectedRegion("ALL");
     setSelectedDistrict("ALL");
     setSelectedMandalam("ALL");
+    setSelectedArea("ALL");
     setSelectedBooth("ALL");
   };
 
@@ -182,42 +679,16 @@ export function AdminDashboard() {
           </div>
 
           {/* Period & Filter Controls */}
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-start lg:self-center">
-            {/* Date Picker Control */}
-            <div className="inline-flex h-9.5 items-center rounded-xl border border-border bg-background p-1 shadow-2xs">
-              <button
-                type="button"
-                onClick={() => handleStepMonth(-1)}
-                title={lang === "ml" ? "മുൻ മാസം" : "Previous Month"}
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsDatePickerOpen(true)}
-                title={lang === "ml" ? "കലണ്ടർ ഡേറ്റ് പിക്കർ തുറക്കുക" : "Open Calendar Date Picker"}
-                className="inline-flex h-7 items-center gap-2 rounded-lg px-2.5 text-xs font-bold text-foreground hover:bg-muted transition-colors cursor-pointer"
-              >
-                <Calendar className="h-4 w-4 text-primary" />
-                <span className="whitespace-nowrap">{formatDashboardMonth(dashboardDate, lang)}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleStepMonth(1)}
-                title={lang === "ml" ? "അടുത്ത മാസം" : "Next Month"}
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 shrink-0 self-start lg:self-center">
+            {/* Date Filter */}
+            <DashboardDateFilter lang={lang} />
 
             {/* Filter Control */}
             <div className="relative" ref={filterRef}>
               <button
                 type="button"
                 onClick={() => setIsFilterOpen(!isFilterOpen)}
-                className={`h-9.5 rounded-xl border px-3.5 text-xs font-bold shadow-2xs transition-all flex items-center gap-2 cursor-pointer ${
+                className={`h-8 rounded-xl sm:rounded-lg border px-3 text-xs font-bold shadow-2xs transition-all flex items-center gap-2 cursor-pointer ${
                   activeFiltersCount > 0 || isFilterOpen
                     ? "border-primary bg-primary/5 text-primary"
                     : "border-border bg-background text-foreground hover:bg-muted"
@@ -248,7 +719,7 @@ export function AdminDashboard() {
                         <div className="flex items-center gap-2">
                           <Filter className="h-4 w-4 text-primary" />
                           <span className="text-sm font-extrabold text-foreground uppercase tracking-wider">
-                            {lang === "ml" ? "ഫിൽട്ടറുകൾ" : "FILTER"}
+                            {lang === "ml" ? "ഹോം ഫിൽട്ടർ" : "HOME FILTER"}
                           </span>
                         </div>
                         <button
@@ -260,40 +731,19 @@ export function AdminDashboard() {
                         </button>
                       </div>
 
-                      {/* Geography Drill-Down */}
-                      <div className="space-y-3">
-                        <span className="text-[10px] font-extrabold text-primary uppercase tracking-wider block">
-                          {lang === "ml" ? "ഭൂമിശാസ്ത്രപരമായ വിഭജനം" : "Geography Drill-Down"}
-                        </span>
-
-                        {/* State */}
+                      {/* Location & Geography Filter */}
+                      <div className="space-y-3.5">
+                        {/* Select Location Level */}
                         <div className="space-y-1.5">
-                          <label className="text-[11px] font-bold text-muted-foreground">
-                            {lang === "ml" ? "സംസ്ഥാനം" : "State"}
-                          </label>
-                          <input
-                            type="text"
-                            disabled
-                            value={lang === "ml" ? "കേരള സംസ്ഥാനം" : "Kerala State"}
-                            className="w-full rounded-xl border border-border bg-muted/50 px-3 py-2 text-xs font-bold text-foreground cursor-not-allowed opacity-80"
-                          />
-                        </div>
-
-                        {/* District */}
-                        <div className="space-y-1.5">
-                          <label className="text-[11px] font-bold text-muted-foreground">
-                            {lang === "ml" ? "ജില്ല" : "District"}
+                          <label className="text-[11px] font-bold text-slate-600">
+                            {lang === "ml" ? "ലൊക്കേഷൻ ലെവൽ തിരഞ്ഞെടുക്കുക" : "Select Location Level"}
                           </label>
                           <select
-                            value={selectedDistrict}
-                            onChange={(e) => {
-                              setSelectedDistrict(e.target.value);
-                              setSelectedMandalam("ALL");
-                              setSelectedBooth("ALL");
-                            }}
-                            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-foreground focus:border-primary focus:outline-none cursor-pointer"
+                            value={selectedLocationLevel}
+                            onChange={(e) => setSelectedLocationLevel(e.target.value)}
+                            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-800 focus:border-primary focus:outline-none cursor-pointer shadow-2xs"
                           >
-                            {districtOptions.map((opt) => (
+                            {locationLevelOptions.map((opt) => (
                               <option key={opt.value} value={opt.value}>
                                 {opt.label}
                               </option>
@@ -301,49 +751,133 @@ export function AdminDashboard() {
                           </select>
                         </div>
 
-                        {/* Mandalam */}
-                        <div className="space-y-1.5">
-                          <label className="text-[11px] font-bold text-muted-foreground">
-                            {lang === "ml" ? "മണ്ഡലം" : "Mandalam"}
-                          </label>
-                          <select
-                            disabled={selectedDistrict === "ALL"}
-                            value={selectedMandalam}
-                            onChange={(e) => {
-                              setSelectedMandalam(e.target.value);
-                              setSelectedBooth("ALL");
-                            }}
-                            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-foreground focus:border-primary focus:outline-none disabled:bg-muted/40 disabled:text-muted-foreground disabled:cursor-not-allowed cursor-pointer"
-                          >
-                            <option value="ALL">{lang === "ml" ? "എല്ലാ മണ്ഡലങ്ങളും" : "All Mandalams"}</option>
-                            {filteredMandalams.map((m) => (
-                              <option key={m.id} value={m.id}>
-                                {m[lang]}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
+                        {/* State */}
+                        {(selectedLocationLevel === "STATE" || selectedLocationLevel === "REGION") && (
+                          <div className="space-y-1.5">
+                            <label className="text-[11px] font-bold text-slate-600">
+                              {lang === "ml" ? "സംസ്ഥാനം" : "State"}
+                            </label>
+                            <input
+                              type="text"
+                              disabled
+                              value={lang === "ml" ? "കേരള സംസ്ഥാനം" : "Kerala State"}
+                              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-800 cursor-not-allowed opacity-90 shadow-2xs"
+                            />
+                          </div>
+                        )}
 
-                        {/* Booth */}
-                        <div className="space-y-1.5">
-                          <label className="text-[11px] font-bold text-muted-foreground">
-                            {lang === "ml" ? "ബൂത്ത്" : "Booth"}
-                          </label>
-                          <select
-                            disabled={selectedMandalam === "ALL"}
-                            value={selectedBooth}
-                            onChange={(e) => setSelectedBooth(e.target.value)}
-                            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-foreground focus:border-primary focus:outline-none disabled:bg-muted/40 disabled:text-muted-foreground disabled:cursor-not-allowed cursor-pointer"
-                          >
-                            <option value="ALL">{lang === "ml" ? "എല്ലാ ബൂത്തുകളും" : "All Booths"}</option>
-                            {selectedMandalam !== "ALL" &&
-                              boothOptions.map((b) => (
+                        {/* Region */}
+                        {selectedLocationLevel === "REGION" && (
+                          <div className="space-y-1.5">
+                            <label className="text-[11px] font-bold text-slate-600">
+                              {lang === "ml" ? "റീജിയൻ" : "Region"}
+                            </label>
+                            <select
+                              value={selectedRegion}
+                              onChange={(e) => setSelectedRegion(e.target.value)}
+                              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-800 focus:border-primary focus:outline-none cursor-pointer shadow-2xs"
+                            >
+                              {regionOptions.map((opt) => (
+                                <option key={opt.value} value={opt.value}>
+                                  {opt.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+
+                        {/* Org District */}
+                        {["DISTRICT", "MANDALAM", "AREA", "BOOTH"].includes(selectedLocationLevel) && (
+                          <div className="space-y-1.5">
+                            <label className="text-[11px] font-bold text-slate-600">
+                              {lang === "ml" ? "ഓർഗനൈസേഷൻ ജില്ല" : "Org District"}
+                            </label>
+                            <select
+                              value={selectedDistrict}
+                              onChange={(e) => {
+                                setSelectedDistrict(e.target.value);
+                                setSelectedMandalam("ALL");
+                                setSelectedArea("ALL");
+                                setSelectedBooth("ALL");
+                              }}
+                              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-800 focus:border-primary focus:outline-none cursor-pointer shadow-2xs"
+                            >
+                              {districtOptions.map((opt) => (
+                                <option key={opt.value} value={opt.value}>
+                                  {opt.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+
+                        {/* Assembly Mandalam */}
+                        {["MANDALAM", "AREA", "BOOTH"].includes(selectedLocationLevel) && (
+                          <div className="space-y-1.5">
+                            <label className="text-[11px] font-bold text-slate-600">
+                              {lang === "ml" ? "നിയമസഭാ മണ്ഡലം" : "Assembly Mandalam"}
+                            </label>
+                            <select
+                              value={selectedMandalam}
+                              onChange={(e) => {
+                                setSelectedMandalam(e.target.value);
+                                setSelectedArea("ALL");
+                                setSelectedBooth("ALL");
+                              }}
+                              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-800 focus:border-primary focus:outline-none cursor-pointer shadow-2xs"
+                            >
+                              <option value="ALL">{lang === "ml" ? "എല്ലാ മണ്ഡലങ്ങളും" : "All Mandalams"}</option>
+                              {filteredMandalams.map((m) => (
+                                <option key={m.id} value={m.id}>
+                                  {m[lang]}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+
+                        {/* Area */}
+                        {["AREA", "BOOTH"].includes(selectedLocationLevel) && (
+                          <div className="space-y-1.5">
+                            <label className="text-[11px] font-bold text-slate-600">
+                              {lang === "ml" ? "ഏരിയ" : "Area"}
+                            </label>
+                            <select
+                              value={selectedArea}
+                              onChange={(e) => {
+                                setSelectedArea(e.target.value);
+                                setSelectedBooth("ALL");
+                              }}
+                              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-800 focus:border-primary focus:outline-none cursor-pointer shadow-2xs"
+                            >
+                              {areaOptions.map((opt) => (
+                                <option key={opt.value} value={opt.value}>
+                                  {opt.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+
+                        {/* Select Ward / Booth */}
+                        {selectedLocationLevel === "BOOTH" && (
+                          <div className="space-y-1.5">
+                            <label className="text-[11px] font-bold text-slate-600">
+                              {lang === "ml" ? "വാർഡ് / ബൂത്ത് തിരഞ്ഞെടുക്കുക" : "Select Ward / Booth"}
+                            </label>
+                            <select
+                              value={selectedBooth}
+                              onChange={(e) => setSelectedBooth(e.target.value)}
+                              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-800 focus:border-primary focus:outline-none cursor-pointer shadow-2xs"
+                            >
+                              {boothOptions.map((b) => (
                                 <option key={b.value} value={b.value}>
                                   {b.label}
                                 </option>
                               ))}
-                          </select>
-                        </div>
+                            </select>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -352,14 +886,14 @@ export function AdminDashboard() {
                       <button
                         type="button"
                         onClick={handleResetFilters}
-                        className="text-xs font-bold text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                        className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-all cursor-pointer shadow-2xs"
                       >
                         {lang === "ml" ? "റീസെറ്റ്" : "Reset"}
                       </button>
                       <button
                         type="button"
                         onClick={() => setIsFilterOpen(false)}
-                        className="rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-primary-foreground hover:opacity-95 shadow-xs transition-all cursor-pointer"
+                        className="rounded-lg bg-primary px-5 py-2 text-xs font-bold text-primary-foreground hover:opacity-95 shadow-2xs transition-all cursor-pointer"
                       >
                         {lang === "ml" ? "ഫിൽട്ടറുകൾ പ്രയോഗിക്കുക" : "Apply Filters"}
                       </button>
@@ -371,61 +905,7 @@ export function AdminDashboard() {
           </div>
         </div>
 
-        {/* Removable Active Filter Chips Row */}
-        {activeFiltersCount > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-border/40">
 
-            {selectedDistrict !== "ALL" && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary border border-primary/20">
-                <span>{selectedDistrict}</span>
-                <button
-                  onClick={() => {
-                    setSelectedDistrict("ALL");
-                    setSelectedMandalam("ALL");
-                    setSelectedBooth("ALL");
-                  }}
-                  className="hover:text-primary-foreground hover:bg-primary rounded-full p-0.5"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            )}
-
-            {selectedMandalam !== "ALL" && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary border border-primary/20">
-                <span>{selectedMandalam}</span>
-                <button
-                  onClick={() => {
-                    setSelectedMandalam("ALL");
-                    setSelectedBooth("ALL");
-                  }}
-                  className="hover:text-primary-foreground hover:bg-primary rounded-full p-0.5"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            )}
-
-            {selectedBooth !== "ALL" && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary border border-primary/20">
-                <span>{selectedBooth}</span>
-                <button
-                  onClick={() => setSelectedBooth("ALL")}
-                  className="hover:text-primary-foreground hover:bg-primary rounded-full p-0.5"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            )}
-
-            <button
-              onClick={handleResetFilters}
-              className="text-xs font-bold text-muted-foreground hover:text-foreground underline ml-1"
-            >
-              {lang === "ml" ? "എല്ലാം ഒഴിവാക്കുക" : "Clear all"}
-            </button>
-          </div>
-        )}
 
       {/* ========================================================================= */}
       {/* ========================================================================= */}
@@ -1027,13 +1507,7 @@ export function AdminDashboard() {
         onClose={() => setIsMobileModalOpen(false)}
       />
 
-      {/* Date & Period Selection Sheet Modal */}
-      <DatePickerModal
-        isOpen={isDatePickerOpen}
-        onClose={() => setIsDatePickerOpen(false)}
-        selectedPeriod={period}
-        onSelectPeriod={(p) => setPeriod(p)}
-      />
+      
     </div>
   );
 }

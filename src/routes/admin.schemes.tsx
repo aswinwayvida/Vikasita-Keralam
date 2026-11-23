@@ -422,19 +422,26 @@ type SchemeDateFilterMode = "single" | "range";
 
 const SCHEME_DATE_REFERENCE = new Date(2026, 9, 8);
 
-const SCHEME_DATE_PRESETS: Array<{
+const SCHEME_DATE_PRESETS_ROW1: Array<{
   key: SchemeDatePreset;
   en: string;
   ml: string;
 }> = [
   { key: "allTime", en: "All time", ml: "എല്ലാ സമയവും" },
   { key: "today", en: "Today", ml: "ഇന്ന്" },
-  { key: "thisWeek", en: "This week", ml: "ഈ ആഴ്ച" },
-  { key: "thisMonth", en: "This month", ml: "ഈ മാസം" },
-  { key: "thisYear", en: "This year", ml: "ഈ വർഷം" },
   { key: "yesterday", en: "Yesterday", ml: "ഇന്നലെ" },
+  { key: "thisWeek", en: "This week", ml: "ഈ ആഴ്ച" },
   { key: "lastWeek", en: "Last week", ml: "കഴിഞ്ഞ ആഴ്ച" },
+];
+
+const SCHEME_DATE_PRESETS_ROW2: Array<{
+  key: SchemeDatePreset;
+  en: string;
+  ml: string;
+}> = [
+  { key: "thisMonth", en: "This month", ml: "ഈ മാസം" },
   { key: "lastMonth", en: "Last month", ml: "കഴിഞ്ഞ മാസം" },
+  { key: "thisYear", en: "This year", ml: "ഈ വർഷം" },
   { key: "lastYear", en: "Last year", ml: "കഴിഞ്ഞ വർഷം" },
 ];
 
@@ -676,158 +683,182 @@ function SchemesDateFilter({
           </SheetHeader>
 
           <div className="flex-1 overflow-y-auto">
-          <div className="px-4 pt-4">
-            <div className="flex max-w-[310px] flex-wrap gap-1.5">
-              {SCHEME_DATE_PRESETS.map((preset) => {
-                const isActive = draftPreset === preset.key;
-                return (
-                  <button
-                    key={preset.key}
-                    type="button"
-                    onClick={() => handlePresetSelect(preset.key)}
-                    className={cn(
-                      "rounded-full border px-2.5 py-[3px] text-[10.5px] leading-4 font-semibold transition-colors cursor-pointer",
-                      isActive
-                        ? "border-primary bg-primary text-primary-foreground shadow-2xs"
-                        : "border-[#f2dfca] bg-[#fffaf3] text-slate-700 hover:border-primary/40 hover:bg-orange-50",
-                    )}
-                  >
-                    {lang === "ml" ? preset.ml : preset.en}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="mx-4 mt-3 border-t border-slate-100" />
-
-          <div className="space-y-1.5 px-4 pt-3">
-            <div className="flex items-center justify-between gap-4 border-b border-slate-100">
-              <span className="pb-2 text-[11px] font-semibold text-slate-500">
-                {tr("Select date", "തീയതി തിരഞ്ഞെടുക്കുക")}
-              </span>
-              <div className="flex items-center gap-4 text-[11px] font-semibold">
-                <button
-                  type="button"
-                  onClick={() => handleModeChange("single")}
-                  className={cn(
-                    "border-b-2 pb-2 transition-colors cursor-pointer",
-                    draftMode === "single"
-                      ? "border-primary text-primary"
-                      : "border-transparent text-slate-500 hover:text-foreground",
-                  )}
-                >
-                  {tr("Single Date", "ഒരു തീയതി")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleModeChange("range")}
-                  className={cn(
-                    "border-b-2 pb-2 transition-colors cursor-pointer",
-                    draftMode === "range"
-                      ? "border-primary text-primary"
-                      : "border-transparent text-slate-500 hover:text-foreground",
-                  )}
-                >
-                  {tr("Date Range", "തീയതി പരിധി")}
-                </button>
-              </div>
-            </div>
-            <p className="text-[16px] font-extrabold tracking-tight text-[#101828]">
-              {draftSummary}
-            </p>
-          </div>
-
-          <div className="px-4 pt-3">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-[16px] font-extrabold tracking-tight text-[#101828]">
-                {formatMonth(viewMonth)}
-              </span>
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => stepViewMonth(-1)}
-                  className="flex h-7 w-7 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-foreground transition-colors cursor-pointer"
-                  aria-label={tr("Previous month", "മുൻ മാസം")}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => stepViewMonth(1)}
-                  className="flex h-7 w-7 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-foreground transition-colors cursor-pointer"
-                  aria-label={tr("Next month", "അടുത്ത മാസം")}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-7 gap-y-1 text-center">
-              {weekdayLabels.map((label, index) => (
-                <span
-                  key={`${label}-${index}`}
-                  className="pb-1 text-[10px] font-bold uppercase text-slate-400"
-                >
-                  {label}
-                </span>
-              ))}
-
-              {calendarDays.map((day, index) => {
-                if (!day) return <span key={`empty-${index}`} className="h-10" />;
-
-                const dayTime = day.getTime();
-                const isSelected =
-                  draftMode === "single"
-                    ? isSameSchemeDate(day, draftDate)
-                    : isSameSchemeDate(day, rangeStart) || isSameSchemeDate(day, rangeEnd);
-                const isInRange =
-                  draftMode === "range" &&
-                  rangeStartTime !== null &&
-                  rangeEndTime !== null &&
-                  dayTime > Math.min(rangeStartTime, rangeEndTime) &&
-                  dayTime < Math.max(rangeStartTime, rangeEndTime);
-
-                return (
-                  <div key={day.toISOString()} className="flex h-[34px] items-center justify-center">
+            <div className="px-4 pt-4 space-y-1.5">
+              <div className="flex flex-wrap items-center gap-1.5">
+                {SCHEME_DATE_PRESETS_ROW1.map((preset) => {
+                  const isActive = draftPreset === preset.key;
+                  return (
                     <button
+                      key={preset.key}
                       type="button"
-                      onClick={() => handleDaySelect(day)}
-                      aria-label={formatFullDate(day)}
+                      onClick={() => handlePresetSelect(preset.key)}
                       className={cn(
-                        "flex h-8 w-8 items-center justify-center rounded-full text-[12px] font-semibold transition-colors cursor-pointer",
-                        isSelected
-                          ? "bg-primary text-primary-foreground shadow-sm"
-                          : isInRange
-                            ? "bg-orange-50 text-primary hover:bg-orange-100"
-                            : "text-[#344054] hover:bg-orange-50 hover:text-primary",
+                        "rounded-full border px-2.5 py-[3px] text-[10.5px] leading-4 font-semibold transition-colors cursor-pointer",
+                        isActive
+                          ? "border-primary bg-primary text-primary-foreground shadow-2xs"
+                          : "border-[#f2dfca] bg-[#fffaf3] text-slate-700 hover:border-primary/40 hover:bg-orange-50",
                       )}
                     >
-                      {day.getDate()}
+                      {lang === "ml" ? preset.ml : preset.en}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {SCHEME_DATE_PRESETS_ROW2.map((preset) => {
+                  const isActive = draftPreset === preset.key;
+                  return (
+                    <button
+                      key={preset.key}
+                      type="button"
+                      onClick={() => handlePresetSelect(preset.key)}
+                      className={cn(
+                        "rounded-full border px-2.5 py-[3px] text-[10.5px] leading-4 font-semibold transition-colors cursor-pointer",
+                        isActive
+                          ? "border-primary bg-primary text-primary-foreground shadow-2xs"
+                          : "border-[#f2dfca] bg-[#fffaf3] text-slate-700 hover:border-primary/40 hover:bg-orange-50",
+                      )}
+                    >
+                      {lang === "ml" ? preset.ml : preset.en}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="mx-4 mt-3 border-t border-slate-100" />
+
+            <div className="space-y-1.5 px-4 pt-3">
+              <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-2">
+                <span className="text-[11px] font-semibold text-slate-500">
+                  {tr("Select date", "തീയതി തിരഞ്ഞെടുക്കുക")}
+                </span>
+                <div className="flex items-center gap-4 text-[11px] font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => handleModeChange("single")}
+                    className={cn(
+                      "border-b-2 pb-0.5 transition-colors cursor-pointer",
+                      draftMode === "single"
+                        ? "border-primary text-primary font-bold"
+                        : "border-transparent text-slate-500 hover:text-foreground",
+                    )}
+                  >
+                    {tr("Single Date", "ഒരു തീയതി")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleModeChange("range")}
+                    className={cn(
+                      "border-b-2 pb-0.5 transition-colors cursor-pointer",
+                      draftMode === "range"
+                        ? "border-primary text-primary font-bold"
+                        : "border-transparent text-slate-500 hover:text-foreground",
+                    )}
+                  >
+                    {tr("Date Range", "തീയതി পরিധി")}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-4 pt-3 pb-2">
+              <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-[15px] font-bold tracking-tight text-[#101828]">
+                    {formatMonth(viewMonth)}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => stepViewMonth(-1)}
+                      className="flex h-7 w-7 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-foreground transition-colors cursor-pointer"
+                      aria-label={tr("Previous month", "മുൻ മാസം")}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => stepViewMonth(1)}
+                      className="flex h-7 w-7 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-foreground transition-colors cursor-pointer"
+                      aria-label={tr("Next month", "അടുത്ത മാസം")}
+                    >
+                      <ChevronRight className="h-4 w-4" />
                     </button>
                   </div>
-                );
-              })}
+                </div>
+
+                <div className="grid grid-cols-7 gap-y-1 text-center">
+                  {weekdayLabels.map((label, index) => (
+                    <span
+                      key={`${label}-${index}`}
+                      className="pb-1 text-[10px] font-bold uppercase text-slate-400"
+                    >
+                      {label}
+                    </span>
+                  ))}
+
+                  {calendarDays.map((day, index) => {
+                    if (!day) return <span key={`empty-${index}`} className="h-10" />;
+
+                    const dayTime = day.getTime();
+                    const isSelected =
+                      draftMode === "single"
+                        ? isSameSchemeDate(day, draftDate)
+                        : isSameSchemeDate(day, rangeStart) || isSameSchemeDate(day, rangeEnd);
+                    const isInRange =
+                      draftMode === "range" &&
+                      rangeStartTime !== null &&
+                      rangeEndTime !== null &&
+                      dayTime > Math.min(rangeStartTime, rangeEndTime) &&
+                      dayTime < Math.max(rangeStartTime, rangeEndTime);
+
+                    return (
+                      <div key={day.toISOString()} className="flex h-[34px] items-center justify-center">
+                        <button
+                          type="button"
+                          onClick={() => handleDaySelect(day)}
+                          aria-label={formatFullDate(day)}
+                          className={cn(
+                            "flex h-8 w-8 items-center justify-center rounded-full text-[12px] font-semibold transition-colors cursor-pointer",
+                            isSelected
+                              ? "bg-primary text-primary-foreground shadow-sm"
+                              : isInRange
+                                ? "bg-orange-50 text-primary hover:bg-orange-100"
+                                : "text-[#344054] hover:bg-orange-50 hover:text-primary",
+                          )}
+                        >
+                          {day.getDate()}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
-          </div>
 
-          <SheetFooter className="flex shrink-0 flex-row items-center justify-end gap-3 border-t border-slate-100 bg-white px-4 py-3">
-            <button
-              type="button"
-              onClick={() => handleOpenChange(false)}
-              className="px-3 py-1.5 text-[12px] font-semibold text-slate-600 hover:text-foreground transition-colors cursor-pointer"
-            >
-              {tr("Cancel", "റദ്ദാക്കുക")}
-            </button>
-            <button
-              type="button"
-              onClick={applySelection}
-              disabled={draftMode === "range" && (!rangeStart || !rangeEnd)}
-              className="inline-flex h-8 min-w-16 items-center justify-center rounded-full bg-primary px-4 text-[12px] font-bold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 transition-colors cursor-pointer"
-            >
-              {tr("OK", "ശരി")}
-            </button>
+          <SheetFooter className="flex shrink-0 flex-row items-center justify-between gap-3 border-t border-slate-100 bg-white px-4 py-3">
+            <div className="mr-auto text-xs font-normal text-slate-600">
+              {draftSummary}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleOpenChange(false)}
+                className="rounded-lg border border-slate-200 bg-white px-4 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+              >
+                {tr("Cancel", "റദ്ദാക്കുക")}
+              </button>
+              <button
+                type="button"
+                onClick={applySelection}
+                disabled={draftMode === "range" && (!rangeStart || !rangeEnd)}
+                className="inline-flex h-8 min-w-16 items-center justify-center rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 transition-colors cursor-pointer"
+              >
+                {tr("Done", "പൂർത്തിയായി")}
+              </button>
+            </div>
           </SheetFooter>
         </SheetContent>
       </Sheet>
