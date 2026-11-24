@@ -583,7 +583,24 @@ function workerAssignmentLevel(worker: WorkerProfile): AssignmentLevel | "" {
 
 function workerMatchesListFilters(worker: WorkerProfile, filters: WorkerListFilters) {
   const level = workerAssignmentLevel(worker);
-  if (filters.level !== "all" && level !== filters.level) return false;
+  if (filters.level !== "all") {
+    const isFilterDistrict =
+      filters.level === "org_district" || filters.level === "districts" || filters.level === "district";
+    const isWorkerDistrict =
+      level === "org_district" || level === "districts" || level === "district";
+    const isFilterMandalam =
+      filters.level === "mandalam" || filters.level === "assembly_constituency";
+    const isWorkerMandalam =
+      level === "mandalam" || level === "assembly_constituency";
+
+    if (isFilterDistrict) {
+      if (!isWorkerDistrict) return false;
+    } else if (isFilterMandalam) {
+      if (!isWorkerMandalam) return false;
+    } else if (level !== filters.level) {
+      return false;
+    }
+  }
 
   const matchesStatus =
     filters.status === "all" ||
@@ -1140,10 +1157,18 @@ export function MobileCreatePartyWorkerFlow({
   const workerFilterAppRole = rolePresets.find((item) => item.id === draftWorkerFilters.appRole);
   const workerFilterDesignationOptions = useMemo<PartyDesignation[]>(() => {
     const filterLevel = draftWorkerFilters.level === "all" ? "" : draftWorkerFilters.level;
+    const isDistrictLevel =
+      filterLevel === "org_district" || filterLevel === "districts" || filterLevel === "district";
+    const isMandalamLevel =
+      filterLevel === "mandalam" || filterLevel === "assembly_constituency";
+
     const standard = partyDesignations.filter((item) => {
       if (!filterLevel) return true;
-      if (filterLevel === "mandalam" || filterLevel === "assembly_constituency") {
+      if (isMandalamLevel) {
         return item.level === "mandalam" || item.level === "assembly_constituency";
+      }
+      if (isDistrictLevel) {
+        return item.level === "org_district" || item.level === "districts" || item.level === "district";
       }
       return item.level === filterLevel;
     });
@@ -1153,7 +1178,15 @@ export function MobileCreatePartyWorkerFlow({
           !role.system &&
           role.status === "Active" &&
           !isRetiredCustomRole(role) &&
-          (!filterLevel || role.assignmentLevels.includes(filterLevel as AssignmentLevel)),
+          (!filterLevel ||
+            role.assignmentLevels.includes(filterLevel as AssignmentLevel) ||
+            (isDistrictLevel &&
+              (role.assignmentLevels.includes("district" as AssignmentLevel) ||
+               role.assignmentLevels.includes("districts" as AssignmentLevel) ||
+               role.assignmentLevels.includes("org_district" as AssignmentLevel))) ||
+            (isMandalamLevel &&
+              (role.assignmentLevels.includes("mandalam" as AssignmentLevel) ||
+               role.assignmentLevels.includes("assembly_constituency" as AssignmentLevel)))),
       )
       .map((role) => managedRoleDesignation(role, filterLevel as AssignmentLevel));
     return [...standard, ...custom];
@@ -1808,10 +1841,23 @@ export function MobileCreatePartyWorkerFlow({
       const previousDesignation = allDesignationChoices.find(
         (item) => item.id === prev.designationId,
       );
-      const designationId =
-        nextLevel === "all" || previousDesignation?.level === nextLevel
-          ? prev.designationId
-          : "all";
+      const isDistrictLevel = (l?: string) =>
+        l === "org_district" || l === "districts" || l === "district";
+      const isMandalamLevel = (l?: string) =>
+        l === "mandalam" || l === "assembly_constituency";
+
+      let levelMatches = false;
+      if (!previousDesignation?.level || nextLevel === "all") {
+        levelMatches = true;
+      } else if (isDistrictLevel(nextLevel) && isDistrictLevel(previousDesignation.level)) {
+        levelMatches = true;
+      } else if (isMandalamLevel(nextLevel) && isMandalamLevel(previousDesignation.level)) {
+        levelMatches = true;
+      } else if (previousDesignation.level === nextLevel) {
+        levelMatches = true;
+      }
+
+      const designationId = levelMatches ? prev.designationId : "all";
       return {
         ...prev,
         ...clearedWorkerFilterLocations(),
@@ -1826,7 +1872,16 @@ export function MobileCreatePartyWorkerFlow({
       if (nextId === "all") return { ...prev, designationId: "all" };
       const nextDesignation = allDesignationChoices.find((item) => item.id === nextId);
       if (!nextDesignation) return prev;
-      const levelChanged = prev.level !== nextDesignation.level;
+      const isDistrictLevel = (l?: string) =>
+        l === "org_district" || l === "districts" || l === "district";
+      const isMandalamLevel = (l?: string) =>
+        l === "mandalam" || l === "assembly_constituency";
+
+      const sameLevel =
+        prev.level === nextDesignation.level ||
+        (isDistrictLevel(prev.level) && isDistrictLevel(nextDesignation.level)) ||
+        (isMandalamLevel(prev.level) && isMandalamLevel(nextDesignation.level));
+      const levelChanged = !sameLevel;
       return {
         ...prev,
         designationId: nextId,
@@ -2307,7 +2362,12 @@ export function MobileCreatePartyWorkerFlow({
         ...workerFilterDesignationOptions.map((item) => ({
           id: item.id,
           label: lang === "ml" ? item.ml : item.en,
-          hint: assignmentLevels.find((levelItem) => levelItem.id === item.level)?.[lang],
+          hint: (
+            assignmentLevels.find((levelItem) => levelItem.id === item.level) ||
+            (item.level === "district" || item.level === "districts" || item.level === "org_district"
+              ? { en: "Organisational District", ml: "ഓർഗനൈസേഷണൽ ജില്ല" }
+              : undefined)
+          )?.[lang],
           search: `${item.en} ${item.ml}`,
         })),
       ];

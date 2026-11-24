@@ -1807,7 +1807,7 @@ function ApplicationsPage() {
                                     </DropdownMenuItem>
 
                                     <DropdownMenuItem
-                                      onClick={() => setEditingRecord(record)}
+                                      onClick={() => navigate({ to: "/admin/applications/$applicationId/verify", params: { applicationId: record.id } })}
                                       className="cursor-pointer text-xs font-semibold"
                                     >
                                       <Pencil className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
@@ -1855,31 +1855,17 @@ function ApplicationsPage() {
                                       </DropdownMenuSubContent>
                                     </DropdownMenuSub>
 
-                                    <DropdownMenuSub>
-                                      <DropdownMenuSubTrigger className="cursor-pointer text-xs font-semibold">
-                                        <UserCheck className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-                                        {lang === "ml" ? "മറ്റൊരാൾക്ക് അസൈൻ ചെയ്യുക" : "Assign to User"}
-                                      </DropdownMenuSubTrigger>
-                                      <DropdownMenuSubContent className="w-56 p-1">
-                                        {applicationReviewers.map((rev) => (
-                                          <DropdownMenuItem
-                                            key={rev}
-                                            onClick={() => { setAssignTargetAppId(record.id); setAssignUserSearch(""); setIsAssignDrawerOpen(true); }}
-                                            className={`cursor-pointer text-xs font-semibold ${record.reviewer === rev ? "bg-accent font-bold" : ""}`}
-                                          >
-                                            {rev}
-                                          </DropdownMenuItem>
-                                        ))}
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem
-                                          onClick={() => navigate({ to: "/admin/settings/new-role", search: { editRoleId: undefined, returnTo: "/admin/applications" } })}
-                                          className="cursor-pointer text-xs font-bold text-primary"
-                                        >
-                                          <Plus className="h-3.5 w-3.5 mr-2 text-primary" />
-                                          {lang === "ml" ? "+ പുതിയ റോൾ സൃഷ്ടിക്കുക..." : "+ Create New Role..."}
-                                        </DropdownMenuItem>
-                                      </DropdownMenuSubContent>
-                                    </DropdownMenuSub>
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        setAssignTargetAppId(record.id);
+                                        setAssignUserSearch("");
+                                        setIsAssignDrawerOpen(true);
+                                      }}
+                                      className="cursor-pointer text-xs font-semibold"
+                                    >
+                                      <UserCheck className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+                                      {lang === "ml" ? "മറ്റൊരാൾക്ക് അസൈൻ ചെയ്യുക" : "Assign to User"}
+                                    </DropdownMenuItem>
 
                                     <DropdownMenuSeparator />
 
@@ -2055,8 +2041,8 @@ function ApplicationsPage() {
                 <UserPlus className="h-5 w-5 text-primary" />
                 <span>
                   {tr(
-                    'Assign Users to "Admin"',
-                    '"Admin" റോളിലേക്ക് ഉപയോക്താക്കളെ അസൈൻ ചെയ്യുക'
+                    "Assign Users",
+                    "ഉപയോക്താക്കളെ അസൈൻ ചെയ്യുക"
                   )}
                 </span>
               </SheetTitle>

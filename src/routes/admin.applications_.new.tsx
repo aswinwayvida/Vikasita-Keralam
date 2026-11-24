@@ -165,6 +165,8 @@ export function NewApplicationPage() {
   const navigate = useNavigate();
   const search = Route.useSearch();
 
+  const isEditMode = search.edit === "true" || search.skipOtp === "true" || !!search.applicantId;
+
   // Wizard Step State: 1, 2, or 3
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
 
@@ -500,8 +502,8 @@ export function NewApplicationPage() {
             </button>
             <div>
               <h1 className="font-display text-lg font-bold tracking-tight text-foreground">
-                {search.edit === "true"
-                  ? (lang === "ml" ? "അപേക്ഷ എഡിറ്റ് ചെയ്യുക" : "Edit Application")
+                {search.edit === "true" || search.skipOtp === "true" || search.applicantId
+                  ? (lang === "ml" ? "അപേക്ഷകന്റെ വിവരങ്ങൾ എഡിറ്റ് ചെയ്യുക" : "Edit Applicant Details")
                   : (lang === "ml" ? "പുതിയ അപേക്ഷ സൃഷ്ടിക്കുക" : "Create New Application")}
               </h1>
             </div>
@@ -608,7 +610,7 @@ export function NewApplicationPage() {
       {currentStep === 1 && (
         <div className="space-y-6">
           {/* Merged Section Container */}
-          <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-xs space-y-6">
+          <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-border/80 pb-3">
               <h2 className="text-base font-bold text-foreground flex items-center gap-2">
                 <Phone className="h-4 w-4 text-primary" />
@@ -645,7 +647,7 @@ export function NewApplicationPage() {
                     }
                   }}
                   placeholder="Enter mobile number"
-                  className="h-11 rounded-xl bg-white dark:bg-card border-border text-sm font-semibold"
+                  className="h-9.5 rounded-lg bg-white dark:bg-card border-border/60 text-xs font-semibold shadow-none"
                 />
                 {checkingMobile && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -655,7 +657,7 @@ export function NewApplicationPage() {
               </div>
 
               {/* Status and Action after 10-digit mobile number entry */}
-              {mobileNumber.length === 10 && !checkingMobile && (
+              {mobileNumber.length === 10 && !checkingMobile && !isEditMode && (
                 <div>
                   {existingApplicant ? (
                     <div className="mt-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 space-y-2">
@@ -692,7 +694,7 @@ export function NewApplicationPage() {
                         <Button
                           type="button"
                           onClick={handleSendOtp}
-                          className="h-10 px-5 rounded-xl text-xs font-bold shadow-xs flex items-center gap-2 cursor-pointer"
+                          className="h-10 px-5 rounded-xl text-xs font-bold shadow-xs flex items-center gap-2 cursor-pointer shadow-none"
                         >
                           <ShieldCheck className="h-4 w-4" />
                           <span>{lang === "ml" ? "OTP അയക്കുക" : "Send OTP"}</span>
@@ -706,11 +708,11 @@ export function NewApplicationPage() {
 
             {/* Demographics Form Section — Displayed inside the same container after verification */}
             {(isOtpVerified || isUsingExisting) && (
-              <div className="pt-4 border-t border-border/80 space-y-6">
+              <div className="pt-3 border-t border-border/80 space-y-4">
                 {/* 3 Inputs per row grid */}
-                <div className="grid gap-5 grid-cols-1 md:grid-cols-3">
+                <div className="grid gap-3.5 grid-cols-1 md:grid-cols-3">
                   {/* 1. Full Name */}
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     <label className="text-xs font-bold text-foreground block">
                       {lang === "ml" ? "പൂർണ്ണമായ പേര് *" : "Applicant Full Name *"}
                     </label>
@@ -720,12 +722,12 @@ export function NewApplicationPage() {
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       placeholder="Enter full legal name"
-                      className="h-11 rounded-xl bg-white dark:bg-card border-border text-sm font-semibold"
+                      className="h-9.5 rounded-lg bg-white dark:bg-card border-border/60 text-xs font-semibold shadow-none"
                     />
                   </div>
 
                   {/* 2. Date of Birth & Auto Age */}
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-bold text-foreground block">
                         {lang === "ml" ? "ജനനത്തീയതി *" : "Date of Birth *"}
@@ -742,14 +744,14 @@ export function NewApplicationPage() {
                         required
                         value={dob}
                         onChange={(e) => setDob(e.target.value)}
-                        className="h-11 rounded-xl bg-white dark:bg-card border-border text-sm font-semibold pr-10"
+                        className="h-9.5 rounded-lg bg-white dark:bg-card border-border/60 text-xs font-semibold pr-10 shadow-none"
                       />
                       <CalendarIcon className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     </div>
                   </div>
 
                   {/* 3. Gender */}
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     <label className="text-xs font-bold text-foreground block">
                       {lang === "ml" ? "ലിംഗഭേദം *" : "Gender *"}
                     </label>
@@ -758,7 +760,7 @@ export function NewApplicationPage() {
                         required
                         value={gender}
                         onChange={(e) => setGender(e.target.value)}
-                        className="h-11 w-full appearance-none rounded-xl border border-border bg-white dark:bg-card px-3.5 text-xs font-semibold outline-none focus:ring-1 focus:ring-primary text-foreground"
+                        className="h-9.5 w-full appearance-none rounded-lg border border-border/60 bg-white dark:bg-card px-3 text-xs font-semibold outline-none focus:ring-1 focus:ring-primary text-foreground shadow-none"
                       >
                         <option value="">Select Gender</option>
                         <option value="male">Male</option>
@@ -770,7 +772,7 @@ export function NewApplicationPage() {
                   </div>
 
                   {/* 4. Marital Status */}
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     <label className="text-xs font-bold text-foreground block">
                       {lang === "ml" ? "വൈവാഹിക നില *" : "Marital Status *"}
                     </label>
@@ -778,7 +780,7 @@ export function NewApplicationPage() {
                       <select
                         value={maritalStatus}
                         onChange={(e) => setMaritalStatus(e.target.value)}
-                        className="h-11 w-full appearance-none rounded-xl border border-border bg-white dark:bg-card px-3.5 text-xs font-semibold outline-none focus:ring-1 focus:ring-primary text-foreground"
+                        className="h-9.5 w-full appearance-none rounded-lg border border-border/60 bg-white dark:bg-card px-3 text-xs font-semibold outline-none focus:ring-1 focus:ring-primary text-foreground shadow-none"
                       >
                         <option value="">Select Marital Status</option>
                         <option value="single">Single / Unmarried</option>
@@ -792,7 +794,7 @@ export function NewApplicationPage() {
                   </div>
 
                   {/* 5. Religion */}
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     <label className="text-xs font-bold text-foreground block">
                       {lang === "ml" ? "മതം *" : "Religion *"}
                     </label>
@@ -800,7 +802,7 @@ export function NewApplicationPage() {
                       <select
                         value={religion}
                         onChange={(e) => setReligion(e.target.value)}
-                        className="h-11 w-full appearance-none rounded-xl border border-border bg-white dark:bg-card px-3.5 text-xs font-semibold outline-none focus:ring-1 focus:ring-primary text-foreground"
+                        className="h-9.5 w-full appearance-none rounded-lg border border-border/60 bg-white dark:bg-card px-3 text-xs font-semibold outline-none focus:ring-1 focus:ring-primary text-foreground shadow-none"
                       >
                         <option value="">Select Religion</option>
                         <option value="hinduism">Hinduism</option>
@@ -816,7 +818,7 @@ export function NewApplicationPage() {
                   </div>
 
                   {/* 6. Caste / Social Category */}
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     <label className="text-xs font-bold text-foreground block">
                       {lang === "ml" ? "സാമൂഹിക വിഭാഗം / ജാതി *" : "Caste / Social Category *"}
                     </label>
@@ -824,7 +826,7 @@ export function NewApplicationPage() {
                       <select
                         value={caste}
                         onChange={(e) => setCaste(e.target.value)}
-                        className="h-11 w-full appearance-none rounded-xl border border-border bg-white dark:bg-card px-3.5 text-xs font-semibold outline-none focus:ring-1 focus:ring-primary text-foreground"
+                        className="h-9.5 w-full appearance-none rounded-lg border border-border/60 bg-white dark:bg-card px-3 text-xs font-semibold outline-none focus:ring-1 focus:ring-primary text-foreground shadow-none"
                       >
                         <option value="">Select Caste / Category</option>
                         <option value="general">General</option>
@@ -839,7 +841,7 @@ export function NewApplicationPage() {
                   </div>
 
                   {/* 7. Occupation */}
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     <label className="text-xs font-bold text-foreground block">
                       {lang === "ml" ? "തൊഴിൽ *" : "Occupation *"}
                     </label>
@@ -847,7 +849,7 @@ export function NewApplicationPage() {
                       <select
                         value={occupation}
                         onChange={(e) => setOccupation(e.target.value)}
-                        className="h-11 w-full appearance-none rounded-xl border border-border bg-white dark:bg-card px-3.5 text-xs font-semibold outline-none focus:ring-1 focus:ring-primary text-foreground"
+                        className="h-9.5 w-full appearance-none rounded-lg border border-border/60 bg-white dark:bg-card px-3 text-xs font-semibold outline-none focus:ring-1 focus:ring-primary text-foreground shadow-none"
                       >
                         <option value="">Select Occupation</option>
                         <option value="farmer">Farmer / Agriculture</option>
@@ -866,7 +868,7 @@ export function NewApplicationPage() {
                   </div>
 
                   {/* 8. Annual Family Income */}
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     <label className="text-xs font-bold text-foreground block">
                       {lang === "ml" ? "വാർഷിക കുടുംബ വരുമാനം (₹) *" : "Annual Family Income (₹) *"}
                     </label>
@@ -880,13 +882,13 @@ export function NewApplicationPage() {
                         value={annualIncome}
                         onChange={(e) => setAnnualIncome(e.target.value)}
                         placeholder="e.g. 75000"
-                        className="h-11 pl-8 rounded-xl bg-white dark:bg-card border-border text-sm font-semibold"
+                        className="h-9.5 pl-8 rounded-lg bg-white dark:bg-card border-border/60 text-xs font-semibold shadow-none"
                       />
                     </div>
                   </div>
 
                   {/* 9. Aadhaar Number with Masking */}
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     <label className="text-xs font-bold text-foreground block">
                       {lang === "ml" ? "ആധാർ നമ്പർ (12 അക്കങ്ങൾ)" : "Aadhaar Number (12 Digits)"}
                     </label>
@@ -898,7 +900,7 @@ export function NewApplicationPage() {
                         value={aadhaarNumber}
                         onChange={(e) => setAadhaarNumber(e.target.value.replace(/\D/g, ""))}
                         placeholder="Enter 12-digit Aadhaar"
-                        className="h-11 rounded-xl bg-white dark:bg-card border-border text-sm font-mono font-semibold tracking-wider pr-10"
+                        className="h-9.5 rounded-lg bg-white dark:bg-card border-border/60 text-xs font-mono font-semibold tracking-wider pr-10 shadow-none"
                       />
                       <button
                         type="button"
@@ -919,11 +921,11 @@ export function NewApplicationPage() {
                 </div>
 
                 {/* Bottom Action for Step 1 — Sticky on Desktop */}
-                <div className="flex justify-end pt-4 border-t border-border/80 sm:sticky sm:bottom-0 sm:z-30 sm:bg-card/95 sm:backdrop-blur-md sm:border-t sm:border-border/80 sm:py-3.5 sm:px-6 sm:shadow-lg sm:-mx-8 sm:-mb-8 sm:mt-6 sm:rounded-b-3xl">
+                <div className="flex justify-end pt-4 border-t border-border/80 sm:sticky sm:bottom-0 sm:z-30 sm:bg-card/95 sm:backdrop-blur-md sm:border-t sm:border-border/80 sm:py-2.5 sm:px-5 sm:shadow-lg sm:-mx-5 sm:-mb-5 sm:mt-4 sm:rounded-b-2xl">
                   <Button
                     type="button"
                     onClick={handleProceedToStep2}
-                    className="h-11 px-6 rounded-xl font-bold text-xs shadow-xs flex items-center gap-2 cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
+                    className="h-9.5 px-5 rounded-lg font-bold text-xs shadow-xs flex items-center gap-2 cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 shadow-none"
                   >
                     <span>{lang === "ml" ? "തുടരുക (ഘട്ടം 2)" : "Continue to Step 2"}</span>
                     <ChevronRight className="h-4 w-4" />
@@ -958,7 +960,7 @@ export function NewApplicationPage() {
                     value={otpValue}
                     onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, ""))}
                     placeholder="Enter 6-digit OTP"
-                    className="h-12 text-center text-lg font-mono font-bold tracking-widest rounded-xl bg-white dark:bg-card border-border"
+                    className="h-12 text-center text-lg font-mono font-bold tracking-widest rounded-xl bg-white dark:bg-card border-border/60 shadow-none"
                   />
                   {otpError && <p className="text-xs font-semibold text-destructive">{otpError}</p>}
                 </div>
@@ -987,7 +989,7 @@ export function NewApplicationPage() {
                   type="button"
                   onClick={handleVerifyOtp}
                   disabled={otpValue.length < 6}
-                  className="w-full h-11 text-xs font-bold rounded-xl shadow-xs cursor-pointer"
+                  className="w-full h-11 text-xs font-bold rounded-xl shadow-xs cursor-pointer shadow-none"
                 >
                   {lang === "ml" ? "OTP വെരിഫൈ ചെയ്യുക" : "Verify OTP"}
                 </Button>
@@ -1001,7 +1003,7 @@ export function NewApplicationPage() {
       {currentStep === 2 && (
         <form onSubmit={handleProceedToStep3} className="space-y-6">
           {/* Location & Address Section Box */}
-          <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-xs space-y-6">
+          <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-4">
             <h2 className="text-base font-bold text-foreground border-b border-border/80 pb-3 flex items-center gap-2">
               <MapPin className="h-4 w-4 text-primary" />
               <span>{lang === "ml" ? "ലൊക്കേഷനും വിലാസവും" : "Location & Address Details"}</span>
@@ -1022,7 +1024,7 @@ export function NewApplicationPage() {
                     value={pinCode}
                     onChange={(e) => setPinCode(e.target.value.replace(/\D/g, ""))}
                     placeholder="e.g. 695001"
-                    className="h-11 rounded-xl bg-white dark:bg-card border-border font-mono font-bold text-sm"
+                    className="h-9.5 rounded-lg bg-white dark:bg-card border-border/60 font-mono font-bold text-xs shadow-none"
                   />
                 </div>
                 {pinLocationInfo && (
@@ -1039,14 +1041,14 @@ export function NewApplicationPage() {
             </div>
 
             {/* Location Group */}
-            <div className="space-y-4 pt-2">
+            <div className="space-y-2.5 pt-1">
               <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider border-b border-border/40 pb-1">
                 {lang === "ml" ? "അഡ്മിനിസ്ട്രേറ്റീവ് ലൊക്കേഷൻ" : "Location Details"}
               </h3>
 
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
                 {/* District */}
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <label className="text-xs font-bold text-foreground block">
                     {lang === "ml" ? "ജില്ല *" : "District *"}
                   </label>
@@ -1059,7 +1061,7 @@ export function NewApplicationPage() {
                         setAssemblyMandalam("");
                         setLocalBody("");
                       }}
-                      className="h-11 w-full appearance-none rounded-xl border border-border bg-white dark:bg-card px-3.5 text-xs font-semibold outline-none focus:ring-1 focus:ring-primary text-foreground"
+                      className="h-9.5 w-full appearance-none rounded-lg border border-border/60 bg-white dark:bg-card px-3 text-xs font-semibold outline-none focus:ring-1 focus:ring-primary text-foreground shadow-none"
                     >
                       <option value="">Select District</option>
                       {districts.map((d) => (
@@ -1073,7 +1075,7 @@ export function NewApplicationPage() {
                 </div>
 
                 {/* Assembly Mandalam */}
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <label className="text-xs font-bold text-foreground block">
                     {lang === "ml" ? "നിയമസഭാ മണ്ഡലം *" : "Assembly Mandalam *"}
                   </label>
@@ -1081,7 +1083,7 @@ export function NewApplicationPage() {
                     <select
                       value={assemblyMandalam}
                       onChange={(e) => setAssemblyMandalam(e.target.value)}
-                      className="h-11 w-full appearance-none rounded-xl border border-border bg-white dark:bg-card px-3.5 text-xs font-semibold outline-none focus:ring-1 focus:ring-primary text-foreground"
+                      className="h-9.5 w-full appearance-none rounded-lg border border-border/60 bg-white dark:bg-card px-3 text-xs font-semibold outline-none focus:ring-1 focus:ring-primary text-foreground shadow-none"
                     >
                       <option value="">Select Assembly Mandalam</option>
                       {filteredConstituencies.map((c) => (
@@ -1095,7 +1097,7 @@ export function NewApplicationPage() {
                 </div>
 
                 {/* Local Body Type */}
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <label className="text-xs font-bold text-foreground block">
                     {lang === "ml" ? "തദ്ദേശ സ്വയംഭരണ സ്ഥാപനം തരം *" : "Local Body Type *"}
                   </label>
@@ -1106,7 +1108,7 @@ export function NewApplicationPage() {
                         setLocalBodyType(e.target.value as any);
                         setLocalBody("");
                       }}
-                      className="h-11 w-full appearance-none rounded-xl border border-border bg-white dark:bg-card px-3.5 text-xs font-semibold outline-none focus:ring-1 focus:ring-primary text-foreground"
+                      className="h-9.5 w-full appearance-none rounded-lg border border-border/60 bg-white dark:bg-card px-3 text-xs font-semibold outline-none focus:ring-1 focus:ring-primary text-foreground shadow-none"
                     >
                       <option value="">Select Local Body Type</option>
                       <option value="panchayat">Grama Panchayat</option>
@@ -1118,7 +1120,7 @@ export function NewApplicationPage() {
                 </div>
 
                 {/* Local Body */}
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <label className="text-xs font-bold text-foreground block">
                     {lang === "ml" ? "തദ്ദേശ സ്ഥാപനത്തിന്റെ പേര് *" : "Local Body *"}
                   </label>
@@ -1126,7 +1128,7 @@ export function NewApplicationPage() {
                     <select
                       value={localBody}
                       onChange={(e) => setLocalBody(e.target.value)}
-                      className="h-11 w-full appearance-none rounded-xl border border-border bg-white dark:bg-card px-3.5 text-xs font-semibold outline-none focus:ring-1 focus:ring-primary text-foreground"
+                      className="h-9.5 w-full appearance-none rounded-lg border border-border/60 bg-white dark:bg-card px-3 text-xs font-semibold outline-none focus:ring-1 focus:ring-primary text-foreground shadow-none"
                     >
                       <option value="">Select Local Body</option>
                       {filteredLocalBodies.map((lb) => (
@@ -1140,7 +1142,7 @@ export function NewApplicationPage() {
                 </div>
 
                 {/* Ward Number */}
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <label className="text-xs font-bold text-foreground block">
                     {lang === "ml" ? "വാർഡ് നമ്പർ *" : "Ward *"}
                   </label>
@@ -1148,7 +1150,7 @@ export function NewApplicationPage() {
                     <select
                       value={ward}
                       onChange={(e) => setWard(e.target.value)}
-                      className="h-11 w-full appearance-none rounded-xl border border-border bg-white dark:bg-card px-3.5 text-xs font-semibold outline-none focus:ring-1 focus:ring-primary text-foreground"
+                      className="h-9.5 w-full appearance-none rounded-lg border border-border/60 bg-white dark:bg-card px-3 text-xs font-semibold outline-none focus:ring-1 focus:ring-primary text-foreground shadow-none"
                     >
                       <option value="">Select Ward</option>
                       {Array.from({ length: 50 }, (_, i) => i + 1).map((w) => (
@@ -1164,14 +1166,14 @@ export function NewApplicationPage() {
             </div>
 
             {/* Residential Address Group */}
-            <div className="space-y-4 pt-4 border-t border-border/80">
+            <div className="space-y-3 pt-3 border-t border-border/80">
               <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider border-b border-border/40 pb-1">
                 {lang === "ml" ? "വീട്ടു വിലാസം" : "Residential Address"}
               </h3>
 
-              <div className="grid gap-5 sm:grid-cols-3">
+              <div className="grid gap-3.5 sm:grid-cols-3">
                 {/* House Number */}
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <label className="text-xs font-bold text-foreground block">
                     {lang === "ml" ? "വീട്ടു നമ്പർ" : "House Number"}
                   </label>
@@ -1180,12 +1182,12 @@ export function NewApplicationPage() {
                     value={houseNumber}
                     onChange={(e) => setHouseNumber(e.target.value)}
                     placeholder="e.g. TC 14/820"
-                    className="h-11 rounded-xl bg-white dark:bg-card border-border text-sm font-semibold"
+                    className="h-9.5 rounded-lg bg-white dark:bg-card border-border/60 text-xs font-semibold shadow-none"
                   />
                 </div>
 
                 {/* House Name */}
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <label className="text-xs font-bold text-foreground block">
                     {lang === "ml" ? "വീട്ടു പേര്" : "House Name"}
                   </label>
@@ -1194,12 +1196,12 @@ export function NewApplicationPage() {
                     value={houseName}
                     onChange={(e) => setHouseName(e.target.value)}
                     placeholder="e.g. Lakshmi Nivas"
-                    className="h-11 rounded-xl bg-white dark:bg-card border-border text-sm font-semibold"
+                    className="h-9.5 rounded-lg bg-white dark:bg-card border-border/60 text-xs font-semibold shadow-none"
                   />
                 </div>
 
                 {/* Street / Locality */}
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <label className="text-xs font-bold text-foreground block">
                     {lang === "ml" ? "തെരുവ് / സ്ഥലം" : "Street / Locality"}
                   </label>
@@ -1208,19 +1210,19 @@ export function NewApplicationPage() {
                     value={streetLocality}
                     onChange={(e) => setStreetLocality(e.target.value)}
                     placeholder="e.g. Kaithamukku Junction"
-                    className="h-11 rounded-xl bg-white dark:bg-card border-border text-sm font-semibold"
+                    className="h-9.5 rounded-lg bg-white dark:bg-card border-border/60 text-xs font-semibold shadow-none"
                   />
                 </div>
               </div>
             </div>
 
             {/* Bottom Actions for Step 2 — Sticky on Desktop */}
-            <div className="flex items-center justify-between pt-6 border-t border-border/80 sm:sticky sm:bottom-0 sm:z-30 sm:bg-card/95 sm:backdrop-blur-md sm:border-t sm:border-border/80 sm:py-3.5 sm:px-6 sm:shadow-lg sm:-mx-8 sm:-mb-8 sm:mt-6 sm:rounded-b-3xl">
+            <div className="flex items-center justify-between pt-6 border-t border-border/80 sm:sticky sm:bottom-0 sm:z-30 sm:bg-card/95 sm:backdrop-blur-md sm:border-t sm:border-border/80 sm:py-2.5 sm:px-5 sm:shadow-lg sm:-mx-5 sm:-mb-5 sm:mt-4 sm:rounded-b-2xl">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setCurrentStep(1)}
-                className="h-11 px-6 rounded-xl font-bold text-xs cursor-pointer"
+                className="h-9.5 px-4 rounded-lg font-bold text-xs cursor-pointer shadow-none"
               >
                 <ArrowLeft className="h-4 w-4 mr-1.5" />
                 <span>{lang === "ml" ? "പുറകിലേക്ക് (ഘട്ടം 1)" : "Back to Step 1"}</span>
@@ -1228,7 +1230,7 @@ export function NewApplicationPage() {
 
               <Button
                 type="submit"
-                className="h-12 px-8 rounded-xl font-bold text-xs bg-amber-600 hover:bg-amber-700 text-white shadow-md flex items-center gap-2 cursor-pointer"
+                className="h-9.5 px-6 rounded-lg font-bold text-xs bg-amber-600 hover:bg-amber-700 text-white shadow-md flex items-center gap-2 cursor-pointer shadow-none"
               >
                 <Sparkles className="h-4 w-4" />
                 <span>{lang === "ml" ? "അപേക്ഷകനെ രജിസ്റ്റർ ചെയ്ത് തുടരുക" : "Create Applicant & Continue"}</span>
@@ -1242,7 +1244,7 @@ export function NewApplicationPage() {
       {currentStep === 3 && (
         <div className="space-y-6">
           {/* Main Card Container */}
-          <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-xs space-y-6">
+          <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-4">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/80 pb-4">
               <div>
@@ -1281,7 +1283,7 @@ export function NewApplicationPage() {
                   value={schemeSearch}
                   onChange={(e) => setSchemeSearch(e.target.value)}
                   placeholder={lang === "ml" ? "പദ്ധതികൾ തിരയുക..." : "Search eligible schemes..."}
-                  className="h-10 pl-9 pr-3 rounded-xl border-border bg-white dark:bg-card text-xs font-semibold"
+                  className="h-10 pl-9 pr-3 rounded-xl border-border/60 bg-white dark:bg-card text-xs font-semibold shadow-none"
                 />
               </div>
 
@@ -1290,7 +1292,7 @@ export function NewApplicationPage() {
                 <select
                   value={schemeCategoryFilter}
                   onChange={(e) => setSchemeCategoryFilter(e.target.value)}
-                  className="h-10 appearance-none rounded-xl border border-border bg-white dark:bg-card px-3 text-xs font-semibold outline-none text-foreground"
+                  className="h-10 appearance-none rounded-xl border border-border/60 bg-white dark:bg-card px-3 text-xs font-semibold outline-none text-foreground shadow-none"
                 >
                   <option value="all">{lang === "ml" ? "എല്ലാ വിഭാഗങ്ങളും" : "All Categories"}</option>
                   <option value="agriculture">{lang === "ml" ? "കൃഷി" : "Agriculture"}</option>
@@ -1314,7 +1316,7 @@ export function NewApplicationPage() {
                       setSelectedSchemeIds(new Set(allIds));
                     }
                   }}
-                  className="h-10 text-xs font-bold rounded-xl border-border flex items-center gap-1.5 cursor-pointer"
+                  className="h-10 text-xs font-bold rounded-xl border-border/60 flex items-center gap-1.5 cursor-pointer shadow-none"
                 >
                   <CheckSquare className="h-3.5 w-3.5" />
                   <span>
@@ -1404,7 +1406,7 @@ export function NewApplicationPage() {
                       </div>
 
                       {/* Benefits & Eligibility Summary */}
-                      <div className="space-y-1.5 pt-2 border-t border-border/60 text-xs">
+                      <div className="space-y-1 pt-1.5 border-t border-border/60 text-xs">
                         <div className="flex items-start gap-1.5 text-emerald-700 dark:text-emerald-400 font-semibold">
                           <Tag className="h-3.5 w-3.5 shrink-0 mt-0.5 text-emerald-600" />
                           <span>{scheme?.benefit?.[lang] || scheme?.benefit?.en || "Benefits available"}</span>
@@ -1419,12 +1421,12 @@ export function NewApplicationPage() {
             </div>
 
             {/* Bottom Actions for Step 3 — Sticky on Desktop */}
-            <div className="flex items-center justify-between pt-6 border-t border-border/80 sm:sticky sm:bottom-0 sm:z-30 sm:bg-card/95 sm:backdrop-blur-md sm:border-t sm:border-border/80 sm:py-3.5 sm:px-6 sm:shadow-lg sm:-mx-8 sm:-mb-8 sm:mt-6 sm:rounded-b-3xl">
+            <div className="flex items-center justify-between pt-6 border-t border-border/80 sm:sticky sm:bottom-0 sm:z-30 sm:bg-card/95 sm:backdrop-blur-md sm:border-t sm:border-border/80 sm:py-2.5 sm:px-5 sm:shadow-lg sm:-mx-5 sm:-mb-5 sm:mt-4 sm:rounded-b-2xl">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setCurrentStep(2)}
-                className="h-11 px-6 rounded-xl font-bold text-xs cursor-pointer"
+                className="h-9.5 px-4 rounded-lg font-bold text-xs cursor-pointer shadow-none"
               >
                 <ArrowLeft className="h-4 w-4 mr-1.5" />
                 <span>{lang === "ml" ? "പുറകിലേക്ക് (ഘട്ടം 2)" : "Back to Step 2"}</span>
@@ -1434,7 +1436,7 @@ export function NewApplicationPage() {
                 type="button"
                 onClick={handleFinalSubmitApplications}
                 disabled={isSubmitting || selectedSchemeIds.size === 0}
-                className="h-12 px-8 rounded-xl font-bold text-xs bg-primary text-primary-foreground shadow-md hover:bg-primary/90 flex items-center gap-2 cursor-pointer"
+                className="h-9.5 px-6 rounded-lg font-bold text-xs bg-primary text-primary-foreground shadow-md hover:bg-primary/90 flex items-center gap-2 cursor-pointer shadow-none"
               >
                 {isSubmitting ? (
                   <>

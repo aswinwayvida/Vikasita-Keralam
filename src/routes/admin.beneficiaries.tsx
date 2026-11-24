@@ -1428,7 +1428,18 @@ function BeneficiariesPage() {
                                     </DropdownMenuItem>
 
                                     <DropdownMenuItem
-                                      onClick={() => setEditingApplicant(b)}
+                                      onClick={() => {
+                                        const cleanMobile = (b.mobile ? b.mobile.replace(/[^0-9]/g, "").slice(-10) : "") || "9847012345";
+                                        navigate({
+                                          to: "/admin/applications/new",
+                                          search: {
+                                            applicantId: b.id,
+                                            mobile: cleanMobile,
+                                            skipOtp: "true",
+                                            edit: "true",
+                                          },
+                                        });
+                                      }}
                                       className="cursor-pointer text-xs font-semibold"
                                     >
                                       <Pencil className="h-3.5 w-3.5 mr-2 text-muted-foreground" />

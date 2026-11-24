@@ -12921,12 +12921,23 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 type="button"
                                 onClick={() => {
                                   setAppInfoMenuOpen(false);
-                                  handleEditApplicationDetails(selectedApplicationRecord);
+                                  openDocumentVerificationForApplication(selectedApplicationRecord);
                                 }}
                                 className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11.5px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
                               >
                                 <Pencil className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
                                 {lang === "ml" ? "തിരുത്തുക" : "Edit"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setAppInfoMenuOpen(false);
+                                  handleEditApplicationDetails(selectedApplicationRecord);
+                                }}
+                                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11.5px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
+                              >
+                                <UserCheck className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                                {lang === "ml" ? "അപേക്ഷകനെ എഡിറ്റ് ചെയ്യുക" : "Edit Applicant"}
                               </button>
                               <button
                                 type="button"
