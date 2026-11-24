@@ -1009,10 +1009,15 @@ export function NewApplicationPage() {
               <span>{lang === "ml" ? "ലൊക്കേഷനും വിലാസവും" : "Location & Address Details"}</span>
             </h2>
 
-            {/* PIN Code Lookup Section */}
-            <div className="rounded-2xl border border-primary/20 bg-primary/[0.04] p-4 space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="space-y-1 flex-1 max-w-xs">
+            {/* Location Group */}
+            <div className="space-y-2.5 pt-1">
+              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider border-b border-border/40 pb-1">
+                {lang === "ml" ? "അഡ്മിനിസ്ട്രേറ്റീവ് ലൊക്കേഷൻ" : "Location Details"}
+              </h3>
+
+              <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+                {/* PIN Code */}
+                <div className="space-y-1">
                   <label className="text-xs font-bold text-foreground block">
                     {lang === "ml" ? "പിൻകോഡ് (6 അക്കങ്ങൾ) *" : "PIN Code (6 Digits) *"}
                   </label>
@@ -1026,27 +1031,13 @@ export function NewApplicationPage() {
                     placeholder="e.g. 695001"
                     className="h-9.5 rounded-lg bg-white dark:bg-card border-border/60 font-mono font-bold text-xs shadow-none"
                   />
+                  {pinLocationInfo && (
+                    <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
+                      <span>✓</span> <span>{pinLocationInfo}</span>
+                    </p>
+                  )}
                 </div>
-                {pinLocationInfo && (
-                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 sm:max-w-md">
-                    <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 block">
-                      ✓ Location Found: {pinLocationInfo}
-                    </span>
-                    <span className="text-[10px] text-emerald-700 dark:text-emerald-400 block">
-                      District & Local body type auto-detected.
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
 
-            {/* Location Group */}
-            <div className="space-y-2.5 pt-1">
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider border-b border-border/40 pb-1">
-                {lang === "ml" ? "അഡ്മിനിസ്ട്രേറ്റീവ് ലൊക്കേഷൻ" : "Location Details"}
-              </h3>
-
-              <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
                 {/* District */}
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-foreground block">
@@ -1245,64 +1236,38 @@ export function NewApplicationPage() {
         <div className="space-y-6">
           {/* Main Card Container */}
           <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-4">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/80 pb-4">
-              <div>
-                <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-primary" />
-                  <span>{lang === "ml" ? "അർഹതയുള്ള പദ്ധതികളുടെ പട്ടിക" : "Eligible Schemes Selection"}</span>
-                </h2>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {lang === "ml"
-                    ? "അപേക്ഷകന്റെ വിവരങ്ങൾക്കനുസരിച്ച് യോഗ്യമായ പദ്ധതികൾ താഴെ കാണിച്ചിരിക്കുന്നു. ഒന്നിൽക്കൂടുതൽ പദ്ധതികൾ തിരഞ്ഞെടുക്കാം."
-                    : "Below is the list of eligible government schemes matched to the applicant. Select one or more schemes to create applications."}
-                </p>
-              </div>
+            {/* Header with Title and Actions */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 pb-3">
+              <h2 className="text-base font-bold text-foreground">
+                {lang === "ml"
+                  ? `${fullName || "രമേഷ് കുമാർ"}-ന്റെ അർഹതയുള്ള പദ്ധതികൾ (${schemes.length})`
+                  : `Eligible Schemes (${schemes.length}) Of ${fullName || "Ramesh Kumar"}`}
+              </h2>
 
-              {/* Applicant Info Summary Chip */}
-              <div className="rounded-xl border border-primary/20 bg-primary/5 px-3.5 py-2 flex items-center gap-3 shrink-0">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-xs">
-                  {fullName ? fullName.charAt(0).toUpperCase() : "A"}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-semibold text-muted-foreground hidden sm:inline">{lang === "ml" ? "വിഭാഗം:" : "Category:"}</span>
+                  <select
+                    value={schemeCategoryFilter}
+                    onChange={(e) => setSchemeCategoryFilter(e.target.value)}
+                    className="h-8 text-xs font-semibold rounded-xl border border-border/60 bg-background px-2.5 py-1 outline-none focus:ring-1 focus:ring-primary cursor-pointer shadow-none"
+                  >
+                    <option value="all">{lang === "ml" ? "എല്ലാ വിഭാഗങ്ങളും" : "All Categories"}</option>
+                    <option value="agriculture">{lang === "ml" ? "കൃഷി (Agriculture)" : "Agriculture"}</option>
+                    <option value="welfare">{lang === "ml" ? "ക്ഷേമം (Welfare)" : "Welfare"}</option>
+                    <option value="housing">{lang === "ml" ? "ഭവനം (Housing)" : "Housing"}</option>
+                    <option value="women">{lang === "ml" ? "വനിത (Women)" : "Women"}</option>
+                    <option value="msme">{lang === "ml" ? "എം.എസ്.എം.ഇ (MSME)" : "MSME"}</option>
+                    <option value="employment">{lang === "ml" ? "തൊഴിൽ (Employment)" : "Employment"}</option>
+                    <option value="health">{lang === "ml" ? "ആരോഗ്യം (Health)" : "Health"}</option>
+                    <option value="education">{lang === "ml" ? "വിദ്യാഭ്യാസം (Education)" : "Education"}</option>
+                  </select>
                 </div>
-                <div>
-                  <p className="text-xs font-bold text-foreground">{fullName || "Applicant"}</p>
-                  <p className="text-[11px] text-muted-foreground">
-                    {mobileNumber} • {districts.find((d) => d.id === selectedDistrict)?.[lang] || "Kerala"}
-                  </p>
-                </div>
-              </div>
-            </div>
 
-            {/* Filter and Search Bar */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-              {/* Search Input */}
-              <div className="relative w-full sm:w-72">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="text"
-                  value={schemeSearch}
-                  onChange={(e) => setSchemeSearch(e.target.value)}
-                  placeholder={lang === "ml" ? "പദ്ധതികൾ തിരയുക..." : "Search eligible schemes..."}
-                  className="h-10 pl-9 pr-3 rounded-xl border-border/60 bg-white dark:bg-card text-xs font-semibold shadow-none"
-                />
-              </div>
-
-              {/* Category Filter + Select All Toggle */}
-              <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-                <select
-                  value={schemeCategoryFilter}
-                  onChange={(e) => setSchemeCategoryFilter(e.target.value)}
-                  className="h-10 appearance-none rounded-xl border border-border/60 bg-white dark:bg-card px-3 text-xs font-semibold outline-none text-foreground shadow-none"
-                >
-                  <option value="all">{lang === "ml" ? "എല്ലാ വിഭാഗങ്ങളും" : "All Categories"}</option>
-                  <option value="agriculture">{lang === "ml" ? "കൃഷി" : "Agriculture"}</option>
-                  <option value="health">{lang === "ml" ? "ആരോഗ്യം" : "Health"}</option>
-                  <option value="welfare">{lang === "ml" ? "ക്ഷേമം" : "Welfare"}</option>
-                  <option value="women">{lang === "ml" ? "വനിതാ വികസനം" : "Women"}</option>
-                  <option value="housing">{lang === "ml" ? "ഭവനം" : "Housing"}</option>
-                  <option value="employment">{lang === "ml" ? "തൊഴിൽ" : "Employment"}</option>
-                  <option value="msme">{lang === "ml" ? "MSME / സംരംഭങ്ങൾ" : "MSME"}</option>
-                </select>
+                <span className="font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-full border border-primary/20 text-xs">
+                  {selectedSchemeIds.size}{" "}
+                  {lang === "ml" ? "പദ്ധതികൾ തിരഞ്ഞെടുത്തു" : "Scheme(s) Selected"}
+                </span>
 
                 <Button
                   type="button"
@@ -1316,9 +1281,8 @@ export function NewApplicationPage() {
                       setSelectedSchemeIds(new Set(allIds));
                     }
                   }}
-                  className="h-10 text-xs font-bold rounded-xl border-border/60 flex items-center gap-1.5 cursor-pointer shadow-none"
+                  className="h-8 text-xs font-bold rounded-xl border-border/60 flex items-center gap-2 cursor-pointer shadow-none px-3"
                 >
-                  <CheckSquare className="h-3.5 w-3.5" />
                   <span>
                     {selectedSchemeIds.size === schemes.length
                       ? lang === "ml"
@@ -1328,34 +1292,23 @@ export function NewApplicationPage() {
                       ? "എല്ലാം തിരഞ്ഞെടുക്കുക"
                       : "Select All"}
                   </span>
+                  <div
+                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border transition-all ${
+                      selectedSchemeIds.size === schemes.length
+                        ? "bg-primary border-primary text-primary-foreground"
+                        : "border-muted-foreground/50 bg-white dark:bg-card"
+                    }`}
+                  >
+                    {selectedSchemeIds.size === schemes.length && <Check className="h-3 w-3 font-bold" />}
+                  </div>
                 </Button>
               </div>
-            </div>
-
-            {/* Selected Count Indicator */}
-            <div className="flex items-center justify-between text-xs border-b border-border/40 pb-2">
-              <span className="font-bold text-foreground">
-                {lang === "ml" ? "ലഭ്യമായ പദ്ധതികൾ" : "Eligible Schemes"}{" "}
-                <span className="text-muted-foreground">({schemes.length})</span>
-              </span>
-              <span className="font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
-                {selectedSchemeIds.size}{" "}
-                {lang === "ml" ? "പദ്ധതികൾ തിരഞ്ഞെടുത്തു" : "Scheme(s) Selected"}
-              </span>
             </div>
 
             {/* Schemes Cards Grid */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {schemes
-                .filter((scheme) => {
-                  const matchSearch =
-                    !schemeSearch ||
-                    scheme.en.toLowerCase().includes(schemeSearch.toLowerCase()) ||
-                    scheme.ml.includes(schemeSearch);
-                  const matchCat =
-                    schemeCategoryFilter === "all" || scheme.category === schemeCategoryFilter;
-                  return matchSearch && matchCat;
-                })
+                .filter((s) => schemeCategoryFilter === "all" || s.category.toLowerCase() === schemeCategoryFilter.toLowerCase())
                 .map((scheme) => {
                   const isSelected = selectedSchemeIds.has(scheme.id);
                   return (
@@ -1380,7 +1333,7 @@ export function NewApplicationPage() {
                     >
                       {/* Top Checkbox & Category Badge */}
                       <div className="flex items-start justify-between gap-2 mb-2">
-                        <span className="inline-flex items-center rounded-full bg-secondary/80 px-2.5 py-0.5 text-[10px] font-bold text-secondary-foreground uppercase tracking-wide">
+                        <span className="inline-flex items-center rounded-full bg-amber-500 text-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide">
                           {scheme.category}
                         </span>
                         <div
@@ -1405,15 +1358,12 @@ export function NewApplicationPage() {
                         </p>
                       </div>
 
-                      {/* Benefits & Eligibility Summary */}
+                      {/* Benefits Summary */}
                       <div className="space-y-1 pt-1.5 border-t border-border/60 text-xs">
                         <div className="flex items-start gap-1.5 text-emerald-700 dark:text-emerald-400 font-semibold">
                           <Tag className="h-3.5 w-3.5 shrink-0 mt-0.5 text-emerald-600" />
                           <span>{scheme?.benefit?.[lang] || scheme?.benefit?.en || "Benefits available"}</span>
                         </div>
-                        <p className="text-[11px] text-muted-foreground/90 line-clamp-2">
-                          <strong>Eligibility:</strong> {scheme?.eligibility?.[lang] || scheme?.eligibility?.en || "Standard eligibility criteria"}
-                        </p>
                       </div>
                     </div>
                   );
