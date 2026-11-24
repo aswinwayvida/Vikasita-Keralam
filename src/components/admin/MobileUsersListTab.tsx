@@ -295,7 +295,7 @@ export function MobileUsersListTab({
         <button
           type="button"
           onClick={onOpenDatePicker}
-          className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0"
+          className="font-display text-[10px] sm:text-[11px] font-semibold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-left hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0"
           title="Click to Open Date Picker"
         >
           {displayPeriodText}

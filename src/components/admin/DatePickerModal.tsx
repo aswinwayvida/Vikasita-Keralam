@@ -403,7 +403,7 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
         <div className="rounded-xl border border-slate-200 dark:border-slate-700/80 p-2.5 sm:p-3 bg-white dark:bg-slate-800/40 space-y-2">
           {/* Calendar Navigation Header */}
           <div className="flex items-center justify-between px-0.5">
-            <h5 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+            <h5 className="text-[11px] sm:text-xs font-semibold text-slate-900 dark:text-white">
               {lang === "ml" ? `${monthNamesMl[currentMonth]} ${currentYear}` : `${monthNamesEn[currentMonth]} ${currentYear}`}
             </h5>
             <div className="flex items-center gap-1">

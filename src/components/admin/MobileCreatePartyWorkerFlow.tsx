@@ -4456,7 +4456,7 @@ export function MobileCreatePartyWorkerFlow({
                   </div>
 
                   {assistedDateRange !== "all" && assistedDateRange !== "all_time" && (
-                    <div className="flex items-center gap-1 text-xs font-black text-[#1B255A] dark:text-white truncate">
+                    <div className="flex items-center gap-1 text-[11px] font-semibold text-[#1B255A] dark:text-white truncate">
                       <span className="text-black dark:text-white font-extrabold text-sm leading-none">▪</span>
                       <span className="truncate">
                         {assistedDateRange === "oct2026" || assistedDateRange === "this_month"
@@ -4924,7 +4924,7 @@ export function MobileCreatePartyWorkerFlow({
                 >
                   {tr("My View", "എന്റെ കാഴ്ച")}
                 </button>
-                <span className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-center truncate min-w-0 flex-1 px-1">
+                <span className="font-display text-[10px] sm:text-[11px] font-semibold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-center truncate min-w-0 flex-1 px-1">
                   October 2026
                 </span>
                 <div className="flex items-center gap-1.5 shrink-0">

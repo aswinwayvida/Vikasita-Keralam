@@ -3852,11 +3852,11 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 {partyWorkerTab === "team" ? (lang === "ml" ? "ടീം കാഴ്ച" : "Team View") : (lang === "ml" ? "എന്റെ കാഴ്ച" : "My View")}
               </button>
 
-              {/* Center: Bold Date/Period Title */}
+              {/* Center: Date/Period Title */}
               <button
                 type="button"
                 onClick={() => setIsDatePickerOpen(true)}
-                className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-slate-100 tracking-tight leading-none text-center hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0 flex-1 px-1"
+                className="font-display text-[10px] sm:text-[11px] font-semibold text-[#0a0f1d] dark:text-slate-100 tracking-tight leading-none text-center hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0 flex-1 px-1"
                 title="Click to Open Date Picker"
               >
                 {getFormattedPeriodDisplay()}
@@ -4561,11 +4561,11 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 {lang === "ml" ? "ടീം കാഴ്ച" : "Team View"}
               </span>
 
-              {/* Center: Bold Date/Period Title */}
+              {/* Center: Date/Period Title */}
               <button
                 type="button"
                 onClick={() => setIsDatePickerOpen(true)}
-                className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-center hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0 flex-1 px-1"
+                className="font-display text-[10px] sm:text-[11px] font-semibold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-center hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0 flex-1 px-1"
                 title="Click to Open Date Picker"
               >
                 {getFormattedPeriodDisplay()}
@@ -13207,11 +13207,11 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         {lang === "ml" ? "എന്റെ കാഴ്ച" : "My View"}
                       </button>
 
-                      {/* Center: Bold Date/Period Title */}
+                      {/* Center: Date/Period Title */}
                       <button
                         type="button"
                         onClick={() => setIsDatePickerOpen(true)}
-                        className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-center hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0 flex-1 px-1"
+                        className="font-display text-[10px] sm:text-[11px] font-semibold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-center hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0 flex-1 px-1"
                         title="Click to Open Date Picker"
                       >
                         {getFormattedPeriodDisplay()}
@@ -14126,7 +14126,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 <button
                                   type="button"
                                   onClick={() => setIsDatePickerOpen(true)}
-                                  className="text-[10px] font-extrabold text-[#0a0f1d] dark:text-slate-100 hover:text-[#ff5500] transition-colors cursor-pointer px-0.5 tracking-tight whitespace-nowrap"
+                                  className="text-[9.5px] font-semibold text-[#0a0f1d] dark:text-slate-100 hover:text-[#ff5500] transition-colors cursor-pointer px-0.5 tracking-tight whitespace-nowrap"
                                   title="Click to Open Date Picker"
                                 >
                                   {getFormattedPeriodDisplay()}
@@ -15704,7 +15704,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 <button
                                   type="button"
                                   onClick={() => setIsDatePickerOpen(true)}
-                                  className="text-[9.5px] sm:text-[10px] font-extrabold text-[#0a0f1d] dark:text-slate-100 hover:text-[#ff5500] transition-colors cursor-pointer px-0.5 tracking-tight truncate"
+                                  className="text-[9px] sm:text-[9.5px] font-semibold text-[#0a0f1d] dark:text-slate-100 hover:text-[#ff5500] transition-colors cursor-pointer px-0.5 tracking-tight truncate"
                                   title="Click to Open Date Picker"
                                 >
                                   {getFormattedPeriodDisplay()}
@@ -16212,7 +16212,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 <button
                                   type="button"
                                   onClick={() => setIsDatePickerOpen(true)}
-                                  className="text-[9.5px] sm:text-[10px] font-extrabold text-[#0a0f1d] dark:text-slate-100 hover:text-[#ff5500] transition-colors cursor-pointer px-0.5 tracking-tight truncate"
+                                  className="text-[9px] sm:text-[9.5px] font-semibold text-[#0a0f1d] dark:text-slate-100 hover:text-[#ff5500] transition-colors cursor-pointer px-0.5 tracking-tight truncate"
                                   title="Click to Open Date Picker"
                                 >
                                   {getFormattedPeriodDisplay()}
@@ -16501,7 +16501,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             <button
                               type="button"
                               onClick={() => setIsDatePickerOpen(true)}
-                              className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-center hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0 flex-1 px-1"
+                              className="font-display text-[10px] sm:text-[11px] font-semibold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-center hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0 flex-1 px-1"
                               title={lang === "ml" ? "തീയതി മാറ്റുക" : "Change Period"}
                             >
                               {getFormattedPeriodDisplay()}
@@ -18088,7 +18088,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       <button
                         type="button"
                         onClick={() => setIsDatePickerOpen(true)}
-                        className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-center hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0 flex-1 px-1"
+                        className="font-display text-[10px] sm:text-[11px] font-semibold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-center hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0 flex-1 px-1"
                         title={lang === "ml" ? "തീയതി മാറ്റുക" : "Change Period"}
                       >
                         {getFormattedPeriodDisplay()}
@@ -21824,7 +21824,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             <button
                               type="button"
                               onClick={() => setIsDatePickerOpen(true)}
-                              className="font-display text-[10px] sm:text-[11px] font-extrabold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-center hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0 flex-1 px-0.5"
+                              className="font-display text-[9.5px] sm:text-[10px] font-semibold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-center hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0 flex-1 px-0.5"
                               title={lang === "ml" ? "തീയതി മാറ്റുക" : "Change Period"}
                             >
                               {getFormattedPeriodDisplay()}
@@ -24715,7 +24715,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         </p>
                       ) : (
                         activeTab !== "applications" && (
-                          <p className="text-[10px] text-slate-400 dark:text-slate-400 font-semibold leading-none mt-0.5">
+                          <p className="text-[9.5px] text-slate-400 dark:text-slate-400 font-semibold leading-none mt-0.5">
                             {lang === "ml" ? "ഡാഷ്‌ബോർഡ് കാലയളവ്: ഒക്ടോബർ 2026" : "Dashboard period: October 2026"}
                           </p>
                         )
