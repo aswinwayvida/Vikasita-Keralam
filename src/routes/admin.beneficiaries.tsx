@@ -26,6 +26,9 @@ import {
   Plus,
   Search,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
   Check,
   X,
 } from "lucide-react";
@@ -321,6 +324,462 @@ function getPageNumbers(current: number, total: number): (number | string)[] {
   }
   return [1, "...", current - 1, current, current + 1, "...", total];
 }
+
+type ApplicantsDatePreset =
+  | "allTime"
+  | "today"
+  | "thisWeek"
+  | "thisMonth"
+  | "thisYear"
+  | "yesterday"
+  | "lastWeek"
+  | "lastMonth"
+  | "lastYear";
+
+type ApplicantsDateFilterMode = "single" | "range";
+
+const APPLICANTS_DATE_REFERENCE = new Date(2026, 9, 8);
+
+const APPLICANTS_DATE_PRESETS_ROW1: { key: ApplicantsDatePreset; en: string; ml: string }[] = [
+  { key: "allTime", en: "All time", ml: "എല്ലാ സമയവും" },
+  { key: "today", en: "Today", ml: "ഇന്ന്" },
+  { key: "yesterday", en: "Yesterday", ml: "ഇന്നലെ" },
+  { key: "thisWeek", en: "This week", ml: "ഈ ആഴ്ച" },
+  { key: "lastWeek", en: "Last week", ml: "കഴിഞ്ഞ ആഴ്ച" },
+];
+
+const APPLICANTS_DATE_PRESETS_ROW2: { key: ApplicantsDatePreset; en: string; ml: string }[] = [
+  { key: "thisMonth", en: "This month", ml: "ഈ മാസം" },
+  { key: "lastMonth", en: "Last month", ml: "കഴിഞ്ഞ മാസം" },
+  { key: "thisYear", en: "This year", ml: "ഈ വർഷം" },
+  { key: "lastYear", en: "Last year", ml: "കഴിഞ്ഞ വർഷം" },
+];
+
+function isSameApplicantsDate(a: Date | null | undefined, b: Date | null | undefined) {
+  return Boolean(
+    a &&
+      b &&
+      a.getFullYear() === b.getFullYear() &&
+      a.getMonth() === b.getMonth() &&
+      a.getDate() === b.getDate(),
+  );
+}
+
+function ApplicantsDateFilterControl({ lang }: { lang: "en" | "ml" }) {
+  const tr = (en: string, ml: string) => (lang === "ml" ? ml : en);
+  const locale = lang === "ml" ? "ml-IN" : "en-GB";
+  const [isOpen, setIsOpen] = useState(false);
+  const [appliedDate, setAppliedDate] = useState(() => new Date(APPLICANTS_DATE_REFERENCE));
+  const [appliedPreset, setAppliedPreset] = useState<ApplicantsDatePreset | null>("thisMonth");
+  const [draftDate, setDraftDate] = useState(() => new Date(APPLICANTS_DATE_REFERENCE));
+  const [draftPreset, setDraftPreset] = useState<ApplicantsDatePreset | null>("thisMonth");
+  const [draftMode, setDraftMode] = useState<ApplicantsDateFilterMode>("single");
+  const [draftRangeStart, setDraftRangeStart] = useState<Date | null>(null);
+  const [draftRangeEnd, setDraftRangeEnd] = useState<Date | null>(null);
+  const [viewMonth, setViewMonth] = useState(
+    () => new Date(APPLICANTS_DATE_REFERENCE.getFullYear(), APPLICANTS_DATE_REFERENCE.getMonth(), 1),
+  );
+
+  const formatMonth = (date: Date) =>
+    date.toLocaleDateString(locale, { month: "long", year: "numeric" });
+  const formatFullDate = (date: Date) =>
+    date.toLocaleDateString(locale, {
+      weekday: "long",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  const formatShortDate = (date: Date) =>
+    date.toLocaleDateString(locale, {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+
+  const weekdayLabels = useMemo(
+    () =>
+      Array.from({ length: 7 }, (_, index) =>
+        new Date(2026, 9, 4 + index).toLocaleDateString(locale, { weekday: "narrow" }),
+      ),
+    [locale],
+  );
+
+  const calendarDays = useMemo(() => {
+    const year = viewMonth.getFullYear();
+    const month = viewMonth.getMonth();
+    const leadingDays = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const cells: Array<Date | null> = Array.from({ length: leadingDays }, () => null);
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      cells.push(new Date(year, month, day));
+    }
+    while (cells.length % 7 !== 0) cells.push(null);
+    return cells;
+  }, [viewMonth]);
+
+  const presetDate = (preset: ApplicantsDatePreset) => {
+    const reference = new Date(APPLICANTS_DATE_REFERENCE);
+    const year = reference.getFullYear();
+    const month = reference.getMonth();
+    const day = reference.getDate();
+    const startOfWeek = new Date(year, month, day - reference.getDay());
+
+    switch (preset) {
+      case "today":
+        return reference;
+      case "yesterday":
+        return new Date(year, month, day - 1);
+      case "thisWeek":
+        return startOfWeek;
+      case "lastWeek":
+        return new Date(year, month, day - reference.getDay() - 7);
+      case "thisMonth":
+        return reference;
+      case "lastMonth":
+        return new Date(year, month - 1, day);
+      case "thisYear":
+        return new Date(year, 0, day);
+      case "lastYear":
+        return new Date(year - 1, 0, day);
+      case "allTime":
+      default:
+        return reference;
+    }
+  };
+
+  const resetDraft = () => {
+    setDraftDate(new Date(appliedDate));
+    setDraftPreset(appliedPreset);
+    setDraftMode("single");
+    setDraftRangeStart(null);
+    setDraftRangeEnd(null);
+    setViewMonth(new Date(appliedDate.getFullYear(), appliedDate.getMonth(), 1));
+  };
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) resetDraft();
+    setIsOpen(nextOpen);
+  };
+
+  const handlePresetSelect = (preset: ApplicantsDatePreset) => {
+    const nextDate = presetDate(preset);
+    setDraftPreset(preset);
+    setDraftDate(nextDate);
+    setDraftMode("single");
+    setDraftRangeStart(nextDate);
+    setDraftRangeEnd(null);
+    setViewMonth(new Date(nextDate.getFullYear(), nextDate.getMonth(), 1));
+  };
+
+  const handleModeChange = (mode: ApplicantsDateFilterMode) => {
+    setDraftMode(mode);
+    setDraftPreset(null);
+    if (mode === "range") {
+      setDraftRangeStart(null);
+      setDraftRangeEnd(null);
+    }
+  };
+
+  const handleDaySelect = (date: Date) => {
+    if (draftMode === "single") {
+      setDraftDate(date);
+      setDraftPreset(null);
+      return;
+    }
+
+    if (!draftRangeStart || draftRangeEnd) {
+      setDraftRangeStart(date);
+      setDraftRangeEnd(null);
+      return;
+    }
+
+    if (date.getTime() < draftRangeStart.getTime()) {
+      setDraftRangeStart(date);
+      setDraftRangeEnd(null);
+      return;
+    }
+
+    setDraftRangeEnd(date);
+  };
+
+  const stepAppliedMonth = (offset: number) => {
+    setAppliedDate((current) => {
+      const targetMonth = new Date(current.getFullYear(), current.getMonth() + offset, 1);
+      const lastDay = new Date(
+        targetMonth.getFullYear(),
+        targetMonth.getMonth() + 1,
+        0,
+      ).getDate();
+      return new Date(
+        targetMonth.getFullYear(),
+        targetMonth.getMonth(),
+        Math.min(current.getDate(), lastDay),
+      );
+    });
+    setAppliedPreset(null);
+  };
+
+  const stepViewMonth = (offset: number) => {
+    setViewMonth((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1));
+  };
+
+  const applySelection = () => {
+    if (draftMode === "single") {
+      setAppliedDate(draftDate);
+      setAppliedPreset(draftPreset);
+    } else if (draftRangeStart && draftRangeEnd) {
+      setAppliedDate(draftRangeEnd);
+      setAppliedPreset(null);
+    }
+    setIsOpen(false);
+  };
+
+  const rangeStart = draftRangeStart;
+  const rangeEnd = draftRangeEnd;
+  const rangeStartTime = rangeStart?.getTime() ?? null;
+  const rangeEndTime = rangeEnd?.getTime() ?? null;
+  const appliedDateLabel =
+    appliedPreset === "thisMonth" ? formatMonth(appliedDate) : formatShortDate(appliedDate);
+  const draftSummary =
+    draftMode === "single"
+      ? formatFullDate(draftDate)
+      : `${rangeStart ? formatShortDate(rangeStart) : tr("Start date", "ആരംഭ തീയതി")} – ${
+          rangeEnd ? formatShortDate(rangeEnd) : tr("End date", "അവസാന തീയതി")
+        }`;
+
+  return (
+    <div className="flex h-8 items-center rounded-xl sm:rounded-lg border border-border bg-background p-0.5 shadow-2xs shrink-0">
+      <button
+        type="button"
+        onClick={() => stepAppliedMonth(-1)}
+        aria-label={tr("Previous month", "മുൻ മാസം")}
+        title={tr("Previous month", "മുൻ മാസം")}
+        className="flex h-7 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+      >
+        <ChevronLeft className="h-3.5 w-3.5" />
+      </button>
+
+      <Sheet open={isOpen} onOpenChange={handleOpenChange}>
+        <button
+          type="button"
+          onClick={() => handleOpenChange(true)}
+          className="inline-flex h-7 items-center gap-1.5 rounded-md px-1.5 text-[12px] font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+          title={tr("Select date", "തീയതി തിരഞ്ഞെടുക്കുക")}
+        >
+          <Calendar className="h-3.5 w-3.5 text-primary" />
+          <span className="whitespace-nowrap">{appliedDateLabel}</span>
+        </button>
+
+        <SheetContent
+          side="right"
+          className="flex h-full w-full flex-col gap-0 border-l border-border bg-white p-0 sm:max-w-[420px] z-50"
+        >
+          <SheetHeader className="space-y-1 border-b border-slate-100 px-5 py-4 pr-12 text-left">
+            <SheetTitle className="flex items-center gap-2 text-base font-bold text-[#101828]">
+              <Calendar className="h-4 w-4 text-primary" />
+              <span>{tr("Date filter", "തീയതി ഫിൽട്ടർ")}</span>
+            </SheetTitle>
+            <SheetDescription className="text-xs text-slate-500">
+              {tr(
+                "Choose a preset, single date, or date range.",
+                "ഒരു പ്രീസെറ്റ്, ഒരു തീയതി അല്ലെങ്കിൽ തീയതി പരിധി തിരഞ്ഞെടുക്കുക.",
+              )}
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="flex-1 overflow-y-auto">
+            <div className="px-4 pt-4 space-y-1.5">
+              <div className="flex flex-wrap items-center gap-1.5">
+                {APPLICANTS_DATE_PRESETS_ROW1.map((preset) => {
+                  const isActive = draftPreset === preset.key;
+                  return (
+                    <button
+                      key={preset.key}
+                      type="button"
+                      onClick={() => handlePresetSelect(preset.key)}
+                      className={cn(
+                        "rounded-full border px-2.5 py-[3px] text-[10.5px] leading-4 font-semibold transition-colors cursor-pointer",
+                        isActive
+                          ? "border-primary bg-primary text-primary-foreground shadow-2xs"
+                          : "border-[#f2dfca] bg-[#fffaf3] text-slate-700 hover:border-primary/40 hover:bg-orange-50",
+                      )}
+                    >
+                      {lang === "ml" ? preset.ml : preset.en}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {APPLICANTS_DATE_PRESETS_ROW2.map((preset) => {
+                  const isActive = draftPreset === preset.key;
+                  return (
+                    <button
+                      key={preset.key}
+                      type="button"
+                      onClick={() => handlePresetSelect(preset.key)}
+                      className={cn(
+                        "rounded-full border px-2.5 py-[3px] text-[10.5px] leading-4 font-semibold transition-colors cursor-pointer",
+                        isActive
+                          ? "border-primary bg-primary text-primary-foreground shadow-2xs"
+                          : "border-[#f2dfca] bg-[#fffaf3] text-slate-700 hover:border-primary/40 hover:bg-orange-50",
+                      )}
+                    >
+                      {lang === "ml" ? preset.ml : preset.en}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="mx-4 mt-3 border-t border-slate-100" />
+
+            <div className="space-y-1.5 px-4 pt-3">
+              <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-2">
+                <span className="text-[11px] font-semibold text-slate-500">
+                  {tr("Select date", "തീയതി തിരഞ്ഞെടുക്കുക")}
+                </span>
+                <div className="flex items-center gap-4 text-[11px] font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => handleModeChange("single")}
+                    className={cn(
+                      "border-b-2 pb-0.5 transition-colors cursor-pointer",
+                      draftMode === "single"
+                        ? "border-primary text-primary font-bold"
+                        : "border-transparent text-slate-500 hover:text-foreground",
+                    )}
+                  >
+                    {tr("Single Date", "ഒരു തീയതി")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleModeChange("range")}
+                    className={cn(
+                      "border-b-2 pb-0.5 transition-colors cursor-pointer",
+                      draftMode === "range"
+                        ? "border-primary text-primary font-bold"
+                        : "border-transparent text-slate-500 hover:text-foreground",
+                    )}
+                  >
+                    {tr("Date Range", "തീയതി പരിധി")}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-4 pt-3 pb-2">
+              <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-[15px] font-bold tracking-tight text-[#101828]">
+                    {formatMonth(viewMonth)}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => stepViewMonth(-1)}
+                      className="flex h-7 w-7 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-foreground transition-colors cursor-pointer"
+                      aria-label={tr("Previous month", "മുൻ മാസം")}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => stepViewMonth(1)}
+                      className="flex h-7 w-7 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-foreground transition-colors cursor-pointer"
+                      aria-label={tr("Next month", "അടുത്ത മാസം")}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-7 gap-y-1 text-center">
+                  {weekdayLabels.map((label, index) => (
+                    <span
+                      key={`${label}-${index}`}
+                      className="pb-1 text-[10px] font-bold uppercase text-slate-400"
+                    >
+                      {label}
+                    </span>
+                  ))}
+
+                  {calendarDays.map((day, index) => {
+                    if (!day) return <span key={`empty-${index}`} className="h-10" />;
+
+                    const dayTime = day.getTime();
+                    const isSelected =
+                      draftMode === "single"
+                        ? isSameApplicantsDate(day, draftDate)
+                        : isSameApplicantsDate(day, rangeStart) || isSameApplicantsDate(day, rangeEnd);
+                    const isInRange =
+                      draftMode === "range" &&
+                      rangeStartTime !== null &&
+                      rangeEndTime !== null &&
+                      dayTime > Math.min(rangeStartTime, rangeEndTime) &&
+                      dayTime < Math.max(rangeStartTime, rangeEndTime);
+
+                    return (
+                      <div key={day.toISOString()} className="flex h-[34px] items-center justify-center">
+                        <button
+                          type="button"
+                          onClick={() => handleDaySelect(day)}
+                          aria-label={formatFullDate(day)}
+                          className={cn(
+                            "flex h-8 w-8 items-center justify-center rounded-full text-[12px] font-semibold transition-colors cursor-pointer",
+                            isSelected
+                              ? "bg-primary text-primary-foreground shadow-sm"
+                              : isInRange
+                                ? "bg-orange-50 text-primary hover:bg-orange-100"
+                                : "text-[#344054] hover:bg-orange-50 hover:text-primary",
+                          )}
+                        >
+                          {day.getDate()}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <SheetFooter className="flex shrink-0 flex-row items-center justify-between gap-3 border-t border-slate-100 bg-white px-4 py-3">
+            <div className="mr-auto text-xs font-normal text-slate-600">
+              {draftSummary}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleOpenChange(false)}
+                className="rounded-lg border border-slate-200 bg-white px-4 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+              >
+                {tr("Cancel", "റദ്ദാക്കുക")}
+              </button>
+              <button
+                type="button"
+                onClick={applySelection}
+                disabled={draftMode === "range" && (!rangeStart || !rangeEnd)}
+                className="inline-flex h-8 min-w-16 items-center justify-center rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 transition-colors cursor-pointer"
+              >
+                {tr("Done", "പൂർത്തിയായി")}
+              </button>
+            </div>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+
+      <button
+        type="button"
+        onClick={() => stepAppliedMonth(1)}
+        aria-label={tr("Next month", "അടുത്ത മാസം")}
+        title={tr("Next month", "അടുത്ത മാസം")}
+        className="flex h-7 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+      >
+        <ChevronRight className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
 function BeneficiariesPage() {
   const { lang } = useLang();
   const navigate = useNavigate();
@@ -601,17 +1060,10 @@ function BeneficiariesPage() {
               <div className="flex flex-wrap items-center gap-2.5 bg-white dark:bg-card border border-border/80 rounded-full px-3 py-1 text-xs shadow-2xs animate-in fade-in transition-all">
                 <span className="font-extrabold text-foreground text-[11px]">
                   {tr(
-                    `${selectedIds.size} of ${filteredBeneficiaries.length} selected`,
-                    `${selectedIds.size} / ${filteredBeneficiaries.length} തിരഞ്ഞെടുത്തു`,
+                    `${selectedIds.size}/${filteredBeneficiaries.length} selected`,
+                    `${selectedIds.size}/${filteredBeneficiaries.length} തിരഞ്ഞെടുത്തു`,
                   )}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setSelectedIds(new Set())}
-                  className="font-bold text-orange-600 dark:text-orange-400 hover:underline cursor-pointer text-[11px]"
-                >
-                  {tr("Deselect All", "എല്ലാം ഒഴിവാക്കുക")}
-                </button>
                 <div className="h-3.5 w-px bg-border mx-0.5" />
                 <button
                   type="button"
@@ -659,6 +1111,11 @@ function BeneficiariesPage() {
 
           {/* Action Buttons Row */}
           <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar pb-0.5 max-w-full sm:ml-auto shrink-0">
+            {/* Date filter action (Desktop) */}
+            <div className="hidden md:block shrink-0">
+              <ApplicantsDateFilterControl lang={lang} />
+            </div>
+
             {/* Manage Columns Button (Desktop) */}
             <button
               type="button"
@@ -668,53 +1125,6 @@ function BeneficiariesPage() {
             >
               <Columns3 className="h-4 w-4" />
             </button>
-
-            {/* 30 Days Dropdown side by side with Filter Button */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className="flex items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors shrink-0 cursor-pointer shadow-2xs"
-                >
-                  <span>
-                    {timeRange === "today"
-                      ? tr("Today", "ഇന്ന്")
-                      : timeRange === "7days"
-                      ? tr("7 Days", "7 ദിവസങ്ങൾ")
-                      : timeRange === "30days"
-                      ? tr("30 Days", "30 ദിവസങ്ങൾ")
-                      : timeRange === "60days"
-                      ? tr("60 Days", "60 ദിവസങ്ങൾ")
-                      : timeRange === "1year"
-                      ? tr("1 Year", "1 വർഷം")
-                      : tr("All Time", "എല്ലാ സമയവും")}
-                  </span>
-                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-36 p-1 text-xs bg-white dark:bg-card border border-border shadow-md rounded-xl z-50">
-                {[
-                  { value: "today", labelEn: "Today", labelMl: "ഇന്ന്" },
-                  { value: "7days", labelEn: "7 Days", labelMl: "7 ദിവസങ്ങൾ" },
-                  { value: "30days", labelEn: "30 Days", labelMl: "30 ദിവസങ്ങൾ" },
-                  { value: "60days", labelEn: "60 Days", labelMl: "60 ദിവസങ്ങൾ" },
-                  { value: "1year", labelEn: "1 Year", labelMl: "1 വർഷം" },
-                  { value: "all", labelEn: "All Time", labelMl: "എല്ലാ സമയവും" },
-                ].map((item) => (
-                  <DropdownMenuItem
-                    key={item.value}
-                    onClick={() => setTimeRange(item.value)}
-                    className={cn(
-                      "px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer flex items-center justify-between",
-                      timeRange === item.value ? "bg-primary/10 text-primary font-bold" : "text-foreground hover:bg-muted"
-                    )}
-                  >
-                    <span>{tr(item.labelEn, item.labelMl)}</span>
-                    {timeRange === item.value && <Check className="h-3.5 w-3.5 text-primary" />}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
 
             {/* Filter Right-Sided Sheet Popup */}
             <button

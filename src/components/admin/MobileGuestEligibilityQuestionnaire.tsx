@@ -67,6 +67,7 @@ type Props = {
   onClose: () => void;
   onHelpRequestSent: () => void;
   onOpenSchemeDetails?: (schemeId: string) => void;
+  targetSchemeName?: string;
 };
 
 type View = "questions" | "loading" | "results" | "browse" | "error" | "success";
@@ -357,16 +358,63 @@ function SearchableSelect({
   );
 }
 
+const findTargetMatch = (
+  evaluatedList: EligibilityMatch[],
+  name?: string,
+): EligibilityMatch | null => {
+  if (!name) return null;
+  const cleanTarget = name.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+  let match = evaluatedList.find((m) => {
+    const idClean = m.scheme.id.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const enClean = m.scheme.en.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const mlClean = m.scheme.ml.toLowerCase().replace(/[^a-z0-9]/g, "");
+    return (
+      idClean === cleanTarget ||
+      cleanTarget.includes(idClean) ||
+      idClean.includes(cleanTarget) ||
+      enClean.includes(cleanTarget) ||
+      cleanTarget.includes(enClean) ||
+      (mlClean && (mlClean.includes(cleanTarget) || cleanTarget.includes(mlClean)))
+    );
+  });
+
+  if (match) return match;
+
+  if (cleanTarget.includes("kisan") || cleanTarget.includes("pmkisan")) {
+    return evaluatedList.find((m) => m.scheme.id === "pmkisan") || null;
+  }
+  if (cleanTarget.includes("ayushman") || cleanTarget.includes("pmjay")) {
+    return evaluatedList.find((m) => m.scheme.id === "pmjay") || null;
+  }
+  if (cleanTarget.includes("ujjwala")) {
+    return evaluatedList.find((m) => m.scheme.id === "ujjwala") || null;
+  }
+  if (cleanTarget.includes("awas") || cleanTarget.includes("pmay")) {
+    return evaluatedList.find((m) => m.scheme.id === "pmay") || null;
+  }
+  if (cleanTarget.includes("mudra")) {
+    return evaluatedList.find((m) => m.scheme.id === "mudra") || null;
+  }
+  if (cleanTarget.includes("atal") || cleanTarget.includes("apy")) {
+    return evaluatedList.find((m) => m.scheme.id === "apy") || null;
+  }
+
+  return null;
+};
+
 export function MobileGuestEligibilityQuestionnaire({
   lang,
   onClose,
   onHelpRequestSent,
   onOpenSchemeDetails,
+  targetSchemeName,
 }: Props) {
   const t = (en: string, ml: string) => (lang === "ml" ? ml : en);
   const [answers, setAnswers] = useState<GuestEligibilityAnswers>(EMPTY);
   const [step, setStep] = useState(1);
   const [view, setView] = useState<View>("questions");
+  const [allEvaluatedResults, setAllEvaluatedResults] = useState<EligibilityMatch[]>([]);
   const [results, setResults] = useState<EligibilityMatch[]>([]);
   const [resultQuery, setResultQuery] = useState("");
   const [showHeaderSearch, setShowHeaderSearch] = useState(false);
@@ -597,9 +645,17 @@ export function MobileGuestEligibilityQuestionnaire({
     window.setTimeout(() => {
       try {
         const canonical = toEligibilityAnswers(answers);
-        setResults(
-          evaluateEligibility(canonical, schemes).filter((match) => match.status !== "not-matched"),
-        );
+        const evaluated = evaluateEligibility(canonical, schemes);
+        setAllEvaluatedResults(evaluated);
+        const matched = evaluated.filter((match) => match.status !== "not-matched");
+        setResults(matched);
+
+        const target = findTargetMatch(evaluated, targetSchemeName);
+        if (target && target.status !== "not-matched") {
+          setSelectedSchemeIds([target.scheme.id]);
+        } else {
+          setSelectedSchemeIds(matched.filter((m) => m.status === "strong").map((m) => m.scheme.id));
+        }
         setView("results");
       } catch {
         setResultError(
@@ -1470,118 +1526,284 @@ export function MobileGuestEligibilityQuestionnaire({
     </div>
   );
 
-  const renderResults = () => (
-    <>
-      {matchedResults.length > 0 ? (
-        filteredResults.length > 0 ? (
-          <>
-            <div className="flex items-center justify-between gap-2 pb-0.5 pr-3 pt-0.5">
-              <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400">
-                {t(
-                  `${filteredResults.length} eligible scheme${filteredResults.length === 1 ? "" : "s"}`,
-                  `${filteredResults.length} അനുയോജ്യ പദ്ധതികൾ`,
+  const renderResults = () => {
+    const targetMatch = findTargetMatch(allEvaluatedResults, targetSchemeName);
+    const otherEligibleResults = targetMatch
+      ? matchedResults.filter((m) => m.scheme.id !== targetMatch.scheme.id)
+      : matchedResults;
+    const otherFilteredResults = targetMatch
+      ? filteredResults.filter((m) => m.scheme.id !== targetMatch.scheme.id)
+      : filteredResults;
+
+    if (targetMatch) {
+      const targetLogo = getSchemeLogoSrc(targetMatch.scheme);
+      return (
+        <div className="space-y-3">
+          {/* Target Scheme Result Card */}
+          <div
+            className={`rounded-2xl border px-3 py-2.5 shadow-2xs space-y-1.5 transition-all bg-white dark:bg-slate-900 ${
+              targetMatch.status === "strong"
+                ? "border-emerald-400 dark:border-emerald-800"
+                : targetMatch.status === "possible"
+                  ? "border-amber-400 dark:border-amber-800"
+                  : "border-slate-300 dark:border-slate-800"
+            }`}
+          >
+            {/* Header Status Badge */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5">
+                {targetMatch.status === "strong" ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-900/90 px-2 py-0.5 text-[10px] font-extrabold text-emerald-800 dark:text-emerald-200">
+                    <Check className="h-3 w-3 stroke-[3]" />
+                    {t("Eligible for this Scheme", "ഈ പദ്ധതിക്ക് യോഗ്യതയുണ്ട്")}
+                  </span>
+                ) : targetMatch.status === "possible" ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/90 px-2 py-0.5 text-[10px] font-extrabold text-amber-800 dark:text-amber-200">
+                    <Sparkles className="h-3 w-3 stroke-[2.5]" />
+                    {t("More Information Needed", "കൂടുതൽ വിവരങ്ങൾ ആവശ്യമാണ്")}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-200 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-extrabold text-slate-700 dark:text-slate-300">
+                    <X className="h-3 w-3 stroke-[2.5]" />
+                    {t("Not Currently Eligible", "നിലവിൽ യോഗ്യതയില്ല")}
+                  </span>
                 )}
-              </p>
-              <button
-                type="button"
-                onClick={toggleSelectAllResults}
-                className="flex shrink-0 items-center gap-1.5 cursor-pointer text-[12px] font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
-              >
-                <span>{t("Select all", "എല്ലാം തിരഞ്ഞെടുക്കുക")}</span>
-                <span
-                  aria-hidden="true"
-                  className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border-2 transition-all active:scale-95 ${
-                    isAllResultsSelected
+              </div>
+            </div>
+
+            {/* Scheme Title & Details */}
+            <div className="flex items-start justify-between gap-2 pt-0.5">
+              <div className="flex items-start gap-2 min-w-0">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-orange-100 bg-white p-0.5 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
+                  <img
+                    src={targetLogo}
+                    alt=""
+                    className="h-full w-full object-contain"
+                    onError={(e) => {
+                      e.currentTarget.src = "/pm-kisan-logo.png";
+                    }}
+                  />
+                </span>
+                <div className="min-w-0">
+                  <h3
+                    onClick={() => onOpenSchemeDetails?.(targetMatch.scheme.id)}
+                    className="font-extrabold text-[12.5px] text-slate-900 dark:text-white leading-snug hover:text-orange-600 cursor-pointer"
+                  >
+                    {lang === "ml" ? targetMatch.scheme.ml : targetMatch.scheme.en}
+                  </h3>
+                  <p className="mt-0.5 text-[10.5px] font-semibold text-slate-600 dark:text-slate-300 leading-snug">
+                    {lang === "ml" ? targetMatch.scheme.benefit.ml : targetMatch.scheme.benefit.en}
+                  </p>
+                </div>
+              </div>
+              {targetMatch.status !== "not-matched" && (
+                <button
+                  type="button"
+                  onClick={() => toggleScheme(targetMatch.scheme.id)}
+                  aria-label={t("Select scheme", "പദ്ധതി തിരഞ്ഞെടുക്കുക")}
+                  className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border-2 transition-all cursor-pointer ${
+                    selectedSchemeIds.includes(targetMatch.scheme.id)
                       ? "border-orange-500 bg-orange-500 text-white shadow-xs"
                       : "border-orange-300 bg-white hover:border-orange-500 dark:border-orange-900 dark:bg-slate-900"
                   }`}
                 >
-                  {isAllResultsSelected && <Check className="h-2.5 w-2.5 stroke-[4]" />}
-                </span>
-              </button>
+                  {selectedSchemeIds.includes(targetMatch.scheme.id) && (
+                    <Check className="h-2.5 w-2.5 stroke-[4]" />
+                  )}
+                </button>
+              )}
             </div>
-            <div className="space-y-2">
-              {filteredResults.map((match) => renderSchemeCard(match.scheme, match))}
-            </div>
-          </>
-        ) : (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white dark:border-slate-800 dark:bg-slate-900 px-4 py-6 text-center">
-            <Search className="mx-auto h-8 w-8 text-slate-300 dark:text-slate-600" />
-            <p className="mt-2 text-[11px] font-bold text-slate-700 dark:text-slate-200">
-              {t("No eligible schemes found", "അനുയോജ്യമായ പദ്ധതികൾ കണ്ടെത്തിയില്ല")}
+
+            {/* Explanation Note */}
+            <p className="text-[10px] font-medium leading-relaxed text-slate-600 dark:text-slate-300 pt-1 border-t border-slate-100 dark:border-slate-800">
+              {targetMatch.status === "strong"
+                ? t(
+                    "Your profile responses fully satisfy the eligibility requirements for this scheme.",
+                    "നിങ്ങൾ നൽകിയ ഉത്തരങ്ങൾ ഈ പദ്ധതിയുടെ യോഗ്യതാ മാനദണ്ഡങ്ങളുമായി പൂർണ്ണമായും പൊരുത്തപ്പെടുന്നു."
+                  )
+                : targetMatch.status === "possible"
+                  ? t(
+                      "Your responses match key requirements. Additional document verification may be required.",
+                      "അടിസ്ഥാന യോഗ്യതകൾ പൊരുത്തപ്പെടുന്നു. കൂടുതൽ രേഖ പരിശോധന ആവശ്യമായി വന്നേക്കാം."
+                    )
+                  : t(
+                      "Based on your profile responses, you do not currently qualify for this specific scheme.",
+                      "നിങ്ങൾ നൽകിയ ഉത്തരങ്ങളുടെ അടിസ്ഥാനത്തിൽ നിലവിൽ ഈ പദ്ധതിക്ക് യോഗ്യതയില്ല."
+                    )}
             </p>
-            <p className="mt-1 text-[9.5px] font-medium text-slate-500 dark:text-slate-400">
+          </div>
+
+          {/* Other Eligible Schemes Section */}
+          {otherEligibleResults.length > 0 && (
+            <div className="space-y-2 pt-1">
+              <div className="flex items-center justify-between gap-2 pb-0.5 pr-2 pt-1">
+                <p className="text-[12px] font-extrabold text-slate-800 dark:text-slate-200">
+                  {t(
+                    `Other Eligible Schemes (${otherFilteredResults.length})`,
+                    `മറ്റ് അനുയോജ്യ പദ്ധതികൾ (${otherFilteredResults.length})`
+                  )}
+                </p>
+                <button
+                  type="button"
+                  onClick={toggleSelectAllResults}
+                  className="flex shrink-0 items-center gap-1.5 cursor-pointer text-[11.5px] font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
+                >
+                  <span>{t("Select all", "എല്ലാം തിരഞ്ഞെടുക്കുക")}</span>
+                  <span
+                    aria-hidden="true"
+                    className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border-2 transition-all active:scale-95 ${
+                      isAllResultsSelected
+                        ? "border-orange-500 bg-orange-500 text-white shadow-xs"
+                        : "border-orange-300 bg-white hover:border-orange-500 dark:border-orange-900 dark:bg-slate-900"
+                    }`}
+                  >
+                    {isAllResultsSelected && <Check className="h-2.5 w-2.5 stroke-[4]" />}
+                  </span>
+                </button>
+              </div>
+              <div className="space-y-2">
+                {otherFilteredResults.map((match) => renderSchemeCard(match.scheme, match))}
+              </div>
+            </div>
+          )}
+
+          {/* Bottom Explore Other Schemes Button */}
+          <div className="rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 px-4 py-3.5 text-center shadow-2xs mt-2">
+            <h3 className="text-[12px] font-extrabold text-slate-900 dark:text-white">
+              {t("Explore all 100+ welfare schemes", "100-ലധികം മറ്റ് പദ്ധതികൾ കാണുക")}
+            </h3>
+            <p className="mt-1 text-[9.5px] font-medium leading-relaxed text-slate-500 dark:text-slate-400">
               {t(
-                "Try a different search, or explore all schemes below.",
-                "മറ്റൊരു തിരയൽ ശ്രമിക്കുകയോ താഴെയുള്ള എല്ലാ പദ്ധതികളും കാണുകയോ ചെയ്യുക.",
+                "Browse all available state and central schemes with search and category filters.",
+                "തിരയലും വിഭാഗം ഫിൽട്ടറുകളും ഉപയോഗിച്ച് ലഭ്യമായ എല്ലാ പദ്ധതികളും കാണുക."
               )}
             </p>
             <button
               type="button"
-              onClick={() => setResultQuery("")}
-              className="mt-2.5 rounded-lg border border-orange-200 bg-orange-50 dark:border-orange-900/60 dark:bg-orange-950/40 px-3 py-1.5 text-[9.5px] font-extrabold text-orange-700 dark:text-orange-300"
-            >
-              {t("Clear search", "തിരയൽ മായ്ക്കുക")}
-            </button>
-          </div>
-        )
-      ) : (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white dark:border-slate-800 dark:bg-slate-900 px-4 py-6 text-center">
-          <SearchCheck className="mx-auto h-9 w-9 text-slate-300 dark:text-slate-600" />
-          <h3 className="mt-2 text-[13px] font-extrabold text-slate-900 dark:text-white">
-            {t(
-              "No schemes matched your answers",
-              "നിങ്ങളുടെ ഉത്തരങ്ങളുമായി പൊരുത്തപ്പെടുന്ന പദ്ധതികളില്ല",
-            )}
-          </h3>
-          <p className="mt-1 text-[10px] font-medium leading-relaxed text-slate-500 dark:text-slate-400">
-            {t(
-              "Try editing your answers, or browse all schemes to explore other options.",
-              "ഉത്തരങ്ങൾ തിരുത്തുകയോ എല്ലാ പദ്ധതികളും കാണുകയോ ചെയ്യുക.",
-            )}
-          </p>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setView("questions");
-                setStep(1);
-              }}
-              className="rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-800 px-2 py-2 text-[10px] font-extrabold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
-            >
-              {t("Edit Answers", "ഉത്തരങ്ങൾ തിരുത്തുക")}
-            </button>
-            <button
-              type="button"
               onClick={() => setView("browse")}
-              className="rounded-xl border border-orange-300 bg-orange-50 dark:border-orange-900/60 dark:bg-orange-950/40 px-2 py-2 text-[10px] font-extrabold text-orange-700 dark:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-900/60"
+              className="mt-2.5 inline-flex items-center justify-center gap-1.5 rounded-xl border border-orange-300 bg-orange-50 dark:border-orange-900/60 dark:bg-orange-950/40 px-3.5 py-2 text-[11px] font-extrabold text-orange-700 dark:text-orange-300 transition-colors hover:bg-orange-100 dark:hover:bg-orange-900/60"
             >
-              {t("Explore All Schemes", "എല്ലാ പദ്ധതികളും കാണുക")}
+              {t("Explore Other Schemes", "മറ്റ് പദ്ധതികൾ പരിശോധിക്കുക")}
+              <ArrowRight className="h-3.5 w-3.5 stroke-[2.5]" />
             </button>
           </div>
         </div>
-      )}
-      <div className="rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 px-4 py-3.5 text-center">
-        <h3 className="text-[12px] font-extrabold text-slate-900 dark:text-white">
-          {t("Looking for another scheme?", "മറ്റൊരു പദ്ധതി തിരയുകയാണോ?")}
-        </h3>
-        <p className="mt-1 text-[9.5px] font-medium leading-relaxed text-slate-500 dark:text-slate-400">
-          {t(
-            "Browse all schemes with search and filters. Your answers stay saved.",
-            "തിരയലും ഫിൽട്ടറുകളും ഉപയോഗിച്ച് എല്ലാ പദ്ധതികളും കാണുക. നിങ്ങളുടെ ഉത്തരങ്ങൾ സൂക്ഷിക്കും.",
-          )}
-        </p>
-        <button
-          type="button"
-          onClick={() => setView("browse")}
-          className="mt-2.5 inline-flex items-center justify-center gap-1.5 rounded-xl border border-orange-300 bg-orange-50 dark:border-orange-900/60 dark:bg-orange-950/40 px-3 py-2 text-[10.5px] font-extrabold text-orange-700 dark:text-orange-300 transition-colors hover:bg-orange-100 dark:hover:bg-orange-900/60"
-        >
-          {t("Explore All Schemes", "എല്ലാ പദ്ധതികളും കാണുക")}
-          <ArrowRight className="h-3.5 w-3.5 stroke-[2.5]" />
-        </button>
-      </div>
-    </>
-  );
+      );
+    }
+
+    return (
+      <>
+        {matchedResults.length > 0 ? (
+          filteredResults.length > 0 ? (
+            <>
+              <div className="flex items-center justify-between gap-2 pb-0.5 pr-3 pt-0.5">
+                <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400">
+                  {t(
+                    `${filteredResults.length} eligible scheme${filteredResults.length === 1 ? "" : "s"}`,
+                    `${filteredResults.length} അനുയോജ്യ പദ്ധതികൾ`,
+                  )}
+                </p>
+                <button
+                  type="button"
+                  onClick={toggleSelectAllResults}
+                  className="flex shrink-0 items-center gap-1.5 cursor-pointer text-[12px] font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
+                >
+                  <span>{t("Select all", "എല്ലാം തിരഞ്ഞെടുക്കുക")}</span>
+                  <span
+                    aria-hidden="true"
+                    className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border-2 transition-all active:scale-95 ${
+                      isAllResultsSelected
+                        ? "border-orange-500 bg-orange-500 text-white shadow-xs"
+                        : "border-orange-300 bg-white hover:border-orange-500 dark:border-orange-900 dark:bg-slate-900"
+                    }`}
+                  >
+                    {isAllResultsSelected && <Check className="h-2.5 w-2.5 stroke-[4]" />}
+                  </span>
+                </button>
+              </div>
+              <div className="space-y-2">
+                {filteredResults.map((match) => renderSchemeCard(match.scheme, match))}
+              </div>
+            </>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-white dark:border-slate-800 dark:bg-slate-900 px-4 py-6 text-center">
+              <Search className="mx-auto h-8 w-8 text-slate-300 dark:text-slate-600" />
+              <p className="mt-2 text-[11px] font-bold text-slate-700 dark:text-slate-200">
+                {t("No eligible schemes found", "അനുയോജ്യമായ പദ്ധതികൾ കണ്ടെത്തിയില്ല")}
+              </p>
+              <p className="mt-1 text-[9.5px] font-medium text-slate-500 dark:text-slate-400">
+                {t(
+                  "Try a different search, or explore all schemes below.",
+                  "മറ്റൊരു തിരയൽ ശ്രമിക്കുകയോ താഴെയുള്ള എല്ലാ പദ്ധതികളും കാണുകയോ ചെയ്യുക.",
+                )}
+              </p>
+              <button
+                type="button"
+                onClick={() => setResultQuery("")}
+                className="mt-2.5 rounded-lg border border-orange-200 bg-orange-50 dark:border-orange-900/60 dark:bg-orange-950/40 px-3 py-1.5 text-[9.5px] font-extrabold text-orange-700 dark:text-orange-300"
+              >
+                {t("Clear search", "തിരയൽ മായ്ക്കുക")}
+              </button>
+            </div>
+          )
+        ) : (
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white dark:border-slate-800 dark:bg-slate-900 px-4 py-6 text-center">
+            <SearchCheck className="mx-auto h-9 w-9 text-slate-300 dark:text-slate-600" />
+            <h3 className="mt-2 text-[13px] font-extrabold text-slate-900 dark:text-white">
+              {t(
+                "No schemes matched your answers",
+                "നിങ്ങളുടെ ഉത്തരങ്ങളുമായി പൊരുത്തപ്പെടുന്ന പദ്ധതികളില്ല",
+              )}
+            </h3>
+            <p className="mt-1 text-[10px] font-medium leading-relaxed text-slate-500 dark:text-slate-400">
+              {t(
+                "Try editing your answers, or browse all schemes to explore other options.",
+                "ഉത്തരങ്ങൾ തിരുത്തുകയോ എല്ലാ പദ്ധതികളും കാണുകയോ ചെയ്യുക.",
+              )}
+            </p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setView("questions");
+                  setStep(1);
+                }}
+                className="rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-800 px-2 py-2 text-[10px] font-extrabold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
+              >
+                {t("Edit Answers", "ഉത്തരങ്ങൾ തിരുത്തുക")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setView("browse")}
+                className="rounded-xl border border-orange-300 bg-orange-50 dark:border-orange-900/60 dark:bg-orange-950/40 px-2 py-2 text-[10px] font-extrabold text-orange-700 dark:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-900/60"
+              >
+                {t("Explore All Schemes", "എല്ലാ പദ്ധതികളും കാണുക")}
+              </button>
+            </div>
+          </div>
+        )}
+        <div className="rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 px-4 py-3.5 text-center">
+          <h3 className="text-[12px] font-extrabold text-slate-900 dark:text-white">
+            {t("Looking for another scheme?", "മറ്റൊരു പദ്ധതി തിരയുകയാണോ?")}
+          </h3>
+          <p className="mt-1 text-[9.5px] font-medium leading-relaxed text-slate-500 dark:text-slate-400">
+            {t(
+              "Browse all schemes with search and filters. Your answers stay saved.",
+              "തിരയലും ഫിൽട്ടറുകളും ഉപയോഗിച്ച് എല്ലാ പദ്ധതികളും കാണുക. നിങ്ങളുടെ ഉത്തരങ്ങൾ സൂക്ഷിക്കും.",
+            )}
+          </p>
+          <button
+            type="button"
+            onClick={() => setView("browse")}
+            className="mt-2.5 inline-flex items-center justify-center gap-1.5 rounded-xl border border-orange-300 bg-orange-50 dark:border-orange-900/60 dark:bg-orange-950/40 px-3 py-2 text-[10.5px] font-extrabold text-orange-700 dark:text-orange-300 transition-colors hover:bg-orange-100 dark:hover:bg-orange-900/60"
+          >
+            {t("Explore Other Schemes", "മറ്റ് പദ്ധതികൾ പരിശോധിക്കുക")}
+            <ArrowRight className="h-3.5 w-3.5 stroke-[2.5]" />
+          </button>
+        </div>
+      </>
+    );
+  };
 
   const renderBrowse = () => (
     <>

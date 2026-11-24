@@ -40,6 +40,19 @@ import { useLang } from "@/i18n/LanguageProvider";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/applications_/new")({
+  validateSearch: (search: Record<string, unknown>): {
+    applicantId?: string;
+    mobile?: string;
+    skipOtp?: string;
+    edit?: string;
+    step?: string;
+  } => ({
+    applicantId: search.applicantId as string | undefined,
+    mobile: search.mobile as string | undefined,
+    skipOtp: search.skipOtp as string | undefined,
+    edit: search.edit as string | undefined,
+    step: search.step as string | undefined,
+  }),
   head: () => ({ meta: [{ title: "New Application · Admin" }] }),
   component: NewApplicationPage,
 });
@@ -90,6 +103,27 @@ const existingApplicantsDb: Record<
     ward: "12",
     assemblyMandalam: "tvm-c6",
   },
+  "9847012345": {
+    id: "BEN-8921",
+    fullName: "Soman P",
+    dob: "1972-08-20",
+    gender: "male",
+    maritalStatus: "married",
+    religion: "hinduism",
+    caste: "obc",
+    occupation: "farmer",
+    income: "60000",
+    aadhaar: "772189012345",
+    districtId: "tvm",
+    pinCode: "695020",
+    houseNo: "KP 4/312",
+    houseName: "Padmalayam",
+    street: "Nemom Junction",
+    localBodyType: "panchayat",
+    localBody: "nemom-gp",
+    ward: "04",
+    assemblyMandalam: "nemom",
+  },
   "9488000900": {
     id: "VK-2026-0108",
     fullName: "Sandhya Nair",
@@ -129,6 +163,7 @@ const pinCodeDatabase: Record<
 export function NewApplicationPage() {
   const { lang } = useLang();
   const navigate = useNavigate();
+  const search = Route.useSearch();
 
   // Wizard Step State: 1, 2, or 3
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
@@ -184,6 +219,65 @@ export function NewApplicationPage() {
   // Form Submission
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
+
+  // Search parameters prefill logic for Edit Profile redirect (skips OTP and prefills all data)
+  useEffect(() => {
+    if (search.skipOtp === "true" || search.edit === "true" || search.applicantId || search.mobile) {
+      const targetMobile = search.mobile || "9847012345";
+      setMobileNumber(targetMobile);
+
+      let applicant = existingApplicantsDb[targetMobile];
+      if (!applicant && search.applicantId) {
+        applicant = Object.values(existingApplicantsDb).find((a) => a.id === search.applicantId);
+      }
+
+      if (applicant) {
+        setExistingApplicant(applicant);
+        setIsUsingExisting(true);
+        setFullName(applicant.fullName);
+        setDob(applicant.dob);
+        setGender(applicant.gender);
+        setMaritalStatus(applicant.maritalStatus);
+        setReligion(applicant.religion);
+        setCaste(applicant.caste);
+        setOccupation(applicant.occupation);
+        setAnnualIncome(applicant.income);
+        setAadhaarNumber(applicant.aadhaar);
+
+        setPinCode(applicant.pinCode);
+        setSelectedDistrict(applicant.districtId);
+        setAssemblyMandalam(applicant.assemblyMandalam);
+        setLocalBodyType(applicant.localBodyType as "corporation" | "panchayat" | "municipality");
+        setLocalBody(applicant.localBody);
+        setWard(applicant.ward);
+        setHouseNumber(applicant.houseNo);
+        setHouseName(applicant.houseName);
+        setStreetLocality(applicant.street);
+      } else {
+        setFullName("Soman P");
+        setDob("1972-08-20");
+        setGender("male");
+        setMaritalStatus("married");
+        setReligion("hinduism");
+        setCaste("obc");
+        setOccupation("farmer");
+        setAnnualIncome("60000");
+        setAadhaarNumber("772189012345");
+        setPinCode("695020");
+        setSelectedDistrict("tvm");
+        setAssemblyMandalam("nemom");
+        setLocalBodyType("panchayat");
+        setHouseNumber("KP 4/312");
+        setHouseName("Padmalayam");
+        setStreetLocality("Nemom Junction");
+      }
+
+      setIsOtpVerified(true);
+      if (search.step === "3" || search.step === "schemes") {
+        setCurrentStep(3);
+      }
+    }
+  }, [search.applicantId, search.mobile, search.skipOtp, search.edit, search.step]);
 
   // Auto age calculation
   const calculatedAge = useMemo(() => {
@@ -406,7 +500,9 @@ export function NewApplicationPage() {
             </button>
             <div>
               <h1 className="font-display text-lg font-bold tracking-tight text-foreground">
-                {lang === "ml" ? "പുതിയ അപേക്ഷ സൃഷ്ടിക്കുക" : "Create New Application"}
+                {search.edit === "true"
+                  ? (lang === "ml" ? "അപേക്ഷ എഡിറ്റ് ചെയ്യുക" : "Edit Application")
+                  : (lang === "ml" ? "പുതിയ അപേക്ഷ സൃഷ്ടിക്കുക" : "Create New Application")}
               </h1>
             </div>
           </div>
@@ -544,7 +640,9 @@ export function NewApplicationPage() {
                   onChange={(e) => {
                     const val = e.target.value.replace(/\D/g, "");
                     setMobileNumber(val);
-                    setIsOtpVerified(false);
+                    if (!search.skipOtp && !search.edit) {
+                      setIsOtpVerified(false);
+                    }
                   }}
                   placeholder="Enter mobile number"
                   className="h-11 rounded-xl bg-white dark:bg-card border-border text-sm font-semibold"
@@ -1297,11 +1395,11 @@ export function NewApplicationPage() {
                       {/* Scheme Name */}
                       <div className="space-y-1 mb-3">
                         <h3 className="font-bold text-sm text-foreground leading-snug">
-                          {scheme[lang] || scheme.en}
+                          {scheme?.[lang] || scheme?.en || scheme?.id}
                         </h3>
                         <p className="text-[11px] text-muted-foreground flex items-center gap-1">
                           <Building2 className="h-3 w-3 shrink-0 text-muted-foreground/70" />
-                          <span>{scheme.ministry[lang] || scheme.ministry.en}</span>
+                          <span>{scheme?.ministry?.[lang] || scheme?.ministry?.en || scheme?.category}</span>
                         </p>
                       </div>
 
@@ -1309,10 +1407,10 @@ export function NewApplicationPage() {
                       <div className="space-y-1.5 pt-2 border-t border-border/60 text-xs">
                         <div className="flex items-start gap-1.5 text-emerald-700 dark:text-emerald-400 font-semibold">
                           <Tag className="h-3.5 w-3.5 shrink-0 mt-0.5 text-emerald-600" />
-                          <span>{scheme.benefit[lang] || scheme.benefit.en}</span>
+                          <span>{scheme?.benefit?.[lang] || scheme?.benefit?.en || "Benefits available"}</span>
                         </div>
                         <p className="text-[11px] text-muted-foreground/90 line-clamp-2">
-                          <strong>Eligibility:</strong> {scheme.eligibility[lang] || scheme.eligibility.en}
+                          <strong>Eligibility:</strong> {scheme?.eligibility?.[lang] || scheme?.eligibility?.en || "Standard eligibility criteria"}
                         </p>
                       </div>
                     </div>

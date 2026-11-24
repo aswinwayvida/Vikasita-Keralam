@@ -3552,6 +3552,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [isLogoutSplashScreen, setIsLogoutSplashScreen] = useState<boolean>(false);
   const [isSahAiOpen, setIsSahAiOpen] = useState<boolean>(false);
   const [isGuestEligibilityOpen, setIsGuestEligibilityOpen] = useState<boolean>(false);
+  const [guestEligibilityTargetScheme, setGuestEligibilityTargetScheme] = useState<string | undefined>(undefined);
   const [isMobileAuthOpen, setIsMobileAuthOpen] = useState<boolean>(false);
   const [isSideMenuOpen, setIsSideMenuOpen] = useState<boolean>(false);
 
@@ -3674,13 +3675,10 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     setMobileSubPage("none");
   };
 
-  const openGuestEligibility = () => {
+  const openGuestEligibility = (targetSchemeName?: string) => {
     setIsSahAiOpen(false);
-    const userApps = [...savedApplicationRecords, ...mobileApplicationAllPreviewRecords].filter(
-                                               (app) => !deletedApplicationRefs.includes(app.ref) && app.applicantNameEn.trim().toLowerCase() === user.id
-                                             );
-                                             const appRecord = userApps[0] || mobileApplicationAllPreviewRecords[0];
-                                             openDocumentVerificationForApplication(appRecord);
+    setGuestEligibilityTargetScheme(targetSchemeName);
+    setIsGuestEligibilityOpen(true);
     setIsMobileAuthOpen(false);
     setMobileSubPage("none");
   };
@@ -9773,13 +9771,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
     const handlePrimaryAction = () => {
       if (isGuest) {
-        const userApps = [...savedApplicationRecords, ...mobileApplicationAllPreviewRecords].filter(
-                                               (app) => !deletedApplicationRefs.includes(app.ref) && app.applicantNameEn.trim().toLowerCase() === user.id
-                                             );
-                                             const appRecord = userApps[0] || mobileApplicationAllPreviewRecords[0];
-                                             openDocumentVerificationForApplication(appRecord);
-        setSelectedSchemeName(detail.fullSchemeNameEn);
-        setMobileSubPage("none");
+        const targetName = detail.fullSchemeNameEn || selectedSchemeName || selectedScheme?.en || detail.id;
+        openGuestEligibility(targetName);
         return;
       }
       if (activeTab === "create" || createFlowStep === "scheme_details" || createFlowStep === "applicant_applications") {
@@ -9791,6 +9784,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       } else {
         setSelectedSchemeName(detail.fullSchemeNameEn);
         setActiveTab("create");
+        setCreateFlowStep("form");
         setMobileSubPage("none");
       }
     };
@@ -10158,9 +10152,14 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   <CheckCircle2 className="h-3.5 w-3.5 stroke-[2.5]" />
                   <span>{lang === "ml" ? "പദ്ധതി തിരിഞ്ഞെടുത്തു" : "Scheme Selected"}</span>
                 </>
+              ) : isGuest ? (
+                <>
+                  <span>{lang === "ml" ? "യോഗ്യത പരിശോധിക്കുക" : "Check Eligibility"}</span>
+                  <ChevronRight className="h-3.5 w-3.5 stroke-[2.5]" />
+                </>
               ) : (
                 <>
-                  <span>{lang === "ml" ? "രേഖാ പരിശോധന" : "Update Document verification"}</span>
+                  <span>{lang === "ml" ? "ഈ പദ്ധതിക്ക് അപേക്ഷിക്കുക" : "Apply for this Scheme"}</span>
                   <ChevronRight className="h-3.5 w-3.5 stroke-[2.5]" />
                 </>
               )}
@@ -12440,11 +12439,13 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         <div className="px-1">
           <div
             onClick={() => {
-              const userApps = [...savedApplicationRecords, ...mobileApplicationAllPreviewRecords].filter(
-                                               (app) => !deletedApplicationRefs.includes(app.ref) && app.applicantNameEn.trim().toLowerCase() === user.id
-                                             );
-                                             const appRecord = userApps[0] || mobileApplicationAllPreviewRecords[0];
-                                             openDocumentVerificationForApplication(appRecord);
+              if (isGuest) {
+                openGuestEligibility();
+              } else {
+                setActiveTab("create");
+                setCreateFlowStep("form");
+                setMobileSubPage("none");
+              }
             }}
             className="group relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#243D95]/10 via-blue-500/5 to-[#243D95]/15 border border-white dark:border-slate-800/80 p-3.5 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 active:scale-[0.99]"
           >
@@ -13100,7 +13101,11 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 <div hidden={mobileSubPage === "scheme_details"} className="h-full">
                   <MobileGuestEligibilityQuestionnaire
                     lang={lang}
-                    onClose={() => setIsGuestEligibilityOpen(false)}
+                    targetSchemeName={guestEligibilityTargetScheme}
+                    onClose={() => {
+                      setIsGuestEligibilityOpen(false);
+                      setGuestEligibilityTargetScheme(undefined);
+                    }}
                     onHelpRequestSent={handleGuestHelpRequestSent}
                     onOpenSchemeDetails={(schemeId) => openMobileSchemeDetailsView(schemeId)}
                   />

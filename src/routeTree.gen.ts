@@ -53,6 +53,7 @@ import { Route as AdminSettingsNewUserRouteImport } from './routes/admin.setting
 import { Route as AdminSettingsUserDetailsRouteImport } from './routes/admin.settings_.user-details'
 import { Route as AdminVolunteersVolunteerIdRouteImport } from './routes/admin.volunteers_.$volunteerId'
 import { Route as AdminWhatsappMessageIdRouteImport } from './routes/admin.whatsapp_.$messageId'
+import { Route as AdminApplicationsApplicationIdVerifyRouteImport } from './routes/admin.applications_.$applicationId_.verify'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -279,6 +280,12 @@ const AdminWhatsappMessageIdRoute = AdminWhatsappMessageIdRouteImport.update({
   path: '/whatsapp/$messageId',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminApplicationsApplicationIdVerifyRoute =
+  AdminApplicationsApplicationIdVerifyRouteImport.update({
+    id: '/applications_/$applicationId_/verify',
+    path: '/applications/$applicationId/verify',
+    getParentRoute: () => AdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -325,6 +332,7 @@ export interface FileRoutesByFullPath {
   '/admin/settings/user-details': typeof AdminSettingsUserDetailsRoute
   '/admin/volunteers/$volunteerId': typeof AdminVolunteersVolunteerIdRoute
   '/admin/whatsapp/$messageId': typeof AdminWhatsappMessageIdRoute
+  '/admin/applications/$applicationId/verify': typeof AdminApplicationsApplicationIdVerifyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -369,6 +377,7 @@ export interface FileRoutesByTo {
   '/admin/settings/user-details': typeof AdminSettingsUserDetailsRoute
   '/admin/volunteers/$volunteerId': typeof AdminVolunteersVolunteerIdRoute
   '/admin/whatsapp/$messageId': typeof AdminWhatsappMessageIdRoute
+  '/admin/applications/$applicationId/verify': typeof AdminApplicationsApplicationIdVerifyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -416,6 +425,7 @@ export interface FileRoutesById {
   '/admin/settings_/user-details': typeof AdminSettingsUserDetailsRoute
   '/admin/volunteers_/$volunteerId': typeof AdminVolunteersVolunteerIdRoute
   '/admin/whatsapp_/$messageId': typeof AdminWhatsappMessageIdRoute
+  '/admin/applications_/$applicationId_/verify': typeof AdminApplicationsApplicationIdVerifyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -464,6 +474,7 @@ export interface FileRouteTypes {
     | '/admin/settings/user-details'
     | '/admin/volunteers/$volunteerId'
     | '/admin/whatsapp/$messageId'
+    | '/admin/applications/$applicationId/verify'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -508,6 +519,7 @@ export interface FileRouteTypes {
     | '/admin/settings/user-details'
     | '/admin/volunteers/$volunteerId'
     | '/admin/whatsapp/$messageId'
+    | '/admin/applications/$applicationId/verify'
   id:
     | '__root__'
     | '/'
@@ -554,6 +566,7 @@ export interface FileRouteTypes {
     | '/admin/settings_/user-details'
     | '/admin/volunteers_/$volunteerId'
     | '/admin/whatsapp_/$messageId'
+    | '/admin/applications_/$applicationId_/verify'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -882,6 +895,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminWhatsappMessageIdRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/applications_/$applicationId_/verify': {
+      id: '/admin/applications_/$applicationId_/verify'
+      path: '/applications/$applicationId/verify'
+      fullPath: '/admin/applications/$applicationId/verify'
+      preLoaderRoute: typeof AdminApplicationsApplicationIdVerifyRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
@@ -912,6 +932,7 @@ interface AdminRouteChildren {
   AdminSettingsUserDetailsRoute: typeof AdminSettingsUserDetailsRoute
   AdminVolunteersVolunteerIdRoute: typeof AdminVolunteersVolunteerIdRoute
   AdminWhatsappMessageIdRoute: typeof AdminWhatsappMessageIdRoute
+  AdminApplicationsApplicationIdVerifyRoute: typeof AdminApplicationsApplicationIdVerifyRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
@@ -941,6 +962,8 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminSettingsUserDetailsRoute: AdminSettingsUserDetailsRoute,
   AdminVolunteersVolunteerIdRoute: AdminVolunteersVolunteerIdRoute,
   AdminWhatsappMessageIdRoute: AdminWhatsappMessageIdRoute,
+  AdminApplicationsApplicationIdVerifyRoute:
+    AdminApplicationsApplicationIdVerifyRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)

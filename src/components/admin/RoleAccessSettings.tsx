@@ -2595,17 +2595,10 @@ export function RoleAccessSettings({
                 <div className="flex flex-wrap items-center gap-2.5 bg-white dark:bg-card border border-border/80 rounded-full px-3 py-1 text-xs shadow-2xs animate-in fade-in transition-all">
                   <span className="font-extrabold text-foreground text-[11px]">
                     {tr(
-                      `${selectedDesignationIds.length} of ${filteredDesignations.length} selected`,
-                      `${selectedDesignationIds.length} / ${filteredDesignations.length} തിരഞ്ഞെടുത്തു`,
+                      `${selectedDesignationIds.length}/${filteredDesignations.length} selected`,
+                      `${selectedDesignationIds.length}/${filteredDesignations.length} തിരഞ്ഞെടുത്തു`,
                     )}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedDesignationIds([])}
-                    className="font-bold text-orange-600 dark:text-orange-400 hover:underline cursor-pointer text-[11px]"
-                  >
-                    {tr("Deselect All", "എല്ലാം ഒഴിവാക്കുക")}
-                  </button>
                   <div className="h-3.5 w-px bg-border mx-0.5" />
                   <button
                     type="button"
@@ -2667,17 +2660,10 @@ export function RoleAccessSettings({
                 <div className="flex flex-wrap items-center gap-2.5 bg-white dark:bg-card border border-border/80 rounded-full px-3 py-1 text-xs shadow-2xs animate-in fade-in transition-all">
                   <span className="font-extrabold text-foreground text-[11px]">
                     {tr(
-                      `${selectedTableRoleIds.length} of ${displayedRoles.length} selected`,
-                      `${selectedTableRoleIds.length} / ${displayedRoles.length} തിരഞ്ഞെടുത്തു`,
+                      `${selectedTableRoleIds.length}/${displayedRoles.length} selected`,
+                      `${selectedTableRoleIds.length}/${displayedRoles.length} തിരഞ്ഞെടുത്തു`,
                     )}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTableRoleIds([])}
-                    className="font-bold text-orange-600 dark:text-orange-400 hover:underline cursor-pointer text-[11px]"
-                  >
-                    {tr("Deselect All", "എല്ലാം ഒഴിവാക്കുക")}
-                  </button>
                   <div className="h-3.5 w-px bg-border mx-0.5" />
                   <button
                     type="button"
@@ -2724,17 +2710,10 @@ export function RoleAccessSettings({
                 <div className="flex flex-wrap items-center gap-2.5 bg-white dark:bg-card border border-border/80 rounded-full px-3 py-1 text-xs shadow-2xs animate-in fade-in transition-all">
                   <span className="font-extrabold text-foreground text-[11px]">
                     {tr(
-                      `${selectedTableUserIds.length} of ${filteredUsers.length} selected`,
-                      `${selectedTableUserIds.length} / ${filteredUsers.length} തിരഞ്ഞെടുത്തു`,
+                      `${selectedTableUserIds.length}/${filteredUsers.length} selected`,
+                      `${selectedTableUserIds.length}/${filteredUsers.length} തിരഞ്ഞെടുത്തു`,
                     )}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTableUserIds([])}
-                    className="font-bold text-orange-600 dark:text-orange-400 hover:underline cursor-pointer text-[11px]"
-                  >
-                    {tr("Deselect All", "എല്ലാം ഒഴിവാക്കുക")}
-                  </button>
                   <div className="h-3.5 w-px bg-border mx-0.5" />
                   <button
                     type="button"

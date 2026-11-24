@@ -1193,17 +1193,10 @@ function SchemesPage() {
               <div className="flex flex-wrap items-center gap-2.5 bg-white dark:bg-card border border-border/80 rounded-full px-3 py-1 text-xs shadow-2xs animate-in fade-in transition-all">
                 <span className="font-extrabold text-foreground text-[11px]">
                   {tr(
-                    `${selectedSchemeIds.size} of ${filtered.length} selected`,
-                    `${selectedSchemeIds.size} / ${filtered.length} തിരഞ്ഞെടുത്തു`,
+                    `${selectedSchemeIds.size}/${filtered.length} selected`,
+                    `${selectedSchemeIds.size}/${filtered.length} തിരഞ്ഞെടുത്തു`,
                   )}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setSelectedSchemeIds(new Set())}
-                  className="font-bold text-orange-600 dark:text-orange-400 hover:underline cursor-pointer text-[11px]"
-                >
-                  {tr("Deselect All", "എല്ലാം ഒഴിവാക്കുക")}
-                </button>
                 <div className="h-3.5 w-px bg-border mx-0.5" />
                 <button
                   type="button"

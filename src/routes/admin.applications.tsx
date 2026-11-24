@@ -4,7 +4,9 @@ import {
   Search,
   ChevronDown,
   Check,
+  ChevronLeft,
   ChevronRight,
+  Calendar,
   Filter,
   Download,
   Upload,
@@ -30,6 +32,7 @@ import {
   Clock3,
   AlertCircle,
   FileCheck2,
+  FileSearch,
   Send,
   CheckCircle2,
   XCircle,
@@ -240,17 +243,21 @@ export type ApplicationStatus =
   | "Follow Up Required"
   | "Document Verified"
   | "Applied"
+  | "Submitted"
+  | "In Review"
   | "Approved"
   | "Rejected"
   | "Pending";
 
 export const applicationStatuses: ApplicationStatus[] = [
   "Received",
-  "Follow Up Required",
   "Document Verified",
   "Applied",
+  "Submitted",
+  "In Review",
   "Approved",
   "Rejected",
+  "Follow Up Required",
   "Pending",
 ];
 
@@ -271,6 +278,41 @@ const mlToEnNames: Record<string, string> = {
 export function getApplicantName(applicant: string, lang: string): string {
   if (lang === "ml") return applicant;
   return mlToEnNames[applicant] || applicant;
+}
+
+const AVATAR_COLOR_PALETTES = [
+  "bg-amber-100 text-amber-900 border-amber-200 dark:bg-amber-950/80 dark:text-amber-300 dark:border-amber-800",
+  "bg-orange-100 text-orange-900 border-orange-200 dark:bg-orange-950/80 dark:text-orange-300 dark:border-orange-800",
+  "bg-emerald-100 text-emerald-900 border-emerald-200 dark:bg-emerald-950/80 dark:text-emerald-300 dark:border-emerald-800",
+  "bg-sky-100 text-sky-900 border-sky-200 dark:bg-sky-950/80 dark:text-sky-300 dark:border-sky-800",
+  "bg-indigo-100 text-indigo-900 border-indigo-200 dark:bg-indigo-950/80 dark:text-indigo-300 dark:border-indigo-800",
+  "bg-purple-100 text-purple-900 border-purple-200 dark:bg-purple-950/80 dark:text-purple-300 dark:border-purple-800",
+  "bg-rose-100 text-rose-900 border-rose-200 dark:bg-rose-950/80 dark:text-rose-300 dark:border-rose-800",
+  "bg-teal-100 text-teal-900 border-teal-200 dark:bg-teal-950/80 dark:text-teal-300 dark:border-teal-800",
+];
+
+export function getApplicantInitials(applicant: string): string {
+  const nameEn = mlToEnNames[applicant] || applicant;
+  const cleanName = nameEn.replace(/^(Shri|Smt|Kumari|Dr|Mr|Mrs|Ms)\.?\s+/i, "").trim();
+  const parts = cleanName.split(/\s+/).filter(Boolean);
+
+  if (parts.length === 0) return "A";
+  if (parts.length === 1) {
+    const chars = Array.from(parts[0]);
+    return chars.slice(0, 2).join("").toUpperCase();
+  }
+  const first = Array.from(parts[0])[0];
+  const last = Array.from(parts[parts.length - 1])[0];
+  return (first + last).toUpperCase();
+}
+
+export function getApplicantAvatarStyle(applicant: string): string {
+  let hash = 0;
+  for (let i = 0; i < applicant.length; i++) {
+    hash = applicant.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % AVATAR_COLOR_PALETTES.length;
+  return AVATAR_COLOR_PALETTES[index];
 }
 
 const reviewerDesignations: Record<string, string> = {
@@ -297,12 +339,18 @@ export function StatusPill({ status }: { status: ApplicationStatus | string }) {
   } else if (status === "Applied" || status === "Ready to submit" || status === "New") {
     badgeClass = "bg-blue-500/10 text-blue-600 border-blue-500/20";
     Icon = Send;
+  } else if (status === "Submitted") {
+    badgeClass = "bg-cyan-500/10 text-cyan-600 border-cyan-500/20";
+    Icon = Send;
   } else if (status === "Approved" || status === "Completed") {
     badgeClass = "bg-emerald-500/10 text-emerald-600 border-emerald-500/20";
     Icon = CheckCircle2;
   } else if (status === "Rejected") {
     badgeClass = "bg-red-500/10 text-red-600 border-red-500/20";
     Icon = XCircle;
+  } else if (status === "In Review") {
+    badgeClass = "bg-amber-500/10 text-amber-600 border-amber-500/20";
+    Icon = Clock3;
   } else if (status === "Pending") {
     badgeClass = "bg-amber-500/10 text-amber-600 border-amber-500/20";
     Icon = Clock3;
@@ -413,6 +461,54 @@ function ApplicationsPage() {
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
   const [selectedCreatedBys, setSelectedCreatedBys] = useState<string[]>([]);
   const [dateFilter, setDateFilter] = useState("all");
+  const [selectedMonthDate, setSelectedMonthDate] = useState<Date>(new Date(2026, 9, 1));
+  const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
+  const [selectedPreset, setSelectedPreset] = useState<string>("This month");
+  const [dateSelectionMode, setDateSelectionMode] = useState<"single" | "range">("single");
+  const [selectedSingleDate, setSelectedSingleDate] = useState<Date>(new Date(2026, 9, 8));
+
+  const handlePrevMonth = () => {
+    setSelectedMonthDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  };
+  const handleNextMonth = () => {
+    setSelectedMonthDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  };
+
+  const handleSelectPreset = (preset: string) => {
+    setSelectedPreset(preset);
+    const now = new Date();
+    if (preset === "All time") {
+      setDateFilter("all");
+    } else if (preset === "Today") {
+      setSelectedSingleDate(now);
+      setDateFilter("today");
+    } else if (preset === "Yesterday") {
+      const yest = new Date(now.getTime() - 86400000);
+      setSelectedSingleDate(yest);
+      setDateFilter("yesterday");
+    } else if (preset === "This week") {
+      setDateFilter("this_week");
+    } else if (preset === "Last week") {
+      setDateFilter("last_week");
+    } else if (preset === "This month") {
+      setSelectedMonthDate(new Date(2026, 9, 1));
+      setDateFilter("this_month");
+    } else if (preset === "Last month") {
+      setDateFilter("last_month");
+    } else if (preset === "This year") {
+      setDateFilter("this_year");
+    } else if (preset === "Last year") {
+      setDateFilter("last_year");
+    }
+  };
+
+  const formatSingleDateDisplay = (d: Date): string => {
+    const dayName = d.toLocaleDateString("en-US", { weekday: "long" });
+    const dayNum = String(d.getDate()).padStart(2, "0");
+    const monthNum = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    return `${dayName}, ${dayNum}/${monthNum}/${year}`;
+  };
   const [customStartDate, setCustomRangeStart] = useState("");
   const [customEndDate, setCustomRangeEnd] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -783,19 +879,35 @@ function ApplicationsPage() {
 
       let dateMatch = true;
       if (dateFilter !== "all") {
-        const recordDate = new Date(record.submittedAt || record.createdAt || Date.now()).getTime();
+        const recordDateObj = new Date(record.submittedAt || record.createdAt || Date.now());
+        const recordTime = recordDateObj.getTime();
         const now = Date.now();
         const oneDay = 24 * 60 * 60 * 1000;
         if (dateFilter === "today") {
-          dateMatch = now - recordDate <= oneDay;
-        } else if (dateFilter === "week" || dateFilter === "7days") {
-          dateMatch = now - recordDate <= 7 * oneDay;
-        } else if (dateFilter === "month" || dateFilter === "30days") {
-          dateMatch = now - recordDate <= 30 * oneDay;
-        } else if (dateFilter === "6months") {
-          dateMatch = now - recordDate <= 180 * oneDay;
-        } else if (dateFilter === "year") {
-          dateMatch = now - recordDate <= 365 * oneDay;
+          dateMatch = now - recordTime <= oneDay;
+        } else if (dateFilter === "yesterday") {
+          dateMatch = now - recordTime <= 2 * oneDay && now - recordTime > oneDay;
+        } else if (dateFilter === "week" || dateFilter === "7days" || dateFilter === "this_week") {
+          dateMatch = now - recordTime <= 7 * oneDay;
+        } else if (dateFilter === "last_week") {
+          dateMatch = now - recordTime <= 14 * oneDay && now - recordTime > 7 * oneDay;
+        } else if (dateFilter === "month" || dateFilter === "30days" || dateFilter === "this_month") {
+          dateMatch = now - recordTime <= 30 * oneDay;
+        } else if (dateFilter === "last_month") {
+          dateMatch = now - recordTime <= 60 * oneDay && now - recordTime > 30 * oneDay;
+        } else if (dateFilter === "year" || dateFilter === "this_year") {
+          dateMatch = now - recordTime <= 365 * oneDay;
+        } else if (dateFilter === "last_year") {
+          dateMatch = now - recordTime <= 730 * oneDay && now - recordTime > 365 * oneDay;
+        } else if (dateFilter === "single_date") {
+          dateMatch =
+            recordDateObj.getDate() === selectedSingleDate.getDate() &&
+            recordDateObj.getMonth() === selectedSingleDate.getMonth() &&
+            recordDateObj.getFullYear() === selectedSingleDate.getFullYear();
+        } else if (dateFilter === "month_pick") {
+          dateMatch =
+            recordDateObj.getMonth() === selectedMonthDate.getMonth() &&
+            recordDateObj.getFullYear() === selectedMonthDate.getFullYear();
         }
       }
 
@@ -820,6 +932,8 @@ function ApplicationsPage() {
     selectedAreas,
     selectedCreatedBys,
     dateFilter,
+    selectedMonthDate,
+    selectedSingleDate,
   ]);
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -836,6 +950,8 @@ function ApplicationsPage() {
     selectedAreas,
     selectedCreatedBys,
     dateFilter,
+    selectedMonthDate,
+    selectedSingleDate,
   ]);
 
   const totalPages = useMemo(() => Math.ceil(filtered.length / pageSize) || 1, [filtered.length, pageSize]);
@@ -896,17 +1012,10 @@ function ApplicationsPage() {
               <div className="flex flex-wrap items-center gap-2.5 bg-white dark:bg-card border border-border/80 rounded-full px-3 py-1 text-xs shadow-2xs animate-in fade-in transition-all">
                 <span className="font-extrabold text-foreground text-[11px]">
                   {tr(
-                    `${selectedIds.size} of ${filtered.length} selected`,
-                    `${selectedIds.size} / ${filtered.length} തിരഞ്ഞെടുത്തു`,
+                    `${selectedIds.size}/${filtered.length} selected`,
+                    `${selectedIds.size}/${filtered.length} തിരഞ്ഞെടുത്തു`,
                   )}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setSelectedIds(new Set())}
-                  className="font-bold text-orange-600 dark:text-orange-400 hover:underline cursor-pointer text-[11px]"
-                >
-                  {tr("Deselect All", "എല്ലാം ഒഴിവാക്കുക")}
-                </button>
                 <div className="h-3.5 w-px bg-border mx-0.5" />
                 <button
                   type="button"
@@ -962,6 +1071,264 @@ function ApplicationsPage() {
 
           {/* Filter, View Mode, Columns & Actions on the Right */}
           <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar pb-0.5 max-w-full sm:ml-auto shrink-0">
+
+            {/* Date Filter Button & Popup (Desktop) */}
+            <div className="hidden md:inline-flex items-center gap-1.5 rounded-full border border-amber-200/80 bg-[#FFF9F2] dark:bg-slate-800 dark:border-slate-700 px-3 py-1 text-xs font-bold text-slate-800 dark:text-slate-200 shadow-2xs shrink-0">
+              <button
+                type="button"
+                onClick={handlePrevMonth}
+                title={lang === "ml" ? "മുൻപത്തെ മാസം" : "Previous Month"}
+                className="p-0.5 hover:bg-amber-100 dark:hover:bg-slate-700 rounded-full text-slate-500 dark:text-slate-400 hover:text-slate-800 cursor-pointer transition-colors"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+              </button>
+
+              <Sheet open={isDatePopoverOpen} onOpenChange={setIsDatePopoverOpen}>
+                <button
+                  type="button"
+                  onClick={() => setIsDatePopoverOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-1 py-0.5 hover:text-amber-600 dark:hover:text-amber-400 cursor-pointer rounded transition-colors"
+                  title={lang === "ml" ? "തീയതി ഫിൽട്ടർ പോപ്പപ്പ് കാണിക്കുക" : "Open Date Filter Popup"}
+                >
+                  <Calendar className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                  <span className="font-bold text-slate-900 dark:text-slate-100">
+                    {selectedMonthDate.toLocaleDateString(lang === "ml" ? "ml-IN" : "en-US", {
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </span>
+                  <ChevronDown className="h-3 w-3 text-slate-400 ml-0.5" />
+                </button>
+                <SheetContent
+                  side="right"
+                  className="w-[540px] sm:w-[560px] max-w-[95vw] p-6 flex flex-col justify-between h-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl z-50 space-y-4 [&>button.absolute]:hidden"
+                >
+                  {/* Sheet Header */}
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-2.5">
+                      <div className="p-1.5 rounded-lg bg-orange-50 dark:bg-orange-950/40 text-orange-500 shrink-0 mt-0.5">
+                        <Calendar className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                          {lang === "ml" ? "തീയതി ഫിൽട്ടർ" : "Date filter"}
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                          {lang === "ml"
+                            ? "പ്രീസെറ്റ്, ഒറ്റ തീയതി അല്ലെങ്കിൽ തീയതി പരിധി തിരഞ്ഞെടുക്കുക."
+                            : "Choose a preset, single date, or date range."}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsDatePopoverOpen(false)}
+                      className="text-orange-400 hover:text-orange-600 p-1 rounded-full cursor-pointer transition-colors"
+                    >
+                      <XCircle className="h-6 w-6" />
+                    </button>
+                  </div>
+
+                  {/* Presets Pills in 2 Rows */}
+                  <div className="space-y-2">
+                    {/* Row 1 */}
+                    <div className="flex flex-nowrap items-center gap-1.5">
+                      {["All time", "Today", "Yesterday", "This week", "Last week"].map((preset) => {
+                        const isActive = selectedPreset === preset;
+                        return (
+                          <button
+                            key={preset}
+                            type="button"
+                            onClick={() => handleSelectPreset(preset)}
+                            className={cn(
+                              "px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer border whitespace-nowrap shrink-0",
+                              isActive
+                                ? "bg-orange-500 text-white font-bold border-orange-500 shadow-xs"
+                                : "border-amber-200/80 bg-[#FFF9F2] dark:bg-slate-800 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-amber-100/60"
+                            )}
+                          >
+                            {preset}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Row 2 */}
+                    <div className="flex flex-nowrap items-center gap-1.5">
+                      {["This month", "Last month", "This year", "Last year"].map((preset) => {
+                        const isActive = selectedPreset === preset;
+                        return (
+                          <button
+                            key={preset}
+                            type="button"
+                            onClick={() => handleSelectPreset(preset)}
+                            className={cn(
+                              "px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer border whitespace-nowrap shrink-0",
+                              isActive
+                                ? "bg-orange-500 text-white font-bold border-orange-500 shadow-xs"
+                                : "border-amber-200/80 bg-[#FFF9F2] dark:bg-slate-800 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-amber-100/60"
+                            )}
+                          >
+                            {preset}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Mode Switcher */}
+                  <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800 text-xs">
+                    <span className="font-semibold text-slate-500 dark:text-slate-400">
+                      {lang === "ml" ? "തീയതി തിരഞ്ഞെടുക്കുക" : "Select date"}
+                    </span>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setDateSelectionMode("single")}
+                        className={cn(
+                          "pb-0.5 font-bold transition-colors cursor-pointer",
+                          dateSelectionMode === "single"
+                            ? "text-orange-500 border-b-2 border-orange-500"
+                            : "text-slate-400 hover:text-slate-600"
+                        )}
+                      >
+                        {lang === "ml" ? "ഒറ്റ തീയതി" : "Single Date"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDateSelectionMode("range")}
+                        className={cn(
+                          "pb-0.5 font-bold transition-colors cursor-pointer",
+                          dateSelectionMode === "range"
+                            ? "text-orange-500 border-b-2 border-orange-500"
+                            : "text-slate-400 hover:text-slate-600"
+                        )}
+                      >
+                        {lang === "ml" ? "തീയതി പരിധി" : "Date Range"}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Calendar Card Container */}
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-white dark:bg-slate-900 space-y-3">
+                    {/* Month Navigation */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                        {selectedMonthDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+                      </span>
+                      <div className="flex items-center gap-2 text-slate-500">
+                        <button
+                          type="button"
+                          onClick={handlePrevMonth}
+                          className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleNextMonth}
+                          className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Weekdays Header */}
+                    <div className="grid grid-cols-7 text-center text-xs font-semibold text-slate-400">
+                      {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
+                        <div key={i} className="py-1">
+                          {d}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Days Grid */}
+                    <div className="grid grid-cols-7 text-center gap-y-1 text-xs">
+                      {(() => {
+                        const firstDayIdx = new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth(), 1).getDay();
+                        const totalDays = new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth() + 1, 0).getDate();
+                        const cells: (number | null)[] = [];
+                        for (let i = 0; i < firstDayIdx; i++) cells.push(null);
+                        for (let d = 1; d <= totalDays; d++) cells.push(d);
+
+                        return cells.map((day, idx) => {
+                          if (!day) return <div key={`empty-${idx}`} />;
+                          const cellDate = new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth(), day);
+                          const isSelected = selectedSingleDate.toDateString() === cellDate.toDateString();
+
+                          return (
+                            <div key={day} className="py-0.5">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedSingleDate(cellDate);
+                                  setSelectedPreset("");
+                                  setDateFilter("single_date");
+                                }}
+                                className={cn(
+                                  "h-7 w-7 rounded-full text-xs transition-all cursor-pointer flex items-center justify-center mx-auto",
+                                  isSelected
+                                    ? "bg-orange-500 text-white font-bold shadow-xs"
+                                    : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium"
+                                )}
+                              >
+                                {day}
+                              </button>
+                            </div>
+                          );
+                        });
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* Footer Bar */}
+                  <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between mt-auto">
+                    <span className="text-xs text-slate-500 font-medium">
+                      {formatSingleDateDisplay(selectedSingleDate)}
+                    </span>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsDatePopoverOpen(false)}
+                        className="rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                      >
+                        {lang === "ml" ? "റദ്ദാക്കുക" : "Cancel"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (selectedPreset === "All time") setDateFilter("all");
+                          else if (selectedPreset === "Today") setDateFilter("today");
+                          else if (selectedPreset === "Yesterday") setDateFilter("yesterday");
+                          else if (selectedPreset === "This week") setDateFilter("this_week");
+                          else if (selectedPreset === "Last week") setDateFilter("last_week");
+                          else if (selectedPreset === "This month") setDateFilter("this_month");
+                          else if (selectedPreset === "Last month") setDateFilter("last_month");
+                          else if (selectedPreset === "This year") setDateFilter("this_year");
+                          else if (selectedPreset === "Last year") setDateFilter("last_year");
+                          else setDateFilter("single_date");
+                          setIsDatePopoverOpen(false);
+                        }}
+                        className="rounded-full bg-orange-500 hover:bg-orange-600 px-5 py-1.5 text-xs font-bold text-white shadow-xs transition-colors cursor-pointer"
+                      >
+                        {lang === "ml" ? "പൂർത്തിയായി" : "Done"}
+                      </button>
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
+
+              <button
+                type="button"
+                onClick={handleNextMonth}
+                title={lang === "ml" ? "അടുത്ത മാസം" : "Next Month"}
+                className="p-0.5 hover:bg-amber-100 dark:hover:bg-slate-700 rounded-full text-slate-500 dark:text-slate-400 hover:text-slate-800 cursor-pointer transition-colors"
+              >
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
 
             {/* Manage Columns Button (Desktop) */}
             <button
@@ -1208,17 +1575,28 @@ function ApplicationsPage() {
                   </div>
 
                   <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <Link
-                        to="/admin/beneficiaries"
-                        onClick={(e) => e.stopPropagation()}
-                        className="font-bold text-sm text-foreground hover:text-primary hover:underline block"
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div
+                        className={cn(
+                          "h-9 w-9 rounded-full border flex items-center justify-center font-extrabold text-xs shrink-0 shadow-2xs select-none",
+                          getApplicantAvatarStyle(record.applicant)
+                        )}
+                        title={displayName}
                       >
-                        {displayName}
-                      </Link>
-                      <p className="text-xs text-muted-foreground font-medium">{record.mobile}</p>
+                        {getApplicantInitials(record.applicant)}
+                      </div>
+                      <div className="min-w-0">
+                        <Link
+                          to="/admin/beneficiaries"
+                          onClick={(e) => e.stopPropagation()}
+                          className="font-bold text-sm text-foreground hover:text-primary hover:underline block truncate"
+                        >
+                          {displayName}
+                        </Link>
+                        <p className="text-xs text-muted-foreground font-medium">{record.mobile}</p>
+                      </div>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right shrink-0">
                       <Link
                         to="/admin/schemes"
                         onClick={(e) => e.stopPropagation()}
@@ -1326,13 +1704,26 @@ function ApplicationsPage() {
                           case "applicant":
                             return (
                               <td key="applicant" className="p-3" onClick={(e) => e.stopPropagation()}>
-                                <Link
-                                  to="/admin/beneficiaries"
-                                  className="font-bold text-foreground hover:text-primary hover:underline block"
-                                >
-                                  {displayName}
-                                </Link>
-                                <p className="text-[10px] font-mono text-muted-foreground">{record.mobile}</p>
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  <div
+                                    className={cn(
+                                      "h-8 w-8 rounded-full border flex items-center justify-center font-extrabold text-xs shrink-0 shadow-2xs select-none",
+                                      getApplicantAvatarStyle(record.applicant)
+                                    )}
+                                    title={displayName}
+                                  >
+                                    {getApplicantInitials(record.applicant)}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <Link
+                                      to="/admin/beneficiaries"
+                                      className="font-bold text-foreground hover:text-primary hover:underline block truncate"
+                                    >
+                                      {displayName}
+                                    </Link>
+                                    <p className="text-[10px] font-mono text-muted-foreground">{record.mobile}</p>
+                                  </div>
+                                </div>
                               </td>
                             );
                           case "trackingId":
@@ -1473,7 +1864,7 @@ function ApplicationsPage() {
                                         {applicationReviewers.map((rev) => (
                                           <DropdownMenuItem
                                             key={rev}
-                                            onClick={() => { setAssignTargetAppId(record.id); setSelectedAssignOfficer(rev); setAssignUserSearch(""); setIsAssignDrawerOpen(true); }}
+                                            onClick={() => { setAssignTargetAppId(record.id); setAssignUserSearch(""); setIsAssignDrawerOpen(true); }}
                                             className={`cursor-pointer text-xs font-semibold ${record.reviewer === rev ? "bg-accent font-bold" : ""}`}
                                           >
                                             {rev}
@@ -1481,7 +1872,7 @@ function ApplicationsPage() {
                                         ))}
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem
-                                          onClick={() => navigate({ to: "/admin/settings/new-role", search: { returnTo: "/admin/applications" } })}
+                                          onClick={() => navigate({ to: "/admin/settings/new-role", search: { editRoleId: undefined, returnTo: "/admin/applications" } })}
                                           className="cursor-pointer text-xs font-bold text-primary"
                                         >
                                           <Plus className="h-3.5 w-3.5 mr-2 text-primary" />

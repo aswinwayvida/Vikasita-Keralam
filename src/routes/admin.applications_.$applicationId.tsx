@@ -7,6 +7,7 @@ import {
   Calendar,
   Check,
   CheckCircle2,
+  Clock,
   Clock3,
   Copy,
   CreditCard,
@@ -15,6 +16,7 @@ import {
   EyeOff,
   FileCheck2,
   FileEdit,
+  FileSearch,
   FileSpreadsheet,
   FileText,
   FileX,
@@ -79,6 +81,40 @@ const mlToEnNames: Record<string, string> = {
   ജോസഫ്: "Joseph",
 };
 
+const schemeLogoFallback =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23ea580c'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l5 5v11a2 2 0 01-2 2z'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M14 2v4a2 2 0 002 2h4'/%3E%3C/svg%3E";
+
+const schemeLogoUrls: Record<string, string> = {
+  pmkisan: "/images/popular-schemes/pm_kisan.png",
+  pmjjby: "/images/popular-schemes/pmjjby.png",
+  pmsby: "/images/popular-schemes/pmsby.png",
+  apy: "/images/popular-schemes/atal_pension.png",
+  pmay: "/images/popular-schemes/pm_awas.png",
+  ujjwala: "/images/popular-schemes/pm_ujjwala.png",
+  mudra: "/images/popular-schemes/mudra.png",
+  pmjay: "/images/popular-schemes/pm_jay.png",
+  standup: "/images/popular-schemes/stand_up_india.png",
+  pmmvy: "/images/popular-schemes/pm_matru_vandana.png",
+  midday: "/images/popular-schemes/mid_day_meal.png",
+  pmkvy: "/images/popular-schemes/pmkvy.png",
+  pm_kisan: "/images/popular-schemes/pm_kisan.png",
+  pm_jay: "/images/popular-schemes/pm_jay.png",
+  pm_ujjwala: "/images/popular-schemes/pm_ujjwala.png",
+  pm_awas: "/images/popular-schemes/pm_awas.png",
+  pm_surya_ghar: "/images/popular-schemes/pm_surya_ghar.png",
+  pm_jan_dhan: "/images/popular-schemes/pm_jan_dhan.png",
+  pm_vishwakarma: "/images/popular-schemes/pm_vishwakarma.png",
+  digital_india: "/images/popular-schemes/digital_india.png",
+  khelo_india: "/images/popular-schemes/khelo_india.png",
+  smart_city: "/images/popular-schemes/smart_city.png",
+  sukanya: "/images/popular-schemes/pm_matru_vandana.png",
+  swachh: "/images/popular-schemes/pm_ujjwala.png",
+  vidyalakshmi: "/images/popular-schemes/digital_india.png",
+  pmsym: "/images/popular-schemes/atal_pension.png",
+  pmfby: "/images/popular-schemes/pm_kisan.png",
+  skillindia: "/images/popular-schemes/pmkvy.png",
+};
+
 export function getApplicantDisplayName(nameStr: string, lang: "ml" | "en") {
   if (!nameStr) return "";
   if (lang === "ml") return nameStr;
@@ -97,12 +133,14 @@ function DesktopStatusBadge({
   onStatusChange: (newStatus: string) => void;
 }) {
   const statusConfig: Record<string, { bg: string; icon: any }> = {
-    Received: { bg: "bg-blue-500/10 text-blue-600 border-blue-500/20", icon: FileText },
-    "Document Verified": { bg: "bg-teal-500/10 text-teal-600 border-teal-500/20", icon: FileCheck2 },
-    Applied: { bg: "bg-indigo-500/10 text-indigo-600 border-indigo-500/20", icon: Send },
+    Received: { bg: "bg-sky-500/10 text-sky-600 border-sky-500/20", icon: Clock },
+    "Document Verified": { bg: "bg-purple-500/10 text-purple-600 border-purple-500/20", icon: FileCheck2 },
+    Applied: { bg: "bg-blue-500/10 text-blue-600 border-blue-500/20", icon: Send },
+    Submitted: { bg: "bg-cyan-500/10 text-cyan-600 border-cyan-500/20", icon: Send },
+    "In Review": { bg: "bg-amber-500/10 text-amber-600 border-amber-500/20", icon: Clock3 },
     Approved: { bg: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20", icon: CheckCircle2 },
     Rejected: { bg: "bg-red-500/10 text-red-600 border-red-500/20", icon: XCircle },
-    "In Review": { bg: "bg-amber-500/10 text-amber-600 border-amber-500/20", icon: Clock3 },
+    Pending: { bg: "bg-orange-500/10 text-orange-600 border-orange-500/20", icon: Clock },
   };
 
   const config = statusConfig[status] || statusConfig["Received"];
@@ -112,9 +150,10 @@ function DesktopStatusBadge({
     "Received",
     "Document Verified",
     "Applied",
+    "Submitted",
+    "In Review",
     "Approved",
     "Rejected",
-    "In Review",
   ];
 
   return (
@@ -162,7 +201,11 @@ export const Route = createFileRoute("/admin/applications_/$applicationId")({
 function ApplicationDetailsPage() {
   const { applicationId } = Route.useParams();
   const { lang } = useLang();
-  const application = adminApplications.find((item) => item.id === applicationId);
+  const application =
+    adminApplications.find((item) => item.id === applicationId) ||
+    adminApplications.find((item) => item.reference === applicationId) ||
+    adminApplications.find((item) => item.id.toLowerCase() === applicationId?.toLowerCase()) ||
+    adminApplications[0];
   const [helpdeskRequest, setHelpdeskRequest] = useState<HelpdeskRequest | undefined>();
   const mapInitialStatus = (stage: string) => {
     switch (stage) {
@@ -370,11 +413,10 @@ function ApplicationDetailsPage() {
               {avatarInitials}
             </div>
             <div className="space-y-0.5">
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-2">
                 <h2 className="font-display text-xl font-extrabold text-foreground tracking-tight">
                   {applicantDisplayName}
                 </h2>
-                <DesktopStatusBadge status={appStatus} onStatusChange={setAppStatus} />
               </div>
               <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground font-semibold">
                 <span className="flex items-center gap-1">
@@ -390,19 +432,31 @@ function ApplicationDetailsPage() {
             </div>
           </div>
 
-          {/* Right side: Scheme Info Box & 3-Dot Dropdown Action Menu */}
+          {/* Right side: White Scheme Card with Status Badge & 3-Dot Action Menu */}
           <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
-            <div className="flex items-center gap-3 bg-muted/40 px-3.5 py-2 rounded-xl border border-border/60 shadow-2xs">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-orange-100 text-orange-600 border border-orange-200/60 font-bold">
-                <FileText className="h-5 w-5" />
+            <div className="flex items-center gap-3 bg-white dark:bg-card px-3.5 py-2 rounded-xl border border-border shadow-2xs">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-50 dark:bg-slate-800 border border-border/80 p-1 font-bold shadow-2xs">
+                <img
+                  src={schemeLogoUrls[application.schemeId] ?? schemeLogoUrls[scheme?.id ?? ""] ?? schemeLogoFallback}
+                  alt={scheme?.[lang] ?? application.schemeId}
+                  className="h-full w-full object-contain"
+                  loading="lazy"
+                  onError={(event) => {
+                    event.currentTarget.onerror = null;
+                    event.currentTarget.src = schemeLogoFallback;
+                  }}
+                />
               </div>
               <div className="min-w-0">
-                <p className="font-display text-xs font-extrabold text-foreground leading-tight truncate max-w-[200px] sm:max-w-[240px]">
+                <p className="font-display text-xs font-extrabold text-foreground leading-tight truncate max-w-[180px] sm:max-w-[220px]">
                   {scheme?.[lang] ?? application.schemeId}
                 </p>
-                <p className="text-[10px] font-semibold text-muted-foreground mt-0.5 truncate max-w-[200px] sm:max-w-[240px]">
-                  {scheme?.ministry[lang] ?? scheme?.category}
+                <p className="text-[10px] font-semibold text-muted-foreground mt-0.5 truncate max-w-[180px] sm:max-w-[220px]">
+                  {scheme?.ministry?.[lang] ?? scheme?.category}
                 </p>
+              </div>
+              <div className="pl-2.5 border-l border-border/70 shrink-0">
+                <DesktopStatusBadge status={appStatus} onStatusChange={setAppStatus} />
               </div>
             </div>
 
@@ -418,17 +472,26 @@ function ApplicationDetailsPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 z-50">
-                <DropdownMenuItem className="cursor-pointer gap-2.5 py-2">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                  <span>{lang === "ml" ? "പ്രൊഫൈൽ എഡിറ്റ് ചെയ്യുക" : "Edit Profile"}</span>
+                <DropdownMenuItem asChild className="cursor-pointer gap-2.5 py-2">
+                  <Link
+                    to="/admin/applications/new"
+                    search={{
+                      applicantId: application.id,
+                      mobile: application.mobile ? application.mobile.replace(/\D/g, "") : "9847012345",
+                      skipOtp: "true",
+                      edit: "true",
+                      step: "1",
+                    }}
+                  >
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span>{lang === "ml" ? "പ്രൊഫൈൽ എഡിറ്റ് ചെയ്യുക" : "Edit Profile"}</span>
+                  </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer gap-2.5 py-2">
-                  <FileEdit className="h-4 w-4 text-muted-foreground" />
-                  <span>{lang === "ml" ? "അപേക്ഷ എഡിറ്റ് ചെയ്യുക" : "Edit Application"}</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer gap-2.5 py-2">
-                  <FileCheck2 className="h-4 w-4 text-muted-foreground" />
-                  <span>{lang === "ml" ? "രേഖാ പരിശോധന പുതുക്കുക" : "Update Document Verifications"}</span>
+                <DropdownMenuItem asChild className="cursor-pointer gap-2.5 py-2">
+                  <Link to="/admin/applications/$applicationId/verify" params={{ applicationId: application.id }}>
+                    <FileEdit className="h-4 w-4 text-muted-foreground" />
+                    <span>{lang === "ml" ? "അപേക്ഷ എഡിറ്റ് ചെയ്യുക" : "Edit Application"}</span>
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="cursor-pointer gap-2.5 py-2">
                   <Phone className="h-4 w-4 text-muted-foreground" />
@@ -449,7 +512,7 @@ function ApplicationDetailsPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,.65fr)]">
+      <div className="space-y-4">
         <div className="space-y-4">
           {/* Desktop Tabs Header */}
           <div className="hidden sm:flex border-b border-border/70 mb-2 gap-1">
@@ -463,19 +526,7 @@ function ApplicationDetailsPage() {
                   : "border-transparent text-muted-foreground hover:text-foreground"
               )}
             >
-              {lang === "ml" ? "വിശദാംശങ്ങൾ" : "Details"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("files")}
-              className={cn(
-                "px-4 py-2.5 text-sm font-bold border-b-2 transition-all cursor-pointer",
-                activeTab === "files"
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {lang === "ml" ? "ഫയലുകൾ" : "Files"}
+              {lang === "ml" ? "വിശദാംശങ്ങളും ഫയലുകളും" : "Details & Files"}
             </button>
             <button
               type="button"
@@ -491,209 +542,390 @@ function ApplicationDetailsPage() {
             </button>
           </div>
 
-          {/* Desktop Tab 1: Details */}
+          {/* Desktop Tab 1: Details & Files */}
           <div className="hidden sm:block">
             {activeTab === "details" && (
-              <div className="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
-                <div className="divide-y divide-border/60">
-                  {detailsRows.map((row) => {
-                    const IconComponent = row.icon;
-                    const isCopied = copiedField === row.key;
-                    return (
-                      <div
-                        key={row.key}
-                        className="flex items-center justify-between p-3.5 sm:px-5 hover:bg-muted/30 transition-colors"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <IconComponent className="h-4 w-4 shrink-0 text-orange-500" />
-                          <span className="text-sm font-medium text-muted-foreground truncate">
-                            {row.label}
-                          </span>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+                {/* 1. Details Card */}
+                <div className="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
+                  <div className="p-4 border-b border-border/60">
+                    <h3 className="font-display text-base font-extrabold text-foreground">
+                      {lang === "ml" ? "അപേക്ഷാ വിവരങ്ങൾ" : "Application Details"}
+                    </h3>
+                  </div>
+                  <div className="divide-y divide-border/60">
+                    {detailsRows.map((row) => {
+                      const IconComponent = row.icon;
+                      const isCopied = copiedField === row.key;
+                      return (
+                        <div
+                          key={row.key}
+                          className="flex items-center justify-between p-3 sm:px-4 hover:bg-muted/30 transition-colors"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <IconComponent className="h-4 w-4 shrink-0 text-orange-500" />
+                            <span className="text-xs font-medium text-muted-foreground truncate">
+                              {row.label}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                            <span className="text-xs font-extrabold text-foreground truncate max-w-[140px]">
+                              {row.value}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleCopy(row.value, row.key)}
+                              className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                              title="Copy value"
+                            >
+                              {isCopied ? (
+                                <Check className="h-3 w-3 text-green-600" />
+                              ) : (
+                                <Copy className="h-3 w-3" />
+                              )}
+                            </button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0 ml-4">
-                          <span className="text-sm font-extrabold text-foreground">
-                            {row.value}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleCopy(row.value, row.key)}
-                            className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
-                            title="Copy value"
-                          >
-                            {isCopied ? (
-                              <Check className="h-3.5 w-3.5 text-green-600" />
-                            ) : (
-                              <Copy className="h-3.5 w-3.5" />
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            )}
 
-            {/* Desktop Tab 2: Files */}
-            {activeTab === "files" && (
-              <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-3">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-display text-base font-bold text-foreground">
-                    {lang === "ml" ? "അറ്റാച്ച് ചെയ്ത രേഖകൾ" : "Attached Documents"}
-                  </h3>
-                  <span className="text-xs font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-full">
-                    {filesData.filter((f) => f.uploaded).length} / {filesData.length}{" "}
-                    {lang === "ml" ? "അപ്‌ലോഡ് ചെയ്തു" : "Uploaded"}
-                  </span>
-                </div>
-                <div className="space-y-2.5">
-                  {filesData.map((file, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between p-3.5 rounded-xl border border-border/70 bg-background hover:border-border transition-all"
-                    >
-                      <div className="flex items-start gap-3 min-w-0">
-                        {file.uploaded ? (
-                          <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600 mt-0.5" />
-                        ) : (
-                          <FileX className="h-5 w-5 shrink-0 text-amber-500 mt-0.5" />
-                        )}
-                        <div className="min-w-0">
-                          <p className="text-sm font-extrabold text-foreground truncate">
-                            {file.title}
-                          </p>
-                          {file.uploaded && (
-                            <p className="text-xs text-muted-foreground font-medium mt-0.5 flex items-center gap-2">
-                              <span className="truncate max-w-[200px] sm:max-w-[300px]">
-                                {file.fileName}
-                              </span>
-                              <span>•</span>
-                              <span>{file.size}</span>
+                {/* 2. Attached Documents / Files Card */}
+                <div className="rounded-2xl border border-border bg-white dark:bg-card p-4 sm:p-5 shadow-xs space-y-3">
+                  <div className="flex items-center justify-between mb-2 border-b border-border/60 pb-3">
+                    <h3 className="font-display text-base font-extrabold text-foreground">
+                      {lang === "ml" ? "അറ്റാച്ച് ചെയ്ത രേഖകൾ" : "Attached Documents"}
+                    </h3>
+                    <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 rounded-full border border-slate-200 dark:border-slate-700">
+                      {filesData.filter((f) => f.uploaded).length}/{filesData.length}{" "}
+                      {lang === "ml" ? "അപ്‌ലോഡ് ചെയ്തു" : "Uploaded"}
+                    </span>
+                  </div>
+                  <div className="space-y-2.5">
+                    {filesData.map((file, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between p-3 rounded-xl border border-border bg-white dark:bg-slate-900/60 shadow-2xs hover:border-border/80 transition-all"
+                      >
+                        <div className="flex items-start gap-2.5 min-w-0">
+                          {file.uploaded ? (
+                            <CheckCircle2 className="h-4.5 w-4.5 shrink-0 text-emerald-600 mt-0.5" />
+                          ) : (
+                            <FileX className="h-4.5 w-4.5 shrink-0 text-slate-400 mt-0.5" />
+                          )}
+                          <div className="min-w-0">
+                            <p className="text-xs font-extrabold text-foreground truncate">
+                              {file.title}
                             </p>
+                            {file.uploaded && (
+                              <p className="text-[11px] text-muted-foreground font-medium mt-0.5 flex items-center gap-1.5">
+                                <span className="truncate max-w-[120px]">
+                                  {file.fileName}
+                                </span>
+                                <span>•</span>
+                                <span>{file.size}</span>
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="shrink-0 ml-2">
+                          {file.uploaded ? (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
+                                >
+                                  <MoreVertical className="h-3.5 w-3.5" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-40 z-50">
+                                <DropdownMenuItem className="cursor-pointer gap-2 py-2">
+                                  <Eye className="h-3.5 w-3.5" />
+                                  <span>{lang === "ml" ? "കാണുക" : "Preview"}</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="cursor-pointer gap-2 py-2">
+                                  <Download className="h-3.5 w-3.5" />
+                                  <span>{lang === "ml" ? "ഡൗൺലോഡ്" : "Download"}</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem className="cursor-pointer gap-2 py-2 text-destructive focus:bg-destructive/10">
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                  <span>{lang === "ml" ? "ഡിലീറ്റ്" : "Delete"}</span>
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-[11px] px-2 font-semibold gap-1 cursor-pointer border-border bg-white dark:bg-slate-800 text-foreground hover:bg-slate-50 dark:hover:bg-slate-700"
+                            >
+                              <Upload className="h-3 w-3 text-slate-500" />
+                              <span>{lang === "ml" ? "അപ്‌ലോഡ്" : "Upload"}</span>
+                            </Button>
                           )}
                         </div>
                       </div>
-                      <div className="shrink-0 ml-3">
-                        {file.uploaded ? (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
-                              >
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40 z-50">
-                              <DropdownMenuItem className="cursor-pointer gap-2 py-2">
-                                <Eye className="h-3.5 w-3.5" />
-                                <span>{lang === "ml" ? "കാണുക" : "Preview"}</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="cursor-pointer gap-2 py-2">
-                                <Download className="h-3.5 w-3.5" />
-                                <span>{lang === "ml" ? "ഡൗൺലോഡ്" : "Download"}</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem className="cursor-pointer gap-2 py-2 text-destructive focus:bg-destructive/10">
-                                <Trash2 className="h-3.5 w-3.5" />
-                                <span>{lang === "ml" ? "ഡിലീറ്റ്" : "Delete"}</span>
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 text-xs font-semibold gap-1.5 cursor-pointer border-primary/40 text-primary hover:bg-primary/10"
-                          >
-                            <Upload className="h-3.5 w-3.5" />
-                            <span>{lang === "ml" ? "അപ്‌ലോഡ് ചെയ്യുക" : "Upload"}</span>
-                          </Button>
-                        )}
+                    ))}
+                  </div>
+                </div>
+
+                {/* 3. Application Progress Timeline Card */}
+                <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-4">
+                  <div className="border-b border-border/60 pb-3">
+                    <h3 className="font-display text-base font-extrabold text-foreground">
+                      {lang === "ml" ? "അപേക്ഷാ പുരോഗതി" : "Application Progress"}
+                    </h3>
+                  </div>
+
+                  <div className="relative pl-1 pr-2 py-1 space-y-5">
+                    {/* Step 1 */}
+                    <div className="relative flex items-start gap-3">
+                      <div className="absolute left-[11px] top-6 bottom-[-20px] w-[2px] bg-emerald-500" />
+                      <div className="relative z-10 flex h-5.5 w-5.5 items-center justify-center rounded-full bg-emerald-500 text-white shrink-0 shadow-2xs">
+                        <Check className="h-3 w-3 stroke-[3]" />
+                      </div>
+                      <div className="min-w-0 flex-1 pt-0.5">
+                        <h4 className="text-xs font-extrabold text-foreground leading-snug">
+                          {lang === "ml" ? "അപേക്ഷ ലഭിച്ചു" : "Application received"}
+                        </h4>
+                        <p className="text-[11px] text-muted-foreground font-medium mt-0.5">
+                          {applicantDisplayName || "K. Krishnan"} · 24 Nov 2026 · 09:34 AM
+                        </p>
                       </div>
                     </div>
-                  ))}
+
+                    {/* Step 2 */}
+                    <div className="relative flex items-start gap-3">
+                      <div className="absolute left-[11px] top-6 bottom-[-20px] w-[2px] bg-emerald-500" />
+                      <div className="relative z-10 flex h-5.5 w-5.5 items-center justify-center rounded-full bg-emerald-500 text-white shrink-0 shadow-2xs">
+                        <Check className="h-3 w-3 stroke-[3]" />
+                      </div>
+                      <div className="min-w-0 flex-1 pt-0.5">
+                        <h4 className="text-xs font-extrabold text-foreground leading-snug">
+                          {lang === "ml" ? "രേഖകൾ പരിശോധിച്ചു" : "Documents checked"}
+                        </h4>
+                        <p className="text-[11px] text-muted-foreground font-medium mt-0.5">
+                          {application.reviewer || "Jayasurya"} · 24 Nov 2026 · 09:36 AM
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Step 3 */}
+                    <div className="relative flex items-start gap-3">
+                      <div className="absolute left-[11px] top-6 bottom-[-20px] w-[2px] bg-emerald-500" />
+                      <div className="relative z-10 flex h-5.5 w-5.5 items-center justify-center rounded-full bg-emerald-500 text-white shrink-0 shadow-2xs">
+                        <Check className="h-3 w-3 stroke-[3]" />
+                      </div>
+                      <div className="min-w-0 flex-1 pt-0.5">
+                        <h4 className="text-xs font-extrabold text-foreground leading-snug">
+                          {lang === "ml" ? "ഔദ്യോഗിക പോർട്ടലിൽ സ്കീം തുറന്നു" : "Apply Scheme opened on the official portal"}
+                        </h4>
+                        <p className="text-[11px] text-muted-foreground font-medium mt-0.5">
+                          {application.reviewer || "Jayasurya"} · 24 Nov 2026 · 09:36 AM
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Step 4 */}
+                    <div className="relative flex items-start gap-3">
+                      <div className="absolute left-[11px] top-6 bottom-[-20px] w-[2px] bg-emerald-500" />
+                      <div className="relative z-10 flex h-5.5 w-5.5 items-center justify-center rounded-full bg-emerald-500 text-white shrink-0 shadow-2xs">
+                        <Check className="h-3 w-3 stroke-[3]" />
+                      </div>
+                      <div className="min-w-0 flex-1 pt-0.5">
+                        <h4 className="text-xs font-extrabold text-foreground leading-snug">
+                          {lang === "ml" ? "ട്രാക്കിംഗ് ഐഡി ചേർത്തു" : "Tracking ID added"}
+                        </h4>
+                        <p className="text-[11px] text-muted-foreground font-medium mt-0.5">
+                          {application.reviewer || "Jayasurya"} · 24 Nov 2026 · 09:36 AM
+                        </p>
+                        {/* Notes Box matching attachment design */}
+                        <div className="mt-2 max-w-md rounded-xl border border-amber-200/80 bg-[#FFF9F2] p-2.5 dark:border-amber-800/60 dark:bg-amber-950/30">
+                          <span className="block text-[9px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                            {lang === "ml" ? "കുറിപ്പുകൾ" : "NOTES"}
+                          </span>
+                          <p className="mt-0.5 text-xs font-bold text-slate-800 dark:text-slate-200">
+                            Tracking ID: 5445454545
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Step 5 */}
+                    <div className="relative flex items-start gap-3">
+                      <div className="absolute left-[11px] top-6 bottom-[-20px] w-[2px] bg-emerald-500" />
+                      <div className="relative z-10 flex h-5.5 w-5.5 items-center justify-center rounded-full bg-emerald-500 text-white shrink-0 shadow-2xs">
+                        <Check className="h-3 w-3 stroke-[3]" />
+                      </div>
+                      <div className="min-w-0 flex-1 pt-0.5">
+                        <h4 className="text-xs font-extrabold text-foreground leading-snug">
+                          {lang === "ml" ? `തീരുമാനം രേഖപ്പെടുത്തി: ${appStatus}` : `Decision recorded: ${appStatus}`}
+                        </h4>
+                        <p className="text-[11px] text-muted-foreground font-medium mt-0.5">
+                          {application.reviewer || "Jayasurya"} · 24 Nov 2026 · 09:36 AM
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Step 6 */}
+                    <div className="relative flex items-start gap-3">
+                      <div className="relative z-10 flex h-5.5 w-5.5 items-center justify-center rounded-full border-2 border-orange-500 bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 shrink-0 shadow-2xs">
+                        <Clock3 className="h-3 w-3 stroke-[2.5]" />
+                      </div>
+                      <div className="min-w-0 flex-1 pt-0.5">
+                        <h4 className="text-xs font-extrabold text-orange-600 dark:text-orange-400 leading-snug">
+                          {lang === "ml" ? "വകുപ്പുതല പരിശോധനയും അംഗീകാരവും" : "Departmental Review & Approval"}
+                        </h4>
+                        <p className="text-[11px] text-muted-foreground font-medium mt-0.5">
+                          {appStatus === "Approved" ? (lang === "ml" ? "പൂർത്തിയായി" : "Completed") : (lang === "ml" ? "തീർപ്പുകൽപ്പിക്കാത്തത്" : "Pending")}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
 
             {/* Desktop Tab 3: Applicant Details */}
             {activeTab === "applicant" && (
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-5 md:grid-cols-2 items-start">
                 {/* Personal Information Card */}
-                <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-3">
-                  <div className="flex items-center gap-2 border-b border-border/60 pb-3">
-                    <User className="h-4 w-4 text-orange-500" />
-                    <h3 className="font-display text-base font-bold text-foreground">
+                <div className="rounded-2xl border border-amber-200/70 dark:border-amber-900/40 bg-card p-4 sm:p-5 shadow-2xs space-y-2">
+                  <div className="flex items-center gap-2.5 border-b border-amber-200/60 dark:border-border/60 pb-3 mb-1">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-orange-100/80 dark:bg-orange-950/80 text-orange-600 dark:text-orange-400 border border-orange-200/60 dark:border-orange-800/60">
+                      <User className="h-3.5 w-3.5" />
+                    </div>
+                    <h3 className="font-display text-base font-extrabold text-foreground">
                       {lang === "ml" ? "വ്യക്തിഗത വിവരങ്ങൾ" : "Personal Information"}
                     </h3>
                   </div>
-                  <div className="divide-y divide-border/50 text-xs sm:text-sm">
-                    <div className="flex justify-between py-2">
-                      <span className="text-muted-foreground font-medium">
-                        {lang === "ml" ? "പൂർണ്ണ നാമം" : "Full Name"}
+                  <div className="divide-y divide-border/50 text-xs">
+                    <div className="flex items-center justify-between py-2.5 px-1 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <User className="h-3.5 w-3.5 shrink-0 text-orange-500/90" />
+                        <span className="text-xs font-semibold text-muted-foreground truncate">
+                          {lang === "ml" ? "പൂർണ്ണ നാമം" : "Full Name"}
+                        </span>
+                      </div>
+                      <span className="text-xs font-extrabold text-foreground shrink-0 ml-3">
+                        {applicantDisplayName || "Soman P"}
                       </span>
-                      <span className="font-extrabold text-foreground">{applicantDisplayName}</span>
                     </div>
-                    <div className="flex justify-between py-2">
-                      <span className="text-muted-foreground font-medium">
-                        {lang === "ml" ? "മൊബൈൽ നമ്പർ" : "Mobile Number"}
+
+                    <div className="flex items-center justify-between py-2.5 px-1 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Phone className="h-3.5 w-3.5 shrink-0 text-orange-500/90" />
+                        <span className="text-xs font-semibold text-muted-foreground truncate">
+                          {lang === "ml" ? "മൊബൈൽ നമ്പർ" : "Mobile Number"}
+                        </span>
+                      </div>
+                      <span className="text-xs font-extrabold text-foreground shrink-0 ml-3">
+                        {application.mobile ? (application.mobile.startsWith("+91") ? application.mobile : `+91 ${application.mobile}`) : "+91 98470 12345"}
                       </span>
-                      <span className="font-extrabold text-foreground">{application.mobile}</span>
                     </div>
-                    <div className="flex justify-between py-2">
-                      <span className="text-muted-foreground font-medium">
-                        {lang === "ml" ? "ജനനത്തീയതിയും വയസ്സും" : "Date of Birth & Age"}
+
+                    <div className="flex items-center justify-between py-2.5 px-1 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Calendar className="h-3.5 w-3.5 shrink-0 text-orange-500/90" />
+                        <span className="text-xs font-semibold text-muted-foreground truncate">
+                          {lang === "ml" ? "ജനനത്തീയതിയും വയസ്സും" : "Date of Birth & Age"}
+                        </span>
+                      </div>
+                      <span className="text-xs font-extrabold text-foreground shrink-0 ml-3">
+                        1972-08-20 (54 Yrs)
                       </span>
-                      <span className="font-extrabold text-foreground">1972-08-20 (54 Yrs)</span>
                     </div>
-                    <div className="flex justify-between py-2">
-                      <span className="text-muted-foreground font-medium">
-                        {lang === "ml" ? "ലിംഗഭേദം" : "Gender"}
+
+                    <div className="flex items-center justify-between py-2.5 px-1 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <User className="h-3.5 w-3.5 shrink-0 text-orange-500/90" />
+                        <span className="text-xs font-semibold text-muted-foreground truncate">
+                          {lang === "ml" ? "ലിംഗഭേദം" : "Gender"}
+                        </span>
+                      </div>
+                      <span className="text-xs font-extrabold text-foreground shrink-0 ml-3">
+                        Male
                       </span>
-                      <span className="font-extrabold text-foreground">Male</span>
                     </div>
-                    <div className="flex justify-between py-2">
-                      <span className="text-muted-foreground font-medium">
-                        {lang === "ml" ? "വൈവാഹിക നില" : "Marital Status"}
+
+                    <div className="flex items-center justify-between py-2.5 px-1 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Heart className="h-3.5 w-3.5 shrink-0 text-orange-500/90" />
+                        <span className="text-xs font-semibold text-muted-foreground truncate">
+                          {lang === "ml" ? "വൈവാഹിക നില" : "Marital Status"}
+                        </span>
+                      </div>
+                      <span className="text-xs font-extrabold text-foreground shrink-0 ml-3">
+                        Married
                       </span>
-                      <span className="font-extrabold text-foreground">Married</span>
                     </div>
-                    <div className="flex justify-between py-2">
-                      <span className="text-muted-foreground font-medium">
-                        {lang === "ml" ? "മതം" : "Religion"}
+
+                    <div className="flex items-center justify-between py-2.5 px-1 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Landmark className="h-3.5 w-3.5 shrink-0 text-orange-500/90" />
+                        <span className="text-xs font-semibold text-muted-foreground truncate">
+                          {lang === "ml" ? "മതം" : "Religion"}
+                        </span>
+                      </div>
+                      <span className="text-xs font-extrabold text-foreground shrink-0 ml-3">
+                        Hinduism
                       </span>
-                      <span className="font-extrabold text-foreground">Hinduism</span>
                     </div>
-                    <div className="flex justify-between py-2">
-                      <span className="text-muted-foreground font-medium">
-                        {lang === "ml" ? "ജാതി / സോഷ്യൽ വിഭാഗം" : "Caste / Social Category"}
+
+                    <div className="flex items-center justify-between py-2.5 px-1 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <User className="h-3.5 w-3.5 shrink-0 text-orange-500/90" />
+                        <span className="text-xs font-semibold text-muted-foreground truncate">
+                          {lang === "ml" ? "ജാതി / സോഷ്യൽ വിഭാഗം" : "Caste / Social Category"}
+                        </span>
+                      </div>
+                      <span className="text-xs font-extrabold text-foreground shrink-0 ml-3">
+                        OBC
                       </span>
-                      <span className="font-extrabold text-foreground">OBC</span>
                     </div>
-                    <div className="flex justify-between py-2">
-                      <span className="text-muted-foreground font-medium">
-                        {lang === "ml" ? "തൊഴിൽ" : "Occupation"}
+
+                    <div className="flex items-center justify-between py-2.5 px-1 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Briefcase className="h-3.5 w-3.5 shrink-0 text-orange-500/90" />
+                        <span className="text-xs font-semibold text-muted-foreground truncate">
+                          {lang === "ml" ? "തൊഴിൽ" : "Occupation"}
+                        </span>
+                      </div>
+                      <span className="text-xs font-extrabold text-foreground shrink-0 ml-3">
+                        Agricultural Worker
                       </span>
-                      <span className="font-extrabold text-foreground">Agricultural Worker</span>
                     </div>
-                    <div className="flex justify-between py-2">
-                      <span className="text-muted-foreground font-medium">
-                        {lang === "ml" ? "വാർഷിക കുടുംബ വരുമാനം" : "Annual Family Income"}
+
+                    <div className="flex items-center justify-between py-2.5 px-1 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Tag className="h-3.5 w-3.5 shrink-0 text-orange-500/90" />
+                        <span className="text-xs font-semibold text-muted-foreground truncate">
+                          {lang === "ml" ? "വാർഷിക കുടുംബ വരുമാനം" : "Annual Family Income"}
+                        </span>
+                      </div>
+                      <span className="text-xs font-extrabold text-foreground shrink-0 ml-3">
+                        ₹60,000 / Year
                       </span>
-                      <span className="font-extrabold text-foreground">₹60,000 / Year</span>
                     </div>
-                    <div className="flex justify-between items-center py-2">
-                      <span className="text-muted-foreground font-medium">
-                        {lang === "ml" ? "ആധാർ നമ്പർ" : "Aadhaar Number"}
-                      </span>
-                      <div className="flex items-center gap-1.5 font-extrabold text-foreground">
+
+                    <div className="flex items-center justify-between py-2.5 px-1 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-orange-500/90" />
+                        <span className="text-xs font-semibold text-muted-foreground truncate">
+                          {lang === "ml" ? "ആധാർ നമ്പർ" : "Aadhaar Number"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 font-extrabold text-xs text-foreground shrink-0 ml-3">
                         <span>{showAadhaar ? "4829 1048 2345" : "•••• •••• 2345"}</span>
                         <button
                           type="button"
                           onClick={() => setShowAadhaar(!showAadhaar)}
-                          className="p-1 text-muted-foreground hover:text-foreground cursor-pointer"
+                          className="p-0.5 text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                          title={showAadhaar ? "Hide Aadhaar" : "Show Aadhaar"}
                         >
                           {showAadhaar ? (
                             <EyeOff className="h-3.5 w-3.5" />
@@ -707,74 +939,133 @@ function ApplicationDetailsPage() {
                 </div>
 
                 {/* Address & Location Details Card */}
-                <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-3">
-                  <div className="flex items-center gap-2 border-b border-border/60 pb-3">
-                    <Home className="h-4 w-4 text-orange-500" />
-                    <h3 className="font-display text-base font-bold text-foreground">
+                <div className="rounded-2xl border border-amber-200/70 dark:border-amber-900/40 bg-card p-4 sm:p-5 shadow-2xs space-y-2">
+                  <div className="flex items-center gap-2.5 border-b border-amber-200/60 dark:border-border/60 pb-3 mb-1">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-orange-100/80 dark:bg-orange-950/80 text-orange-600 dark:text-orange-400 border border-orange-200/60 dark:border-orange-800/60">
+                      <MapPin className="h-3.5 w-3.5" />
+                    </div>
+                    <h3 className="font-display text-base font-extrabold text-foreground">
                       {lang === "ml" ? "വിലാസവും സ്ഥല വിവരങ്ങളും" : "Address & Location Details"}
                     </h3>
                   </div>
-                  <div className="divide-y divide-border/50 text-xs sm:text-sm">
-                    <div className="flex justify-between py-2">
-                      <span className="text-muted-foreground font-medium">
-                        {lang === "ml" ? "വീട്ടു നമ്പർ" : "House No / Door No"}
+                  <div className="divide-y divide-border/50 text-xs">
+                    <div className="flex items-center justify-between py-2.5 px-1 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Home className="h-3.5 w-3.5 shrink-0 text-orange-500/90" />
+                        <span className="text-xs font-semibold text-muted-foreground truncate">
+                          {lang === "ml" ? "വീട്ടു നമ്പർ" : "House No / Door No"}
+                        </span>
+                      </div>
+                      <span className="text-xs font-extrabold text-foreground shrink-0 ml-3">
+                        KP 4/312
                       </span>
-                      <span className="font-extrabold text-foreground">KP 4/312</span>
                     </div>
-                    <div className="flex justify-between py-2">
-                      <span className="text-muted-foreground font-medium">
-                        {lang === "ml" ? "വീടിന്റെ പേര്" : "House Name"}
+
+                    <div className="flex items-center justify-between py-2.5 px-1 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Building2 className="h-3.5 w-3.5 shrink-0 text-orange-500/90" />
+                        <span className="text-xs font-semibold text-muted-foreground truncate">
+                          {lang === "ml" ? "വീടിന്റെ പേര്" : "House Name"}
+                        </span>
+                      </div>
+                      <span className="text-xs font-extrabold text-foreground shrink-0 ml-3">
+                        Padmalayam
                       </span>
-                      <span className="font-extrabold text-foreground">Padmalayam</span>
                     </div>
-                    <div className="flex justify-between py-2">
-                      <span className="text-muted-foreground font-medium">
-                        {lang === "ml" ? "തെരുവ് / സ്ഥലം" : "Street / Locality"}
+
+                    <div className="flex items-center justify-between py-2.5 px-1 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <MapPin className="h-3.5 w-3.5 shrink-0 text-orange-500/90" />
+                        <span className="text-xs font-semibold text-muted-foreground truncate">
+                          {lang === "ml" ? "തെരുവ് / സ്ഥലം" : "Street / Locality"}
+                        </span>
+                      </div>
+                      <span className="text-xs font-extrabold text-foreground shrink-0 ml-3">
+                        Nemom Junction
                       </span>
-                      <span className="font-extrabold text-foreground">Nemom Junction</span>
                     </div>
-                    <div className="flex justify-between py-2">
-                      <span className="text-muted-foreground font-medium">
-                        {lang === "ml" ? "പിൻ കോഡ്" : "PIN Code"}
+
+                    <div className="flex items-center justify-between py-2.5 px-1 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Tag className="h-3.5 w-3.5 shrink-0 text-orange-500/90" />
+                        <span className="text-xs font-semibold text-muted-foreground truncate">
+                          {lang === "ml" ? "പിൻ കോഡ്" : "PIN Code"}
+                        </span>
+                      </div>
+                      <span className="text-xs font-extrabold text-foreground shrink-0 ml-3">
+                        695020
                       </span>
-                      <span className="font-extrabold text-foreground">695020</span>
                     </div>
-                    <div className="flex justify-between py-2">
-                      <span className="text-muted-foreground font-medium">
-                        {lang === "ml" ? "പോസ്റ്റ് ഓഫീസ്" : "Post Office"}
+
+                    <div className="flex items-center justify-between py-2.5 px-1 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <FileText className="h-3.5 w-3.5 shrink-0 text-orange-500/90" />
+                        <span className="text-xs font-semibold text-muted-foreground truncate">
+                          {lang === "ml" ? "പോസ്റ്റ് ഓഫീസ്" : "Post Office"}
+                        </span>
+                      </div>
+                      <span className="text-xs font-extrabold text-foreground shrink-0 ml-3">
+                        Nemom PO
                       </span>
-                      <span className="font-extrabold text-foreground">Nemom PO</span>
                     </div>
-                    <div className="flex justify-between py-2">
-                      <span className="text-muted-foreground font-medium">
-                        {lang === "ml" ? "വാർഡ് നമ്പർ" : "Ward Number"}
+
+                    <div className="flex items-center justify-between py-2.5 px-1 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Home className="h-3.5 w-3.5 shrink-0 text-orange-500/90" />
+                        <span className="text-xs font-semibold text-muted-foreground truncate">
+                          {lang === "ml" ? "വാർഡ് നമ്പർ" : "Ward Number"}
+                        </span>
+                      </div>
+                      <span className="text-xs font-extrabold text-foreground shrink-0 ml-3">
+                        Ward 04
                       </span>
-                      <span className="font-extrabold text-foreground">Ward 04</span>
                     </div>
-                    <div className="flex justify-between py-2">
-                      <span className="text-muted-foreground font-medium">
-                        {lang === "ml" ? "തദ്ദേശ സ്വയംഭരണ തരം" : "Local Body Type"}
+
+                    <div className="flex items-center justify-between py-2.5 px-1 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Building2 className="h-3.5 w-3.5 shrink-0 text-orange-500/90" />
+                        <span className="text-xs font-semibold text-muted-foreground truncate">
+                          {lang === "ml" ? "തദ്ദേശ സ്വയംഭരണ തരം" : "Local Body Type"}
+                        </span>
+                      </div>
+                      <span className="text-xs font-extrabold text-foreground shrink-0 ml-3">
+                        Panchayat
                       </span>
-                      <span className="font-extrabold text-foreground">Panchayat</span>
                     </div>
-                    <div className="flex justify-between py-2">
-                      <span className="text-muted-foreground font-medium">
-                        {lang === "ml" ? "തദ്ദേശ സ്വയംഭരണ സ്ഥാപനം" : "Local Body Name"}
+
+                    <div className="flex items-center justify-between py-2.5 px-1 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Building2 className="h-3.5 w-3.5 shrink-0 text-orange-500/90" />
+                        <span className="text-xs font-semibold text-muted-foreground truncate">
+                          {lang === "ml" ? "തദ്ദേശ സ്വയംഭരണ സ്ഥാപനം" : "Local Body Name"}
+                        </span>
+                      </div>
+                      <span className="text-xs font-extrabold text-foreground shrink-0 ml-3">
+                        Nemom Grama Panchayat
                       </span>
-                      <span className="font-extrabold text-foreground">Nemom Grama Panchayat</span>
                     </div>
-                    <div className="flex justify-between py-2">
-                      <span className="text-muted-foreground font-medium">
-                        {lang === "ml" ? "നിയമസഭാ മണ്ഡലം" : "Assembly Mandalam"}
+
+                    <div className="flex items-center justify-between py-2.5 px-1 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <MapPin className="h-3.5 w-3.5 shrink-0 text-orange-500/90" />
+                        <span className="text-xs font-semibold text-muted-foreground truncate">
+                          {lang === "ml" ? "നിയമസഭാ മണ്ഡലം" : "Assembly Mandalam"}
+                        </span>
+                      </div>
+                      <span className="text-xs font-extrabold text-foreground shrink-0 ml-3">
+                        Nemom
                       </span>
-                      <span className="font-extrabold text-foreground">Nemom</span>
                     </div>
-                    <div className="flex justify-between py-2">
-                      <span className="text-muted-foreground font-medium">
-                        {lang === "ml" ? "ജില്ല" : "District"}
-                      </span>
-                      <span className="font-extrabold text-foreground">
-                        {getDistrictName(application.districtId, lang)}
+
+                    <div className="flex items-center justify-between py-2.5 px-1 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <MapPin className="h-3.5 w-3.5 shrink-0 text-orange-500/90" />
+                        <span className="text-xs font-semibold text-muted-foreground truncate">
+                          {lang === "ml" ? "ജില്ല" : "District"}
+                        </span>
+                      </div>
+                      <span className="text-xs font-extrabold text-foreground shrink-0 ml-3">
+                        {getDistrictName(application.districtId, lang) || "Thiruvananthapuram"}
                       </span>
                     </div>
                   </div>
@@ -825,8 +1116,8 @@ function ApplicationDetailsPage() {
                 <p className="text-[10px] font-semibold uppercase tracking-[.12em] text-muted-foreground">
                   Scheme
                 </p>
-                <p className="mt-1 font-semibold">{scheme?.[lang]}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{scheme?.ministry[lang]}</p>
+                <p className="mt-1 font-semibold">{scheme?.[lang] ?? application.schemeId}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{scheme?.ministry?.[lang] ?? scheme?.category ?? "Ministry / Department"}</p>
               </div>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <Info label="Eligibility result" value="Initial criteria matched" />
@@ -888,7 +1179,7 @@ function ApplicationDetailsPage() {
         </div>
 
         <aside className="space-y-4">
-          <section className="rounded-2xl border border-border bg-card p-5">
+          <section className="sm:hidden rounded-2xl border border-border bg-card p-5">
             <h2 className="font-display text-lg font-bold">Application progress</h2>
             <div className="mt-4 space-y-4">
               {[
