@@ -1243,6 +1243,99 @@ const mobileApplicationStageConfig: Record<
   },
 };
 
+export type SchemeLocationLevel = "state" | "region" | "org_district" | "mandalam" | "area" | "ward";
+
+export interface DesignationOption {
+  id: string;
+  en: string;
+  ml: string;
+}
+
+export const DESIGNATION_OPTIONS_BY_LEVEL: Record<SchemeLocationLevel, DesignationOption[]> = {
+  state: [
+    { id: "all", en: "All Designations", ml: "എല്ലാ പദവികളും" },
+    { id: "state_president", en: "State President", ml: "സംസ്ഥാന പ്രസിഡന്റ്" },
+    { id: "state_gen_sec", en: "State General Secretary", ml: "സംസ്ഥാന ജനറൽ സെക്രട്ടറി" },
+    { id: "state_convenor", en: "State Convenor", ml: "സംസ്ഥാന കൺവീനർ" },
+    { id: "state_exec_member", en: "State Executive Member", ml: "സംസ്ഥാന എക്സിക്യൂട്ടീവ് അംഗം" },
+  ],
+  region: [
+    { id: "all", en: "All Designations", ml: "എല്ലാ പദവികളും" },
+    { id: "region_president", en: "Regional President", ml: "മേഖല പ്രസിഡന്റ്" },
+    { id: "district_president", en: "District President", ml: "ജില്ലാ പ്രസിഡന്റ്" },
+    { id: "district_gen_sec", en: "District General Secretary", ml: "ജില്ലാ ജനറൽ സെക്രട്ടറി" },
+    { id: "district_exec_member", en: "District Executive Member", ml: "ജില്ലാ എക്സിക്യൂട്ടീവ് അംഗം" },
+  ],
+  org_district: [
+    { id: "all", en: "All Designations", ml: "എല്ലാ പദവികളും" },
+    { id: "district_president", en: "District President", ml: "ജില്ലാ പ്രസിഡന്റ്" },
+    { id: "district_gen_sec", en: "District General Secretary", ml: "ജില്ലാ ജനറൽ സെക്രട്ടറി" },
+    { id: "district_exec_member", en: "District Executive Member", ml: "ജില്ലാ എക്സിക്യൂട്ടീവ് അംഗം" },
+  ],
+  mandalam: [
+    { id: "all", en: "All Designations", ml: "എല്ലാ പദവികളും" },
+    { id: "mandalam_president", en: "Mandalam President", ml: "മണ്ഡലം പ്രസിഡന്റ്" },
+    { id: "mandalam_gen_sec", en: "Mandalam General Secretary", ml: "മണ്ഡലം ജനറൽ സെക്രട്ടറി" },
+    { id: "mandalam_vice_president", en: "Mandalam Vice President", ml: "മണ്ഡലം വൈസ് പ്രസിഡന്റ്" },
+  ],
+  area: [
+    { id: "all", en: "All Designations", ml: "എല്ലാ പദവികളും" },
+    { id: "area_president", en: "Area President", ml: "ഏരിയ പ്രസിഡന്റ്" },
+    { id: "area_secretary", en: "Area Secretary", ml: "ഏരിയ സെക്രട്ടറി" },
+    { id: "area_exec_member", en: "Area Executive Member", ml: "ഏരിയ എക്സിക്യൂട്ടീവ് അംഗം" },
+  ],
+  ward: [
+    { id: "all", en: "All Designations", ml: "എല്ലാ പദവികളും" },
+    { id: "booth_president", en: "Booth President", ml: "ബൂത്ത് പ്രസിഡന്റ്" },
+    { id: "booth_secretary", en: "Booth Secretary", ml: "ബൂത്ത് സെക്രട്ടറി" },
+    { id: "booth_incharge", en: "Booth In-charge", ml: "ബൂത്ത് ഇൻ-ചാർജ്" },
+  ],
+};
+
+export interface TeamMemberDef {
+  id: string;
+  name: string;
+  designationId: string;
+  designationEn: string;
+  designationMl: string;
+  level: SchemeLocationLevel;
+}
+
+export const TEAM_MEMBER_OPTIONS: TeamMemberDef[] = [
+  { id: "k_p_radhakrishnan", name: "K. P. Radhakrishnan", designationId: "state_president", designationEn: "State President", designationMl: "സംസ്ഥാന പ്രസിഡന്റ്", level: "state" },
+  { id: "sunil_kumar", name: "Sunil Kumar", designationId: "state_gen_sec", designationEn: "State General Secretary", designationMl: "സംസ്ഥാന ജനറൽ സെക്രട്ടറി", level: "state" },
+  { id: "meena_p", name: "Meena P.", designationId: "state_convenor", designationEn: "State Convenor", designationMl: "സംസ്ഥാന കൺവീനർ", level: "state" },
+  { id: "anil_v", name: "Anil V.", designationId: "state_exec_member", designationEn: "State Executive Member", designationMl: "സംസ്ഥാന എക്സിക്യൂട്ടീവ് അംഗം", level: "state" },
+
+  { id: "rajesh_v", name: "Rajesh V", designationId: "district_president", designationEn: "District President", designationMl: "ജില്ലാ പ്രസിഡന്റ്", level: "region" },
+  { id: "gopika_r", name: "Gopika R", designationId: "district_gen_sec", designationEn: "District General Secretary", designationMl: "ജില്ലാ ജനറൽ സെക്രട്ടറി", level: "region" },
+  { id: "hari_m", name: "Hari M", designationId: "district_exec_member", designationEn: "District Executive Member", designationMl: "ജില്ലാ എക്സിക്യൂട്ടീവ് അംഗം", level: "region" },
+
+  { id: "rajesh_v", name: "Rajesh V", designationId: "district_president", designationEn: "District President", designationMl: "ജില്ലാ പ്രസിഡന്റ്", level: "org_district" },
+  { id: "gopika_r", name: "Gopika R", designationId: "district_gen_sec", designationEn: "District General Secretary", designationMl: "ജില്ലാ ജനറൽ സെക്രട്ടറി", level: "org_district" },
+  { id: "hari_m", name: "Hari M", designationId: "district_exec_member", designationEn: "District Executive Member", designationMl: "ജില്ലാ എക്സിക്യൂട്ടീവ് അംഗം", level: "org_district" },
+
+  { id: "suresh_kumar", name: "Suresh Kumar", designationId: "mandalam_president", designationEn: "Mandalam President", designationMl: "മണ്ഡലം പ്രസിഡന്റ്", level: "mandalam" },
+  { id: "renjith_s", name: "Renjith S", designationId: "mandalam_gen_sec", designationEn: "Mandalam General Secretary", designationMl: "മണ്ഡലം ജനറൽ സെക്രട്ടറി", level: "mandalam" },
+  { id: "deepa_n", name: "Deepa N", designationId: "mandalam_vice_president", designationEn: "Mandalam Vice President", designationMl: "മണ്ഡലം വൈസ് പ്രസിഡന്റ്", level: "mandalam" },
+
+  { id: "dhyan", name: "Dhyan M S", designationId: "area_president", designationEn: "Area President", designationMl: "ഏരിയ പ്രസിഡന്റ്", level: "area" },
+  { id: "rahul_k", name: "Rahul K", designationId: "area_secretary", designationEn: "Area Secretary", designationMl: "ഏരിയ സെക്രട്ടറി", level: "area" },
+  { id: "priya_m", name: "Priya M", designationId: "area_exec_member", designationEn: "Area Executive Member", designationMl: "ഏരിയ എക്സിക്യൂട്ടീവ് അംഗം", level: "area" },
+
+  { id: "anjali", name: "Anjali Nair", designationId: "booth_president", designationEn: "Booth Worker", designationMl: "ബൂത്ത് വർക്കർ", level: "ward" },
+  { id: "vinu_s", name: "Vinu S", designationId: "booth_secretary", designationEn: "Booth Secretary", designationMl: "ബൂത്ത് സെക്രട്ടറി", level: "ward" },
+  { id: "manoj_k", name: "Manoj K", designationId: "booth_incharge", designationEn: "Booth In-charge", designationMl: "ബൂത്ത് ഇൻ-ചാർജ്", level: "ward" },
+];
+
+export function getFilteredTeamMembers(level: SchemeLocationLevel, designationId?: string): TeamMemberDef[] {
+  return TEAM_MEMBER_OPTIONS.filter((member) => {
+    if (member.level !== level) return false;
+    if (designationId && designationId !== "all" && member.designationId !== designationId) return false;
+    return true;
+  });
+}
+
 const formatMobileApplicationStageDate = (baseDate: string, offsetDays: number) => {
   const date = new Date(`${baseDate} 00:00:00`);
   if (Number.isNaN(date.getTime())) return baseDate;
@@ -3459,6 +3552,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [appLocationSearchQuery, setAppLocationSearchQuery] = useState<string>("");
 
   const [appFilterAssignedWorker, setAppFilterAssignedWorker] = useState<string>("all");
+  const [appFilterDesignation, setAppFilterDesignation] = useState<string>("all");
   const [isAppWorkerDropdownOpen, setIsAppWorkerDropdownOpen] = useState<boolean>(false);
   const [appWorkerSearchQuery, setAppWorkerSearchQuery] = useState<string>("");
 
@@ -18800,6 +18894,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           setAppFilterFollowUp("all");
                           setAppSelectedFollowUpFilters([]);
                           setPartyWorkerTab("my_work");
+                          setAppFilterDesignation("all");
                           setAppFilterAssignedWorker("all");
                           if (userRole === "party_worker") {
                             setAppLocationLevel("area");
@@ -24670,17 +24765,19 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           {/* Applicants filter bottom sheet (refer Attachment 1 & 2) */}
           {isApplicantFilterOpen && (mobileSubPage === "users" || mobileSubPage === "applicants") && (
             <div
-              className="absolute inset-0 z-50 flex items-end rounded-[36px] bg-black/60 animate-in fade-in duration-200"
+              className="absolute inset-0 z-50 flex flex-col justify-end rounded-[36px] bg-black/60 transition-opacity animate-in fade-in duration-200 overflow-hidden h-full w-full"
               onClick={() => setIsApplicantFilterOpen(false)}
+              onWheel={(e) => e.stopPropagation()}
+              onTouchMove={(e) => e.stopPropagation()}
             >
               <div
-                className="w-full max-h-[80%] overflow-y-auto rounded-t-[20px] border-t border-slate-100 bg-white px-3.5 pb-4 pt-2.5 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+                className="w-full max-h-[85%] overflow-hidden rounded-t-[20px] border-t border-slate-100 bg-white px-3.5 pb-4 pt-2.5 shadow-2xl dark:border-slate-800 dark:bg-slate-900 flex flex-col"
                 onClick={(event) => event.stopPropagation()}
               >
-                <div className="mx-auto mb-2 h-1 w-9 rounded-full bg-slate-200 dark:bg-slate-700" />
+                <div className="mx-auto mb-2 h-1 w-9 rounded-full bg-slate-200 dark:bg-slate-700 shrink-0" />
 
                 {/* Header with Filter icon and close button */}
-                <div className="mb-2 flex items-center justify-between pb-1.5 border-b border-slate-100 dark:border-slate-800">
+                <div className="mb-2 flex items-center justify-between pb-1.5 border-b border-slate-100 dark:border-slate-800 shrink-0">
                   <div className="flex items-center gap-2">
                     <span className="flex h-6 w-6 items-center justify-center rounded-full bg-orange-50 text-[#ff5500] dark:bg-orange-950/40 dark:text-orange-300">
                       <Filter className="h-3 w-3 stroke-[2.2]" />
@@ -24706,7 +24803,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   </button>
                 </div>
 
-                <div className="space-y-2">
+                <div className="flex-1 overflow-y-auto min-h-0 pr-1 space-y-2">
                   {/* Segmented View Toggle: My View / Team */}
                   <div>
                     <div className="grid grid-cols-2 gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/60 p-0.5">
@@ -24902,6 +24999,60 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     />
                   )}
 
+                  {/* 7. Designations & Team Member Selection (when Team tab is active) */}
+                  {applicantPendingWorkView === "team" && (
+                    <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                      <PickerButton
+                        label={lang === "ml" ? "പദവി തിരഞ്ഞെടുക്കുക (Designation)" : "Select Designation"}
+                        value={(() => {
+                          const levelDesignations = DESIGNATION_OPTIONS_BY_LEVEL[applicantPendingLocationLevel] || DESIGNATION_OPTIONS_BY_LEVEL.state;
+                          const current = levelDesignations.find((d) => d.id === appFilterDesignation);
+                          return current ? (lang === "ml" ? current.ml : current.en) : (lang === "ml" ? "എല്ലാ പദവികളും" : "All Designations");
+                        })()}
+                        onClick={() => {
+                          const levelDesignations = DESIGNATION_OPTIONS_BY_LEVEL[applicantPendingLocationLevel] || DESIGNATION_OPTIONS_BY_LEVEL.state;
+                          openCustomPicker(
+                            lang === "ml" ? "പദവി തിരഞ്ഞെടുക്കുക" : "Select Designation",
+                            levelDesignations.map((d) => ({ id: d.id, label: lang === "ml" ? d.ml : d.en })),
+                            appFilterDesignation,
+                            (id) => {
+                              setAppFilterDesignation(id);
+                              setAppFilterAssignedWorker("all");
+                            }
+                          );
+                        }}
+                      />
+
+                      <PickerButton
+                        label={lang === "ml" ? "ടീം അംഗത്തെ തിരഞ്ഞെടുക്കുക (Team Member)" : "Select Team Member"}
+                        value={(() => {
+                          if (appFilterAssignedWorker === "all") return lang === "ml" ? "എല്ലാ പ്രവർത്തകരും" : "All Workers";
+                          if (appFilterAssignedWorker === "unassigned") return lang === "ml" ? "ചുമതലപ്പെടുത്താത്തവ" : "Unassigned";
+                          const members = getFilteredTeamMembers(applicantPendingLocationLevel, appFilterDesignation);
+                          const match = members.find((m) => m.id === appFilterAssignedWorker) || TEAM_MEMBER_OPTIONS.find((m) => m.id === appFilterAssignedWorker);
+                          return match ? `${match.name} (${lang === "ml" ? match.designationMl : match.designationEn})` : appFilterAssignedWorker;
+                        })()}
+                        onClick={() => {
+                          const filteredMembers = getFilteredTeamMembers(applicantPendingLocationLevel, appFilterDesignation);
+                          const options = [
+                            { id: "all", label: lang === "ml" ? "എല്ലാ പ്രവർത്തകരും" : "All Workers" },
+                            { id: "unassigned", label: lang === "ml" ? "ചുമതലപ്പെടുത്താത്തവ (Unassigned)" : "Unassigned" },
+                            ...filteredMembers.map((m) => ({
+                              id: m.id,
+                              label: `${m.name} (${lang === "ml" ? m.designationMl : m.designationEn})`,
+                            })),
+                          ];
+                          openCustomPicker(
+                            lang === "ml" ? "ടീം അംഗത്തെ തിരഞ്ഞെടുക്കുക" : "Select Team Member",
+                            options,
+                            appFilterAssignedWorker,
+                            (id) => setAppFilterAssignedWorker(id)
+                          );
+                        }}
+                      />
+                    </div>
+                  )}
+
                   {/* Scheme Category, Scheme Selection and Sort By (below Location Level) */}
                   <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                     {/* Scheme Category */}
@@ -24994,7 +25145,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   </div>
 
                   {/* Bottom Action Buttons: Reset & Apply Filters */}
-                  <div className="pt-1.5 flex items-center gap-2">
+                  <div className="pt-2 flex items-center gap-2 shrink-0 border-t border-slate-100 dark:border-slate-800">
                     <button
                       type="button"
                       onClick={() => {
@@ -25057,7 +25208,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           {/* Interactive Filter Modal Overlay - Home Filters UI matching reference mock */}
           {showFilterMenu && (
             <div 
-              className="absolute inset-0 z-50 flex items-end bg-black/60 transition-opacity animate-in fade-in duration-200 rounded-[36px] overflow-hidden"
+              className="sticky inset-0 bottom-0 z-50 flex flex-col justify-end bg-black/60 transition-opacity animate-in fade-in duration-200 rounded-t-[36px] rounded-b-[36px] overflow-hidden -mt-[200vh] min-h-full h-full"
               onClick={() => {
                 setAppliedGeoMode(geoMode);
                 if (geoMode === "assembly") {
@@ -25172,35 +25323,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           <span>{lang === "ml" ? "ടീം" : "Team"}</span>
                         </button>
                       </div>
-
-                      {/* If Team view is active, show Assigned Worker selection */}
-                      {partyWorkerTab === "team" && (
-                        <PickerButton
-                          label={lang === "ml" ? "ചുമതലപ്പെടുത്തിയ പ്രവർത്തകൻ" : "Assigned Worker"}
-                          value={
-                            appFilterAssignedWorker === "all"
-                              ? (lang === "ml" ? "എല്ലാ പ്രവർത്തകരും" : "All Workers")
-                              : appFilterAssignedWorker === "unassigned"
-                                ? (lang === "ml" ? "ചുമതലപ്പെടുത്താത്തവ" : "Unassigned")
-                                : appFilterAssignedWorker === "dhyan"
-                                  ? "Dhyan M S (Area President)"
-                                  : "Anjali Nair (Booth Worker)"
-                          }
-                          onClick={() =>
-                            openCustomPicker(
-                              lang === "ml" ? "ചുമതലപ്പെടുത്തിയ പ്രവർത്തകൻ" : "Assigned Worker",
-                              [
-                                { id: "all", label: lang === "ml" ? "എല്ലാ പ്രവർത്തകരും" : "All Workers" },
-                                { id: "unassigned", label: lang === "ml" ? "ചുമതലപ്പെടുത്താത്തവ (Unassigned)" : "Unassigned" },
-                                { id: "dhyan", label: "Dhyan M S (Area President)" },
-                                { id: "anjali", label: "Anjali Nair (Booth Worker)" },
-                              ],
-                              appFilterAssignedWorker,
-                              (id) => setAppFilterAssignedWorker(id)
-                            )
-                          }
-                        />
-                      )}
                     </div>
 
                     {/* 2. Location Filter with Location Level Selection */}
@@ -25423,6 +25545,60 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         </div>
                       )}
                     </div>
+
+                    {/* Team Tab Filters: Designation & Team Member selection below Location level */}
+                    {partyWorkerTab === "team" && (
+                      <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                        <PickerButton
+                          label={lang === "ml" ? "പദവി തിരഞ്ഞെടുക്കുക (Designation)" : "Select Designation"}
+                          value={(() => {
+                            const levelDesignations = DESIGNATION_OPTIONS_BY_LEVEL[appLocationLevel] || DESIGNATION_OPTIONS_BY_LEVEL.state;
+                            const current = levelDesignations.find((d) => d.id === appFilterDesignation);
+                            return current ? (lang === "ml" ? current.ml : current.en) : (lang === "ml" ? "എല്ലാ പദവികളും" : "All Designations");
+                          })()}
+                          onClick={() => {
+                            const levelDesignations = DESIGNATION_OPTIONS_BY_LEVEL[appLocationLevel] || DESIGNATION_OPTIONS_BY_LEVEL.state;
+                            openCustomPicker(
+                              lang === "ml" ? "പദവി തിരഞ്ഞെടുക്കുക" : "Select Designation",
+                              levelDesignations.map((d) => ({ id: d.id, label: lang === "ml" ? d.ml : d.en })),
+                              appFilterDesignation,
+                              (id) => {
+                                setAppFilterDesignation(id);
+                                setAppFilterAssignedWorker("all");
+                              }
+                            );
+                          }}
+                        />
+
+                        <PickerButton
+                          label={lang === "ml" ? "തൊഴിലാളി / ടീം അംഗം (Team Member)" : "Select Team Member"}
+                          value={(() => {
+                            if (appFilterAssignedWorker === "all") return lang === "ml" ? "എല്ലാ പ്രവർത്തകരും" : "All Workers";
+                            if (appFilterAssignedWorker === "unassigned") return lang === "ml" ? "ചുമതലപ്പെടുത്താത്തവ" : "Unassigned";
+                            const members = getFilteredTeamMembers(appLocationLevel, appFilterDesignation);
+                            const match = members.find((m) => m.id === appFilterAssignedWorker) || TEAM_MEMBER_OPTIONS.find((m) => m.id === appFilterAssignedWorker);
+                            return match ? `${match.name} (${lang === "ml" ? match.designationMl : match.designationEn})` : appFilterAssignedWorker;
+                          })()}
+                          onClick={() => {
+                            const filteredMembers = getFilteredTeamMembers(appLocationLevel, appFilterDesignation);
+                            const options = [
+                              { id: "all", label: lang === "ml" ? "എല്ലാ പ്രവർത്തകരും" : "All Workers" },
+                              { id: "unassigned", label: lang === "ml" ? "ചുമതലപ്പെടുത്താത്തവ (Unassigned)" : "Unassigned" },
+                              ...filteredMembers.map((m) => ({
+                                id: m.id,
+                                label: `${m.name} (${lang === "ml" ? m.designationMl : m.designationEn})`,
+                              })),
+                            ];
+                            openCustomPicker(
+                              lang === "ml" ? "ടീം അംഗത്തെ തിരഞ്ഞെടുക്കുക" : "Select Team Member",
+                              options,
+                              appFilterAssignedWorker,
+                              (id) => setAppFilterAssignedWorker(id)
+                            );
+                          }}
+                        />
+                      </div>
+                    )}
 
                     {/* 7. Scheme Category, Scheme Selection and Sort By (below Location Level) */}
                     <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
@@ -25995,6 +26171,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         setAppFilterFollowUp("all");
                         setAppSelectedFollowUpFilters(["all"]);
                         setIsAppFollowUpDropdownOpen(false);
+                        setAppFilterDesignation("all");
                         setAppFilterAssignedWorker("all");
                         setIsAppWorkerDropdownOpen(false);
                         setAppWorkerSearchQuery("");

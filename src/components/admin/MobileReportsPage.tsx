@@ -133,6 +133,8 @@ interface SchemeFilterState {
   category?: string;
   scheme?: string;
   sortBy?: string;
+  designation?: string;
+  teamMember?: string;
 }
 
 const createEmptySchemeLocation = (): SchemeLocationFilter => ({
@@ -148,7 +150,136 @@ const createDefaultSchemeFilter = (): SchemeFilterState => ({
   statuses: [],
   locationLevel: "state",
   location: createEmptySchemeLocation(),
+  category: "all",
+  scheme: "all",
+  sortBy: "benefits_high_low",
+  designation: "all",
+  teamMember: "all",
 });
+
+interface DesignationOption {
+  id: string;
+  en: string;
+  ml: string;
+}
+
+const DESIGNATION_OPTIONS_BY_LEVEL: Record<SchemeLocationLevel, DesignationOption[]> = {
+  state: [
+    { id: "all", en: "All Designations", ml: "എല്ലാ പദവികളും" },
+    { id: "state_president", en: "State President", ml: "സംസ്ഥാന പ്രസിഡന്റ്" },
+    { id: "state_gen_sec", en: "State General Secretary", ml: "സംസ്ഥാന ജനറൽ സെക്രട്ടറി" },
+    { id: "state_convenor", en: "State Convenor", ml: "സംസ്ഥാന കൺവീനർ" },
+    { id: "state_exec_member", en: "State Executive Member", ml: "സംസ്ഥാന എക്സിക്യൂട്ടീവ് അംഗം" },
+  ],
+  region: [
+    { id: "all", en: "All Designations", ml: "എല്ലാ പദവികളും" },
+    { id: "region_president", en: "Regional President", ml: "മേഖല പ്രസിഡന്റ്" },
+    { id: "district_president", en: "District President", ml: "ജില്ലാ പ്രസിഡന്റ്" },
+    { id: "district_gen_sec", en: "District General Secretary", ml: "ജില്ലാ ജനറൽ സെക്രട്ടറി" },
+    { id: "district_exec_member", en: "District Executive Member", ml: "ജില്ലാ എക്സിക്യൂട്ടീവ് അംഗം" },
+  ],
+  org_district: [
+    { id: "all", en: "All Designations", ml: "എല്ലാ പദവികളും" },
+    { id: "district_president", en: "District President", ml: "ജില്ലാ പ്രസിഡന്റ്" },
+    { id: "district_gen_sec", en: "District General Secretary", ml: "ജില്ലാ ജനറൽ സെക്രട്ടറി" },
+    { id: "district_exec_member", en: "District Executive Member", ml: "ജില്ലാ എക്സിക്യൂട്ടീവ് അംഗം" },
+  ],
+  mandalam: [
+    { id: "all", en: "All Designations", ml: "എല്ലാ പദവികളും" },
+    { id: "mandalam_president", en: "Mandalam President", ml: "മണ്ഡലം പ്രസിഡന്റ്" },
+    { id: "mandalam_gen_sec", en: "Mandalam General Secretary", ml: "മണ്ഡലം ജനറൽ സെക്രട്ടറി" },
+    { id: "mandalam_vice_president", en: "Mandalam Vice President", ml: "മണ്ഡലം വൈസ് പ്രസിഡന്റ്" },
+  ],
+  area: [
+    { id: "all", en: "All Designations", ml: "എല്ലാ പദവികളും" },
+    { id: "area_president", en: "Area President", ml: "ഏരിയ പ്രസിഡന്റ്" },
+    { id: "area_secretary", en: "Area Secretary", ml: "ഏരിയ സെക്രട്ടറി" },
+    { id: "area_exec_member", en: "Area Executive Member", ml: "ഏരിയ എക്സിക്യൂട്ടീവ് അംഗം" },
+  ],
+  ward: [
+    { id: "all", en: "All Designations", ml: "എല്ലാ പദവികളും" },
+    { id: "booth_president", en: "Booth President", ml: "ബൂത്ത് പ്രസിഡന്റ്" },
+    { id: "booth_secretary", en: "Booth Secretary", ml: "ബൂത്ത് സെക്രട്ടറി" },
+    { id: "booth_incharge", en: "Booth In-charge", ml: "ബൂത്ത് ഇൻ-ചാർജ്" },
+  ],
+};
+
+interface TeamMemberDef {
+  id: string;
+  name: string;
+  designationId: string;
+  designationEn: string;
+  designationMl: string;
+  level: SchemeLocationLevel;
+}
+
+const TEAM_MEMBER_OPTIONS: TeamMemberDef[] = [
+  { id: "k_p_radhakrishnan", name: "K. P. Radhakrishnan", designationId: "state_president", designationEn: "State President", designationMl: "സംസ്ഥാന പ്രസിഡന്റ്", level: "state" },
+  { id: "sunil_kumar", name: "Sunil Kumar", designationId: "state_gen_sec", designationEn: "State General Secretary", designationMl: "സംസ്ഥാന ജനറൽ സെക്രട്ടറി", level: "state" },
+  { id: "meena_p", name: "Meena P.", designationId: "state_convenor", designationEn: "State Convenor", designationMl: "സംസ്ഥാന കൺവീനർ", level: "state" },
+  { id: "anil_v", name: "Anil V.", designationId: "state_exec_member", designationEn: "State Executive Member", designationMl: "സംസ്ഥാന എക്സിക്യൂട്ടീവ് അംഗം", level: "state" },
+
+  { id: "rajesh_v", name: "Rajesh V", designationId: "district_president", designationEn: "District President", designationMl: "ജില്ലാ പ്രസിഡന്റ്", level: "region" },
+  { id: "gopika_r", name: "Gopika R", designationId: "district_gen_sec", designationEn: "District General Secretary", designationMl: "ജില്ലാ ജനറൽ സെക്രട്ടറി", level: "region" },
+  { id: "hari_m", name: "Hari M", designationId: "district_exec_member", designationEn: "District Executive Member", designationMl: "ജില്ലാ എക്സിക്യൂട്ടീവ് അംഗം", level: "region" },
+
+  { id: "rajesh_v", name: "Rajesh V", designationId: "district_president", designationEn: "District President", designationMl: "ജില്ലാ പ്രസിഡന്റ്", level: "org_district" },
+  { id: "gopika_r", name: "Gopika R", designationId: "district_gen_sec", designationEn: "District General Secretary", designationMl: "ജില്ലാ ജനറൽ സെക്രട്ടറി", level: "org_district" },
+  { id: "hari_m", name: "Hari M", designationId: "district_exec_member", designationEn: "District Executive Member", designationMl: "ജില്ലാ എക്സിക്യൂട്ടീവ് അംഗം", level: "org_district" },
+
+  { id: "suresh_kumar", name: "Suresh Kumar", designationId: "mandalam_president", designationEn: "Mandalam President", designationMl: "മണ്ഡലം പ്രസിഡന്റ്", level: "mandalam" },
+  { id: "renjith_s", name: "Renjith S", designationId: "mandalam_gen_sec", designationEn: "Mandalam General Secretary", designationMl: "മണ്ഡലം ജനറൽ സെക്രട്ടറി", level: "mandalam" },
+  { id: "deepa_n", name: "Deepa N", designationId: "mandalam_vice_president", designationEn: "Mandalam Vice President", designationMl: "മണ്ഡലം വൈസ് പ്രസിഡന്റ്", level: "mandalam" },
+
+  { id: "dhyan", name: "Dhyan M S", designationId: "area_president", designationEn: "Area President", designationMl: "ഏരിയ പ്രസിഡന്റ്", level: "area" },
+  { id: "rahul_k", name: "Rahul K", designationId: "area_secretary", designationEn: "Area Secretary", designationMl: "ഏരിയ സെക്രട്ടറി", level: "area" },
+  { id: "priya_m", name: "Priya M", designationId: "area_exec_member", designationEn: "Area Executive Member", designationMl: "ഏരിയ എക്സിക്യൂട്ടീവ് അംഗം", level: "area" },
+
+  { id: "anjali", name: "Anjali Nair", designationId: "booth_president", designationEn: "Booth Worker", designationMl: "ബൂത്ത് വർക്കർ", level: "ward" },
+  { id: "vinu_s", name: "Vinu S", designationId: "booth_secretary", designationEn: "Booth Secretary", designationMl: "ബൂത്ത് സെക്രട്ടറി", level: "ward" },
+  { id: "manoj_k", name: "Manoj K", designationId: "booth_incharge", designationEn: "Booth In-charge", designationMl: "ബൂത്ത് ഇൻ-ചാർജ്", level: "ward" },
+];
+
+const getFilteredTeamMembers = (level: SchemeLocationLevel, designationId?: string) => {
+  const levelMembers = TEAM_MEMBER_OPTIONS.filter((m) => m.level === level);
+  if (!designationId || designationId === "all") {
+    return levelMembers;
+  }
+  return levelMembers.filter((m) => m.designationId === designationId);
+};
+
+const SORT_BY_OPTIONS = [
+  {
+    id: "benefits_high_low",
+    en: "Benefits Received: High to Low",
+    ml: "ലഭിച്ച ആനുകൂല്യങ്ങൾ: ഉയർന്നതിൽ നിന്ന് താഴ്ന്നതിലേക്ക്",
+  },
+  {
+    id: "benefits_low_high",
+    en: "Benefits Received: Low to High",
+    ml: "ലഭിച്ച ആനുകൂല്യങ്ങൾ: താഴ്ന്നതിൽ നിന്ന് ഉയർന്നതിലേക്ക്",
+  },
+  {
+    id: "pending_high_low",
+    en: "Pending Applications: High to Low",
+    ml: "തീർപ്പുകൽപ്പിക്കാത്ത അപേക്ഷകൾ: ഉയർന്നതിൽ നിന്ന് താഴ്ന്നതിലേക്ക്",
+  },
+  {
+    id: "pending_low_high",
+    en: "Pending Applications: Low to High",
+    ml: "തീർപ്പുകൽപ്പിക്കാത്ത അപേക്ഷകൾ: താഴ്ന്നതിൽ നിന്ന് ഉയർന്നതിലേക്ക്",
+  },
+  {
+    id: "review_high_low",
+    en: "In Review: High to Low",
+    ml: "പരിശോധനയിലുള്ളവ: ഉയർന്നതിൽ നിന്ന് താഴ്ന്നതിലേക്ക്",
+  },
+  {
+    id: "review_low_high",
+    en: "In Review: Low to High",
+    ml: "പരിശോധനയിലുള്ളവ: താഴ്ന്നതിൽ നിന്ന് ഉയർന്നതിലേക്ക്",
+  },
+];
 
 const REPORT_SCHEMES: SchemeReportDef[] = [
   {
@@ -949,10 +1080,16 @@ export function MobileReportsPage({
   const hasLocalFilters =
     appliedSchemeFilter.workView !== "my_work" ||
     appliedSchemeFilter.statuses.length > 0 ||
+    Boolean(appliedSchemeFilter.category && appliedSchemeFilter.category !== "all") ||
+    Boolean(appliedSchemeFilter.scheme && appliedSchemeFilter.scheme !== "all") ||
+    Boolean(appliedSchemeFilter.sortBy && appliedSchemeFilter.sortBy !== "benefits_high_low") ||
     hasLocationFilters;
   const localFilterCount =
     (appliedSchemeFilter.workView !== "my_work" ? 1 : 0) +
     (appliedSchemeFilter.statuses.length > 0 ? 1 : 0) +
+    (appliedSchemeFilter.category && appliedSchemeFilter.category !== "all" ? 1 : 0) +
+    (appliedSchemeFilter.scheme && appliedSchemeFilter.scheme !== "all" ? 1 : 0) +
+    (appliedSchemeFilter.sortBy && appliedSchemeFilter.sortBy !== "benefits_high_low" ? 1 : 0) +
     (hasLocationFilters ? 1 : 0);
   const activeFilterCount = (isFilterActive ? filterCount : 0) + localFilterCount;
 
@@ -1086,11 +1223,51 @@ export function MobileReportsPage({
     );
   }, [searchQuery]);
 
-  // Hide schemes that have no applications matching the active filter
+  // Hide schemes that have no applications matching the active filter, filter by category & scheme selection, and sort by selected sortBy metric
   const visibleSchemes = useMemo(() => {
-    if (!isFilterActive && !hasLocalFilters) return filteredSchemes;
-    return filteredSchemes.filter((scheme) => (filteredByScheme.get(scheme.id) || []).length > 0);
-  }, [filteredSchemes, filteredByScheme, isFilterActive, hasLocalFilters]);
+    let list = filteredSchemes;
+
+    // Filter by Category if selected
+    if (appliedSchemeFilter.category && appliedSchemeFilter.category !== "all") {
+      list = list.filter((s) => s.categoryId === appliedSchemeFilter.category);
+    }
+
+    // Filter by Scheme Selection if selected
+    if (appliedSchemeFilter.scheme && appliedSchemeFilter.scheme !== "all") {
+      list = list.filter((s) => s.id === appliedSchemeFilter.scheme);
+    }
+
+    // Filter out schemes with 0 matching applications if filter is active or local filters applied
+    if (isFilterActive || hasLocalFilters) {
+      list = list.filter((scheme) => (filteredByScheme.get(scheme.id) || []).length > 0);
+    }
+
+    // Sort schemes by the selected sortBy metric
+    const sortBy = appliedSchemeFilter.sortBy || "benefits_high_low";
+    return [...list].sort((a, b) => {
+      const aApps = filteredByScheme.get(a.id) || [];
+      const bApps = filteredByScheme.get(b.id) || [];
+      const aStats = getSchemeStats(aApps);
+      const bStats = getSchemeStats(bApps);
+
+      switch (sortBy) {
+        case "benefits_high_low":
+          return bStats.approved - aStats.approved;
+        case "benefits_low_high":
+          return aStats.approved - bStats.approved;
+        case "pending_high_low":
+          return bStats.pending - aStats.pending;
+        case "pending_low_high":
+          return aStats.pending - bStats.pending;
+        case "review_high_low":
+          return bStats.inReview - aStats.inReview;
+        case "review_low_high":
+          return aStats.inReview - bStats.inReview;
+        default:
+          return 0;
+      }
+    });
+  }, [filteredSchemes, filteredByScheme, isFilterActive, hasLocalFilters, appliedSchemeFilter]);
   const getFilterSheetBounds = (anchor?: HTMLElement | null) => {
     let ancestor = anchor?.parentElement || null;
     while (ancestor && ancestor !== document.body) {
@@ -1300,21 +1477,25 @@ export function MobileReportsPage({
     );
     const draftCount =
       (draftSchemeFilter.workView !== "my_work" ? 1 : 0) +
+      (draftSchemeFilter.category && draftSchemeFilter.category !== "all" ? 1 : 0) +
+      (draftSchemeFilter.scheme && draftSchemeFilter.scheme !== "all" ? 1 : 0) +
+      (draftSchemeFilter.sortBy && draftSchemeFilter.sortBy !== "benefits_high_low" ? 1 : 0) +
       (draftHasLocation ? 1 : 0);
 
     return (
       <div
-        className={`fixed ${filterSheetBounds ? "" : "inset-0"} z-[120] flex items-end bg-slate-950/50 animate-in fade-in duration-150`}
-        style={filterSheetBounds ?? undefined}
+        className="absolute inset-0 z-[120] flex flex-col justify-end bg-slate-950/60 transition-opacity animate-in fade-in duration-200 rounded-[36px] overflow-hidden h-full w-full"
         onClick={() => setIsFilterSheetOpen(false)}
+        onWheel={(e) => e.stopPropagation()}
+        onTouchMove={(e) => e.stopPropagation()}
       >
         <div
-          className="w-full max-h-[88%] overflow-y-auto rounded-t-[24px] border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-2xl animate-in slide-in-from-bottom-full duration-300"
+          className="w-full max-h-[85%] overflow-hidden rounded-t-[24px] border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-2xl animate-in slide-in-from-bottom duration-250 flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto -mt-1 mb-3" />
+          <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto -mt-1 mb-3 shrink-0" />
 
-          <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-slate-800 shrink-0">
             <div className="flex items-center gap-2">
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-orange-50 dark:bg-orange-950/40 text-[#ff5500]">
                 <Filter className="h-3.5 w-3.5 stroke-[2.2]" />
@@ -1334,6 +1515,7 @@ export function MobileReportsPage({
             </button>
           </div>
 
+          <div className="flex-1 overflow-y-auto min-h-0 pr-1 space-y-3 my-1">
           {/* Work View */}
           <div className="space-y-1 mb-2.5">
             <div className="grid grid-cols-2 gap-0.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 p-0.5">
@@ -1550,13 +1732,14 @@ export function MobileReportsPage({
 
               return (
                 <div className="space-y-2">
-                  {renderLocationDropdown({
-                    field: "region",
-                    label: lang === "ml" ? "മേഖല തിരഞ്ഞെടുക്കുക" : "Select Region",
-                    allLabel: lang === "ml" ? "എല്ലാ മേഖലകളും" : "All Regions",
-                    value: selectedLocation.region,
-                    options: KERALA_REGIONS,
-                  })}
+                  {rank === 1 &&
+                    renderLocationDropdown({
+                      field: "region",
+                      label: lang === "ml" ? "മേഖല തിരഞ്ഞെടുക്കുക" : "Select Region",
+                      allLabel: lang === "ml" ? "എല്ലാ മേഖലകളും" : "All Regions",
+                      value: selectedLocation.region,
+                      options: KERALA_REGIONS,
+                    })}
                   {rank >= 2 &&
                     renderLocationDropdown({
                       field: "orgDistrict",
@@ -1594,7 +1777,320 @@ export function MobileReportsPage({
             })()}
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Team Tab Filters: Designation & Team Member selection below Location level */}
+          {draftSchemeFilter.workView === "team" && (
+            <div className="space-y-2.5 mb-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+              {/* Designation Dropdown */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
+                  {lang === "ml" ? "പദവി തിരഞ്ഞെടുക്കുക" : "Select Designation"}
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setOpenLocationField((open) => (open === ("designation" as any) ? null : ("designation" as any)))}
+                  aria-expanded={openLocationField === ("designation" as any)}
+                  className="flex w-full h-9 items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-left cursor-pointer"
+                >
+                  <span className="truncate text-[11px] font-bold text-slate-800 dark:text-slate-100">
+                    {(() => {
+                      const levelDesignations = DESIGNATION_OPTIONS_BY_LEVEL[draftSchemeFilter.locationLevel] || DESIGNATION_OPTIONS_BY_LEVEL.state;
+                      const current = levelDesignations.find((d) => d.id === draftSchemeFilter.designation);
+                      return current ? (lang === "ml" ? current.ml : current.en) : (lang === "ml" ? "എല്ലാ പദവികളും" : "All Designations");
+                    })()}
+                  </span>
+                  <ChevronDown
+                    className={`h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform ${
+                      openLocationField === ("designation" as any) ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+                {openLocationField === ("designation" as any) && (
+                  <div className="max-h-36 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800">
+                    {(DESIGNATION_OPTIONS_BY_LEVEL[draftSchemeFilter.locationLevel] || DESIGNATION_OPTIONS_BY_LEVEL.state).map((option) => {
+                      const isSelected = (draftSchemeFilter.designation || "all") === option.id;
+                      return (
+                        <button
+                          key={option.id}
+                          type="button"
+                          onClick={() => {
+                            setDraftSchemeFilter((prev) => ({ ...prev, designation: option.id, teamMember: "all" }));
+                            setOpenLocationField(null);
+                          }}
+                          className={`flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-[11px] font-semibold text-left transition-colors cursor-pointer ${
+                            isSelected
+                              ? "bg-orange-50 dark:bg-orange-950/40 text-[#EA580C] dark:text-orange-400"
+                              : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/60"
+                          }`}
+                        >
+                          <span className="truncate">{lang === "ml" ? option.ml : option.en}</span>
+                          {isSelected && <Check className="h-3 w-3 shrink-0 stroke-[3]" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Team Member Selection Dropdown */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
+                  {lang === "ml" ? "ടീം അംഗത്തെ തിരഞ്ഞെടുക്കുക" : "Select Team Member"}
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setOpenLocationField((open) => (open === ("teamMember" as any) ? null : ("teamMember" as any)))}
+                  aria-expanded={openLocationField === ("teamMember" as any)}
+                  className="flex w-full h-9 items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-left cursor-pointer"
+                >
+                  <span className="truncate text-[11px] font-bold text-slate-800 dark:text-slate-100">
+                    {(() => {
+                      const filteredMembers = getFilteredTeamMembers(draftSchemeFilter.locationLevel, draftSchemeFilter.designation);
+                      const current = filteredMembers.find((m) => m.id === draftSchemeFilter.teamMember);
+                      if (!current || draftSchemeFilter.teamMember === "all") {
+                        return lang === "ml" ? "എല്ലാ ടീം അംഗങ്ങളും" : "All Team Members";
+                      }
+                      return lang === "ml" ? `${current.name} (${current.designationMl})` : `${current.name} (${current.designationEn})`;
+                    })()}
+                  </span>
+                  <ChevronDown
+                    className={`h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform ${
+                      openLocationField === ("teamMember" as any) ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+                {openLocationField === ("teamMember" as any) && (
+                  <div className="max-h-36 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDraftSchemeFilter((prev) => ({ ...prev, teamMember: "all" }));
+                        setOpenLocationField(null);
+                      }}
+                      className={`flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-[11px] font-semibold text-left transition-colors cursor-pointer ${
+                        !draftSchemeFilter.teamMember || draftSchemeFilter.teamMember === "all"
+                          ? "bg-orange-50 dark:bg-orange-950/40 text-[#EA580C] dark:text-orange-400"
+                          : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/60"
+                      }`}
+                    >
+                      <span>{lang === "ml" ? "എല്ലാ ടീം അംഗങ്ങളും" : "All Team Members"}</span>
+                      {(!draftSchemeFilter.teamMember || draftSchemeFilter.teamMember === "all") && (
+                        <Check className="h-3 w-3 shrink-0 stroke-[3]" />
+                      )}
+                    </button>
+                    {getFilteredTeamMembers(draftSchemeFilter.locationLevel, draftSchemeFilter.designation).map((member) => {
+                      const isSelected = draftSchemeFilter.teamMember === member.id;
+                      return (
+                        <button
+                          key={member.id}
+                          type="button"
+                          onClick={() => {
+                            setDraftSchemeFilter((prev) => ({ ...prev, teamMember: member.id }));
+                            setOpenLocationField(null);
+                          }}
+                          className={`flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-[11px] font-semibold text-left transition-colors cursor-pointer ${
+                            isSelected
+                              ? "bg-orange-50 dark:bg-orange-950/40 text-[#EA580C] dark:text-orange-400"
+                              : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/60"
+                          }`}
+                        >
+                          <span className="truncate">{lang === "ml" ? `${member.name} (${member.designationMl})` : `${member.name} (${member.designationEn})`}</span>
+                          {isSelected && <Check className="h-3 w-3 shrink-0 stroke-[3]" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Scheme Category */}
+          <div className="space-y-1.5 mb-3">
+            <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
+              {lang === "ml" ? "പദ്ധതി വിഭാഗം" : "Scheme Category"}
+            </label>
+            <button
+              type="button"
+              onClick={() => setOpenLocationField((open) => (open === ("category" as any) ? null : ("category" as any)))}
+              aria-expanded={openLocationField === ("category" as any)}
+              className="flex w-full h-9 items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-left cursor-pointer"
+            >
+              <span className="truncate text-[11px] font-bold text-slate-800 dark:text-slate-100">
+                {draftSchemeFilter.category && draftSchemeFilter.category !== "all"
+                  ? REPORT_CATEGORIES.find((c) => c.id === draftSchemeFilter.category)?.[lang === "ml" ? "nameMl" : "nameEn"] || draftSchemeFilter.category
+                  : (lang === "ml" ? "എല്ലാ വിഭാഗങ്ങളും" : "All Categories")}
+              </span>
+              <ChevronDown
+                className={`h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform ${
+                  openLocationField === ("category" as any) ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+            {openLocationField === ("category" as any) && (
+              <div className="max-h-36 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDraftSchemeFilter((prev) => ({ ...prev, category: "all", scheme: "all" }));
+                    setOpenLocationField(null);
+                  }}
+                  className={`flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-[11px] font-semibold text-left transition-colors cursor-pointer ${
+                    !draftSchemeFilter.category || draftSchemeFilter.category === "all"
+                      ? "bg-orange-50 dark:bg-orange-950/40 text-[#EA580C] dark:text-orange-400"
+                      : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/60"
+                  }`}
+                >
+                  <span>{lang === "ml" ? "എല്ലാ വിഭാഗങ്ങളും" : "All Categories"}</span>
+                  {(!draftSchemeFilter.category || draftSchemeFilter.category === "all") && (
+                    <Check className="h-3 w-3 shrink-0 stroke-[3]" />
+                  )}
+                </button>
+                {REPORT_CATEGORIES.map((cat) => {
+                  const isSelected = draftSchemeFilter.category === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => {
+                        setDraftSchemeFilter((prev) => ({ ...prev, category: cat.id, scheme: "all" }));
+                        setOpenLocationField(null);
+                      }}
+                      className={`flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-[11px] font-semibold text-left transition-colors cursor-pointer ${
+                        isSelected
+                          ? "bg-orange-50 dark:bg-orange-950/40 text-[#EA580C] dark:text-orange-400"
+                          : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/60"
+                      }`}
+                    >
+                      <span className="truncate">{lang === "ml" ? cat.nameMl : cat.nameEn}</span>
+                      {isSelected && <Check className="h-3 w-3 shrink-0 stroke-[3]" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Scheme Selection */}
+          <div className="space-y-1.5 mb-3">
+            <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
+              {lang === "ml" ? "പദ്ധതി തിരഞ്ഞെടുക്കൽ" : "Scheme Selection"}
+            </label>
+            <button
+              type="button"
+              onClick={() => setOpenLocationField((open) => (open === ("scheme" as any) ? null : ("scheme" as any)))}
+              aria-expanded={openLocationField === ("scheme" as any)}
+              className="flex w-full h-9 items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-left cursor-pointer"
+            >
+              <span className="truncate text-[11px] font-bold text-slate-800 dark:text-slate-100">
+                {draftSchemeFilter.scheme && draftSchemeFilter.scheme !== "all"
+                  ? REPORT_SCHEMES.find((s) => s.id === draftSchemeFilter.scheme)?.[lang === "ml" ? "nameMl" : "nameEn"] || draftSchemeFilter.scheme
+                  : (lang === "ml" ? "എല്ലാ പദ്ധതികളും" : "All Schemes")}
+              </span>
+              <ChevronDown
+                className={`h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform ${
+                  openLocationField === ("scheme" as any) ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+            {openLocationField === ("scheme" as any) && (
+              <div className="max-h-36 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDraftSchemeFilter((prev) => ({ ...prev, scheme: "all" }));
+                    setOpenLocationField(null);
+                  }}
+                  className={`flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-[11px] font-semibold text-left transition-colors cursor-pointer ${
+                    !draftSchemeFilter.scheme || draftSchemeFilter.scheme === "all"
+                      ? "bg-orange-50 dark:bg-orange-950/40 text-[#EA580C] dark:text-orange-400"
+                      : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/60"
+                  }`}
+                >
+                  <span>{lang === "ml" ? "എല്ലാ പദ്ധതികളും" : "All Schemes"}</span>
+                  {(!draftSchemeFilter.scheme || draftSchemeFilter.scheme === "all") && (
+                    <Check className="h-3 w-3 shrink-0 stroke-[3]" />
+                  )}
+                </button>
+                {(draftSchemeFilter.category && draftSchemeFilter.category !== "all"
+                  ? REPORT_SCHEMES.filter((s) => s.categoryId === draftSchemeFilter.category)
+                  : REPORT_SCHEMES
+                ).map((scheme) => {
+                  const isSelected = draftSchemeFilter.scheme === scheme.id;
+                  return (
+                    <button
+                      key={scheme.id}
+                      type="button"
+                      onClick={() => {
+                        setDraftSchemeFilter((prev) => ({ ...prev, scheme: scheme.id }));
+                        setOpenLocationField(null);
+                      }}
+                      className={`flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-[11px] font-semibold text-left transition-colors cursor-pointer ${
+                        isSelected
+                          ? "bg-orange-50 dark:bg-orange-950/40 text-[#EA580C] dark:text-orange-400"
+                          : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/60"
+                      }`}
+                    >
+                      <span className="truncate">{lang === "ml" ? scheme.nameMl : scheme.nameEn}</span>
+                      {isSelected && <Check className="h-3 w-3 shrink-0 stroke-[3]" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Sort By */}
+          <div className="space-y-1.5 mb-3">
+            <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
+              {lang === "ml" ? "ക്രമീകരിക്കുക" : "Sort By"}
+            </label>
+            <button
+              type="button"
+              onClick={() => setOpenLocationField((open) => (open === ("sortBy" as any) ? null : ("sortBy" as any)))}
+              aria-expanded={openLocationField === ("sortBy" as any)}
+              className="flex w-full h-9 items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-left cursor-pointer"
+            >
+              <span className="truncate text-[11px] font-bold text-slate-800 dark:text-slate-100">
+                {SORT_BY_OPTIONS.find((opt) => opt.id === (draftSchemeFilter.sortBy || "benefits_high_low"))?.[
+                  lang === "ml" ? "ml" : "en"
+                ]}
+              </span>
+              <ChevronDown
+                className={`h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform ${
+                  openLocationField === ("sortBy" as any) ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+            {openLocationField === ("sortBy" as any) && (
+              <div className="max-h-40 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800">
+                {SORT_BY_OPTIONS.map((opt) => {
+                  const isSelected = (draftSchemeFilter.sortBy || "benefits_high_low") === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => {
+                        setDraftSchemeFilter((prev) => ({ ...prev, sortBy: opt.id }));
+                        setOpenLocationField(null);
+                      }}
+                      className={`flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-[11px] font-semibold text-left transition-colors cursor-pointer ${
+                        isSelected
+                          ? "bg-orange-50 dark:bg-orange-950/40 text-[#EA580C] dark:text-orange-400"
+                          : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/60"
+                      }`}
+                    >
+                      <span className="truncate">{lang === "ml" ? opt.ml : opt.en}</span>
+                      {isSelected && <Check className="h-3 w-3 shrink-0 stroke-[3]" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          </div>
+
+          <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 shrink-0">
             <button
               type="button"
               onClick={() => {
@@ -1807,7 +2303,7 @@ export function MobileReportsPage({
   // Render Scheme Applications Drilldown View
   if (selectedScheme) {
     return (
-      <div className="flex flex-col min-h-full bg-white dark:bg-slate-950 pb-10 animate-in fade-in duration-200">
+      <div className={`flex flex-col min-h-full bg-white dark:bg-slate-950 pb-10 animate-in fade-in duration-200 ${isFilterSheetOpen ? "overflow-hidden max-h-screen" : ""}`}>
         {/* Header */}
         <header className="sticky top-0 z-30 bg-[#FFFDF9] dark:bg-slate-900 border-b border-slate-200/60 dark:border-slate-800/60 px-3.5 py-1.5 shadow-2xs">
           <div className="relative flex h-9 items-center justify-between w-full">
@@ -2308,7 +2804,7 @@ export function MobileReportsPage({
     const catSchemesCount = schemesCountByCategory[selectedCategory.id] || selectedCategory.schemesCount;
 
     return (
-      <div className="flex flex-col min-h-full bg-white dark:bg-slate-950 pb-8 animate-in fade-in duration-200">
+      <div className={`relative flex flex-col min-h-full bg-white dark:bg-slate-950 pb-8 animate-in fade-in duration-200 ${isFilterSheetOpen ? "overflow-hidden max-h-screen" : ""}`}>
         {/* Header */}
         <header className="sticky top-0 z-30 bg-[#FFFDF9] dark:bg-slate-900 border-b border-slate-200/60 dark:border-slate-800/60 px-3.5 py-1.5 shadow-2xs">
           <div className="relative flex h-9 items-center justify-between w-full">
@@ -2428,7 +2924,7 @@ export function MobileReportsPage({
 
   // Root Reports Page View with 2 Tabs
   return (
-    <div className="flex flex-col min-h-full bg-white dark:bg-slate-950 pb-20 animate-in fade-in duration-200">
+    <div className={`relative flex flex-col min-h-full bg-white dark:bg-slate-950 pb-20 animate-in fade-in duration-200 ${isFilterSheetOpen ? "overflow-hidden max-h-screen" : ""}`}>
       {/* Top Header */}
       <header className={`sticky top-0 z-30 ${headerStyle === "period_controls" ? "bg-white" : "bg-[#FFFDF9]"} dark:bg-slate-900 border-b border-slate-200/60 dark:border-slate-800/60 px-3.5 py-1.5 shadow-2xs`}>
         {headerStyle === "period_controls" ? (
