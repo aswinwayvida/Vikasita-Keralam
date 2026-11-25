@@ -1078,14 +1078,12 @@ export function MobileReportsPage({
     appliedLocation.ward
   );
   const hasLocalFilters =
-    appliedSchemeFilter.workView !== "my_work" ||
     appliedSchemeFilter.statuses.length > 0 ||
     Boolean(appliedSchemeFilter.category && appliedSchemeFilter.category !== "all") ||
     Boolean(appliedSchemeFilter.scheme && appliedSchemeFilter.scheme !== "all") ||
     Boolean(appliedSchemeFilter.sortBy && appliedSchemeFilter.sortBy !== "benefits_high_low") ||
     hasLocationFilters;
   const localFilterCount =
-    (appliedSchemeFilter.workView !== "my_work" ? 1 : 0) +
     (appliedSchemeFilter.statuses.length > 0 ? 1 : 0) +
     (appliedSchemeFilter.category && appliedSchemeFilter.category !== "all" ? 1 : 0) +
     (appliedSchemeFilter.scheme && appliedSchemeFilter.scheme !== "all" ? 1 : 0) +
@@ -1410,22 +1408,90 @@ export function MobileReportsPage({
             ))
           )}
 
-          {/* Work View: Only shown as dismissible chip if switched away from default My View */}
-          {appliedSchemeFilter.workView === "team" && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/40 border border-blue-200/90 dark:border-blue-800/60 text-blue-800 dark:text-blue-300 font-semibold shrink-0 shadow-2xs text-[10.5px]">
-              <Users className="h-2.5 w-2.5 text-blue-500 shrink-0" />
-              <span>{lang === "ml" ? "ടീം കാഴ്ച" : "Team View"}</span>
-              <button
-                type="button"
-                onClick={resetWorkView}
-                className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-blue-200/80 dark:hover:bg-blue-900/60 text-blue-600 dark:text-blue-300 transition-colors cursor-pointer"
-                title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
-                aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+          {/* Scheme Category Filter chip */}
+          {appliedSchemeFilter.category && appliedSchemeFilter.category !== "all" && (() => {
+            const catDef = REPORT_CATEGORIES.find((c) => c.id === appliedSchemeFilter.category);
+            const label = catDef ? (lang === "ml" ? catDef.nameMl : catDef.nameEn) : appliedSchemeFilter.category;
+            return (
+              <span
+                key="category"
+                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-semibold shrink-0 shadow-2xs text-[10.5px]"
               >
-                <X className="h-2.5 w-2.5 stroke-[2.5]" />
-              </button>
-            </span>
-          )}
+                <span>{label}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAppliedSchemeFilter((prev) => ({ ...prev, category: "all" }));
+                    setDraftSchemeFilter((prev) => ({ ...prev, category: "all" }));
+                  }}
+                  className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
+                  title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                  aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                >
+                  <X className="h-2.5 w-2.5 stroke-[2.5]" />
+                </button>
+              </span>
+            );
+          })()}
+
+          {/* Scheme Selection Filter chip */}
+          {appliedSchemeFilter.scheme && appliedSchemeFilter.scheme !== "all" && (() => {
+            const schDef = REPORT_SCHEMES.find((s) => s.id === appliedSchemeFilter.scheme);
+            const label = schDef ? (lang === "ml" ? schDef.nameMl : schDef.nameEn) : appliedSchemeFilter.scheme;
+            return (
+              <span
+                key="scheme"
+                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-semibold shrink-0 shadow-2xs text-[10.5px]"
+              >
+                <span>{label}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAppliedSchemeFilter((prev) => ({ ...prev, scheme: "all" }));
+                    setDraftSchemeFilter((prev) => ({ ...prev, scheme: "all" }));
+                  }}
+                  className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
+                  title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                  aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                >
+                  <X className="h-2.5 w-2.5 stroke-[2.5]" />
+                </button>
+              </span>
+            );
+          })()}
+
+          {/* Sort By Filter chip */}
+          {appliedSchemeFilter.sortBy && appliedSchemeFilter.sortBy !== "benefits_high_low" && (() => {
+            const sortOptionLabels: Record<string, { en: string; ml: string }> = {
+              benefits_high_low: { en: "Benefits: High to Low", ml: "ആനുകൂല്യം: ഉയർന്നതിൽ നിന്ന് കുറഞ്ഞതിലേക്ക്" },
+              benefits_low_high: { en: "Benefits: Low to High", ml: "ആനുകൂല്യം: കുറഞ്ഞതിൽ നിന്ന് ഉയർന്നതിലേക്ക്" },
+              pending_high_low: { en: "Pending: High to Low", ml: "തീർപ്പുകൽപ്പിക്കാത്തത്: ഉയർന്നതിൽ നിന്ന് കുറഞ്ഞതിലേക്ക്" },
+              pending_low_high: { en: "Pending: Low to High", ml: "തീർപ്പുകൽപ്പിക്കാത്തത്: കുറഞ്ഞതിൽ നിന്ന് ഉയർന്നതിലേക്ക്" },
+              review_high_low: { en: "In Review: High to Low", ml: "പരിശോധനയിൽ: ഉയർന്നതിൽ നിന്ന് കുറഞ്ഞതിലേക്ക്" },
+              review_low_high: { en: "In Review: Low to High", ml: "പരിശോധനയിൽ: കുറഞ്ഞതിൽ നിന്ന് ഉയർന്നതിലേക്ക്" },
+            };
+            const label = sortOptionLabels[appliedSchemeFilter.sortBy]?.[lang] || appliedSchemeFilter.sortBy;
+            return (
+              <span
+                key="sortBy"
+                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-semibold shrink-0 shadow-2xs text-[10.5px]"
+              >
+                <span>{label}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAppliedSchemeFilter((prev) => ({ ...prev, sortBy: "benefits_high_low" }));
+                    setDraftSchemeFilter((prev) => ({ ...prev, sortBy: "benefits_high_low" }));
+                  }}
+                  className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
+                  title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                  aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                >
+                  <X className="h-2.5 w-2.5 stroke-[2.5]" />
+                </button>
+              </span>
+            );
+          })()}
 
           {/* Status Filter chips */}
           {appliedSchemeFilter.statuses.map((statusId) => {
@@ -1476,7 +1542,6 @@ export function MobileReportsPage({
       draftLocation.ward
     );
     const draftCount =
-      (draftSchemeFilter.workView !== "my_work" ? 1 : 0) +
       (draftSchemeFilter.category && draftSchemeFilter.category !== "all" ? 1 : 0) +
       (draftSchemeFilter.scheme && draftSchemeFilter.scheme !== "all" ? 1 : 0) +
       (draftSchemeFilter.sortBy && draftSchemeFilter.sortBy !== "benefits_high_low" ? 1 : 0) +
@@ -2415,13 +2480,9 @@ export function MobileReportsPage({
             <>
               <button
                 type="button"
-                onClick={() => {
-                  const nextView = appliedSchemeFilter.workView === "my_work" ? "team" : "my_work";
-                  setAppliedSchemeFilter((prev) => ({ ...prev, workView: nextView }));
-                  setDraftSchemeFilter((prev) => ({ ...prev, workView: nextView }));
-                }}
+                onClick={openFilterSheet}
                 className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#ff5500] tracking-tight leading-none text-left cursor-pointer whitespace-nowrap shrink-0"
-                title={lang === "ml" ? "കാഴ്ച മാറ്റുക (My View / Team View)" : "Switch View (My View / Team View)"}
+                title={lang === "ml" ? "ഫിൽട്ടർ കാണിക്കുക" : "Show Filter Popup"}
               >
                 {appliedSchemeFilter.workView === "team" ? (lang === "ml" ? "ടീം കാഴ്ച" : "Team View") : (lang === "ml" ? "എന്റെ കാഴ്ച" : "My View")}
               </button>
@@ -2957,13 +3018,9 @@ export function MobileReportsPage({
               <>
                 <button
                   type="button"
-                  onClick={() => {
-                    const nextView = appliedSchemeFilter.workView === "my_work" ? "team" : "my_work";
-                    setAppliedSchemeFilter((prev) => ({ ...prev, workView: nextView }));
-                    setDraftSchemeFilter((prev) => ({ ...prev, workView: nextView }));
-                  }}
+                  onClick={openFilterSheet}
                   className="font-display text-[11px] sm:text-[13px] font-extrabold text-[#ff5500] tracking-tight leading-none text-left cursor-pointer whitespace-nowrap shrink-0"
-                  title={lang === "ml" ? "കാഴ്ച മാറ്റുക (My View / Team View)" : "Switch View (My View / Team View)"}
+                  title={lang === "ml" ? "ഫിൽട്ടർ കാണിക്കുക" : "Show Filter Popup"}
                 >
                   {appliedSchemeFilter.workView === "team" ? (lang === "ml" ? "ടീം കാഴ്ച" : "Team View") : (lang === "ml" ? "എന്റെ കാഴ്ച" : "My View")}
                 </button>

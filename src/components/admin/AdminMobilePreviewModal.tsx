@@ -4012,124 +4012,128 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             </div>
 
             {/* Core Analytics KPI Grid (6 cards matching Booth Level sample counts for Party Worker) */}
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              {/* 1. Application Received */}
-              <div
-                onClick={() => {
-                  setActiveTab("applications");
-                  setMobileSubPage("none");
-                  setApplicationStatusFilter("all");
-                  setApplicationSearchQuery("");
-                }}
-                className="rounded-lg border border-border bg-card py-1 px-2 flex flex-col justify-between shadow-2xs hover:border-blue-500/70 transition-all cursor-pointer"
-              >
-                <div className="flex items-center justify-between gap-1">
-                  <span className="text-[10px] sm:text-[10.5px] font-bold text-muted-foreground truncate leading-tight">
-                    {lang === "ml" ? "ലഭിച്ച അപേക്ഷകൾ" : "Applications Received"}
-                  </span>
-                  <img src={openApplication3dIcon} alt="Applications Received" className="h-6 w-6 object-contain shrink-0" />
-                </div>
-                <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-0.5">
-                  {partyWorkerMetrics.applicationsReceived.toLocaleString()}
-                </p>
-              </div>
+            {(() => {
+              const pwDocVerifiedLen = Math.max(1, mobileApplicationRecordsByStatus.document_verification_completed.length);
+              const pwAppReceivedLen = Math.max(1, mobileApplicationRecordsByStatus.application_received.length);
+              const pwTotalIntakeLen = pwDocVerifiedLen + pwAppReceivedLen;
+              const partyWorkerReadyToApplyCount = Math.round(partyWorkerMetrics.pending * (pwDocVerifiedLen / pwTotalIntakeLen));
+              return (
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  {/* 1. Application Received */}
+                  <div
+                    onClick={() => {
+                      setActiveTab("applications");
+                      setMobileSubPage("none");
+                      setApplicationStatusFilter("all");
+                      setApplicationSearchQuery("");
+                    }}
+                    className="rounded-lg border border-border bg-card py-1 px-2 flex flex-col justify-between shadow-2xs hover:border-blue-500/70 transition-all cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-[10px] sm:text-[10.5px] font-bold text-muted-foreground truncate leading-tight">
+                        {lang === "ml" ? "ലഭിച്ച അപേക്ഷകൾ" : "Applications Received"}
+                      </span>
+                      <img src={openApplication3dIcon} alt="Applications Received" className="h-6 w-6 object-contain shrink-0" />
+                    </div>
+                    <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-0.5">
+                      {partyWorkerMetrics.applicationsReceived.toLocaleString()}
+                    </p>
+                  </div>
 
-              {/* 2. Submitted */}
-              <div
-                onClick={() => {
-                  setActiveTab("applications");
-                  setMobileSubPage("none");
-                  setApplicationStatusFilter("applied");
-                }}
-                className="rounded-lg border border-border bg-card py-1 px-2 flex flex-col justify-between shadow-2xs hover:border-sky-500/70 transition-all cursor-pointer"
-              >
-                <div className="flex items-center justify-between gap-1">
-                  <span className="text-[11.5px] font-bold text-muted-foreground truncate">
-                    {lang === "ml" ? "സമർപ്പിച്ചവ" : "Submitted"}
-                  </span>
-                  <img src={readyToSubmit3dIcon} alt="Submitted" className="h-6 w-6 object-contain shrink-0" />
-                </div>
-                <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-0.5">
-                  {partyWorkerMetrics.submitted.toLocaleString()}
-                </p>
-              </div>
+                  {/* 2. Submitted */}
+                  <div
+                    onClick={() => {
+                      setActiveTab("applications");
+                      setMobileSubPage("none");
+                      setApplicationStatusFilter("applied");
+                    }}
+                    className="rounded-lg border border-border bg-card py-1 px-2 flex flex-col justify-between shadow-2xs hover:border-sky-500/70 transition-all cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-[11.5px] font-bold text-muted-foreground truncate">
+                        {lang === "ml" ? "സമർപ്പിച്ചവ" : "Submitted"}
+                      </span>
+                      <img src={readyToSubmit3dIcon} alt="Submitted" className="h-6 w-6 object-contain shrink-0" />
+                    </div>
+                    <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-0.5">
+                      {partyWorkerMetrics.submitted.toLocaleString()}
+                    </p>
+                  </div>
 
-              {/* 3. Beneficiaries */}
-              <div
-                onClick={() => openApplicationListWithStatus("beneficiary")}
-                className="rounded-lg border border-border bg-card py-1 px-2 flex flex-col justify-between shadow-2xs hover:border-emerald-500/70 transition-all cursor-pointer"
-              >
-                <div className="flex items-center justify-between gap-1">
-                  <span className="text-[11.5px] font-bold text-muted-foreground truncate">
-                    {lang === "ml" ? "ഗുണഭോക്താക്കൾ" : "Beneficiaries"}
-                  </span>
-                  <img src={assisted3dIcon} alt="Beneficiaries" className="h-6 w-6 object-contain shrink-0" />
-                </div>
-                <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-0.5">
-                  {partyWorkerMetrics.beneficiaries.toLocaleString()}
-                </p>
-              </div>
+                  {/* 3. Beneficiaries */}
+                  <div
+                    onClick={() => openApplicationListWithStatus("beneficiary")}
+                    className="rounded-lg border border-border bg-card py-1 px-2 flex flex-col justify-between shadow-2xs hover:border-emerald-500/70 transition-all cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-[11.5px] font-bold text-muted-foreground truncate">
+                        {lang === "ml" ? "ഗുണഭോക്താക്കൾ" : "Beneficiaries"}
+                      </span>
+                      <img src={assisted3dIcon} alt="Beneficiaries" className="h-6 w-6 object-contain shrink-0" />
+                    </div>
+                    <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-0.5">
+                      {partyWorkerMetrics.beneficiaries.toLocaleString()}
+                    </p>
+                  </div>
 
-              {/* 4. In Review */}
-              <div
-                onClick={() => {
-                  setActiveTab("applications");
-                  setMobileSubPage("none");
-                  setApplicationStatusFilter("review");
-                }}
-                className="rounded-lg border border-border bg-card py-1 px-2 flex flex-col justify-between shadow-2xs hover:border-indigo-500/70 transition-all cursor-pointer"
-              >
-                <div className="flex items-center justify-between gap-1">
-                  <span className="text-[11.5px] font-bold text-muted-foreground truncate">
-                    {lang === "ml" ? "പരിശോധനയിലുള്ളവ" : "In Review"}
-                  </span>
-                  <img src={documentsPending3dIcon} alt="In Review" className="h-6 w-6 object-contain shrink-0" />
-                </div>
-                <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-0.5">
-                  {partyWorkerMetrics.inReview < 10 ? `0${partyWorkerMetrics.inReview}` : partyWorkerMetrics.inReview}
-                </p>
-              </div>
+                  {/* 4. In Review */}
+                  <div
+                    onClick={() => {
+                      setActiveTab("applications");
+                      setMobileSubPage("none");
+                      setApplicationStatusFilter("review");
+                    }}
+                    className="rounded-lg border border-border bg-card py-1 px-2 flex flex-col justify-between shadow-2xs hover:border-indigo-500/70 transition-all cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-[11.5px] font-bold text-muted-foreground truncate">
+                        {lang === "ml" ? "പരിശോധനയിലുള്ളവ" : "In Review"}
+                      </span>
+                      <img src={documentsPending3dIcon} alt="In Review" className="h-6 w-6 object-contain shrink-0" />
+                    </div>
+                    <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-0.5">
+                      {partyWorkerMetrics.inReview < 10 ? `0${partyWorkerMetrics.inReview}` : partyWorkerMetrics.inReview}
+                    </p>
+                  </div>
 
-              {/* 5. Pending Submission */}
-              <div
-                onClick={() => {
-                  setActiveTab("applications");
-                  setMobileSubPage("none");
-                  setApplicationStatusFilter("application_received");
-                }}
-                className="rounded-lg border border-border bg-card py-1 px-2 flex flex-col justify-between shadow-2xs hover:border-amber-500/70 transition-all cursor-pointer"
-              >
-                <div className="flex items-center justify-between gap-1">
-                  <span className="text-[11.5px] font-bold text-muted-foreground truncate">
-                    {lang === "ml" ? "പെൻഡിംഗ് സമർപ്പണം" : "Pending Submission"}
-                  </span>
-                  <img src={followupsDue3dIcon} alt="Pending Submission" className="h-6 w-6 object-contain shrink-0" />
-                </div>
-                <p className="font-display text-sm sm:text-base font-bold text-amber-600 dark:text-amber-400 leading-none mt-0.5">
-                  {partyWorkerMetrics.pending < 10 ? `0${partyWorkerMetrics.pending}` : partyWorkerMetrics.pending}
-                </p>
-              </div>
+                  {/* 5. Ready to Apply */}
+                  <div
+                    onClick={() => openApplicationListWithStatus("document_verification_completed")}
+                    className="rounded-lg border border-border bg-card py-1 px-2 flex flex-col justify-between shadow-2xs hover:border-amber-500/70 transition-all cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-[11.5px] font-bold text-muted-foreground truncate">
+                        {lang === "ml" ? "അപേക്ഷിക്കാൻ തയ്യാർ" : "Ready to Apply"}
+                      </span>
+                      <img src={readyToSubmit3dIcon} alt="Ready to Apply" className="h-6 w-6 object-contain shrink-0" />
+                    </div>
+                    <p className="font-display text-sm sm:text-base font-bold text-amber-600 dark:text-amber-400 leading-none mt-0.5">
+                      {partyWorkerReadyToApplyCount < 10 ? `0${partyWorkerReadyToApplyCount}` : partyWorkerReadyToApplyCount}
+                    </p>
+                  </div>
 
-              {/* 6. Rejected */}
-              <div
-                onClick={() => {
-                  setActiveTab("applications");
-                  setMobileSubPage("none");
-                  setApplicationStatusFilter("rejected");
-                }}
-                className="rounded-lg border border-border bg-card py-1 px-2 flex flex-col justify-between shadow-2xs hover:border-rose-500/70 transition-all cursor-pointer"
-              >
-                <div className="flex items-center justify-between gap-1">
-                  <span className="text-[11.5px] font-bold text-muted-foreground truncate">
-                    {lang === "ml" ? "നിരസിച്ചവ" : "Rejected"}
-                  </span>
-                  <img src={rejected3dIcon} alt="Rejected" className="h-6 w-6 object-contain shrink-0" />
+                  {/* 6. Rejected */}
+                  <div
+                    onClick={() => {
+                      setActiveTab("applications");
+                      setMobileSubPage("none");
+                      setApplicationStatusFilter("rejected");
+                    }}
+                    className="rounded-lg border border-border bg-card py-1 px-2 flex flex-col justify-between shadow-2xs hover:border-rose-500/70 transition-all cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-[11.5px] font-bold text-muted-foreground truncate">
+                        {lang === "ml" ? "നിരസിച്ചവ" : "Rejected"}
+                      </span>
+                      <img src={rejected3dIcon} alt="Rejected" className="h-6 w-6 object-contain shrink-0" />
+                    </div>
+                    <p className="font-display text-sm sm:text-base font-bold text-rose-600 dark:text-rose-400 leading-none mt-0.5">
+                      {partyWorkerMetrics.rejected < 10 ? `0${partyWorkerMetrics.rejected}` : partyWorkerMetrics.rejected}
+                    </p>
+                  </div>
                 </div>
-                <p className="font-display text-sm sm:text-base font-bold text-rose-600 dark:text-rose-400 leading-none mt-0.5">
-                  {partyWorkerMetrics.rejected < 10 ? `0${partyWorkerMetrics.rejected}` : partyWorkerMetrics.rejected}
-                </p>
-              </div>
-            </div>
+              );
+            })()}
 
             {/* SECTION: Events & Announcements - Matching Admin View */}
             <div className="space-y-1.5 pt-1">
@@ -10422,35 +10426,48 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       ratio = 1.0;
     }
 
-    const baseReceived = 45;
-    const baseSubmitted = 32;
     const baseBeneficiaries = 24;
     const baseInReview = 6;
-    const basePending = 13;
     const baseRejected = 2;
+    const basePending = 13;
     const baseTeamApps = 142;
 
     if (ratio < 0.08) {
       // Single day
+      const beneficiaries = 2;
+      const inReview = 1;
+      const rejected = 0;
+      const pending = 1;
+      const submitted = beneficiaries + inReview + rejected; // 3
+      const applicationsReceived = submitted + pending; // 4
       return {
-        applicationsReceived: 3,
-        submitted: 2,
-        beneficiaries: 2,
-        inReview: 1,
-        pending: 1,
-        rejected: 0,
+        applicationsReceived,
+        submitted,
+        beneficiaries,
+        inReview,
+        pending,
+        rejected,
         teamApplications: 8,
       };
     }
 
+    const beneficiaries = Math.max(1, Math.round(baseBeneficiaries * ratio));
+    const inReview = Math.max(0, Math.round(baseInReview * ratio));
+    const rejected = Math.max(0, Math.round(baseRejected * ratio));
+    const pending = Math.max(1, Math.round(basePending * ratio));
+
+    const submitted = beneficiaries + inReview + rejected;
+    const applicationsReceived = submitted + pending;
+    const teamApplications = Math.max(2, Math.round(baseTeamApps * ratio));
+
     return {
-      applicationsReceived: Math.max(1, Math.round(baseReceived * ratio)),
-      submitted: Math.max(1, Math.round(baseSubmitted * ratio)),
-      beneficiaries: Math.max(1, Math.round(baseBeneficiaries * ratio)),
-      inReview: Math.max(0, Math.round(baseInReview * ratio)),
-      pending: Math.max(1, Math.round(basePending * ratio)),
-      rejected: Math.max(0, Math.round(baseRejected * ratio)),
-      teamApplications: Math.max(2, Math.round(baseTeamApps * ratio)),
+      applicationsReceived,
+      submitted,
+      beneficiaries,
+      inReview,
+      pending,
+      rejected,
+      teamApplications,
     };
   }, [selectedPeriod, selectedDateInfo]);
 
@@ -11683,12 +11700,13 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     }
     return lang === "ml" ? "എല്ലാ കേരളവും • സംസ്ഥാന തലം" : "Kerala State (State-Wide)";
   }, [filterGeoScope, homeLocationLevel, homeSelectedRegion, homeSelectedOrgDistrict, homeSelectedMandalam, homeSelectedArea, homeSelectedWard, homeSelectedWardIds, selectedDistrict, selectedMandalam, selectedArea, selectedBooth, lang]);
-  // Applications = sum of pending, assisted (In Review), rejected, and beneficiaries (Approved)
-  const applicationsCount =
-    currentMetrics.pending +
+  // Submitted = sum of beneficiaries, assisted (In Review), and rejected
+  const submittedCount =
+    currentMetrics.beneficiaries +
     currentMetrics.assisted +
-    currentMetrics.rejected +
-    currentMetrics.beneficiaries;
+    currentMetrics.rejected;
+  // Applications Received = sum of submitted and pending
+  const applicationsCount = submittedCount + currentMetrics.pending;
   const resolvedCount = currentMetrics.beneficiaries + currentMetrics.assisted;
   const resolutionRateVal = applicationsCount > 0
     ? ((currentMetrics.beneficiaries / applicationsCount) * 100).toFixed(1)
@@ -13443,7 +13461,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           </span>
                           <img src={readyToSubmit3dIcon} alt="Submitted" className="h-6 w-6 object-contain shrink-0" />
                         </div>
-                        <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-0.5">{Math.max(0, Math.round(applicationsCount * 0.94)).toLocaleString()}</p>
+                        <p className="font-display text-sm sm:text-base font-bold text-foreground leading-none mt-0.5">{submittedCount.toLocaleString()}</p>
                       </div>
 
                       {/* 3. Beneficiaries */}
@@ -18395,6 +18413,13 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
                   if (!showIntakeKpis) return null;
 
+                  const docVerifiedSeedLen = Math.max(1, mobileApplicationRecordsByStatus.document_verification_completed.length);
+                  const appReceivedSeedLen = Math.max(1, mobileApplicationRecordsByStatus.application_received.length);
+                  const totalIntakeSeedLen = docVerifiedSeedLen + appReceivedSeedLen;
+
+                  const readyToApplyCount = Math.round(partyWorkerMetrics.pending * (docVerifiedSeedLen / totalIntakeSeedLen));
+                  const documentPendingCount = partyWorkerMetrics.pending - readyToApplyCount;
+
                   return (
                     <div className="grid grid-cols-2 gap-2">
                       <button
@@ -18415,7 +18440,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             {lang === "ml" ? "അപേക്ഷിക്കാൻ തയ്യാർ" : "Ready to Apply"}
                           </span>
                           <span className="mt-1 block font-display text-base font-bold leading-none text-foreground">
-                            {Math.max(1, Math.round(mobileApplicationRecordsByStatus.document_verification_completed.length * (partyWorkerMetrics.applicationsReceived / 45))).toLocaleString()}
+                            {readyToApplyCount.toLocaleString()}
                           </span>
                         </span>
                         <img src={readyToSubmit3dIcon} alt="Ready to Apply" className="h-9 w-9 shrink-0 object-contain" />
@@ -18439,7 +18464,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             {lang === "ml" ? "രേഖകൾ ബാക്കി" : "Document Pending"}
                           </span>
                           <span className="mt-1 block font-display text-base font-bold leading-none text-foreground">
-                            {Math.max(1, Math.round(mobileApplicationRecordsByStatus.application_received.length * (partyWorkerMetrics.applicationsReceived / 45))).toLocaleString()}
+                            {documentPendingCount.toLocaleString()}
                           </span>
                         </span>
                         <img src={documentsPending3dIcon} alt="Document Pending" className="h-9 w-9 shrink-0 object-contain" />
@@ -18627,23 +18652,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         return null;
                       })()}
 
-                      {/* Work View: Only shown as chip if switched away from default My View */}
-                      {partyWorkerTab === "team" && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/40 border border-blue-200/90 dark:border-blue-800/60 text-blue-800 dark:text-blue-300 font-semibold shrink-0 shadow-2xs text-[10.5px]">
-                          <Users className="h-2.5 w-2.5 text-blue-500 shrink-0" />
-                          <span>{lang === "ml" ? "ടീം കാഴ്ച" : "Team View"}</span>
-                          <button
-                            type="button"
-                            onClick={() => setPartyWorkerTab("my_work")}
-                            className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-blue-200/80 dark:hover:bg-blue-900/60 text-blue-600 dark:text-blue-300 transition-colors cursor-pointer"
-                            title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
-                            aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
-                          >
-                            <X className="h-2.5 w-2.5 stroke-[2.5]" />
-                          </button>
-                        </span>
-                      )}
-
                       {/* Assigned Worker Filter (Team View only) */}
                       {partyWorkerTab === "team" && appFilterAssignedWorker !== "all" && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-semibold shrink-0 shadow-2xs text-[10.5px]">
@@ -18674,7 +18682,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         selectedAppStatusFilters.map((sId) => {
                           const statusMap: Record<string, { en: string; ml: string }> = {
                             application_received: { en: "Application Received", ml: "ലഭിച്ച അപേക്ഷകൾ" },
-                            document_verification_completed: { en: "Ready to Apply", ml: "രേഖാ പരിശോധന പൂർത്തിയായി" },
+                            document_verification_completed: { en: "Ready to Apply", ml: "അപേക്ഷിക്കാൻ തയ്യാർ" },
                             applied: { en: "Applied", ml: "അപേക്ഷിച്ചു" },
                             review: { en: "Review", ml: "പരിശോധനയിൽ" },
                             beneficiary: { en: "Beneficiary", ml: "ഗുണഭോക്താവ്" },
@@ -18880,6 +18888,36 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           </button>
                         </span>
                       ) : null}
+
+                      {/* Sort By Filter Chip */}
+                      {appSchemeSortBy && appSchemeSortBy !== "benefits_high_low" && (() => {
+                        const sortOptionLabels: Record<string, { en: string; ml: string }> = {
+                          benefits_high_low: { en: "Benefits: High to Low", ml: "ആനുകൂല്യം: ഉയർന്നതിൽ നിന്ന് കുറഞ്ഞതിലേക്ക്" },
+                          benefits_low_high: { en: "Benefits: Low to High", ml: "ആനുകൂല്യം: കുറഞ്ഞതിൽ നിന്ന് ഉയർന്നതിലേക്ക്" },
+                          pending_high_low: { en: "Pending: High to Low", ml: "തീർപ്പുകൽപ്പിക്കാത്തത്: ഉയർന്നതിൽ നിന്ന് കുറഞ്ഞതിലേക്ക്" },
+                          pending_low_high: { en: "Pending: Low to High", ml: "തീർപ്പുകൽപ്പിക്കാത്തത്: കുറഞ്ഞതിൽ നിന്ന് ഉയർന്നതിലേക്ക്" },
+                          review_high_low: { en: "In Review: High to Low", ml: "പരിശോധനയിൽ: ഉയർന്നതിൽ നിന്ന് കുറഞ്ഞതിലേക്ക്" },
+                          review_low_high: { en: "In Review: Low to High", ml: "പരിശോധനയിൽ: കുറഞ്ഞതിൽ നിന്ന് ഉയർന്നതിലേക്ക്" },
+                        };
+                        const label = sortOptionLabels[appSchemeSortBy]?.[lang] || appSchemeSortBy;
+                        return (
+                          <span
+                            key="appSchemeSortBy"
+                            className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-semibold shrink-0 shadow-2xs text-[10.5px]"
+                          >
+                            <span>{label}</span>
+                            <button
+                              type="button"
+                              onClick={() => setAppSchemeSortBy("benefits_high_low")}
+                              className="ml-0.5 -mr-0.5 p-0.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
+                              title={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                              aria-label={lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"}
+                            >
+                              <X className="h-2.5 w-2.5 stroke-[2.5]" />
+                            </button>
+                          </span>
+                        );
+                      })()}
 
                       {/* Clear All Button */}
                       <button
