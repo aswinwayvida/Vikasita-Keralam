@@ -5,6 +5,7 @@ import createScheme3dAvatar from "@/assets/create-scheme-3d-avatar.jpg";
 import {
   AlertCircle,
   ArrowLeft,
+  ArrowUpDown,
   Briefcase,
   Building,
   Building2,
@@ -48,6 +49,7 @@ import {
   Vote,
   X,
 } from "lucide-react";
+import { toast } from "sonner";
 import {
   mockUsers,
   getUserRegion,
@@ -204,7 +206,9 @@ type PickerKey =
   | "worker_filter_booth"
   | "worker_filter_org_unit"
   | "worker_filter_status"
-  | "worker_filter_app_role";
+  | "worker_filter_app_role"
+  | "worker_filter_app_status"
+  | "worker_filter_scheme";
 
 interface PickerOption {
   id: string;
@@ -515,7 +519,37 @@ type WorkerListFilters = {
   boothId: string;
   orgUnitId: string;
   appRole: RolePresetId | "all";
+  appStatus?: string;
+  schemeId?: string;
 };
+
+function getWorkerAppStatusLabel(statusId: string, lang: Lang) {
+  switch (statusId) {
+    case "all":
+      return lang === "ml" ? "എല്ലാ സ്റ്റാറ്റസുകളും" : "All Statuses";
+    case "application_received":
+      return lang === "ml" ? "അപേക്ഷ ലഭിച്ചു" : "Application Received";
+    case "document_verification_completed":
+      return lang === "ml" ? "രേഖാ പരിശോധന പൂർത്തിയായി" : "Document Verification Completed";
+    case "applied":
+      return lang === "ml" ? "അപേക്ഷിച്ചു" : "Applied";
+    case "review":
+      return lang === "ml" ? "പരിശോധനയിൽ" : "In Review";
+    case "beneficiary":
+      return lang === "ml" ? "അംഗീകരിച്ചു / ഗുണഭോക്താവ്" : "Approved / Beneficiary";
+    case "rejected":
+      return lang === "ml" ? "നിരസിച്ചു" : "Rejected";
+    default:
+      return statusId;
+  }
+}
+
+function getWorkerSchemeLabel(schemeId: string, lang: Lang) {
+  if (!schemeId || schemeId === "all") {
+    return lang === "ml" ? "എല്ലാ പദ്ധതികളും" : "All Schemes";
+  }
+  return schemeId;
+}
 
 function managedRoleDesignation(role: ManagedRole, level?: AssignmentLevel | ""): PartyDesignation {
   return {
@@ -552,6 +586,8 @@ const defaultWorkerListFilters: WorkerListFilters = {
   boothId: "",
   orgUnitId: "",
   appRole: "all",
+  appStatus: "all",
+  schemeId: "all",
 };
 
 function countActiveWorkerFilters(filters: WorkerListFilters) {
@@ -568,6 +604,8 @@ function countActiveWorkerFilters(filters: WorkerListFilters) {
   if (filters.boothId) count += 1;
   if (filters.orgUnitId) count += 1;
   if (filters.appRole !== "all") count += 1;
+  if (filters.appStatus && filters.appStatus !== "all") count += 1;
+  if (filters.schemeId && filters.schemeId !== "all") count += 1;
   return count;
 }
 
@@ -750,6 +788,17 @@ function buildWorkerDirectory() {
   return Array.from(workers.values());
 }
 
+export type WorkerSortOption =
+  | "name_asc"
+  | "name_desc"
+  | "benefits_desc"
+  | "benefits_asc"
+  | "apps_desc"
+  | "apps_asc"
+  | "pending_desc"
+  | "pending_asc"
+  | "in_review_desc";
+
 export function MobileCreatePartyWorkerFlow({
   lang,
   onClose,
@@ -769,6 +818,7 @@ export function MobileCreatePartyWorkerFlow({
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [profileActiveTab, setProfileActiveTab] = useState<"informations" | "applications">("informations");
   const [assistedViewMode, setAssistedViewMode] = useState<"applications" | "schemes">("applications");
+  const [assistedViewDropdownOpen, setAssistedViewDropdownOpen] = useState(false);
   const [assistedDateRange, setAssistedDateRange] = useState<string>("this_month");
   const [assistedStatusFilter, setAssistedStatusFilter] = useState<string>("all");
   const [assistedFilterOpen, setAssistedFilterOpen] = useState(false);
@@ -910,6 +960,8 @@ export function MobileCreatePartyWorkerFlow({
   const [focusAccessAreas, setFocusAccessAreas] = useState(false);
   const [workerSearch, setWorkerSearch] = useState("");
   const [workerSearchOpen, setWorkerSearchOpen] = useState(false);
+  const [workerSortOption, setWorkerSortOption] = useState<WorkerSortOption>("name_asc");
+  const [workerSortSheetOpen, setWorkerSortSheetOpen] = useState(false);
   const [workerFiltersOpen, setWorkerFiltersOpen] = useState(false);
   const [workerMoreFiltersOpen, setWorkerMoreFiltersOpen] = useState(false);
   const [appliedWorkerFilters, setAppliedWorkerFilters] = useState<WorkerListFilters>({
@@ -2551,6 +2603,53 @@ export function MobileCreatePartyWorkerFlow({
       ];
       selectedId = draftWorkerFilters.appRole;
       onPick = handleWorkerFilterAppRoleChange;
+    } else if (picker === "worker_filter_app_status") {
+      title = tr("Status Filter", "സ്റ്റാറ്റസ് ഫിൽട്ടർ");
+      options = [
+        { id: "all", label: tr("All Statuses", "എല്ലാ സ്റ്റാറ്റസുകളും"), search: "all statuses" },
+        { id: "application_received", label: tr("Application Received", "അപേക്ഷ ലഭിച്ചു"), search: "application received" },
+        { id: "document_verification_completed", label: tr("Document Verification Completed", "രേഖാ പരിശോധന പൂർത്തിയായി"), search: "document verification completed" },
+        { id: "applied", label: tr("Applied", "അപേക്ഷിച്ചു"), search: "applied" },
+        { id: "review", label: tr("In Review", "പരിശോധനയിൽ"), search: "review in review" },
+        { id: "beneficiary", label: tr("Approved / Beneficiary", "അംഗീകരിച്ചു / ഗുണഭോക്താവ്"), search: "approved beneficiary" },
+        { id: "rejected", label: tr("Rejected", "നിരസിച്ചു"), search: "rejected" },
+      ];
+      selectedId = draftWorkerFilters.appStatus || "all";
+      onPick = (id) =>
+        setDraftWorkerFilters((prev) => ({
+          ...prev,
+          appStatus: id,
+        }));
+    } else if (picker === "worker_filter_scheme") {
+      title = tr("Scheme Filter", "സ്കീം ഫിൽട്ടർ");
+      const schemeList = [
+        "PM Kisan Samman Nidhi",
+        "Pradhan Mantri Fasal Bima Yojana (PMFBY)",
+        "Kisan Credit Card (KCC) Scheme",
+        "Pradhan Mantri Jan Dhan Yojana (PMJDY)",
+        "Atal Pension Yojana (APY)",
+        "PM SVANidhi",
+        "PM Vishwakarma Yojana",
+        "PM YASASVI Scholarship",
+        "Ayushman Bharat - PM-JAY",
+        "Pradhan Mantri Awas Yojana - Gramin (PMAY-G)",
+        "Pradhan Mantri Ujjwala Yojana 2.0",
+        "Indira Gandhi National Old Age Pension Scheme (IGNOAPS)",
+      ];
+      options = [
+        { id: "all", label: tr("All Schemes", "എല്ലാ പദ്ധതികളും"), search: "all schemes" },
+        ...schemeList.map((name) => ({
+          id: name,
+          label: name,
+          search: name.toLowerCase(),
+        })),
+      ];
+      selectedId = draftWorkerFilters.schemeId || "all";
+      onPick = (id) =>
+        setDraftWorkerFilters((prev) => ({
+          ...prev,
+          schemeId: id,
+        }));
     } else if (picker === "filter_district") {
       title = tr("Filter by district", "ജില്ല ഉപയോഗിച്ച് ഫിൽട്ടർ ചെയ്യുക");
       options = districts.map((item) => ({
@@ -3526,12 +3625,42 @@ export function MobileCreatePartyWorkerFlow({
   const getVisibleWorkers = () => {
     const allWorkers = buildWorkerDirectory();
     const query = workerSearch.trim().toLowerCase();
-    return allWorkers.filter((worker) => {
+    const filtered = allWorkers.filter((worker) => {
       const designation = lang === "ml" ? worker.designationMl : worker.designationEn;
       const area = workerAreaLabel(worker, lang);
       const searchText = `${worker.name} ${worker.nameMl || ""} ${worker.mobile} ${designation} ${area}`;
       const matchesSearch = !query || searchText.toLowerCase().includes(query);
       return matchesSearch && workerMatchesListFilters(worker, appliedWorkerFilters);
+    });
+
+    return filtered.sort((a, b) => {
+      const statsA = getWorkerApplicationStats(a);
+      const statsB = getWorkerApplicationStats(b);
+      const nameA = lang === "ml" ? (a.nameMl || a.name) : a.name;
+      const nameB = lang === "ml" ? (b.nameMl || b.name) : b.name;
+
+      switch (workerSortOption) {
+        case "name_asc":
+          return nameA.localeCompare(nameB);
+        case "name_desc":
+          return nameB.localeCompare(nameA);
+        case "benefits_desc":
+          return statsB.approved - statsA.approved || nameA.localeCompare(nameB);
+        case "benefits_asc":
+          return statsA.approved - statsB.approved || nameA.localeCompare(nameB);
+        case "apps_desc":
+          return statsB.total - statsA.total || nameA.localeCompare(nameB);
+        case "apps_asc":
+          return statsA.total - statsB.total || nameA.localeCompare(nameB);
+        case "pending_desc":
+          return statsB.pending - statsA.pending || nameA.localeCompare(nameB);
+        case "pending_asc":
+          return statsA.pending - statsB.pending || nameA.localeCompare(nameB);
+        case "in_review_desc":
+          return statsB.inReview - statsA.inReview || nameA.localeCompare(nameB);
+        default:
+          return 0;
+      }
     });
   };
 
@@ -3604,15 +3733,30 @@ export function MobileCreatePartyWorkerFlow({
                     </p>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px] font-black leading-none border border-[#00875A] bg-[#00875A] text-white shadow-2xs" title={tr(`Approved: ${stats.approved}`, `അംഗീകരിച്ചു: ${stats.approved}`)}>
-                      {stats.approved}
-                    </span>
-                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px] font-black leading-none border border-[#f59e0b] bg-[#f59e0b] text-white shadow-2xs" title={tr(`Pending in Review: ${stats.inReview + stats.pending}`, `പരിശോധനയിൽ: ${stats.inReview + stats.pending}`)}>
-                      {stats.inReview + stats.pending}
-                    </span>
-                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px] font-black leading-none border border-[#FF2C2C] bg-[#FF2C2C] text-white shadow-2xs" title={tr(`Rejected: ${stats.rejected}`, `നിരസിച്ചു: ${stats.rejected}`)}>
-                      {stats.rejected}
-                    </span>
+                    {stats.approved > 0 ? (
+                      <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px] font-black leading-none border border-[#00875A] bg-[#00875A] text-white shadow-2xs" title={tr(`Approved: ${stats.approved}`, `അംഗീകരിച്ചു: ${stats.approved}`)}>
+                        {stats.approved}
+                      </span>
+                    ) : (
+                      <span className="h-5 w-[20px] shrink-0" />
+                    )}
+
+                    {stats.inReview + stats.pending > 0 ? (
+                      <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px] font-black leading-none border border-[#f59e0b] bg-[#f59e0b] text-white shadow-2xs" title={tr(`Pending in Review: ${stats.inReview + stats.pending}`, `പരിശോധനയിൽ: ${stats.inReview + stats.pending}`)}>
+                        {stats.inReview + stats.pending}
+                      </span>
+                    ) : (
+                      <span className="h-5 w-[20px] shrink-0" />
+                    )}
+
+                    {stats.rejected > 0 ? (
+                      <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px] font-black leading-none border border-[#FF2C2C] bg-[#FF2C2C] text-white shadow-2xs" title={tr(`Rejected: ${stats.rejected}`, `നിരസിച്ചു: ${stats.rejected}`)}>
+                        {stats.rejected}
+                      </span>
+                    ) : (
+                      <span className="h-5 w-[20px] shrink-0" />
+                    )}
+
                     <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500">
                       <ChevronRight className="h-3.5 w-3.5" />
                     </div>
@@ -3885,6 +4029,20 @@ export function MobileCreatePartyWorkerFlow({
                 placeholder={tr("All status", "എല്ലാ നിലകളും")}
                 onClick={() => openPicker("worker_filter_status")}
               />
+
+              <PickerButton
+                label={tr("Status Filter", "സ്റ്റാറ്റസ് ഫിൽട്ടർ")}
+                value={getWorkerAppStatusLabel(draftWorkerFilters.appStatus || "all", lang)}
+                placeholder={tr("All Statuses", "എല്ലാ സ്റ്റാറ്റസുകളും")}
+                onClick={() => openPicker("worker_filter_app_status")}
+              />
+
+              <PickerButton
+                label={tr("Scheme Filter", "സ്കീം ഫിൽട്ടർ")}
+                value={getWorkerSchemeLabel(draftWorkerFilters.schemeId || "all", lang)}
+                placeholder={tr("All Schemes", "എല്ലാ പദ്ധതികളും")}
+                onClick={() => openPicker("worker_filter_scheme")}
+              />
             </div>
           </div>
 
@@ -3903,6 +4061,79 @@ export function MobileCreatePartyWorkerFlow({
             >
               {tr("Apply Filters", "ഫിൽട്ടറുകൾ പ്രയോഗിക്കുക")}
             </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderWorkerSortSheet = () => {
+    if (!workerSortSheetOpen) return null;
+
+    const sortOptions: { id: WorkerSortOption; en: string; ml: string }[] = [
+      { id: "name_asc", en: "Name: A to Z", ml: "പേര്: A മുതൽ Z വരെ" },
+      { id: "name_desc", en: "Name: Z to A", ml: "പേര്: Z മുതൽ A വരെ" },
+      { id: "benefits_desc", en: "Benefits Received: High to Low", ml: "ലഭിച്ച ആനുകൂല്യങ്ങൾ: ഉയർന്നത് മുതൽ താഴ്ന്നത് വരെ" },
+      { id: "benefits_asc", en: "Benefits Received: Low to High", ml: "ലഭിച്ച ആനുകൂല്യങ്ങൾ: താഴ്ന്നത് മുതൽ ഉയർന്നത് വരെ" },
+      { id: "apps_desc", en: "Applications Assisted: High to Low", ml: "സഹായിച്ച അപേക്ഷകൾ: ഉയർന്നത് മുതൽ താഴ്ന്നത് വരെ" },
+      { id: "apps_asc", en: "Applications Assisted: Low to High", ml: "സഹായിച്ച അപേക്ഷകൾ: താഴ്ന്നത് മുതൽ ഉയർന്നത് വരെ" },
+      { id: "pending_desc", en: "Pending Applications: High to Low", ml: "തീർപ്പുകൽപ്പിക്കാത്ത അപേക്ഷകൾ: ഉയർന്നത് മുതൽ താഴ്ന്നത് വരെ" },
+      { id: "pending_asc", en: "Pending Applications: Low to High", ml: "തീർപ്പുകൽപ്പിക്കാത്ത അപേക്ഷകൾ: താഴ്ന്നത് മുതൽ ഉയർന്നത് വരെ" },
+      { id: "in_review_desc", en: "In Review: High to Low", ml: "പരിശോധനയിൽ ഉള്ളവ: ഉയർന്നത് മുതൽ താഴ്ന്നത് വരെ" },
+    ];
+
+    return (
+      <div
+        className="absolute inset-0 z-[110] flex items-end bg-black/55 animate-in fade-in duration-150"
+        onClick={() => setWorkerSortSheetOpen(false)}
+      >
+        <div
+          className="flex max-h-[85%] w-full flex-col rounded-t-2xl border-t border-orange-100 bg-white shadow-2xl animate-in slide-in-from-bottom duration-200 dark:border-slate-800 dark:bg-slate-900"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <div className="shrink-0 border-b border-slate-100 px-3.5 pb-2.5 pt-2 dark:border-slate-800">
+            <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-slate-200 dark:bg-slate-700" />
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <h3 className="flex items-center gap-1.5 text-[13px] font-extrabold text-slate-900 dark:text-white">
+                  <ArrowUpDown className="h-4 w-4 text-[#ff5500] stroke-[2.2]" />
+                  {tr("Sort Users", "ഉപയോക്താക്കളെ ക്രമീകരിക്കുക")}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setWorkerSortSheetOpen(false)}
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-1 overflow-y-auto p-3.5 pb-[max(1rem,env(safe-area-inset-bottom))]">
+            {sortOptions.map((option) => {
+              const isSelected = workerSortOption === option.id;
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => {
+                    setWorkerSortOption(option.id);
+                    setWorkerSortSheetOpen(false);
+                  }}
+                  className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-left text-[11.5px] font-bold transition ${
+                    isSelected
+                      ? "bg-orange-50 text-[#C2410C] dark:bg-orange-950/40 dark:text-orange-300"
+                      : "text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/60"
+                  }`}
+                >
+                  <span>{lang === "ml" ? option.ml : option.en}</span>
+                  {isSelected ? (
+                    <Check className="h-4 w-4 stroke-[2.5] text-[#ff5500]" />
+                  ) : null}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -4343,7 +4574,7 @@ export function MobileCreatePartyWorkerFlow({
             </p>
           ) : null}
 
-          {/* 2 Tabs: Informations | Assisted Applications */}
+          {/* 2 Tabs: Information | Assisted Applications */}
           <div className="mt-3 flex border-b border-slate-200 dark:border-slate-800">
             <button
               type="button"
@@ -4354,7 +4585,7 @@ export function MobileCreatePartyWorkerFlow({
                   : "border-transparent text-slate-500 font-bold hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
               }`}
             >
-              {tr("Informations", "വിവരങ്ങൾ")}
+              {tr("Information", "വിവരങ്ങൾ")}
             </button>
             <button
               type="button"
@@ -4443,16 +4674,80 @@ export function MobileCreatePartyWorkerFlow({
               <div className="flex items-center justify-between gap-1.5 pt-0.5 pb-0.5">
                 {/* Left side: View Selection Dropdown + Selected Bullet Date Label */}
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <div className="relative flex shrink-0 items-center rounded-xl border border-slate-200/90 bg-white px-2 py-1 shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
-                    <select
-                      value={assistedViewMode}
-                      onChange={(e) => setAssistedViewMode(e.target.value as "applications" | "schemes")}
-                      className="appearance-none bg-transparent text-[11px] font-extrabold text-[#1B255A] focus:outline-none dark:text-blue-300 cursor-pointer pr-4"
+                  <div className="relative shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setAssistedViewDropdownOpen(!assistedViewDropdownOpen)}
+                      className="flex items-center gap-1.5 rounded-xl border border-slate-200/90 bg-white px-2.5 py-1 text-[11px] font-extrabold text-[#1B255A] shadow-2xs hover:bg-slate-50/80 dark:border-slate-700/80 dark:bg-slate-900 dark:text-blue-300 dark:hover:bg-slate-800/80 transition-all cursor-pointer active:scale-[0.98]"
                     >
-                      <option value="applications">{tr("Applications View", "അപേക്ഷകളുടെ വ്യൂ")}</option>
-                      <option value="schemes">{tr("Scheme-wise View", "പദ്ധതി അധിഷ്ഠിത വ്യൂ")}</option>
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-1.5 h-3.5 w-3.5 text-slate-400" />
+                      <span>
+                        {assistedViewMode === "applications"
+                          ? tr("Applications View", "അപേക്ഷകളുടെ വ്യൂ")
+                          : tr("Scheme-wise View", "പദ്ധതി അധിഷ്ഠിത വ്യൂ")}
+                      </span>
+                      <ChevronDown
+                        className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-200 ${
+                          assistedViewDropdownOpen ? "rotate-180" : ""
+                        }`}
+                      />
+                    </button>
+
+                    {assistedViewDropdownOpen && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-30"
+                          onClick={() => setAssistedViewDropdownOpen(false)}
+                        />
+                        <div className="absolute left-0 top-full mt-1.5 z-40 w-48 rounded-2xl border border-slate-200/90 bg-white p-1.5 shadow-xl dark:border-slate-700 dark:bg-slate-900 animate-in fade-in-0 zoom-in-95 duration-150">
+                          <div className="px-2.5 py-1 mb-1 border-b border-slate-100 dark:border-slate-800">
+                            <p className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                              {tr("Select View", "കാഴ്‌ച തിരഞ്ഞെടുക്കുക")}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAssistedViewMode("applications");
+                              setAssistedViewDropdownOpen(false);
+                            }}
+                            className={`flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-left text-[11px] font-bold transition-all ${
+                              assistedViewMode === "applications"
+                                ? "bg-orange-50 text-[#ff5500] dark:bg-orange-950/40 dark:text-orange-400 font-extrabold"
+                                : "text-slate-700 hover:bg-slate-100/80 dark:text-slate-200 dark:hover:bg-slate-800/60"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-3.5 w-3.5 opacity-70" />
+                              <span>{tr("Applications View", "അപേക്ഷകളുടെ വ്യൂ")}</span>
+                            </div>
+                            {assistedViewMode === "applications" && (
+                              <Check className="h-3.5 w-3.5 text-[#ff5500] dark:text-orange-400 stroke-[2.5]" />
+                            )}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAssistedViewMode("schemes");
+                              setAssistedViewDropdownOpen(false);
+                            }}
+                            className={`flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-left text-[11px] font-bold transition-all ${
+                              assistedViewMode === "schemes"
+                                ? "bg-orange-50 text-[#ff5500] dark:bg-orange-950/40 dark:text-orange-400 font-extrabold"
+                                : "text-slate-700 hover:bg-slate-100/80 dark:text-slate-200 dark:hover:bg-slate-800/60"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <Layers className="h-3.5 w-3.5 opacity-70" />
+                              <span>{tr("Scheme-wise View", "പദ്ധതി അധിഷ്ഠിത വ്യൂ")}</span>
+                            </div>
+                            {assistedViewMode === "schemes" && (
+                              <Check className="h-3.5 w-3.5 text-[#ff5500] dark:text-orange-400 stroke-[2.5]" />
+                            )}
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {assistedDateRange !== "all" && assistedDateRange !== "all_time" && (
@@ -4722,7 +5017,12 @@ export function MobileCreatePartyWorkerFlow({
                                 type="button"
                                 onClick={() => {
                                   setOpenCardMenuId(null);
-                                  setAssistedAppList((prev) => prev.filter((item) => item.id !== app.id));
+                                  toast.success(
+                                    tr(
+                                      "Deletion request submitted. Will be deleted after Higher Authority Approval.",
+                                      "ഡിലീറ്റ് അപേക്ഷ സമർപ്പിച്ചു. ഉന്നതാധികാര അനുമതി ലഭിച്ച ശേഷം നീക്കം ചെയ്യപ്പെടും."
+                                    )
+                                  );
                                 }}
                                 className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer"
                               >
@@ -5516,6 +5816,18 @@ export function MobileCreatePartyWorkerFlow({
                 </button>
                 <button
                   type="button"
+                  onClick={() => setWorkerSortSheetOpen(true)}
+                  className={`relative flex h-7 w-7 items-center justify-center rounded-full border transition-colors active:scale-95 shadow-2xs ${
+                    workerSortOption !== "name_asc"
+                      ? "bg-[#ff5500] text-white border-orange-600"
+                      : "bg-white text-[#ff5500] border-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:text-orange-400 dark:border-slate-700"
+                  }`}
+                  aria-label={tr("Sort users", "ഉപയോക്താക്കളെ ക്രമീകരിക്കുക")}
+                >
+                  <ArrowUpDown className={`h-3.5 w-3.5 stroke-[2.2] ${workerSortOption !== "name_asc" ? "text-white" : "text-[#ff5500] dark:text-orange-400"}`} />
+                </button>
+                <button
+                  type="button"
                   onClick={openWorkerFilters}
                   className={`relative flex h-7 w-7 items-center justify-center rounded-full border transition-colors active:scale-95 shadow-2xs ${
                     appliedWorkerFilterCount > 0
@@ -5626,6 +5938,7 @@ export function MobileCreatePartyWorkerFlow({
       {renderPicker()}
       {renderAccessSheet()}
       {renderWorkerFilters()}
+      {renderWorkerSortSheet()}
 
       {/* Application Details View Screen Overlay (Matching image media_1795239859823_d55f80fb.png) */}
       {selectedAssistedApp && (

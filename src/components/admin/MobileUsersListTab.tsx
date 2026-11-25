@@ -667,15 +667,29 @@ export function MobileUsersListTab({
                     )}
 
                     {/* Status count badges matching Applicants card */}
-                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px] font-black leading-none border border-[#00875A] bg-[#00875A] text-white shadow-2xs" title={lang === "ml" ? `അംഗീകരിച്ചു: ${stats.approved}` : `Approved: ${stats.approved}`}>
-                      {stats.approved}
-                    </span>
-                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px] font-black leading-none border border-[#f59e0b] bg-[#f59e0b] text-white shadow-2xs" title={lang === "ml" ? `പരിശോധനയിൽ: ${stats.inReview + stats.pending}` : `Pending in Review: ${stats.inReview + stats.pending}`}>
-                      {stats.inReview + stats.pending}
-                    </span>
-                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px] font-black leading-none border border-[#FF2C2C] bg-[#FF2C2C] text-white shadow-2xs" title={lang === "ml" ? `നിരസിച്ചു: ${stats.rejected}` : `Rejected: ${stats.rejected}`}>
-                      {stats.rejected}
-                    </span>
+                    {stats.approved > 0 ? (
+                      <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px] font-black leading-none border border-[#00875A] bg-[#00875A] text-white shadow-2xs" title={lang === "ml" ? `അംഗീകരിച്ചു: ${stats.approved}` : `Approved: ${stats.approved}`}>
+                        {stats.approved}
+                      </span>
+                    ) : (
+                      <span className="h-5 w-[20px] shrink-0" />
+                    )}
+
+                    {stats.inReview + stats.pending > 0 ? (
+                      <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px] font-black leading-none border border-[#f59e0b] bg-[#f59e0b] text-white shadow-2xs" title={lang === "ml" ? `പരിശോധനയിൽ: ${stats.inReview + stats.pending}` : `Pending in Review: ${stats.inReview + stats.pending}`}>
+                        {stats.inReview + stats.pending}
+                      </span>
+                    ) : (
+                      <span className="h-5 w-[20px] shrink-0" />
+                    )}
+
+                    {stats.rejected > 0 ? (
+                      <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px] font-black leading-none border border-[#FF2C2C] bg-[#FF2C2C] text-white shadow-2xs" title={lang === "ml" ? `നിരസിച്ചു: ${stats.rejected}` : `Rejected: ${stats.rejected}`}>
+                        {stats.rejected}
+                      </span>
+                    ) : (
+                      <span className="h-5 w-[20px] shrink-0" />
+                    )}
                   </div>
                 </div>
 

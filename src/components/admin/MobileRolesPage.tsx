@@ -313,14 +313,28 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
     toast.success(tr("Role duplicated.", "റോൾ പകർത്തി."));
   };
 
+  const [roleDeleteReason, setRoleDeleteReason] = useState("");
+  const [roleDeleteReasonError, setRoleDeleteReasonError] = useState(false);
+
   const confirmDeleteRole = () => {
     if (!deleteTarget) return;
+    if (!roleDeleteReason || roleDeleteReason.trim().length < 3) {
+      setRoleDeleteReasonError(true);
+      return;
+    }
     const targetId = deleteTarget.id;
     markManagedRoleDeleted(targetId);
     commitRoles(roles.filter((role) => role.id !== targetId));
     if (assignmentRole?.id === targetId) setAssignmentRole(null);
     setDeleteTarget(null);
-    toast.success(tr("Role deleted.", "റോൾ മായ്ച്ചു."));
+    setRoleDeleteReason("");
+    setRoleDeleteReasonError(false);
+    toast.success(
+      tr(
+        "Deletion request submitted. Will be deleted after Higher Authority Approval.",
+        "ഡിലീറ്റ് അപേക്ഷ സമർപ്പിച്ചു. ഉന്നതാധികാര അനുമതി ലഭിച്ച ശേഷം നീക്കം ചെയ്യപ്പെടും."
+      )
+    );
   };
 
   const assignmentDistrictOptions = Array.from(
@@ -834,7 +848,11 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
       {deleteTarget ? (
         <div
           className="absolute inset-0 z-[130] flex items-end bg-slate-950/50 animate-in fade-in duration-150"
-          onClick={() => setDeleteTarget(null)}
+          onClick={() => {
+            setDeleteTarget(null);
+            setRoleDeleteReason("");
+            setRoleDeleteReasonError(false);
+          }}
         >
           <div
             className="w-full rounded-t-2xl border-t border-orange-100 bg-white shadow-2xl animate-in slide-in-from-bottom duration-200 dark:border-slate-800 dark:bg-slate-900"
@@ -843,15 +861,19 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
             <div className="flex items-start justify-between gap-3 border-b border-border/70 px-4 pb-3 pt-3">
               <div>
                 <h3 className="text-[13px] font-extrabold text-foreground">
-                  {tr("Delete Role", "റോൾ മായ്ക്കുക")}
+                  {tr("Confirm Delete", "ഡിലീറ്റ് സ്ഥിരീകരിക്കുക")}
                 </h3>
                 <p className="mt-0.5 text-[9.5px] font-medium text-muted-foreground">
-                  {tr("This action cannot be undone.", "ഈ പ്രവർത്തനം പഴയപടിയാക്കാനാകില്ല.")}
+                  {tr("Requires Higher Authority Approval", "ഉന്നതാധികാര അനുമതി ആവശ്യമാണ്")}
                 </p>
               </div>
               <button
                 type="button"
-                onClick={() => setDeleteTarget(null)}
+                onClick={() => {
+                  setDeleteTarget(null);
+                  setRoleDeleteReason("");
+                  setRoleDeleteReasonError(false);
+                }}
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted/60 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground dark:bg-slate-800 dark:hover:bg-slate-700"
                 aria-label={tr("Close", "അടയ്ക്കുക")}
               >
@@ -872,16 +894,47 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
                       `ഈ റോൾ നൽകിയ ${deleteTarget.assignedUsers} ഉപയോക്താവിന് ഇത് നഷ്ടമാകും.`,
                     )
                   : tr(
-                      "This role will be removed from Roles and Control.",
-                      "ഈ റോൾ Roles and Control-ൽ നിന്ന് നീക്കം ചെയ്യും.",
+                      "This role deletion request will be submitted to Higher Authority for approval.",
+                      "ഈ റോൾ ഡിലീറ്റ് ചെയ്യാനുള്ള അപേക്ഷ ഉന്നതാധികാരിക്ക് സമർപ്പിക്കും.",
                     )}
               </p>
+
+              <div className="mt-3">
+                <label className="block text-[10.5px] font-extrabold text-foreground">
+                  {tr("Reason for Deletion *", "ഡിലീറ്റ് ചെയ്യാനുള്ള കാരണം *")}
+                </label>
+                <textarea
+                  value={roleDeleteReason}
+                  onChange={(e) => {
+                    setRoleDeleteReason(e.target.value);
+                    if (e.target.value.trim().length >= 3) {
+                      setRoleDeleteReasonError(false);
+                    }
+                  }}
+                  placeholder={tr("Enter reason for deletion (mandatory)...", "കാരണം രേഖപ്പെടുത്തുക (നിർബന്ധമാണ്)...")}
+                  className={cn(
+                    "mt-1.5 min-h-[70px] w-full rounded-lg border bg-background px-3 py-2 text-[11px] font-medium text-foreground outline-none transition-all placeholder:text-muted-foreground focus:ring-2 focus:ring-orange-500/20",
+                    roleDeleteReasonError
+                      ? "border-rose-500 ring-2 ring-rose-500/20 dark:border-rose-500"
+                      : "border-input hover:border-orange-200 dark:hover:border-slate-700"
+                  )}
+                />
+                {roleDeleteReasonError && (
+                  <p className="mt-1 text-[9.5px] font-semibold text-rose-500">
+                    {tr("Please enter a valid reason (min 3 characters).", "ദയവായി സാധുവായ കാരണം രേഖപ്പെടുത്തുക (കുറഞ്ഞത് 3 അക്ഷരങ്ങൾ).")}
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="flex items-center gap-2 border-t border-border/70 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
               <button
                 type="button"
-                onClick={() => setDeleteTarget(null)}
+                onClick={() => {
+                  setDeleteTarget(null);
+                  setRoleDeleteReason("");
+                  setRoleDeleteReasonError(false);
+                }}
                 className="h-10 w-[35%] shrink-0 rounded-lg border border-orange-200 bg-white px-3 text-[10.5px] font-extrabold text-orange-700 transition-colors hover:bg-orange-50 dark:border-orange-900/60 dark:bg-slate-900 dark:text-orange-300 dark:hover:bg-orange-950/40"
               >
                 {tr("Cancel", "റദ്ദാക്കുക")}
@@ -889,9 +942,10 @@ export function MobileRolesPage({ onBack, onFormOpenChange }: MobileRolesPagePro
               <Button
                 type="button"
                 onClick={confirmDeleteRole}
-                className="h-10 flex-1 rounded-lg bg-rose-600 text-[11.5px] font-extrabold text-white hover:bg-rose-700"
+                disabled={!roleDeleteReason || roleDeleteReason.trim().length < 3}
+                className="h-10 flex-1 rounded-lg bg-rose-600 text-[11.5px] font-extrabold text-white hover:bg-rose-700 disabled:opacity-50"
               >
-                {tr("Delete Role", "റോൾ മായ്ക്കുക")}
+                {tr("Submit Request", "അപേക്ഷ സമർപ്പിക്കുക")}
               </Button>
             </div>
           </div>

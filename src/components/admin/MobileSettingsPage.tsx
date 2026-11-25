@@ -342,12 +342,26 @@ export function MobileSettingsPage({
     setDesignationFormError("");
   };
 
+  const [designationDeleteReason, setDesignationDeleteReason] = useState("");
+  const [designationDeleteReasonError, setDesignationDeleteReasonError] = useState(false);
+
   const deleteDesignation = () => {
     if (!designationDeleteTarget) return;
+    if (!designationDeleteReason || designationDeleteReason.trim().length < 3) {
+      setDesignationDeleteReasonError(true);
+      return;
+    }
     const nextHidden = [...hiddenDesignationIds, designationDeleteTarget.id];
     setHiddenDesignationIds(nextHidden);
     writeStoredJson(hiddenDesignationStorageKey, nextHidden);
     setDesignationDeleteTarget(null);
+    setDesignationDeleteReason("");
+    setDesignationDeleteReasonError(false);
+    toast.success(
+      isMalayalam
+        ? "ഡിലീറ്റ് അപേക്ഷ സമർപ്പിച്ചു. ഉന്നതാധികാര അനുമതി ലഭിച്ച ശേഷം നീക്കം ചെയ്യപ്പെടും."
+        : "Deletion request submitted. Will be deleted after Higher Authority Approval."
+    );
   };
 
   if (activeView === "roles") {
@@ -698,24 +712,62 @@ export function MobileSettingsPage({
         {designationDeleteTarget ? (
           <div
             className="absolute inset-0 z-[120] flex items-end bg-slate-950/50 animate-in fade-in duration-150"
-            onClick={() => setDesignationDeleteTarget(null)}
+            onClick={() => {
+              setDesignationDeleteTarget(null);
+              setDesignationDeleteReason("");
+              setDesignationDeleteReasonError(false);
+            }}
           >
             <div
               className="w-full rounded-t-2xl border-t border-orange-100 bg-white p-4 shadow-2xl animate-in slide-in-from-bottom duration-200 dark:border-slate-800 dark:bg-slate-900"
               onClick={(event) => event.stopPropagation()}
             >
               <h3 className="text-[13px] font-extrabold text-foreground">
-                {isMalayalam ? "ഡെസിഗ്നേഷൻ ഡിലീറ്റ് ചെയ്യണോ?" : "Delete designation?"}
+                {isMalayalam ? "Confirm Delete" : "Confirm Delete"}
               </h3>
               <p className="mt-1 text-[10px] font-medium text-muted-foreground">
                 {isMalayalam
-                  ? `${designationDeleteTarget.name} ഈ പട്ടികയിൽ നിന്ന് നീക്കം ചെയ്യും.`
-                  : `${designationDeleteTarget.name} will be removed from this list.`}
+                  ? `${designationDeleteTarget.name} - ഉന്നതാധികാര അനുമതി ലഭിച്ച ശേഷം നീക്കം ചെയ്യപ്പെടും.`
+                  : `${designationDeleteTarget.name} - Deletion requires Higher Authority Approval.`}
               </p>
+
+              <div className="mt-3">
+                <label className="block text-[10px] font-bold text-foreground mb-1">
+                  {isMalayalam ? "നീക്കം ചെയ്യാനുള്ള കാരണം *" : "Reason for Deletion *"}
+                </label>
+                <textarea
+                  rows={2}
+                  value={designationDeleteReason}
+                  onChange={(e) => {
+                    setDesignationDeleteReason(e.target.value);
+                    if (e.target.value.trim().length >= 3) setDesignationDeleteReasonError(false);
+                  }}
+                  placeholder={
+                    isMalayalam
+                      ? "ഡിലീറ്റ് ചെയ്യുന്നതിനുള്ള കാരണം രേഖപ്പെടുത്തുക..."
+                      : "Enter mandatory reason for deletion..."
+                  }
+                  className={`w-full rounded-xl border p-2 text-[11px] font-medium bg-muted/30 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 ${
+                    designationDeleteReasonError
+                      ? "border-rose-500 focus:ring-rose-500"
+                      : "border-border focus:ring-ring"
+                  }`}
+                />
+                {designationDeleteReasonError ? (
+                  <p className="mt-0.5 text-[9px] font-bold text-rose-500">
+                    {isMalayalam ? "കാരണം രേഖപ്പെടുത്തേണ്ടത് നിർബന്ധമാണ്." : "Reason for deletion is mandatory."}
+                  </p>
+                ) : null}
+              </div>
+
               <div className="mt-4 flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setDesignationDeleteTarget(null)}
+                  onClick={() => {
+                    setDesignationDeleteTarget(null);
+                    setDesignationDeleteReason("");
+                    setDesignationDeleteReasonError(false);
+                  }}
                   className="h-10 w-[35%] shrink-0 rounded-lg border border-border bg-white px-3 text-[10.5px] font-extrabold text-foreground transition-colors hover:bg-muted dark:bg-slate-900"
                 >
                   {isMalayalam ? "റദ്ദാക്കുക" : "Cancel"}
@@ -723,9 +775,10 @@ export function MobileSettingsPage({
                 <button
                   type="button"
                   onClick={deleteDesignation}
-                  className="h-10 flex-1 rounded-lg bg-rose-600 px-3 text-[11.5px] font-extrabold text-white transition-colors hover:bg-rose-700"
+                  disabled={!designationDeleteReason || designationDeleteReason.trim().length < 3}
+                  className="h-10 flex-1 rounded-lg bg-rose-600 px-3 text-[11.5px] font-extrabold text-white transition-colors hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isMalayalam ? "ഡിലീറ്റ് ചെയ്യുക" : "Delete"}
+                  {isMalayalam ? "സമർപ്പിക്കുക" : "Submit Request"}
                 </button>
               </div>
             </div>
@@ -1155,7 +1208,7 @@ export function MobileSettingsPage({
           className="flex w-full items-center justify-between gap-3 border-b border-border/70 px-4 py-3 text-left transition-colors hover:bg-orange-50/60 dark:hover:bg-slate-800/70 cursor-pointer"
         >
           <span className="flex min-w-0 items-center gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-100 dark:bg-orange-950/60">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-100 dark:bg-white/20">
               <img
                 src="/images/settings/language.png"
                 alt=""
@@ -1180,7 +1233,7 @@ export function MobileSettingsPage({
 
         <label className="flex w-full cursor-pointer items-center justify-between gap-3 border-b border-border/70 px-4 py-3">
           <span className="flex min-w-0 items-center gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-100 dark:bg-orange-950/60">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-100 dark:bg-white/20">
               <img
                 src="/images/settings/notifications.png"
                 alt=""
@@ -1206,41 +1259,13 @@ export function MobileSettingsPage({
           />
         </label>
 
-        {/* Application View Setting */}
-        <button
-          type="button"
-          onClick={openAppViewSheet}
-          className="flex w-full items-center justify-between gap-3 border-b border-border/70 px-4 py-3 text-left transition-colors hover:bg-orange-50/60 dark:hover:bg-slate-800/70 cursor-pointer"
-        >
-          <span className="flex min-w-0 items-center gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-100 dark:bg-orange-950/60">
-              <ClipboardList className="h-4.5 w-4.5 text-orange-600 dark:text-orange-400" />
-            </span>
-            <span className="min-w-0">
-              <span className="block text-[11.5px] font-extrabold text-foreground">
-                {isMalayalam ? "അപേക്ഷാ കാഴ്‌ച" : "Application View"}
-              </span>
-              <span className="block text-[9.5px] text-muted-foreground">
-                {currentAppView === "scheme_wise"
-                  ? isMalayalam
-                    ? "പദ്ധതി തിരിച്ചുള്ള കാഴ്‌ച"
-                    : "Scheme-wise Application View"
-                  : isMalayalam
-                    ? "ആപ്ലിക്കേഷൻ കാർഡ് വ്യൂ"
-                    : "Application Card View"}
-              </span>
-            </span>
-          </span>
-          <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
-        </button>
-
         <button
           type="button"
           onClick={onLogout}
           className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-rose-600 transition-colors hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
         >
           <span className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-300">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-100 text-rose-600 dark:bg-white/20 dark:text-rose-400">
               <LogOut className="h-4 w-4" />
             </span>
             <span className="text-[11.5px] font-extrabold">
