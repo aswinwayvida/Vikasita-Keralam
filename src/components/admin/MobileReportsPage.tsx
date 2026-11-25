@@ -130,6 +130,9 @@ interface SchemeFilterState {
   statuses: SchemeStatusBucket[];
   locationLevel: SchemeLocationLevel;
   location: SchemeLocationFilter;
+  category?: string;
+  scheme?: string;
+  sortBy?: string;
 }
 
 const createEmptySchemeLocation = (): SchemeLocationFilter => ({
