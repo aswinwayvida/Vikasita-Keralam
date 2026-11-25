@@ -105,6 +105,7 @@ type SchemeStatusBucket = "approved" | "in_review" | "pending" | "rejected";
 type SchemeWorkView = "my_work" | "team";
 type SchemeLocationLevel = "state" | "region" | "org_district" | "mandalam" | "area" | "ward";
 type SchemeLocationField = "level" | "region" | "orgDistrict" | "mandalam" | "area" | "ward";
+type SchemeFilterField = SchemeLocationField | "category" | "scheme" | "sortBy";
 
 interface SchemeLocationOption {
   value: string;
