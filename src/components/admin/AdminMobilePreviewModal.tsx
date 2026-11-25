@@ -13044,7 +13044,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           </>
                         ) : null}
                       </div>
-                    ) : mobileSubPage === "about" || mobileSubPage === "contact" || mobileSubPage === "events_announcements" || (activeTab === "create" && createFlowStep === "scheme_details") ? null : (
+                    ) : mobileSubPage === "about" || mobileSubPage === "contact" || mobileSubPage === "events_announcements" || mobileSubPage === "needs_attention" || (activeTab === "create" && createFlowStep === "scheme_details") ? null : (
                       <>
                         <button
                           type="button"
