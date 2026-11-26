@@ -806,7 +806,7 @@ function BeneficiariesPage() {
     return "cards";
   });
   const [visibleColumns, setVisibleColumns] = useState<Set<BeneficiaryColumnKey>>(
-    () => new Set(BENEFICIARY_COLUMNS.map((c) => c.key)),
+    () => new Set(BENEFICIARY_COLUMNS.filter((c) => c.key !== "areaWard").map((c) => c.key)),
   );
   const [columnOrder, setColumnOrder] = useState<BeneficiaryColumnKey[]>(() =>
     BENEFICIARY_COLUMNS.map((c) => c.key),
@@ -1047,17 +1047,17 @@ function BeneficiariesPage() {
   return (
     <div className="space-y-3 pb-6 [font-family:'Instrument_Sans',sans-serif]">
       {/* Merged Single Section Container */}
-      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-xs">
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-xs md:space-y-4 md:overflow-visible md:rounded-none md:border-0 md:bg-transparent md:shadow-none">
         
         {/* Top Header Row with Filter & Create New Applicant Buttons on the Right */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 p-3 sm:px-4 sm:py-2.5">
-          <div className="flex flex-wrap items-center gap-3">
-            <h2 className="text-base font-bold text-foreground">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 p-3 sm:px-4 sm:py-2.5 md:rounded-2xl md:border md:bg-card md:shadow-xs">
+          <div className="flex flex-wrap items-center gap-3 md:min-w-0 md:flex-1 md:flex-nowrap md:overflow-x-auto md:desktop-hide-scrollbar">
+            <h2 className="text-base font-bold text-foreground md:shrink-0 md:whitespace-nowrap">
               {lang === "ml" ? "അപേക്ഷകരുടെ പട്ടിക" : "Applicants List"}
             </h2>
 
             {selectedIds.size > 0 && (
-              <div className="flex flex-wrap items-center gap-2.5 bg-white dark:bg-card border border-border/80 rounded-full px-3 py-1 text-xs shadow-2xs animate-in fade-in transition-all">
+              <div className="flex flex-wrap items-center gap-2.5 bg-white dark:bg-card border border-border/80 rounded-full px-3 py-1 text-xs shadow-2xs animate-in fade-in transition-all md:flex-nowrap md:shrink-0 md:whitespace-nowrap">
                 <span className="font-extrabold text-foreground text-[11px]">
                   {tr(
                     `${selectedIds.size}/${filteredBeneficiaries.length} selected`,
@@ -1279,9 +1279,9 @@ function BeneficiariesPage() {
         </div>
 
         {/* Data Table View */}
-        <div className="overflow-x-auto desktop-hide-scrollbar">
+        <div className="overflow-x-auto desktop-hide-scrollbar md:rounded-2xl md:border md:border-border md:bg-card md:shadow-[0_4px_14px_rgba(15,23,42,0.1)] dark:md:shadow-[0_4px_16px_rgba(0,0,0,0.25)]">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50/70 dark:bg-slate-900/70 font-bold text-muted-foreground border-b border-border">
+            <thead className="bg-slate-50/70 dark:bg-slate-900/70 md:bg-slate-100 dark:md:bg-[#1c2b43] font-bold text-muted-foreground md:text-slate-700 dark:md:text-slate-300 border-b border-border">
               <tr>
                 <th className="py-3.5 pl-4 sm:pl-5 pr-2 w-10 text-center">
                   <Checkbox

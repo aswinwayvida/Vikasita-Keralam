@@ -20815,7 +20815,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         </div>
 
                         {isPmKisanScheme(selectedEligibleScheme) && (
-                          <div className="rounded-2xl border border-orange-200/80 bg-white p-2.5 shadow-2xs dark:border-orange-900/50 dark:bg-card [&_input]:!rounded-md [&_select]:!rounded-md [&_input]:border-slate-300 [&_select]:border-slate-300 [&_input]:bg-white [&_select]:bg-white">
+                          <div className="rounded-2xl border border-orange-200/80 bg-white p-2.5 shadow-2xs dark:border-orange-900/50 dark:bg-card [&_input]:!rounded-md [&_select]:!rounded-md [&_input]:border-slate-300 [&_select]:border-slate-300 [&_input]:bg-white [&_select]:bg-white dark:[&_input]:border-slate-600 dark:[&_select]:border-slate-600 dark:[&_input]:bg-slate-800 dark:[&_select]:bg-slate-800 dark:[&_input]:text-slate-100 dark:[&_select]:text-slate-100 dark:[&_input::placeholder]:text-slate-400 dark:[&_select:disabled]:bg-slate-800 dark:[&_select:disabled]:text-slate-400">
                             <div className="space-y-2">
                               <div>
                                 <label htmlFor="pm_kisan_land_ownership" className="mb-0.5 block text-[11px] font-bold text-foreground">

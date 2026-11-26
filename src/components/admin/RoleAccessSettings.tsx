@@ -2536,8 +2536,8 @@ export function RoleAccessSettings({
 
   return (
     <div className="space-y-4 [font-family:'Instrument_Sans',sans-serif]">
-      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 px-4 py-2.5 sm:px-5">
+      <div className={cn("overflow-hidden rounded-2xl border border-border bg-card shadow-xs", (activeTab === "roles" || activeTab === "users") && "md:space-y-4 md:overflow-visible md:rounded-none md:border-0 md:bg-transparent md:shadow-none")}>
+        <div className={cn("flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 px-4 py-2.5 sm:px-5", (activeTab === "roles" || activeTab === "users") && "md:rounded-2xl md:border md:bg-card md:px-4 md:py-3 md:shadow-[0_4px_14px_rgba(15,23,42,0.1)] dark:md:shadow-[0_4px_16px_rgba(0,0,0,0.25)]")}>
           {activeTab === "location" ? (
             <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
               <h2 className="text-sm font-extrabold text-foreground px-1">
@@ -3757,8 +3757,8 @@ export function RoleAccessSettings({
         </div>
       )
     ) : activeTab === "roles" ? (
-          <div className="space-y-0">
-            <div className="overflow-x-auto desktop-hide-scrollbar">
+          <div className="space-y-0 md:space-y-4">
+            <div className="overflow-x-auto desktop-hide-scrollbar md:rounded-2xl md:border md:border-border md:bg-card md:shadow-[0_4px_14px_rgba(15,23,42,0.1)] dark:md:shadow-[0_4px_16px_rgba(0,0,0,0.25)]">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50/70 dark:bg-slate-900/70 font-bold text-muted-foreground border-b border-border">
                 <tr>
@@ -3915,7 +3915,7 @@ export function RoleAccessSettings({
 
           {/* Roles Pagination Footer */}
           {displayedRoles.length > 0 && (
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border p-3 text-xs text-muted-foreground font-semibold bg-muted/20">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border p-3 text-xs text-muted-foreground font-semibold bg-muted/20 md:rounded-xl md:border md:bg-card md:px-4 md:py-3 md:shadow-xs">
               <div>
                 {lang === "ml"
                   ? `${displayedRoles.length} റോളുകളിൽ ${Math.min((rolePage - 1) * 12 + 1, displayedRoles.length)} മുതൽ ${Math.min(rolePage * 12, displayedRoles.length)} വരെ കാണിക്കുന്നു`
@@ -3968,8 +3968,8 @@ export function RoleAccessSettings({
           )}
           </div>
         ) : activeTab === "users" ? (
-          <div className="space-y-0">
-            <div className="overflow-x-auto desktop-hide-scrollbar">
+          <div className="space-y-0 md:space-y-4">
+            <div className="overflow-x-auto desktop-hide-scrollbar md:rounded-2xl md:border md:border-border md:bg-card md:shadow-[0_4px_14px_rgba(15,23,42,0.1)] dark:md:shadow-[0_4px_16px_rgba(0,0,0,0.25)]">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50/70 dark:bg-slate-900/70 font-bold text-muted-foreground border-b border-border">
                 <tr>
@@ -4171,7 +4171,7 @@ export function RoleAccessSettings({
 
           {/* Users Pagination Footer */}
           {filteredUsers.length > 0 && (
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border p-3 text-xs text-muted-foreground font-semibold bg-muted/20">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border p-3 text-xs text-muted-foreground font-semibold bg-muted/20 md:rounded-xl md:border md:bg-card md:px-4 md:py-3 md:shadow-xs">
               <div>
                 {lang === "ml"
                   ? `${filteredUsers.length} ഉപയോക്താക്കളിൽ ${Math.min((userPage - 1) * 12 + 1, filteredUsers.length)} മുതൽ ${Math.min(userPage * 12, filteredUsers.length)} വരെ കാണിക്കുന്നു`

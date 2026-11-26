@@ -1179,18 +1179,18 @@ function SchemesPage() {
   return (
     <div className="w-full min-w-0 max-w-full space-y-3 pb-6 [font-family:'Instrument_Sans',sans-serif]">
       {/* Merged Single Section Container */}
-      <div className="w-full max-w-full min-w-0 overflow-hidden rounded-2xl border border-border bg-card shadow-xs">
+      <div className="w-full max-w-full min-w-0 overflow-hidden rounded-2xl border border-border bg-card shadow-xs md:space-y-4 md:overflow-visible md:rounded-none md:border-0 md:bg-transparent md:shadow-none">
         {/* Top Header Row with Title & Filter / Export / Import / Add Scheme Buttons */}
-        <div className="flex min-w-0 flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 p-3 sm:px-3 sm:py-2">
-          <div className="flex min-w-0 flex-wrap items-center gap-3">
-            <h2 className="font-display text-base font-bold text-foreground">
+        <div className="flex min-w-0 flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 p-3 sm:px-3 sm:py-2 md:rounded-2xl md:border md:bg-card md:shadow-xs">
+          <div className="flex min-w-0 flex-wrap items-center gap-3 md:flex-1 md:flex-nowrap md:overflow-x-auto md:desktop-hide-scrollbar">
+            <h2 className="font-display text-base font-bold text-foreground md:shrink-0 md:whitespace-nowrap">
               {lang === "ml"
                 ? `പദ്ധതി പട്ടിക (${filtered.length})`
                 : `Schemes List (${filtered.length})`}
             </h2>
 
             {selectedSchemeIds.size > 0 && (
-              <div className="flex flex-wrap items-center gap-2.5 bg-white dark:bg-card border border-border/80 rounded-full px-3 py-1 text-xs shadow-2xs animate-in fade-in transition-all">
+              <div className="flex flex-wrap items-center gap-2.5 bg-white dark:bg-card border border-border/80 rounded-full px-3 py-1 text-xs shadow-2xs animate-in fade-in transition-all md:flex-nowrap md:shrink-0 md:whitespace-nowrap">
                 <span className="font-extrabold text-foreground text-[11px]">
                   {tr(
                     `${selectedSchemeIds.size}/${filtered.length} selected`,

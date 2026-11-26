@@ -999,17 +999,17 @@ function ApplicationsPage() {
   return (
     <div className="space-y-6 pb-8 [font-family:'Instrument_Sans',sans-serif]">
       {/* Merged Single Section Container */}
-      <div className="rounded-2xl border border-border bg-card p-3 sm:p-3 shadow-xs space-y-2">
+      <div className="rounded-2xl border border-border bg-card p-3 shadow-xs space-y-2 md:space-y-4 md:rounded-none md:border-0 md:bg-transparent md:p-0 md:shadow-none">
         
         {/* Top Header Row with Title & Filter / Actions */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b sm:border-b-0 border-border/80 pb-2 sm:pb-0">
-          <div className="flex flex-wrap items-center gap-3">
-            <h2 className="text-base font-bold text-foreground">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b sm:border-b-0 border-border/80 pb-2 sm:pb-0 md:rounded-2xl md:border md:border-border md:bg-card md:px-4 md:py-3 md:shadow-[0_4px_14px_rgba(15,23,42,0.1)] dark:md:shadow-[0_4px_16px_rgba(0,0,0,0.25)]">
+          <div className="flex flex-wrap items-center gap-3 md:min-w-0 md:flex-1 md:flex-nowrap md:overflow-x-auto md:desktop-hide-scrollbar">
+            <h2 className="text-base font-bold text-foreground md:shrink-0 md:whitespace-nowrap">
               {lang === "ml" ? "അപേക്ഷകളുടെ ലിസ്റ്റ്" : "Applications List"}
             </h2>
 
             {selectedIds.size > 0 && (
-              <div className="flex flex-wrap items-center gap-2.5 bg-white dark:bg-card border border-border/80 rounded-full px-3 py-1 text-xs shadow-2xs animate-in fade-in transition-all">
+              <div className="flex flex-wrap items-center gap-2.5 bg-white dark:bg-card border border-border/80 rounded-full px-3 py-1 text-xs shadow-2xs animate-in fade-in transition-all md:flex-nowrap md:shrink-0 md:whitespace-nowrap">
                 <span className="font-extrabold text-foreground text-[11px]">
                   {tr(
                     `${selectedIds.size}/${filtered.length} selected`,
@@ -1028,7 +1028,7 @@ function ApplicationsPage() {
                 <button
                   type="button"
                   onClick={handleBulkMessage}
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-card px-2.5 py-0.5 text-[11px] font-bold text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors"
+                  className="inline-flex md:hidden shrink-0 items-center gap-1.5 rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-card px-2.5 py-0.5 text-[11px] font-bold text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors"
                 >
                   <MessageCircle className="h-3.5 w-3.5 text-slate-900 dark:text-slate-100" />
                   <span>{tr("Message", "സന്ദേശം")}</span>
@@ -1638,9 +1638,9 @@ function ApplicationsPage() {
 
         {/* Data Table View */}
         {viewMode === "table" && (
-          <div className="overflow-x-auto rounded-xl desktop-hide-scrollbar">
+          <div className="overflow-x-auto rounded-xl desktop-hide-scrollbar md:rounded-2xl md:border md:border-border md:bg-card md:shadow-[0_4px_14px_rgba(15,23,42,0.1)] dark:md:shadow-[0_4px_16px_rgba(0,0,0,0.25)]">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50/70 dark:bg-slate-900/70 font-bold text-muted-foreground border-b border-border">
+              <thead className="bg-slate-50/70 dark:bg-slate-900/70 md:bg-slate-100 dark:md:bg-[#1c2b43] font-bold text-muted-foreground md:text-slate-700 dark:md:text-slate-300 border-b border-border">
                 <tr>
                   <th className="w-10 p-3">
                     <Checkbox
@@ -1894,7 +1894,7 @@ function ApplicationsPage() {
 
         {/* Pagination Footer */}
         {filtered.length > 0 && (
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border pt-3 px-1 text-xs text-muted-foreground font-semibold">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border pt-3 px-1 text-xs text-muted-foreground font-semibold md:rounded-xl md:border md:bg-card md:px-4 md:py-3 md:shadow-xs">
             <div>
               {lang === "ml"
                 ? `${filtered.length} അപേക്ഷകളിൽ ${Math.min((currentPage - 1) * pageSize + 1, filtered.length)} മുതൽ ${Math.min(currentPage * pageSize, filtered.length)} വരെ കാണിക്കുന്നു`

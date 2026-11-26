@@ -408,6 +408,39 @@
 }
 
 /* Inner scroll regions inside the Create Scheme wizard follow the same rule. */
+/* Desktop admin dialogs and their portalled menus sometimes use fixed light colors. */
+@media (min-width: 768px) {
+  .dark body[data-desktop-admin]:not(:has([data-mobile-preview-shell])) :is([role="dialog"], [data-radix-popper-content-wrapper]) .bg-white,
+  .dark body[data-desktop-admin]:not(:has([data-mobile-preview-shell])) :is([role="dialog"], [data-radix-popper-content-wrapper]).bg-white {
+    background-color: var(--card) !important;
+  }
+  .dark body[data-desktop-admin]:not(:has([data-mobile-preview-shell])) :is([role="dialog"], [data-radix-popper-content-wrapper]) :is(.bg-slate-50, .bg-slate-100) {
+    background-color: var(--muted) !important;
+  }
+  .dark body[data-desktop-admin]:not(:has([data-mobile-preview-shell])) :is([role="dialog"], [data-radix-popper-content-wrapper]) :is(.text-slate-900, .text-slate-800, .text-slate-700, .text-zinc-900) {
+    color: var(--foreground) !important;
+  }
+  .dark body[data-desktop-admin]:not(:has([data-mobile-preview-shell])) :is([role="dialog"], [data-radix-popper-content-wrapper]) :is(input, select, textarea) {
+    color-scheme: dark;
+  }
+}
+
+@media (min-width: 768px) {
+  .admin-desktop-content table:not([data-mobile-preview-shell] table) > thead > tr > th {
+    background-color: #f1f5f9;
+    color: #334155;
+  }
+  .dark .admin-desktop-content table:not([data-mobile-preview-shell] table) > thead > tr > th {
+    background-color: #1c2b43;
+    color: #cbd5e1;
+  }
+  .admin-desktop-content div:has(> table):not([data-mobile-preview-shell] div) {
+    border-radius: 1rem;
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 14px rgb(15 23 42 / 0.1);
+  }
+}
+
 .desktop-hide-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;
