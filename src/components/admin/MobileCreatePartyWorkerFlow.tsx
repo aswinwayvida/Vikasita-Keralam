@@ -537,7 +537,7 @@ function getWorkerAppStatusLabel(statusId: string, lang: Lang) {
     case "review":
       return lang === "ml" ? "പരിശോധനയിൽ" : "In Review";
     case "beneficiary":
-      return lang === "ml" ? "അംഗീകരിച്ചു / ഗുണഭോക്താവ്" : "Approved / Beneficiary";
+      return lang === "ml" ? "അംഗീകരിച്ചു / ഗുണഭോക്താവ്" : "Beneficiary";
     case "rejected":
       return lang === "ml" ? "നിരസിച്ചു" : "Rejected";
     default:
@@ -844,7 +844,7 @@ export function MobileCreatePartyWorkerFlow({
       ministryEn: "Ministry of Agriculture & Farmers Welfare, Govt. of India",
       ministryMl: "കാർഷിക കർഷക ക്ഷേമ മന്ത്രാലയം, ഭാരത സർക്കാർ",
       status: "approved",
-      statusLabelEn: "Approved",
+      statusLabelEn: "Beneficiary",
       statusLabelMl: "അംഗീകരിച്ചു",
       date: "23 Oct 2026",
       periodKey: "oct2026",
@@ -862,7 +862,7 @@ export function MobileCreatePartyWorkerFlow({
       ministryEn: "NABARD & Ministry of Agriculture",
       ministryMl: "നബാർഡ് & കൃഷി മന്ത്രാലയം",
       status: "approved",
-      statusLabelEn: "Approved",
+      statusLabelEn: "Beneficiary",
       statusLabelMl: "അംഗീകരിച്ചു",
       date: "23 Oct 2026",
       periodKey: "oct2026",
@@ -880,7 +880,7 @@ export function MobileCreatePartyWorkerFlow({
       ministryEn: "Ministry of Housing & Urban Affairs",
       ministryMl: "ഭവന നഗരകാര്യ മന്ത്രാലയം",
       status: "approved",
-      statusLabelEn: "Approved",
+      statusLabelEn: "Beneficiary",
       statusLabelMl: "അംഗീകരിച്ചു",
       date: "23 Oct 2026",
       periodKey: "oct2026",
@@ -934,7 +934,7 @@ export function MobileCreatePartyWorkerFlow({
       ministryEn: "Ministry of Finance",
       ministryMl: "ധനകാര്യ മന്ത്രാലയം",
       status: "approved",
-      statusLabelEn: "Approved",
+      statusLabelEn: "Beneficiary",
       statusLabelMl: "അംഗീകരിച്ചു",
       date: "12 Oct 2026",
       periodKey: "oct2026",
@@ -952,7 +952,7 @@ export function MobileCreatePartyWorkerFlow({
       ministryEn: "Ministry of Rural Development",
       ministryMl: "ഗ്രാമീണ വികസന മന്ത്രാലയം",
       status: "approved",
-      statusLabelEn: "Approved",
+      statusLabelEn: "Beneficiary",
       statusLabelMl: "അംഗീകരിച്ചു",
       date: "10 Oct 2026",
       periodKey: "oct2026",
@@ -2619,7 +2619,7 @@ export function MobileCreatePartyWorkerFlow({
         { id: "document_verification_completed", label: tr("Document Verification Completed", "രേഖാ പരിശോധന പൂർത്തിയായി"), search: "document verification completed" },
         { id: "applied", label: tr("Applied", "അപേക്ഷിച്ചു"), search: "applied" },
         { id: "review", label: tr("In Review", "പരിശോധനയിൽ"), search: "review in review" },
-        { id: "beneficiary", label: tr("Approved / Beneficiary", "അംഗീകരിച്ചു / ഗുണഭോക്താവ്"), search: "approved beneficiary" },
+        { id: "beneficiary", label: tr("Beneficiary", "അംഗീകരിച്ചു / ഗുണഭോക്താവ്"), search: "approved beneficiary" },
         { id: "rejected", label: tr("Rejected", "നിരസിച്ചു"), search: "rejected" },
       ];
       selectedId = draftWorkerFilters.appStatus || "all";
@@ -3742,7 +3742,7 @@ export function MobileCreatePartyWorkerFlow({
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     {stats.approved > 0 ? (
-                      <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px] font-black leading-none border border-[#00875A] bg-[#00875A] text-white shadow-2xs" title={tr(`Approved: ${stats.approved}`, `അംഗീകരിച്ചു: ${stats.approved}`)}>
+                      <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px] font-black leading-none border border-[#00875A] bg-[#00875A] text-white shadow-2xs" title={tr(`Beneficiary: ${stats.approved}`, `അംഗീകരിച്ചു: ${stats.approved}`)}>
                         {stats.approved}
                       </span>
                     ) : (
@@ -4868,7 +4868,7 @@ export function MobileCreatePartyWorkerFlow({
                     >
                       <span className="text-[12px] font-black text-[#00875A] dark:text-emerald-400 leading-none">3</span>
                       <span className="text-[7.5px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">
-                        {tr("Approved", "അംഗീകരിച്ചു")}
+                        {tr("Beneficiary", "അംഗീകരിച്ചു")}
                       </span>
                     </button>
 
@@ -5158,7 +5158,7 @@ export function MobileCreatePartyWorkerFlow({
                             {scheme.approved}
                           </span>
                           <span className="text-[7px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">
-                            {tr("Approved", "അംഗീകരിച്ചു")}
+                            {tr("Beneficiary", "അംഗീകരിച്ചു")}
                           </span>
                         </div>
 
@@ -5264,7 +5264,7 @@ export function MobileCreatePartyWorkerFlow({
                   </div>
                   <div className="flex-1 py-1 px-0.5 flex flex-col items-center justify-center text-center">
                     <span className="text-[12px] font-black text-[#00875A] dark:text-emerald-400 leading-none">{selectedAssistedScheme.approved}</span>
-                    <span className="text-[8px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">{tr("Approved", "അംഗീകരിച്ചു")}</span>
+                    <span className="text-[8px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">{tr("Beneficiary", "അംഗീകരിച്ചു")}</span>
                   </div>
                   <div className="flex-1 py-1 px-0.5 flex flex-col items-center justify-center text-center">
                     <span className="text-[12px] font-black text-[#DC2626] dark:text-rose-400 leading-none">{selectedAssistedScheme.rejected}</span>

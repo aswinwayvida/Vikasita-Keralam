@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
+import { MobileFilterPicker } from "./MobileFilterPicker";
 import {
   ArrowLeft,
   ChevronLeft,
@@ -61,6 +62,8 @@ export interface MobileReportApplicationRecord {
 
 export interface MobileReportsPageProps {
   applicationFilterInPhone?: boolean;
+  initialHomeLocation?: { level: "region" | "org_district" | "mandalam"; region?: string; district?: string; mandalam?: string } | null;
+  initialKpiStatuses?: string[] | null;
   onBack: () => void;
   applications: MobileReportApplicationRecord[];
   onSelectApplication: (application: MobileReportApplicationRecord) => void;
@@ -103,7 +106,7 @@ interface CategoryReportDef {
   schemesCount: number;
 }
 
-type SchemeStatusBucket = "approved" | "in_review" | "pending" | "rejected";
+type SchemeStatusBucket = "approved" | "in_review" | "pending" | "rejected" | "received" | "verified" | "applied";
 type SchemeWorkView = "my_work" | "team";
 type SchemeLocationLevel = "state" | "region" | "org_district" | "mandalam" | "area" | "ward";
 type SchemeLocationField = "level" | "region" | "orgDistrict" | "mandalam" | "area" | "ward";
@@ -249,6 +252,23 @@ const getFilteredTeamMembers = (level: SchemeLocationLevel, designationId?: stri
   }
   return levelMembers.filter((m) => m.designationId === designationId);
 };
+
+const SCHEME_CARD_SORT_OPTIONS = [
+  { value: "total_desc", label: "Applications: ↓" }, { value: "total_asc", label: "Applications: ↑" },
+  { value: "approved_desc", label: "Beneficiary: ↓" }, { value: "approved_asc", label: "Beneficiary: ↑" },
+  { value: "pending_desc", label: "Pending: ↓" }, { value: "pending_asc", label: "Pending: ↑" },
+  { value: "review_desc", label: "In Review: ↓" }, { value: "review_asc", label: "In Review: ↑" },
+  { value: "rejected_desc", label: "Rejected: ↓" }, { value: "rejected_asc", label: "Rejected: ↑" },
+  { value: "name_asc", label: "Scheme Name: A → Z" }, { value: "name_desc", label: "Scheme Name: Z → A" },
+];
+const SCHEME_SORT_METRICS = [
+  { value: "total", en: "Applications", ml: "അപേക്ഷകൾ" },
+  { value: "approved", en: "Beneficiaries", ml: "ഗുണഭോക്താക്കൾ" },
+  { value: "pending", en: "Pending", ml: "തീർപ്പാകാത്തവ" },
+  { value: "review", en: "In Review", ml: "പരിശോധനയിൽ" },
+  { value: "rejected", en: "Rejected", ml: "നിരസിച്ചവ" },
+  { value: "name", en: "Scheme Name", ml: "പദ്ധതിയുടെ പേര്" },
+];
 
 const SORT_BY_OPTIONS = [
   {
@@ -757,10 +777,35 @@ const KERALA_APPLICANT_POOL: Array<{
   { nameEn: "Saritha Mohan", nameMl: "സരിത മോഹൻ", locationEn: "Kanhangad, Kasaragod", locationMl: "കാഞ്ഞങ്ങാട്, കാസർഗോഡ്" },
 ];
 
+// Explicit demo assignments; records without a listed locality remain unassigned.
+const SAMPLE_ORGANISATION_ASSIGNMENTS: Record<string, { district: string; mandalam: string; area: string; ward: string }> = {
+  "Malappuram Central": { district: "malappuram_central", mandalam: "Malappuram", area: "Central Area", ward: "Ward 1" },
+  "Palakkad North": { district: "palakkad_east", mandalam: "Palakkad", area: "North Area", ward: "Ward 2" },
+  Ollur: { district: "thrissur_city", mandalam: "Ollur", area: "South Area", ward: "Ward 3" },
+  "Kottayam East": { district: "kottayam_west", mandalam: "Kottayam", area: "Central Area", ward: "Ward 4" },
+  "Kannur Town": { district: "kannur_south", mandalam: "Kannur", area: "North Area", ward: "Ward 5" },
+  Koyilandy: { district: "kozhikode_north", mandalam: "Quilandy", area: "Central Area", ward: "Ward 6" },
+  Nedumangad: { district: "thiruvananthapuram_north", mandalam: "Nedumangad", area: "North Area", ward: "Ward 7" },
+  Chavara: { district: "kollam_west", mandalam: "Chavara", area: "South Area", ward: "Ward 8" },
+  Aluva: { district: "ernakulam_north", mandalam: "Aluva", area: "Central Area", ward: "Ward 9" },
+  Tirur: { district: "malappuram_west", mandalam: "Tirur", area: "South Area", ward: "Ward 10" },
+  Alathur: { district: "palakkad_east", mandalam: "Alathur", area: "South Area", ward: "Ward 1" },
+  Kanjirappally: { district: "kottayam_east", mandalam: "Kanjirappally", area: "North Area", ward: "Ward 2" },
+  Vadakara: { district: "kozhikode_north", mandalam: "Vadakara", area: "North Area", ward: "Ward 3" },
+  Neyyattinkara: { district: "thiruvananthapuram_south", mandalam: "Neyyattinkara", area: "South Area", ward: "Ward 4" },
+  Chittur: { district: "palakkad_east", mandalam: "Chittur", area: "Central Area", ward: "Ward 5" },
+  Karunagappally: { district: "kollam_west", mandalam: "Karunagappally", area: "North Area", ward: "Ward 6" },
+  Thiruvalla: { district: "pathanamthitta", mandalam: "Thiruvalla", area: "Central Area", ward: "Ward 7" },
+  Mananthavady: { district: "wayanad", mandalam: "Mananthavady", area: "North Area", ward: "Ward 8" },
+  Cherthala: { district: "alappuzha_north", mandalam: "Cherthala", area: "Central Area", ward: "Ward 9" },
+  Kanhangad: { district: "kasaragod", mandalam: "Kanhangad", area: "South Area", ward: "Ward 10" },
+};
+
 // Curated supplementary roster generator per scheme to guarantee rich application list
 const generateSchemeApplications = (
   scheme: SchemeReportDef,
-  existingApps: MobileReportApplicationRecord[]
+  existingApps: MobileReportApplicationRecord[],
+  targetCount = 7,
 ): MobileReportApplicationRecord[] => {
   const result: MobileReportApplicationRecord[] = [...existingApps];
   const existingNames = new Set(
@@ -788,34 +833,37 @@ const generateSchemeApplications = (
   }
 
   const poolLen = KERALA_APPLICANT_POOL.length;
-  const targetCount = 7; // Guarantee 7 applications per scheme
+  const expandedSamples = targetCount === 20;
+  const desiredCount = expandedSamples ? 28 + (hash % 125) : targetCount;
 
-  for (let i = 0; i < poolLen && result.length < targetCount; i++) {
-    const poolIdx = (hash + i) % poolLen;
+  for (let i = 0; i < (expandedSamples ? desiredCount + poolLen : poolLen) && result.length < desiredCount; i++) {
+    const poolIdx = expandedSamples ? (hash + Math.floor((i * i) / poolLen)) % poolLen : (hash + i) % poolLen;
     const person = KERALA_APPLICANT_POOL[poolIdx];
-    if (existingNames.has(person.nameEn.toLowerCase())) continue;
+    const suffix = expandedSamples && i >= poolLen ? ` ${i + 1}` : "";
+    const nameEn = `${person.nameEn}${suffix}`;
+    if (existingNames.has(nameEn.toLowerCase())) continue;
 
     const item = statusCycle[result.length % statusCycle.length];
     const day = 18 - (result.length % 12);
     const dateStr = `${day < 10 ? "0" + day : day} Oct 2026`;
-    const refNum = 9200 + ((hash + result.length * 13) % 700);
+    const ref = expandedSamples ? `SAMPLE-${scheme.id}-${i}` : `APP-2026-${9200 + ((hash + result.length * 13) % 700)}`;
 
     result.push({
-      ref: `APP-2026-${refNum}`,
-      trackingId: `APP-2026-${refNum}`,
+      ref,
+      trackingId: ref,
       schemeNameEn: scheme.nameEn,
       schemeNameMl: scheme.nameMl,
       categoryEn: scheme.categoryEn,
       categoryMl: scheme.categoryMl,
-      applicantNameEn: person.nameEn,
-      applicantNameMl: person.nameMl,
+      applicantNameEn: nameEn,
+      applicantNameMl: `${person.nameMl}${suffix}`,
       locationEn: person.locationEn,
       locationMl: person.locationMl,
       status: item.status,
       workflowStatus: item.workflowStatus,
       appliedDate: dateStr,
     });
-    existingNames.add(person.nameEn.toLowerCase());
+    existingNames.add(nameEn.toLowerCase());
   }
 
   return result;
@@ -877,6 +925,16 @@ function getApplicationBucket(
   return "pending";
 }
 
+function matchesApplicationFilterStatus(app: MobileReportApplicationRecord, status: SchemeStatusBucket): boolean {
+  const workflow = (app.workflowStatus || app.status || "").toLowerCase();
+  if (status === "received") return ["application_received", "received", "pending"].includes(workflow);
+  if (status === "verified") return ["document_verification_completed", "document_verified"].includes(workflow);
+  if (status === "pending") return matchesApplicationFilterStatus(app, "received") || matchesApplicationFilterStatus(app, "verified");
+  if (status === "applied") return workflow === "applied" || workflow === "submitted";
+  if (status === "in_review") return ["in_review", "review", "under_review", "in_progress"].includes(workflow);
+  return getApplicationBucket(app) === status;
+}
+
 function getSchemeStats(apps: MobileReportApplicationRecord[]) {
   const total = apps.length;
   let approved = 0;
@@ -900,8 +958,65 @@ function getSchemeStats(apps: MobileReportApplicationRecord[]) {
   return { total, approved, inReview, pending, rejected };
 }
 
+export function buildMobileApplicationRoster(
+  applications: MobileReportApplicationRecord[],
+  isFilterActive = false,
+  applicationFilterInPhone = true,
+): Map<string, MobileReportApplicationRecord[]> {
+    const map = new Map<string, MobileReportApplicationRecord[]>();
+    for (const scheme of REPORT_SCHEMES) {
+      map.set(scheme.id, []);
+    }
+
+    const normSchemeMap = new Map<string, SchemeReportDef>();
+    for (const scheme of REPORT_SCHEMES) {
+      normSchemeMap.set(normalizeStr(scheme.nameEn), scheme);
+      normSchemeMap.set(normalizeStr(scheme.id), scheme);
+    }
+
+    for (const app of applications) {
+      const appSchemeNorm = normalizeStr(app.schemeNameEn);
+      let matchedSchemeId = "";
+
+      for (const [normKey, scheme] of normSchemeMap.entries()) {
+        if (appSchemeNorm.includes(normKey) || normKey.includes(appSchemeNorm)) {
+          matchedSchemeId = scheme.id;
+          break;
+        }
+      }
+
+      if (!matchedSchemeId) {
+        // Fallback matching
+        for (const scheme of REPORT_SCHEMES) {
+          if (
+            app.schemeNameEn.toLowerCase().includes(scheme.nameEn.toLowerCase()) ||
+            scheme.nameEn.toLowerCase().includes(app.schemeNameEn.toLowerCase())
+          ) {
+            matchedSchemeId = scheme.id;
+            break;
+          }
+        }
+      }
+
+      if (matchedSchemeId && map.has(matchedSchemeId)) {
+        map.get(matchedSchemeId)!.push(app);
+      }
+    }
+
+    // Guarantee that every scheme has a rich complete roster of applications when no filter is active
+    for (const scheme of REPORT_SCHEMES) {
+      const existing = map.get(scheme.id) || [];
+      const completeList = isFilterActive ? existing : generateSchemeApplications(scheme, existing, applicationFilterInPhone ? 20 : 7);
+      map.set(scheme.id, completeList);
+    }
+
+    return map;
+}
+
 export function MobileReportsPage({
   applicationFilterInPhone = false,
+  initialHomeLocation = null,
+  initialKpiStatuses = null,
   onBack,
   applications = [],
   onSelectApplication,
@@ -983,6 +1098,14 @@ export function MobileReportsPage({
   const [selectedCategory, setSelectedCategory] = useState<CategoryReportDef | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [schemeCardSort, setSchemeCardSort] = useState("total_desc");
+  const [schemeSortOpen, setSchemeSortOpen] = useState(false);
+  const [groupSortOpen, setGroupSortOpen] = useState(false);
+  const [groupBy, setGroupBy] = useState("none");
+  const [groupMetric, setGroupMetric] = useState("total");
+  const [groupOrder, setGroupOrder] = useState("desc");
+  const [collapsedGroups, setCollapsedGroups] = useState<string[]>([]);
+  const [draftSchemeCardSort, setDraftSchemeCardSort] = useState("total_desc");
 
   // Scheme Drilldown Search & Status Filter
   const [schemeAppSearchQuery, setSchemeAppSearchQuery] = useState("");
@@ -996,10 +1119,14 @@ export function MobileReportsPage({
   // Page-level Application Filter (work view + statuses + location)
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
   const [filterSheetBounds, setFilterSheetBounds] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
-  const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
   const [openLocationField, setOpenLocationField] = useState<SchemeLocationField | null>(null);
-  const [appliedSchemeFilter, setAppliedSchemeFilter] = useState<SchemeFilterState>(() => createDefaultSchemeFilter());
-  const [draftSchemeFilter, setDraftSchemeFilter] = useState<SchemeFilterState>(() => createDefaultSchemeFilter());
+  const initialMobileFilter = (): SchemeFilterState => ({ ...createDefaultSchemeFilter(), statuses: (initialKpiStatuses || []) as SchemeStatusBucket[], ...(applicationFilterInPhone && initialHomeLocation ? { locationLevel: initialHomeLocation.level, location: { ...createEmptySchemeLocation(), region: initialHomeLocation.region || "", orgDistrict: initialHomeLocation.district || "", mandalam: initialHomeLocation.mandalam || "" } } : {}) });
+  const [appliedSchemeFilter, setAppliedSchemeFilter] = useState<SchemeFilterState>(initialMobileFilter);
+  useEffect(() => {
+    setGroupBy("none");
+    setCollapsedGroups([]);
+  }, [appliedSchemeFilter.locationLevel]);
+  const [draftSchemeFilter, setDraftSchemeFilter] = useState<SchemeFilterState>(initialMobileFilter);
 
   const mandalamOptionsByDistrict = useMemo(() => {
     const map = new Map<string, Map<string, SchemeLocationOption>>();
@@ -1096,56 +1223,10 @@ export function MobileReportsPage({
 
 
   // Group applications by Scheme
-  const applicationsByScheme = useMemo(() => {
-    const map = new Map<string, MobileReportApplicationRecord[]>();
-    for (const scheme of REPORT_SCHEMES) {
-      map.set(scheme.id, []);
-    }
-
-    const normSchemeMap = new Map<string, SchemeReportDef>();
-    for (const scheme of REPORT_SCHEMES) {
-      normSchemeMap.set(normalizeStr(scheme.nameEn), scheme);
-      normSchemeMap.set(normalizeStr(scheme.id), scheme);
-    }
-
-    for (const app of applications) {
-      const appSchemeNorm = normalizeStr(app.schemeNameEn);
-      let matchedSchemeId = "";
-
-      for (const [normKey, scheme] of normSchemeMap.entries()) {
-        if (appSchemeNorm.includes(normKey) || normKey.includes(appSchemeNorm)) {
-          matchedSchemeId = scheme.id;
-          break;
-        }
-      }
-
-      if (!matchedSchemeId) {
-        // Fallback matching
-        for (const scheme of REPORT_SCHEMES) {
-          if (
-            app.schemeNameEn.toLowerCase().includes(scheme.nameEn.toLowerCase()) ||
-            scheme.nameEn.toLowerCase().includes(app.schemeNameEn.toLowerCase())
-          ) {
-            matchedSchemeId = scheme.id;
-            break;
-          }
-        }
-      }
-
-      if (matchedSchemeId && map.has(matchedSchemeId)) {
-        map.get(matchedSchemeId)!.push(app);
-      }
-    }
-
-    // Guarantee that every scheme has a rich complete roster of applications when no filter is active
-    for (const scheme of REPORT_SCHEMES) {
-      const existing = map.get(scheme.id) || [];
-      const completeList = isFilterActive ? existing : generateSchemeApplications(scheme, existing);
-      map.set(scheme.id, completeList);
-    }
-
-    return map;
-  }, [applications, isFilterActive]);
+  const applicationsByScheme = useMemo(
+    () => buildMobileApplicationRoster(applications, isFilterActive, applicationFilterInPhone),
+    [applications, isFilterActive, applicationFilterInPhone],
+  );
 
   // Apply the page-level filter (work view + statuses + location) to each scheme roster
   const filteredByScheme = useMemo(() => {
@@ -1157,10 +1238,10 @@ export function MobileReportsPage({
         schemeId,
         list.filter((app) => {
           const bucket = getApplicationBucket(app);
-          if (appliedSchemeFilter.workView === "my_work" && bucket !== "pending" && bucket !== "in_review") {
+          if (!applicationFilterInPhone && !(initialKpiStatuses && appliedSchemeFilter.statuses.length > 0) && appliedSchemeFilter.workView === "my_work" && bucket !== "pending" && bucket !== "in_review") {
             return false;
           }
-          if (statuses.size > 0 && !statuses.has(bucket)) {
+          if (statuses.size > 0 && (applicationFilterInPhone ? ![...statuses].some((status) => matchesApplicationFilterStatus(app, status)) : !statuses.has(bucket))) {
             return false;
           }
           const appLocation = getApplicationLocationHierarchy(app);
@@ -1174,7 +1255,7 @@ export function MobileReportsPage({
       );
     }
     return map;
-  }, [applicationsByScheme, appliedSchemeFilter]);
+  }, [applicationsByScheme, appliedSchemeFilter, applicationFilterInPhone, initialKpiStatuses]);
 
   // Group applications by Category from schemes
   const applicationsByCategory = useMemo(() => {
@@ -1239,7 +1320,7 @@ export function MobileReportsPage({
     }
 
     // Filter out schemes with 0 matching applications if filter is active or local filters applied
-    if (isFilterActive || hasLocalFilters) {
+    if (!applicationFilterInPhone && (isFilterActive || hasLocalFilters)) {
       list = list.filter((scheme) => (filteredByScheme.get(scheme.id) || []).length > 0);
     }
 
@@ -1248,6 +1329,18 @@ export function MobileReportsPage({
     return [...list].sort((a, b) => {
       const aApps = filteredByScheme.get(a.id) || [];
       const bApps = filteredByScheme.get(b.id) || [];
+      if (applicationFilterInPhone) {
+        const name = a.nameEn.localeCompare(b.nameEn);
+        if (schemeCardSort === "name_asc") return name;
+        if (schemeCardSort === "name_desc") return -name;
+        const [metric, direction] = schemeCardSort.split("_");
+        const uniqueStats = (apps: MobileReportApplicationRecord[]) => getSchemeStats([...new Map(apps.map((app) => [app.ref || app.trackingId, app])).values()]);
+        const left = uniqueStats(aApps);
+        const right = uniqueStats(bApps);
+        const key = metric === "review" ? "inReview" : metric as "total" | "approved" | "pending" | "rejected";
+        const difference = left[key] - right[key];
+        return (direction === "asc" ? difference : -difference) || name;
+      }
       const aStats = getSchemeStats(aApps);
       const bStats = getSchemeStats(bApps);
 
@@ -1268,7 +1361,7 @@ export function MobileReportsPage({
           return 0;
       }
     });
-  }, [filteredSchemes, filteredByScheme, isFilterActive, hasLocalFilters, appliedSchemeFilter]);
+  }, [filteredSchemes, filteredByScheme, isFilterActive, hasLocalFilters, appliedSchemeFilter, applicationFilterInPhone, schemeCardSort]);
   const getFilterSheetBounds = (anchor?: HTMLElement | null) => {
     let ancestor = anchor?.parentElement || null;
     while (ancestor && ancestor !== document.body) {
@@ -1300,7 +1393,6 @@ export function MobileReportsPage({
       statuses: [...appliedSchemeFilter.statuses],
       location: { ...appliedSchemeFilter.location },
     });
-    setIsStatusMenuOpen(false);
     setOpenLocationField(null);
     setIsFilterSheetOpen(true);
   };
@@ -1309,15 +1401,6 @@ export function MobileReportsPage({
     setAppliedSchemeFilter(createDefaultSchemeFilter());
     setDraftSchemeFilter(createDefaultSchemeFilter());
     setOpenLocationField(null);
-  };
-
-  const toggleDraftStatus = (id: SchemeStatusBucket) => {
-    setDraftSchemeFilter((prev) => ({
-      ...prev,
-      statuses: prev.statuses.includes(id)
-        ? prev.statuses.filter((status) => status !== id)
-        : [...prev.statuses, id],
-    }));
   };
 
   const updateDraftLocation = (field: keyof SchemeLocationFilter, value: string) => {
@@ -1343,8 +1426,16 @@ export function MobileReportsPage({
     setOpenLocationField(null);
   };
 
-  const statusFilterOptions: Array<{ id: SchemeStatusBucket; en: string; ml: string }> = [
-    { id: "approved", en: "Approved", ml: "അംഗീകരിച്ചവ" },
+  const statusFilterOptions: Array<{ id: SchemeStatusBucket; en: string; ml: string }> = applicationFilterInPhone ? [
+    { id: "received", en: "Applications Received", ml: "ലഭിച്ച അപേക്ഷകൾ" },
+    { id: "verified", en: "Document Verified (Ready to Apply)", ml: "രേഖകൾ പരിശോധിച്ചു" },
+    { id: "pending", en: "Pending", ml: "തീർപ്പുകൽപ്പിക്കാത്തവ" },
+    { id: "applied", en: "Applied", ml: "അപേക്ഷിച്ചു" },
+    { id: "in_review", en: "In Review", ml: "പരിശോധനയിൽ" },
+    { id: "approved", en: "Beneficiary", ml: "അംഗീകരിച്ചവ" },
+    { id: "rejected", en: "Rejected", ml: "നിരസിച്ചവ" },
+  ] : [
+    { id: "approved", en: "Beneficiary", ml: "അംഗീകരിച്ചവ" },
     { id: "in_review", en: "In Review", ml: "പരിശോധനയിൽ" },
     { id: "pending", en: "Pending", ml: "തീർപ്പുകൽപ്പിക്കാത്തവ" },
     { id: "rejected", en: "Rejected", ml: "നിരസിച്ചവ" },
@@ -1376,10 +1467,11 @@ export function MobileReportsPage({
     }));
   };
 
-  const renderAppliedFiltersRow = () => {
+  const renderAppliedFiltersRow = (showSchemeSort = false, showGroupSort = false) => {
     // Default no needs to show that section Applied Filter section and state wide,
     // if any changes done in the filter then only show that section.
-    if (!hasLocalFilters) {
+    const groupActive = showGroupSort && groupBy !== "none";
+    if (!hasLocalFilters && !(showSchemeSort && schemeCardSort !== "total_desc") && !groupActive) {
       return null;
     }
 
@@ -1389,6 +1481,8 @@ export function MobileReportsPage({
       <div className="flex flex-col border-b border-slate-200/70 dark:border-slate-800 bg-[#FAF7F2]/90 dark:bg-slate-900/80 shrink-0">
         {/* Active Filter Chips & View */}
         <div className="flex items-center gap-1.5 overflow-x-auto px-2.5 py-1.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden shrink-0 whitespace-nowrap">
+          {groupActive && <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 text-[10.5px] font-semibold text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300"><button type="button" onClick={() => setGroupOrder((order) => order === "desc" ? "asc" : "desc")} aria-label="Reverse group sort order">{groupBy === "none" ? (lang === "ml" ? "ഗ്രൂപ്പില്ല" : "No grouping") : ({ region: "Region", org_district: "Organisational District", mandalam: "Assembly Mandalam", area: "Area", ward: "Ward" } as Record<string, string>)[groupBy]} · {SCHEME_SORT_METRICS.find((option) => option.value === groupMetric)?.[lang === "ml" ? "ml" : "en"]} {groupOrder === "desc" ? "↓" : "↑"}</button><button type="button" onClick={() => { setGroupBy("none"); setGroupMetric("total"); setGroupOrder("desc"); setCollapsedGroups([]); }} aria-label="Clear group and sort"><X className="h-3 w-3" /></button></span>}
+          {showSchemeSort && schemeCardSort !== "total_desc" && <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 text-[10.5px] font-semibold text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300"><button type="button" onClick={() => setSchemeCardSort((current) => { const [metric, direction] = current.split("_"); return `${metric}_${direction === "asc" ? "desc" : "asc"}`; })} aria-label="Reverse sort order">{SCHEME_CARD_SORT_OPTIONS.find((option) => option.value === schemeCardSort)?.label}</button><button type="button" onClick={() => setSchemeCardSort("total_desc")} aria-label="Clear sort"><X className="h-3 w-3" /></button></span>}
           {/* Show location chips if location was changed from default */}
           {hasLocationFilters && (
             appliedLocationChips.map((chip) => (
@@ -1467,7 +1561,7 @@ export function MobileReportsPage({
           {appliedSchemeFilter.sortBy && appliedSchemeFilter.sortBy !== "benefits_high_low" && (() => {
             const sortOptionLabels: Record<string, { en: string; ml: string }> = {
               benefits_high_low: { en: "Benefits: High to Low", ml: "ആനുകൂല്യം: ഉയർന്നതിൽ നിന്ന് കുറഞ്ഞതിലേക്ക്" },
-              benefits_low_high: { en: "Benefits: Low to High", ml: "ആനുകൂല്യം: കുറഞ്ഞതിൽ നിന്ന് ഉയർന്നതിലേക്ക്" },
+              benefits_low_high: applicationFilterInPhone ? { en: "Low to High", ml: "താഴ്ന്നതിൽ നിന്ന് മുകളിലേക്ക്" } : { en: "Benefits: Low to High", ml: "ആനുകൂല്യം: കുറഞ്ഞതിൽ നിന്ന് ഉയർന്നതിലേക്ക്" },
               pending_high_low: { en: "Pending: High to Low", ml: "തീർപ്പുകൽപ്പിക്കാത്തത്: ഉയർന്നതിൽ നിന്ന് കുറഞ്ഞതിലേക്ക്" },
               pending_low_high: { en: "Pending: Low to High", ml: "തീർപ്പുകൽപ്പിക്കാത്തത്: കുറഞ്ഞതിൽ നിന്ന് ഉയർന്നതിലേക്ക്" },
               review_high_low: { en: "In Review: High to Low", ml: "പരിശോധനയിൽ: ഉയർന്നതിൽ നിന്ന് കുറഞ്ഞതിലേക്ക്" },
@@ -1545,6 +1639,7 @@ export function MobileReportsPage({
       draftLocation.ward
     );
     const draftCount =
+      (draftSchemeFilter.statuses.length > 0 ? 1 : 0) +
       (draftSchemeFilter.category && draftSchemeFilter.category !== "all" ? 1 : 0) +
       (draftSchemeFilter.scheme && draftSchemeFilter.scheme !== "all" ? 1 : 0) +
       (draftSchemeFilter.sortBy && draftSchemeFilter.sortBy !== "benefits_high_low" ? 1 : 0) +
@@ -1618,6 +1713,7 @@ export function MobileReportsPage({
               <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
                 {lang === "ml" ? "ലൊക്കേഷൻ ലെവൽ തിരഞ്ഞെടുക്കുക" : "Select Location Level"}
               </label>
+              {applicationFilterInPhone ? <MobileFilterPicker label={lang === "ml" ? "ലൊക്കേഷൻ ലെവൽ തിരഞ്ഞെടുക്കുക" : "Select Location Level"} value={draftSchemeFilter.locationLevel} options={SCHEME_LOCATION_LEVEL_OPTIONS.map((option) => ({ value: option.id, label: lang === "ml" ? option.ml : option.en }))} onChange={(value) => { const level = value as SchemeLocationLevel; const rank = SCHEME_LOCATION_LEVEL_RANK[level]; setDraftSchemeFilter((prev) => { const location = { ...prev.location }; if (rank === 0) return { ...prev, locationLevel: level, location: createEmptySchemeLocation() }; if (rank >= 2) location.region = ""; if (rank < 2) location.orgDistrict = ""; if (rank < 3) location.mandalam = ""; if (rank < 4) location.area = ""; if (rank < 5) location.ward = ""; return { ...prev, locationLevel: level, location }; }); }} searchLabel={lang === "ml" ? "തിരയുക..." : "Search..."} /> : <>
               <button
                 type="button"
                 onClick={() => setOpenLocationField((open) => (open === "level" ? null : "level"))}
@@ -1671,12 +1767,13 @@ export function MobileReportsPage({
                   })}
                 </div>
               )}
+              </>}
             </div>
 
             {(() => {
               const rank = SCHEME_LOCATION_LEVEL_RANK[draftSchemeFilter.locationLevel];
               const selectedLocation = draftSchemeFilter.location;
-              const orgDistrictOptions = selectedLocation.region
+              const orgDistrictOptions = !applicationFilterInPhone && selectedLocation.region
                 ? KERALA_ORG_DISTRICTS.filter((district) => district.region === selectedLocation.region)
                 : KERALA_ORG_DISTRICTS;
               const selectedDistrictMandalams = new Map<string, SchemeLocationOption>();
@@ -1726,6 +1823,7 @@ export function MobileReportsPage({
                       : lang === "ml"
                         ? `${selectedValues.length} എണ്ണം തിരഞ്ഞെടുത്തു`
                         : `${selectedValues.length} selected`;
+                if (applicationFilterInPhone && !multiple) return <div className="space-y-1"><label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400">{label}</label><MobileFilterPicker label={label} value={value || ""} options={[{ value: "", label: allLabel }, ...options.map((option) => ({ value: option.value, label: lang === "ml" ? option.ml : option.en }))]} onChange={(selected) => updateDraftLocation(field, selected)} searchLabel={lang === "ml" ? "തിരയുക..." : "Search..."} /></div>;
                 return (
                   <div className="space-y-1">
                     <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
@@ -1845,6 +1943,8 @@ export function MobileReportsPage({
             })()}
           </div>
 
+
+          {applicationFilterInPhone && draftSchemeFilter.workView === "team" ? <div className="space-y-3 border-t border-slate-100 pt-2 dark:border-slate-800"><div><label className="mb-1 block text-[10px] font-semibold text-slate-500 dark:text-slate-400">{lang === "ml" ? "പദവി തിരഞ്ഞെടുക്കുക" : "Select Designation"}</label><MobileFilterPicker label={lang === "ml" ? "പദവി തിരഞ്ഞെടുക്കുക" : "Select Designation"} value={draftSchemeFilter.designation || "all"} options={(DESIGNATION_OPTIONS_BY_LEVEL[draftSchemeFilter.locationLevel] || DESIGNATION_OPTIONS_BY_LEVEL.state).map((option) => ({ value: option.id, label: lang === "ml" ? option.ml : option.en }))} onChange={(value) => setDraftSchemeFilter((prev) => ({ ...prev, designation: value, teamMember: "all" }))} /></div><div><label className="mb-1 block text-[10px] font-semibold text-slate-500 dark:text-slate-400">{lang === "ml" ? "ടീം അംഗത്തെ തിരഞ്ഞെടുക്കുക" : "Select Team Member"}</label><MobileFilterPicker label={lang === "ml" ? "ടീം അംഗത്തെ തിരഞ്ഞെടുക്കുക" : "Select Team Member"} value={draftSchemeFilter.teamMember || "all"} options={[{ value: "all", label: lang === "ml" ? "എല്ലാ ടീം അംഗങ്ങളും" : "All Team Members" }, ...getFilteredTeamMembers(draftSchemeFilter.locationLevel, draftSchemeFilter.designation).map((member) => ({ value: member.id, label: member.name }))]} onChange={(value) => setDraftSchemeFilter((prev) => ({ ...prev, teamMember: value }))} /></div></div> : !applicationFilterInPhone ? <>
           {/* Team Tab Filters: Designation & Team Member selection below Location level */}
           {draftSchemeFilter.workView === "team" && (
             <div className="space-y-2.5 mb-3 pt-2 border-t border-slate-100 dark:border-slate-800">
@@ -1971,7 +2071,15 @@ export function MobileReportsPage({
               </div>
             </div>
           )}
+          </> : null}
 
+          {applicationFilterInPhone ? (
+            !selectedScheme && <div className="space-y-3">
+              <div><label className="mb-1 block text-[10px] font-semibold text-slate-500 dark:text-slate-400">{lang === "ml" ? "പദ്ധതി വിഭാഗം" : "Scheme Category"}</label><MobileFilterPicker label={lang === "ml" ? "പദ്ധതി വിഭാഗം" : "Scheme Category"} value={draftSchemeFilter.category || "all"} options={[{ value: "all", label: lang === "ml" ? "എല്ലാ വിഭാഗങ്ങളും" : "All Categories" }, ...REPORT_CATEGORIES.map((cat) => ({ value: cat.id, label: lang === "ml" ? cat.nameMl : cat.nameEn }))]} onChange={(value) => setDraftSchemeFilter((prev) => ({ ...prev, category: value, scheme: "all" }))} searchLabel={lang === "ml" ? "തിരയുക..." : "Search..."} /></div>
+              <div><label className="mb-1 block text-[10px] font-semibold text-slate-500 dark:text-slate-400">{lang === "ml" ? "പദ്ധതി തിരഞ്ഞെടുക്കൽ" : "Scheme Selection"}</label><MobileFilterPicker label={lang === "ml" ? "പദ്ധതി തിരഞ്ഞെടുക്കൽ" : "Scheme Selection"} value={draftSchemeFilter.scheme || "all"} options={[{ value: "all", label: lang === "ml" ? "എല്ലാ പദ്ധതികളും" : "All Schemes" }, ...REPORT_SCHEMES.filter((scheme) => !draftSchemeFilter.category || draftSchemeFilter.category === "all" || scheme.categoryId === draftSchemeFilter.category).map((scheme) => ({ value: scheme.id, label: lang === "ml" ? scheme.nameMl : scheme.nameEn }))]} onChange={(value) => setDraftSchemeFilter((prev) => ({ ...prev, scheme: value }))} searchLabel={lang === "ml" ? "തിരയുക..." : "Search..."} /></div>
+            </div>
+          ) : (
+            <>
           {/* Scheme Category */}
           <div className="space-y-1.5 mb-3">
             <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
@@ -2106,7 +2214,11 @@ export function MobileReportsPage({
               </div>
             )}
           </div>
+            </>
+          )}
 
+          {!applicationFilterInPhone && (
+            <>
           {/* Sort By */}
           <div className="space-y-1.5 mb-3">
             <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
@@ -2119,7 +2231,7 @@ export function MobileReportsPage({
               className="flex w-full h-9 items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-left cursor-pointer"
             >
               <span className="truncate text-[11px] font-bold text-slate-800 dark:text-slate-100">
-                {SORT_BY_OPTIONS.find((opt) => opt.id === (draftSchemeFilter.sortBy || "benefits_high_low"))?.[
+                {(applicationFilterInPhone ? [{ id: "benefits_high_low", en: "High to Low", ml: "ഉയർന്നതിൽ നിന്ന് താഴേക്ക്" }, { id: "benefits_low_high", en: "Low to High", ml: "താഴ്ന്നതിൽ നിന്ന് മുകളിലേക്ക്" }] : SORT_BY_OPTIONS).find((opt) => opt.id === (draftSchemeFilter.sortBy || "benefits_high_low"))?.[
                   lang === "ml" ? "ml" : "en"
                 ]}
               </span>
@@ -2131,7 +2243,7 @@ export function MobileReportsPage({
             </button>
             {openLocationField === ("sortBy" as any) && (
               <div className="max-h-40 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800">
-                {SORT_BY_OPTIONS.map((opt) => {
+                {(applicationFilterInPhone ? [{ id: "benefits_high_low", en: "High to Low", ml: "ഉയർന്നതിൽ നിന്ന് താഴേക്ക്" }, { id: "benefits_low_high", en: "Low to High", ml: "താഴ്ന്നതിൽ നിന്ന് മുകളിലേക്ക്" }] : SORT_BY_OPTIONS).map((opt) => {
                   const isSelected = (draftSchemeFilter.sortBy || "benefits_high_low") === opt.id;
                   return (
                     <button
@@ -2155,7 +2267,8 @@ export function MobileReportsPage({
               </div>
             )}
           </div>
-
+            </>
+          )}
           </div>
 
           <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 shrink-0">
@@ -2163,7 +2276,6 @@ export function MobileReportsPage({
               type="button"
               onClick={() => {
                 setDraftSchemeFilter(createDefaultSchemeFilter());
-                setIsStatusMenuOpen(false);
                 setOpenLocationField(null);
               }}
               className="w-1/3 flex items-center justify-center gap-1.5 rounded-lg border border-orange-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-orange-600 dark:text-orange-400 font-extrabold text-[11.5px] py-2.5 hover:bg-orange-50 transition-all cursor-pointer active:scale-[0.98]"
@@ -2180,7 +2292,6 @@ export function MobileReportsPage({
                   location: { ...draftSchemeFilter.location },
                 });
                 setIsFilterSheetOpen(false);
-                setIsStatusMenuOpen(false);
                 setOpenLocationField(null);
               }}
               className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-[#ff5500] hover:bg-orange-600 text-white font-extrabold text-[11.5px] py-2.5 transition-all cursor-pointer active:scale-[0.98]"
@@ -2242,7 +2353,7 @@ export function MobileReportsPage({
       st === "disbursed"
     ) {
       return {
-        label: lang === "ml" ? "അംഗീകരിച്ചു" : "Approved",
+        label: lang === "ml" ? "അംഗീകരിച്ചു" : "Beneficiary",
         icon: HandCoins,
         className: "border-emerald-200/80 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300",
       };
@@ -2256,7 +2367,7 @@ export function MobileReportsPage({
       st === "assisted"
     ) {
       return {
-        label: lang === "ml" ? "അംഗീകരിച്ചു" : "Approved",
+        label: lang === "ml" ? "അംഗീകരിച്ചു" : "Beneficiary",
         icon: CheckCircle2,
         className: "border-emerald-200/80 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300",
       };
@@ -2320,24 +2431,7 @@ export function MobileReportsPage({
     rejectedSchemeApps,
     filteredSchemeApplications,
   } = useMemo(() => {
-    const stats = getSchemeStats(schemeApplications);
-    const total = stats.total;
-    const approved = stats.approved;
-    const inReview = stats.inReview;
-    const pending = stats.pending;
-    const rejected = stats.rejected;
-
     let list = schemeApplications;
-    if (schemeStatusFilter === "approved") {
-      list = list.filter((app) => getApplicationBucket(app) === "approved");
-    } else if (schemeStatusFilter === "in_review" || schemeStatusFilter === "in_progress") {
-      list = list.filter((app) => getApplicationBucket(app) === "in_review");
-    } else if (schemeStatusFilter === "pending") {
-      list = list.filter((app) => getApplicationBucket(app) === "pending");
-    } else if (schemeStatusFilter === "rejected") {
-      list = list.filter((app) => getApplicationBucket(app) === "rejected");
-    }
-
     const q = schemeAppSearchQuery.trim().toLowerCase();
     if (q) {
       list = list.filter((app) => {
@@ -2348,15 +2442,25 @@ export function MobileReportsPage({
       });
     }
 
+    const stats = getSchemeStats(applicationFilterInPhone && groupBy !== "none" ? list : schemeApplications);
+    if (schemeStatusFilter === "approved") {
+      list = list.filter((app) => getApplicationBucket(app) === "approved");
+    } else if (schemeStatusFilter === "in_review" || schemeStatusFilter === "in_progress") {
+      list = list.filter((app) => getApplicationBucket(app) === "in_review");
+    } else if (schemeStatusFilter === "pending") {
+      list = list.filter((app) => getApplicationBucket(app) === "pending");
+    } else if (schemeStatusFilter === "rejected") {
+      list = list.filter((app) => getApplicationBucket(app) === "rejected");
+    }
     return {
-      totalSchemeApps: total,
-      approvedSchemeApps: approved,
-      inReviewSchemeApps: inReview,
-      pendingSchemeApps: pending,
-      rejectedSchemeApps: rejected,
+      totalSchemeApps: stats.total,
+      approvedSchemeApps: stats.approved,
+      inReviewSchemeApps: stats.inReview,
+      pendingSchemeApps: stats.pending,
+      rejectedSchemeApps: stats.rejected,
       filteredSchemeApplications: list,
     };
-  }, [schemeApplications, schemeStatusFilter, schemeAppSearchQuery]);
+  }, [schemeApplications, schemeStatusFilter, schemeAppSearchQuery, applicationFilterInPhone, groupBy]);
 
   const sortedSchemeApplications = useMemo(() => {
     return [...filteredSchemeApplications].sort((a, b) => {
@@ -2371,6 +2475,36 @@ export function MobileReportsPage({
       return schemeSortOrder === "oldest" ? diff : -diff;
     });
   }, [filteredSchemeApplications, schemeSortOrder]);
+
+  const sampleGroups = useMemo(() => {
+    if (!applicationFilterInPhone || groupBy === "none") return [];
+    const groups = new Map<string, MobileReportApplicationRecord[]>();
+    for (const app of sortedSchemeApplications) {
+      const locality = (app.locationEn || "").split(",")[0].trim();
+      const assignment = SAMPLE_ORGANISATION_ASSIGNMENTS[locality];
+      const district = assignment && KERALA_ORG_DISTRICTS.find((item) => item.value === assignment.district);
+      const name = groupBy === "region" ? KERALA_REGIONS.find((item) => item.value === district?.region)?.en : groupBy === "org_district" ? district?.en : groupBy === "mandalam" ? assignment?.mandalam : groupBy === "area" ? assignment?.area : assignment?.ward;
+      const label = name || "Unassigned";
+      if (!groups.has(label)) groups.set(label, []);
+      groups.get(label)!.push(app);
+    }
+    return [...groups.entries()].map(([name, apps]) => ({ name, apps, stats: getSchemeStats(apps) })).sort((a, b) => {
+      const key = groupMetric === "review" ? "inReview" : groupMetric as "total" | "approved" | "pending" | "rejected";
+      const delta = a.stats[key] - b.stats[key];
+      return (groupOrder === "asc" ? delta : -delta) || a.name.localeCompare(b.name);
+    });
+  }, [applicationFilterInPhone, groupBy, groupMetric, groupOrder, sortedSchemeApplications]);
+  const schemeRows = applicationFilterInPhone && groupBy !== "none"
+    ? sampleGroups.flatMap((group) => [{ kind: "header" as const, group }, ...(collapsedGroups.includes(group.name) ? group.apps.map((app) => ({ kind: "app" as const, app })) : [])])
+    : sortedSchemeApplications.map((app) => ({ kind: "app" as const, app }));
+
+  const selectSchemeStatusTab = (status: "all" | "approved" | "rejected" | "in_review" | "pending") => {
+    const next = status !== "all" && schemeStatusFilter === status ? "all" : status;
+    setSchemeStatusFilter(next);
+    if (applicationFilterInPhone && groupBy !== "none") {
+      setGroupMetric(next === "all" ? "total" : next === "in_review" ? "review" : next);
+    }
+  };
 
   // Render Scheme Applications Drilldown View
   if (selectedScheme) {
@@ -2551,13 +2685,14 @@ export function MobileReportsPage({
             )}
 
             {/* Filter Icon Button */}
+            {applicationFilterInPhone && <button type="button" onClick={() => setGroupSortOpen(true)} aria-label="Group and sort applications" className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${groupBy !== "none" || groupMetric !== "total" || groupOrder !== "desc" ? "border-red-500 bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400" : "border-slate-200 bg-white text-[#ff5500] dark:border-slate-800 dark:bg-slate-900"}`}><ArrowUpDown className="h-3.5 w-3.5" /></button>}
             <button
               type="button"
               onClick={openFilterSheet}
               aria-haspopup="dialog"
               aria-expanded={isFilterSheetOpen}
               className={`relative flex h-6 w-6 items-center justify-center rounded-full border transition-all shadow-2xs cursor-pointer shrink-0 ${
-                activeFilterCount > 0
+                activeFilterCount > 0 || (applicationFilterInPhone && schemeStatusFilter !== "all")
                   ? "border-orange-500 bg-orange-500 text-white ring-2 ring-orange-500/30 shadow-xs"
                   : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[#0a0f1d] dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
               }`}
@@ -2565,12 +2700,12 @@ export function MobileReportsPage({
             >
               <Filter
                 className={`h-3 w-3 stroke-[2.2] ${
-                  activeFilterCount > 0 ? "text-white" : "text-[#ff5500]"
+                  activeFilterCount > 0 || (applicationFilterInPhone && schemeStatusFilter !== "all") ? "text-white" : "text-[#ff5500]"
                 }`}
               />
-              {activeFilterCount > 0 && (
+              {(activeFilterCount > 0 || (applicationFilterInPhone && schemeStatusFilter !== "all")) && (
                 <span className="absolute -top-1 -right-1 flex h-3 min-w-3 items-center justify-center rounded-full bg-red-600 px-0.5 text-[7px] font-black leading-none text-white ring-1.5 ring-white dark:ring-slate-900">
-                  {activeFilterCount}
+                  {activeFilterCount + (applicationFilterInPhone && schemeStatusFilter !== "all" ? 1 : 0)}
                 </span>
               )}
             </button>
@@ -2578,7 +2713,7 @@ export function MobileReportsPage({
         </div>
 
         {/* Applied Filters Bar (Single Row) */}
-        {renderAppliedFiltersRow()}
+        {renderAppliedFiltersRow(false, applicationFilterInPhone)}
 
         {/* Content Container */}
         <div className="px-3 pt-2 pb-4">
@@ -2588,7 +2723,7 @@ export function MobileReportsPage({
             {/* 1. Applications */}
             <button
               type="button"
-              onClick={() => setSchemeStatusFilter("all")}
+              onClick={() => selectSchemeStatusTab("all")}
               className={`flex-1 py-1.5 px-0.5 flex flex-col items-center justify-center transition-colors cursor-pointer text-center ${
                 schemeStatusFilter === "all"
                   ? "bg-blue-50/70 dark:bg-blue-950/40"
@@ -2607,26 +2742,26 @@ export function MobileReportsPage({
             {/* 2. Approved */}
             <button
               type="button"
-              onClick={() => setSchemeStatusFilter(schemeStatusFilter === "approved" ? "all" : "approved")}
+              onClick={() => selectSchemeStatusTab("approved")}
               className={`flex-1 py-1.5 px-0.5 flex flex-col items-center justify-center transition-colors cursor-pointer text-center ${
                 schemeStatusFilter === "approved"
                   ? "bg-emerald-50/70 dark:bg-emerald-950/40"
                   : "hover:bg-black/[0.02] dark:hover:bg-white/[0.02]"
               }`}
-              title={lang === "ml" ? "അംഗീകരിച്ചവ" : "Approved"}
+              title={lang === "ml" ? "അംഗീകരിച്ചവ" : "Beneficiary"}
             >
               <span className="text-[13.5px] font-extrabold text-[#00875A] dark:text-emerald-400 leading-none">
                 {approvedSchemeApps}
               </span>
               <span className="text-[8px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap">
-                {lang === "ml" ? "അംഗീകാരം" : "Approved"}
+                {lang === "ml" ? "അംഗീകാരം" : "Beneficiary"}
               </span>
             </button>
 
             {/* 3. Rejected */}
             <button
               type="button"
-              onClick={() => setSchemeStatusFilter(schemeStatusFilter === "rejected" ? "all" : "rejected")}
+              onClick={() => selectSchemeStatusTab("rejected")}
               className={`flex-1 py-1.5 px-0.5 flex flex-col items-center justify-center transition-colors cursor-pointer text-center ${
                 schemeStatusFilter === "rejected"
                   ? "bg-rose-50/70 dark:bg-rose-950/40"
@@ -2645,7 +2780,7 @@ export function MobileReportsPage({
             {/* 4. In Review */}
             <button
               type="button"
-              onClick={() => setSchemeStatusFilter(schemeStatusFilter === "in_review" ? "all" : "in_review")}
+              onClick={() => selectSchemeStatusTab("in_review")}
               className={`flex-1 py-1.5 px-0.5 flex flex-col items-center justify-center transition-colors cursor-pointer text-center ${
                 schemeStatusFilter === "in_review"
                   ? "bg-sky-50/70 dark:bg-sky-950/40"
@@ -2664,7 +2799,7 @@ export function MobileReportsPage({
             {/* 5. Pending */}
             <button
               type="button"
-              onClick={() => setSchemeStatusFilter(schemeStatusFilter === "pending" ? "all" : "pending")}
+              onClick={() => selectSchemeStatusTab("pending")}
               className={`flex-1 py-1.5 px-0.5 flex flex-col items-center justify-center transition-colors cursor-pointer text-center ${
                 schemeStatusFilter === "pending"
                   ? "bg-amber-50/70 dark:bg-amber-950/40"
@@ -2704,7 +2839,14 @@ export function MobileReportsPage({
                 )}
               </div>
             ) : (
-              sortedSchemeApplications.map((app, index) => {
+              schemeRows.map((row, index) => {
+                if (row.kind === "header") {
+                  const group = row.group;
+                  const expanded = collapsedGroups.includes(group.name);
+                  const metricKey = groupMetric === "review" ? "inReview" : groupMetric as "total" | "approved" | "pending" | "rejected";
+                  return <button key={`group-${group.name}`} type="button" aria-expanded={expanded} onClick={() => setCollapsedGroups((current) => expanded ? current.filter((name) => name !== group.name) : [...current, group.name])} className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-left text-xs font-bold text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"><span className="min-w-0 truncate">{group.name}</span><span className="flex shrink-0 items-center gap-1.5"><span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-orange-100 px-1 text-[11px] font-extrabold text-orange-700 dark:bg-slate-700 dark:text-slate-100">{group.stats[metricKey]}</span><ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "" : "-rotate-90"}`} /></span></button>;
+                }
+                const app = row.app;
                 const badge = getStatusBadge(app);
                 const BadgeIcon = badge.icon;
                 const menuKey = `${app.ref}-${index}`;
@@ -2861,6 +3003,14 @@ export function MobileReportsPage({
             {schemeShareToast}
           </div>
         )}
+        {applicationFilterInPhone && groupSortOpen && typeof document !== "undefined" && (() => {
+          const phone = document.querySelector("[data-mobile-preview-shell]");
+          if (!phone) return null;
+          const groupLabels: Record<string, string> = { region: "Region", org_district: "Organisational District", mandalam: "Assembly Mandalam", area: "Area", ward: "Ward", none: "No Grouping" };
+          const defaults: Record<SchemeLocationLevel, string> = { state: "org_district", region: "org_district", org_district: "mandalam", mandalam: "area", area: "ward", ward: "none" };
+          const choices = appliedSchemeFilter.locationLevel === "state" ? ["none", "org_district", "region"] : [...new Set(["none", defaults[appliedSchemeFilter.locationLevel]])];
+          return createPortal(<div className="absolute inset-0 z-[120] flex items-end bg-slate-950/60" onClick={() => setGroupSortOpen(false)}><div role="dialog" aria-modal="true" aria-label="Group and sort" onClick={(event) => event.stopPropagation()} className="flex max-h-[85%] w-full flex-col rounded-t-[24px] border-t border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-800 dark:bg-slate-900"><div className="mx-auto mb-3 h-1 w-10 rounded-full bg-slate-300 dark:bg-slate-700" /><div className="mb-2 flex items-center justify-between border-b border-slate-100 pb-2 dark:border-slate-800"><h2 className="text-sm font-extrabold text-slate-900 dark:text-white">{lang === "ml" ? "ഗ്രൂപ്പും ക്രമവും" : "Group & Sort"}</h2><button type="button" onClick={() => setGroupSortOpen(false)} aria-label="Close" className="rounded-full bg-slate-100 p-1.5 dark:bg-slate-800"><X className="h-4 w-4" /></button></div><div className="min-h-0 space-y-3 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"><p className="text-[10px] text-slate-500 dark:text-slate-400">{lang === "ml" ? "മാതൃകാ സംഘടനാ വിവരങ്ങൾ" : "Sample organisation assignments"}</p><div className="space-y-1"><span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Group By</span><MobileFilterPicker label="Group By" value={groupBy} options={choices.map((choice) => ({ value: choice, label: groupLabels[choice] }))} onChange={(value) => { setGroupBy(value); setCollapsedGroups([]); }} /></div><div className="space-y-1"><span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Sort By</span><MobileFilterPicker label="Sort By" value={groupMetric} options={SCHEME_SORT_METRICS.filter((option) => option.value !== "name").map((option) => ({ value: option.value, label: lang === "ml" ? option.ml : option.en }))} onChange={setGroupMetric} /></div><div><p className="mb-1 text-[10px] font-bold text-slate-500 dark:text-slate-400">Sort Order</p><div className="flex rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800">{[{ id: "desc", text: "↓ High to Low" }, { id: "asc", text: "↑ Low to High" }].map((option) => <button key={option.id} type="button" aria-pressed={groupOrder === option.id} onClick={() => setGroupOrder(option.id)} className={`flex-1 rounded-lg px-2 py-2 text-xs font-bold ${groupOrder === option.id ? "bg-white text-orange-700 shadow-sm dark:bg-slate-700 dark:text-orange-300" : "text-slate-500 dark:text-slate-400"}`}>{option.text}</button>)}</div></div></div><button type="button" onClick={() => { setSchemeStatusFilter(groupMetric === "total" ? "all" : groupMetric === "review" ? "in_review" : groupMetric as "approved" | "pending" | "rejected"); setGroupSortOpen(false); }} className="mt-3 rounded-lg bg-[#ff5500] py-2.5 text-xs font-extrabold text-white">{lang === "ml" ? "പ്രയോഗിക്കുക" : "Apply"}</button></div></div>, phone);
+        })()}
         {renderApplicationFilterSheet()}
       </div>
     );
@@ -3091,6 +3241,9 @@ export function MobileReportsPage({
               )}
 
               {/* Filter Icon Button */}
+              {applicationFilterInPhone && <button type="button" onClick={() => { setDraftSchemeCardSort(schemeCardSort); setSchemeSortOpen(true); }} aria-label={lang === "ml" ? "പദ്ധതികൾ ക്രമീകരിക്കുക" : "Sort schemes"} aria-haspopup="dialog" aria-expanded={schemeSortOpen} className={`relative flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${schemeCardSort !== "total_desc" ? "border-red-500 bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400" : "border-slate-200 bg-white text-[#ff5500] dark:border-slate-800 dark:bg-slate-900"}`} title="Sort schemes">
+                <ArrowUpDown className="h-3.5 w-3.5" />
+              </button>}
               <button
                 type="button"
                 onClick={openFilterSheet}
@@ -3202,13 +3355,14 @@ export function MobileReportsPage({
       </header>
 
       {/* Applied Filters Bar (Single Row) */}
-      {renderAppliedFiltersRow()}
+      {renderAppliedFiltersRow(applicationFilterInPhone)}
 
       {/* Main Body - Scheme-wise Applications List */}
       <div className="p-2.5 space-y-2">
         <div className="space-y-1.5">
           {visibleSchemes.map((scheme) => {
-            const schemeApps = filteredByScheme.get(scheme.id) || [];
+            const records = filteredByScheme.get(scheme.id) || [];
+            const schemeApps = applicationFilterInPhone ? [...new Map(records.map((app) => [app.ref || app.trackingId, app])).values()] : records;
             const stats = getSchemeStats(schemeApps);
 
             return (
@@ -3247,7 +3401,6 @@ export function MobileReportsPage({
                     </div>
                   </div>
 
-                  {/* Right: Chevron Arrow (Count removed) */}
                   <ChevronRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 group-hover:text-[#243D95] group-hover:translate-x-0.5 transition-all shrink-0" />
                 </div>
 
@@ -3281,13 +3434,13 @@ export function MobileReportsPage({
                       setSchemeStatusFilter("approved");
                     }}
                     className="flex-1 py-1 px-0.5 flex flex-col items-center justify-center transition-colors cursor-pointer text-center hover:bg-emerald-50/70 dark:hover:bg-emerald-950/40"
-                    title={lang === "ml" ? "അംഗീകരിച്ചവ" : "Approved"}
+                    title={lang === "ml" ? "അംഗീകരിച്ചവ" : "Beneficiary"}
                   >
                     <span className="text-[11.5px] font-extrabold text-[#00875A] dark:text-emerald-400 leading-none">
                       {stats.approved}
                     </span>
                     <span className="text-[7.5px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 whitespace-nowrap leading-none">
-                      {lang === "ml" ? "അംഗീകാരം" : "Approved"}
+                      {lang === "ml" ? "ഗുണഭോക്താവ്" : "Beneficiary"}
                     </span>
                   </button>
 
@@ -3364,6 +3517,46 @@ export function MobileReportsPage({
         </div>
       </div>
       {renderApplicationFilterSheet()}
+      {applicationFilterInPhone && schemeSortOpen && typeof document !== "undefined" && (() => {
+        const phone = document.querySelector("[data-mobile-preview-shell]");
+        if (!phone) return null;
+        return createPortal(
+          <div className="absolute inset-0 z-[120] flex items-end bg-slate-950/60" onClick={() => setSchemeSortOpen(false)}>
+            <div role="dialog" aria-modal="true" aria-label={lang === "ml" ? "പദ്ധതികൾ ക്രമീകരിക്കുക" : "Sort schemes"} className="flex max-h-[85%] w-full flex-col overflow-hidden rounded-t-[24px] border-t border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-800 dark:bg-slate-900" onClick={(event) => event.stopPropagation()}>
+              <div className="mx-auto mb-3 h-1 w-10 shrink-0 rounded-full bg-slate-300 dark:bg-slate-700" />
+              <div className="mb-2 flex shrink-0 items-center justify-between border-b border-slate-100 pb-2 dark:border-slate-800">
+                <h2 className="flex items-center gap-2 text-sm font-extrabold text-slate-900 dark:text-white"><ArrowUpDown className="h-4 w-4 text-[#ff5500]" />{lang === "ml" ? "ക്രമീകരിക്കുക" : "Sort By"}</h2>
+                <button type="button" onClick={() => setSchemeSortOpen(false)} aria-label={lang === "ml" ? "അടയ്ക്കുക" : "Close"} className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300"><X className="h-4 w-4" /></button>
+              </div>
+              <div className="min-h-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <p className="px-3 pb-1 pt-2 text-[10px] font-bold text-slate-500 dark:text-slate-400">{lang === "ml" ? "ക്രമീകരിക്കേണ്ട മാനദണ്ഡം" : "Sort By"}</p>
+                <div role="radiogroup" aria-label="Sort By">
+                  {SCHEME_SORT_METRICS.map((option) => {
+                    const selected = draftSchemeCardSort.startsWith(`${option.value}_`);
+                    return <button key={option.value} type="button" role="radio" aria-checked={selected} onClick={() => { if (!selected) setDraftSchemeCardSort(`${option.value}_${option.value === "name" ? "asc" : "desc"}`); }} className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs font-semibold ${selected ? "bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300" : "text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"}`}><span>{lang === "ml" ? option.ml : option.en}</span><span className={`flex h-4 w-4 items-center justify-center rounded-full border ${selected ? "border-orange-500 bg-orange-500 text-white" : "border-slate-300 dark:border-slate-600"}`}>{selected && <Check className="h-3 w-3" />}</span></button>;
+                  })}
+                </div>
+                <p className="px-3 pb-1 pt-3 text-[10px] font-bold text-slate-500 dark:text-slate-400">{lang === "ml" ? "ക്രമം" : "Sort Order"}</p>
+                <div role="radiogroup" aria-label="Sort Order" className="mx-3 flex rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800/70">
+                  {(draftSchemeCardSort.startsWith("name_") ? [{ value: "asc", label: "A to Z" }, { value: "desc", label: "Z to A" }] : [{ value: "desc", label: lang === "ml" ? "ഉയർന്നതിൽ നിന്ന് താഴേക്ക്" : "High to Low" }, { value: "asc", label: lang === "ml" ? "താഴ്ന്നതിൽ നിന്ന് മുകളിലേക്ക്" : "Low to High" }]).map((option) => {
+                    const [metric, direction] = draftSchemeCardSort.split("_");
+                    const selected = direction === option.value;
+                    return <button key={option.value} type="button" role="radio" aria-checked={selected} onClick={() => setDraftSchemeCardSort(`${metric}_${option.value}`)} className={`flex min-w-0 flex-1 items-center justify-center gap-1 rounded-lg px-2 py-2 text-center text-xs font-semibold transition-colors ${selected ? "bg-white text-orange-700 shadow-sm dark:bg-slate-700 dark:text-orange-300" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"}`}><span aria-hidden="true">{option.value === "desc" ? "↓" : "↑"}</span><span>{option.label}</span></button>;
+                  })}
+                </div>
+                {(() => {
+                  const [metric, direction] = draftSchemeCardSort.split("_");
+                  const selectedMetric = SCHEME_SORT_METRICS.find((option) => option.value === metric);
+                  const metricLabel = selectedMetric ? (lang === "ml" ? selectedMetric.ml : selectedMetric.en) : "";
+                  const orderLabel = metric === "name" ? (direction === "asc" ? "A to Z" : "Z to A") : (direction === "desc" ? "highest first" : "lowest first");
+                  return <p className="px-3 pt-2 text-[10px] leading-relaxed text-slate-500 dark:text-slate-400">{lang === "ml" ? `പദ്ധതികൾ ${metricLabel} അനുസരിച്ച് ${metric === "name" ? orderLabel : direction === "desc" ? "ഉയർന്നത് ആദ്യം" : "താഴ്ന്നത് ആദ്യം"} ക്രമീകരിക്കും.` : `Schemes will be sorted by ${metricLabel}, ${orderLabel}.`}</p>;
+                })()}
+              </div>
+              <button type="button" onClick={() => { setSchemeCardSort(draftSchemeCardSort); setSchemeSortOpen(false); }} className="mt-3 shrink-0 rounded-lg bg-[#ff5500] py-2.5 text-xs font-extrabold text-white">{lang === "ml" ? "പ്രയോഗിക്കുക" : "Apply"}</button>
+            </div>
+          </div>, phone,
+        );
+      })()}
     </div>
   );
 }

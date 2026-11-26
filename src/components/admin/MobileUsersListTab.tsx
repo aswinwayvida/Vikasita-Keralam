@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   Users,
   Search,
@@ -22,6 +23,7 @@ import { useLang } from "@/i18n/LanguageProvider";
 import { mockUsers, userCategorySummary, AppUser, UserCategory, isBjpMemberUser } from "@/data/users";
 import { districts } from "@/data/geo";
 import { FilterChip } from "./MobileAppliedFiltersScope";
+import { MobileFilterPicker } from "./MobileFilterPicker";
 import { PartyFlagIcon } from "@/components/common/PartyFlagIcon";
 
 function getUserApplicationStats(user: { id: string; name: string; mobile?: string }) {
@@ -356,10 +358,11 @@ export function MobileUsersListTab({
       </div>
 
       {/* Interactive Filter Drawer (Dashboard-Style) */}
-      {showFilterDrawer && (
-        <div className="p-3 rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50/70 dark:bg-amber-950/40 animate-in fade-in slide-in-from-top-1 duration-200 space-y-2.5 shadow-xs">
-          <div className="flex items-center justify-between pb-1 border-b border-amber-200/60 dark:border-amber-900/40">
-            <span className="text-[10.5px] font-black text-amber-950 dark:text-amber-200 uppercase tracking-wider flex items-center gap-1.5">
+      {showFilterDrawer && typeof document !== "undefined" && document.querySelector("[data-mobile-preview-shell]") && createPortal(
+        <div className="absolute inset-0 z-[110] flex items-end bg-slate-950/60" onClick={() => setShowFilterDrawer(false)}><div className="w-full rounded-t-2xl border-t border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-800 dark:bg-slate-900 space-y-3" onClick={(event) => event.stopPropagation()}>
+          <div className="mx-auto h-1 w-10 rounded-full bg-slate-300 dark:bg-slate-700" />
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2 dark:border-slate-800">
+            <span className="text-[13px] font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
               <Filter className="h-3.5 w-3.5 text-[#ff5500]" />
               <span>{lang === "ml" ? "ഫിൽട്ടർ ക്രമീകരണങ്ങൾ" : "User Directory Filters"}</span>
             </span>
@@ -392,21 +395,9 @@ export function MobileUsersListTab({
               <Map className="h-3 w-3 text-orange-500" />
               {lang === "ml" ? "ജില്ല അനുസരിച്ച്:" : "Filter by District:"}
             </label>
-            <select
-              value={selectedDistrict}
-              onChange={(e) => setSelectedDistrict(e.target.value)}
-              className="w-full rounded-xl border border-border bg-card p-1.5 text-xs font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500"
-            >
-              <option value="all">{lang === "ml" ? "എല്ലാ ജില്ലകളും (All Kerala)" : "All Kerala (All Districts)"}</option>
-              {districts.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {lang === "ml" ? d.ml : d.en}
-                </option>
-              ))}
-            </select>
+            <MobileFilterPicker label={lang === "ml" ? "ജില്ല" : "District"} value={selectedDistrict} options={[{ value: "all", label: lang === "ml" ? "എല്ലാ ജില്ലകളും (All Kerala)" : "All Kerala (All Districts)" }, ...districts.map((d) => ({ value: d.id, label: lang === "ml" ? d.ml : d.en }))]} onChange={setSelectedDistrict} searchLabel={lang === "ml" ? "തിരയുക..." : "Search..."} />
           </div>
-        </div>
-      )}
+        </div></div>, document.querySelector("[data-mobile-preview-shell]")!) }
 
 
 
@@ -561,30 +552,7 @@ export function MobileUsersListTab({
 
         {/* Category Select Dropdown on Right Side */}
         <div className="flex items-center shrink-0 max-w-[130px] sm:max-w-[160px]">
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value as "all" | UserCategory)}
-            className="w-full rounded-xl border border-border bg-muted/40 px-2 py-1.5 text-[11px] font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer text-ellipsis truncate"
-          >
-            <option value="all">
-              {lang === "ml" ? "എല്ലാം (All Users)" : "All Users"}
-            </option>
-            <option value="public">
-              {lang === "ml" ? "പൊതുജനങ്ങൾ" : "Public"}
-            </option>
-            <option value="politician">
-              {lang === "ml" ? "നേതാക്കൾ" : "Politicians"}
-            </option>
-            <option value="peoples_representative">
-              {lang === "ml" ? "ജനപ്രതിനിധികൾ" : "People's Reps"}
-            </option>
-            <option value="bjp_member">
-              {lang === "ml" ? "ബി.ജെ.പി അംഗങ്ങൾ" : "BJP Members"}
-            </option>
-            <option value="other_party_member">
-              {lang === "ml" ? "മറ്റ് പാർട്ടികൾ" : "Other Parties"}
-            </option>
-          </select>
+          <MobileFilterPicker label={lang === "ml" ? "വിഭാഗം" : "Category"} value={selectedCategory} options={[{ value: "all", label: lang === "ml" ? "എല്ലാം (All Users)" : "All Users" }, { value: "public", label: lang === "ml" ? "പൊതുജനങ്ങൾ" : "Public" }, { value: "politician", label: lang === "ml" ? "നേതാക്കൾ" : "Politicians" }, { value: "peoples_representative", label: lang === "ml" ? "ജനപ്രതിനിധികൾ" : "People's Reps" }, { value: "bjp_member", label: lang === "ml" ? "ബി.ജെ.പി അംഗങ്ങൾ" : "BJP Members" }, { value: "other_party_member", label: lang === "ml" ? "മറ്റ് പാർട്ടികൾ" : "Other Parties" }]} onChange={(value) => setSelectedCategory(value as "all" | UserCategory)} searchLabel={lang === "ml" ? "തിരയുക..." : "Search..."} />
         </div>
       </div>
 
@@ -668,7 +636,7 @@ export function MobileUsersListTab({
 
                     {/* Status count badges matching Applicants card */}
                     {stats.approved > 0 ? (
-                      <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px] font-black leading-none border border-[#00875A] bg-[#00875A] text-white shadow-2xs" title={lang === "ml" ? `അംഗീകരിച്ചു: ${stats.approved}` : `Approved: ${stats.approved}`}>
+                      <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px] font-black leading-none border border-[#00875A] bg-[#00875A] text-white shadow-2xs" title={lang === "ml" ? `അംഗീകരിച്ചു: ${stats.approved}` : `Beneficiary: ${stats.approved}`}>
                         {stats.approved}
                       </span>
                     ) : (

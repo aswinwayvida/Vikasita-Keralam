@@ -1,4 +1,6 @@
+import { ORGANISATIONAL_DISTRICT_MANDALAMS } from "./mobileOrganisationMapping";
 import React, { useState, useRef, useEffect, useMemo } from "react";
+import { masterLocationIdToReport } from "./mobileLocationIdAdapter";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
 import { X, Smartphone, Wifi, Battery, Signal, ChevronRight, ChevronLeft, ArrowLeft, ArrowRight, ArrowUpDown, Users, Users2, HeartHandshake, Database, Layers, Sparkles, MessageSquare, Clock3, Clock, UserCheck, LayoutDashboard, Sliders, SlidersHorizontal, Calendar, FileText, XCircle, CheckCircle2, Hourglass, MapPin, Mail, PhoneCall, Trophy, AlertTriangle, Activity, Globe, Map as MapIcon, Network, Store, ShieldCheck, ChevronDown, Filter, Search, SearchCheck, Megaphone, CalendarDays, BellRing, Phone, RotateCcw, GraduationCap, Sprout, LayoutGrid, MoreVertical, AlertCircle, Star, Zap, Headphones, Edit, Upload, FileCheck, Loader2, SearchX, RefreshCw, Check, Minus, Lock, User, Eye, Send, Info, Plus, Inbox, FileSearch, FileX, HandCoins, UserRound, ClipboardList, Headset, Copy, Pencil, Download, FileImage, ExternalLink, CloudUpload, Home, Building2, Flame, HelpCircle, UserPlus, Trash2, Accessibility, Briefcase, Percent, BookOpen, Share2, Navigation, Facebook, Instagram, Twitter } from "lucide-react";
@@ -42,6 +44,7 @@ import {
   type CreatedSchemePayload,
 } from "./MobileCreateSchemeFlow";
 import { MobileCreatePartyWorkerFlow } from "./MobileCreatePartyWorkerFlow";
+import { MobileMultiFilterSheet } from "./MobileFilterPicker";
 import { MobileSettingsPage, type MobileApplicationViewMode } from "./MobileSettingsPage";
 import { MobileReportsPage } from "./MobileReportsPage";
 import { type FilterChip } from "./MobileAppliedFiltersScope";
@@ -840,7 +843,14 @@ type MobileApplicationRecordSeed = Omit<
   "ref" | "status" | "currentStep" | "pendingDocs" | "nextActionEn" | "nextActionMl" | "auditLog" | "workflowStatus" | "decisionReason"
 >;
 
-type MobileApplicantSchemeStatusFilter = "all" | MobileApplicationRecord["status"];
+type MobileApplicantSchemeStatusFilter =
+  | "all"
+  | MobileApplicationRecord["status"]
+  | "application_received"
+  | "document_verification_completed"
+  | "applied"
+  | "review"
+  | "beneficiary";
 
 const mobileApplicationRecordSeeds: MobileApplicationRecordSeed[] = [
   {
@@ -1580,13 +1590,13 @@ const mobileApplicationStatusMeta: Record<
     className: "border-orange-200/90 bg-orange-50 text-[#ff5500] dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300",
   },
   beneficiary: {
-    labelEn: "Approved",
+    labelEn: "Beneficiary",
     labelMl: "അംഗീകരിച്ചു",
     icon: HandCoins,
     className: "border-emerald-200/80 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300",
   },
   approved: {
-    labelEn: "Approved",
+    labelEn: "Beneficiary",
     labelMl: "അംഗീകരിച്ചു",
     icon: CheckCircle2,
     className: "border-emerald-200/80 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300",
@@ -1604,13 +1614,13 @@ const mobileApplicationStatusMeta: Record<
     className: "border-slate-200/90 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-200",
   },
   assisted: {
-    labelEn: "Approved",
+    labelEn: "Beneficiary",
     labelMl: "അംഗീകരിച്ചു",
     icon: CheckCircle2,
     className: "border-blue-200/80 bg-blue-50 text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300",
   },
   disbursed: {
-    labelEn: "Approved",
+    labelEn: "Beneficiary",
     labelMl: "അംഗീകരിച്ചു",
     icon: HandCoins,
     className: "border-emerald-200/80 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300",
@@ -3265,44 +3275,6 @@ const REGION_ORGANISATIONAL_DISTRICTS: Record<string, string[]> = {
   ],
 };
 
-const ORGANISATIONAL_DISTRICT_MANDALAMS: Record<string, string[]> = {
-  // 1. Northern Region — 10 Organisational Districts, 48 Mandalams
-  "od-ksd": ["ksd-c1", "ksd-c2", "ksd-c3", "ksd-c4", "ksd-c5"], // Kasaragod: Manjeshwar, Kasaragod, Udma, Kanhangad, Trikaripur (5)
-  "od-knr-north": ["knr-c1", "knr-c2", "knr-c3", "knr-c4", "knr-c5"], // Kannur North: Payyannur, Kalliasseri, Taliparamba, Irikkur, Azhikode (5)
-  "od-knr-south": ["knr-c6", "knr-c7", "knr-c8", "knr-c9", "knr-c10", "knr-c11"], // Kannur South: Kannur, Dharmadam, Thalassery, Kuthuparamba, Mattannur, Peravoor (6)
-  "od-wyd": ["wyd-c1", "wyd-c2", "wyd-c3"], // Wayanad: Mananthavady, Sulthan Bathery, Kalpetta (3)
-  "od-kkd-city": ["kkd-c7", "kkd-c8", "kkd-c9", "kkd-c10"], // Kozhikode City: Elathur, Kozhikode North, Kozhikode South, Beypore (4)
-  "od-kkd-north": ["kkd-c1", "kkd-c2", "kkd-c3", "kkd-c4", "kkd-c5"], // Kozhikode North: Vadakara, Kuttiadi, Nadapuram, Quilandy, Perambra (5)
-  "od-kkd-rural": ["kkd-c6", "kkd-c11", "kkd-c12", "kkd-c13"], // Kozhikode Rural: Balussery, Kunnamangalam, Koduvally, Thiruvambady (4)
-  "od-mlp-central": ["mlp-c1", "mlp-c5", "mlp-c8", "mlp-c7", "mlp-c6"], // Malappuram Central: Kondotty, Manjeri, Malappuram, Mankada, Perinthalmanna (5)
-  "od-mlp-east": ["mlp-c2", "mlp-c3", "mlp-c4", "mlp-c9", "mlp-c10"], // Malappuram East: Eranad, Nilambur, Wandoor, Vengara, Vallikkunnu (5)
-  "od-mlp-west": ["mlp-c11", "mlp-c12", "mlp-c13", "mlp-c14", "mlp-c15", "mlp-c16"], // Malappuram West: Tirurangadi, Tanur, Tirur, Kottakkal, Thavanur, Ponnani (6)
-
-  // 2. Central Region — 12 Organisational Districts, 53 Mandalams
-  "od-pkd-east": ["pkd-c5", "pkd-c7", "pkd-c8", "pkd-c10", "pkd-c11", "pkd-c12"], // Palakkad East: Kongad, Malampuzha, Palakkad, Chittur, Nenmara, Alathur (6)
-  "od-pkd-west": ["pkd-c1", "pkd-c2", "pkd-c3", "pkd-c4", "pkd-c6", "pkd-c9"], // Palakkad West: Thrithala, Pattambi, Shornur, Ottapalam, Mannarkad, Tarur (6)
-  "od-tsr-city": ["tsr-c7", "tsr-c6", "tsr-c4", "tsr-c8"], // Thrissur City: Thrissur, Ollur, Manalur, Nattika (4)
-  "od-tsr-north": ["tsr-c1", "tsr-c2", "tsr-c3", "tsr-c5"], // Thrissur North: Chelakkara, Kunnamkulam, Guruvayoor, Wadakkanchery (4)
-  "od-tsr-south": ["tsr-c9", "tsr-c10", "tsr-c11", "tsr-c12", "tsr-c13"], // Thrissur South: Kaipamangalam, Irinjalakkuda, Puthukkad, Chalakkudy, Kodungallur (5)
-  "od-ekm-city": ["ekm-c7", "ekm-c8", "ekm-c14", "ekm-c9", "ekm-c6"], // Ernakulam City: Kochi, Ernakulam, Thripunithura, Thrikkakara, Vypen (5)
-  "od-ekm-north": ["ekm-c2", "ekm-c3", "ekm-c4", "ekm-c5"], // Ernakulam North: Angamaly, Aluva, Kalamassery, Paravur (4)
-  "od-ekm-east": ["ekm-c1", "ekm-c10", "ekm-c11", "ekm-c12", "ekm-c13"], // Ernakulam East: Perumbavoor, Kunnathunad, Piravom, Muvattupuzha, Kothamangalam (5)
-  "od-idk-north": ["idk-c1", "idk-c2", "idk-c3"], // Idukki North: Devikulam, Udumbanchola, Thodupuzha (3)
-  "od-idk-south": ["idk-c4", "idk-c5"], // Idukki South: Idukki, Peerumade (2)
-  "od-ktm-east": ["ktm-c9", "ktm-c8", "ktm-c7", "ktm-c6"], // Kottayam East: Poonjar, Kanjirappally, Changanassery, Puthuppally (4)
-  "od-ktm-west": ["ktm-c1", "ktm-c2", "ktm-c3", "ktm-c4", "ktm-c5"], // Kottayam West: Pala, Kaduthuruthy, Vaikom, Ettumanoor, Kottayam (5)
-
-  // 3. Southern Region — 8 Organisational Districts, 39 Mandalams
-  "od-alp-north": ["alp-c1", "alp-c2", "alp-c3", "alp-c4"], // Alappuzha North: Aroor, Cherthala, Alappuzha, Ambalapuzha (4)
-  "od-alp-south": ["alp-c5", "alp-c6", "alp-c7", "alp-c8", "alp-c9"], // Alappuzha South: Kuttanad, Haripad, Kayamkulam, Mavelikara, Chengannur (5)
-  "od-ptm": ["ptm-c1", "ptm-c2", "ptm-c3", "ptm-c4", "ptm-c5"], // Pathanamthitta: Thiruvalla, Ranni, Aranmula, Konni, Adoor (5)
-  "od-klm-east": ["klm-c3", "klm-c4", "klm-c5", "klm-c6", "klm-c7", "klm-c8"], // Kollam East: Kunnathur, Kottarakkara, Pathanapuram, Punalur, Chadayamangalam, Kundara (6)
-  "od-klm-west": ["klm-c1", "klm-c2", "klm-c9", "klm-c10", "klm-c11"], // Kollam West: Karunagappally, Chavara, Kollam, Eravipuram, Chathannur (5)
-  "od-tvm-city": ["tvm-c6", "tvm-c7", "tvm-c8", "tvm-c9"], // Thiruvananthapuram City: Kazhakkoottam, Vattiyoorkavu, Thiruvananthapuram, Nemom (4)
-  "od-tvm-north": ["tvm-c1", "tvm-c2", "tvm-c3", "tvm-c4", "tvm-c5", "tvm-c10"], // Thiruvananthapuram North: Varkala, Attingal, Chirayinkeezhu, Nedumangad, Vamanapuram, Aruvikkara (6)
-  "od-tvm-south": ["tvm-c11", "tvm-c12", "tvm-c13", "tvm-c14"], // Thiruvananthapuram South: Parassala, Kattakkada, Kovalam, Neyyattinkara (4)
-};
-
 const getAvailableMandalams = (selectedRegion: string, selectedOrgDistrict: string) => {
   if (selectedOrgDistrict && selectedOrgDistrict !== "all") {
     const mandalamIds = ORGANISATIONAL_DISTRICT_MANDALAMS[selectedOrgDistrict] || [];
@@ -3370,6 +3342,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     options: { id: string; label: string; hint?: string }[];
     selectedId: string;
     onSelect: (id: string) => void;
+    searchable?: boolean;
   } | null>(null);
   const [modalPickerSearch, setModalPickerSearch] = useState("");
 
@@ -3377,7 +3350,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     title: string,
     options: { id: string; label: string; hint?: string }[],
     selectedId: string,
-    onSelect: (id: string) => void
+    onSelect: (id: string) => void,
+    searchable?: boolean
   ) => {
     setModalPickerSearch("");
     setActiveModalPicker({
@@ -3385,6 +3359,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       options,
       selectedId,
       onSelect,
+      searchable: searchable !== undefined ? searchable : (showFilterMenu || isHelpdeskFilterOpen || isApplicantFilterOpen || attentionFilterOpen || schemeFilterSheetOpen || options.length > 5),
     });
   };
 
@@ -3541,6 +3516,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [isAppCategoryDropdownOpen, setIsAppCategoryDropdownOpen] = useState<boolean>(false);
   const [appCategorySearchQuery, setAppCategorySearchQuery] = useState<string>("");
 
+  const [appDepartmentFilter, setAppDepartmentFilter] = useState<string>("all");
+  const [appSelectedDepartmentIds, setAppSelectedDepartmentIds] = useState<string[]>(["all"]);
+
   const [appSelectedSchemeIds, setAppSelectedSchemeIds] = useState<string[]>(["all"]);
   const [isAppSchemeDropdownOpen, setIsAppSchemeDropdownOpen] = useState<boolean>(false);
   const [appSchemeSearchQuery, setAppSchemeSearchQuery] = useState<string>("");
@@ -3587,11 +3565,11 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
   useEffect(() => {
     if (userRole === "party_worker") {
-      setAppLocationLevel("area");
-      setAppSelectedRegion("reg-south");
-      setAppSelectedOrgDistrict("od-tvm-north");
-      setAppSelectedMandalam("tvm-c6");
-      setAppSelectedArea("area-kazh-main");
+      setAppLocationLevel("state");
+      setAppSelectedRegion("all");
+      setAppSelectedOrgDistrict("all");
+      setAppSelectedMandalam("all");
+      setAppSelectedArea("all");
       setAppSelectedWard("all");
       setAppSelectedWardIds(["all"]);
       setAppFilterLocation("all");
@@ -3824,6 +3802,17 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   };
   const [partyWorkerTab, setPartyWorkerTab] = useState<"my_work" | "team">("my_work");
   const [activeTab, setActiveTab] = useState<AdminMobileTab>("overview");
+  useEffect(() => {
+    if (activeTab !== "applications") return;
+    setAppLocationLevel(homeLocationLevel);
+    setAppSelectedRegion(homeSelectedRegion);
+    setAppSelectedOrgDistrict(homeSelectedOrgDistrict);
+    setAppSelectedMandalam(homeSelectedMandalam);
+    setAppSelectedArea(homeSelectedArea);
+    setAppSelectedWard(homeSelectedWard);
+    setAppSelectedWardIds(homeSelectedWardIds);
+    setAppFilterLocation(homeSelectedWard);
+  }, [activeTab]);
 
   const [isSchemeDrilldownActive, setIsSchemeDrilldownActive] = useState(false);
 
@@ -4014,6 +4003,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               </div>
             </div>
 
+            {renderHomeAppliedFilters()}
             {/* Core Analytics KPI Grid (6 cards matching Booth Level sample counts for Party Worker) */}
             {(() => {
               const pwDocVerifiedLen = Math.max(1, mobileApplicationRecordsByStatus.document_verification_completed.length);
@@ -4024,12 +4014,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 <div className="grid grid-cols-2 gap-2 pt-1">
                   {/* 1. Application Received */}
                   <div
-                    onClick={() => {
-                      setActiveTab("applications");
-                      setMobileSubPage("none");
-                      setApplicationStatusFilter("all");
-                      setApplicationSearchQuery("");
-                    }}
+                    onClick={() => openApplicationListWithStatus("application_received")}
                     className="rounded-lg border border-border bg-card py-1 px-2 flex flex-col justify-between shadow-2xs hover:border-blue-500/70 transition-all cursor-pointer"
                   >
                     <div className="flex items-center justify-between gap-1">
@@ -4045,11 +4030,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
                   {/* 2. Submitted */}
                   <div
-                    onClick={() => {
-                      setActiveTab("applications");
-                      setMobileSubPage("none");
-                      setApplicationStatusFilter("applied");
-                    }}
+                    onClick={() => openApplicationListWithStatus("applied")}
                     className="rounded-lg border border-border bg-card py-1 px-2 flex flex-col justify-between shadow-2xs hover:border-sky-500/70 transition-all cursor-pointer"
                   >
                     <div className="flex items-center justify-between gap-1">
@@ -4081,11 +4062,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
                   {/* 4. In Review */}
                   <div
-                    onClick={() => {
-                      setActiveTab("applications");
-                      setMobileSubPage("none");
-                      setApplicationStatusFilter("review");
-                    }}
+                    onClick={() => openApplicationListWithStatus("review")}
                     className="rounded-lg border border-border bg-card py-1 px-2 flex flex-col justify-between shadow-2xs hover:border-indigo-500/70 transition-all cursor-pointer"
                   >
                     <div className="flex items-center justify-between gap-1">
@@ -4117,11 +4094,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
                   {/* 6. Rejected */}
                   <div
-                    onClick={() => {
-                      setActiveTab("applications");
-                      setMobileSubPage("none");
-                      setApplicationStatusFilter("rejected");
-                    }}
+                    onClick={() => openApplicationListWithStatus("rejected")}
                     className="rounded-lg border border-border bg-card py-1 px-2 flex flex-col justify-between shadow-2xs hover:border-rose-500/70 transition-all cursor-pointer"
                   >
                     <div className="flex items-center justify-between gap-1">
@@ -4810,7 +4783,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     </div>
 
                     <div className="flex items-center gap-1 shrink-0">
-                      <span title={`Approved: ${worker.approved}`} className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#00875A] px-1 text-[10px] font-black text-white">{worker.approved}</span>
+                      <span title={`Beneficiary: ${worker.approved}`} className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#00875A] px-1 text-[10px] font-black text-white">{worker.approved}</span>
                       <span title={`Pending and in review: ${worker.pending + worker.inReview}`} className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#f59e0b] px-1 text-[10px] font-black text-white">{worker.pending + worker.inReview}</span>
                       <span title={`Rejected: ${worker.rejected}`} className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FF2C2C] px-1 text-[10px] font-black text-white">{worker.rejected}</span>
                       <div className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-400 dark:bg-slate-800"><ChevronRight className="h-3.5 w-3.5" /></div>
@@ -6648,6 +6621,10 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [showCategorySearch, setShowCategorySearch] = useState(false);
   const [eventsSubTab, setEventsSubTab] = useState<"events" | "announcements">("events");
   const [applicationStatusFilter, setApplicationStatusFilter] = useState<MobileApplicationStatusFilter>("all");
+  const [homeKpiStatuses, setHomeKpiStatuses] = useState<string[] | null>(null);
+  useEffect(() => {
+    if (activeTab !== "applications") setHomeKpiStatuses(null);
+  }, [activeTab]);
   const [appSchemeCategoryFilter, setAppSchemeCategoryFilter] = useState<string>("all");
   const [appSchemeSortBy, setAppSchemeSortBy] = useState<string>("benefits_high_low");
   const [appAssistanceStatusFilter, setAppAssistanceStatusFilter] = useState<string>("all");
@@ -6724,6 +6701,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [applicantPendingDistrict, setApplicantPendingDistrict] = useState<string>("all");
   const [applicantCategoryFilter, setApplicantCategoryFilter] = useState<string>("all");
   const [applicantPendingCategory, setApplicantPendingCategory] = useState<string>("all");
+  const [applicantDepartmentFilter, setApplicantDepartmentFilter] = useState<string>("all");
+  const [applicantPendingDepartment, setApplicantPendingDepartment] = useState<string>("all");
 
   const openApplicantFilterModal = () => {
     setApplicantPendingWorkView(applicantWorkView);
@@ -6735,6 +6714,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     setApplicantPendingWard(applicantWardFilter);
     setApplicantPendingDistrict(applicantDistrictFilter);
     setApplicantPendingCategory(applicantCategoryFilter);
+    setApplicantPendingDepartment(applicantDepartmentFilter);
     setApplicantPendingScheme(applicantSchemeFilter);
     setApplicantPendingSchemeStatus(applicantSchemeStatusFilter);
     setIsApplicantFilterOpen(true);
@@ -8128,7 +8108,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           : workflowStatus === "assisted"
             ? {
                 key: "approved",
-                labelEn: "Approved",
+                labelEn: "Beneficiary",
                 labelMl: "അംഗീകരിച്ചു",
                 tone: "success",
               }
@@ -10487,10 +10467,12 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   }, [selectedPeriod, selectedDateInfo]);
 
   const openApplicationListWithStatus = (status: MobileApplicationStatusFilter) => {
+    const statuses = status === "application_received" ? ["received", "verified", "in_review", "approved", "rejected"] : status === "applied" ? ["in_review", "approved", "rejected"] : status === "pending" ? ["pending"] : status === "beneficiary" ? ["approved"] : status === "review" ? ["in_review"] : status === "document_verification_completed" ? ["verified"] : [status];
+    setHomeKpiStatuses(statuses);
     setActiveTab("applications");
     setMobileSubPage("none");
-    setApplicationStatusFilter(status);
-    setSelectedAppStatusFilters(status === "all" ? ["all"] : [status]);
+    setApplicationStatusFilter(status === "application_received" ? "all" : status);
+    setSelectedAppStatusFilters(status === "application_received" ? ["all"] : status === "applied" ? ["review", "beneficiary", "rejected"] : status === "pending" ? ["application_received", "document_verification_completed"] : status === "all" ? ["all"] : [status]);
     setApplicationSearchQuery("");
   };
 
@@ -10655,7 +10637,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     ) {
       return {
         key: "approved",
-        labelEn: "Approved",
+        labelEn: "Beneficiary",
         labelMl: "അംഗീകരിച്ചു",
         className: "border-[#00875A] bg-[#00875A] text-white",
         order: 1,
@@ -10913,6 +10895,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     applicantAreaFilter !== "all",
     applicantWardFilter !== "all",
     applicantDistrictFilter !== "all",
+    applicantCategoryFilter !== "all",
+    applicantDepartmentFilter !== "all",
     applicantSchemeFilter !== "all",
     applicantSchemeStatusFilter !== "all",
   ].filter(Boolean).length;
@@ -10926,6 +10910,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     applicantPendingArea !== "all",
     applicantPendingWard !== "all",
     applicantPendingDistrict !== "all",
+    applicantPendingCategory !== "all",
+    applicantPendingDepartment !== "all",
     applicantPendingScheme !== "all",
     applicantPendingSchemeStatus !== "all",
   ].filter(Boolean).length;
@@ -10936,8 +10922,66 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       return false;
     }
 
-    if (applicantSchemeStatusFilter !== "all" && !user.schemeStatuses.includes(applicantSchemeStatusFilter)) {
-      return false;
+    if (applicantSchemeStatusFilter !== "all") {
+      const matches = user.applications.some((app) => {
+        const wst = (app.workflowStatus || "").toLowerCase();
+        const st = (app.status || "").toLowerCase();
+        if (applicantSchemeStatusFilter === "application_received") {
+          return wst === "application_received" || st === "application_received";
+        }
+        if (applicantSchemeStatusFilter === "document_verification_completed") {
+          return wst === "document_verification_completed" || wst === "document_verified" || st === "document_verification_completed";
+        }
+        if (applicantSchemeStatusFilter === "applied") {
+          return wst === "applied" || st === "applied";
+        }
+        if (applicantSchemeStatusFilter === "review") {
+          return wst === "review" || wst === "in_review" || st === "in_review" || st === "review";
+        }
+        if (applicantSchemeStatusFilter === "beneficiary") {
+          return wst === "beneficiary" || wst === "approved" || st === "beneficiary" || st === "approved";
+        }
+        if (applicantSchemeStatusFilter === "rejected") {
+          return wst === "rejected" || st === "rejected";
+        }
+        return user.schemeStatuses.includes(applicantSchemeStatusFilter as any);
+      });
+      if (!matches) return false;
+    }
+
+    if (applicantCategoryFilter !== "all") {
+      const catMap: Record<string, string[]> = {
+        agriculture: ["agriculture", "കൃഷി"],
+        healthcare: ["healthcare", "health", "medical", "ആരോഗ്യം"],
+        housing: ["housing", "shelter", "ഭവനനിർമ്മാണം"],
+        pension: ["pension", "welfare", "പെൻഷൻ"],
+        education: ["education", "scholarship", "വിദ്യാഭ്യാസം"],
+      };
+      const allowed = catMap[applicantCategoryFilter] || [applicantCategoryFilter.toLowerCase()];
+      const matchesCat = user.applications.some((app) => {
+        const cat = (app.categoryEn || "").toLowerCase();
+        return allowed.some((a) => cat.includes(a));
+      });
+      if (!matchesCat) return false;
+    }
+
+    if (applicantDepartmentFilter !== "all") {
+      const deptMap: Record<string, string[]> = {
+        agriculture: ["agriculture", "കൃഷി", "farmer"],
+        health: ["health", "ആരോഗ്യം", "medical"],
+        social_justice: ["social", "നീതി", "welfare", "pension"],
+        revenue: ["revenue", "റവന്യൂ", "disaster"],
+        lsgd: ["local", "തദ്ദേശ", "panchayat", "municipality", "corporation"],
+        education: ["education", "വിദ്യാഭ്യാസം", "school"],
+        finance: ["finance", "ധനകാര്യ", "pension"],
+      };
+      const allowed = deptMap[applicantDepartmentFilter] || [applicantDepartmentFilter.toLowerCase()];
+      const matchesDept = user.applications.some((app) => {
+        const cat = (app.categoryEn || "").toLowerCase();
+        const scheme = (app.schemeNameEn || "").toLowerCase();
+        return allowed.some((a) => cat.includes(a) || scheme.includes(a));
+      });
+      if (!matchesDept) return false;
     }
 
     const locParts = user.locationEn.split(",").map((s) => s.trim());
@@ -11005,6 +11049,11 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       : [user.nameEn, user.nameMl, user.locationEn, user.locationMl, user.phone].some((value) =>
           value.toLowerCase().includes(userQuery),
         );
+  }).sort((a, b) => {
+    if (appSchemeSortBy === "benefits_low_high") {
+      return a.applicationCount - b.applicationCount || a.nameEn.localeCompare(b.nameEn);
+    }
+    return b.applicationCount - a.applicationCount || a.nameEn.localeCompare(b.nameEn);
   });
 
   const selectedApplicationUser = selectedApplicationUserId
@@ -11863,6 +11912,26 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const appliedFilterChips = isHomeFilterApplied
     ? Array(Math.max(1, homeActiveFilterCount)).fill({ id: "filter", label: "", onRemove: () => {} })
     : [];
+
+  const renderHomeAppliedFilters = () => {
+    if (!isHomeFilterApplied || showFilterMenu) return null;
+    const clearLocation = () => {
+      setHomeLocationLevel("state"); setHomeSelectedRegion("all"); setHomeSelectedOrgDistrict("all");
+      setHomeSelectedMandalam("all"); setHomeSelectedArea("all"); setHomeSelectedWard("all");
+      setHomeSelectedWardIds(["all"]); setFilterGeoScope("state");
+    };
+    const clearCategory = () => { setSelectedCategoryIds(["all"]); setFilterSchemeCategory("all"); };
+    const clearScheme = () => { setSelectedSchemeIdsState(["all"]); setFilterScheme("all"); };
+    const chips = [
+      ...(isHomeLocationFiltered ? [{ id: "location", label: activeLocationLabel, remove: clearLocation }] : []),
+      ...dashboardFilterChips.map((chip) => ({ id: chip.id, label: chip.label.replace(/^(Category|Department|Scheme Type|Performance):\s*/, ""), remove: chip.id === "category" ? clearCategory : chip.onRemove })),
+      ...(filterScheme !== "all" ? [{ id: "scheme", label: filterScheme, remove: clearScheme }] : []),
+    ];
+    return <div className="-mx-3 !mt-0 flex min-w-0 items-center gap-1.5 overflow-x-auto border-b border-slate-200/70 bg-[#FAF7F2]/90 px-2.5 py-1.5 dark:border-slate-800 dark:bg-slate-900/80 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      {chips.map((chip) => <span key={chip.id} className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10.5px] font-semibold shadow-2xs ${chip.id === "location" ? "border-orange-200/90 bg-orange-50 text-orange-800 dark:border-orange-800/60 dark:bg-orange-950/40 dark:text-orange-300" : "border-slate-200 bg-slate-100 text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"}`}>{chip.id === "location" && <MapPin className="h-2.5 w-2.5 text-orange-500" />}<span>{chip.label}</span><button type="button" onClick={chip.remove} aria-label={`${lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"} ${chip.label}`}><X className="h-3 w-3" /></button></span>)}
+      <button type="button" onClick={() => { clearLocation(); clearCategory(); clearScheme(); setFilterSchemeType("all"); setFilterDepartment("all"); setFilterPerformance("all"); }} className="shrink-0 px-1 text-[10.5px] font-bold text-orange-600 dark:text-orange-400">{lang === "ml" ? "എല്ലാം ഒഴിവാക്കുക" : "Clear All"}</button>
+    </div>;
+  };
 
   const filteredBeneficiariesList = React.useMemo(() => {
     return mockBeneficiariesFullList.filter((b) => {
@@ -13376,8 +13445,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     renderPartyMemberDashboard()
                   ) : (
                     <div className="space-y-3 animate-in fade-in duration-200">
+                    <div>
                     {/* Header Row: Date Title Left + Action Buttons Right (<, >, Calendar, Filter) - Matching Users Tab */}
-                    <div className="flex items-center justify-between gap-2 pt-0.5 pb-1 my-0">
+                    <div className="-mx-3 -mt-1.5 flex items-center justify-between gap-1 border-b border-slate-200/60 bg-white px-3.5 py-1.5 dark:border-slate-800 dark:bg-slate-900">
                       {/* Left Side: My View Label Button (clicks open filter popup) */}
                       <button
                         type="button"
@@ -13452,6 +13522,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       </div>
                     </div>
 
+                    {renderHomeAppliedFilters()}
+                    </div>
                     {/* Core Analytics KPI Grid (2 cards per row) */}
                     <div className="grid grid-cols-2 gap-2">
                       {/* 1. Application Received */}
@@ -13512,7 +13584,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
                       {/* 5. Pending */}
                       <div
-                        onClick={() => openApplicationListWithStatus("document_verification_completed")}
+                        onClick={() => openApplicationListWithStatus("pending")}
                         className="rounded-lg border border-border bg-card py-1 px-2 flex flex-col justify-between shadow-2xs hover:border-amber-500/70 transition-all cursor-pointer"
                       >
                         <div className="flex items-center justify-between gap-1">
@@ -13526,11 +13598,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
                       {/* 6. Rejected */}
                       <div
-                        onClick={() => {
-                          setActiveTab("applications");
-                          setMobileSubPage("none");
-                          setApplicationStatusFilter("rejected");
-                        }}
+                        onClick={() => openApplicationListWithStatus("rejected")}
                         className="rounded-lg border border-border bg-card py-1 px-2 flex flex-col justify-between shadow-2xs hover:border-rose-500/70 transition-all cursor-pointer"
                       >
                         <div className="flex items-center justify-between gap-1">
@@ -16054,77 +16122,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             </button>
 
                             {/* Dropdown Menu - Right aligned & bounded inside app width */}
-                            {isAppStatusDropdownOpen && (
-                              <div className="absolute right-0 top-full mt-1.5 w-56 z-50 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-2 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
-                                <div className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase px-2 py-1 border-b border-slate-100 dark:border-slate-800 mb-1 flex items-center justify-between">
-                                  <span>{lang === "ml" ? "അവസ്ഥ തിരഞ്ഞെടുക്കുക" : "Select Statuses"}</span>
-                                  {selectedAppStatusFilters.length > 0 && !selectedAppStatusFilters.includes("all") && (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setSelectedAppStatusFilters(["all"]);
-                                        setApplicationStatusFilter("all");
-                                      }}
-                                      className="text-orange-500 hover:underline normal-case font-bold cursor-pointer"
-                                    >
-                                      {lang === "ml" ? "എല്ലാം മായ്ക്കുക" : "Reset"}
-                                    </button>
-                                  )}
-                                </div>
-                                <div className="max-h-48 overflow-y-auto space-y-0.5 pr-0.5">
-                                  {[
-                                    { id: "all", en: "All Applications", ml: "എല്ലാ അപേക്ഷകളും" },
-                                    { id: "pending", en: "Pending Verification", ml: "പെൻഡിംഗ് അപേക്ഷകൾ" },
-                                    { id: "application_received", en: "Application Received", ml: "ലഭിച്ച അപേക്ഷകൾ" },
-                                    { id: "document_verification_completed", en: "Document Verification Completed", ml: "രേഖാ പരിശോധന പൂർത്തിയായി" },
-                                    { id: "applied", en: "Applied", ml: "അപേക്ഷിച്ചു" },
-                                    { id: "review", en: "Review", ml: "പരിശോധനയിൽ" },
-                                    { id: "beneficiary", en: "Beneficiary / Disbursed", ml: "ഗുണഭോക്താവ്" },
-                                    { id: "assisted", en: "Approved & Assisted", ml: "സഹായം ലഭിച്ചു" },
-                                    { id: "rejected", en: "Rejected", ml: "നിരസിച്ചവ" },
-                                  ].map((st) => {
-                                    const isSelected = selectedAppStatusFilters.includes(st.id);
-                                    return (
-                                      <label
-                                        key={st.id}
-                                        onClick={() => {
-                                          let updated: string[];
-                                          if (st.id === "all") {
-                                            updated = ["all"];
-                                          } else {
-                                            const filtered = selectedAppStatusFilters.filter((id) => id !== "all");
-                                            if (filtered.includes(st.id)) {
-                                              updated = filtered.filter((id) => id !== st.id);
-                                            } else {
-                                              updated = [...filtered, st.id];
-                                            }
-                                            if (updated.length === 0) updated = ["all"];
-                                          }
-                                          setSelectedAppStatusFilters(updated);
-                                          setApplicationStatusFilter(updated.length === 1 ? (updated[0] as any) : "all");
-                                        }}
-                                        className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-[11.5px] font-bold cursor-pointer transition-colors ${
-                                          isSelected
-                                            ? "bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400"
-                                            : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200"
-                                        }`}
-                                      >
-                                        <div
-                                          className={`w-4 h-4 rounded-md flex items-center justify-center border transition-colors shrink-0 ${
-                                            isSelected
-                                              ? "bg-orange-500 border-orange-500 text-white"
-                                              : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
-                                          }`}
-                                        >
-                                          {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
-                                        </div>
-                                        <span className="truncate">{lang === "ml" ? st.ml : st.en}</span>
-                                      </label>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            )}
+                            {isAppStatusDropdownOpen && <MobileMultiFilterSheet label={lang === "ml" ? "അവസ്ഥ തിരഞ്ഞെടുക്കുക" : "Select Statuses"} options={[{ value: "all", label: lang === "ml" ? "എല്ലാ അപേക്ഷകളും" : "All Applications" }, { value: "pending", label: lang === "ml" ? "പെൻഡിംഗ് അപേക്ഷകൾ" : "Pending Verification" }, { value: "application_received", label: lang === "ml" ? "ലഭിച്ച അപേക്ഷകൾ" : "Application Received" }, { value: "document_verification_completed", label: lang === "ml" ? "രേഖാ പരിശോധന പൂർത്തിയായി" : "Document Verification Completed" }, { value: "applied", label: lang === "ml" ? "അപേക്ഷിച്ചു" : "Applied" }, { value: "review", label: lang === "ml" ? "പരിശോധനയിൽ" : "Review" }, { value: "beneficiary", label: lang === "ml" ? "ഗുണഭോക്താവ്" : "Beneficiary / Disbursed" }, { value: "assisted", label: lang === "ml" ? "സഹായം ലഭിച്ചു" : "Beneficiary" }, { value: "rejected", label: lang === "ml" ? "നിരസിച്ചവ" : "Rejected" }]} selected={selectedAppStatusFilters} onToggle={(id) => { let updated: string[]; if (id === "all") updated = ["all"]; else { const current = selectedAppStatusFilters.filter((item) => item !== "all"); updated = current.includes(id) ? current.filter((item) => item !== id) : [...current, id]; if (!updated.length) updated = ["all"]; } setSelectedAppStatusFilters(updated); setApplicationStatusFilter(updated.length === 1 ? updated[0] as MobileApplicationStatusFilter : "all"); }} onClose={() => setIsAppStatusDropdownOpen(false)} searchLabel={lang === "ml" ? "തിരയുക..." : "Search..."} doneLabel={lang === "ml" ? "പൂർത്തിയായി" : "Done"} />}
                           </div>
                         </div>
 
@@ -16227,7 +16225,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 </span>
                                 <span className="text-[9.5px] font-bold text-teal-700 bg-teal-100 px-2 py-0.2 rounded-md inline-flex items-center gap-1">
                                   <CheckCircle2 className="h-2.5 w-2.5" />
-                                  {lang === "ml" ? "സഹായം ലഭിച്ചു" : "Approved & Assisted"}
+                                  {lang === "ml" ? "സഹായം ലഭിച്ചു" : "Beneficiary"}
                                 </span>
                               </div>
                               <h5 className="font-bold text-[12.5px] text-[#0f172a] dark:text-white leading-tight mt-1.5">
@@ -17257,13 +17255,13 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                     ? "bg-emerald-50/70 dark:bg-emerald-950/40"
                                     : "hover:bg-black/[0.02] dark:hover:bg-white/[0.02]"
                                 }`}
-                                title={lang === "ml" ? "അംഗീകരിച്ചവ" : "Approved"}
+                                title={lang === "ml" ? "ഗുണഭോക്താവ്" : "Beneficiary"}
                               >
                                 <span className="text-[13.5px] font-extrabold text-[#00875A] dark:text-emerald-400 leading-none">
                                   {applicantAppsStats.approved}
                                 </span>
                                 <span className="text-[8.5px] font-medium text-slate-500 dark:text-slate-400 mt-1 whitespace-nowrap">
-                                  {lang === "ml" ? "അംഗീകാരം" : "Approved"}
+                                  {lang === "ml" ? "ഗുണഭോക്താവ്" : "Beneficiary"}
                                 </span>
                               </button>
 
@@ -18251,6 +18249,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               ) : effectiveApplicationView === "scheme_wise" ? (
                 <MobileReportsPage
                   applicationFilterInPhone
+                  initialHomeLocation={homeLocationLevel === "region" && homeSelectedRegion !== "all" ? { level: "region", region: masterLocationIdToReport("region", homeSelectedRegion) || "" } : homeLocationLevel === "org_district" && homeSelectedOrgDistrict !== "all" ? { level: "org_district", district: masterLocationIdToReport("org_district", homeSelectedOrgDistrict) || "" } : homeLocationLevel === "mandalam" && homeSelectedMandalam !== "all" ? { level: "mandalam", mandalam: (constituencies.find((item) => item.id === homeSelectedMandalam)?.en || "").trim().toLowerCase() } : null}
+                  initialKpiStatuses={homeKpiStatuses}
                   onBack={() => setActiveTab("overview")}
                   userRole={userRole}
                   initialSelectedSchemeId={selectedSchemeForReportsId}
@@ -18953,16 +18953,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           setPartyWorkerTab("my_work");
                           setAppFilterDesignation("all");
                           setAppFilterAssignedWorker("all");
-                          if (userRole === "party_worker") {
-                            setAppLocationLevel("area");
-                            setAppSelectedRegion("reg-south");
-                            setAppSelectedOrgDistrict("od-tvm-north");
-                            setAppSelectedMandalam("tvm-c6");
-                            setAppSelectedArea("area-kazh-main");
-                            setAppSelectedWard("all");
-                            setAppSelectedWardIds(["all"]);
-                            setAppFilterLocation("all");
-                          } else {
                             setAppLocationLevel("state");
                             setAppSelectedRegion("all");
                             setAppSelectedOrgDistrict("all");
@@ -18971,7 +18961,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             setAppSelectedWard("all");
                             setAppSelectedWardIds(["all"]);
                             setAppFilterLocation("all");
-                          }
                         }}
                         className="shrink-0 text-[10.5px] font-bold text-orange-600 hover:text-orange-700 dark:text-orange-400 hover:underline px-1.5 py-0.5 transition-colors cursor-pointer"
                       >
@@ -23723,7 +23712,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     </span>
                     <span className="min-w-0">
                       <span className="block text-[13px] font-extrabold text-[#0F172A] dark:text-white">
-                        {lang === "ml" ? "അംഗീകരിച്ചു" : "Approved"}
+                        {lang === "ml" ? "ഗുണഭോക്താവ്" : "Beneficiary"}
                       </span>
                       <span className="mt-0.5 block text-[10.5px] font-medium text-slate-500 dark:text-slate-400">
                         {lang === "ml" ? "അപേക്ഷ അംഗീകരിച്ചു" : "Application approved by the scheme"}
@@ -24515,19 +24504,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   <h3 className="flex items-center gap-2 text-sm font-bold"><Filter className="h-4 w-4 text-orange-600" />{lang === "ml" ? "ശ്രദ്ധ ആവശ്യമുള്ളവ ഫിൽട്ടർ ചെയ്യുക" : "Needs Attention Filters"}</h3>
                   <button type="button" aria-label="Close" onClick={() => setAttentionFilterOpen(false)}><X className="h-5 w-5" /></button>
                 </div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">{lang === "ml" ? "ശ്രദ്ധയുടെ തരം" : "Attention Type"}</label>
-                <select value={attentionType} onChange={(event) => setAttentionType(event.target.value)} className="w-full h-10 rounded-xl border border-slate-200 bg-white dark:bg-slate-800 px-3 text-xs mb-3">
-                  <option value="all">{lang === "ml" ? "എല്ലാ തരങ്ങളും" : "All Types"}</option>
-                  <option value="delete">{lang === "ml" ? "ഡിലീറ്റ് അനുമതികൾ" : "Delete Approvals"}</option>
-                  <option value="follow">{lang === "ml" ? "തുടർനടപടികൾ" : "Follow Ups"}</option>
-                  <option value="documents">{lang === "ml" ? "രേഖകൾ ബാക്കി" : "Documents Missing"}</option>
-                  <option value="other">{lang === "ml" ? "മറ്റുള്ളവ" : "Other"}</option>
-                </select>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">{lang === "ml" ? "പദ്ധതി" : "Scheme"}</label>
-                <select value={attentionScheme} onChange={(event) => setAttentionScheme(event.target.value)} className="w-full h-10 rounded-xl border border-slate-200 bg-white dark:bg-slate-800 px-3 text-xs">
-                  <option value="all">{lang === "ml" ? "എല്ലാ പദ്ധതികളും" : "All Schemes"}</option>
-                  {[...new Set(["PM Kisan", "PM Vishwakarma", "PM SVANidhi", "Subhadra Yojana", "Karunya Health Scheme", "Indira Gandhi Old Age Pension", "PM Awas Yojana (Gramin)", "Matsya Samridhi Scheme", "Vayoshreshtha Samman", "Kera Suraksha Bima Yojana", "Chief Minister's Distress Relief Fund", "PM Employment Generation Programme", ...followUpCollectionRecords.map((record) => record.scheme.titleEn)])].sort().map((scheme) => <option key={scheme} value={scheme}>{scheme}</option>)}
-                </select>
+                <div className="space-y-3"><PickerButton label={lang === "ml" ? "ശ്രദ്ധയുടെ തരം" : "Attention Type"} value={({ all: lang === "ml" ? "എല്ലാ തരങ്ങളും" : "All Types", delete: "Delete Approvals", follow: "Follow Ups", documents: "Documents Missing", other: "Other" } as Record<string, string>)[attentionType]} onClick={() => openCustomPicker(lang === "ml" ? "ശ്രദ്ധയുടെ തരം" : "Attention Type", [{ id: "all", label: lang === "ml" ? "എല്ലാ തരങ്ങളും" : "All Types" }, { id: "delete", label: lang === "ml" ? "ഡിലീറ്റ് അനുമതികൾ" : "Delete Approvals" }, { id: "follow", label: lang === "ml" ? "തുടർനടപടികൾ" : "Follow Ups" }, { id: "documents", label: lang === "ml" ? "രേഖകൾ ബാക്കി" : "Documents Missing" }, { id: "other", label: lang === "ml" ? "മറ്റുള്ളവ" : "Other" }], attentionType, setAttentionType, true)} />
+                <PickerButton label={lang === "ml" ? "പദ്ധതി" : "Scheme"} value={attentionScheme === "all" ? (lang === "ml" ? "എല്ലാ പദ്ധതികളും" : "All Schemes") : attentionScheme} onClick={() => openCustomPicker(lang === "ml" ? "പദ്ധതി" : "Scheme", [{ id: "all", label: lang === "ml" ? "എല്ലാ പദ്ധതികളും" : "All Schemes" }, ...[...new Set(["PM Kisan", "PM Vishwakarma", "PM SVANidhi", "Subhadra Yojana", "Karunya Health Scheme", "Indira Gandhi Old Age Pension", "PM Awas Yojana (Gramin)", "Matsya Samridhi Scheme", "Vayoshreshtha Samman", "Kera Suraksha Bima Yojana", "Chief Minister's Distress Relief Fund", "PM Employment Generation Programme", ...followUpCollectionRecords.map((record) => record.scheme.titleEn)])].sort().map((scheme) => ({ id: scheme, label: scheme }))], attentionScheme, setAttentionScheme, true)} /></div>
                 <div className="flex gap-2 mt-4">
                   <button type="button" onClick={() => { setAttentionType("all"); setAttentionScheme("all"); }} className="rounded-xl border border-slate-200 px-5 py-2 text-xs font-bold">{lang === "ml" ? "പുനഃസജ്ജമാക്കുക" : "Reset"}</button>
                   <button type="button" onClick={() => setAttentionFilterOpen(false)} className="flex-1 rounded-xl bg-[#ff5500] py-2 text-xs font-bold text-white">{lang === "ml" ? "ഫിൽട്ടർ പ്രയോഗിക്കുക" : "Apply Filters"}</button>
@@ -24593,7 +24571,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             { id: "state", label: lang === "ml" ? "സംസ്ഥാനം" : "State" },
                           ],
                           helpdeskPendingLocationLevel,
-                          (id) => setHelpdeskPendingLocationLevel(id as any)
+                          (id) => { setHelpdeskPendingLocationLevel(id as any); if (id !== "region") setHelpdeskPendingRegion("all"); }
                         )
                       }
                     />
@@ -24640,11 +24618,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                               [
                                 { id: "all", label: lang === "ml" ? "എല്ലാ ഓർഗ് ജില്ലകളും" : "All Org Districts" },
                                 ...organisationalDistricts
-                                  .filter((od) => {
-                                    if (helpdeskPendingRegion === "all") return true;
-                                    const allowedODs = REGION_ORGANISATIONAL_DISTRICTS[helpdeskPendingRegion] || [];
-                                    return allowedODs.includes(od.id);
-                                  })
                                   .map((od) => ({ id: od.id, label: od[lang] })),
                               ],
                               helpdeskPendingOrgDistrict,
@@ -24907,7 +24880,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             { id: "state", label: lang === "ml" ? "സംസ്ഥാനം" : "State" },
                           ],
                           applicantPendingLocationLevel,
-                          (id) => setApplicantPendingLocationLevel(id as any)
+                          (id) => { setApplicantPendingLocationLevel(id as any); if (id !== "region") setApplicantPendingRegion("all"); }
                         )
                       }
                     />
@@ -24954,11 +24927,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                               [
                                 { id: "all", label: lang === "ml" ? "എല്ലാ ഓർഗ് ജില്ലകളും" : "All Org Districts" },
                                 ...organisationalDistricts
-                                  .filter((od) => {
-                                    if (applicantPendingRegion === "all") return true;
-                                    const allowedODs = REGION_ORGANISATIONAL_DISTRICTS[applicantPendingRegion] || [];
-                                    return allowedODs.includes(od.id);
-                                  })
                                   .map((od) => ({ id: od.id, label: od[lang] })),
                               ],
                               applicantPendingOrgDistrict,
@@ -25109,9 +25077,65 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     </div>
                   )}
 
-                  {/* Scheme Category, Scheme Selection and Sort By (below Location Level) */}
+                  {/* Application Status, Sort By, Scheme Category, Department & Scheme Selection (below Location Level) */}
                   <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                    {/* Scheme Category */}
+                    {/* Application Status (Above Sort By) */}
+                    <PickerButton
+                      label={lang === "ml" ? "അപേക്ഷാ നില (Application Status)" : "Application Status"}
+                      value={
+                        {
+                          all: lang === "ml" ? "എല്ലാ അപേക്ഷകളും" : "All Statuses",
+                          application_received: lang === "ml" ? "ലഭിച്ച അപേക്ഷകൾ" : "Application Received",
+                          document_verification_completed: lang === "ml" ? "രേഖാ പരിശോധന പൂർത്തിയായി" : "Document Verified",
+                          applied: lang === "ml" ? "അപേക്ഷിച്ചു" : "Applied",
+                          review: lang === "ml" ? "പരിശോധനയിൽ" : "In Review",
+                          beneficiary: lang === "ml" ? "അംഗീകരിച്ചവ (ഗുണഭോക്താവ്)" : "Beneficiary",
+                          rejected: lang === "ml" ? "നിരസിച്ചവ" : "Rejected",
+                        }[applicantPendingSchemeStatus] || (lang === "ml" ? "എല്ലാ അപേക്ഷകളും" : "All Statuses")
+                      }
+                      onClick={() =>
+                        openCustomPicker(
+                          lang === "ml" ? "അപേക്ഷാ നില" : "Application Status",
+                          [
+                            { id: "all", label: lang === "ml" ? "എല്ലാ അപേക്ഷകളും" : "All Statuses" },
+                            { id: "application_received", label: lang === "ml" ? "ലഭിച്ച അപേക്ഷകൾ" : "Application Received" },
+                            { id: "document_verification_completed", label: lang === "ml" ? "രേഖാ പരിശോധന പൂർത്തിയായി" : "Document Verified" },
+                            { id: "applied", label: lang === "ml" ? "അപേക്ഷിച്ചു" : "Applied" },
+                            { id: "review", label: lang === "ml" ? "പരിശോധനയിൽ" : "In Review" },
+                            { id: "beneficiary", label: lang === "ml" ? "അംഗീകരിച്ചവ (ഗുണഭോക്താവ്)" : "Beneficiary" },
+                            { id: "rejected", label: lang === "ml" ? "നിരസിച്ചവ" : "Rejected" },
+                          ],
+                          applicantPendingSchemeStatus,
+                          (id) => setApplicantPendingSchemeStatus(id as MobileApplicantSchemeStatusFilter),
+                          false
+                        )
+                      }
+                    />
+
+                    {/* Sort By Dropdown */}
+                    <PickerButton
+                      label={lang === "ml" ? "ക്രമീകരിക്കുക (Sort By)" : "Sort By"}
+                      value={
+                        {
+                          benefits_high_low: lang === "ml" ? "ഉയർന്നതിൽ നിന്ന് താഴ്ന്നതിലേക്ക് (High to Low)" : "High to Low",
+                          benefits_low_high: lang === "ml" ? "താഴ്ന്നതിൽ നിന്ന് ഉയർന്നതിലേക്ക് (Low to High)" : "Low to High",
+                        }[appSchemeSortBy] || (lang === "ml" ? "ഉയർന്നതിൽ നിന്ന് താഴ്ന്നതിലേക്ക് (High to Low)" : "High to Low")
+                      }
+                      onClick={() =>
+                        openCustomPicker(
+                          lang === "ml" ? "ക്രമീകരിക്കുക (Sort By)" : "Sort By",
+                          [
+                            { id: "benefits_low_high", label: lang === "ml" ? "താഴ്ന്നതിൽ നിന്ന് ഉയർന്നതിലേക്ക് (Low to High)" : "Low to High" },
+                            { id: "benefits_high_low", label: lang === "ml" ? "ഉയർന്നതിൽ നിന്ന് താഴ്ന്നതിലേക്ക് (High to Low)" : "High to Low" },
+                          ],
+                          appSchemeSortBy,
+                          (id) => setAppSchemeSortBy(id),
+                          false
+                        )
+                      }
+                    />
+
+                    {/* Scheme Category (Below Sort By) */}
                     <PickerButton
                       label={lang === "ml" ? "പദ്ധതി വിഭാഗം (Category)" : "Scheme Category"}
                       value={
@@ -25142,7 +25166,41 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       }
                     />
 
-                    {/* Scheme Selection */}
+                    {/* Department Filter (Below Scheme Category) */}
+                    <PickerButton
+                      label={lang === "ml" ? "വകുപ്പ് (Department)" : "Department"}
+                      value={
+                        {
+                          all: lang === "ml" ? "എല്ലാ വകുപ്പുകളും" : "All Departments",
+                          agriculture: lang === "ml" ? "കൃഷി & കർഷകക്ഷേമ വകുപ്പ്" : "Agriculture & Farmers Welfare",
+                          health: lang === "ml" ? "ആരോഗ്യ & കുടുംബക്ഷേമ വകുപ്പ്" : "Health & Family Welfare",
+                          social_justice: lang === "ml" ? "സാമൂഹിക നീതി വകുപ്പ്" : "Social Justice & Welfare",
+                          revenue: lang === "ml" ? "റവന്യൂ & ദുരന്തനിവാരണ വകുപ്പ്" : "Revenue & Disaster Management",
+                          lsgd: lang === "ml" ? "തദ്ദേശ സ്വയംഭരണ വകുപ്പ്" : "Local Self Government (LSGD)",
+                          education: lang === "ml" ? "പൊതുവിദ്യാഭ്യാസ വകുപ്പ്" : "General Education",
+                          finance: lang === "ml" ? "ധനകാര്യ വകുപ്പ്" : "Financial Services & Pension",
+                        }[applicantPendingDepartment] || (lang === "ml" ? "എല്ലാ വകുപ്പുകളും" : "All Departments")
+                      }
+                      onClick={() =>
+                        openCustomPicker(
+                          lang === "ml" ? "വകുപ്പ് (Department)" : "Select Department",
+                          [
+                            { id: "all", label: lang === "ml" ? "എല്ലാ വകുപ്പുകളും" : "All Departments" },
+                            { id: "agriculture", label: lang === "ml" ? "കൃഷി & കർഷകക്ഷേമ വകുപ്പ്" : "Agriculture & Farmers Welfare" },
+                            { id: "health", label: lang === "ml" ? "ആരോഗ്യ & കുടുംബക്ഷേമ വകുപ്പ്" : "Health & Family Welfare" },
+                            { id: "social_justice", label: lang === "ml" ? "സാമൂഹിക നീതി വകുപ്പ്" : "Social Justice & Welfare" },
+                            { id: "revenue", label: lang === "ml" ? "റവന്യൂ & ദുരന്തനിവാരണ വകുപ്പ്" : "Revenue & Disaster Management" },
+                            { id: "lsgd", label: lang === "ml" ? "തദ്ദേശ സ്വയംഭരണ വകുപ്പ്" : "Local Self Government (LSGD)" },
+                            { id: "education", label: lang === "ml" ? "പൊതുവിദ്യാഭ്യാസ വകുപ്പ്" : "General Education" },
+                            { id: "finance", label: lang === "ml" ? "ധനകാര്യ വകുപ്പ്" : "Financial Services & Pension" },
+                          ],
+                          applicantPendingDepartment,
+                          (id) => setApplicantPendingDepartment(id)
+                        )
+                      }
+                    />
+
+                    {/* Scheme Selection (Below Department) */}
                     <PickerButton
                       label={lang === "ml" ? "പദ്ധതി തിരഞ്ഞെടുപ്പ് (Scheme)" : "Scheme Selection"}
                       value={
@@ -25165,36 +25223,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           ],
                           applicantPendingScheme || "all",
                           (id) => setApplicantPendingScheme(id)
-                        )
-                      }
-                    />
-
-                    {/* Sort By Dropdown */}
-                    <PickerButton
-                      label={lang === "ml" ? "ക്രമീകരിക്കുക (Sort By)" : "Sort By"}
-                      value={
-                        {
-                          benefits_high_low: lang === "ml" ? "ലഭിച്ച ആനുകൂല്യങ്ങൾ: ഉയർന്നതിൽ നിന്ന് താഴ്ന്നതിലേക്ക്" : "Benefits Received: High to Low",
-                          benefits_low_high: lang === "ml" ? "ലഭിച്ച ആനുകൂല്യങ്ങൾ: താഴ്ന്നതിൽ നിന്ന് ഉയർന്നതിലേക്ക്" : "Benefits Received: Low to High",
-                          pending_high_low: lang === "ml" ? "തീർപ്പുകൽപ്പിക്കാത്ത അപേക്ഷകൾ: ഉയർന്നതിൽ നിന്ന് താഴ്ന്നതിലേക്ക്" : "Pending Applications: High to Low",
-                          pending_low_high: lang === "ml" ? "തീർപ്പുകൽപ്പിക്കാത്ത അപേക്ഷകൾ: താഴ്ന്നതിൽ നിന്ന് ഉയർന്നതിലേക്ക്" : "Pending Applications: Low to High",
-                          review_high_low: lang === "ml" ? "പരിശോധനയിലുള്ളവ: ഉയർന്നതിൽ നിന്ന് താഴ്ന്നതിലേക്ക്" : "In Review: High to Low",
-                          review_low_high: lang === "ml" ? "പരിശോധനയിലുള്ളവ: താഴ്ന്നതിൽ നിന്ന് ഉയർന്നതിലേക്ക്" : "In Review: Low to High",
-                        }[appSchemeSortBy] || (lang === "ml" ? "ലഭിച്ച ആനുകൂല്യങ്ങൾ: ഉയർന്നതിൽ നിന്ന് താഴ്ന്നതിലേക്ക്" : "Benefits Received: High to Low")
-                      }
-                      onClick={() =>
-                        openCustomPicker(
-                          lang === "ml" ? "ക്രമീകരിക്കുക (Sort By)" : "Sort By",
-                          [
-                            { id: "benefits_high_low", label: lang === "ml" ? "ലഭിച്ച ആനുകൂല്യങ്ങൾ: ഉയർന്നതിൽ നിന്ന് താഴ്ന്നതിലേക്ക്" : "Benefits Received: High to Low" },
-                            { id: "benefits_low_high", label: lang === "ml" ? "ലഭിച്ച ആനുകൂല്യങ്ങൾ: താഴ്ന്നതിൽ നിന്ന് ഉയർന്നതിലേക്ക്" : "Benefits Received: Low to High" },
-                            { id: "pending_high_low", label: lang === "ml" ? "തീർപ്പുകൽപ്പിക്കാത്ത അപേക്ഷകൾ: ഉയർന്നതിൽ നിന്ന് താഴ്ന്നതിലേക്ക്" : "Pending Applications: High to Low" },
-                            { id: "pending_low_high", label: lang === "ml" ? "തീർപ്പുകൽപ്പിക്കാത്ത അപേക്ഷകൾ: താഴ്ന്നതിൽ നിന്ന് ഉയർന്നതിലേക്ക്" : "Pending Applications: Low to High" },
-                            { id: "review_high_low", label: lang === "ml" ? "പരിശോധനയിലുള്ളവ: ഉയർന്നതിൽ നിന്ന് താഴ്ന്നതിലേക്ക്" : "In Review: High to Low" },
-                            { id: "review_low_high", label: lang === "ml" ? "പരിശോധനയിലുള്ളവ: താഴ്ന്നതിൽ നിന്ന് ഉയർന്നതിലേക്ക്" : "In Review: Low to High" },
-                          ],
-                          appSchemeSortBy,
-                          (id) => setAppSchemeSortBy(id)
                         )
                       }
                     />
@@ -25223,6 +25251,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         }
                         setApplicantPendingDistrict("all");
                         setApplicantPendingCategory("all");
+                        setApplicantPendingDepartment("all");
                         setApplicantPendingScheme("all");
                         setApplicantPendingSchemeStatus("all");
                       }}
@@ -25243,6 +25272,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         setApplicantWardFilter(applicantPendingWard);
                         setApplicantDistrictFilter(applicantPendingDistrict);
                         setApplicantCategoryFilter(applicantPendingCategory);
+                        setApplicantDepartmentFilter(applicantPendingDepartment);
                         setApplicantSchemeFilter(applicantPendingScheme);
                         setApplicantSchemeStatusFilter(applicantPendingSchemeStatus);
                         setIsApplicantFilterOpen(false);
@@ -25320,12 +25350,14 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     <div>
                       <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight block">
                         {activeTab === "applications"
-                          ? (lang === "ml" ? "അപേക്ഷകൾ ഫിൽട്ടർ ചെയ്യുക" : "Filter Applications")
+                          ? (lang === "ml" ? "അപേക്ഷാ ഫിൽട്ടർ" : "Applicants Filter")
                           : (lang === "ml" ? "ഹോം ഫിൽട്ടറുകൾ" : "Home Filters")}
                       </span>
                       {userRole === "party_worker" ? (
                         <p className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold leading-none mt-1">
-                          {lang === "ml" ? "ഏരിയ പ്രസിഡന്റ്" : "Area President"}
+                          {activeTab === "applications"
+                            ? (lang === "ml" ? "ലെവൽ: ഏരിയ (കഴക്കൂട്ടം ഏരിയ)" : "Level: Area (Kazhakkoottam Area)")
+                            : (lang === "ml" ? "ഏരിയ പ്രസിഡന്റ്" : "Area President")}
                         </p>
                       ) : (
                         activeTab !== "applications" && (
@@ -25381,7 +25413,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       </div>
                     </div>
 
-                    {/* 2. Location Filter with Location Level Selection */}
+                    {/* 2. Location Level Filter */}
                     <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                       {/* Ward Selection for Party Worker */}
                       {userRole === "party_worker" ? (
@@ -25433,7 +25465,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           />
                         </div>
                       ) : (
-                        /* Admin: Dynamic cascading fields with Region & District in same row, Assembly & Area in same row */
+                        /* Admin: Dynamic cascading fields */
                         <div className="space-y-2 pt-1 animate-in fade-in duration-200">
                           {/* Location Level Selector for Admin */}
                           <PickerButton
@@ -25451,7 +25483,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                   { id: "ward", label: lang === "ml" ? "വാർഡ് (Ward)" : "Ward" },
                                 ],
                                 appLocationLevel,
-                                (id) => setAppLocationLevel(id as AppLocationLevel)
+                                (id) => { setAppLocationLevel(id as AppLocationLevel); if (id !== "region") setAppSelectedRegion("all"); }
                               )
                             }
                           />
@@ -25497,11 +25529,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                   [
                                     { id: "all", label: lang === "ml" ? "എല്ലാ ഓർഗ്. ജില്ലകളും" : "All Org Districts" },
                                     ...organisationalDistricts
-                                      .filter((od) => {
-                                        if (appSelectedRegion === "all") return true;
-                                        const allowedODs = REGION_ORGANISATIONAL_DISTRICTS[appSelectedRegion] || [];
-                                        return allowedODs.includes(od.id);
-                                      })
                                       .map((od) => ({ id: od.id, label: od[lang] })),
                                   ],
                                   appSelectedOrgDistrict,
@@ -25656,7 +25683,57 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       </div>
                     )}
 
-                    {/* 7. Scheme Category, Scheme Selection and Sort By (below Location Level) */}
+                    {/* 3. Application Status Filter (Moved below Location Level with Enhanced Multi-Select Checkboxes) */}
+                    <div className="space-y-1 pt-2 border-t border-slate-100 dark:border-slate-800">
+                      <PickerButton
+                        label={lang === "ml" ? "അപേക്ഷാ നില (Application Status)" : "Application Status"}
+                        value={
+                          selectedAppStatusFilters.length === 0 || selectedAppStatusFilters.includes("all") || selectedAppStatusFilters.length === 7
+                            ? (lang === "ml" ? "എല്ലാ അപേക്ഷകളും" : "All Statuses")
+                            : selectedAppStatusFilters.length === 1
+                              ? {
+                                  application_received: lang === "ml" ? "ലഭിച്ച അപേക്ഷകൾ" : "Applications Received",
+                                  document_verification_completed: lang === "ml" ? "രേഖാ പരിശോധന പൂർത്തിയായി" : "Document Verified (Ready to Apply)",
+                                  pending: lang === "ml" ? "പെൻഡിംഗ് അപേക്ഷകൾ" : "Pending",
+                                  applied: lang === "ml" ? "അപേക്ഷിച്ചു" : "Applied",
+                                  review: lang === "ml" ? "പരിശോധനയിൽ" : "In Review",
+                                  beneficiary: lang === "ml" ? "ഗുണഭോക്താവ്" : "Beneficiary",
+                                  rejected: lang === "ml" ? "നിരസിച്ചവ" : "Rejected",
+                                }[selectedAppStatusFilters[0]] || selectedAppStatusFilters[0]
+                              : `${selectedAppStatusFilters.length} ${lang === "ml" ? "സ്റ്റാറ്റസുകൾ" : "statuses selected"}`
+                        }
+                        onClick={() => setIsAppStatusDropdownOpen(!isAppStatusDropdownOpen)}
+                      />
+
+                      {/* Styled Expandable Checkbox Dropdown Panel */}
+                      {isAppStatusDropdownOpen && <MobileMultiFilterSheet label={lang === "ml" ? "അവസ്ഥകൾ തിരഞ്ഞെടുക്കുക" : "Select Statuses"} options={[{ value: "all", label: lang === "ml" ? "എല്ലാ അപേക്ഷകളും" : "All Statuses" }, { value: "application_received", label: lang === "ml" ? "ലഭിച്ച അപേക്ഷകൾ" : "Applications Received" }, { value: "document_verification_completed", label: lang === "ml" ? "രേഖാ പരിശോധന പൂർത്തിയായി" : "Document Verified (Ready to Apply)" }, { value: "pending", label: lang === "ml" ? "പെൻഡിംഗ് അപേക്ഷകൾ" : "Pending" }, { value: "applied", label: lang === "ml" ? "അപേക്ഷിച്ചു" : "Applied" }, { value: "review", label: lang === "ml" ? "പരിശോധനയിൽ" : "In Review" }, { value: "beneficiary", label: lang === "ml" ? "ഗുണഭോക്താവ്" : "Beneficiary" }, { value: "rejected", label: lang === "ml" ? "നിരസിച്ചവ" : "Rejected" }]} selected={selectedAppStatusFilters.includes("all") ? ["all", "application_received", "document_verification_completed", "pending", "applied", "review", "beneficiary", "rejected"] : selectedAppStatusFilters} onToggle={(id) => { const all = ["application_received", "document_verification_completed", "pending", "applied", "review", "beneficiary", "rejected"]; if (id === "all") { setSelectedAppStatusFilters(selectedAppStatusFilters.includes("all") || selectedAppStatusFilters.length === all.length ? [] : ["all", ...all]); setApplicationStatusFilter("all"); return; } const current = selectedAppStatusFilters.includes("all") ? all : selectedAppStatusFilters.filter((item) => item !== "all"); const updated = current.includes(id) ? current.filter((item) => item !== id) : [...current, id]; if (updated.length === 0 || updated.length === all.length) { setSelectedAppStatusFilters(["all"]); setApplicationStatusFilter("all"); } else { setSelectedAppStatusFilters(updated); setApplicationStatusFilter(updated[0] as MobileApplicationStatusFilter); } }} onClose={() => setIsAppStatusDropdownOpen(false)} searchLabel={lang === "ml" ? "തിരയുക..." : "Search..."} doneLabel={lang === "ml" ? "പൂർത്തിയായി" : "Done"} />}
+                    </div>
+
+                    {/* 4. Sort By Dropdown (Moved below Application Status) */}
+                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                      <PickerButton
+                        label={lang === "ml" ? "ക്രമീകരിക്കുക (Sort By)" : "Sort By"}
+                        value={
+                          {
+                            benefits_high_low: lang === "ml" ? "ഉയർന്നതിൽ നിന്ന് താഴ്ന്നതിലേക്ക് (High to Low)" : "High to Low",
+                            benefits_low_high: lang === "ml" ? "താഴ്ന്നതിൽ നിന്ന് ഉയർന്നതിലേക്ക് (Low to High)" : "Low to High",
+                          }[appSchemeSortBy] || (lang === "ml" ? "ഉയർന്നതിൽ നിന്ന് താഴ്ന്നതിലേക്ക് (High to Low)" : "High to Low")
+                        }
+                        onClick={() =>
+                          openCustomPicker(
+                            lang === "ml" ? "ക്രമീകരിക്കുക (Sort By)" : "Sort By",
+                            [
+                              { id: "benefits_low_high", label: lang === "ml" ? "താഴ്ന്നതിൽ നിന്ന് ഉയർന്നതിലേക്ക് (Low to High)" : "Low to High" },
+                              { id: "benefits_high_low", label: lang === "ml" ? "ഉയർന്നതിൽ നിന്ന് താഴ്ന്നതിലേക്ക് (High to Low)" : "High to Low" },
+                            ],
+                            appSchemeSortBy,
+                            (id) => setAppSchemeSortBy(id)
+                          )
+                        }
+                      />
+                    </div>
+
+                    {/* 5. Scheme Category, Department & Scheme Selection (Below Sort By) */}
                     <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                       {/* Scheme Category */}
                       <PickerButton
@@ -25699,6 +25776,40 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         }
                       />
 
+                      {/* Department Filter */}
+                      <PickerButton
+                        label={lang === "ml" ? "വകുപ്പ് (Department)" : "Department"}
+                        value={
+                          {
+                            all: lang === "ml" ? "എല്ലാ വകുപ്പുകളും" : "All Departments",
+                            agriculture: lang === "ml" ? "കൃഷി & കർഷകക്ഷേമ വകുപ്പ്" : "Agriculture & Farmers Welfare",
+                            health: lang === "ml" ? "ആരോഗ്യ & കുടുംബക്ഷേമ വകുപ്പ്" : "Health & Family Welfare",
+                            social_justice: lang === "ml" ? "സാമൂഹിക നീതി വകുപ്പ്" : "Social Justice & Welfare",
+                            revenue: lang === "ml" ? "റവന്യൂ & ദുരന്തനിവാരണ വകുപ്പ്" : "Revenue & Disaster Management",
+                            lsgd: lang === "ml" ? "തദ്ദേശ സ്വയംഭരണ വകുപ്പ്" : "Local Self Government (LSGD)",
+                            education: lang === "ml" ? "പൊതുവിദ്യാഭ്യാസ വകുപ്പ്" : "General Education",
+                            finance: lang === "ml" ? "ധനകാര്യ വകുപ്പ്" : "Financial Services & Pension",
+                          }[appDepartmentFilter] || (lang === "ml" ? "എല്ലാ വകുപ്പുകളും" : "All Departments")
+                        }
+                        onClick={() =>
+                          openCustomPicker(
+                            lang === "ml" ? "വകുപ്പ് (Department)" : "Select Department",
+                            [
+                              { id: "all", label: lang === "ml" ? "എല്ലാ വകുപ്പുകളും" : "All Departments" },
+                              { id: "agriculture", label: lang === "ml" ? "കൃഷി & കർഷകക്ഷേമ വകുപ്പ്" : "Agriculture & Farmers Welfare" },
+                              { id: "health", label: lang === "ml" ? "ആരോഗ്യ & കുടുംബക്ഷേമ വകുപ്പ്" : "Health & Family Welfare" },
+                              { id: "social_justice", label: lang === "ml" ? "സാമൂഹിക നീതി വകുപ്പ്" : "Social Justice & Welfare" },
+                              { id: "revenue", label: lang === "ml" ? "റവന്യൂ & ദുരന്തനിവാരണ വകുപ്പ്" : "Revenue & Disaster Management" },
+                              { id: "lsgd", label: lang === "ml" ? "തദ്ദേശ സ്വയംഭരണ വകുപ്പ്" : "Local Self Government (LSGD)" },
+                              { id: "education", label: lang === "ml" ? "പൊതുവിദ്യാഭ്യാസ വകുപ്പ്" : "General Education" },
+                              { id: "finance", label: lang === "ml" ? "ധനകാര്യ വകുപ്പ്" : "Financial Services & Pension" },
+                            ],
+                            appDepartmentFilter,
+                            (id) => setAppDepartmentFilter(id)
+                          )
+                        }
+                      />
+
                       {/* Scheme Selection */}
                       <PickerButton
                         label={lang === "ml" ? "പദ്ധതി തിരഞ്ഞെടുപ്പ് (Scheme)" : "Scheme Selection"}
@@ -25735,119 +25846,48 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           )
                         }
                       />
+                    </div>
 
-                      {/* Sort By Dropdown */}
+                    {/* 6. Follow-up Filter */}
+                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
                       <PickerButton
-                        label={lang === "ml" ? "ക്രമീകരിക്കുക (Sort By)" : "Sort By"}
+                        label={lang === "ml" ? "തുടർനടപടി" : "Follow-ups"}
                         value={
-                          {
-                            benefits_high_low: lang === "ml" ? "ലഭിച്ച ആനുകൂല്യങ്ങൾ: ഉയർന്നതിൽ നിന്ന് താഴ്ന്നതിലേക്ക്" : "Benefits Received: High to Low",
-                            benefits_low_high: lang === "ml" ? "ലഭിച്ച ആനുകൂല്യങ്ങൾ: താഴ്ന്നതിൽ നിന്ന് ഉയർന്നതിലേക്ക്" : "Benefits Received: Low to High",
-                            pending_high_low: lang === "ml" ? "തീർപ്പുകൽപ്പിക്കാത്ത അപേക്ഷകൾ: ഉയർന്നതിൽ നിന്ന് താഴ്ന്നതിലേക്ക്" : "Pending Applications: High to Low",
-                            pending_low_high: lang === "ml" ? "തീർപ്പുകൽപ്പിക്കാത്ത അപേക്ഷകൾ: താഴ്ന്നതിൽ നിന്ന് ഉയർന്നതിലേക്ക്" : "Pending Applications: Low to High",
-                            review_high_low: lang === "ml" ? "പരിശോധനയിലുള്ളവ: ഉയർന്നതിൽ നിന്ന് താഴ്ന്നതിലേക്ക്" : "In Review: High to Low",
-                            review_low_high: lang === "ml" ? "പരിശോധനയിലുള്ളവ: താഴ്ന്നതിൽ നിന്ന് ഉയർന്നതിലേക്ക്" : "In Review: Low to High",
-                          }[appSchemeSortBy] || (lang === "ml" ? "ലഭിച്ച ആനുകൂല്യങ്ങൾ: ഉയർന്നതിൽ നിന്ന് താഴ്ന്നതിലേക്ക്" : "Benefits Received: High to Low")
+                          appSelectedFollowUpFilters.length === 0 || appSelectedFollowUpFilters.includes("all") || appSelectedFollowUpFilters.length === 4
+                            ? (lang === "ml" ? "എല്ലാ തുടർനടപടികളും" : "All Follow-ups")
+                            : appSelectedFollowUpFilters.length === 1
+                              ? {
+                                  overdue: lang === "ml" ? "സമയം കഴിഞ്ഞവ (Overdue)" : "Overdue",
+                                  today: lang === "ml" ? "ഇന്നുള്ളവ (Due Today)" : "Due Today",
+                                  upcoming: lang === "ml" ? "വരാനിരിക്കുന്നവ (Upcoming)" : "Upcoming",
+                                  none: lang === "ml" ? "തുടർനടപടി ഷെഡ്യൂൾ ചെയ്യാത്തവ" : "No Follow-up Scheduled",
+                                }[appSelectedFollowUpFilters[0]] || appSelectedFollowUpFilters[0]
+                              : `${appSelectedFollowUpFilters.length} ${lang === "ml" ? "തിരഞ്ഞെടുത്തു" : "selected"}`
                         }
                         onClick={() =>
                           openCustomPicker(
-                            lang === "ml" ? "ക്രമീകരിക്കുക (Sort By)" : "Sort By",
+                            lang === "ml" ? "തുടർനടപടി" : "Follow-ups",
                             [
-                              { id: "benefits_high_low", label: lang === "ml" ? "ലഭിച്ച ആനുകൂല്യങ്ങൾ: ഉയർന്നതിൽ നിന്ന് താഴ്ന്നതിലേക്ക്" : "Benefits Received: High to Low" },
-                              { id: "benefits_low_high", label: lang === "ml" ? "ലഭിച്ച ആനുകൂല്യങ്ങൾ: താഴ്ന്നതിൽ നിന്ന് ഉയർന്നതിലേക്ക്" : "Benefits Received: Low to High" },
-                              { id: "pending_high_low", label: lang === "ml" ? "തീർപ്പുകൽപ്പിക്കാത്ത അപേക്ഷകൾ: ഉയർന്നതിൽ നിന്ന് താഴ്ന്നതിലേക്ക്" : "Pending Applications: High to Low" },
-                              { id: "pending_low_high", label: lang === "ml" ? "തീർപ്പുകൽപ്പിക്കാത്ത അപേക്ഷകൾ: താഴ്ന്നതിൽ നിന്ന് ഉയർന്നതിലേക്ക്" : "Pending Applications: Low to High" },
-                              { id: "review_high_low", label: lang === "ml" ? "പരിശോധനയിലുള്ളവ: ഉയർന്നതിൽ നിന്ന് താഴ്ന്നതിലേക്ക്" : "In Review: High to Low" },
-                              { id: "review_low_high", label: lang === "ml" ? "പരിശോധനയിലുള്ളവ: താഴ്ന്നതിൽ നിന്ന് ഉയർന്നതിലേക്ക്" : "In Review: Low to High" },
+                              { id: "all", label: lang === "ml" ? "എല്ലാ തുടർനടപടികളും" : "All Follow-ups" },
+                              { id: "overdue", label: lang === "ml" ? "സമയം കഴിഞ്ഞവ (Overdue)" : "Overdue" },
+                              { id: "today", label: lang === "ml" ? "ഇന്നുള്ളവ (Due Today)" : "Due Today" },
+                              { id: "upcoming", label: lang === "ml" ? "വരാനിരിക്കുന്നവ (Upcoming)" : "Upcoming" },
+                              { id: "none", label: lang === "ml" ? "തുടർനടപടി ഷെഡ്യൂൾ ചെയ്യാത്തവ" : "No Follow-up Scheduled" },
                             ],
-                            appSchemeSortBy,
-                            (id) => setAppSchemeSortBy(id)
+                            appSelectedFollowUpFilters.includes("all") || appSelectedFollowUpFilters.length === 4 ? "all" : appSelectedFollowUpFilters[0] || "all",
+                            (id) => {
+                              if (id === "all") {
+                                setAppSelectedFollowUpFilters(["all", "overdue", "today", "upcoming", "none"]);
+                                setAppFilterFollowUp("all");
+                              } else {
+                                setAppSelectedFollowUpFilters([id]);
+                                setAppFilterFollowUp(id);
+                              }
+                            }
                           )
                         }
                       />
                     </div>
-
-                    {/* 4. Application Status Filter */}
-                    <PickerButton
-                      label={lang === "ml" ? "അപേക്ഷാ നില" : "Application Status"}
-                      value={
-                        selectedAppStatusFilters.length === 0 || selectedAppStatusFilters.includes("all") || selectedAppStatusFilters.length === 6
-                          ? (lang === "ml" ? "എല്ലാ അപേക്ഷകളും" : "All Applications")
-                          : selectedAppStatusFilters.length === 1
-                            ? {
-                                application_received: lang === "ml" ? "ലഭിച്ച അപേക്ഷകൾ" : "Application Received",
-                                document_verification_completed: lang === "ml" ? "രേഖാ പരിശോധന പൂർത്തിയായി" : "Document Verification Completed",
-                                applied: lang === "ml" ? "അപേക്ഷിച്ചു" : "Applied",
-                                review: lang === "ml" ? "പരിശോധനയിൽ" : "Review",
-                                beneficiary: lang === "ml" ? "ഗുണഭോക്താവ്" : "Beneficiary",
-                                rejected: lang === "ml" ? "നിരസിച്ചവ" : "Rejected",
-                              }[selectedAppStatusFilters[0]] || selectedAppStatusFilters[0]
-                            : `${selectedAppStatusFilters.length} ${lang === "ml" ? "സ്റ്റാറ്റസുകൾ" : "statuses selected"}`
-                      }
-                      onClick={() =>
-                        openCustomPicker(
-                          lang === "ml" ? "അപേക്ഷാ നില" : "Application Status",
-                          [
-                            { id: "all", label: lang === "ml" ? "എല്ലാ അപേക്ഷകളും" : "All Applications" },
-                            { id: "application_received", label: lang === "ml" ? "ലഭിച്ച അപേക്ഷകൾ" : "Application Received" },
-                            { id: "document_verification_completed", label: lang === "ml" ? "രേഖാ പരിശോധന പൂർത്തിയായി" : "Document Verification Completed" },
-                            { id: "applied", label: lang === "ml" ? "അപേക്ഷിച്ചു" : "Applied" },
-                            { id: "review", label: lang === "ml" ? "പരിശോധനയിൽ" : "Review" },
-                            { id: "beneficiary", label: lang === "ml" ? "ഗുണഭോക്താവ്" : "Beneficiary" },
-                            { id: "rejected", label: lang === "ml" ? "നിരസിച്ചവ" : "Rejected" },
-                          ],
-                          selectedAppStatusFilters.includes("all") || selectedAppStatusFilters.length === 6 ? "all" : selectedAppStatusFilters[0] || "all",
-                          (id) => {
-                            if (id === "all") {
-                              setSelectedAppStatusFilters(["all", "application_received", "document_verification_completed", "applied", "review", "beneficiary", "rejected"]);
-                              setApplicationStatusFilter("all");
-                            } else {
-                              setSelectedAppStatusFilters([id]);
-                              setApplicationStatusFilter(id as MobileApplicationStatusFilter);
-                            }
-                          }
-                        )
-                      }
-                    />
-
-                    {/* 5. Follow-up Filter */}
-                    <PickerButton
-                      label={lang === "ml" ? "തുടർനടപടി" : "Follow-ups"}
-                      value={
-                        appSelectedFollowUpFilters.length === 0 || appSelectedFollowUpFilters.includes("all") || appSelectedFollowUpFilters.length === 4
-                          ? (lang === "ml" ? "എല്ലാ തുടർനടപടികളും" : "All Follow-ups")
-                          : appSelectedFollowUpFilters.length === 1
-                            ? {
-                                overdue: lang === "ml" ? "സമയം കഴിഞ്ഞവ (Overdue)" : "Overdue",
-                                today: lang === "ml" ? "ഇന്നുള്ളവ (Due Today)" : "Due Today",
-                                upcoming: lang === "ml" ? "വരാനിരിക്കുന്നവ (Upcoming)" : "Upcoming",
-                                none: lang === "ml" ? "തുടർനടപടി ഷെഡ്യൂൾ ചെയ്യാത്തവ" : "No Follow-up Scheduled",
-                              }[appSelectedFollowUpFilters[0]] || appSelectedFollowUpFilters[0]
-                            : `${appSelectedFollowUpFilters.length} ${lang === "ml" ? "തിരഞ്ഞെടുത്തു" : "selected"}`
-                      }
-                      onClick={() =>
-                        openCustomPicker(
-                          lang === "ml" ? "തുടർനടപടി" : "Follow-ups",
-                          [
-                            { id: "all", label: lang === "ml" ? "എല്ലാ തുടർനടപടികളും" : "All Follow-ups" },
-                            { id: "overdue", label: lang === "ml" ? "സമയം കഴിഞ്ഞവ (Overdue)" : "Overdue" },
-                            { id: "today", label: lang === "ml" ? "ഇന്നുള്ളവ (Due Today)" : "Due Today" },
-                            { id: "upcoming", label: lang === "ml" ? "വരാനിരിക്കുന്നവ (Upcoming)" : "Upcoming" },
-                            { id: "none", label: lang === "ml" ? "തുടർനടപടി ഷെഡ്യൂൾ ചെയ്യാത്തവ" : "No Follow-up Scheduled" },
-                          ],
-                          appSelectedFollowUpFilters.includes("all") || appSelectedFollowUpFilters.length === 4 ? "all" : appSelectedFollowUpFilters[0] || "all",
-                          (id) => {
-                            if (id === "all") {
-                              setAppSelectedFollowUpFilters(["all", "overdue", "today", "upcoming", "none"]);
-                              setAppFilterFollowUp("all");
-                            } else {
-                              setAppSelectedFollowUpFilters([id]);
-                              setAppFilterFollowUp(id);
-                            }
-                          }
-                        )
-                      }
-                    />
                   </div>
                 ) : (
                   /* Filter Inputs Area for Home */
@@ -25932,6 +25972,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 (id) => {
                                   const newLevel = id as HomeLocationLevel;
                                   setHomeLocationLevel(newLevel);
+                                  if (newLevel !== "region") setHomeSelectedRegion("all");
                                   setAppFilterDesignation("all");
                                   setAppFilterAssignedWorker("all");
                                   if (newLevel === "state") {
@@ -25988,11 +26029,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                   [
                                     { id: "all", label: lang === "ml" ? "എല്ലാ ഓർഗ്. ജില്ലകളും" : "All Org Districts" },
                                     ...organisationalDistricts
-                                      .filter((od) => {
-                                        if (homeSelectedRegion === "all") return true;
-                                        const allowedODs = REGION_ORGANISATIONAL_DISTRICTS[homeSelectedRegion] || [];
-                                        return allowedODs.includes(od.id);
-                                      })
                                       .map((od) => ({ id: od.id, label: od[lang] })),
                                   ],
                                   homeSelectedOrgDistrict,
@@ -26205,38 +26241,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         }
                       />
 
-                      {/* Sort By */}
-                      <PickerButton
-                        label={lang === "ml" ? "ക്രമീകരിക്കുക (Sort By)" : "Sort By"}
-                        value={
-                          appSchemeSortBy === "benefits_high_low"
-                            ? (lang === "ml" ? "ലഭിച്ച ആനുകൂല്യങ്ങൾ: ഉയർന്നതിൽ നിന്ന് താഴ്ന്നതിലേക്ക്" : "Benefits Received: High to Low")
-                            : appSchemeSortBy === "benefits_low_high"
-                              ? (lang === "ml" ? "ലഭിച്ച ആനുകൂല്യങ്ങൾ: താഴ്ന്നതിൽ നിന്ന് ഉയർന്നതിലേക്ക്" : "Benefits Received: Low to High")
-                              : appSchemeSortBy === "pending_high_low"
-                                ? (lang === "ml" ? "തീർപ്പുകൽപ്പിക്കാത്ത അപേക്ഷകൾ: ഉയർന്നതിൽ നിന്ന് താഴ്ന്നതിലേക്ക്" : "Pending Applications: High to Low")
-                                : appSchemeSortBy === "pending_low_high"
-                                  ? (lang === "ml" ? "തീർപ്പുകൽപ്പിക്കാത്ത അപേക്ഷകൾ: താഴ്ന്നതിൽ നിന്ന് ഉയർന്നതിലേക്ക്" : "Pending Applications: Low to High")
-                                  : appSchemeSortBy === "review_high_low"
-                                    ? (lang === "ml" ? "പരിശോധനയിലുള്ളവ: ഉയർന്നതിൽ നിന്ന് താഴ്ന്നതിലേക്ക്" : "In Review: High to Low")
-                                    : (lang === "ml" ? "പരിശോധനയിലുള്ളവ: താഴ്ന്നതിൽ നിന്ന് ഉയർന്നതിലേക്ക്" : "In Review: Low to High")
-                        }
-                        onClick={() =>
-                          openCustomPicker(
-                            lang === "ml" ? "ക്രമീകരിക്കുക" : "Sort By",
-                            [
-                              { id: "benefits_high_low", label: lang === "ml" ? "ലഭിച്ച ആനുകൂല്യങ്ങൾ: ഉയർന്നതിൽ നിന്ന് താഴ്ന്നതിലേക്ക്" : "Benefits Received: High to Low" },
-                              { id: "benefits_low_high", label: lang === "ml" ? "ലഭിച്ച ആനുകൂല്യങ്ങൾ: താഴ്ന്നതിൽ നിന്ന് ഉയർന്നതിലേക്ക്" : "Benefits Received: Low to High" },
-                              { id: "pending_high_low", label: lang === "ml" ? "തീർപ്പുകൽപ്പിക്കാത്ത അപേക്ഷകൾ: ഉയർന്നതിൽ നിന്ന് താഴ്ന്നതിലേക്ക്" : "Pending Applications: High to Low" },
-                              { id: "pending_low_high", label: lang === "ml" ? "തീർപ്പുകൽപ്പിക്കാത്ത അപേക്ഷകൾ: താഴ്ന്നതിൽ നിന്ന് ഉയർന്നതിലേക്ക്" : "Pending Applications: Low to High" },
-                              { id: "review_high_low", label: lang === "ml" ? "പരിശോധനയിലുള്ളവ: ഉയർന്നതിൽ നിന്ന് താഴ്ന്നതിലേക്ക്" : "In Review: High to Low" },
-                              { id: "review_low_high", label: lang === "ml" ? "പരിശോധനയിലുള്ളവ: താഴ്ന്നതിൽ നിന്ന് ഉയർന്നതിലേക്ക്" : "In Review: Low to High" },
-                            ],
-                            appSchemeSortBy,
-                            (id) => setAppSchemeSortBy(id)
-                          )
-                        }
-                      />
                     </div>
                   </div>
                 )}
@@ -26274,15 +26278,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         setAppLocationSearchQuery("");
                         setCategorySearchQuery("");
                         setHomeFilterSchemeSearchQuery("");
-                        if (userRole === "party_worker") {
-                          setAppLocationLevel("area");
-                          setAppSelectedRegion("reg-south");
-                          setAppSelectedOrgDistrict("od-tvm-north");
-                          setAppSelectedMandalam("tvm-c6");
-                          setAppSelectedArea("area-kazh-main");
-                          setAppSelectedWard("all");
-                          setAppFilterLocation("all");
-                        } else {
                           setAppLocationLevel("state");
                           setAppSelectedRegion("all");
                           setAppSelectedOrgDistrict("all");
@@ -26290,7 +26285,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           setAppSelectedArea("all");
                           setAppSelectedWard("all");
                           setAppFilterLocation("all");
-                        }
                       } else {
                         setIsCategoryDropdownOpen(false);
                         setIsSchemeDropdownOpen(false);
@@ -26677,16 +26671,18 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             </div>
 
             {/* Search Input */}
-            <div className="relative mb-3">
-              <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-              <input
-                type="text"
-                value={modalPickerSearch}
-                onChange={(e) => setModalPickerSearch(e.target.value)}
-                placeholder={lang === "ml" ? "തിരയുക..." : "Search..."}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-[#ff5500] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#ff5500] dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100 dark:focus:bg-slate-800"
-              />
-            </div>
+            {activeModalPicker.searchable !== false && (
+              <div className="relative mb-3">
+                <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                <input
+                  type="text"
+                  value={modalPickerSearch}
+                  onChange={(e) => setModalPickerSearch(e.target.value)}
+                  placeholder={lang === "ml" ? "തിരയുക..." : "Search..."}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-[#ff5500] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#ff5500] dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100 dark:focus:bg-slate-800"
+                />
+              </div>
+            )}
 
             {/* Options List */}
             <div className="max-h-60 overflow-y-auto space-y-1 pr-1">
@@ -26716,7 +26712,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           <div className="text-[10px] text-slate-400 font-normal">{opt.hint}</div>
                         )}
                       </div>
-                      {isSelected && <Check className="h-4 w-4 shrink-0 text-[#ff5500]" />}
+                      {(showFilterMenu || isHelpdeskFilterOpen || isApplicantFilterOpen || attentionFilterOpen || schemeFilterSheetOpen) ? <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${isSelected ? "border-[#ff5500] bg-[#ff5500] text-white" : "border-slate-300 dark:border-slate-600"}`}>{isSelected && <Check className="h-3 w-3" />}</span> : isSelected && <Check className="h-4 w-4 shrink-0 text-[#ff5500]" />}
                     </button>
                   );
                 })}
@@ -27281,19 +27277,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300">
                     {lang === "ml" ? "മന്ത്രാലയം / വകുപ്പ്" : "Ministry / Department"}
                   </label>
-                  <select
-                    value={selectedMinistryFilter}
-                    onChange={(e) => setSelectedMinistryFilter(e.target.value)}
-                    className="w-full h-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/20"
-                  >
-                    <option value="all">{lang === "ml" ? "എല്ലാ മന്ത്രാലയങ്ങളും" : "All Ministries / Departments"}</option>
-                    <option value="Agriculture">{lang === "ml" ? "കാർഷിക വകുപ്പ്" : "Agriculture & Farmers Welfare"}</option>
-                    <option value="Health">{lang === "ml" ? "ആരോഗ്യ വകുപ്പ്" : "Health & Family Welfare / NHA"}</option>
-                    <option value="Petroleum">{lang === "ml" ? "പെട്രോളിയം വകുപ്പ്" : "Petroleum & Natural Gas"}</option>
-                    <option value="Housing">{lang === "ml" ? "ഭവന നിർമ്മാണ വകുപ്പ്" : "Housing & Urban Affairs"}</option>
-                    <option value="Finance">{lang === "ml" ? "ധനകാര്യ വകുപ്പ്" : "Finance / Financial Services"}</option>
-                    <option value="Micro">{lang === "ml" ? "എം.എസ്.എം.ഇ വകുപ്പ്" : "Micro, Small & Medium Enterprises"}</option>
-                  </select>
+                  <PickerButton value={selectedMinistryFilter === "all" ? (lang === "ml" ? "എല്ലാ മന്ത്രാലയങ്ങളും" : "All Ministries / Departments") : ({ Agriculture: "Agriculture & Farmers Welfare", Health: "Health & Family Welfare / NHA", Petroleum: "Petroleum & Natural Gas", Housing: "Housing & Urban Affairs", Finance: "Finance / Financial Services", Micro: "Micro, Small & Medium Enterprises" } as Record<string, string>)[selectedMinistryFilter]} onClick={() => openCustomPicker(lang === "ml" ? "മന്ത്രാലയം / വകുപ്പ്" : "Ministry / Department", [{ id: "all", label: lang === "ml" ? "എല്ലാ മന്ത്രാലയങ്ങളും" : "All Ministries / Departments" }, { id: "Agriculture", label: lang === "ml" ? "കാർഷിക വകുപ്പ്" : "Agriculture & Farmers Welfare" }, { id: "Health", label: lang === "ml" ? "ആരോഗ്യ വകുപ്പ്" : "Health & Family Welfare / NHA" }, { id: "Petroleum", label: lang === "ml" ? "പെട്രോളിയം വകുപ്പ്" : "Petroleum & Natural Gas" }, { id: "Housing", label: lang === "ml" ? "ഭവന നിർമ്മാണ വകുപ്പ്" : "Housing & Urban Affairs" }, { id: "Finance", label: lang === "ml" ? "ധനകാര്യ വകുപ്പ്" : "Finance / Financial Services" }, { id: "Micro", label: lang === "ml" ? "എം.എസ്.എം.ഇ വകുപ്പ്" : "Micro, Small & Medium Enterprises" }], selectedMinistryFilter, setSelectedMinistryFilter, true)} />
                 </div>
 
                 {/* Filter Option 2: Category */}
@@ -27301,19 +27285,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300">
                     {lang === "ml" ? "വിഭാഗം" : "Category"}
                   </label>
-                  <select
-                    value={selectedCategoryFilter}
-                    onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-                    className="w-full h-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/20"
-                  >
-                    <option value="all">{lang === "ml" ? "എല്ലാ വിഭാഗങ്ങളും" : "All Categories"}</option>
-                    <option value="Agriculture">{lang === "ml" ? "കൃഷി & കർഷകക്ഷേമം" : "Agriculture & Farmers"}</option>
-                    <option value="Healthcare">{lang === "ml" ? "ആരോഗ്യം" : "Healthcare"}</option>
-                    <option value="Energy">{lang === "ml" ? "ഊർജ്ജം & ഇന്ധനം" : "Energy & LPG"}</option>
-                    <option value="Housing">{lang === "ml" ? "ഭവനം & നഗരവികസനം" : "Housing & Infrastructure"}</option>
-                    <option value="Financial">{lang === "ml" ? "സാമ്പത്തിക സേവനങ്ങൾ" : "Financial Inclusion & Pensions"}</option>
-                    <option value="Skill">{lang === "ml" ? "തൊഴിൽ & നൈപുണ്യം" : "Skills & Artisans"}</option>
-                  </select>
+                  <PickerButton value={selectedCategoryFilter === "all" ? (lang === "ml" ? "എല്ലാ വിഭാഗങ്ങളും" : "All Categories") : ({ Agriculture: "Agriculture & Farmers", Healthcare: "Healthcare", Energy: "Energy & LPG", Housing: "Housing & Infrastructure", Financial: "Financial Inclusion & Pensions", Skill: "Skills & Artisans" } as Record<string, string>)[selectedCategoryFilter]} onClick={() => openCustomPicker(lang === "ml" ? "വിഭാഗം" : "Category", [{ id: "all", label: lang === "ml" ? "എല്ലാ വിഭാഗങ്ങളും" : "All Categories" }, { id: "Agriculture", label: lang === "ml" ? "കൃഷി & കർഷകക്ഷേമം" : "Agriculture & Farmers" }, { id: "Healthcare", label: lang === "ml" ? "ആരോഗ്യം" : "Healthcare" }, { id: "Energy", label: lang === "ml" ? "ഊർജ്ജം & ഇന്ധനം" : "Energy & LPG" }, { id: "Housing", label: lang === "ml" ? "ഭവനം & നഗരവികസനം" : "Housing & Infrastructure" }, { id: "Financial", label: lang === "ml" ? "സാമ്പത്തിക സേവനങ്ങൾ" : "Financial Inclusion & Pensions" }, { id: "Skill", label: lang === "ml" ? "തൊഴിൽ & നൈപുണ്യം" : "Skills & Artisans" }], selectedCategoryFilter, setSelectedCategoryFilter, true)} />
                 </div>
 
                 {/* Action Buttons */}
