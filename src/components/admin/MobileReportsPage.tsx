@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { MobileFilterPicker } from "./MobileFilterPicker";
+import { MOBILE_SAMPLE_DEPARTMENTS, MOBILE_SAMPLE_SCHEME_DEPARTMENT } from "./mobileSampleDepartments";
 import {
   ArrowLeft,
   ChevronLeft,
@@ -136,6 +137,7 @@ interface SchemeFilterState {
   locationLevel: SchemeLocationLevel;
   location: SchemeLocationFilter;
   category?: string;
+  department?: string;
   scheme?: string;
   sortBy?: string;
   designation?: string;
@@ -156,6 +158,7 @@ const createDefaultSchemeFilter = (): SchemeFilterState => ({
   locationLevel: "state",
   location: createEmptySchemeLocation(),
   category: "all",
+  department: "all",
   scheme: "all",
   sortBy: "benefits_high_low",
   designation: "all",
@@ -730,7 +733,7 @@ const getSchemeLocationLabel = (options: SchemeLocationOption[], value: string, 
   return lang === "ml" ? option.ml : option.en;
 };
 
-const getApplicationLocationHierarchy = (app: MobileReportApplicationRecord) => {
+export const getApplicationLocationHierarchy = (app: MobileReportApplicationRecord) => {
   const { localityEn, districtEn } = splitSchemeLocation(app.locationEn, app.locationMl);
   let district = getSchemeOrgDistrictDef(districtEn);
   if (!district && localityEn) {
@@ -935,7 +938,7 @@ function matchesApplicationFilterStatus(app: MobileReportApplicationRecord, stat
   return getApplicationBucket(app) === status;
 }
 
-function getSchemeStats(apps: MobileReportApplicationRecord[]) {
+export function getSchemeStats(apps: MobileReportApplicationRecord[]) {
   const total = apps.length;
   let approved = 0;
   let inReview = 0;
@@ -1209,12 +1212,14 @@ export function MobileReportsPage({
   );
   const hasLocalFilters =
     appliedSchemeFilter.statuses.length > 0 ||
+    Boolean(appliedSchemeFilter.department && appliedSchemeFilter.department !== "all") ||
     Boolean(appliedSchemeFilter.category && appliedSchemeFilter.category !== "all") ||
     Boolean(appliedSchemeFilter.scheme && appliedSchemeFilter.scheme !== "all") ||
     Boolean(appliedSchemeFilter.sortBy && appliedSchemeFilter.sortBy !== "benefits_high_low") ||
     hasLocationFilters;
   const localFilterCount =
     (appliedSchemeFilter.statuses.length > 0 ? 1 : 0) +
+    (appliedSchemeFilter.department && appliedSchemeFilter.department !== "all" ? 1 : 0) +
     (appliedSchemeFilter.category && appliedSchemeFilter.category !== "all" ? 1 : 0) +
     (appliedSchemeFilter.scheme && appliedSchemeFilter.scheme !== "all" ? 1 : 0) +
     (appliedSchemeFilter.sortBy && appliedSchemeFilter.sortBy !== "benefits_high_low" ? 1 : 0) +
@@ -1308,6 +1313,10 @@ export function MobileReportsPage({
   // Hide schemes that have no applications matching the active filter, filter by category & scheme selection, and sort by selected sortBy metric
   const visibleSchemes = useMemo(() => {
     let list = filteredSchemes;
+
+    if (applicationFilterInPhone && userRole === "state_admin" && appliedSchemeFilter.department && appliedSchemeFilter.department !== "all") {
+      list = list.filter((scheme) => MOBILE_SAMPLE_SCHEME_DEPARTMENT[scheme.id] === appliedSchemeFilter.department);
+    }
 
     // Filter by Category if selected
     if (appliedSchemeFilter.category && appliedSchemeFilter.category !== "all") {
@@ -1505,6 +1514,12 @@ export function MobileReportsPage({
             ))
           )}
 
+          {applicationFilterInPhone && userRole === "state_admin" && appliedSchemeFilter.department && appliedSchemeFilter.department !== "all" && (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-[10.5px] font-semibold text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+              <span>{MOBILE_SAMPLE_DEPARTMENTS.find((department) => department.id === appliedSchemeFilter.department)?.[lang === "ml" ? "ml" : "en"]}</span>
+              <button type="button" aria-label="Remove department" onClick={() => setAppliedSchemeFilter((prev) => ({ ...prev, department: "all" }))}><X className="h-3 w-3" /></button>
+            </span>
+          )}
           {/* Scheme Category Filter chip */}
           {appliedSchemeFilter.category && appliedSchemeFilter.category !== "all" && (() => {
             const catDef = REPORT_CATEGORIES.find((c) => c.id === appliedSchemeFilter.category);
@@ -1640,6 +1655,7 @@ export function MobileReportsPage({
     );
     const draftCount =
       (draftSchemeFilter.statuses.length > 0 ? 1 : 0) +
+      (draftSchemeFilter.department && draftSchemeFilter.department !== "all" ? 1 : 0) +
       (draftSchemeFilter.category && draftSchemeFilter.category !== "all" ? 1 : 0) +
       (draftSchemeFilter.scheme && draftSchemeFilter.scheme !== "all" ? 1 : 0) +
       (draftSchemeFilter.sortBy && draftSchemeFilter.sortBy !== "benefits_high_low" ? 1 : 0) +
@@ -2075,6 +2091,7 @@ export function MobileReportsPage({
 
           {applicationFilterInPhone ? (
             !selectedScheme && <div className="space-y-3">
+              {userRole === "state_admin" && <div><label className="mb-1 block text-[10px] font-semibold text-slate-500 dark:text-slate-400">{lang === "ml" ? "വകുപ്പ്" : "Department"}</label><MobileFilterPicker label={lang === "ml" ? "വകുപ്പ്" : "Department"} value={draftSchemeFilter.department || "all"} options={[{ value: "all", label: lang === "ml" ? "എല്ലാ വകുപ്പുകളും" : "All Departments" }, ...MOBILE_SAMPLE_DEPARTMENTS.map((department) => ({ value: department.id, label: lang === "ml" ? department.ml : department.en }))]} onChange={(value) => setDraftSchemeFilter((prev) => ({ ...prev, department: value }))} /></div>}
               <div><label className="mb-1 block text-[10px] font-semibold text-slate-500 dark:text-slate-400">{lang === "ml" ? "പദ്ധതി വിഭാഗം" : "Scheme Category"}</label><MobileFilterPicker label={lang === "ml" ? "പദ്ധതി വിഭാഗം" : "Scheme Category"} value={draftSchemeFilter.category || "all"} options={[{ value: "all", label: lang === "ml" ? "എല്ലാ വിഭാഗങ്ങളും" : "All Categories" }, ...REPORT_CATEGORIES.map((cat) => ({ value: cat.id, label: lang === "ml" ? cat.nameMl : cat.nameEn }))]} onChange={(value) => setDraftSchemeFilter((prev) => ({ ...prev, category: value, scheme: "all" }))} searchLabel={lang === "ml" ? "തിരയുക..." : "Search..."} /></div>
               <div><label className="mb-1 block text-[10px] font-semibold text-slate-500 dark:text-slate-400">{lang === "ml" ? "പദ്ധതി തിരഞ്ഞെടുക്കൽ" : "Scheme Selection"}</label><MobileFilterPicker label={lang === "ml" ? "പദ്ധതി തിരഞ്ഞെടുക്കൽ" : "Scheme Selection"} value={draftSchemeFilter.scheme || "all"} options={[{ value: "all", label: lang === "ml" ? "എല്ലാ പദ്ധതികളും" : "All Schemes" }, ...REPORT_SCHEMES.filter((scheme) => !draftSchemeFilter.category || draftSchemeFilter.category === "all" || scheme.categoryId === draftSchemeFilter.category).map((scheme) => ({ value: scheme.id, label: lang === "ml" ? scheme.nameMl : scheme.nameEn }))]} onChange={(value) => setDraftSchemeFilter((prev) => ({ ...prev, scheme: value }))} searchLabel={lang === "ml" ? "തിരയുക..." : "Search..."} /></div>
             </div>

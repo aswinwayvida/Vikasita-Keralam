@@ -46,7 +46,8 @@ import {
 import { MobileCreatePartyWorkerFlow } from "./MobileCreatePartyWorkerFlow";
 import { MobileMultiFilterSheet } from "./MobileFilterPicker";
 import { MobileSettingsPage, type MobileApplicationViewMode } from "./MobileSettingsPage";
-import { MobileReportsPage } from "./MobileReportsPage";
+import { MobileReportsPage, buildMobileApplicationRoster, getApplicationLocationHierarchy, getSchemeStats } from "./MobileReportsPage";
+import { MOBILE_SAMPLE_DEPARTMENTS, MOBILE_SAMPLE_SCHEME_DEPARTMENT } from "./mobileSampleDepartments";
 import { type FilterChip } from "./MobileAppliedFiltersScope";
 import { PartyFlagIcon } from "@/components/common/PartyFlagIcon";
 import { districts, organisationalDistricts, constituencies, panchayats, wards, getDistrictName, getConstituencyName, getWardsForLocalBody, getMappedConstituencyForWard, LocalBodyType, WardItem } from "@/data/geo";
@@ -10381,14 +10382,25 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       : 1.0;
 
   const rawMetrics = computeRawMetrics(selectedPeriod, selectedDateInfo, currentSelectedDate);
+  const homeDepartmentStats = userRole === "state_admin" && filterDepartment !== "all"
+    ? getSchemeStats([...buildMobileApplicationRoster(
+        [...savedApplicationRecords, ...mobileApplicationAllPreviewRecords].filter((app) => !deletedApplicationRefs.includes(app.ref)),
+      ).entries()].filter(([schemeId]) => MOBILE_SAMPLE_SCHEME_DEPARTMENT[schemeId] === filterDepartment).flatMap(([, records]) => records).filter((record) => {
+        const location = getApplicationLocationHierarchy(record);
+        if (homeLocationLevel === "region" && homeSelectedRegion !== "all") return location.region === masterLocationIdToReport("region", homeSelectedRegion);
+        if (homeLocationLevel === "org_district" && homeSelectedOrgDistrict !== "all") return location.orgDistrict === masterLocationIdToReport("org_district", homeSelectedOrgDistrict);
+        if (homeLocationLevel === "mandalam" && homeSelectedMandalam !== "all") return location.mandalam === (constituencies.find((item) => item.id === homeSelectedMandalam)?.en || "").trim().toLowerCase();
+        return true;
+      }))
+    : null;
 
   const currentMetrics = {
     ...rawMetrics,
     users: Math.max(12, Math.round((rawMetrics?.users || 0) * geoScopeMultiplier)),
-    pending: Math.max(3, Math.round((rawMetrics?.pending || 0) * geoScopeMultiplier)),
-    rejected: Math.max(1, Math.round((rawMetrics?.rejected || 0) * geoScopeMultiplier)),
-    beneficiaries: Math.max(5, Math.round((rawMetrics?.beneficiaries || 0) * geoScopeMultiplier)),
-    assisted: Math.max(4, Math.round((rawMetrics?.assisted || 0) * geoScopeMultiplier)),
+    pending: homeDepartmentStats?.pending ?? Math.max(3, Math.round((rawMetrics?.pending || 0) * geoScopeMultiplier)),
+    rejected: homeDepartmentStats?.rejected ?? Math.max(1, Math.round((rawMetrics?.rejected || 0) * geoScopeMultiplier)),
+    beneficiaries: homeDepartmentStats?.approved ?? Math.max(5, Math.round((rawMetrics?.beneficiaries || 0) * geoScopeMultiplier)),
+    assisted: homeDepartmentStats?.inReview ?? Math.max(4, Math.round((rawMetrics?.assisted || 0) * geoScopeMultiplier)),
     schemes: rawMetrics?.schemes || 128,
     boothCoverage: rawMetrics?.boothCoverage || "94.2%",
     convertedBooths: rawMetrics?.convertedBooths || "23,550",
@@ -11812,7 +11824,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
         chips.push({
         id: "dept",
-        label: `Department: ${deptNames[filterDepartment] || filterDepartment}`,
+        label: `Department: ${MOBILE_SAMPLE_DEPARTMENTS.find((department) => department.id === filterDepartment)?.[lang === "ml" ? "ml" : "en"] || deptNames[filterDepartment] || filterDepartment}`,
         onRemove: () => setFilterDepartment("all"),
       });
     }
@@ -25414,7 +25426,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     </div>
 
                     {/* 2. Location Level Filter */}
-                    <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <div className={`space-y-2 pt-2 ${userRole === "party_worker" ? "" : "border-t border-slate-100 dark:border-slate-800"}`}>
                       {/* Ward Selection for Party Worker */}
                       {userRole === "party_worker" ? (
                         <div className="space-y-2 pt-0.5">
@@ -25631,7 +25643,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
                     {/* Team Tab Filters: Designation & Team Member selection below Location level */}
                     {partyWorkerTab === "team" && (
-                      <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                      <div className={`space-y-2 pt-2 ${userRole === "party_worker" ? "" : "border-t border-slate-100 dark:border-slate-800"}`}>
                         <PickerButton
                           label={lang === "ml" ? "പദവി തിരഞ്ഞെടുക്കുക (Designation)" : "Select Designation"}
                           value={(() => {
@@ -25684,7 +25696,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     )}
 
                     {/* 3. Application Status Filter (Moved below Location Level with Enhanced Multi-Select Checkboxes) */}
-                    <div className="space-y-1 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <div className={`space-y-1 pt-2 ${userRole === "party_worker" ? "" : "border-t border-slate-100 dark:border-slate-800"}`}>
                       <PickerButton
                         label={lang === "ml" ? "അപേക്ഷാ നില (Application Status)" : "Application Status"}
                         value={
@@ -25710,7 +25722,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     </div>
 
                     {/* 4. Sort By Dropdown (Moved below Application Status) */}
-                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                    {userRole !== "party_worker" && (
+                    <div className={`pt-2 ${userRole === "party_worker" ? "" : "border-t border-slate-100 dark:border-slate-800"}`}>
                       <PickerButton
                         label={lang === "ml" ? "ക്രമീകരിക്കുക (Sort By)" : "Sort By"}
                         value={
@@ -25732,9 +25745,10 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         }
                       />
                     </div>
+                    )}
 
                     {/* 5. Scheme Category, Department & Scheme Selection (Below Sort By) */}
-                    <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <div className={`space-y-2 pt-2 ${userRole === "party_worker" ? "" : "border-t border-slate-100 dark:border-slate-800"}`}>
                       {/* Scheme Category */}
                       <PickerButton
                         label={lang === "ml" ? "പദ്ധതി വിഭാഗം (Category)" : "Scheme Category"}
@@ -25849,7 +25863,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     </div>
 
                     {/* 6. Follow-up Filter */}
-                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <div className={`pt-2 ${userRole === "party_worker" ? "" : "border-t border-slate-100 dark:border-slate-800"}`}>
                       <PickerButton
                         label={lang === "ml" ? "തുടർനടപടി" : "Follow-ups"}
                         value={
@@ -26184,6 +26198,14 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
                     {/* 2. Scheme Category, Scheme Selection and Sort By (below Location Level) */}
                     <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                      {userRole === "state_admin" && <PickerButton
+                        label={lang === "ml" ? "വകുപ്പ്" : "Department"}
+                        value={MOBILE_SAMPLE_DEPARTMENTS.find((department) => department.id === filterDepartment)?.[lang === "ml" ? "ml" : "en"] || (lang === "ml" ? "എല്ലാ വകുപ്പുകളും" : "All Departments")}
+                        onClick={() => openCustomPicker(lang === "ml" ? "വകുപ്പ്" : "Department", [
+                          { id: "all", label: lang === "ml" ? "എല്ലാ വകുപ്പുകളും" : "All Departments" },
+                          ...MOBILE_SAMPLE_DEPARTMENTS.map((department) => ({ id: department.id, label: lang === "ml" ? department.ml : department.en })),
+                        ], filterDepartment, setFilterDepartment)}
+                      />}
                       {/* Scheme Category */}
                       <PickerButton
                         label={lang === "ml" ? "പദ്ധതി വിഭാഗം (Category)" : "Scheme Category"}
@@ -26297,6 +26319,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         setSelectedSchemeIdsState(["all"]);
                         setFilterSchemeCategory("all");
                         setFilterScheme("all");
+                        setFilterDepartment("all");
                         setPartyWorkerTab("my_work");
                         setAppFilterDesignation("all");
                         setAppFilterAssignedWorker("all");
