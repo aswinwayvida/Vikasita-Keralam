@@ -12,6 +12,7 @@ import pmKisanLogoImg from "/pm-kisan-logo.png";
 import createSchemeAvatar from "@/assets/create-scheme-3d-avatar.jpg";
 import createPartyWorkerAvatar from "@/assets/create-partyworker-3d-avatar.jpg";
 import users3dIcon from "@/assets/kpi-3d/users.png";
+import partyWorkerAvatar from "@/assets/create-partyworker-3d-avatar.jpg";
 import inReview3dIcon from "@/assets/kpi-3d/in-review.png";
 import documentsPending3dIcon from "@/assets/kpi-3d/documents-pending.png";
 import applications3dIcon from "@/assets/kpi-3d/applications.png";
@@ -3655,6 +3656,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [createSchemeInitialData, setCreateSchemeInitialData] = useState<CreatedSchemePayload | null>(null);
   const [isCreatePartyWorkerModalOpen, setIsCreatePartyWorkerModalOpen] = useState<boolean>(false);
   const [partyWorkerStartPhase, setPartyWorkerStartPhase] = useState<"form" | "list">("form");
+  const teamMemberSort = "apps_desc" as string;
+  const [teamMemberProfile, setTeamMemberProfile] = useState<{ name: string; nameMl: string; role: string } | null>(null);
   const [isSkipDocumentVerifyModalOpen, setIsSkipDocumentVerifyModalOpen] = useState<boolean>(false);
   const [isOfflineDocChecked, setIsOfflineDocChecked] = useState<boolean>(false);
 
@@ -4759,15 +4762,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
             {/* Workers List Section with Application Counts */}
             <div className="space-y-2 pt-1">
-              <div className="flex items-center justify-between px-0.5">
-                <h3 className="font-display text-xs sm:text-[13px] font-black text-[#0a0f1d] dark:text-white tracking-tight">
-                  {lang === "ml" ? "ബൂത്ത് പ്രവർത്തകർ" : "Booth Workers"}
-                </h3>
-                <span className="text-[10.5px] font-bold text-slate-500 dark:text-slate-400">
-                  18 {lang === "ml" ? "പേർ" : "Workers"}
-                </span>
-              </div>
-
               <div className="space-y-2">
                 {[
                   { name: "Sujith Kumar", nameMl: "സുജിത് കുമാർ", role: "Booth Convenor", applications: 28, avatarBg: "bg-[#FFF1E6] dark:bg-orange-950/60 text-[#B54708] dark:text-orange-300" },
@@ -4776,32 +4770,50 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   { name: "Arun Varma", nameMl: "അരുൺ വർമ്മ", role: "Yuva Morcha Member", applications: 15, avatarBg: "bg-[#FFF1E6] dark:bg-orange-950/60 text-[#B54708] dark:text-orange-300" },
                   { name: "Vishnu Prasad", nameMl: "വിഷ്ണു പ്രസാദ്", role: "Panna Pramukh", applications: 12, avatarBg: "bg-[#FFF1E6] dark:bg-orange-950/60 text-[#B54708] dark:text-orange-300" },
                   { name: "Lakshmi Priya", nameMl: "ലക്ഷ്മി പ്രിയ", role: "Booth Volunteer", applications: 9, avatarBg: "bg-[#FFF1E6] dark:bg-orange-950/60 text-[#B54708] dark:text-orange-300" },
-                ].map((worker, i) => (
+                ].map((worker) => {
+                  const seed = worker.name.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
+                  const approved = Math.floor(worker.applications * 0.45) + (seed % 2);
+                  const rejected = Math.max(0, Math.floor(worker.applications * 0.15) - (seed % 2));
+                  const inReview = Math.floor(worker.applications * 0.25);
+                  const pending = Math.max(0, worker.applications - approved - rejected - inReview);
+                  return { ...worker, approved, rejected, inReview, pending };
+                }).sort((a, b) => {
+                  const name = a.name.localeCompare(b.name);
+                  switch (teamMemberSort) {
+                    case "name_asc": return name;
+                    case "name_desc": return -name;
+                    case "benefits_desc": return b.approved - a.approved || name;
+                    case "benefits_asc": return a.approved - b.approved || name;
+                    case "apps_asc": return a.applications - b.applications || name;
+                    case "pending_desc": return b.pending - a.pending || name;
+                    case "pending_asc": return a.pending - b.pending || name;
+                    case "review_desc": return b.inReview - a.inReview || name;
+                    default: return b.applications - a.applications || name;
+                  }
+                }).map((worker) => (
                   <div
-                    key={i}
-                    onClick={() => setActiveTab("applications")}
-                    className="rounded-2xl bg-white dark:bg-slate-900 border border-orange-100 dark:border-slate-800 p-2.5 sm:p-3 flex items-center justify-between shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-98"
+                    key={worker.name}
+                    onClick={() => { setTeamMemberProfile(worker); setIsCreatePartyWorkerModalOpen(true); }}
+                    className="flex w-full items-center gap-2.5 rounded-xl border border-slate-200 bg-white p-2.5 text-left shadow-2xs transition hover:border-[#ff5500]/40 dark:border-slate-800 dark:bg-slate-900 cursor-pointer"
                   >
                     <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                      <div className={`flex h-9 w-9 items-center justify-center rounded-full ${worker.avatarBg} font-extrabold text-xs shrink-0`}>
-                        {worker.name.split(" ").map(n => n[0]).slice(0, 2).join("")}
-                      </div>
+                      <div className="h-9 w-9 overflow-hidden rounded-full bg-orange-50 shadow-sm ring-1 ring-orange-100 shrink-0"><img src={partyWorkerAvatar} alt="" className="h-full w-full rounded-full object-cover scale-[1.22]" /></div>
                       <div className="min-w-0 flex-1">
                         <h4 className="font-black text-[12px] sm:text-[12.5px] text-slate-900 dark:text-white leading-tight truncate">
                           {lang === "ml" ? worker.nameMl : worker.name}
                         </h4>
-                        <p className="font-medium text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
+                        <p className="font-bold text-[9px] text-[#C2410C] dark:text-orange-300 leading-tight mt-0.5 truncate">
                           {worker.role}
                         </p>
+                        <p className="mt-0.5 truncate text-[8.5px] font-medium text-slate-500">{lang === "ml" ? "പ്രദേശം രേഖപ്പെടുത്തിയിട്ടില്ല" : "Area not recorded"}</p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0 ml-2">
-                      <div className="flex items-center gap-1.5 rounded-full bg-orange-50 dark:bg-orange-950/50 border border-orange-200/80 dark:border-orange-900/50 px-2.5 py-1 text-[11px] font-black text-[#ff5500] dark:text-orange-400">
-                        <FileText className="h-3.5 w-3.5 text-[#ff5500]" />
-                        <span>{worker.applications}</span>
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform" />
+                    <div className="flex items-center gap-1 shrink-0">
+                      <span title={`Approved: ${worker.approved}`} className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#00875A] px-1 text-[10px] font-black text-white">{worker.approved}</span>
+                      <span title={`Pending and in review: ${worker.pending + worker.inReview}`} className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#f59e0b] px-1 text-[10px] font-black text-white">{worker.pending + worker.inReview}</span>
+                      <span title={`Rejected: ${worker.rejected}`} className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FF2C2C] px-1 text-[10px] font-black text-white">{worker.rejected}</span>
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-400 dark:bg-slate-800"><ChevronRight className="h-3.5 w-3.5" /></div>
                     </div>
                   </div>
                 ))}
@@ -6760,6 +6772,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [selectedDateInfo, setSelectedDateInfo] = useState<DatePickerDateInfo | null>(null);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState<boolean>(false);
   const [showFilterMenu, setShowFilterMenu] = useState<boolean>(false);
+  const [attentionFilterOpen, setAttentionFilterOpen] = useState(false);
+  const [attentionType, setAttentionType] = useState("all");
+  const [attentionScheme, setAttentionScheme] = useState("all");
   const [showMoreMenu, setShowMoreMenu] = useState<boolean>(false);
   const [deviceModel, setDeviceModel] = useState<"iphone" | "android">("iphone");
   const [activeNotificationFilter, setActiveNotificationFilter] = useState<"all" | "unread" | "applications" | "schemes" | "support">("all");
@@ -13062,7 +13077,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           </>
                         ) : null}
                       </div>
-                    ) : mobileSubPage === "about" || mobileSubPage === "contact" || mobileSubPage === "events_announcements" || mobileSubPage === "needs_attention" || (activeTab === "create" && createFlowStep === "scheme_details") ? null : (
+                    ) : mobileSubPage === "needs_attention" ? (
+                      <button type="button" onClick={() => setAttentionFilterOpen(true)} aria-label="Filter needs attention" className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full border border-orange-200 text-[#ff5500] bg-orange-50"><Filter className="h-4 w-4" /></button>
+                    ) : mobileSubPage === "about" || mobileSubPage === "contact" || mobileSubPage === "events_announcements" || (activeTab === "create" && createFlowStep === "scheme_details") ? null : (
                       <>
                         <button
                           type="button"
@@ -13161,6 +13178,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   setMobileSubPage("applicants");
                 }}
                 onOpenPartyWorkers={() => {
+                  setTeamMemberProfile(null);
                   setPartyWorkerStartPhase("list");
                   setIsCreatePartyWorkerModalOpen(true);
                 }}
@@ -14598,7 +14616,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         {/* List of Needs Attention Cards */}
                         <div className="space-y-1.5">
                           {/* Pending Deletion Requests Cards */}
-                          {pendingDeletionRequests.map((req) => (
+                          {pendingDeletionRequests.filter((req) => (attentionType === "all" || attentionType === "delete") && (attentionScheme === "all" || req.titleEn.toLowerCase().includes(attentionScheme.toLowerCase()))).map((req) => (
                             <div
                               key={req.id}
                               onClick={() => setSelectedDeletionRequest(req)}
@@ -14629,7 +14647,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           ))}
 
                           {/* Item 1: K. Krishnan (from followUpCollectionRecords) */}
-                          {followUpCollectionRecords.map((record) => (
+                          {followUpCollectionRecords.filter((record) => (attentionType === "all" || attentionType === "follow") && (attentionScheme === "all" || record.scheme.titleEn === attentionScheme)).map((record) => (
                               <div
                                 key={record.reference}
                                 onClick={() => openCollectionRecordView(record, "needs_attention")}
@@ -18232,6 +18250,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 renderSchemeDetailsSubpage()
               ) : effectiveApplicationView === "scheme_wise" ? (
                 <MobileReportsPage
+                  applicationFilterInPhone
                   onBack={() => setActiveTab("overview")}
                   userRole={userRole}
                   initialSelectedSchemeId={selectedSchemeForReportsId}
@@ -23387,7 +23406,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           {isCreatePartyWorkerModalOpen && (
             <MobileCreatePartyWorkerFlow
               lang={lang}
-              onClose={() => setIsCreatePartyWorkerModalOpen(false)}
+              onClose={() => { setIsCreatePartyWorkerModalOpen(false); setTeamMemberProfile(null); }}
+              initialTeamMember={teamMemberProfile}
               actorRole={userRole === "state_admin" ? "state_admin" : "party_worker"}
               initialPhase={partyWorkerStartPhase}
               onSelectScheme={(scheme) => {
@@ -24488,20 +24508,48 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
             inlineInApp={true}
           />
 
+          {mobileSubPage === "needs_attention" && attentionFilterOpen && (
+            <div className="absolute inset-0 z-[100] flex items-end bg-black/60" onClick={() => setAttentionFilterOpen(false)}>
+              <div className="w-full max-h-[85%] overflow-y-auto rounded-t-[24px] bg-white dark:bg-slate-900 p-4 shadow-2xl" onClick={(event) => event.stopPropagation()}>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+                  <h3 className="flex items-center gap-2 text-sm font-bold"><Filter className="h-4 w-4 text-orange-600" />{lang === "ml" ? "ശ്രദ്ധ ആവശ്യമുള്ളവ ഫിൽട്ടർ ചെയ്യുക" : "Needs Attention Filters"}</h3>
+                  <button type="button" aria-label="Close" onClick={() => setAttentionFilterOpen(false)}><X className="h-5 w-5" /></button>
+                </div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">{lang === "ml" ? "ശ്രദ്ധയുടെ തരം" : "Attention Type"}</label>
+                <select value={attentionType} onChange={(event) => setAttentionType(event.target.value)} className="w-full h-10 rounded-xl border border-slate-200 bg-white dark:bg-slate-800 px-3 text-xs mb-3">
+                  <option value="all">{lang === "ml" ? "എല്ലാ തരങ്ങളും" : "All Types"}</option>
+                  <option value="delete">{lang === "ml" ? "ഡിലീറ്റ് അനുമതികൾ" : "Delete Approvals"}</option>
+                  <option value="follow">{lang === "ml" ? "തുടർനടപടികൾ" : "Follow Ups"}</option>
+                  <option value="documents">{lang === "ml" ? "രേഖകൾ ബാക്കി" : "Documents Missing"}</option>
+                  <option value="other">{lang === "ml" ? "മറ്റുള്ളവ" : "Other"}</option>
+                </select>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">{lang === "ml" ? "പദ്ധതി" : "Scheme"}</label>
+                <select value={attentionScheme} onChange={(event) => setAttentionScheme(event.target.value)} className="w-full h-10 rounded-xl border border-slate-200 bg-white dark:bg-slate-800 px-3 text-xs">
+                  <option value="all">{lang === "ml" ? "എല്ലാ പദ്ധതികളും" : "All Schemes"}</option>
+                  {[...new Set(["PM Kisan", "PM Vishwakarma", "PM SVANidhi", "Subhadra Yojana", "Karunya Health Scheme", "Indira Gandhi Old Age Pension", "PM Awas Yojana (Gramin)", "Matsya Samridhi Scheme", "Vayoshreshtha Samman", "Kera Suraksha Bima Yojana", "Chief Minister's Distress Relief Fund", "PM Employment Generation Programme", ...followUpCollectionRecords.map((record) => record.scheme.titleEn)])].sort().map((scheme) => <option key={scheme} value={scheme}>{scheme}</option>)}
+                </select>
+                <div className="flex gap-2 mt-4">
+                  <button type="button" onClick={() => { setAttentionType("all"); setAttentionScheme("all"); }} className="rounded-xl border border-slate-200 px-5 py-2 text-xs font-bold">{lang === "ml" ? "പുനഃസജ്ജമാക്കുക" : "Reset"}</button>
+                  <button type="button" onClick={() => setAttentionFilterOpen(false)} className="flex-1 rounded-xl bg-[#ff5500] py-2 text-xs font-bold text-white">{lang === "ml" ? "ഫിൽട്ടർ പ്രയോഗിക്കുക" : "Apply Filters"}</button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Helpdesk filter bottom sheet (refer Attachment 10) */}
           {isHelpdeskFilterOpen && (
             <div
-              className="absolute inset-0 z-50 flex items-end rounded-[36px] bg-black/60 animate-in fade-in duration-200"
+              className="absolute inset-0 z-50 flex flex-col justify-end rounded-[36px] bg-black/60 transition-opacity animate-in fade-in duration-200 overflow-hidden h-full w-full"
               onClick={() => setIsHelpdeskFilterOpen(false)}
             >
               <div
-                className="w-full max-h-[85%] overflow-y-auto rounded-t-[20px] border-t border-slate-100 bg-white px-3.5 pb-4 pt-2.5 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+                className="w-full max-h-[88%] overflow-hidden rounded-t-[20px] border-t border-slate-100 bg-white px-3.5 pb-4 pt-2.5 shadow-2xl dark:border-slate-800 dark:bg-slate-900 flex flex-col"
                 onClick={(event) => event.stopPropagation()}
               >
-                <div className="mx-auto mb-2 h-1 w-9 rounded-full bg-slate-200 dark:bg-slate-700" />
+                <div className="mx-auto mb-2 h-1 w-9 rounded-full bg-slate-200 dark:bg-slate-700 shrink-0" />
 
                 {/* Header with Filter icon and close button */}
-                <div className="mb-2 flex items-center justify-between pb-1.5 border-b border-slate-100 dark:border-slate-800">
+                <div className="mb-2 flex items-center justify-between pb-1.5 border-b border-slate-100 dark:border-slate-800 shrink-0">
                   <div className="flex items-center gap-2">
                     <span className="flex h-6 w-6 items-center justify-center rounded-full bg-orange-50 text-[#ff5500] dark:bg-orange-950/40 dark:text-orange-300">
                       <Filter className="h-3 w-3 stroke-[2.2]" />
@@ -24527,37 +24575,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   </button>
                 </div>
 
-                <div className="space-y-2.5">
-                  {/* Segmented View Toggle: My View / Team */}
-                  <div>
-                    <div className="grid grid-cols-2 gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/60 p-0.5">
-                      <button
-                        type="button"
-                        onClick={() => setHelpdeskPendingWorkView("my_work")}
-                        className={`flex items-center justify-center gap-1.5 rounded-md py-1.5 text-[11px] font-bold transition-all cursor-pointer ${
-                          helpdeskPendingWorkView === "my_work"
-                            ? "bg-[#FFF9F2] dark:bg-orange-950/40 border border-orange-300 dark:border-orange-600 text-[#EA580C] dark:text-orange-400 shadow-2xs"
-                            : "border border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-                        }`}
-                      >
-                        <Inbox className="h-3.5 w-3.5 shrink-0 stroke-[2.2]" />
-                        <span>{lang === "ml" ? "എന്റെ കാഴ്ച" : "My View"}</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setHelpdeskPendingWorkView("team")}
-                        className={`flex items-center justify-center gap-1.5 rounded-md py-1.5 text-[11px] font-bold transition-all cursor-pointer ${
-                          helpdeskPendingWorkView === "team"
-                            ? "bg-[#FFF9F2] dark:bg-orange-950/40 border border-orange-300 dark:border-orange-600 text-[#EA580C] dark:text-orange-400 shadow-2xs"
-                            : "border border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-                        }`}
-                      >
-                        <Users className="h-3.5 w-3.5 shrink-0 stroke-[2.2]" />
-                        <span>{lang === "ml" ? "ടീം" : "Team"}</span>
-                      </button>
-                    </div>
-                  </div>
-
+                <div className="space-y-2.5 flex-1 overflow-y-auto min-h-0 pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                   {/* 1. Select Location Level (Admin view only) */}
                   {userRole === "state_admin" && (
                     <PickerButton
@@ -24809,7 +24827,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               onTouchMove={(e) => e.stopPropagation()}
             >
               <div
-                className="w-full max-h-[85%] overflow-hidden rounded-t-[20px] border-t border-slate-100 bg-white px-3.5 pb-4 pt-2.5 shadow-2xl dark:border-slate-800 dark:bg-slate-900 flex flex-col"
+                className="w-full max-h-[88%] overflow-hidden rounded-t-[20px] border-t border-slate-100 bg-white px-3.5 pb-4 pt-2.5 shadow-2xl dark:border-slate-800 dark:bg-slate-900 flex flex-col"
                 onClick={(event) => event.stopPropagation()}
               >
                 <div className="mx-auto mb-2 h-1 w-9 rounded-full bg-slate-200 dark:bg-slate-700 shrink-0" />
@@ -24841,7 +24859,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto min-h-0 pr-1 space-y-2">
+                <div className="flex-1 overflow-y-auto min-h-0 pr-1 space-y-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                   {/* Segmented View Toggle: My View / Team */}
                   <div>
                     <div className="grid grid-cols-2 gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/60 p-0.5">
@@ -25246,7 +25264,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           {/* Interactive Filter Modal Overlay - Home Filters UI matching reference mock */}
           {showFilterMenu && (
             <div 
-              className="sticky inset-0 bottom-0 z-50 flex flex-col justify-end bg-black/60 transition-opacity animate-in fade-in duration-200 rounded-t-[36px] rounded-b-[36px] overflow-hidden -mt-[200vh] min-h-full h-full"
+              className="absolute inset-0 z-50 flex flex-col justify-end rounded-[36px] bg-black/60 transition-opacity animate-in fade-in duration-200 overflow-hidden h-full w-full"
               onClick={() => {
                 setAppliedGeoMode(geoMode);
                 if (geoMode === "assembly") {
@@ -25287,7 +25305,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               }}
             >
               <div 
-                className="w-full rounded-t-[28px] bg-white dark:bg-slate-900 p-4 shadow-2xl transition-all border-t border-slate-200 dark:border-slate-800 animate-in slide-in-from-bottom-full duration-300 flex flex-col max-h-[85%] overflow-hidden"
+                className={`w-full rounded-t-[28px] bg-white dark:bg-slate-900 p-4 shadow-2xl transition-all border-t border-slate-200 dark:border-slate-800 animate-in slide-in-from-bottom-full duration-300 flex flex-col ${activeTab === "overview" ? "max-h-[88%]" : "h-[88%]"} overflow-hidden`}
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Top Sheet Handle */}
@@ -25331,7 +25349,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                 {/* Filter Inputs Area */}
                 {activeTab === "applications" ? (
                   /* APPLICATION LIST FILTERS */
-                  <div className="space-y-3 my-1 flex-1 overflow-y-auto min-h-0 pr-1">
+                  <div className="space-y-3 my-1 flex-1 overflow-y-auto min-h-0 pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                     {/* 1. Work View: My Work / Team */}
                     <div className="space-y-1">
                       <div className="grid grid-cols-2 gap-1 p-0.5 bg-slate-100 dark:bg-slate-800/80 rounded-lg border border-slate-200 dark:border-slate-700/60">
@@ -25833,7 +25851,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   </div>
                 ) : (
                   /* Filter Inputs Area for Home */
-                  <div className="space-y-2.5 my-1 flex-1 overflow-y-auto min-h-0 pr-1">
+                  <div className="space-y-2.5 my-1 flex-1 overflow-y-auto min-h-0 pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                     {/* Work View Toggle: My View / Team */}
                     <div>
                       <div className="grid grid-cols-2 gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/60 p-0.5">
@@ -25914,6 +25932,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 (id) => {
                                   const newLevel = id as HomeLocationLevel;
                                   setHomeLocationLevel(newLevel);
+                                  setAppFilterDesignation("all");
+                                  setAppFilterAssignedWorker("all");
                                   if (newLevel === "state") {
                                     setHomeSelectedRegion("all");
                                     setHomeSelectedOrgDistrict("all");
@@ -25926,26 +25946,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                               )
                             }
                           />
-
-                          {/* 1. State Level Display */}
-                          {homeLocationLevel === "state" && (
-                            <div className="p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                <div>
-                                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
-                                    {lang === "ml" ? "കേരള സംസ്ഥാനം (സംസ്ഥാന തലം)" : "Kerala State (State-Wide)"}
-                                  </span>
-                                  <span className="text-[9.5px] text-slate-400 dark:text-slate-400">
-                                    {lang === "ml" ? "എല്ലാ ജില്ലകളും മണ്ഡലങ്ങളും ഉൾപ്പെടുന്നു" : "All 14 Revenue / 30 Organisation Districts"}
-                                  </span>
-                                </div>
-                              </div>
-                              <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
-                                {lang === "ml" ? "പൂർണ്ണം" : "All State"}
-                              </span>
-                            </div>
-                          )}
 
                           {/* Region (when location level is region) */}
                           {homeLocationLevel === "region" && (
@@ -26091,6 +26091,60 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         </div>
                       )}
                     </div>
+
+                    {/* Team Tab Filters: Designation & Team Member selection below Location level */}
+                    {partyWorkerTab === "team" && (
+                      <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                        <PickerButton
+                          label={lang === "ml" ? "പദവി തിരഞ്ഞെടുക്കുക (Designation)" : "Select Designation"}
+                          value={(() => {
+                            const levelDesignations = DESIGNATION_OPTIONS_BY_LEVEL[homeLocationLevel] || DESIGNATION_OPTIONS_BY_LEVEL.state;
+                            const current = levelDesignations.find((d) => d.id === appFilterDesignation);
+                            return current ? (lang === "ml" ? current.ml : current.en) : (lang === "ml" ? "എല്ലാ പദവികളും" : "All Designations");
+                          })()}
+                          onClick={() => {
+                            const levelDesignations = DESIGNATION_OPTIONS_BY_LEVEL[homeLocationLevel] || DESIGNATION_OPTIONS_BY_LEVEL.state;
+                            openCustomPicker(
+                              lang === "ml" ? "പദവി തിരഞ്ഞെടുക്കുക" : "Select Designation",
+                              levelDesignations.map((d) => ({ id: d.id, label: lang === "ml" ? d.ml : d.en })),
+                              appFilterDesignation,
+                              (id) => {
+                                setAppFilterDesignation(id);
+                                setAppFilterAssignedWorker("all");
+                              }
+                            );
+                          }}
+                        />
+
+                        <PickerButton
+                          label={lang === "ml" ? "തൊഴിലാളി / ടീം അംഗം (Team Member)" : "Select Team Member"}
+                          value={(() => {
+                            if (appFilterAssignedWorker === "all") return lang === "ml" ? "എല്ലാ പ്രവർത്തകരും" : "All Workers";
+                            if (appFilterAssignedWorker === "unassigned") return lang === "ml" ? "ചുമതലപ്പെടുത്താത്തവ" : "Unassigned";
+                            const members = getFilteredTeamMembers(homeLocationLevel, appFilterDesignation);
+                            const match = members.find((m) => m.id === appFilterAssignedWorker) || TEAM_MEMBER_OPTIONS.find((m) => m.id === appFilterAssignedWorker);
+                            return match ? `${match.name} (${lang === "ml" ? match.designationMl : match.designationEn})` : appFilterAssignedWorker;
+                          })()}
+                          onClick={() => {
+                            const filteredMembers = getFilteredTeamMembers(homeLocationLevel, appFilterDesignation);
+                            const options = [
+                              { id: "all", label: lang === "ml" ? "എല്ലാ പ്രവർത്തകരും" : "All Workers" },
+                              { id: "unassigned", label: lang === "ml" ? "ചുമതലപ്പെടുത്താത്തവ (Unassigned)" : "Unassigned" },
+                              ...filteredMembers.map((m) => ({
+                                id: m.id,
+                                label: `${m.name} (${lang === "ml" ? m.designationMl : m.designationEn})`,
+                              })),
+                            ];
+                            openCustomPicker(
+                              lang === "ml" ? "ടീം അംഗത്തെ തിരഞ്ഞെടുക്കുക" : "Select Team Member",
+                              options,
+                              appFilterAssignedWorker,
+                              (id) => setAppFilterAssignedWorker(id)
+                            );
+                          }}
+                        />
+                      </div>
+                    )}
 
                     {/* 2. Scheme Category, Scheme Selection and Sort By (below Location Level) */}
                     <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
@@ -26250,6 +26304,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         setFilterSchemeCategory("all");
                         setFilterScheme("all");
                         setPartyWorkerTab("my_work");
+                        setAppFilterDesignation("all");
+                        setAppFilterAssignedWorker("all");
 
                         if (userRole === "party_worker") {
                           setHomeLocationLevel("area");
@@ -27178,7 +27234,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         </div>
 
         {/* Smartphone Device Shell Frame */}
-        <div className={`relative w-[360px] sm:w-[390px] h-[700px] sm:h-[760px] bg-card rounded-[44px] border-[10px] ${
+        <div data-mobile-preview-shell className={`relative w-[360px] sm:w-[390px] h-[700px] sm:h-[760px] bg-card rounded-[44px] border-[10px] ${
           deviceModel === "iphone" ? "border-slate-800 shadow-2xl" : "border-slate-900 rounded-[36px] shadow-2xl"
         } flex flex-col overflow-hidden text-foreground select-none`}>
 

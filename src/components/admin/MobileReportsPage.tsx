@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import {
   ArrowLeft,
   ChevronLeft,
@@ -59,6 +60,7 @@ export interface MobileReportApplicationRecord {
 }
 
 export interface MobileReportsPageProps {
+  applicationFilterInPhone?: boolean;
   onBack: () => void;
   applications: MobileReportApplicationRecord[];
   onSelectApplication: (application: MobileReportApplicationRecord) => void;
@@ -899,6 +901,7 @@ function getSchemeStats(apps: MobileReportApplicationRecord[]) {
 }
 
 export function MobileReportsPage({
+  applicationFilterInPhone = false,
   onBack,
   applications = [],
   onSelectApplication,
@@ -1547,7 +1550,7 @@ export function MobileReportsPage({
       (draftSchemeFilter.sortBy && draftSchemeFilter.sortBy !== "benefits_high_low" ? 1 : 0) +
       (draftHasLocation ? 1 : 0);
 
-    return (
+    const sheet = (
       <div
         className="absolute inset-0 z-[120] flex flex-col justify-end bg-slate-950/60 transition-opacity animate-in fade-in duration-200 rounded-[36px] overflow-hidden h-full w-full"
         onClick={() => setIsFilterSheetOpen(false)}
@@ -1580,7 +1583,7 @@ export function MobileReportsPage({
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto min-h-0 pr-1 space-y-3 my-1">
+          <div className="flex-1 overflow-y-auto min-h-0 pr-1 space-y-3 my-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {/* Work View */}
           <div className="space-y-1 mb-2.5">
             <div className="grid grid-cols-2 gap-0.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 p-0.5">
@@ -2192,6 +2195,10 @@ export function MobileReportsPage({
         </div>
       </div>
     );
+    const phone = applicationFilterInPhone && typeof document !== "undefined"
+      ? document.querySelector("[data-mobile-preview-shell]")
+      : null;
+    return phone ? createPortal(sheet, phone) : sheet;
   };
 
   // Applications list for selected scheme

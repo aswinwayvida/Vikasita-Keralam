@@ -229,11 +229,12 @@ export function MobileSettingsPage({
   const [profileNameOverride, setProfileNameOverride] = useState<string | null>(null);
   const [profileRoleOverride, setProfileRoleOverride] = useState<string | null>(null);
   const [profileMobileOverride, setProfileMobileOverride] = useState<string | null>(null);
+  const [secondaryMobiles, setSecondaryMobiles] = useState<Record<string, string>>(() => readStoredJson("vk-mobile-profile-secondary-numbers", {}));
   const [profileLevelOverride, setProfileLevelOverride] = useState<string | null>(null);
   const [profileAssignmentOverride, setProfileAssignmentOverride] = useState<string | null>(null);
   const [editDetailsOpen, setEditDetailsOpen] = useState(false);
   const [accessAreaOpen, setAccessAreaOpen] = useState(false);
-  const [editDraft, setEditDraft] = useState({ name: "", role: "", mobile: "" });
+  const [editDraft, setEditDraft] = useState({ name: "", role: "", mobile: "", secondaryMobile: "" });
   const [accessDraft, setAccessDraft] = useState({ level: "state", assignment: "" });
   const profilePhotoInputRef = useRef<HTMLInputElement>(null);
   const isMalayalam = lang === "ml";
@@ -274,7 +275,7 @@ export function MobileSettingsPage({
   };
 
   const openEditDetails = () => {
-    setEditDraft({ name: displayName, role: roleLabel, mobile: profileMobile });
+    setEditDraft({ name: displayName, role: roleLabel, mobile: profileMobile, secondaryMobile: secondaryMobiles[userRole] || "" });
     setProfileMenuOpen(false);
     setEditDetailsOpen(true);
   };
@@ -285,6 +286,9 @@ export function MobileSettingsPage({
     setProfileNameOverride(name);
     setProfileRoleOverride(editDraft.role.trim() || defaultRoleLabel);
     setProfileMobileOverride(editDraft.mobile.trim() || null);
+    const updatedSecondaryMobiles = { ...secondaryMobiles, [userRole]: editDraft.secondaryMobile.trim() };
+    setSecondaryMobiles(updatedSecondaryMobiles);
+    writeStoredJson("vk-mobile-profile-secondary-numbers", updatedSecondaryMobiles);
     setEditDetailsOpen(false);
   };
 
@@ -795,6 +799,7 @@ export function MobileSettingsPage({
         labelMl: "മൊബൈൽ നമ്പർ",
         value: profileMobile || "+91 9633360168",
       },
+      ...(secondaryMobiles[userRole] ? [{ icon: Phone, labelEn: "Secondary Mobile Number", labelMl: "രണ്ടാമത്തെ മൊബൈൽ നമ്പർ", value: secondaryMobiles[userRole] }] : []),
       {
         icon: Building2,
         labelEn: "Organisation Level",
@@ -1033,6 +1038,17 @@ export function MobileSettingsPage({
                     onChange={(event) =>
                       setEditDraft((draft) => ({ ...draft, mobile: event.target.value }))
                     }
+                    className="h-9 rounded-lg border-border bg-background px-2.5 text-[11.5px] font-medium text-foreground shadow-none focus:border-orange-400 focus:ring-1 focus:ring-orange-500 md:text-[11.5px]"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-[10.5px] font-bold text-foreground">
+                    {isMalayalam ? "രണ്ടാമത്തെ മൊബൈൽ നമ്പർ (ഐച്ഛികം)" : "Secondary Mobile Number (optional)"}
+                  </label>
+                  <Input
+                    value={editDraft.secondaryMobile}
+                    inputMode="tel"
+                    onChange={(event) => setEditDraft((draft) => ({ ...draft, secondaryMobile: event.target.value }))}
                     className="h-9 rounded-lg border-border bg-background px-2.5 text-[11.5px] font-medium text-foreground shadow-none focus:border-orange-400 focus:ring-1 focus:ring-orange-500 md:text-[11.5px]"
                   />
                 </div>

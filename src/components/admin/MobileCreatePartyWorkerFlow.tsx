@@ -135,6 +135,7 @@ interface MobileCreatePartyWorkerFlowProps {
   actorRole?: ActorRole;
   canOpenExistingWorker?: boolean;
   initialPhase?: "form" | "list";
+  initialTeamMember?: { name: string; nameMl: string; role: string } | null;
 }
 
 interface WorkerProfile {
@@ -808,12 +809,19 @@ export function MobileCreatePartyWorkerFlow({
   actorRole = "state_admin",
   canOpenExistingWorker = true,
   initialPhase = "form",
+  initialTeamMember = null,
 }: MobileCreatePartyWorkerFlowProps) {
   const tr = (en: string, ml: string) => (lang === "ml" ? ml : en);
 
   const [step, setStep] = useState<1 | 2>(1);
-  const [phase, setPhase] = useState<"form" | "profile" | "list">(initialPhase);
-  const [profile, setProfile] = useState<WorkerProfile | null>(null);
+  const [phase, setPhase] = useState<"form" | "profile" | "list">(initialTeamMember ? "profile" : initialPhase);
+  const [profile, setProfile] = useState<WorkerProfile | null>(() => initialTeamMember ? {
+    id: `team-${initialTeamMember.name}`, name: initialTeamMember.name, nameMl: initialTeamMember.nameMl,
+    designationEn: initialTeamMember.role, designationMl: initialTeamMember.role,
+    mobile: "", levelLabelEn: "", levelLabelMl: "", locationLines: { en: "", ml: "" },
+    districtNameEn: "", districtNameMl: "", permissions: [], grants: [], accessManagement: false,
+    status: "Active", createdAt: "", createdBy: "", isExisting: true,
+  } : null);
   const [editingWorkerId, setEditingWorkerId] = useState<string | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [profileActiveTab, setProfileActiveTab] = useState<"informations" | "applications">("informations");
@@ -5769,7 +5777,8 @@ export function MobileCreatePartyWorkerFlow({
               onClick={() => {
                 if (phase === "profile") {
                   setProfileMenuOpen(false);
-                  setPhase("list");
+                  if (initialTeamMember) onClose();
+                  else setPhase("list");
                 } else if (phase === "list") onClose();
                 else if (editingWorkerId && profile) {
                   setEditingWorkerId(null);
