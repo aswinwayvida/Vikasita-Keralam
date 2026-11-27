@@ -45,7 +45,7 @@ import {
   type CreatedSchemePayload,
 } from "./MobileCreateSchemeFlow";
 import { MobileCreatePartyWorkerFlow } from "./MobileCreatePartyWorkerFlow";
-import { MobileMultiFilterSheet } from "./MobileFilterPicker";
+import { MobileFilterPicker, MobileMultiFilterSheet } from "./MobileFilterPicker";
 import { MobileSettingsPage, type MobileApplicationViewMode } from "./MobileSettingsPage";
 import { MobileReportsPage, buildMobileApplicationRoster, getApplicationLocationHierarchy, getSchemeStats } from "./MobileReportsPage";
 import { MOBILE_SAMPLE_DEPARTMENTS, MOBILE_SAMPLE_SCHEME_DEPARTMENT } from "./mobileSampleDepartments";
@@ -6713,7 +6713,11 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [userSearchQuery, setUserSearchQuery] = useState<string>("");
   const [isApplicantFilterOpen, setIsApplicantFilterOpen] = useState<boolean>(false);
   const [applicantListSortOpen, setApplicantListSortOpen] = useState(false);
+  const [applicantGroupBy, setApplicantGroupBy] = useState<"none" | "mandalam" | "region" | "org_district">("none");
+  const [draftApplicantGroupBy, setDraftApplicantGroupBy] = useState<"none" | "mandalam" | "region" | "org_district">("none");
+  const [expandedApplicantGroups, setExpandedApplicantGroups] = useState<string[]>([]);
   const [applicantListSort, setApplicantListSort] = useState("count_desc");
+  const [applicantSortApplied, setApplicantSortApplied] = useState(false);
   const [draftApplicantListSort, setDraftApplicantListSort] = useState("count_desc");
   const [applicantWorkView, setApplicantWorkView] = useState<"my_work" | "team">("my_work");
   const [applicantDesignation, setApplicantDesignation] = useState("all");
@@ -10825,6 +10829,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         schemeStatuses: MobileApplicationRecord["status"][];
         applicationCount: number;
         applications: MobileApplicationRecord[];
+        sampleOrgId?: string;
+        sampleConstituencyId?: string;
       }
     >();
 
@@ -10887,6 +10893,81 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
         usersByName.set(u.id, u);
       }
     });
+
+    // Preview applicants with explicit locations and varied unique names across cards.
+    const firstNames: [string, string][] = [
+      ["Amal", "അമൽ"], ["Devika", "ദേവിക"], ["Arun", "അരുൺ"], ["Meera", "മീര"],
+      ["Vishnu", "വിഷ്ണു"], ["Anjali", "അഞ്ജലി"], ["Rahul", "രാഹുൽ"], ["Lakshmi", "ലക്ഷ്മി"],
+      ["Adithya", "ആദിത്യ"], ["Sreelakshmi", "ശ്രീലക്ഷ്മി"], ["Nikhil", "നിഖിൽ"], ["Aparna", "അപർണ"],
+      ["Sanjay", "സഞ്ജയ്"], ["Athira", "ആതിര"], ["Anand", "ആനന്ദ്"], ["Reshma", "രേഷ്മ"],
+      ["Akhil", "അഖിൽ"], ["Kavya", "കാവ്യ"], ["Jithu", "ജിത്തു"], ["Haritha", "ഹരിത"],
+      ["Pranav", "പ്രണവ്"], ["Gopika", "ഗോപിക"], ["Abhijith", "അഭിജിത്ത്"], ["Sneha", "സ്നേഹ"],
+      ["Sooraj", "സൂരജ്"], ["Ananya", "അനന്യ"], ["Midhun", "മിഥുൻ"], ["Arya", "ആര്യ"],
+      ["Sarath", "ശരത്"], ["Parvathy", "പാർവ്വതി"], ["Deepak", "ദീപക്"], ["Karthika", "കാർത്തിക"],
+      ["Vignesh", "വിഘ്നേഷ്"], ["Swathi", "സ്വാതി"], ["Aswin", "അശ്വിൻ"], ["Divya", "ദിവ്യ"],
+      ["Manoj", "മനോജ്"], ["Pooja", "പൂജ"], ["Vivek", "വിവേക്"], ["Keerthi", "കീർത്തി"],
+      ["Sreeraj", "ശ്രീരാജ്"], ["Malavika", "മാളവിക"], ["Harikrishnan", "ഹരികൃഷ്ണൻ"], ["Shilpa", "ശിൽപ"],
+      ["Gokul", "ഗോകുൽ"], ["Nandana", "നന്ദന"], ["Rohit", "രോഹിത്"], ["Archana", "അർച്ചന"],
+      ["Kiran", "കിരൺ"], ["Gayathri", "ഗായത്രി"], ["Bipin", "ബിപിൻ"], ["Manju", "മഞ്ജു"],
+      ["Sudheesh", "സുധീഷ്"], ["Sandhya", "സന്ധ്യ"], ["Rajesh", "രാജേഷ്"], ["Ritu", "റിതു"],
+      ["Suresh", "സുരേഷ്"], ["Remya", "രമ്യ"], ["Jayesh", "ജയേഷ്"], ["Deepa", "ദീപ"],
+      ["Praveen", "പ്രവീൺ"], ["Anjana", "അഞ്ജന"], ["Renjith", "രഞ്ജിത്ത്"], ["Sruthi", "ശ്രുതി"],
+      ["Mahesh", "മഹേഷ്"], ["Soumya", "സൗമ്യ"], ["Anoop", "അനൂപ്"], ["Nimisha", "നിമിഷ"],
+      ["Shibu", "ഷിബു"], ["Dhanya", "ധന്യ"], ["Vijesh", "വിജേഷ്"], ["Anitha", "അനിത"],
+      ["Vinod", "വിനോദ്"], ["Suja", "സുജ"], ["Unnikrishnan", "ഉണ്ണികൃഷ്ണൻ"], ["Geetha", "ഗീത"],
+      ["Mohan", "മോഹൻ"], ["Bindu", "ബിന്ദു"], ["Girish", "ഗിരീഷ്"], ["Sunitha", "സുനിത"],
+      ["Santhosh", "സന്തോഷ്"], ["Mini", "മിനി"], ["Dileep", "ദിലീപ്"], ["Sobha", "ശോഭ"],
+      ["Baiju", "ബൈജു"], ["Radhika", "രാധിക"], ["Shaji", "ഷാജി"], ["Preetha", "പ്രീത"],
+      ["Jayan", "ജയൻ"], ["Saritha", "സരിത"], ["Babu", "ബാബു"], ["Usha", "ഉഷ"],
+      ["Rajan", "രാജൻ"], ["Vasantha", "വസന്ത"], ["Vijayan", "വിജയൻ"], ["Leela", "ലീല"],
+      ["Kumaran", "കുമാരൻ"], ["Indira", "ഇന്ദിര"], ["Damodaran", "ദാമോദരൻ"], ["Saraswathi", "സരസ്വതി"]
+    ];
+
+    const lastNames: [string, string][] = [
+      ["Nair", "നായർ"], ["Menon", "മേനോൻ"], ["Pillai", "പിള്ള"], ["Varma", "വർമ്മ"],
+      ["Nambiar", "നമ്പ്യാർ"], ["Kurup", "കുറുപ്പ്"], ["Warrier", "വാര്യർ"], ["Panicker", "പണിക്കർ"],
+      ["Kumar", "കുമാർ"], ["Raj", "രാജ്"], ["Prasad", "പ്രസാദ്"], ["Mohan", "മോഹൻ"],
+      ["Das", "ദാസ്"], ["Krishnan", "കൃഷ്ണൻ"], ["Chandran", "ചന്ദ്രൻ"], ["Babu", "ബാബു"],
+      ["Ramesh", "രമേശ്"], ["Suresh", "സുരേഷ്"], ["Prakash", "പ്രകാശ്"], ["Shaji", "ഷാജി"],
+      ["Kaimal", "കൈമൾ"], ["Thampi", "തമ്പി"], ["Unnithan", "ഉണ്ണിത്താൻ"], ["Poduval", "പൊതുവാൾ"],
+      ["Marar", "മാരാർ"], ["Pisharody", "പിഷാരോടി"], ["Gopinath", "ഗോപിനാഥ്"], ["Vijayan", "വിജയൻ"],
+      ["Madhavan", "മാധവൻ"], ["Kesavan", "കേശവൻ"], ["Sreedharan", "ശ്രീധരൻ"], ["Damodaran", "ദാമോദരൻ"],
+      ["Raghavan", "രാഘവൻ"], ["Bhaskaran", "ഭാസ്കരൻ"], ["Achuthan", "അച്യുതൻ"], ["Surendran", "സുരേന്ദ്രൻ"],
+      ["Haridas", "ഹരിദാസ്"], ["Sukumaran", "സുകുമാരൻ"], ["Balakrishnan", "ബാലകൃഷ്ണൻ"], ["Ravindran", "രവീന്ദ്രൻ"],
+      ["Vasudevan", "വാസുദേവൻ"], ["Sankaran", "ശങ്കരൻ"], ["Narayanan", "നാരായണൻ"], ["Padmanabhan", "പത്മനാഭൻ"],
+      ["K", "കെ"], ["V", "വി"], ["P", "പി"], ["R", "ആർ"],
+      ["S", "എസ്"], ["M", "എം"], ["N", "എൻ"], ["B", "ബി"],
+      ["T", "ടി"], ["C", "സി"], ["G", "ജി"], ["A", "എ"],
+      ["J", "ജെ"], ["H", "എച്ച്"], ["D", "ഡി"], ["L", "എൽ"]
+    ];
+
+    const sampleSeed = mobileApplicationAllPreviewRecords[0];
+    let applicantGlobalIndex = 0;
+    if (sampleSeed) Object.entries(ORGANISATIONAL_DISTRICT_MANDALAMS).forEach(([orgId, constituencyIds]) => constituencyIds.forEach((constituencyId, cIdx) => {
+      const constituency = constituencies.find(item => item.id === constituencyId);
+      const district = districts.find(item => item.id === constituency?.districtId);
+      if (!constituency || !district) return;
+      for (let index = 1; index <= 15; index++) {
+        const id = `sample-${orgId}-${constituencyId}-${index}`;
+        const fIdx = (applicantGlobalIndex * 17 + cIdx * 3 + index) % firstNames.length;
+        const lIdx = (applicantGlobalIndex * 23 + cIdx * 7 + index * 5) % lastNames.length;
+        const [fEn, fMl] = firstNames[fIdx];
+        const [lEn, lMl] = lastNames[lIdx];
+        const nameEn = `${fEn} ${lEn}`;
+        const nameMl = `${fMl} ${lMl}`;
+        applicantGlobalIndex++;
+        const locationEn = `${constituency.en}, ${district.en}`;
+        const locationMl = `${constituency.ml}, ${district.ml}`;
+        const statuses: MobileApplicationListVisibleStatus[] = ["application_received", "review", "beneficiary", "rejected"];
+        const appCount = 1 + ((applicantGlobalIndex * 7 + index * 5 + cIdx * 3) % 11);
+        const records = Array.from({ length: appCount }, (_, recordIndex) => {
+          const workflowStatus = statuses[(index + recordIndex) % statuses.length];
+          const status: MobileApplicationRecord["status"] = workflowStatus === "beneficiary" ? "approved" : workflowStatus === "review" ? "in_review" : workflowStatus === "rejected" ? "rejected" : "pending";
+          return { ...sampleSeed, ref: `SAMPLE-${id}-${recordIndex}`, applicantNameEn: nameEn, applicantNameMl: nameMl, locationEn, locationMl, phone: "", workflowStatus, status };
+        });
+        usersByName.set(id, { id, nameEn, nameMl, locationEn, locationMl, phone: "", schemeNames: [...new Set(records.map(record => record.schemeNameEn))], schemeStatuses: [...new Set(records.map(record => record.status))], applicationCount: records.length, applications: records, sampleOrgId: orgId, sampleConstituencyId: constituencyId });
+      }
+    }));
 
     return Array.from(usersByName.values()).map((user) => ({
       ...user,
@@ -10994,6 +11075,15 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   ].filter(Boolean).length;
 
   const userQuery = userSearchQuery.trim().toLowerCase();
+  const applicantSortValue = (user: (typeof mobileApplicationUsers)[number], metric: string) => {
+    if (metric === "count") return user.applicationCount;
+    if (metric === "recent") return Math.max(0, ...user.applications.map(app => Date.parse(app.appliedDate) || 0));
+    return user.applications.filter(app => {
+      const key = getApplicantStatusCategory(app).key;
+      return metric === "pending" ? ["received", "document_verified", "applied"].includes(key) : key === ({ beneficiary: "approved", review: "in_review", rejected: "rejected" } as Record<string, string>)[metric];
+    }).length;
+  };
+
   const filteredMobileApplicationUsers = mobileApplicationUsers.filter((user) => {
     if (applicantSchemeFilter !== "all" && !user.schemeNames.includes(applicantSchemeFilter)) {
       return false;
@@ -11077,6 +11167,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     }
 
     if (applicantOrgDistrictFilter !== "all") {
+      if (user.sampleOrgId && user.sampleOrgId !== applicantOrgDistrictFilter) return false;
       const od = organisationalDistricts.find((o) => o.id === applicantOrgDistrictFilter);
       const odName = od ? od.en.toLowerCase() : applicantOrgDistrictFilter.toLowerCase();
       const mandalamsForOd = (ORGANISATIONAL_DISTRICT_MANDALAMS[applicantOrgDistrictFilter] || []).map((id) => {
@@ -11132,23 +11223,63 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
       return applicantListSort === "name_asc" ? comparison : -comparison;
     }
     const [metric, direction] = applicantListSort.split("_");
-    const value = (user: typeof a) => {
-      if (metric === "count") return user.applicationCount;
-      if (metric === "recent") return Math.max(0, ...user.applications.map(app => Date.parse(app.appliedDate) || 0));
-      return user.applications.filter(app => {
-        const key = getApplicantStatusCategory(app).key;
-        return metric === "pending" ? ["received", "document_verified", "applied"].includes(key) : key === ({ beneficiary: "approved", review: "in_review", rejected: "rejected" } as Record<string, string>)[metric];
-      }).length;
-    };
-    return (value(a) - value(b)) * (direction === "asc" ? 1 : -1) || a.nameEn.localeCompare(b.nameEn);
+    return (applicantSortValue(a, metric) - applicantSortValue(b, metric)) * (direction === "asc" ? 1 : -1) || a.nameEn.localeCompare(b.nameEn);
   });
+
+  const applicantBadgeKeys = ["approved", "in_review", "document_verified", "applied", "received", "rejected"].filter(
+    (key) => !["document_verified", "received"].includes(key) || filteredMobileApplicationUsers.some((user) => user.statusCounts.some((status) => status.key === key)),
+  );
+
+  const applicantGroups = (() => {
+    const sortGroups = (groups: { id: string; label: string; users: typeof filteredMobileApplicationUsers }[]) => {
+      const [metric, direction] = applicantListSort.split("_");
+      const sign = direction === "asc" ? 1 : -1;
+      return groups.sort((a, b) => {
+        if (metric === "name") return sign * a.label.localeCompare(b.label);
+        const value = (group: typeof a) => metric === "recent"
+          ? group.users.reduce((latest, user) => Math.max(latest, applicantSortValue(user, metric)), 0)
+          : group.users.reduce((total, user) => total + applicantSortValue(user, metric), 0);
+        return (value(a) - value(b)) * sign || a.label.localeCompare(b.label);
+      });
+    };
+    if ((applicantGroupBy === "region" || applicantGroupBy === "org_district") && applicantLocationLevel === "state") {
+      const regionDistricts: Record<string, string[]> = { "reg-south": ["thiruvananthapuram", "kollam", "pathanamthitta", "alappuzha"], "reg-central": ["kottayam", "idukki", "ernakulam", "thrissur", "palakkad"], "reg-north": ["malappuram", "kozhikode", "wayanad", "kannur", "kasaragod"] };
+      const groups = applicantGroupBy === "region" ? Object.keys(regionDistricts).map(id => ({ id, label: getRegionLabel(id), users: [] as typeof filteredMobileApplicationUsers })) : organisationalDistricts.filter(item => ORGANISATIONAL_DISTRICT_MANDALAMS[item.id]).map(item => ({ id: item.id, label: item[lang], users: [] as typeof filteredMobileApplicationUsers }));
+      const unassigned: typeof filteredMobileApplicationUsers = [];
+      for (const user of filteredMobileApplicationUsers) {
+        const location = `${user.locationEn} ${user.locationMl}`.toLocaleLowerCase();
+        let id: string | undefined;
+        if (applicantGroupBy === "region") id = Object.keys(regionDistricts).find(key => regionDistricts[key].some(name => location.includes(name)));
+        else {
+          if (user.sampleOrgId) id = user.sampleOrgId;
+          else { const matches = Object.entries(ORGANISATIONAL_DISTRICT_MANDALAMS).filter(([, ids]) => ids.some(cid => { const item = constituencies.find(c => c.id === cid); return item && (location.includes(item.en.toLocaleLowerCase()) || location.includes(item.ml.toLocaleLowerCase())); })); if (matches.length === 1) id = matches[0][0]; }
+        }
+        const group = groups.find(item => item.id === id);
+        if (group) group.users.push(user); else unassigned.push(user);
+      }
+      if (unassigned.length) groups.push({ id: "unassigned", label: lang === "ml" ? "സ്ഥലം ലഭ്യമല്ല" : "Location not available", users: unassigned });
+      return sortGroups(groups);
+    }
+    if (applicantGroupBy !== "mandalam" || applicantLocationLevel !== "org_district" || applicantOrgDistrictFilter === "all") return null;
+    const options = (ORGANISATIONAL_DISTRICT_MANDALAMS[applicantOrgDistrictFilter] || []).map(id => constituencies.find(item => item.id === id)).filter((item): item is (typeof constituencies)[number] => Boolean(item));
+    const groups = options.map(item => ({ id: item.id, label: item[lang], users: [] as typeof filteredMobileApplicationUsers }));
+    const unassigned: typeof filteredMobileApplicationUsers = [];
+    for (const user of filteredMobileApplicationUsers) {
+      const text = `${user.locationEn} ${user.locationMl}`.toLocaleLowerCase();
+      const match = user.sampleConstituencyId ? options.find(item => item.id === user.sampleConstituencyId) : options.find(item => text.includes(item.en.toLocaleLowerCase()) || text.includes(item.ml.toLocaleLowerCase()));
+      const group = groups.find(item => item.id === match?.id);
+      if (group) group.users.push(user); else unassigned.push(user);
+    }
+    if (unassigned.length) groups.push({ id: "unassigned", label: lang === "ml" ? "മണ്ഡലം ലഭ്യമല്ല" : "Constituency not available", users: unassigned });
+    return sortGroups(groups);
+  })();
 
   const selectedApplicationUser = selectedApplicationUserId
     ? mobileApplicationUsers.find((user) => user.id === selectedApplicationUserId) ?? null
     : null;
 
   const selectedApplicationUserApplications = selectedApplicationUser
-    ? [...savedApplicationRecords, ...mobileApplicationAllPreviewRecords].filter(
+    ? selectedApplicationUser.sampleOrgId ? selectedApplicationUser.applications : [...savedApplicationRecords, ...mobileApplicationAllPreviewRecords].filter(
         (application) =>
           application.applicantNameEn.trim().toLowerCase() === selectedApplicationUser.id &&
           !deletedApplicationRefs.includes(application.ref),
@@ -13236,7 +13367,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         ) : null}
                       </div>
                     ) : mobileSubPage === "needs_attention" ? (
-                      <button type="button" onClick={() => setAttentionFilterOpen(true)} aria-label="Filter needs attention" className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full border border-orange-200 text-[#ff5500] bg-orange-50"><Filter className="h-4 w-4" /></button>
+                      <button type="button" onClick={() => setAttentionFilterOpen(true)} aria-label="Filter needs attention" className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full border border-orange-200 bg-orange-50 text-[#ff5500] dark:border-slate-700 dark:bg-slate-800 dark:text-orange-400"><Filter className="h-4 w-4" /></button>
                     ) : mobileSubPage === "about" || mobileSubPage === "contact" || mobileSubPage === "events_announcements" || (activeTab === "create" && createFlowStep === "scheme_details") ? null : (
                       <>
                         <button
@@ -16858,32 +16989,32 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                               >
                                 <Calendar className="h-3.5 w-3.5 stroke-[2.2]" />
                               </button>
-                              <button type="button" title={lang === "ml" ? "ക്രമീകരിക്കുക" : "Sort"} onClick={() => { setDraftApplicantListSort(applicantListSort); setApplicantListSortOpen(true); }} className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 bg-white text-[#ff5500] dark:bg-slate-900 dark:border-slate-800"><ArrowUpDown className="h-3.5 w-3.5" /></button>
+<button type="button" title={lang === "ml" ? "ക്രമീകരിക്കുക" : "Sort"} onClick={() => { setDraftApplicantListSort(applicantListSort); setDraftApplicantGroupBy(applicantLocationLevel === "state" || (applicantLocationLevel === "org_district" && applicantOrgDistrictFilter !== "all") ? applicantGroupBy : "none"); setApplicantListSortOpen(true); }} className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 bg-white text-[#ff5500] dark:bg-slate-900 dark:border-slate-800"><ArrowUpDown className="h-3.5 w-3.5" /></button>
                               <button type="button" title={lang === "ml" ? "ഫിൽട്ടർ ചെയ്യുക" : "Filter"} onClick={openApplicantFilterModal} className="relative flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 bg-white text-[#ff5500] dark:bg-slate-900 dark:border-slate-800"><Filter className="h-3.5 w-3.5" />{applicantActiveFilterCount > 0 && <span className="absolute -top-1 -right-1 rounded-full bg-[#ff5500] px-1 text-[9px] font-bold text-white">{applicantActiveFilterCount}</span>}</button>
                             </div>
                           </div>
                         </div>
 
-                        {applicantListSortOpen && <div className="absolute inset-0 z-[120] flex items-end bg-slate-950/60" onClick={() => setApplicantListSortOpen(false)}><div role="dialog" aria-modal="true" aria-label="Sort applicants" onClick={event => event.stopPropagation()} className="flex max-h-[85%] w-full flex-col overflow-hidden rounded-t-[24px] border-t border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-800 dark:bg-slate-900"><div className="mx-auto mb-3 h-1 w-10 shrink-0 rounded-full bg-slate-300 dark:bg-slate-700" /><div className="mb-2 flex shrink-0 items-center justify-between border-b border-slate-100 pb-2 dark:border-slate-800"><h2 className="flex items-center gap-2 text-sm font-extrabold text-slate-900 dark:text-white"><ArrowUpDown className="h-4 w-4 text-[#ff5500]" />{lang === "ml" ? "ക്രമീകരിക്കുക" : "Sort By"}</h2><button type="button" aria-label="Close" onClick={() => setApplicantListSortOpen(false)} className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300"><X className="h-4 w-4" /></button></div><div className="min-h-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"><p className="px-3 pb-1 pt-2 text-[10px] font-bold text-slate-500 dark:text-slate-400">{lang === "ml" ? "ക്രമീകരിക്കേണ്ട മാനദണ്ഡം" : "Sort By"}</p><div role="radiogroup" aria-label="Sort By">{[{ id: "name", en: "Applicant Name", ml: "അപേക്ഷകന്റെ പേര്" }, { id: "count", en: "Applications", ml: "അപേക്ഷകൾ" }, { id: "beneficiary", en: "Beneficiaries", ml: "ഗുണഭോക്താക്കൾ" }, { id: "pending", en: "Pending Applications", ml: "തീർപ്പാക്കാത്ത അപേക്ഷകൾ" }, { id: "review", en: "In Review", ml: "പരിശോധനയിൽ" }, { id: "rejected", en: "Rejected Applications", ml: "നിരസിച്ച അപേക്ഷകൾ" }, { id: "recent", en: "Recently Added", ml: "അടുത്തിടെ ചേർത്തത്" }].map(option => { const selected = draftApplicantListSort.startsWith(option.id + "_"); return <button key={option.id} type="button" role="radio" aria-checked={selected} onClick={() => setDraftApplicantListSort(option.id + (option.id === "name" ? "_asc" : "_desc"))} className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs font-semibold ${selected ? "bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300" : "text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"}`}><span>{lang === "ml" ? option.ml : option.en}</span><span className={`flex h-4 w-4 items-center justify-center rounded-full border ${selected ? "border-orange-500 bg-orange-500 text-white" : "border-slate-300 dark:border-slate-600"}`}>{selected && <Check className="h-3 w-3" />}</span></button>; })}</div><p className="px-3 pb-1 pt-3 text-[10px] font-bold text-slate-500 dark:text-slate-400">{lang === "ml" ? "ക്രമം" : "Sort Order"}</p><div role="radiogroup" aria-label="Sort Order" className="mx-3 flex rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800/70">{(draftApplicantListSort.startsWith("name_") ? [{ value: "asc", label: "A to Z" }, { value: "desc", label: "Z to A" }] : draftApplicantListSort.startsWith("recent_") ? [{ value: "desc", label: "Newest First" }, { value: "asc", label: "Oldest First" }] : [{ value: "desc", label: "High to Low" }, { value: "asc", label: "Low to High" }]).map(option => { const [metric, direction] = draftApplicantListSort.split("_"); const selected = direction === option.value; return <button key={option.value} type="button" role="radio" aria-checked={selected} onClick={() => setDraftApplicantListSort(metric + "_" + option.value)} className={`flex min-w-0 flex-1 items-center justify-center gap-1 rounded-lg px-2 py-2 text-center text-xs font-semibold ${selected ? "bg-white text-orange-700 shadow-sm dark:bg-slate-700 dark:text-orange-300" : "text-slate-500 dark:text-slate-400"}`}>{option.label}</button>; })}</div><p className="px-3 pt-2 text-[10px] leading-relaxed text-slate-500 dark:text-slate-400">{draftApplicantListSort.startsWith("recent_") ? (draftApplicantListSort.endsWith("desc") ? "Applicants will be sorted by date added, newest first." : "Applicants will be sorted by date added, oldest first.") : "Applicants will be sorted by the selected criterion and order."}</p></div><button type="button" onClick={() => { setApplicantListSort(draftApplicantListSort); setApplicantListSortOpen(false); }} className="mt-3 shrink-0 rounded-lg bg-[#ff5500] py-2.5 text-xs font-extrabold text-white">{lang === "ml" ? "പ്രയോഗിക്കുക" : "Apply"}</button></div></div>}
-                        {(applicantActiveFilterCount > 0 || applicantListSort !== "count_desc") && <div className="!mt-0 flex items-center gap-1.5 overflow-x-auto border-b border-slate-200/70 bg-[#FAF7F2]/90 px-2.5 py-1.5 dark:border-slate-800 dark:bg-slate-900/80 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden whitespace-nowrap">
-                          {applicantListSort !== "count_desc" && <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 text-[10.5px] font-semibold text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300"><button type="button" aria-label="Reverse sort order" onClick={() => setApplicantListSort(current => { const [metric, direction] = current.split("_"); return `${metric}_${direction === "asc" ? "desc" : "asc"}`; })}>{(() => { const [metric, direction] = applicantListSort.split("_"); const labels: Record<string, [string, string]> = { name: ["Applicant Name", "അപേക്ഷകന്റെ പേര്"], count: ["Applications", "അപേക്ഷകൾ"], beneficiary: ["Beneficiaries", "ഗുണഭോക്താക്കൾ"], pending: ["Pending Applications", "തീർപ്പാക്കാത്ത അപേക്ഷകൾ"], review: ["In Review", "പരിശോധനയിൽ"], rejected: ["Rejected Applications", "നിരസിച്ച അപേക്ഷകൾ"], recent: ["Recently Added", "അടുത്തിടെ ചേർത്തത്"] }; const order = metric === "name" ? (direction === "asc" ? "A to Z" : "Z to A") : metric === "recent" ? (direction === "desc" ? "Newest First" : "Oldest First") : (direction === "desc" ? "High to Low" : "Low to High"); return `${labels[metric]?.[lang === "ml" ? 1 : 0] ?? metric} · ${order}`; })()}</button><button type="button" aria-label="Clear sort" onClick={() => setApplicantListSort("count_desc")}><X className="h-3 w-3" /></button></span>}
+{applicantListSortOpen && typeof document !== "undefined" && document.querySelector("[data-mobile-preview-shell]") && createPortal(<div className="absolute inset-0 z-[120] flex items-end bg-slate-950/60" onClick={() => setApplicantListSortOpen(false)}><div role="dialog" aria-modal="true" aria-label="Sort applicants" onClick={event => event.stopPropagation()} className="flex max-h-[85%] w-full flex-col overflow-hidden rounded-t-[24px] border-t border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-800 dark:bg-slate-900"><div className="mx-auto mb-3 h-1 w-10 shrink-0 rounded-full bg-slate-300 dark:bg-slate-700" /><div className="mb-2 flex shrink-0 items-center justify-between border-b border-slate-100 pb-2 dark:border-slate-800"><h2 className="flex items-center gap-2 text-sm font-extrabold text-slate-900 dark:text-white"><ArrowUpDown className="h-4 w-4 text-[#ff5500]" />{lang === "ml" ? "ക്രമീകരിക്കുക" : "Sort By"}</h2><button type="button" aria-label="Close" onClick={() => setApplicantListSortOpen(false)} className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300"><X className="h-4 w-4" /></button></div><div className="min-h-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"><div className="px-3 pt-2"><label htmlFor="applicant-group-by" className="block pb-1 text-[10px] font-bold text-slate-500 dark:text-slate-400">{lang === "ml" ? "ഗ്രൂപ്പ് ചെയ്യുക" : "Group By"}</label><MobileFilterPicker label={lang === "ml" ? "ഗ്രൂപ്പ് ചെയ്യുക" : "Group By"} value={draftApplicantGroupBy} options={[{ value: "none", label: lang === "ml" ? "ഗ്രൂപ്പില്ല" : "No Grouping" }, ...(applicantLocationLevel === "state" ? [{ value: "region", label: lang === "ml" ? "മേഖല" : "Region" }, { value: "org_district", label: lang === "ml" ? "സംഘടനാ ജില്ല" : "Organisational District" }] : []), ...(applicantLocationLevel === "org_district" && applicantOrgDistrictFilter !== "all" ? [{ value: "mandalam", label: lang === "ml" ? "നിയമസഭാ മണ്ഡലം" : "Assembly Constituency" }] : [])]} onChange={value => setDraftApplicantGroupBy(value as "none" | "mandalam" | "region" | "org_district")} searchLabel={lang === "ml" ? "തിരയുക..." : "Search..."} />{applicantLocationLevel === "org_district" && applicantOrgDistrictFilter === "all" && <p className="pt-1 text-[10px] text-slate-500 dark:text-slate-400">{lang === "ml" ? "ഒരു സംഘടനാ ജില്ല തിരഞ്ഞെടുക്കുക." : "Select an organisational district to group by constituency."}</p>}</div><p className="px-3 pb-1 pt-2 text-[10px] font-bold text-slate-500 dark:text-slate-400">{lang === "ml" ? "ക്രമീകരിക്കേണ്ട മാനദണ്ഡം" : "Sort By"}</p><div className="px-3"><MobileFilterPicker label={lang === "ml" ? "ക്രമീകരിക്കുക" : "Sort By"} value={draftApplicantListSort.slice(0, draftApplicantListSort.lastIndexOf("_"))} options={[{ value: "name", label: lang === "ml" ? "അപേക്ഷകന്റെ പേര്" : "Applicant Name" }, { value: "count", label: lang === "ml" ? "അപേക്ഷകൾ" : "Applications" }, { value: "beneficiary", label: lang === "ml" ? "ഗുണഭോക്താക്കൾ" : "Beneficiaries" }, { value: "pending", label: lang === "ml" ? "തീർപ്പാക്കാത്ത അപേക്ഷകൾ" : "Pending Applications" }, { value: "review", label: lang === "ml" ? "പരിശോധനയിൽ" : "In Review" }, { value: "rejected", label: lang === "ml" ? "നിരസിച്ച അപേക്ഷകൾ" : "Rejected Applications" }, { value: "recent", label: lang === "ml" ? "അടുത്തിടെ ചേർത്തത്" : "Recently Added" }]} onChange={value => setDraftApplicantListSort(value + (value === "name" ? "_asc" : "_desc"))} searchLabel={lang === "ml" ? "തിരയുക..." : "Search..."} /></div><p className="px-3 pb-1 pt-3 text-[10px] font-bold text-slate-500 dark:text-slate-400">{lang === "ml" ? "ക്രമം" : "Sort Order"}</p><div role="radiogroup" aria-label="Sort Order" className="mx-3 flex rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800/70">{(draftApplicantListSort.startsWith("name_") ? [{ value: "asc", label: "A to Z" }, { value: "desc", label: "Z to A" }] : draftApplicantListSort.startsWith("recent_") ? [{ value: "desc", label: "Newest First" }, { value: "asc", label: "Oldest First" }] : [{ value: "desc", label: "High to Low" }, { value: "asc", label: "Low to High" }]).map(option => { const [metric, direction] = draftApplicantListSort.split("_"); const selected = direction === option.value; return <button key={option.value} type="button" role="radio" aria-checked={selected} onClick={() => setDraftApplicantListSort(metric + "_" + option.value)} className={`flex min-w-0 flex-1 items-center justify-center gap-1 rounded-lg px-2 py-2 text-center text-xs font-semibold ${selected ? "bg-white text-orange-700 shadow-sm dark:bg-slate-700 dark:text-orange-300" : "text-slate-500 dark:text-slate-400"}`}>{option.label}</button>; })}</div><p className="px-3 pt-2 text-[10px] leading-relaxed text-slate-500 dark:text-slate-400">{draftApplicantListSort.startsWith("recent_") ? (draftApplicantListSort.endsWith("desc") ? "Applicants will be sorted by date added, newest first." : "Applicants will be sorted by date added, oldest first.") : "Applicants will be sorted by the selected criterion and order."}</p></div><button type="button" onClick={() => { setApplicantListSort(draftApplicantListSort); setApplicantSortApplied(true); if (draftApplicantGroupBy !== applicantGroupBy) setExpandedApplicantGroups([]); setApplicantGroupBy(draftApplicantGroupBy); setApplicantListSortOpen(false); }} className="mt-3 shrink-0 rounded-lg bg-[#ff5500] py-2.5 text-xs font-extrabold text-white">{lang === "ml" ? "പ്രയോഗിക്കുക" : "Apply"}</button></div></div>, document.querySelector("[data-mobile-preview-shell]")!)}
+                        {(applicantActiveFilterCount > 0 || applicantSortApplied) && <div className="!mt-0 flex items-center gap-1.5 overflow-x-auto border-b border-slate-200/70 bg-[#FAF7F2]/90 px-2.5 py-1.5 dark:border-slate-800 dark:bg-slate-900/80 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden whitespace-nowrap">
+                          {applicantSortApplied && <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 text-[10.5px] font-semibold text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300"><button type="button" aria-label="Reverse sort order" onClick={() => setApplicantListSort(current => { const [metric, direction] = current.split("_"); return `${metric}_${direction === "asc" ? "desc" : "asc"}`; })}>{(() => { const [metric, direction] = applicantListSort.split("_"); const labels: Record<string, [string, string]> = { name: ["Applicant Name", "അപേക്ഷകന്റെ പേര്"], count: ["Applications", "അപേക്ഷകൾ"], beneficiary: ["Beneficiaries", "ഗുണഭോക്താക്കൾ"], pending: ["Pending Applications", "തീർപ്പാക്കാത്ത അപേക്ഷകൾ"], review: ["In Review", "പരിശോധനയിൽ"], rejected: ["Rejected Applications", "നിരസിച്ച അപേക്ഷകൾ"], recent: ["Recently Added", "അടുത്തിടെ ചേർത്തത്"] }; const order = metric === "name" ? (direction === "asc" ? "A to Z" : "Z to A") : metric === "recent" ? (direction === "desc" ? "Newest First" : "Oldest First") : (direction === "desc" ? "High to Low" : "Low to High"); return `${labels[metric]?.[lang === "ml" ? 1 : 0] ?? metric} · ${order}`; })()}</button><button type="button" aria-label="Clear sort" onClick={() => { setApplicantListSort("count_desc"); setApplicantSortApplied(false); }}><X className="h-3 w-3" /></button></span>}
                           {[
                           ["Designation", applicantWorkView === "team" && applicantDesignation !== "all" ? (DESIGNATION_OPTIONS_BY_LEVEL[applicantLocationLevel] || DESIGNATION_OPTIONS_BY_LEVEL.state).find(item => item.id === applicantDesignation)?.[lang] || applicantDesignation : "", () => setApplicantDesignation("all")],
                           ["Team Member", applicantWorkView === "team" && applicantTeamMember !== "all" ? (TEAM_MEMBER_OPTIONS.find(item => item.id === applicantTeamMember)?.name || (applicantTeamMember === "unassigned" ? (lang === "ml" ? "ചുമതലപ്പെടുത്താത്തവ" : "Unassigned") : applicantTeamMember)) : "", () => setApplicantTeamMember("all")],
-                          ["Level", applicantLocationLevel !== "state" && applicantLocationLevel !== "ward" ? applicantLocationLevel : "", () => setApplicantLocationLevel("state")],
-                          ["Region", applicantRegionFilter, () => setApplicantRegionFilter("all")],
-                          ["Organisation", applicantOrgDistrictFilter, () => setApplicantOrgDistrictFilter("all")],
-                          ["Mandalam", applicantMandalamFilter, () => setApplicantMandalamFilter("all")],
-                          ["Area", applicantAreaFilter, () => setApplicantAreaFilter("all")],
-                          ["Ward", applicantWardFilter, () => setApplicantWardFilter("all")],
+                          ["Region", applicantLocationLevel === "region" ? applicantRegionFilter : "all", () => setApplicantRegionFilter("all")],
+                          ["Organisation", applicantLocationLevel === "org_district" ? applicantOrgDistrictFilter : "all", () => setApplicantOrgDistrictFilter("all")],
+                          ["Mandalam", applicantLocationLevel === "mandalam" ? applicantMandalamFilter : "all", () => setApplicantMandalamFilter("all")],
+                          ["Area", applicantLocationLevel === "area" ? applicantAreaFilter : "all", () => setApplicantAreaFilter("all")],
+                          ["Ward", applicantLocationLevel === "ward" ? applicantWardFilter : "all", () => setApplicantWardFilter("all")],
                           ["District", applicantDistrictFilter, () => setApplicantDistrictFilter("all")],
                           ["Category", applicantCategoryFilter, () => setApplicantCategoryFilter("all")],
                           ["Department", applicantDepartmentFilter, () => setApplicantDepartmentFilter("all")],
                           ["Scheme", applicantSchemeFilter, () => setApplicantSchemeFilter("all")],
                           ["Status", applicantSchemeStatusFilter, () => setApplicantSchemeStatusFilter("all")],
-                        ].filter(([, value]) => value && value !== "all").map(([label, value, remove]) => { const location = ["Region", "Organisation", "Mandalam", "Area", "Ward", "District"].includes(label as string); const display = label === "Organisation" ? organisationalDistricts.find(item => item.id === value)?.[lang === "ml" ? "ml" : "en"] : label === "Mandalam" ? constituencies.find(item => item.id === value)?.[lang === "ml" ? "ml" : "en"] : undefined; return <span key={label as string} className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10.5px] font-semibold shadow-2xs ${location ? "border-orange-200/90 bg-orange-50 text-orange-800 dark:border-orange-800/60 dark:bg-orange-950/40 dark:text-orange-300" : "border-slate-200 bg-slate-100 text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"}`}>{location && <MapPin className="h-2.5 w-2.5 text-orange-500" />}<span>{display || String(value).replace(/[_-]/g, " ")}</span><button type="button" aria-label={`Remove ${label}`} onClick={remove as () => void} className="ml-0.5 -mr-0.5 rounded-full p-0.5"><X className="h-2.5 w-2.5 stroke-[2.5]" /></button></span>; })}<button type="button" className="shrink-0 text-[10px] font-bold text-orange-600" onClick={() => { setApplicantListSort("count_desc"); setApplicantWorkView("my_work"); setApplicantDesignation("all"); setApplicantTeamMember("all"); setApplicantLocationLevel("state"); setApplicantRegionFilter("all"); setApplicantOrgDistrictFilter("all"); setApplicantMandalamFilter("all"); setApplicantAreaFilter("all"); setApplicantWardFilter("all"); setApplicantLocalBodyFilter("all"); setApplicantDistrictFilter("all"); setApplicantCategoryFilter("all"); setApplicantDepartmentFilter("all"); setApplicantSchemeFilter("all"); setApplicantSchemeStatusFilter("all"); }}>{lang === "ml" ? "എല്ലാം ഒഴിവാക്കുക" : "Clear All"}</button></div>}
+                        ].filter(([, value]) => value && value !== "all").map(([label, value, remove]) => { const location = ["Region", "Organisation", "Mandalam", "Area", "Ward", "District"].includes(label as string); const display = label === "Region" ? getRegionLabel(String(value)) : label === "Area" ? getAreaLabel(String(value)) : label === "Ward" ? getWardLabel(String(value)) : label === "Organisation" ? organisationalDistricts.find(item => item.id === value)?.[lang === "ml" ? "ml" : "en"] : label === "Mandalam" ? constituencies.find(item => item.id === value)?.[lang === "ml" ? "ml" : "en"] : undefined; return <span key={label as string} className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10.5px] font-semibold shadow-2xs ${location ? "border-orange-200/90 bg-orange-50 text-orange-800 dark:border-orange-800/60 dark:bg-orange-950/40 dark:text-orange-300" : "border-slate-200 bg-slate-100 text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"}`}>{location && <MapPin className="h-2.5 w-2.5 text-orange-500" />}<span>{display || String(value).replace(/[_-]/g, " ")}</span><button type="button" aria-label={`Remove ${label}`} onClick={remove as () => void} className="ml-0.5 -mr-0.5 rounded-full p-0.5"><X className="h-2.5 w-2.5 stroke-[2.5]" /></button></span>; })}<button type="button" className="shrink-0 text-[10px] font-bold text-orange-600" onClick={() => { setApplicantListSort("count_desc"); setApplicantSortApplied(false); setApplicantGroupBy("none"); setApplicantWorkView("my_work"); setApplicantDesignation("all"); setApplicantTeamMember("all"); setApplicantLocationLevel("state"); setApplicantRegionFilter("all"); setApplicantOrgDistrictFilter("all"); setApplicantMandalamFilter("all"); setApplicantAreaFilter("all"); setApplicantWardFilter("all"); setApplicantLocalBodyFilter("all"); setApplicantDistrictFilter("all"); setApplicantCategoryFilter("all"); setApplicantDepartmentFilter("all"); setApplicantSchemeFilter("all"); setApplicantSchemeStatusFilter("all"); }}>{lang === "ml" ? "എല്ലാം ഒഴിവാക്കുക" : "Clear All"}</button></div>}
                         <div className="space-y-1.5 pt-0.5 px-3">
-                          {filteredMobileApplicationUsers.map((user) => {
+                          {(() => {
+                            const renderApplicantCard = (user: (typeof filteredMobileApplicationUsers)[number]) => {
                             const avatar = getApplicantAvatarInfo(user.nameEn || user.nameMl || "");
                             const isMenuOpen = openApplicantMenuId === user.id;
 
@@ -16914,9 +17045,10 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 </div>
 
                                 <div className="relative shrink-0 flex items-center gap-1.5">
-                                  {user.statusCounts && user.statusCounts.length > 0 && (
-                                    <div className="flex items-center gap-1">
-                                      {user.statusCounts.map((sc) => {
+                                    <div className="flex items-center justify-end gap-1">
+                                      {applicantBadgeKeys.map((statusKey) => {
+                                        const sc = user.statusCounts.find((status) => status.key === statusKey);
+                                        if (!sc) return <span key={statusKey} aria-hidden="true" className="h-5 w-5 shrink-0" />;
                                         const matchingApps = user.applications.filter(
                                           (app) => getApplicantStatusCategory(app).key === sc.key
                                         );
@@ -16944,14 +17076,13 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                               }
                                             }}
                                             title={lang === "ml" ? `${sc.count} ${sc.labelMl}` : `${sc.count} ${sc.labelEn}`}
-                                            className={`flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10.5px] font-black leading-none border shadow-2xs transition-transform hover:scale-110 active:scale-95 cursor-pointer ${sc.className}`}
+                                            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10.5px] font-black leading-none border shadow-2xs transition-transform hover:scale-110 active:scale-95 cursor-pointer ${sc.key === "applied" ? "border-[#fb923c] bg-[#fb923c] text-white" : sc.className}`}
                                           >
                                             {sc.count}
                                           </button>
                                         );
                                       })}
                                     </div>
-                                  )}
 
                                   <button
                                     type="button"
@@ -17090,7 +17221,13 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                 </div>
                               </div>
                             );
-                          })}
+                            };
+                            if (!applicantGroups) return filteredMobileApplicationUsers.map(renderApplicantCard);
+                            return applicantGroups.map(group => {
+                              const expanded = expandedApplicantGroups.includes(group.id);
+                              return <div key={group.id} className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"><button type="button" aria-expanded={expanded} onClick={() => setExpandedApplicantGroups(current => current.includes(group.id) ? current.filter(id => id !== group.id) : [...current, group.id])} className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-[11px] font-bold text-slate-900 dark:text-slate-100"><span className="min-w-0 flex-1 truncate">{group.label}</span><span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-slate-100 px-1 text-[10px] text-slate-600 dark:bg-slate-800 dark:text-slate-300">{group.users.length}</span><ChevronRight className={`h-4 w-4 text-slate-400 transition-transform ${expanded ? "rotate-90" : ""}`} /></button>{expanded && <div className="space-y-1.5 border-t border-slate-100 p-2 dark:border-slate-700">{group.users.length ? group.users.map(renderApplicantCard) : <p className="py-2 text-center text-[10px] text-slate-500">{lang === "ml" ? "അപേക്ഷകരില്ല" : "No applicants"}</p>}</div>}</div>;
+                            });
+                          })()}
 
                           {filteredMobileApplicationUsers.length === 0 && (
                             <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-8 text-center dark:border-slate-800 dark:bg-slate-900">
@@ -24598,14 +24735,14 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           {mobileSubPage === "needs_attention" && attentionFilterOpen && (
             <div className="absolute inset-0 z-[100] flex items-end bg-black/60" onClick={() => setAttentionFilterOpen(false)}>
               <div className="w-full max-h-[85%] overflow-y-auto rounded-t-[24px] bg-white dark:bg-slate-900 p-4 shadow-2xl" onClick={(event) => event.stopPropagation()}>
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
-                  <h3 className="flex items-center gap-2 text-sm font-bold"><Filter className="h-4 w-4 text-orange-600" />{lang === "ml" ? "ശ്രദ്ധ ആവശ്യമുള്ളവ ഫിൽട്ടർ ചെയ്യുക" : "Needs Attention Filters"}</h3>
-                  <button type="button" aria-label="Close" onClick={() => setAttentionFilterOpen(false)}><X className="h-5 w-5" /></button>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3 dark:border-slate-700">
+                  <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100"><Filter className="h-4 w-4 text-orange-600 dark:text-orange-400" />{lang === "ml" ? "ശ്രദ്ധ ആവശ്യമുള്ളവ ഫിൽട്ടർ ചെയ്യുക" : "Needs Attention Filters"}</h3>
+                  <button type="button" aria-label="Close" onClick={() => setAttentionFilterOpen(false)} className="text-slate-600 dark:text-slate-200"><X className="h-5 w-5" /></button>
                 </div>
                 <div className="space-y-3"><PickerButton label={lang === "ml" ? "ശ്രദ്ധയുടെ തരം" : "Attention Type"} value={({ all: lang === "ml" ? "എല്ലാ തരങ്ങളും" : "All Types", delete: "Delete Approvals", follow: "Follow Ups", documents: "Documents Missing", other: "Other" } as Record<string, string>)[attentionType]} onClick={() => openCustomPicker(lang === "ml" ? "ശ്രദ്ധയുടെ തരം" : "Attention Type", [{ id: "all", label: lang === "ml" ? "എല്ലാ തരങ്ങളും" : "All Types" }, { id: "delete", label: lang === "ml" ? "ഡിലീറ്റ് അനുമതികൾ" : "Delete Approvals" }, { id: "follow", label: lang === "ml" ? "തുടർനടപടികൾ" : "Follow Ups" }, { id: "documents", label: lang === "ml" ? "രേഖകൾ ബാക്കി" : "Documents Missing" }, { id: "other", label: lang === "ml" ? "മറ്റുള്ളവ" : "Other" }], attentionType, setAttentionType, true)} />
                 <PickerButton label={lang === "ml" ? "പദ്ധതി" : "Scheme"} value={attentionScheme === "all" ? (lang === "ml" ? "എല്ലാ പദ്ധതികളും" : "All Schemes") : attentionScheme} onClick={() => openCustomPicker(lang === "ml" ? "പദ്ധതി" : "Scheme", [{ id: "all", label: lang === "ml" ? "എല്ലാ പദ്ധതികളും" : "All Schemes" }, ...[...new Set(["PM Kisan", "PM Vishwakarma", "PM SVANidhi", "Subhadra Yojana", "Karunya Health Scheme", "Indira Gandhi Old Age Pension", "PM Awas Yojana (Gramin)", "Matsya Samridhi Scheme", "Vayoshreshtha Samman", "Kera Suraksha Bima Yojana", "Chief Minister's Distress Relief Fund", "PM Employment Generation Programme", ...followUpCollectionRecords.map((record) => record.scheme.titleEn)])].sort().map((scheme) => ({ id: scheme, label: scheme }))], attentionScheme, setAttentionScheme, true)} /></div>
                 <div className="flex gap-2 mt-4">
-                  <button type="button" onClick={() => { setAttentionType("all"); setAttentionScheme("all"); }} className="rounded-xl border border-slate-200 px-5 py-2 text-xs font-bold">{lang === "ml" ? "പുനഃസജ്ജമാക്കുക" : "Reset"}</button>
+                  <button type="button" onClick={() => { setAttentionType("all"); setAttentionScheme("all"); }} className="rounded-xl border border-slate-200 px-5 py-2 text-xs font-bold text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">{lang === "ml" ? "പുനഃസജ്ജമാക്കുക" : "Reset"}</button>
                   <button type="button" onClick={() => setAttentionFilterOpen(false)} className="flex-1 rounded-xl bg-[#ff5500] py-2 text-xs font-bold text-white">{lang === "ml" ? "ഫിൽട്ടർ പ്രയോഗിക്കുക" : "Apply Filters"}</button>
                 </div>
               </div>
@@ -24978,7 +25115,14 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             { id: "state", label: lang === "ml" ? "സംസ്ഥാനം" : "State" },
                           ],
                           applicantPendingLocationLevel,
-                          (id) => { setApplicantPendingLocationLevel(id as any); if (id !== "region") setApplicantPendingRegion("all"); }
+                          (id) => {
+                            setApplicantPendingLocationLevel(id as any);
+                            if (id !== "region") setApplicantPendingRegion("all");
+                            if (id === "state" || id === "region") setApplicantPendingOrgDistrict("all");
+                            if (["state", "region", "org_district"].includes(id)) setApplicantPendingMandalam("all");
+                            if (["state", "region", "org_district", "mandalam"].includes(id)) setApplicantPendingArea("all");
+                            if (id !== "ward") setApplicantPendingWard("all");
+                          }
                         )
                       }
                     />
@@ -25341,6 +25485,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       type="button"
                       onClick={() => {
                         setApplicantWorkView(applicantPendingWorkView);
+                        if (applicantPendingLocationLevel !== applicantLocationLevel || applicantPendingOrgDistrict !== applicantOrgDistrictFilter) { setApplicantGroupBy("none"); setExpandedApplicantGroups([]); }
                         setApplicantDesignation(applicantPendingWorkView === "team" ? draftApplicantDesignation : "all");
                         setApplicantTeamMember(applicantPendingWorkView === "team" ? draftApplicantTeamMember : "all");
                         setApplicantLocationLevel(applicantPendingLocationLevel);

@@ -827,6 +827,46 @@ const SAMPLE_ORGANISATION_ASSIGNMENTS: Record<string, { district: string; mandal
 };
 
 // Curated supplementary roster generator per scheme to guarantee rich application list
+const SCHEME_SAMPLE_FIRST_NAMES: [string, string][] = [
+  ["Amal", "അമൽ"], ["Devika", "ദേവിക"], ["Arun", "അരുൺ"], ["Meera", "മീര"],
+  ["Vishnu", "വിഷ്ണു"], ["Anjali", "അഞ്ജലി"], ["Rahul", "രാഹുൽ"], ["Lakshmi", "ലക്ഷ്മി"],
+  ["Adithya", "ആദിത്യ"], ["Sreelakshmi", "ശ്രീലക്ഷ്മി"], ["Nikhil", "നിഖിൽ"], ["Aparna", "അപർണ"],
+  ["Sanjay", "സഞ്ജയ്"], ["Athira", "ആതിര"], ["Anand", "ആനന്ദ്"], ["Reshma", "രേഷ്മ"],
+  ["Akhil", "അഖിൽ"], ["Kavya", "കാവ്യ"], ["Jithu", "ജിത്തു"], ["Haritha", "ഹരിത"],
+  ["Pranav", "പ്രണവ്"], ["Gopika", "ഗോപിക"], ["Abhijith", "അഭിജിത്ത്"], ["Sneha", "സ്നേഹ"],
+  ["Sooraj", "സൂരജ്"], ["Ananya", "അനന്യ"], ["Midhun", "മിഥുൻ"], ["Arya", "ആര്യ"],
+  ["Sarath", "ശരത്"], ["Parvathy", "പാർവ്വതി"], ["Deepak", "ദീപക്"], ["Karthika", "കാർത്തിക"],
+  ["Vignesh", "വിഘ്നേഷ്"], ["Swathi", "സ്വാതി"], ["Aswin", "അശ്വിൻ"], ["Divya", "ദിവ്യ"],
+  ["Manoj", "മനോജ്"], ["Pooja", "പൂജ"], ["Vivek", "വിവേക്"], ["Keerthi", "കീർത്തി"],
+  ["Sreeraj", "ശ്രീരാജ്"], ["Malavika", "മാളവിക"], ["Harikrishnan", "ഹരികൃഷ്ണൻ"], ["Shilpa", "ശിൽപ"],
+  ["Gokul", "ഗോകുൽ"], ["Nandana", "നന്ദന"], ["Rohit", "രോഹിത്"], ["Archana", "അർച്ചന"],
+  ["Kiran", "കിരൺ"], ["Gayathri", "ഗായത്രി"], ["Bipin", "ബിപിൻ"], ["Manju", "മഞ്ജു"],
+  ["Sudheesh", "സുധീഷ്"], ["Sandhya", "സന്ധ്യ"], ["Rajesh", "രാജേഷ്"], ["Ritu", "റിതു"],
+  ["Suresh", "സുരേഷ്"], ["Remya", "രമ്യ"], ["Jayesh", "ജയേഷ്"], ["Deepa", "ദീപ"],
+  ["Praveen", "പ്രവീൺ"], ["Veena", "വീണ"], ["Sunil", "സുനിൽ"], ["Anupama", "അനുപമ"],
+  ["Vineeth", "വിനീത്"], ["Nimisha", "നിമിഷ"], ["Ajith", "അജിത്ത്"], ["Sangeetha", "സംഗീത"],
+  ["Unnikrishnan", "ഉണ്ണികൃഷ്ണൻ"], ["Asha", "ആശ"], ["Sreejith", "ശ്രീജിത്ത്"], ["Soumya", "സൗമ്യ"],
+  ["Mahesh", "മഹേഷ്"], ["Sujatha", "സുജാത"], ["Pradeep", "പ്രദീപ്"], ["Bindu", "ബിന്ദു"],
+  ["Vijayan", "വിജയൻ"], ["Geetha", "ഗീത"], ["Mohanan", "മോഹനൻ"], ["Sobhana", "ശോഭന"],
+  ["Gopalakrishnan", "ഗോപാലകൃഷ്ണൻ"], ["Radha", "രാധ"], ["Sadasivan", "സദാശിവൻ"], ["Vasantha", "വസന്ത"],
+  ["Kuttappan", "കുട്ടപ്പൻ"], ["Saraswathi", "സരസ്വതി"], ["Damodaran", "ദാമോദരൻ"], ["Bhavani", "ഭവാനി"],
+  ["Raman Nair", "രാമൻ നായർ"], ["Kamala", "കമലാ"], ["Raghavan", "രാഘവൻ"], ["Thankam", "തങ്കം"],
+  ["Velayudhan", "വേലായുധൻ"], ["Janaki", "ജാനകി"], ["Balakrishnan", "ബാലകൃഷ്ണൻ"], ["Devaki", "ദേവകി"],
+  ["Sankaran", "ശങ്കരൻ"], ["Meenakshi", "മീനാക്ഷി"], ["Kumaran", "കുമാരൻ"], ["Kalyani", "കല്യാണി"],
+];
+
+const SCHEME_SAMPLE_LAST_NAMES: [string, string][] = [
+  ["Nair", "നായർ"], ["Menon", "മേനോൻ"], ["Pillai", "പിള്ള"], ["Varma", "വർമ്മ"],
+  ["Kurup", "കുറുപ്പ്"], ["Panicker", "പണിക്കർ"], ["Nambiar", "നമ്പ്യാർ"], ["Namboodiri", "നമ്പൂതിരി"],
+  ["Marar", "മാരാർ"], ["Warrier", "വാരിയർ"], ["Pisharody", "പിഷാരോടി"], ["Poduval", "പൊതുവാൾ"],
+  ["Vaidyan", "വൈദ്യൻ"], ["Kaimal", "കൈമൾ"], ["Unnithan", "ഉണ്ണിത്താൻ"], ["Valiathan", "വലിയത്താൻ"],
+  ["Thampi", "തമ്പി"], ["Elayath", "ഇളയത്"], ["Moothath", "മൂത്തത്"], ["Nedungadi", "നെടുങ്ങാടി"],
+  ["Varghese", "വർഗ്ഗീസ്"], ["Joseph", "ജോസഫ്"], ["Thomas", "തോമസ്"], ["Mathew", "മാത്യു"],
+  ["George", "ജോർജ്"], ["Philip", "ഫിലിപ്പ്"], ["Alexander", "അലക്സാണ്ടർ"], ["Chacko", "ചാക്കോ"],
+  ["Shafee", "ഷാഫി"], ["Rahiman", "റഹിമാൻ"], ["Ahammed", "അഹമ്മദ്"], ["Hassan", "ഹസ്സൻ"],
+  ["Ali", "അലി"], ["Khan", "ഖാൻ"], ["Rawther", "റാവുത്തർ"], ["Koya", "കോയ"],
+];
+
 const generateSchemeApplications = (
   scheme: SchemeReportDef,
   existingApps: MobileReportApplicationRecord[],
@@ -862,10 +902,16 @@ const generateSchemeApplications = (
   const desiredCount = expandedSamples ? 28 + (hash % 125) : targetCount;
 
   for (let i = 0; i < (expandedSamples ? desiredCount + poolLen : poolLen) && result.length < desiredCount; i++) {
-    const poolIdx = expandedSamples ? (hash + Math.floor((i * i) / poolLen)) % poolLen : (hash + i) % poolLen;
+    const poolIdx = (hash + i) % poolLen;
     const person = KERALA_APPLICANT_POOL[poolIdx];
-    const suffix = expandedSamples && i >= poolLen ? ` ${i + 1}` : "";
-    const nameEn = `${person.nameEn}${suffix}`;
+    let nameEn = person.nameEn;
+    let nameMl = person.nameMl;
+    if (expandedSamples && i >= poolLen) {
+      const fn = SCHEME_SAMPLE_FIRST_NAMES[(hash + i * 7) % SCHEME_SAMPLE_FIRST_NAMES.length];
+      const ln = SCHEME_SAMPLE_LAST_NAMES[(hash + i * 13) % SCHEME_SAMPLE_LAST_NAMES.length];
+      nameEn = `${fn[0]} ${ln[0]}`;
+      nameMl = `${fn[1]} ${ln[1]}`;
+    }
     if (existingNames.has(nameEn.toLowerCase())) continue;
 
     const item = statusCycle[result.length % statusCycle.length];
@@ -881,7 +927,7 @@ const generateSchemeApplications = (
       categoryEn: scheme.categoryEn,
       categoryMl: scheme.categoryMl,
       applicantNameEn: nameEn,
-      applicantNameMl: `${person.nameMl}${suffix}`,
+      applicantNameMl: nameMl,
       locationEn: person.locationEn,
       locationMl: person.locationMl,
       status: item.status,
@@ -2539,9 +2585,6 @@ export function MobileReportsPage({
       return (groupOrder === "asc" ? delta : -delta) || a.name.localeCompare(b.name);
     });
   }, [applicationFilterInPhone, groupBy, groupMetric, groupOrder, sortedSchemeApplications]);
-  const schemeRows = applicationFilterInPhone && groupBy !== "none"
-    ? sampleGroups.flatMap((group) => [{ kind: "header" as const, group }, ...(collapsedGroups.includes(group.name) ? group.apps.map((app) => ({ kind: "app" as const, app })) : [])])
-    : sortedSchemeApplications.map((app) => ({ kind: "app" as const, app }));
 
   const selectSchemeStatusTab = (status: "all" | "approved" | "rejected" | "in_review" | "pending") => {
     const next = status !== "all" && schemeStatusFilter === status ? "all" : status;
@@ -2549,6 +2592,160 @@ export function MobileReportsPage({
     if (applicationFilterInPhone && groupBy !== "none") {
       setGroupMetric(next === "all" ? "total" : next === "in_review" ? "review" : next);
     }
+  };
+
+  const renderSchemeAppCard = (
+    app: MobileReportApplicationRecord,
+    index: number,
+    groupPrefix?: string,
+  ) => {
+    const badge = getStatusBadge(app);
+    const BadgeIcon = badge.icon;
+    const menuKey = `${groupPrefix ? `${groupPrefix}-` : ""}${app.ref}-${index}`;
+    const isMenuOpen = openAppMenuKey === menuKey;
+
+    return (
+      <div
+        key={menuKey}
+        onClick={() => onSelectApplication(app)}
+        className="group relative px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:border-orange-300 dark:hover:border-orange-800 hover:shadow-xs transition-all cursor-pointer"
+      >
+        <div className="flex items-center justify-between gap-2">
+          {/* Left: Avatar (Orange shade) + Applicant Name (Decreased size) + Location */}
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <div className="h-7.5 w-7.5 rounded-full bg-orange-100/80 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center text-[10px] font-extrabold shrink-0 border border-orange-200 dark:border-orange-800/60">
+              {(lang === "ml" ? app.applicantNameMl : app.applicantNameEn)?.slice(0, 2).toUpperCase() || "AP"}
+            </div>
+            <div className="min-w-0 flex-1">
+              <h4 className="text-[11.5px] font-bold text-slate-900 dark:text-white truncate group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors leading-tight">
+                {lang === "ml" ? app.applicantNameMl : app.applicantNameEn}
+              </h4>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                {lang === "ml" ? app.locationMl : app.locationEn}
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Status badge & 3-dot action button */}
+          <div className="flex shrink-0 items-center gap-1 self-center">
+            <span
+              className={`inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${badge.className}`}
+            >
+              <BadgeIcon className="h-3 w-3 stroke-[2]" />
+              <span>{badge.label}</span>
+            </span>
+
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const isUp = window.innerHeight - rect.bottom < 180;
+                  setOpenAppMenuUp(isUp);
+                  setOpenAppMenuKey(isMenuOpen ? null : menuKey);
+                }}
+                className={`flex h-6.5 w-6.5 items-center justify-center rounded-full transition-colors cursor-pointer ${
+                  isMenuOpen
+                    ? "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200"
+                    : "text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                }`}
+                aria-label={lang === "ml" ? "കൂടുതൽ പ്രവർത്തനങ്ങൾ" : "More actions"}
+                title={lang === "ml" ? "കൂടുതൽ പ്രവർത്തനങ്ങൾ" : "More actions"}
+              >
+                <MoreVertical className="h-3.5 w-3.5 stroke-[2.2]" />
+              </button>
+
+              {isMenuOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpenAppMenuKey(null);
+                    }}
+                  />
+                  <div
+                    className={`absolute right-0 z-50 w-44 overflow-hidden rounded-xl border border-slate-200/90 bg-white py-1 shadow-xl dark:border-slate-800 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-150 ${
+                      openAppMenuUp ? "bottom-7" : "top-7"
+                    }`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOpenAppMenuKey(null);
+                        if (onEditApplication) {
+                          onEditApplication(app);
+                        } else {
+                          onSelectApplication(app);
+                        }
+                      }}
+                      className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
+                    >
+                      <Pencil className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                      <span>{lang === "ml" ? "തിരുത്തുക" : "Edit"}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOpenAppMenuKey(null);
+                        onSelectApplication(app);
+                      }}
+                      className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
+                    >
+                      <Eye className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                      <span>{lang === "ml" ? "കാണുക" : "View"}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOpenAppMenuKey(null);
+                        if (onCallApplication) {
+                          onCallApplication(app);
+                        } else if (app.phone) {
+                          window.location.href = `tel:${app.phone.replace(/\D/g, "")}`;
+                        }
+                      }}
+                      className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
+                    >
+                      <Phone className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                      <span>{lang === "ml" ? "വിളിക്കുക" : "Call"}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOpenAppMenuKey(null);
+                        if (onDocumentVerification) {
+                          onDocumentVerification(app);
+                        } else {
+                          onCheckEligibility?.(app);
+                        }
+                      }}
+                      className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
+                    >
+                      <FileCheck className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                      <span>{lang === "ml" ? "രേഖാ പരിശോധന" : "Update Document verification"}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOpenAppMenuKey(null);
+                        onDeleteApplication?.(app);
+                      }}
+                      className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-1.5 text-left text-[11px] font-semibold text-red-600 hover:bg-red-50 dark:border-slate-800 dark:text-red-400 dark:hover:bg-red-950/40 cursor-pointer"
+                    >
+                      <Trash2 className="h-3.5 w-3.5 text-red-500 dark:text-red-400" />
+                      <span>{lang === "ml" ? "നീക്കം ചെയ്യുക" : "Delete"}</span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   // Render Scheme Applications Drilldown View
@@ -2883,163 +3080,68 @@ export function MobileReportsPage({
                   </button>
                 )}
               </div>
-            ) : (
-              schemeRows.map((row, index) => {
-                if (row.kind === "header") {
-                  const group = row.group;
-                  const expanded = collapsedGroups.includes(group.name);
-                  const metricKey = groupMetric === "review" ? "inReview" : groupMetric as "total" | "approved" | "pending" | "rejected";
-                  return <button key={`group-${group.name}`} type="button" aria-expanded={expanded} onClick={() => setCollapsedGroups((current) => expanded ? current.filter((name) => name !== group.name) : [...current, group.name])} className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-left text-xs font-bold text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"><span className="min-w-0 truncate">{group.name}</span><span className="flex shrink-0 items-center gap-1.5"><span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-orange-100 px-1 text-[11px] font-extrabold text-orange-700 dark:bg-slate-700 dark:text-slate-100">{group.stats[metricKey]}</span><ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "" : "-rotate-90"}`} /></span></button>;
-                }
-                const app = row.app;
-                const badge = getStatusBadge(app);
-                const BadgeIcon = badge.icon;
-                const menuKey = `${app.ref}-${index}`;
-                const isMenuOpen = openAppMenuKey === menuKey;
-
+            ) : applicationFilterInPhone && groupBy !== "none" ? (
+              sampleGroups.map((group) => {
+                const expanded = collapsedGroups.includes(group.name);
+                const metricKey =
+                  groupMetric === "review"
+                    ? "inReview"
+                    : (groupMetric as "total" | "approved" | "pending" | "rejected");
                 return (
                   <div
-                    key={menuKey}
-                    onClick={() => onSelectApplication(app)}
-                    className="group relative px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:border-orange-300 dark:hover:border-orange-800 hover:shadow-xs transition-all cursor-pointer"
+                    key={`group-${group.name}`}
+                    className="overflow-hidden rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs transition-all"
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      {/* Left: Avatar (Orange shade) + Applicant Name (Decreased size) + Location */}
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <div className="h-7.5 w-7.5 rounded-full bg-orange-100/80 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center text-[10px] font-extrabold shrink-0 border border-orange-200 dark:border-orange-800/60">
-                          {(lang === "ml" ? app.applicantNameMl : app.applicantNameEn)?.slice(0, 2).toUpperCase() || "AP"}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h4 className="text-[11.5px] font-bold text-slate-900 dark:text-white truncate group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors leading-tight">
-                            {lang === "ml" ? app.applicantNameMl : app.applicantNameEn}
-                          </h4>
-                          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
-                            {lang === "ml" ? app.locationMl : app.locationEn}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Right: Status badge & 3-dot action button */}
-                      <div className="flex shrink-0 items-center gap-1 self-center">
-                        <span
-                          className={`inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${badge.className}`}
-                        >
-                          <BadgeIcon className="h-3 w-3 stroke-[2]" />
-                          <span>{badge.label}</span>
+                    <button
+                      type="button"
+                      aria-expanded={expanded}
+                      onClick={() =>
+                        setCollapsedGroups((current) =>
+                          expanded
+                            ? current.filter((name) => name !== group.name)
+                            : [...current, group.name]
+                        )
+                      }
+                      className={`flex w-full items-center justify-between px-3.5 py-2.5 text-left text-xs font-bold text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors cursor-pointer ${
+                        expanded
+                          ? "border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-800/40"
+                          : ""
+                      }`}
+                    >
+                      <span className="min-w-0 truncate text-[12px] font-bold text-slate-900 dark:text-white">
+                        {group.name}
+                      </span>
+                      <span className="flex shrink-0 items-center gap-1.5">
+                        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-orange-100 dark:bg-slate-800 px-1.5 text-[11px] font-extrabold text-orange-700 dark:text-slate-200">
+                          {group.stats[metricKey]}
                         </span>
-
-                        <div className="relative">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const rect = e.currentTarget.getBoundingClientRect();
-                              const isUp = window.innerHeight - rect.bottom < 180;
-                              setOpenAppMenuUp(isUp);
-                              setOpenAppMenuKey(isMenuOpen ? null : menuKey);
-                            }}
-                            className={`flex h-6.5 w-6.5 items-center justify-center rounded-full transition-colors cursor-pointer ${
-                              isMenuOpen
-                                ? "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200"
-                                : "text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-                            }`}
-                            aria-label={lang === "ml" ? "കൂടുതൽ പ്രവർത്തനങ്ങൾ" : "More actions"}
-                            title={lang === "ml" ? "കൂടുതൽ പ്രവർത്തനങ്ങൾ" : "More actions"}
-                          >
-                            <MoreVertical className="h-3.5 w-3.5 stroke-[2.2]" />
-                          </button>
-
-                          {isMenuOpen && (
-                            <>
-                              <div
-                                className="fixed inset-0 z-40"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setOpenAppMenuKey(null);
-                                }}
-                              />
-                              <div
-                                className={`absolute right-0 z-50 w-44 overflow-hidden rounded-xl border border-slate-200/90 bg-white py-1 shadow-xl dark:border-slate-800 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-150 ${
-                                  openAppMenuUp ? "bottom-7" : "top-7"
-                                }`}
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setOpenAppMenuKey(null);
-                                    if (onEditApplication) {
-                                      onEditApplication(app);
-                                    } else {
-                                      onSelectApplication(app);
-                                    }
-                                  }}
-                                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
-                                >
-                                  <Pencil className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
-                                  <span>{lang === "ml" ? "തിരുത്തുക" : "Edit"}</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setOpenAppMenuKey(null);
-                                    onSelectApplication(app);
-                                  }}
-                                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
-                                >
-                                  <Eye className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
-                                  <span>{lang === "ml" ? "കാണുക" : "View"}</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setOpenAppMenuKey(null);
-                                    if (onCallApplication) {
-                                      onCallApplication(app);
-                                    } else if (app.phone) {
-                                      window.location.href = `tel:${app.phone.replace(/\D/g, "")}`;
-                                    }
-                                  }}
-                                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
-                                >
-                                  <Phone className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
-                                  <span>{lang === "ml" ? "വിളിക്കുക" : "Call"}</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setOpenAppMenuKey(null);
-                                    if (onDocumentVerification) {
-                                      onDocumentVerification(app);
-                                    } else {
-                                      onCheckEligibility?.(app);
-                                    }
-                                  }}
-                                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/80 cursor-pointer"
-                                >
-                                  <FileCheck className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
-                                  <span>{lang === "ml" ? "രേഖാ പരിശോധന" : "Update Document verification"}</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setOpenAppMenuKey(null);
-                                    onDeleteApplication?.(app);
-                                  }}
-                                  className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-1.5 text-left text-[11px] font-semibold text-red-600 hover:bg-red-50 dark:border-slate-800 dark:text-red-400 dark:hover:bg-red-950/40 cursor-pointer"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5 text-red-500 dark:text-red-400" />
-                                  <span>{lang === "ml" ? "നീക്കം ചെയ്യുക" : "Delete"}</span>
-                                </button>
-                              </div>
-                            </>
-                          )}
-                        </div>
+                        <ChevronDown
+                          className={`h-4 w-4 text-slate-400 dark:text-slate-500 transition-transform duration-200 ${
+                            expanded ? "" : "-rotate-90"
+                          }`}
+                        />
+                      </span>
+                    </button>
+                    {expanded && (
+                      <div className="space-y-1.5 bg-slate-50/40 dark:bg-slate-950/40 p-2">
+                        {group.apps.length === 0 ? (
+                          <div className="py-2.5 text-center text-[11px] font-medium text-slate-400 dark:text-slate-500">
+                            {lang === "ml" ? "അപേക്ഷകൾ ഒന്നും ഇല്ല" : "No applications"}
+                          </div>
+                        ) : (
+                          group.apps.map((app, appIdx) =>
+                            renderSchemeAppCard(app, appIdx, group.name)
+                          )
+                        )}
                       </div>
-                    </div>
+                    )}
                   </div>
                 );
               })
+            ) : (
+              sortedSchemeApplications.map((app, index) =>
+                renderSchemeAppCard(app, index)
+              )
             )}
           </div>
         </div>
