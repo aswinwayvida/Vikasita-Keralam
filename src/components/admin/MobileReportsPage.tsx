@@ -1232,7 +1232,10 @@ export function MobileReportsPage({
     appliedLocation.area ||
     appliedLocation.ward
   );
+  const hasTeamDesignation = applicationFilterInPhone && appliedSchemeFilter.workView === "team" && Boolean(appliedSchemeFilter.designation && appliedSchemeFilter.designation !== "all");
+  const hasTeamMember = applicationFilterInPhone && appliedSchemeFilter.workView === "team" && Boolean(appliedSchemeFilter.teamMember && appliedSchemeFilter.teamMember !== "all");
   const hasLocalFilters =
+    hasTeamDesignation || hasTeamMember ||
     appliedSchemeFilter.statuses.length > 0 ||
     Boolean(appliedSchemeFilter.department && appliedSchemeFilter.department !== "all") ||
     Boolean(appliedSchemeFilter.category && appliedSchemeFilter.category !== "all") ||
@@ -1240,6 +1243,7 @@ export function MobileReportsPage({
     Boolean(appliedSchemeFilter.sortBy && appliedSchemeFilter.sortBy !== "benefits_high_low") ||
     hasLocationFilters;
   const localFilterCount =
+    (hasTeamDesignation ? 1 : 0) + (hasTeamMember ? 1 : 0) +
     (appliedSchemeFilter.statuses.length > 0 ? 1 : 0) +
     (appliedSchemeFilter.department && appliedSchemeFilter.department !== "all" ? 1 : 0) +
     (appliedSchemeFilter.category && appliedSchemeFilter.category !== "all" ? 1 : 0) +
@@ -1514,6 +1518,8 @@ export function MobileReportsPage({
         <div className="flex items-center gap-1.5 overflow-x-auto px-2.5 py-1.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden shrink-0 whitespace-nowrap">
           {groupActive && <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 text-[10.5px] font-semibold text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300"><button type="button" onClick={() => setGroupOrder((order) => order === "desc" ? "asc" : "desc")} aria-label="Reverse group sort order">{groupBy === "none" ? (lang === "ml" ? "ഗ്രൂപ്പില്ല" : "No grouping") : ({ region: "Region", org_district: "Organisational District", mandalam: "Assembly Mandalam", area: "Area", ward: "Ward" } as Record<string, string>)[groupBy]} · {SCHEME_SORT_METRICS.find((option) => option.value === groupMetric)?.[lang === "ml" ? "ml" : "en"]} {groupOrder === "desc" ? "↓" : "↑"}</button><button type="button" onClick={() => { setGroupBy("none"); setGroupMetric("total"); setGroupOrder("desc"); setCollapsedGroups([]); }} aria-label="Clear group and sort"><X className="h-3 w-3" /></button></span>}
           {showSchemeSort && schemeCardSort !== "total_desc" && <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 text-[10.5px] font-semibold text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300"><button type="button" onClick={() => setSchemeCardSort((current) => { const [metric, direction] = current.split("_"); return `${metric}_${direction === "asc" ? "desc" : "asc"}`; })} aria-label="Reverse sort order">{SCHEME_CARD_SORT_OPTIONS.find((option) => option.value === schemeCardSort)?.label}</button><button type="button" onClick={() => setSchemeCardSort("total_desc")} aria-label="Clear sort"><X className="h-3 w-3" /></button></span>}
+          {hasTeamDesignation && <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-[10.5px] font-semibold text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"><span>{(DESIGNATION_OPTIONS_BY_LEVEL[appliedSchemeFilter.locationLevel] || DESIGNATION_OPTIONS_BY_LEVEL.state).find(option => option.id === appliedSchemeFilter.designation)?.[lang === "ml" ? "ml" : "en"] || appliedSchemeFilter.designation}</span><button type="button" aria-label={lang === "ml" ? "പദവി ഒഴിവാക്കുക" : "Remove designation"} onClick={() => setAppliedSchemeFilter(prev => ({ ...prev, designation: "all" }))}><X className="h-3 w-3" /></button></span>}
+          {hasTeamMember && <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-[10.5px] font-semibold text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"><span>{getFilteredTeamMembers(appliedSchemeFilter.locationLevel).find(member => member.id === appliedSchemeFilter.teamMember)?.name || appliedSchemeFilter.teamMember}</span><button type="button" aria-label={lang === "ml" ? "ടീം അംഗത്തെ ഒഴിവാക്കുക" : "Remove team member"} onClick={() => setAppliedSchemeFilter(prev => ({ ...prev, teamMember: "all" }))}><X className="h-3 w-3" /></button></span>}
           {/* Show location chips if location was changed from default */}
           {hasLocationFilters && (
             appliedLocationChips.map((chip) => (

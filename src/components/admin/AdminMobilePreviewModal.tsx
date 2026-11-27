@@ -6666,6 +6666,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     appSelectedSchemeIds.length > 0 && !appSelectedSchemeIds.includes("all"),
     appSelectedFollowUpFilters.length > 0 && !appSelectedFollowUpFilters.includes("all"),
     appFilterAssignedWorker !== "all",
+    partyWorkerTab === "team" && appFilterDesignation !== "all",
     appFilterLocation !== "all",
     appLocationLevel !== "state",
     appSelectedRegion !== "all",
@@ -6715,6 +6716,10 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [applicantListSort, setApplicantListSort] = useState("count_desc");
   const [draftApplicantListSort, setDraftApplicantListSort] = useState("count_desc");
   const [applicantWorkView, setApplicantWorkView] = useState<"my_work" | "team">("my_work");
+  const [applicantDesignation, setApplicantDesignation] = useState("all");
+  const [applicantTeamMember, setApplicantTeamMember] = useState("all");
+  const [draftApplicantDesignation, setDraftApplicantDesignation] = useState("all");
+  const [draftApplicantTeamMember, setDraftApplicantTeamMember] = useState("all");
   const [applicantPendingWorkView, setApplicantPendingWorkView] = useState<"my_work" | "team">("my_work");
   const [applicantLocationLevel, setApplicantLocationLevel] = useState<"state" | "region" | "org_district" | "mandalam" | "area" | "ward">("state");
   const [applicantPendingLocationLevel, setApplicantPendingLocationLevel] = useState<"state" | "region" | "org_district" | "mandalam" | "area" | "ward">("state");
@@ -6736,6 +6741,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [applicantPendingDepartment, setApplicantPendingDepartment] = useState<string>("all");
 
   const openApplicantFilterModal = () => {
+    setDraftApplicantDesignation(applicantDesignation);
+    setDraftApplicantTeamMember(applicantTeamMember);
     setApplicantPendingWorkView(applicantWorkView);
     setApplicantPendingLocationLevel(applicantLocationLevel);
     setApplicantPendingRegion(applicantRegionFilter);
@@ -10955,7 +10962,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   );
 
   const applicantActiveFilterCount = [
-    applicantWorkView === "team",
+    applicantWorkView === "team" && applicantDesignation !== "all",
+    applicantWorkView === "team" && applicantTeamMember !== "all",
     applicantLocationLevel !== "ward" && applicantLocationLevel !== "state",
     applicantRegionFilter !== "all",
     applicantOrgDistrictFilter !== "all",
@@ -10970,7 +10978,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   ].filter(Boolean).length;
 
   const applicantPendingFilterCount = [
-    applicantPendingWorkView === "team",
+    applicantPendingWorkView === "team" && draftApplicantDesignation !== "all",
+    applicantPendingWorkView === "team" && draftApplicantTeamMember !== "all",
     applicantPendingLocationLevel !== "ward" && applicantPendingLocationLevel !== "state",
     applicantPendingRegion !== "all",
     applicantPendingOrgDistrict !== "all",
@@ -11959,7 +11968,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     filterPerformance,
   ]);
 
-  const isHomeFilterApplied = isHomeLocationFiltered || isHomeSchemeFiltered;
+  const isHomeFilterApplied = isHomeLocationFiltered || isHomeSchemeFiltered || (partyWorkerTab === "team" && (appFilterDesignation !== "all" || appFilterAssignedWorker !== "all"));
 
   const homeActiveFilterCount = React.useMemo(() => {
     let count = 0;
@@ -12002,12 +12011,14 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
     const clearScheme = () => { setSelectedSchemeIdsState(["all"]); setFilterScheme("all"); };
     const chips = [
       ...(isHomeLocationFiltered ? [{ id: "location", label: activeLocationLabel, remove: clearLocation }] : []),
+      ...(partyWorkerTab === "team" && appFilterDesignation !== "all" ? [{ id: "designation", label: (DESIGNATION_OPTIONS_BY_LEVEL[homeLocationLevel] || DESIGNATION_OPTIONS_BY_LEVEL.state).find(item => item.id === appFilterDesignation)?.[lang] || appFilterDesignation, remove: () => setAppFilterDesignation("all") }] : []),
+      ...(partyWorkerTab === "team" && appFilterAssignedWorker !== "all" ? [{ id: "team-member", label: TEAM_MEMBER_OPTIONS.find(item => item.id === appFilterAssignedWorker)?.name || (appFilterAssignedWorker === "unassigned" ? (lang === "ml" ? "ചുമതലപ്പെടുത്താത്തവ" : "Unassigned") : appFilterAssignedWorker), remove: () => setAppFilterAssignedWorker("all") }] : []),
       ...dashboardFilterChips.map((chip) => ({ id: chip.id, label: chip.label.replace(/^(Category|Department|Scheme Type|Performance):\s*/, ""), remove: chip.id === "category" ? clearCategory : chip.onRemove })),
       ...(filterScheme !== "all" ? [{ id: "scheme", label: filterScheme, remove: clearScheme }] : []),
     ];
     return <div className="-mx-3 !mt-0 flex min-w-0 items-center gap-1.5 overflow-x-auto border-b border-slate-200/70 bg-[#FAF7F2]/90 px-2.5 py-1.5 dark:border-slate-800 dark:bg-slate-900/80 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
       {chips.map((chip) => <span key={chip.id} className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10.5px] font-semibold shadow-2xs ${chip.id === "location" ? "border-orange-200/90 bg-orange-50 text-orange-800 dark:border-orange-800/60 dark:bg-orange-950/40 dark:text-orange-300" : "border-slate-200 bg-slate-100 text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"}`}>{chip.id === "location" && <MapPin className="h-2.5 w-2.5 text-orange-500" />}<span>{chip.label}</span><button type="button" onClick={chip.remove} aria-label={`${lang === "ml" ? "ഒഴിവാക്കുക" : "Remove"} ${chip.label}`}><X className="h-3 w-3" /></button></span>)}
-      <button type="button" onClick={() => { clearLocation(); clearCategory(); clearScheme(); setFilterSchemeType("all"); setFilterDepartment("all"); setFilterPerformance("all"); }} className="shrink-0 px-1 text-[10.5px] font-bold text-orange-600 dark:text-orange-400">{lang === "ml" ? "എല്ലാം ഒഴിവാക്കുക" : "Clear All"}</button>
+      <button type="button" onClick={() => { clearLocation(); clearCategory(); clearScheme(); setFilterSchemeType("all"); setFilterDepartment("all"); setFilterPerformance("all"); setAppFilterDesignation("all"); setAppFilterAssignedWorker("all"); }} className="shrink-0 px-1 text-[10.5px] font-bold text-orange-600 dark:text-orange-400">{lang === "ml" ? "എല്ലാം ഒഴിവാക്കുക" : "Clear All"}</button>
     </div>;
   };
 
@@ -16854,10 +16865,11 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         </div>
 
                         {applicantListSortOpen && <div className="absolute inset-0 z-[120] flex items-end bg-slate-950/60" onClick={() => setApplicantListSortOpen(false)}><div role="dialog" aria-modal="true" aria-label="Sort applicants" onClick={event => event.stopPropagation()} className="flex max-h-[85%] w-full flex-col overflow-hidden rounded-t-[24px] border-t border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-800 dark:bg-slate-900"><div className="mx-auto mb-3 h-1 w-10 shrink-0 rounded-full bg-slate-300 dark:bg-slate-700" /><div className="mb-2 flex shrink-0 items-center justify-between border-b border-slate-100 pb-2 dark:border-slate-800"><h2 className="flex items-center gap-2 text-sm font-extrabold text-slate-900 dark:text-white"><ArrowUpDown className="h-4 w-4 text-[#ff5500]" />{lang === "ml" ? "ക്രമീകരിക്കുക" : "Sort By"}</h2><button type="button" aria-label="Close" onClick={() => setApplicantListSortOpen(false)} className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300"><X className="h-4 w-4" /></button></div><div className="min-h-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"><p className="px-3 pb-1 pt-2 text-[10px] font-bold text-slate-500 dark:text-slate-400">{lang === "ml" ? "ക്രമീകരിക്കേണ്ട മാനദണ്ഡം" : "Sort By"}</p><div role="radiogroup" aria-label="Sort By">{[{ id: "name", en: "Applicant Name", ml: "അപേക്ഷകന്റെ പേര്" }, { id: "count", en: "Applications", ml: "അപേക്ഷകൾ" }, { id: "beneficiary", en: "Beneficiaries", ml: "ഗുണഭോക്താക്കൾ" }, { id: "pending", en: "Pending Applications", ml: "തീർപ്പാക്കാത്ത അപേക്ഷകൾ" }, { id: "review", en: "In Review", ml: "പരിശോധനയിൽ" }, { id: "rejected", en: "Rejected Applications", ml: "നിരസിച്ച അപേക്ഷകൾ" }, { id: "recent", en: "Recently Added", ml: "അടുത്തിടെ ചേർത്തത്" }].map(option => { const selected = draftApplicantListSort.startsWith(option.id + "_"); return <button key={option.id} type="button" role="radio" aria-checked={selected} onClick={() => setDraftApplicantListSort(option.id + (option.id === "name" ? "_asc" : "_desc"))} className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs font-semibold ${selected ? "bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300" : "text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"}`}><span>{lang === "ml" ? option.ml : option.en}</span><span className={`flex h-4 w-4 items-center justify-center rounded-full border ${selected ? "border-orange-500 bg-orange-500 text-white" : "border-slate-300 dark:border-slate-600"}`}>{selected && <Check className="h-3 w-3" />}</span></button>; })}</div><p className="px-3 pb-1 pt-3 text-[10px] font-bold text-slate-500 dark:text-slate-400">{lang === "ml" ? "ക്രമം" : "Sort Order"}</p><div role="radiogroup" aria-label="Sort Order" className="mx-3 flex rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800/70">{(draftApplicantListSort.startsWith("name_") ? [{ value: "asc", label: "A to Z" }, { value: "desc", label: "Z to A" }] : draftApplicantListSort.startsWith("recent_") ? [{ value: "desc", label: "Newest First" }, { value: "asc", label: "Oldest First" }] : [{ value: "desc", label: "High to Low" }, { value: "asc", label: "Low to High" }]).map(option => { const [metric, direction] = draftApplicantListSort.split("_"); const selected = direction === option.value; return <button key={option.value} type="button" role="radio" aria-checked={selected} onClick={() => setDraftApplicantListSort(metric + "_" + option.value)} className={`flex min-w-0 flex-1 items-center justify-center gap-1 rounded-lg px-2 py-2 text-center text-xs font-semibold ${selected ? "bg-white text-orange-700 shadow-sm dark:bg-slate-700 dark:text-orange-300" : "text-slate-500 dark:text-slate-400"}`}>{option.label}</button>; })}</div><p className="px-3 pt-2 text-[10px] leading-relaxed text-slate-500 dark:text-slate-400">{draftApplicantListSort.startsWith("recent_") ? (draftApplicantListSort.endsWith("desc") ? "Applicants will be sorted by date added, newest first." : "Applicants will be sorted by date added, oldest first.") : "Applicants will be sorted by the selected criterion and order."}</p></div><button type="button" onClick={() => { setApplicantListSort(draftApplicantListSort); setApplicantListSortOpen(false); }} className="mt-3 shrink-0 rounded-lg bg-[#ff5500] py-2.5 text-xs font-extrabold text-white">{lang === "ml" ? "പ്രയോഗിക്കുക" : "Apply"}</button></div></div>}
-                        {(applicantActiveFilterCount > 0 || applicantListSort !== "count_desc") && <div className="flex items-center gap-1.5 overflow-x-auto border-b border-slate-200/70 bg-[#FAF7F2]/90 px-2.5 py-1.5 dark:border-slate-800 dark:bg-slate-900/80 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden whitespace-nowrap">
+                        {(applicantActiveFilterCount > 0 || applicantListSort !== "count_desc") && <div className="!mt-0 flex items-center gap-1.5 overflow-x-auto border-b border-slate-200/70 bg-[#FAF7F2]/90 px-2.5 py-1.5 dark:border-slate-800 dark:bg-slate-900/80 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden whitespace-nowrap">
                           {applicantListSort !== "count_desc" && <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 text-[10.5px] font-semibold text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300"><button type="button" aria-label="Reverse sort order" onClick={() => setApplicantListSort(current => { const [metric, direction] = current.split("_"); return `${metric}_${direction === "asc" ? "desc" : "asc"}`; })}>{(() => { const [metric, direction] = applicantListSort.split("_"); const labels: Record<string, [string, string]> = { name: ["Applicant Name", "അപേക്ഷകന്റെ പേര്"], count: ["Applications", "അപേക്ഷകൾ"], beneficiary: ["Beneficiaries", "ഗുണഭോക്താക്കൾ"], pending: ["Pending Applications", "തീർപ്പാക്കാത്ത അപേക്ഷകൾ"], review: ["In Review", "പരിശോധനയിൽ"], rejected: ["Rejected Applications", "നിരസിച്ച അപേക്ഷകൾ"], recent: ["Recently Added", "അടുത്തിടെ ചേർത്തത്"] }; const order = metric === "name" ? (direction === "asc" ? "A to Z" : "Z to A") : metric === "recent" ? (direction === "desc" ? "Newest First" : "Oldest First") : (direction === "desc" ? "High to Low" : "Low to High"); return `${labels[metric]?.[lang === "ml" ? 1 : 0] ?? metric} · ${order}`; })()}</button><button type="button" aria-label="Clear sort" onClick={() => setApplicantListSort("count_desc")}><X className="h-3 w-3" /></button></span>}
                           {[
-                          ["View", applicantWorkView === "team" ? "Team View" : "", () => setApplicantWorkView("my_work")],
+                          ["Designation", applicantWorkView === "team" && applicantDesignation !== "all" ? (DESIGNATION_OPTIONS_BY_LEVEL[applicantLocationLevel] || DESIGNATION_OPTIONS_BY_LEVEL.state).find(item => item.id === applicantDesignation)?.[lang] || applicantDesignation : "", () => setApplicantDesignation("all")],
+                          ["Team Member", applicantWorkView === "team" && applicantTeamMember !== "all" ? (TEAM_MEMBER_OPTIONS.find(item => item.id === applicantTeamMember)?.name || (applicantTeamMember === "unassigned" ? (lang === "ml" ? "ചുമതലപ്പെടുത്താത്തവ" : "Unassigned") : applicantTeamMember)) : "", () => setApplicantTeamMember("all")],
                           ["Level", applicantLocationLevel !== "state" && applicantLocationLevel !== "ward" ? applicantLocationLevel : "", () => setApplicantLocationLevel("state")],
                           ["Region", applicantRegionFilter, () => setApplicantRegionFilter("all")],
                           ["Organisation", applicantOrgDistrictFilter, () => setApplicantOrgDistrictFilter("all")],
@@ -16869,7 +16881,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           ["Department", applicantDepartmentFilter, () => setApplicantDepartmentFilter("all")],
                           ["Scheme", applicantSchemeFilter, () => setApplicantSchemeFilter("all")],
                           ["Status", applicantSchemeStatusFilter, () => setApplicantSchemeStatusFilter("all")],
-                        ].filter(([, value]) => value && value !== "all").map(([label, value, remove]) => { const location = ["Region", "Organisation", "Mandalam", "Area", "Ward", "District"].includes(label as string); const display = label === "Organisation" ? organisationalDistricts.find(item => item.id === value)?.[lang === "ml" ? "ml" : "en"] : label === "Mandalam" ? constituencies.find(item => item.id === value)?.[lang === "ml" ? "ml" : "en"] : undefined; return <span key={label as string} className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10.5px] font-semibold shadow-2xs ${location ? "border-orange-200/90 bg-orange-50 text-orange-800 dark:border-orange-800/60 dark:bg-orange-950/40 dark:text-orange-300" : "border-slate-200 bg-slate-100 text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"}`}>{location && <MapPin className="h-2.5 w-2.5 text-orange-500" />}<span>{display || String(value).replace(/[_-]/g, " ")}</span><button type="button" aria-label={`Remove ${label}`} onClick={remove as () => void} className="ml-0.5 -mr-0.5 rounded-full p-0.5"><X className="h-2.5 w-2.5 stroke-[2.5]" /></button></span>; })}<button type="button" className="shrink-0 text-[10px] font-bold text-orange-600" onClick={() => { setApplicantListSort("count_desc"); setApplicantWorkView("my_work"); setApplicantLocationLevel("state"); setApplicantRegionFilter("all"); setApplicantOrgDistrictFilter("all"); setApplicantMandalamFilter("all"); setApplicantAreaFilter("all"); setApplicantWardFilter("all"); setApplicantLocalBodyFilter("all"); setApplicantDistrictFilter("all"); setApplicantCategoryFilter("all"); setApplicantDepartmentFilter("all"); setApplicantSchemeFilter("all"); setApplicantSchemeStatusFilter("all"); }}>{lang === "ml" ? "എല്ലാം ഒഴിവാക്കുക" : "Clear All"}</button></div>}
+                        ].filter(([, value]) => value && value !== "all").map(([label, value, remove]) => { const location = ["Region", "Organisation", "Mandalam", "Area", "Ward", "District"].includes(label as string); const display = label === "Organisation" ? organisationalDistricts.find(item => item.id === value)?.[lang === "ml" ? "ml" : "en"] : label === "Mandalam" ? constituencies.find(item => item.id === value)?.[lang === "ml" ? "ml" : "en"] : undefined; return <span key={label as string} className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10.5px] font-semibold shadow-2xs ${location ? "border-orange-200/90 bg-orange-50 text-orange-800 dark:border-orange-800/60 dark:bg-orange-950/40 dark:text-orange-300" : "border-slate-200 bg-slate-100 text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"}`}>{location && <MapPin className="h-2.5 w-2.5 text-orange-500" />}<span>{display || String(value).replace(/[_-]/g, " ")}</span><button type="button" aria-label={`Remove ${label}`} onClick={remove as () => void} className="ml-0.5 -mr-0.5 rounded-full p-0.5"><X className="h-2.5 w-2.5 stroke-[2.5]" /></button></span>; })}<button type="button" className="shrink-0 text-[10px] font-bold text-orange-600" onClick={() => { setApplicantListSort("count_desc"); setApplicantWorkView("my_work"); setApplicantDesignation("all"); setApplicantTeamMember("all"); setApplicantLocationLevel("state"); setApplicantRegionFilter("all"); setApplicantOrgDistrictFilter("all"); setApplicantMandalamFilter("all"); setApplicantAreaFilter("all"); setApplicantWardFilter("all"); setApplicantLocalBodyFilter("all"); setApplicantDistrictFilter("all"); setApplicantCategoryFilter("all"); setApplicantDepartmentFilter("all"); setApplicantSchemeFilter("all"); setApplicantSchemeStatusFilter("all"); }}>{lang === "ml" ? "എല്ലാം ഒഴിവാക്കുക" : "Clear All"}</button></div>}
                         <div className="space-y-1.5 pt-0.5 px-3">
                           {filteredMobileApplicationUsers.map((user) => {
                             const avatar = getApplicantAvatarInfo(user.nameEn || user.nameMl || "");
@@ -18672,6 +18684,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         return null;
                       })()}
 
+                      {partyWorkerTab === "team" && appFilterDesignation !== "all" && <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-[10.5px] font-semibold text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"><span>{(DESIGNATION_OPTIONS_BY_LEVEL[appLocationLevel] || DESIGNATION_OPTIONS_BY_LEVEL.state).find(item => item.id === appFilterDesignation)?.[lang] || appFilterDesignation}</span><button type="button" aria-label="Remove designation" onClick={() => setAppFilterDesignation("all")}><X className="h-3 w-3" /></button></span>}
                       {/* Assigned Worker Filter (Team View only) */}
                       {partyWorkerTab === "team" && appFilterAssignedWorker !== "all" && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-semibold shrink-0 shadow-2xs text-[10.5px]">
@@ -18683,7 +18696,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                               ? "Dhyan M S"
                               : appFilterAssignedWorker === "anjali"
                               ? "Anjali Nair"
-                              : appFilterAssignedWorker}
+                              : TEAM_MEMBER_OPTIONS.find(member => member.id === appFilterAssignedWorker)?.name || appFilterAssignedWorker}
                           </span>
                           <button
                             type="button"
@@ -25115,7 +25128,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                         label={lang === "ml" ? "പദവി തിരഞ്ഞെടുക്കുക (Designation)" : "Select Designation"}
                         value={(() => {
                           const levelDesignations = DESIGNATION_OPTIONS_BY_LEVEL[applicantPendingLocationLevel] || DESIGNATION_OPTIONS_BY_LEVEL.state;
-                          const current = levelDesignations.find((d) => d.id === appFilterDesignation);
+                          const current = levelDesignations.find((d) => d.id === draftApplicantDesignation);
                           return current ? (lang === "ml" ? current.ml : current.en) : (lang === "ml" ? "എല്ലാ പദവികളും" : "All Designations");
                         })()}
                         onClick={() => {
@@ -25123,10 +25136,10 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           openCustomPicker(
                             lang === "ml" ? "പദവി തിരഞ്ഞെടുക്കുക" : "Select Designation",
                             levelDesignations.map((d) => ({ id: d.id, label: lang === "ml" ? d.ml : d.en })),
-                            appFilterDesignation,
+                            draftApplicantDesignation,
                             (id) => {
-                              setAppFilterDesignation(id);
-                              setAppFilterAssignedWorker("all");
+                              setDraftApplicantDesignation(id);
+                              setDraftApplicantTeamMember("all");
                             }
                           );
                         }}
@@ -25135,14 +25148,14 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       <PickerButton
                         label={lang === "ml" ? "ടീം അംഗത്തെ തിരഞ്ഞെടുക്കുക (Team Member)" : "Select Team Member"}
                         value={(() => {
-                          if (appFilterAssignedWorker === "all") return lang === "ml" ? "എല്ലാ പ്രവർത്തകരും" : "All Workers";
-                          if (appFilterAssignedWorker === "unassigned") return lang === "ml" ? "ചുമതലപ്പെടുത്താത്തവ" : "Unassigned";
-                          const members = getFilteredTeamMembers(applicantPendingLocationLevel, appFilterDesignation);
-                          const match = members.find((m) => m.id === appFilterAssignedWorker) || TEAM_MEMBER_OPTIONS.find((m) => m.id === appFilterAssignedWorker);
-                          return match ? `${match.name} (${lang === "ml" ? match.designationMl : match.designationEn})` : appFilterAssignedWorker;
+                          if (draftApplicantTeamMember === "all") return lang === "ml" ? "എല്ലാ പ്രവർത്തകരും" : "All Workers";
+                          if (draftApplicantTeamMember === "unassigned") return lang === "ml" ? "ചുമതലപ്പെടുത്താത്തവ" : "Unassigned";
+                          const members = getFilteredTeamMembers(applicantPendingLocationLevel, draftApplicantDesignation);
+                          const match = members.find((m) => m.id === draftApplicantTeamMember) || TEAM_MEMBER_OPTIONS.find((m) => m.id === draftApplicantTeamMember);
+                          return match ? `${match.name} (${lang === "ml" ? match.designationMl : match.designationEn})` : draftApplicantTeamMember;
                         })()}
                         onClick={() => {
-                          const filteredMembers = getFilteredTeamMembers(applicantPendingLocationLevel, appFilterDesignation);
+                          const filteredMembers = getFilteredTeamMembers(applicantPendingLocationLevel, draftApplicantDesignation);
                           const options = [
                             { id: "all", label: lang === "ml" ? "എല്ലാ പ്രവർത്തകരും" : "All Workers" },
                             { id: "unassigned", label: lang === "ml" ? "ചുമതലപ്പെടുത്താത്തവ (Unassigned)" : "Unassigned" },
@@ -25154,8 +25167,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                           openCustomPicker(
                             lang === "ml" ? "ടീം അംഗത്തെ തിരഞ്ഞെടുക്കുക" : "Select Team Member",
                             options,
-                            appFilterAssignedWorker,
-                            (id) => setAppFilterAssignedWorker(id)
+                            draftApplicantTeamMember,
+                            (id) => setDraftApplicantTeamMember(id)
                           );
                         }}
                       />
@@ -25296,6 +25309,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       type="button"
                       onClick={() => {
                         setApplicantPendingWorkView("my_work");
+                        setDraftApplicantDesignation("all");
+                        setDraftApplicantTeamMember("all");
                         if (userRole === "party_worker") {
                           setApplicantPendingLocationLevel("area");
                           setApplicantPendingRegion("reg-south");
@@ -25326,6 +25341,8 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       type="button"
                       onClick={() => {
                         setApplicantWorkView(applicantPendingWorkView);
+                        setApplicantDesignation(applicantPendingWorkView === "team" ? draftApplicantDesignation : "all");
+                        setApplicantTeamMember(applicantPendingWorkView === "team" ? draftApplicantTeamMember : "all");
                         setApplicantLocationLevel(applicantPendingLocationLevel);
                         setApplicantRegionFilter(applicantPendingRegion);
                         setApplicantOrgDistrictFilter(applicantPendingOrgDistrict);
