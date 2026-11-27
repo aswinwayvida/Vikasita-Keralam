@@ -4566,7 +4566,7 @@ export function MobileCreatePartyWorkerFlow({
             >
               <span>{tr("Assisted Applications", "സഹായിച്ച അപേക്ഷകൾ")}</span>
               <span
-                className={`rounded-full px-1.5 py-0.2 text-[8.5px] font-bold ${
+                className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold leading-none ${
                   profileActiveTab === "applications"
                     ? "bg-slate-100 text-[#1B255A] dark:bg-slate-800 dark:text-blue-300"
                     : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
