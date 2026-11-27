@@ -4506,7 +4506,7 @@ export function MobileCreatePartyWorkerFlow({
             className="hidden"
             onChange={handleProfilePhotoChange}
           />
-          <div className="flex items-start gap-3.5 pb-4 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
             <div className="relative shrink-0">
               <div className="h-14 w-14 overflow-hidden rounded-full bg-orange-50 shadow-sm ring-2 ring-orange-100/80 dark:bg-slate-800 dark:ring-slate-700">
                 <img
@@ -4518,7 +4518,7 @@ export function MobileCreatePartyWorkerFlow({
                 />
               </div>
             </div>
-            <div className="min-w-0 flex-1 pt-0.5">
+            <div className="min-w-0 flex-1">
               <div className="flex items-start justify-between gap-2">
                 <h2 className="text-[15px] font-extrabold leading-tight text-slate-900 dark:text-white">
                   {profile.name}
@@ -4529,7 +4529,7 @@ export function MobileCreatePartyWorkerFlow({
               </p>
               {profileAreaLabel ? (
                 <p className="mt-1 flex items-center gap-1 text-[10px] font-medium leading-snug text-slate-500 dark:text-slate-400">
-                  <MapPin className="h-3 w-3 shrink-0 text-slate-400" />
+                  <MapPin className="h-3 w-3 shrink-0 text-[#ff5500]" />
                   <span className="truncate">{profileAreaLabel}</span>
                 </p>
               ) : null}
