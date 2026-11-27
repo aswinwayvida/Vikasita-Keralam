@@ -1,5 +1,27 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
+function ApplicationPeriodLabel({ text, lang, onChange }: { text: string; lang: string; onChange: () => void }) {
+  const viewportRef = useRef<HTMLSpanElement>(null);
+  const textRef = useRef<HTMLSpanElement>(null);
+  const [overflow, setOverflow] = useState(0);
+  const [expanded, setExpanded] = useState(false);
+  useEffect(() => {
+    const measure = () => setOverflow(Math.max(0, (textRef.current?.scrollWidth || 0) - (viewportRef.current?.clientWidth || 0)));
+    measure();
+    const observer = new ResizeObserver(measure);
+    if (viewportRef.current) observer.observe(viewportRef.current);
+    if (textRef.current) observer.observe(textRef.current);
+    return () => observer.disconnect();
+  }, [text]);
+  useEffect(() => setExpanded(false), [text]);
+  return <>
+    <style>{`@keyframes mobile-application-period-scroll { 0%, 20% { transform: translateX(0); } 45%, 65% { transform: translateX(calc(-1 * var(--period-overflow))); } 85%, 100% { transform: translateX(0); } } @media (prefers-reduced-motion: reduce) { .mobile-application-period-scroll { animation: none !important; } }`}</style>
+    <button type="button" onClick={() => setExpanded(value => !value)} aria-label={`${lang === "ml" ? "തിരഞ്ഞെടുത്ത തീയതി" : "Selected date"}: ${text}`} aria-expanded={expanded} className="min-w-0 flex-1 px-1 text-left font-display text-[10px] font-semibold leading-none tracking-tight text-[#0a0f1d] dark:text-white sm:text-[11px]">
+      <span ref={viewportRef} className="block overflow-hidden whitespace-nowrap"><span ref={textRef} className={overflow > 0 ? "mobile-application-period-scroll inline-block" : "inline-block"} style={overflow > 0 ? { "--period-overflow": `${overflow}px`, animation: "mobile-application-period-scroll 12s ease-in-out infinite" } as React.CSSProperties : undefined}>{text}</span></span>
+    </button>
+    {expanded && <div className="absolute left-3 right-3 top-full z-30 mt-1 flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-lg dark:border-slate-700 dark:bg-slate-900"><span className="text-xs font-semibold text-slate-900 dark:text-white">{text}</span><button type="button" onClick={() => { setExpanded(false); onChange(); }} className="shrink-0 text-xs font-bold text-orange-600">{lang === "ml" ? "മാറ്റുക" : "Change"}</button><button type="button" onClick={() => setExpanded(false)} aria-label={lang === "ml" ? "അടയ്ക്കുക" : "Close"}><X className="h-4 w-4 text-slate-500" /></button></div>}
+  </>;
+}
 import { MobileFilterPicker } from "./MobileFilterPicker";
 import { MOBILE_SAMPLE_DEPARTMENTS, MOBILE_SAMPLE_SCHEME_DEPARTMENT } from "./mobileSampleDepartments";
 import {
@@ -2610,7 +2632,7 @@ export function MobileReportsPage({
         </header>
 
         {/* Date and Controls Section (October 2026, Arrows, Calendar, Search, Filter) */}
-        <div className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800/80 px-3.5 py-1.5 flex items-center justify-between gap-2">
+        <div className="relative bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800/80 px-3.5 py-1.5 flex items-center justify-between gap-2">
           {isSchemeAppSearchExpanded ? (
             <div className="relative flex-1 animate-in fade-in slide-in-from-right-2 duration-150">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400" />
@@ -2644,14 +2666,14 @@ export function MobileReportsPage({
               >
                 {appliedSchemeFilter.workView === "team" ? (lang === "ml" ? "ടീം കാഴ്ച" : "Team View") : (lang === "ml" ? "എന്റെ കാഴ്ച" : "My View")}
               </button>
-              <button
+              {applicationFilterInPhone ? <ApplicationPeriodLabel text={periodText || "October 2026"} lang={lang} onChange={() => onOpenDatePicker?.()} /> : <button
                 type="button"
                 onClick={onOpenDatePicker}
                 className="font-display text-[10px] sm:text-[11px] font-semibold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-center hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0 flex-1 px-1"
                 title={lang === "ml" ? "തീയതി മാറ്റുക" : "Change Period"}
               >
                 {periodText || "October 2026"}
-              </button>
+              </button>}
             </>
           )}
 
@@ -3198,14 +3220,14 @@ export function MobileReportsPage({
                 >
                   {appliedSchemeFilter.workView === "team" ? (lang === "ml" ? "ടീം കാഴ്ച" : "Team View") : (lang === "ml" ? "എന്റെ കാഴ്ച" : "My View")}
                 </button>
-                <button
+                {applicationFilterInPhone ? <ApplicationPeriodLabel text={periodText || "October 2026"} lang={lang} onChange={() => onOpenDatePicker?.()} /> : <button
                   type="button"
                   onClick={onOpenDatePicker}
                   className="font-display text-[10px] sm:text-[11px] font-semibold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-center hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0 flex-1 px-1"
                   title={lang === "ml" ? "തീയതി മാറ്റുക" : "Change Period"}
                 >
                   {periodText || "October 2026"}
-                </button>
+                </button>}
               </>
             )}
 

@@ -56,6 +56,29 @@ import { LeaderboardTop3Podium } from "./LeaderboardTop3Podium";
 import { loadHelpdeskRequests, type HelpdeskRequest } from "@/lib/helpdesk-requests";
 import { mockUsers } from "@/data/users";
 
+function ApplicationPeriodLabel({ text, lang, onChange }: { text: string; lang: string; onChange: () => void }) {
+  const viewportRef = useRef<HTMLSpanElement>(null);
+  const textRef = useRef<HTMLSpanElement>(null);
+  const [overflow, setOverflow] = useState(0);
+  const [expanded, setExpanded] = useState(false);
+  useEffect(() => {
+    const measure = () => setOverflow(Math.max(0, (textRef.current?.scrollWidth || 0) - (viewportRef.current?.clientWidth || 0)));
+    measure();
+    const observer = new ResizeObserver(measure);
+    if (viewportRef.current) observer.observe(viewportRef.current);
+    if (textRef.current) observer.observe(textRef.current);
+    return () => observer.disconnect();
+  }, [text]);
+  useEffect(() => setExpanded(false), [text]);
+  return <>
+    <style>{`@keyframes mobile-application-period-scroll { 0%, 20% { transform: translateX(0); } 45%, 65% { transform: translateX(calc(-1 * var(--period-overflow))); } 85%, 100% { transform: translateX(0); } } @media (prefers-reduced-motion: reduce) { .mobile-application-period-scroll { animation: none !important; } }`}</style>
+    <button type="button" onClick={() => setExpanded(value => !value)} aria-label={`${lang === "ml" ? "തിരഞ്ഞെടുത്ത തീയതി" : "Selected date"}: ${text}`} aria-expanded={expanded} className="min-w-0 flex-1 px-1 text-left font-display text-[10px] font-semibold leading-none tracking-tight text-[#0a0f1d] dark:text-white sm:text-[11px]">
+      <span ref={viewportRef} className="block overflow-hidden whitespace-nowrap"><span ref={textRef} className={overflow > 0 ? "mobile-application-period-scroll inline-block" : "inline-block"} style={overflow > 0 ? { "--period-overflow": `${overflow}px`, animation: "mobile-application-period-scroll 12s ease-in-out infinite" } as React.CSSProperties : undefined}>{text}</span></span>
+    </button>
+    {expanded && <div className="absolute left-3 right-3 top-full z-30 mt-1 flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-lg dark:border-slate-700 dark:bg-slate-900"><span className="text-xs font-semibold text-slate-900 dark:text-white">{text}</span><button type="button" onClick={() => { setExpanded(false); onChange(); }} className="shrink-0 text-xs font-bold text-orange-600">{lang === "ml" ? "മാറ്റുക" : "Change"}</button><button type="button" onClick={() => setExpanded(false)} aria-label={lang === "ml" ? "അടയ്ക്കുക" : "Close"}><X className="h-4 w-4 text-slate-500" /></button></div>}
+  </>;
+}
+
 const INITIAL_MOCK_HELP_REQUESTS: HelpdeskRequest[] = [
   {
     reference: "VK-HELP-G-2026-A8K29P",
@@ -18361,7 +18384,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               ) : (
                 <div className="space-y-2 animate-in fade-in duration-200">
                 {/* Applications Header with Period Selector, Search & Filter Pill */}
-                <div className="-mx-3 flex items-center justify-between gap-1 border-b border-border/80 px-3 pb-1.5">
+                <div className="relative -mx-3 flex items-center justify-between gap-1 border-b border-border/80 px-3 pb-1.5">
                   {/* Left Side: Formatted Period Display or Search Bar */}
                   {isAppSearchExpanded ? (
                     <div className="relative flex-1 min-w-0 pr-1">
@@ -18387,7 +18410,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       </button>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-1.5 min-w-0 truncate">
+                    <div className="flex items-center gap-1.5 min-w-0">
                       <button
                         type="button"
                         onClick={() => setShowFilterMenu(!showFilterMenu)}
@@ -18396,14 +18419,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       >
                         {partyWorkerTab === "team" ? (lang === "ml" ? "ടീം കാഴ്ച" : "Team View") : (lang === "ml" ? "എന്റെ കാഴ്ച" : "My View")}
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => setIsDatePickerOpen(true)}
-                        className="font-display text-[10px] sm:text-[11px] font-semibold text-[#0a0f1d] dark:text-white tracking-tight leading-none text-center hover:text-[#ff5500] transition-colors cursor-pointer whitespace-nowrap truncate min-w-0 flex-1 px-1"
-                        title={lang === "ml" ? "തീയതി മാറ്റുക" : "Change Period"}
-                      >
-                        {getFormattedPeriodDisplay()}
-                      </button>
+                      <ApplicationPeriodLabel text={getFormattedPeriodDisplay()} lang={lang} onChange={() => setIsDatePickerOpen(true)} />
                     </div>
                   )}
 
