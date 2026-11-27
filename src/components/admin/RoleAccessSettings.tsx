@@ -2536,8 +2536,8 @@ export function RoleAccessSettings({
 
   return (
     <div className="space-y-4 [font-family:'Instrument_Sans',sans-serif]">
-      <div className={cn("overflow-hidden rounded-2xl border border-border bg-card shadow-xs", (activeTab === "roles" || activeTab === "users") && "md:space-y-4 md:overflow-visible md:rounded-none md:border-0 md:bg-transparent md:shadow-none")}>
-        <div className={cn("flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 px-4 py-2.5 sm:px-5", (activeTab === "roles" || activeTab === "users") && "md:rounded-2xl md:border md:bg-card md:px-4 md:py-3 md:shadow-[0_4px_14px_rgba(15,23,42,0.1)] dark:md:shadow-[0_4px_16px_rgba(0,0,0,0.25)]")}>
+      <div className={cn("overflow-hidden rounded-2xl border border-border bg-card shadow-xs", (activeTab === "roles" || activeTab === "users") && "md:space-y-4 md:overflow-visible md:rounded-none md:border-0 md:bg-transparent md:shadow-none", defaultTab === "users" && activeTab === "users" && "md:space-y-3")}>
+        <div className={cn("flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 px-4 py-2.5 sm:px-5", (activeTab === "roles" || activeTab === "users") && "md:rounded-2xl md:border md:bg-card md:px-4 md:py-3 md:shadow-[0_4px_14px_rgba(15,23,42,0.1)] dark:md:shadow-[0_4px_16px_rgba(0,0,0,0.25)]", defaultTab === "users" && activeTab === "users" && "md:rounded-none md:border-0 md:bg-transparent md:px-0 md:py-0 md:shadow-none dark:md:shadow-none")}>
           {activeTab === "location" ? (
             <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
               <h2 className="text-sm font-extrabold text-foreground px-1">
@@ -2772,7 +2772,7 @@ export function RoleAccessSettings({
               onClick={() => setIsManageColumnsOpen(true)}
               title={tr("Column Settings", "കോളം സെറ്റിംഗ്സ്")}
               aria-label={tr("Column Settings", "കോളം സെറ്റിംഗ്സ്")}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:border-primary/30 hover:bg-muted hover:text-foreground cursor-pointer shrink-0"
+              className={cn("inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:border-primary/30 hover:bg-muted hover:text-foreground cursor-pointer shrink-0", defaultTab === "users" && activeTab === "users" && "md:bg-white dark:md:bg-slate-800")}
             >
               <Columns3 className="h-4 w-4" />
             </button>
@@ -2784,6 +2784,7 @@ export function RoleAccessSettings({
                   onClick={() => setIsUserFilterSheetOpen(true)}
                   className={cn(
                     "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer",
+                    defaultTab === "users" && "md:bg-white dark:md:bg-slate-800",
                     activeFilterCount > 0
                       ? "border-primary bg-primary/10 text-primary font-bold"
                       : "border-border bg-background text-foreground hover:bg-muted",
@@ -2989,7 +2990,7 @@ export function RoleAccessSettings({
                       type="button"
                       title={tr("More Actions", "കൂടുതൽ പ്രവർത്തനങ്ങൾ")}
                       aria-label={tr("More Actions", "കൂടുതൽ പ്രവർത്തനങ്ങൾ")}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:border-primary/30 hover:bg-muted hover:text-foreground cursor-pointer shrink-0"
+                      className={cn("inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:border-primary/30 hover:bg-muted hover:text-foreground cursor-pointer shrink-0", defaultTab === "users" && "md:bg-white dark:md:bg-slate-800")}
                     >
                       <MoreVertical className="h-4 w-4" />
                     </button>

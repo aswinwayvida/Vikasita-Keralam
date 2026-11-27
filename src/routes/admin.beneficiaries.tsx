@@ -548,7 +548,7 @@ function ApplicantsDateFilterControl({ lang }: { lang: "en" | "ml" }) {
         }`;
 
   return (
-    <div className="flex h-8 items-center rounded-xl sm:rounded-lg border border-border bg-background p-0.5 shadow-2xs shrink-0">
+    <div className="flex h-8 items-center rounded-xl sm:rounded-lg border border-border bg-background md:bg-white dark:md:bg-slate-800 p-0.5 shadow-2xs shrink-0">
       <button
         type="button"
         onClick={() => stepAppliedMonth(-1)}
@@ -1047,10 +1047,10 @@ function BeneficiariesPage() {
   return (
     <div className="space-y-3 pb-6 [font-family:'Instrument_Sans',sans-serif]">
       {/* Merged Single Section Container */}
-      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-xs md:space-y-4 md:overflow-visible md:rounded-none md:border-0 md:bg-transparent md:shadow-none">
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-xs md:space-y-3 md:overflow-visible md:rounded-none md:border-0 md:bg-transparent md:shadow-none">
         
         {/* Top Header Row with Filter & Create New Applicant Buttons on the Right */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 p-3 sm:px-4 sm:py-2.5 md:rounded-2xl md:border md:bg-card md:shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 p-3 sm:px-4 sm:py-2.5 md:border-0 md:bg-transparent md:px-0 md:py-0 md:shadow-none">
           <div className="flex flex-wrap items-center gap-3 md:min-w-0 md:flex-1 md:flex-nowrap md:overflow-x-auto md:desktop-hide-scrollbar">
             <h2 className="text-base font-bold text-foreground md:shrink-0 md:whitespace-nowrap">
               {lang === "ml" ? "അപേക്ഷകരുടെ പട്ടിക" : "Applicants List"}
@@ -1121,7 +1121,7 @@ function BeneficiariesPage() {
               type="button"
               onClick={() => setIsManageColumnsOpen(true)}
               title={lang === "ml" ? "കോളങ്ങൾ ക്രമീകരിക്കുക" : "Manage columns"}
-              className="hidden md:flex h-8 w-8 items-center justify-center rounded-xl border border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer shrink-0"
+              className="hidden md:flex h-8 w-8 items-center justify-center rounded-xl border border-border bg-background md:bg-white dark:md:bg-slate-800 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer shrink-0"
             >
               <Columns3 className="h-4 w-4" />
             </button>
@@ -1131,7 +1131,7 @@ function BeneficiariesPage() {
               type="button"
               onClick={() => setIsFilterSheetOpen(true)}
               className={cn(
-                "flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors shrink-0 cursor-pointer",
+                "flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors shrink-0 cursor-pointer md:bg-white dark:md:bg-slate-800",
                 activeFilterCount > 0
                   ? "border-amber-400 bg-[#FFF8F0] text-amber-950 font-bold"
                   : "border-border bg-background text-foreground hover:bg-muted"
@@ -1252,7 +1252,7 @@ function BeneficiariesPage() {
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-xl border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer shrink-0"
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-xl border border-border bg-background md:bg-white dark:md:bg-slate-800 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer shrink-0"
                   title={lang === "ml" ? "കൂടുതൽ നടപടികൾ" : "More Actions"}
                 >
                   <MoreVertical className="h-4 w-4" />

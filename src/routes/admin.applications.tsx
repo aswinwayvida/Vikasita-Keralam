@@ -999,10 +999,10 @@ function ApplicationsPage() {
   return (
     <div className="space-y-6 pb-8 [font-family:'Instrument_Sans',sans-serif]">
       {/* Merged Single Section Container */}
-      <div className="rounded-2xl border border-border bg-card p-3 shadow-xs space-y-2 md:space-y-4 md:rounded-none md:border-0 md:bg-transparent md:p-0 md:shadow-none">
+      <div className="rounded-2xl border border-border bg-card p-3 shadow-xs space-y-2 md:space-y-3 md:rounded-none md:border-0 md:bg-transparent md:p-0 md:shadow-none">
         
         {/* Top Header Row with Title & Filter / Actions */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b sm:border-b-0 border-border/80 pb-2 sm:pb-0 md:rounded-2xl md:border md:border-border md:bg-card md:px-4 md:py-3 md:shadow-[0_4px_14px_rgba(15,23,42,0.1)] dark:md:shadow-[0_4px_16px_rgba(0,0,0,0.25)]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b sm:border-b-0 border-border/80 pb-2 sm:pb-0 md:px-0 md:py-0">
           <div className="flex flex-wrap items-center gap-3 md:min-w-0 md:flex-1 md:flex-nowrap md:overflow-x-auto md:desktop-hide-scrollbar">
             <h2 className="text-base font-bold text-foreground md:shrink-0 md:whitespace-nowrap">
               {lang === "ml" ? "അപേക്ഷകളുടെ ലിസ്റ്റ്" : "Applications List"}
@@ -1073,7 +1073,7 @@ function ApplicationsPage() {
           <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar pb-0.5 max-w-full sm:ml-auto shrink-0">
 
             {/* Date Filter Button & Popup (Desktop) */}
-            <div className="hidden md:inline-flex items-center gap-1.5 rounded-full border border-amber-200/80 bg-[#FFF9F2] dark:bg-slate-800 dark:border-slate-700 px-3 py-1 text-xs font-bold text-slate-800 dark:text-slate-200 shadow-2xs shrink-0">
+            <div className="hidden md:inline-flex items-center gap-1.5 rounded-full border border-amber-200/80 bg-white dark:bg-slate-800 dark:border-slate-700 px-3 py-1 text-xs font-bold text-slate-800 dark:text-slate-200 shadow-2xs shrink-0">
               <button
                 type="button"
                 onClick={handlePrevMonth}
@@ -1335,7 +1335,7 @@ function ApplicationsPage() {
               type="button"
               onClick={() => setIsManageColumnsOpen(true)}
               title={lang === "ml" ? "കോളങ്ങൾ ക്രമീകരിക്കുക" : "Manage columns"}
-              className="hidden md:flex h-8 w-8 items-center justify-center rounded-xl border border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer shrink-0"
+              className="hidden md:flex h-8 w-8 items-center justify-center rounded-xl border border-border bg-background md:bg-white dark:md:bg-slate-800 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer shrink-0"
             >
               <Columns3 className="h-4 w-4" />
             </button>
@@ -1345,7 +1345,7 @@ function ApplicationsPage() {
               type="button"
               onClick={() => setIsFilterSheetOpen(true)}
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer shrink-0",
+                "inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer shrink-0 md:bg-white dark:md:bg-slate-800",
                 activeFilterCount > 0
                   ? "border-primary bg-primary/10 text-primary font-bold"
                   : "border-border bg-background text-foreground hover:bg-muted"
@@ -1496,7 +1496,7 @@ function ApplicationsPage() {
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="h-8 w-8 inline-flex items-center justify-center rounded-xl border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer shrink-0"
+                    className="h-8 w-8 inline-flex items-center justify-center rounded-xl border border-border bg-background md:bg-white dark:md:bg-slate-800 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer shrink-0"
                     title={lang === "ml" ? "കൂടുതൽ ഓപ്ഷനുകൾ" : "More options"}
                   >
                     <MoreVertical className="h-4 w-4" />
