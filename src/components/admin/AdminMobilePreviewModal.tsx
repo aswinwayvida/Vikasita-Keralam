@@ -6628,6 +6628,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   }, [activeTab]);
   const [appSchemeCategoryFilter, setAppSchemeCategoryFilter] = useState<string>("all");
   const [appSchemeSortBy, setAppSchemeSortBy] = useState<string>("benefits_high_low");
+  const [applicationListSort, setApplicationListSort] = useState("default");
+  const [draftApplicationListSort, setDraftApplicationListSort] = useState("total_desc");
+  const [applicationListSortOpen, setApplicationListSortOpen] = useState(false);
   const [appAssistanceStatusFilter, setAppAssistanceStatusFilter] = useState<string>("all");
   const [appDateFilter, setAppDateFilter] = useState<string>("all");
   const [appCustomStartDate, setAppCustomStartDate] = useState<string>("");
@@ -6684,6 +6687,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   const [beneficiarySearchQuery, setBeneficiarySearchQuery] = useState<string>("");
   const [userSearchQuery, setUserSearchQuery] = useState<string>("");
   const [isApplicantFilterOpen, setIsApplicantFilterOpen] = useState<boolean>(false);
+  const [applicantListSortOpen, setApplicantListSortOpen] = useState(false);
+  const [applicantListSort, setApplicantListSort] = useState("count_desc");
+  const [draftApplicantListSort, setDraftApplicantListSort] = useState("count_desc");
   const [applicantWorkView, setApplicantWorkView] = useState<"my_work" | "team">("my_work");
   const [applicantPendingWorkView, setApplicantPendingWorkView] = useState<"my_work" | "team">("my_work");
   const [applicantLocationLevel, setApplicantLocationLevel] = useState<"state" | "region" | "org_district" | "mandalam" | "area" | "ward">("state");
@@ -10528,7 +10534,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
   ].filter((application) => !deletedApplicationRefs.includes(application.ref));
 
   const applicationQuery = applicationSearchQuery.trim().toLowerCase();
-  const displayedMobileApplicationRecords = applicationRecordsForActiveFilter.filter((application) => {
+  const filteredMobileApplicationRecords = applicationRecordsForActiveFilter.filter((application) => {
     // 1. Text Search Query
     if (applicationQuery) {
       const matchesSearch = [
@@ -10626,6 +10632,29 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
     return true;
   });
+
+  const displayedMobileApplicationRecords = [...filteredMobileApplicationRecords];
+  if (applicationListSort !== "default") {
+    const [metric, direction] = applicationListSort.split("_");
+    const schemeCounts = new Map<string, Record<string, number>>();
+    filteredMobileApplicationRecords.forEach(app => {
+      const key = app.schemeNameEn;
+      const counts = schemeCounts.get(key) || { total: 0, beneficiary: 0, pending: 0, review: 0, rejected: 0 };
+      counts.total++;
+      const status = (app.workflowStatus || app.status || "").toLowerCase();
+      if (["beneficiary", "approved", "assisted"].includes(status)) counts.beneficiary++;
+      else if (["review", "in_review"].includes(status)) counts.review++;
+      else if (status === "rejected") counts.rejected++;
+      else counts.pending++;
+      schemeCounts.set(key, counts);
+    });
+    displayedMobileApplicationRecords.sort((a, b) => {
+      const nameA = lang === "ml" ? a.schemeNameMl : a.schemeNameEn;
+      const nameB = lang === "ml" ? b.schemeNameMl : b.schemeNameEn;
+      const comparison = metric === "name" ? nameA.localeCompare(nameB) : metric === "applicant" ? (lang === "ml" ? a.applicantNameMl : a.applicantNameEn).localeCompare(lang === "ml" ? b.applicantNameMl : b.applicantNameEn) : metric === "recent" ? (Date.parse(a.appliedDate) || 0) - (Date.parse(b.appliedDate) || 0) : (schemeCounts.get(a.schemeNameEn)?.[metric] || 0) - (schemeCounts.get(b.schemeNameEn)?.[metric] || 0);
+      return comparison * (direction === "asc" ? 1 : -1) || nameA.localeCompare(nameB);
+    });
+  }
 
   const getApplicationCardMeta = (application: MobileApplicationRecord) =>
     application.trackingId
@@ -11062,10 +11091,20 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
           value.toLowerCase().includes(userQuery),
         );
   }).sort((a, b) => {
-    if (appSchemeSortBy === "benefits_low_high") {
-      return a.applicationCount - b.applicationCount || a.nameEn.localeCompare(b.nameEn);
+    if (applicantListSort === "name_asc" || applicantListSort === "name_desc") {
+      const comparison = (lang === "ml" ? a.nameMl : a.nameEn).localeCompare(lang === "ml" ? b.nameMl : b.nameEn);
+      return applicantListSort === "name_asc" ? comparison : -comparison;
     }
-    return b.applicationCount - a.applicationCount || a.nameEn.localeCompare(b.nameEn);
+    const [metric, direction] = applicantListSort.split("_");
+    const value = (user: typeof a) => {
+      if (metric === "count") return user.applicationCount;
+      if (metric === "recent") return Math.max(0, ...user.applications.map(app => Date.parse(app.appliedDate) || 0));
+      return user.applications.filter(app => {
+        const key = getApplicantStatusCategory(app).key;
+        return metric === "pending" ? ["received", "document_verified", "applied"].includes(key) : key === ({ beneficiary: "approved", review: "in_review", rejected: "rejected" } as Record<string, string>)[metric];
+      }).length;
+    };
+    return (value(a) - value(b)) * (direction === "asc" ? 1 : -1) || a.nameEn.localeCompare(b.nameEn);
   });
 
   const selectedApplicationUser = selectedApplicationUserId
@@ -16719,19 +16758,6 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                                   >
                                     <Search className="h-3.5 w-3.5 stroke-[2.2]" />
                                   </button>
-                                  <button
-                                    type="button"
-                                    onClick={openApplicantFilterModal}
-                                    className="relative flex h-7 w-7 items-center justify-center rounded-full bg-white text-[#ff5500] hover:bg-slate-50 dark:bg-slate-800 dark:text-orange-400 border border-slate-200 dark:border-slate-700 cursor-pointer shadow-2xs"
-                                    title={lang === "ml" ? "ഫിൽട്ടർ ചെയ്യുക" : "Filter"}
-                                  >
-                                    <Filter className="h-3.5 w-3.5 stroke-[2.2]" />
-                                    {applicantActiveFilterCount > 0 && (
-                                      <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[#ff5500] text-[9px] font-extrabold text-white shadow-xs">
-                                        {applicantActiveFilterCount}
-                                      </span>
-                                    )}
-                                  </button>
                                 </div>
                               </>
                             )}
@@ -16794,10 +16820,29 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                               >
                                 <Calendar className="h-3.5 w-3.5 stroke-[2.2]" />
                               </button>
+                              <button type="button" title={lang === "ml" ? "ക്രമീകരിക്കുക" : "Sort"} onClick={() => { setDraftApplicantListSort(applicantListSort); setApplicantListSortOpen(true); }} className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 bg-white text-[#ff5500] dark:bg-slate-900 dark:border-slate-800"><ArrowUpDown className="h-3.5 w-3.5" /></button>
+                              <button type="button" title={lang === "ml" ? "ഫിൽട്ടർ ചെയ്യുക" : "Filter"} onClick={openApplicantFilterModal} className="relative flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 bg-white text-[#ff5500] dark:bg-slate-900 dark:border-slate-800"><Filter className="h-3.5 w-3.5" />{applicantActiveFilterCount > 0 && <span className="absolute -top-1 -right-1 rounded-full bg-[#ff5500] px-1 text-[9px] font-bold text-white">{applicantActiveFilterCount}</span>}</button>
                             </div>
                           </div>
                         </div>
 
+                        {applicantListSortOpen && <div className="absolute inset-0 z-[120] flex items-end bg-slate-950/60" onClick={() => setApplicantListSortOpen(false)}><div role="dialog" aria-modal="true" aria-label="Sort applicants" onClick={event => event.stopPropagation()} className="flex max-h-[85%] w-full flex-col overflow-hidden rounded-t-[24px] border-t border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-800 dark:bg-slate-900"><div className="mx-auto mb-3 h-1 w-10 shrink-0 rounded-full bg-slate-300 dark:bg-slate-700" /><div className="mb-2 flex shrink-0 items-center justify-between border-b border-slate-100 pb-2 dark:border-slate-800"><h2 className="flex items-center gap-2 text-sm font-extrabold text-slate-900 dark:text-white"><ArrowUpDown className="h-4 w-4 text-[#ff5500]" />{lang === "ml" ? "ക്രമീകരിക്കുക" : "Sort By"}</h2><button type="button" aria-label="Close" onClick={() => setApplicantListSortOpen(false)} className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300"><X className="h-4 w-4" /></button></div><div className="min-h-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"><p className="px-3 pb-1 pt-2 text-[10px] font-bold text-slate-500 dark:text-slate-400">{lang === "ml" ? "ക്രമീകരിക്കേണ്ട മാനദണ്ഡം" : "Sort By"}</p><div role="radiogroup" aria-label="Sort By">{[{ id: "name", en: "Applicant Name", ml: "അപേക്ഷകന്റെ പേര്" }, { id: "count", en: "Applications", ml: "അപേക്ഷകൾ" }, { id: "beneficiary", en: "Beneficiaries", ml: "ഗുണഭോക്താക്കൾ" }, { id: "pending", en: "Pending Applications", ml: "തീർപ്പാക്കാത്ത അപേക്ഷകൾ" }, { id: "review", en: "In Review", ml: "പരിശോധനയിൽ" }, { id: "rejected", en: "Rejected Applications", ml: "നിരസിച്ച അപേക്ഷകൾ" }, { id: "recent", en: "Recently Added", ml: "അടുത്തിടെ ചേർത്തത്" }].map(option => { const selected = draftApplicantListSort.startsWith(option.id + "_"); return <button key={option.id} type="button" role="radio" aria-checked={selected} onClick={() => setDraftApplicantListSort(option.id + (option.id === "name" ? "_asc" : "_desc"))} className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs font-semibold ${selected ? "bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300" : "text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"}`}><span>{lang === "ml" ? option.ml : option.en}</span><span className={`flex h-4 w-4 items-center justify-center rounded-full border ${selected ? "border-orange-500 bg-orange-500 text-white" : "border-slate-300 dark:border-slate-600"}`}>{selected && <Check className="h-3 w-3" />}</span></button>; })}</div><p className="px-3 pb-1 pt-3 text-[10px] font-bold text-slate-500 dark:text-slate-400">{lang === "ml" ? "ക്രമം" : "Sort Order"}</p><div role="radiogroup" aria-label="Sort Order" className="mx-3 flex rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800/70">{(draftApplicantListSort.startsWith("name_") ? [{ value: "asc", label: "A to Z" }, { value: "desc", label: "Z to A" }] : draftApplicantListSort.startsWith("recent_") ? [{ value: "desc", label: "Newest First" }, { value: "asc", label: "Oldest First" }] : [{ value: "desc", label: "High to Low" }, { value: "asc", label: "Low to High" }]).map(option => { const [metric, direction] = draftApplicantListSort.split("_"); const selected = direction === option.value; return <button key={option.value} type="button" role="radio" aria-checked={selected} onClick={() => setDraftApplicantListSort(metric + "_" + option.value)} className={`flex min-w-0 flex-1 items-center justify-center gap-1 rounded-lg px-2 py-2 text-center text-xs font-semibold ${selected ? "bg-white text-orange-700 shadow-sm dark:bg-slate-700 dark:text-orange-300" : "text-slate-500 dark:text-slate-400"}`}>{option.label}</button>; })}</div><p className="px-3 pt-2 text-[10px] leading-relaxed text-slate-500 dark:text-slate-400">{draftApplicantListSort.startsWith("recent_") ? (draftApplicantListSort.endsWith("desc") ? "Applicants will be sorted by date added, newest first." : "Applicants will be sorted by date added, oldest first.") : "Applicants will be sorted by the selected criterion and order."}</p></div><button type="button" onClick={() => { setApplicantListSort(draftApplicantListSort); setApplicantListSortOpen(false); }} className="mt-3 shrink-0 rounded-lg bg-[#ff5500] py-2.5 text-xs font-extrabold text-white">{lang === "ml" ? "പ്രയോഗിക്കുക" : "Apply"}</button></div></div>}
+                        {(applicantActiveFilterCount > 0 || applicantListSort !== "count_desc") && <div className="flex items-center gap-1.5 overflow-x-auto border-b border-slate-200/70 bg-[#FAF7F2]/90 px-2.5 py-1.5 dark:border-slate-800 dark:bg-slate-900/80 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden whitespace-nowrap">
+                          {applicantListSort !== "count_desc" && <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 text-[10.5px] font-semibold text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300"><button type="button" aria-label="Reverse sort order" onClick={() => setApplicantListSort(current => { const [metric, direction] = current.split("_"); return `${metric}_${direction === "asc" ? "desc" : "asc"}`; })}>{(() => { const [metric, direction] = applicantListSort.split("_"); const labels: Record<string, [string, string]> = { name: ["Applicant Name", "അപേക്ഷകന്റെ പേര്"], count: ["Applications", "അപേക്ഷകൾ"], beneficiary: ["Beneficiaries", "ഗുണഭോക്താക്കൾ"], pending: ["Pending Applications", "തീർപ്പാക്കാത്ത അപേക്ഷകൾ"], review: ["In Review", "പരിശോധനയിൽ"], rejected: ["Rejected Applications", "നിരസിച്ച അപേക്ഷകൾ"], recent: ["Recently Added", "അടുത്തിടെ ചേർത്തത്"] }; const order = metric === "name" ? (direction === "asc" ? "A to Z" : "Z to A") : metric === "recent" ? (direction === "desc" ? "Newest First" : "Oldest First") : (direction === "desc" ? "High to Low" : "Low to High"); return `${labels[metric]?.[lang === "ml" ? 1 : 0] ?? metric} · ${order}`; })()}</button><button type="button" aria-label="Clear sort" onClick={() => setApplicantListSort("count_desc")}><X className="h-3 w-3" /></button></span>}
+                          {[
+                          ["View", applicantWorkView === "team" ? "Team View" : "", () => setApplicantWorkView("my_work")],
+                          ["Level", applicantLocationLevel !== "state" && applicantLocationLevel !== "ward" ? applicantLocationLevel : "", () => setApplicantLocationLevel("state")],
+                          ["Region", applicantRegionFilter, () => setApplicantRegionFilter("all")],
+                          ["Organisation", applicantOrgDistrictFilter, () => setApplicantOrgDistrictFilter("all")],
+                          ["Mandalam", applicantMandalamFilter, () => setApplicantMandalamFilter("all")],
+                          ["Area", applicantAreaFilter, () => setApplicantAreaFilter("all")],
+                          ["Ward", applicantWardFilter, () => setApplicantWardFilter("all")],
+                          ["District", applicantDistrictFilter, () => setApplicantDistrictFilter("all")],
+                          ["Category", applicantCategoryFilter, () => setApplicantCategoryFilter("all")],
+                          ["Department", applicantDepartmentFilter, () => setApplicantDepartmentFilter("all")],
+                          ["Scheme", applicantSchemeFilter, () => setApplicantSchemeFilter("all")],
+                          ["Status", applicantSchemeStatusFilter, () => setApplicantSchemeStatusFilter("all")],
+                        ].filter(([, value]) => value && value !== "all").map(([label, value, remove]) => { const location = ["Region", "Organisation", "Mandalam", "Area", "Ward", "District"].includes(label as string); const display = label === "Organisation" ? organisationalDistricts.find(item => item.id === value)?.[lang === "ml" ? "ml" : "en"] : label === "Mandalam" ? constituencies.find(item => item.id === value)?.[lang === "ml" ? "ml" : "en"] : undefined; return <span key={label as string} className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10.5px] font-semibold shadow-2xs ${location ? "border-orange-200/90 bg-orange-50 text-orange-800 dark:border-orange-800/60 dark:bg-orange-950/40 dark:text-orange-300" : "border-slate-200 bg-slate-100 text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"}`}>{location && <MapPin className="h-2.5 w-2.5 text-orange-500" />}<span>{display || String(value).replace(/[_-]/g, " ")}</span><button type="button" aria-label={`Remove ${label}`} onClick={remove as () => void} className="ml-0.5 -mr-0.5 rounded-full p-0.5"><X className="h-2.5 w-2.5 stroke-[2.5]" /></button></span>; })}<button type="button" className="shrink-0 text-[10px] font-bold text-orange-600" onClick={() => { setApplicantListSort("count_desc"); setApplicantWorkView("my_work"); setApplicantLocationLevel("state"); setApplicantRegionFilter("all"); setApplicantOrgDistrictFilter("all"); setApplicantMandalamFilter("all"); setApplicantAreaFilter("all"); setApplicantWardFilter("all"); setApplicantLocalBodyFilter("all"); setApplicantDistrictFilter("all"); setApplicantCategoryFilter("all"); setApplicantDepartmentFilter("all"); setApplicantSchemeFilter("all"); setApplicantSchemeStatusFilter("all"); }}>{lang === "ml" ? "എല്ലാം ഒഴിവാക്കുക" : "Clear All"}</button></div>}
                         <div className="space-y-1.5 pt-0.5 px-3">
                           {filteredMobileApplicationUsers.map((user) => {
                             const avatar = getApplicantAvatarInfo(user.nameEn || user.nameMl || "");
@@ -18309,7 +18354,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
               ) : (
                 <div className="space-y-2 animate-in fade-in duration-200">
                 {/* Applications Header with Period Selector, Search & Filter Pill */}
-                <div className="flex items-center justify-between border-b border-border/80 pb-1.5 gap-1">
+                <div className="-mx-3 flex items-center justify-between gap-1 border-b border-border/80 px-3 pb-1.5">
                   {/* Left Side: Formatted Period Display or Search Bar */}
                   {isAppSearchExpanded ? (
                     <div className="relative flex-1 min-w-0 pr-1">
@@ -18403,6 +18448,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       </button>
                     )}
 
+                    <button type="button" title={lang === "ml" ? "ക്രമീകരിക്കുക" : "Sort applications"} onClick={() => { setDraftApplicationListSort(applicationListSort === "default" ? "total_desc" : applicationListSort); setApplicationListSortOpen(true); }} className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-[#ff5500] dark:border-slate-800 dark:bg-slate-900"><ArrowUpDown className="h-3.5 w-3.5" /></button>
                     {/* Filter Icon Button */}
                     <button
                       type="button"
@@ -18424,94 +18470,14 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                   </div>
                 </div>
 
-                {/* Application intake KPIs */}
-                {(() => {
-                  const allowedIntakeStatuses = new Set([
-                    "all",
-                    "application_received",
-                    "document_verification_completed",
-                    "pending",
-                  ]);
 
-                  const hasDisallowedMultiStatus = selectedAppStatusFilters.some(
-                    (st) => !allowedIntakeStatuses.has(st)
-                  );
-
-                  const isDisallowedSingleStatus =
-                    !allowedIntakeStatuses.has(applicationStatusFilter);
-
-                  const showIntakeKpis = !hasDisallowedMultiStatus && !isDisallowedSingleStatus;
-
-                  if (!showIntakeKpis) return null;
-
-                  const docVerifiedSeedLen = Math.max(1, mobileApplicationRecordsByStatus.document_verification_completed.length);
-                  const appReceivedSeedLen = Math.max(1, mobileApplicationRecordsByStatus.application_received.length);
-                  const totalIntakeSeedLen = docVerifiedSeedLen + appReceivedSeedLen;
-
-                  const readyToApplyCount = Math.round(partyWorkerMetrics.pending * (docVerifiedSeedLen / totalIntakeSeedLen));
-                  const documentPendingCount = partyWorkerMetrics.pending - readyToApplyCount;
-
-                  return (
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setApplicationStatusFilter((prev) =>
-                            prev === "document_verification_completed" ? "all" : "document_verification_completed"
-                          )
-                        }
-                        className={`flex min-h-[64px] items-center justify-between gap-2 rounded-xl border p-2.5 text-left shadow-2xs transition-all cursor-pointer ${
-                          applicationStatusFilter === "document_verification_completed"
-                            ? "border-emerald-300 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30"
-                            : "border-border bg-card hover:border-emerald-200"
-                        }`}
-                      >
-                        <span className="min-w-0">
-                          <span className="block text-[10px] font-bold leading-tight text-muted-foreground">
-                            {lang === "ml" ? "അപേക്ഷിക്കാൻ തയ്യാർ" : "Ready to Apply"}
-                          </span>
-                          <span className="mt-1 block font-display text-base font-bold leading-none text-foreground">
-                            {readyToApplyCount.toLocaleString()}
-                          </span>
-                        </span>
-                        <img src={readyToSubmit3dIcon} alt="Ready to Apply" className="h-9 w-9 shrink-0 object-contain" />
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setApplicationStatusFilter((prev) =>
-                            prev === "application_received" ? "all" : "application_received"
-                          )
-                        }
-                        className={`flex min-h-[64px] items-center justify-between gap-2 rounded-xl border p-2.5 text-left shadow-2xs transition-all cursor-pointer ${
-                          applicationStatusFilter === "application_received"
-                            ? "border-orange-300 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/30"
-                            : "border-border bg-card hover:border-orange-200"
-                        }`}
-                      >
-                        <span className="min-w-0">
-                          <span className="block text-[10px] font-bold leading-tight text-muted-foreground">
-                            {lang === "ml" ? "രേഖകൾ ബാക്കി" : "Document Pending"}
-                          </span>
-                          <span className="mt-1 block font-display text-base font-bold leading-none text-foreground">
-                            {documentPendingCount.toLocaleString()}
-                          </span>
-                        </span>
-                        <img src={documentsPending3dIcon} alt="Document Pending" className="h-9 w-9 shrink-0 object-contain" />
-                      </button>
-                    </div>
-                  );
-                })()}
-
-                {/* SLA Breaches Banner */}
-                {/* Removed per user request */}
-
+                {applicationListSortOpen && <div className="absolute inset-0 z-[120] flex items-end bg-slate-950/60" onClick={() => setApplicationListSortOpen(false)}><div role="dialog" aria-modal="true" aria-label="Sort applications" onClick={event => event.stopPropagation()} className="flex max-h-[85%] w-full flex-col overflow-hidden rounded-t-[24px] border-t border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-800 dark:bg-slate-900"><div className="mx-auto mb-3 h-1 w-10 shrink-0 rounded-full bg-slate-300 dark:bg-slate-700" /><div className="mb-2 flex items-center justify-between border-b border-slate-100 pb-2 dark:border-slate-800"><h2 className="flex items-center gap-2 text-sm font-extrabold text-slate-900 dark:text-white"><ArrowUpDown className="h-4 w-4 text-[#ff5500]" />{lang === "ml" ? "ക്രമീകരിക്കുക" : "Sort By"}</h2><button type="button" aria-label="Close" onClick={() => setApplicationListSortOpen(false)} className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300"><X className="h-4 w-4" /></button></div><div className="min-h-0 overflow-y-auto"><p className="px-3 pb-1 pt-2 text-[10px] font-bold text-slate-500">{lang === "ml" ? "ക്രമീകരിക്കുക" : "Sort By"}</p><div role="radiogroup" aria-label="Sort By">{[{ id: "total", en: "Applications", ml: "അപേക്ഷകൾ" }, { id: "beneficiary", en: "Beneficiaries", ml: "ഗുണഭോക്താക്കൾ" }, { id: "pending", en: "Pending", ml: "തീർപ്പാക്കാത്തവ" }, { id: "review", en: "In Review", ml: "പരിശോധനയിൽ" }, { id: "rejected", en: "Rejected", ml: "നിരസിച്ചത്" }, { id: "name", en: "Scheme Name", ml: "പദ്ധതിയുടെ പേര്" }, { id: "applicant", en: "Applicant Name", ml: "അപേക്ഷകന്റെ പേര്" }, { id: "recent", en: "Recently Added", ml: "അടുത്തിടെ ചേർത്തത്" }].map(option => { const selected = draftApplicationListSort.startsWith(option.id + "_"); return <button key={option.id} type="button" role="radio" aria-checked={selected} onClick={() => setDraftApplicationListSort(option.id + ((option.id === "name" || option.id === "applicant") ? "_asc" : "_desc"))} className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs font-semibold ${selected ? "bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300" : "text-slate-700 dark:text-slate-200"}`}><span>{lang === "ml" ? option.ml : option.en}</span><span className={`flex h-4 w-4 items-center justify-center rounded-full border ${selected ? "border-orange-500 bg-orange-500 text-white" : "border-slate-300 dark:border-slate-600"}`}>{selected && <Check className="h-3 w-3" />}</span></button>; })}</div><p className="px-3 pb-1 pt-3 text-[10px] font-bold text-slate-500">{lang === "ml" ? "ക്രമം" : "Sort Order"}</p><div role="radiogroup" aria-label="Sort Order" className="mx-3 flex rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800/70">{((draftApplicationListSort.startsWith("name_") || draftApplicationListSort.startsWith("applicant_")) ? [{ id: "asc", label: "A to Z" }, { id: "desc", label: "Z to A" }] : draftApplicationListSort.startsWith("recent_") ? [{ id: "desc", label: "Newest First" }, { id: "asc", label: "Oldest First" }] : [{ id: "desc", label: "High to Low" }, { id: "asc", label: "Low to High" }]).map(option => { const [metric, direction] = draftApplicationListSort.split("_"); return <button type="button" role="radio" aria-checked={direction === option.id} key={option.id} onClick={() => setDraftApplicationListSort(metric + "_" + option.id)} className={`flex-1 rounded-lg px-2 py-2 text-xs font-semibold ${direction === option.id ? "bg-white text-orange-700 shadow-sm dark:bg-slate-700 dark:text-orange-300" : "text-slate-500 dark:text-slate-400"}`}>{option.id === "desc" ? "↓" : "↑"} {option.label}</button>; })}</div><p className="px-3 pt-2 text-[10px] text-slate-500 dark:text-slate-400">{lang === "ml" ? "പദ്ധതികൾ തിരഞ്ഞെടുത്ത ക്രമത്തിൽ കാണിക്കും." : (draftApplicationListSort.startsWith("applicant_") ? "Applications are sorted by applicant name." : draftApplicationListSort.startsWith("recent_") ? "Applications are sorted by application date." : "Applications are grouped and sorted by scheme.")}</p></div><button type="button" onClick={() => { setApplicationListSort(draftApplicationListSort); setApplicationListSortOpen(false); }} className="mt-3 shrink-0 rounded-lg bg-[#ff5500] py-2.5 text-xs font-extrabold text-white">{lang === "ml" ? "പ്രയോഗിക്കുക" : "Apply"}</button></div></div>}
                 {/* Applied Filters Bar (Row 1 Active Filter Chips & View) */}
-                {applicationTabActiveFilterCount > 0 && (
-                  <div className="flex flex-col bg-white dark:bg-slate-950 mb-2 shrink-0">
+                {(applicationTabActiveFilterCount > 0 || applicationListSort !== "default") && (
+                  <div className="-mx-3 !mt-0 flex flex-col border-b border-slate-200/70 bg-[#FAF7F2]/90 dark:border-slate-800 dark:bg-slate-900/80 shrink-0">
                     {/* Row 1: Active Filter Chips & View */}
-                    <div className="flex items-center gap-1.5 overflow-x-auto px-1 py-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden shrink-0 whitespace-nowrap">
+                    <div className="flex items-center gap-1.5 overflow-x-auto px-2.5 py-1.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden shrink-0 whitespace-nowrap">
+                      {applicationListSort !== "default" && <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 text-[10.5px] font-semibold text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300"><button type="button" aria-label="Reverse sort order" onClick={() => setApplicationListSort(current => { const [metric, direction] = current.split("_"); return `${metric}_${direction === "asc" ? "desc" : "asc"}`; })}>{(() => { const [metric, direction] = applicationListSort.split("_"); const labels: Record<string, string> = { total: "Applications", beneficiary: "Beneficiaries", pending: "Pending", review: "In Review", rejected: "Rejected", name: "Scheme Name", applicant: "Applicant Name", recent: "Recently Added" }; const order = metric === "name" || metric === "applicant" ? (direction === "asc" ? "A to Z" : "Z to A") : metric === "recent" ? (direction === "desc" ? "Newest First" : "Oldest First") : (direction === "desc" ? "High to Low" : "Low to High"); return `${labels[metric]} · ${order}`; })()}</button><button type="button" aria-label="Clear sort" onClick={() => setApplicationListSort("default")}><X className="h-3 w-3" /></button></span>}
                       {/* Location Filters Chips: Show ONLY the single location name selected on the basis of Location Level */}
                       {(() => {
                         const resetAllLocations = () => {
@@ -18954,6 +18920,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       <button
                         type="button"
                         onClick={() => {
+                          setApplicationListSort("default");
                           setApplicationStatusFilter("all");
                           setSelectedAppStatusFilters([]);
                           setAppSchemeCategoryFilter("all");
@@ -18981,6 +18948,89 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                     </div>
                   </div>
                 )}
+
+                {/* Application intake KPIs */}
+                {(() => {
+                  const allowedIntakeStatuses = new Set([
+                    "all",
+                    "application_received",
+                    "document_verification_completed",
+                    "pending",
+                  ]);
+
+                  const hasDisallowedMultiStatus = selectedAppStatusFilters.some(
+                    (st) => !allowedIntakeStatuses.has(st)
+                  );
+
+                  const isDisallowedSingleStatus =
+                    !allowedIntakeStatuses.has(applicationStatusFilter);
+
+                  const showIntakeKpis = !hasDisallowedMultiStatus && !isDisallowedSingleStatus;
+
+                  if (!showIntakeKpis) return null;
+
+                  const docVerifiedSeedLen = Math.max(1, mobileApplicationRecordsByStatus.document_verification_completed.length);
+                  const appReceivedSeedLen = Math.max(1, mobileApplicationRecordsByStatus.application_received.length);
+                  const totalIntakeSeedLen = docVerifiedSeedLen + appReceivedSeedLen;
+
+                  const readyToApplyCount = Math.round(partyWorkerMetrics.pending * (docVerifiedSeedLen / totalIntakeSeedLen));
+                  const documentPendingCount = partyWorkerMetrics.pending - readyToApplyCount;
+
+                  return (
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setApplicationStatusFilter((prev) =>
+                            prev === "document_verification_completed" ? "all" : "document_verification_completed"
+                          )
+                        }
+                        className={`flex min-h-[64px] items-center justify-between gap-2 rounded-xl border p-2.5 text-left shadow-2xs transition-all cursor-pointer ${
+                          applicationStatusFilter === "document_verification_completed"
+                            ? "border-emerald-300 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30"
+                            : "border-border bg-card hover:border-emerald-200"
+                        }`}
+                      >
+                        <span className="min-w-0">
+                          <span className="block text-[10px] font-bold leading-tight text-muted-foreground">
+                            {lang === "ml" ? "അപേക്ഷിക്കാൻ തയ്യാർ" : "Ready to Apply"}
+                          </span>
+                          <span className="mt-1 block font-display text-base font-bold leading-none text-foreground">
+                            {readyToApplyCount.toLocaleString()}
+                          </span>
+                        </span>
+                        <img src={readyToSubmit3dIcon} alt="Ready to Apply" className="h-9 w-9 shrink-0 object-contain" />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setApplicationStatusFilter((prev) =>
+                            prev === "application_received" ? "all" : "application_received"
+                          )
+                        }
+                        className={`flex min-h-[64px] items-center justify-between gap-2 rounded-xl border p-2.5 text-left shadow-2xs transition-all cursor-pointer ${
+                          applicationStatusFilter === "application_received"
+                            ? "border-orange-300 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/30"
+                            : "border-border bg-card hover:border-orange-200"
+                        }`}
+                      >
+                        <span className="min-w-0">
+                          <span className="block text-[10px] font-bold leading-tight text-muted-foreground">
+                            {lang === "ml" ? "രേഖകൾ ബാക്കി" : "Document Pending"}
+                          </span>
+                          <span className="mt-1 block font-display text-base font-bold leading-none text-foreground">
+                            {documentPendingCount.toLocaleString()}
+                          </span>
+                        </span>
+                        <img src={documentsPending3dIcon} alt="Document Pending" className="h-9 w-9 shrink-0 object-contain" />
+                      </button>
+                    </div>
+                  );
+                })()}
+
+                {/* SLA Breaches Banner */}
+                {/* Removed per user request */}
 
                 {/* List of Applications */}
                 <div className="space-y-1.5">
@@ -25124,30 +25174,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       }
                     />
 
-                    {/* Sort By Dropdown */}
-                    <PickerButton
-                      label={lang === "ml" ? "ക്രമീകരിക്കുക (Sort By)" : "Sort By"}
-                      value={
-                        {
-                          benefits_high_low: lang === "ml" ? "ഉയർന്നതിൽ നിന്ന് താഴ്ന്നതിലേക്ക് (High to Low)" : "High to Low",
-                          benefits_low_high: lang === "ml" ? "താഴ്ന്നതിൽ നിന്ന് ഉയർന്നതിലേക്ക് (Low to High)" : "Low to High",
-                        }[appSchemeSortBy] || (lang === "ml" ? "ഉയർന്നതിൽ നിന്ന് താഴ്ന്നതിലേക്ക് (High to Low)" : "High to Low")
-                      }
-                      onClick={() =>
-                        openCustomPicker(
-                          lang === "ml" ? "ക്രമീകരിക്കുക (Sort By)" : "Sort By",
-                          [
-                            { id: "benefits_low_high", label: lang === "ml" ? "താഴ്ന്നതിൽ നിന്ന് ഉയർന്നതിലേക്ക് (Low to High)" : "Low to High" },
-                            { id: "benefits_high_low", label: lang === "ml" ? "ഉയർന്നതിൽ നിന്ന് താഴ്ന്നതിലേക്ക് (High to Low)" : "High to Low" },
-                          ],
-                          appSchemeSortBy,
-                          (id) => setAppSchemeSortBy(id),
-                          false
-                        )
-                      }
-                    />
-
-                    {/* Scheme Category (Below Sort By) */}
+                    {/* Scheme Category */}
                     <PickerButton
                       label={lang === "ml" ? "പദ്ധതി വിഭാഗം (Category)" : "Scheme Category"}
                       value={

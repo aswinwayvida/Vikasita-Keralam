@@ -798,7 +798,10 @@ export type WorkerSortOption =
   | "apps_asc"
   | "pending_desc"
   | "pending_asc"
-  | "in_review_desc";
+  | "in_review_desc"
+  | "in_review_asc"
+  | "rejected_desc"
+  | "rejected_asc";
 
 export function MobileCreatePartyWorkerFlow({
   lang,
@@ -969,6 +972,7 @@ export function MobileCreatePartyWorkerFlow({
   const [workerSearch, setWorkerSearch] = useState("");
   const [workerSearchOpen, setWorkerSearchOpen] = useState(false);
   const [workerSortOption, setWorkerSortOption] = useState<WorkerSortOption>("name_asc");
+  const [draftWorkerSort, setDraftWorkerSort] = useState<WorkerSortOption>("name_asc");
   const [workerSortSheetOpen, setWorkerSortSheetOpen] = useState(false);
   const [workerFiltersOpen, setWorkerFiltersOpen] = useState(false);
   const [workerMoreFiltersOpen, setWorkerMoreFiltersOpen] = useState(false);
@@ -3666,6 +3670,12 @@ export function MobileCreatePartyWorkerFlow({
           return statsA.pending - statsB.pending || nameA.localeCompare(nameB);
         case "in_review_desc":
           return statsB.inReview - statsA.inReview || nameA.localeCompare(nameB);
+        case "in_review_asc":
+          return statsA.inReview - statsB.inReview || nameA.localeCompare(nameB);
+        case "rejected_desc":
+          return statsB.rejected - statsA.rejected || nameA.localeCompare(nameB);
+        case "rejected_asc":
+          return statsA.rejected - statsB.rejected || nameA.localeCompare(nameB);
         default:
           return 0;
       }
@@ -4077,75 +4087,25 @@ export function MobileCreatePartyWorkerFlow({
 
   const renderWorkerSortSheet = () => {
     if (!workerSortSheetOpen) return null;
-
-    const sortOptions: { id: WorkerSortOption; en: string; ml: string }[] = [
-      { id: "name_asc", en: "Name: A to Z", ml: "പേര്: A മുതൽ Z വരെ" },
-      { id: "name_desc", en: "Name: Z to A", ml: "പേര്: Z മുതൽ A വരെ" },
-      { id: "benefits_desc", en: "Benefits Received: High to Low", ml: "ലഭിച്ച ആനുകൂല്യങ്ങൾ: ഉയർന്നത് മുതൽ താഴ്ന്നത് വരെ" },
-      { id: "benefits_asc", en: "Benefits Received: Low to High", ml: "ലഭിച്ച ആനുകൂല്യങ്ങൾ: താഴ്ന്നത് മുതൽ ഉയർന്നത് വരെ" },
-      { id: "apps_desc", en: "Applications Assisted: High to Low", ml: "സഹായിച്ച അപേക്ഷകൾ: ഉയർന്നത് മുതൽ താഴ്ന്നത് വരെ" },
-      { id: "apps_asc", en: "Applications Assisted: Low to High", ml: "സഹായിച്ച അപേക്ഷകൾ: താഴ്ന്നത് മുതൽ ഉയർന്നത് വരെ" },
-      { id: "pending_desc", en: "Pending Applications: High to Low", ml: "തീർപ്പുകൽപ്പിക്കാത്ത അപേക്ഷകൾ: ഉയർന്നത് മുതൽ താഴ്ന്നത് വരെ" },
-      { id: "pending_asc", en: "Pending Applications: Low to High", ml: "തീർപ്പുകൽപ്പിക്കാത്ത അപേക്ഷകൾ: താഴ്ന്നത് മുതൽ ഉയർന്നത് വരെ" },
-      { id: "in_review_desc", en: "In Review: High to Low", ml: "പരിശോധനയിൽ ഉള്ളവ: ഉയർന്നത് മുതൽ താഴ്ന്നത് വരെ" },
+    const options = [
+      { id: "apps", en: "Applications", ml: "അപേക്ഷകൾ" },
+      { id: "benefits", en: "Beneficiaries", ml: "ഗുണഭോക്താക്കൾ" },
+      { id: "pending", en: "Pending", ml: "തീർപ്പാക്കാത്തവ" },
+      { id: "in_review", en: "In Review", ml: "പരിശോധനയിൽ" },
+      { id: "rejected", en: "Rejected", ml: "നിരസിച്ചത്" },
+      { id: "name", en: "User Name", ml: "ഉപയോക്താവിന്റെ പേര്" },
     ];
-
-    return (
-      <div
-        className="absolute inset-0 z-[110] flex items-end bg-black/55 animate-in fade-in duration-150"
-        onClick={() => setWorkerSortSheetOpen(false)}
-      >
-        <div
-          className="flex max-h-[85%] w-full flex-col rounded-t-2xl border-t border-orange-100 bg-white shadow-2xl animate-in slide-in-from-bottom duration-200 dark:border-slate-800 dark:bg-slate-900"
-          onClick={(event) => event.stopPropagation()}
-        >
-          <div className="shrink-0 border-b border-slate-100 px-3.5 pb-2.5 pt-2 dark:border-slate-800">
-            <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-slate-200 dark:bg-slate-700" />
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <h3 className="flex items-center gap-1.5 text-[13px] font-extrabold text-slate-900 dark:text-white">
-                  <ArrowUpDown className="h-4 w-4 text-[#ff5500] stroke-[2.2]" />
-                  {tr("Sort Users", "ഉപയോക്താക്കളെ ക്രമീകരിക്കുക")}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setWorkerSortSheetOpen(false)}
-                className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-
-          <div className="space-y-1 overflow-y-auto p-3.5 pb-[max(1rem,env(safe-area-inset-bottom))]">
-            {sortOptions.map((option) => {
-              const isSelected = workerSortOption === option.id;
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  onClick={() => {
-                    setWorkerSortOption(option.id);
-                    setWorkerSortSheetOpen(false);
-                  }}
-                  className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-left text-[11.5px] font-bold transition ${
-                    isSelected
-                      ? "bg-orange-50 text-[#C2410C] dark:bg-orange-950/40 dark:text-orange-300"
-                      : "text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800/60"
-                  }`}
-                >
-                  <span>{lang === "ml" ? option.ml : option.en}</span>
-                  {isSelected ? (
-                    <Check className="h-4 w-4 stroke-[2.5] text-[#ff5500]" />
-                  ) : null}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    );
+    const split = draftWorkerSort.lastIndexOf("_");
+    const metric = draftWorkerSort.slice(0, split);
+    const direction = draftWorkerSort.slice(split + 1);
+    return <div className="absolute inset-0 z-[110] flex items-end bg-slate-950/60" onClick={() => setWorkerSortSheetOpen(false)}>
+      <div role="dialog" aria-modal="true" aria-label={tr("Sort users", "ഉപയോക്താക്കളെ ക്രമീകരിക്കുക")} onClick={event => event.stopPropagation()} className="flex max-h-[85%] w-full flex-col overflow-hidden rounded-t-[24px] border-t border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+        <div className="mx-auto mb-3 h-1 w-10 shrink-0 rounded-full bg-slate-300 dark:bg-slate-700" />
+        <div className="mb-2 flex shrink-0 items-center justify-between border-b border-slate-100 pb-2 dark:border-slate-800"><h2 className="flex items-center gap-2 text-sm font-extrabold text-slate-900 dark:text-white"><ArrowUpDown className="h-4 w-4 text-[#ff5500]" />{tr("Sort By", "ക്രമീകരിക്കുക")}</h2><button type="button" aria-label="Close" onClick={() => setWorkerSortSheetOpen(false)} className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300"><X className="h-4 w-4" /></button></div>
+        <div className="min-h-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"><p className="px-3 pb-1 pt-2 text-[10px] font-bold text-slate-500 dark:text-slate-400">{tr("Sort By", "ക്രമീകരിക്കുക")}</p><div role="radiogroup" aria-label="Sort By">{options.map(option => { const selected = metric === option.id; return <button key={option.id} type="button" role="radio" aria-checked={selected} onClick={() => setDraftWorkerSort((option.id + (option.id === "name" ? "_asc" : "_desc")) as WorkerSortOption)} className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs font-semibold ${selected ? "bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300" : "text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"}`}><span>{option[lang]}</span><span className={`flex h-4 w-4 items-center justify-center rounded-full border ${selected ? "border-orange-500 bg-orange-500 text-white" : "border-slate-300 dark:border-slate-600"}`}>{selected && <Check className="h-3 w-3" />}</span></button>; })}</div>
+        <p className="px-3 pb-1 pt-3 text-[10px] font-bold text-slate-500 dark:text-slate-400">{tr("Sort Order", "ക്രമം")}</p><div role="radiogroup" aria-label="Sort Order" className="mx-3 flex rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800/70">{(metric === "name" ? [{ id: "asc", label: "A to Z" }, { id: "desc", label: "Z to A" }] : [{ id: "desc", label: tr("High to Low", "ഉയർന്നതിൽ നിന്ന് താഴേക്ക്") }, { id: "asc", label: tr("Low to High", "താഴ്ന്നതിൽ നിന്ന് മുകളിലേക്ക്") }]).map(option => <button key={option.id} type="button" role="radio" aria-checked={direction === option.id} onClick={() => setDraftWorkerSort((metric + "_" + option.id) as WorkerSortOption)} className={`flex-1 rounded-lg px-2 py-2 text-xs font-semibold ${direction === option.id ? "bg-white text-orange-700 shadow-sm dark:bg-slate-700 dark:text-orange-300" : "text-slate-500 dark:text-slate-400"}`}>{option.id === "desc" ? "↓" : "↑"} {option.label}</button>)}</div><p className="px-3 pt-2 text-[10px] text-slate-500 dark:text-slate-400">{tr("Users will be sorted by the selected criterion and order.", "തിരഞ്ഞെടുത്ത ക്രമത്തിൽ ഉപയോക്താക്കളെ കാണിക്കും.")}</p></div>
+        <button type="button" onClick={() => { setWorkerSortOption(draftWorkerSort); setWorkerSortSheetOpen(false); }} className="mt-3 shrink-0 rounded-lg bg-[#ff5500] py-2.5 text-xs font-extrabold text-white">{tr("Apply", "പ്രയോഗിക്കുക")}</button>
+      </div></div>;
   };
 
   const renderProfilePermissions = (
@@ -5825,7 +5785,7 @@ export function MobileCreatePartyWorkerFlow({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setWorkerSortSheetOpen(true)}
+                  onClick={() => { setDraftWorkerSort(workerSortOption); setWorkerSortSheetOpen(true); }}
                   className={`relative flex h-7 w-7 items-center justify-center rounded-full border transition-colors active:scale-95 shadow-2xs ${
                     workerSortOption !== "name_asc"
                       ? "bg-[#ff5500] text-white border-orange-600"
@@ -5896,6 +5856,12 @@ export function MobileCreatePartyWorkerFlow({
         )}
       </div>
 
+      {phase === "list" && appliedWorkerFilterCount > 0 && <div className="flex shrink-0 items-center gap-1.5 overflow-x-auto border-b border-slate-200/70 bg-[#FAF7F2]/90 px-2.5 py-1.5 whitespace-nowrap dark:border-slate-800 dark:bg-slate-900/80 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{(Object.keys(defaultWorkerListFilters) as (keyof WorkerListFilters)[]).filter(key => appliedWorkerFilters[key] !== defaultWorkerListFilters[key] && appliedWorkerFilters[key]).map(key => {
+        const value = String(appliedWorkerFilters[key]);
+        const location = ["regionId", "districtId", "constituencyId", "localBodyType", "localBodyId", "wardId", "boothId", "orgUnitId"].includes(key);
+        const label = key === "level" ? assignmentLevels.find(item => item.id === value)?.[lang] : key === "designationId" ? allDesignationChoices.find(item => item.id === value)?.[lang] : key === "regionId" ? regions.find(item => item.id === value)?.[lang] : key === "districtId" ? (districts.find(item => item.id === value) || organisationalDistricts.find(item => item.id === value))?.[lang] : key === "constituencyId" ? constituencies.find(item => item.id === value)?.[lang] : key === "localBodyType" ? localBodyTypeOptions.find(item => item.id === value)?.[lang] : key === "localBodyId" ? panchayats.find(item => item.id === value)?.[lang] : key === "appRole" ? rolePresets.find(item => item.id === value)?.[lang] : key === "appStatus" ? getWorkerAppStatusLabel(value, lang) : key === "schemeId" ? getWorkerSchemeLabel(value, lang) : undefined;
+        return <span key={key} className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10.5px] font-semibold shadow-2xs ${location ? "border-orange-200/90 bg-orange-50 text-orange-800 dark:border-orange-800/60 dark:bg-orange-950/40 dark:text-orange-300" : "border-slate-200 bg-slate-100 text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"}`}>{location && <MapPin className="h-2.5 w-2.5 text-orange-500" />}<span>{label || value.replace(/[_-]/g, " ")}</span><button type="button" aria-label={`Remove ${key}`} onClick={() => setAppliedWorkerFilters(prev => ({ ...prev, [key]: defaultWorkerListFilters[key] }))} className="ml-0.5 -mr-0.5 rounded-full p-0.5"><X className="h-2.5 w-2.5 stroke-[2.5]" /></button></span>;
+      })}<button type="button" onClick={() => { setAppliedWorkerFilters({ ...defaultWorkerListFilters }); setDraftWorkerFilters({ ...defaultWorkerListFilters }); }} className="shrink-0 text-[10px] font-bold text-orange-600">{tr("Clear All", "എല്ലാം ഒഴിവാക്കുക")}</button></div>}
       <div
         ref={bodyRef}
         className={`flex-1 overflow-y-auto px-3.5 py-3 pb-[max(1.5rem,env(safe-area-inset-bottom))] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${
