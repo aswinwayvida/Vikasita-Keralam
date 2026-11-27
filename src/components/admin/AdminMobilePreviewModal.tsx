@@ -1,5 +1,6 @@
 import { ORGANISATIONAL_DISTRICT_MANDALAMS } from "./mobileOrganisationMapping";
 import React, { useState, useRef, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { masterLocationIdToReport } from "./mobileLocationIdAdapter";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
@@ -7856,6 +7857,9 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
 
   // Scheme specific filter drawer states
   const [schemeFilterSheetOpen, setSchemeFilterSheetOpen] = useState<boolean>(false);
+  const [schemeListSortOpen, setSchemeListSortOpen] = useState(false);
+  const [schemeListSort, setSchemeListSort] = useState("default");
+  const [draftSchemeListSort, setDraftSchemeListSort] = useState("name_asc");
   const [selectedMinistryFilter, setSelectedMinistryFilter] = useState<string>("all");
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("all");
   const [schemeCategoryFilter, setSchemeCategoryFilter] = useState<string>("all");
@@ -17949,6 +17953,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             >
                               <Search className={`h-3.5 w-3.5 stroke-[2.2] ${categorySchemeQuery ? "text-white" : "text-[#ff5500] dark:text-orange-400"}`} />
                             </button>
+                            <button type="button" title={lang === "ml" ? "ക്രമീകരിക്കുക" : "Sort schemes"} onClick={() => { setDraftSchemeListSort(schemeListSort.startsWith("name_") ? schemeListSort : "name_asc"); setSchemeListSortOpen(true); }} className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-white text-[#ff5500] dark:border-slate-700 dark:bg-slate-800"><ArrowUpDown className="h-3.5 w-3.5" /></button>
                             <button
                               type="button"
                               onClick={() => setSchemeFilterSheetOpen((prev) => !prev)}
@@ -17966,6 +17971,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                       )}
                     </div>
 
+                    {schemeListSortOpen && typeof document !== "undefined" && document.querySelector("[data-mobile-preview-shell]") && createPortal(<div className="absolute inset-0 z-[120] flex items-end bg-slate-950/60" onClick={() => setSchemeListSortOpen(false)}><div role="dialog" aria-modal="true" aria-label="Sort schemes" onClick={event => event.stopPropagation()} className="flex max-h-[85%] w-full flex-col overflow-hidden rounded-t-[24px] border-t border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-800 dark:bg-slate-900"><div className="mx-auto mb-3 h-1 w-10 shrink-0 rounded-full bg-slate-300 dark:bg-slate-700" /><div className="mb-2 flex items-center justify-between border-b border-slate-100 pb-2 dark:border-slate-800"><h2 className="flex items-center gap-2 text-sm font-extrabold text-slate-900 dark:text-white"><ArrowUpDown className="h-4 w-4 text-[#ff5500]" />{lang === "ml" ? "ക്രമീകരിക്കുക" : "Sort By"}</h2><button type="button" aria-label="Close" onClick={() => setSchemeListSortOpen(false)} className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300"><X className="h-4 w-4" /></button></div><div className="min-h-0 overflow-y-auto"><p className="px-3 pb-1 pt-2 text-[10px] font-bold text-slate-500 dark:text-slate-400">{lang === "ml" ? "ക്രമീകരിക്കുക" : "Sort By"}</p><div role="radiogroup" aria-label="Sort By">{[{ id: "name", en: "Scheme Name", ml: "പദ്ധതിയുടെ പേര്" }].map(option => { const selected = draftSchemeListSort.startsWith(option.id + "_"); const unavailable = option.id === "recent"; return <button key={option.id} type="button" role="radio" aria-checked={selected} disabled={unavailable} onClick={() => setDraftSchemeListSort(option.id + "_asc")} className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs font-semibold ${selected ? "bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300" : "text-slate-700 dark:text-slate-200"} ${unavailable ? "opacity-50" : ""}`}><span>{lang === "ml" ? option.ml : option.en}{unavailable && <span className="ml-1 text-[10px] font-normal">{lang === "ml" ? "(തീയതി ലഭ്യമല്ല)" : "(dates unavailable)"}</span>}</span><span className={`flex h-4 w-4 items-center justify-center rounded-full border ${selected ? "border-orange-500 bg-orange-500 text-white" : "border-slate-300 dark:border-slate-600"}`}>{selected && <Check className="h-3 w-3" />}</span></button>; })}</div><p className="px-3 pb-1 pt-3 text-[10px] font-bold text-slate-500 dark:text-slate-400">{lang === "ml" ? "ക്രമം" : "Sort Order"}</p><div role="radiogroup" aria-label="Sort Order" className="mx-3 flex rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800/70">{[{ id: "asc", label: "A to Z" }, { id: "desc", label: "Z to A" }].map(option => { const [metric, direction] = draftSchemeListSort.split("_"); return <button type="button" role="radio" aria-checked={direction === option.id} key={option.id} onClick={() => setDraftSchemeListSort(metric + "_" + option.id)} className={`flex-1 rounded-lg px-2 py-2 text-xs font-semibold ${direction === option.id ? "bg-white text-orange-700 shadow-sm dark:bg-slate-700 dark:text-orange-300" : "text-slate-500 dark:text-slate-400"}`}>{option.label}</button>; })}</div></div><button type="button" onClick={() => { setSchemeListSort(draftSchemeListSort); setSchemeListSortOpen(false); }} className="mt-3 shrink-0 rounded-lg bg-[#ff5500] py-2.5 text-xs font-extrabold text-white">{lang === "ml" ? "പ്രയോഗിക്കുക" : "Apply"}</button></div></div>, document.querySelector("[data-mobile-preview-shell]")!)}
                     {/* Scheme Cards List matching user mockup */}
                     <div className="space-y-1.5 pt-0.5 px-3">
                       {getMobileCentralSchemeCards(selectedSchemeCategoryDetail.id)
@@ -17989,6 +17995,7 @@ export function AdminMobilePreviewModal({ isOpen = true, onClose = () => {}, sta
                             scheme.deptMl.toLowerCase().includes(q)
                           );
                         })
+                        .sort((a, b) => { if (schemeListSort === "default") return 0; const [metric, direction] = schemeListSort.split("_"); const aValue = metric === "ministry" ? (lang === "ml" ? a.deptMl : a.deptEn) : (lang === "ml" ? a.titleMl : a.titleEn); const bValue = metric === "ministry" ? (lang === "ml" ? b.deptMl : b.deptEn) : (lang === "ml" ? b.titleMl : b.titleEn); return aValue.localeCompare(bValue) * (direction === "desc" ? -1 : 1); })
                         .map((scheme) => (
                           <div
                             key={scheme.titleEn}
